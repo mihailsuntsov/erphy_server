@@ -38,6 +38,7 @@ public class ProductsTableJSON {
     private String      markable_group_id;
     private Boolean     excizable;
     private Boolean     not_buy;
+    private Boolean     not_sell;
 
     public Long getId() {
         return id;
@@ -65,6 +66,14 @@ public class ProductsTableJSON {
 
     public void setPpr_id(String ppr_id) {
         this.ppr_id = ppr_id;
+    }
+
+    public Boolean getNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(Boolean not_sell) {
+        this.not_sell = not_sell;
     }
 
     public Boolean getBy_weight() {

@@ -12,6 +12,7 @@ public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
     private BigDecimal  min_quantity;
     private Integer     estimate_quantity;
     private Boolean     not_buy;
+    private Boolean     not_sell;
 
     public Long getId() {
         return id;
@@ -35,6 +36,14 @@ public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
 
     public void setEstimate_quantity(Integer estimate_quantity) {
         this.estimate_quantity = estimate_quantity;
+    }
+
+    public Boolean getNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(Boolean not_sell) {
+        this.not_sell = not_sell;
     }
 
     public String getArticle() {
@@ -150,6 +159,16 @@ public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
     public static Comparator<RemainsTableJSON> COMPARE_BY_NOTBUY_DESC = new Comparator<RemainsTableJSON>() {
         public int compare(RemainsTableJSON one, RemainsTableJSON other) {
             return other.not_buy.compareTo(one.not_buy);
+        }
+    };
+    public static Comparator<RemainsTableJSON> COMPARE_BY_NOTSELL_ASC = new Comparator<RemainsTableJSON>() {
+        public int compare(RemainsTableJSON one, RemainsTableJSON other) {
+            return one.not_sell.compareTo(other.not_sell);
+        }
+    };
+    public static Comparator<RemainsTableJSON> COMPARE_BY_NOTSELL_DESC = new Comparator<RemainsTableJSON>() {
+        public int compare(RemainsTableJSON one, RemainsTableJSON other) {
+            return other.not_sell.compareTo(one.not_sell);
         }
     };
 }

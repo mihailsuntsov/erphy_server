@@ -29,6 +29,7 @@ public class ProductsForm {
     private boolean excizable;
     private Long product_code_free;
     private boolean not_buy;
+    private boolean not_sell;
 
     public Long getId() {
         return id;
@@ -40,6 +41,14 @@ public class ProductsForm {
 
     public boolean isNot_buy() {
         return not_buy;
+    }
+
+    public boolean isNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(boolean not_sell) {
+        this.not_sell = not_sell;
     }
 
     public void setNot_buy(boolean not_buy) {

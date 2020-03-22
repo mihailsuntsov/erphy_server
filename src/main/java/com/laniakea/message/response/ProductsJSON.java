@@ -52,6 +52,7 @@ public class ProductsJSON {
     private Boolean     excizable;
     private String      product_code_free;
     private Boolean     not_buy;
+    private Boolean     not_sell;
 
     public Long getId() {
         return id;
@@ -71,6 +72,14 @@ public class ProductsJSON {
 
     public void setProduct_categories_id(List<Integer> product_categories_id) {
         this.product_categories_id = product_categories_id;
+    }
+
+    public Boolean getNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(Boolean not_sell) {
+        this.not_sell = not_sell;
     }
 
     public Boolean getNot_buy() {

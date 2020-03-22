@@ -61,17 +61,20 @@ public class RemainsRepository {
             String stringQuery;
             List<Integer> pagesList;// информация для пагинации. Первые 3 места - "всего найдено", "страница", "всего страниц", остальное - номера страниц для пагинации
             Boolean hideNotBuyingProducts = filterOptionsIds.contains(3);// скрывать товары, у которых в карточке стоит флаг "Товар не закупается"
+            Boolean hideNotSellingProducts = filterOptionsIds.contains(4);// скрывать снятые с продажи товары (у которых в карточке стоит флаг "Снято с продажи")
             Boolean showNotAviable = filterOptionsIds.contains(0);// отображать товары с оценкой остатков "Отсутствует"
             Boolean showLess = filterOptionsIds.contains(1);// отображать товары с оценкой остатков "Мало"
             Boolean showMany = filterOptionsIds.contains(2);// отображать товары с оценкой остатков "Достаточно"
             Boolean notBuy = false;
+            Boolean notSell = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
            // getProductMinRemains( productId, departmentId, departmentsIdsList, myMasterId)
             stringQuery = "select  p.id as id, " +
                     "           p.name as name, " +
                     "           p.article as article, " +
                     "           coalesce(pg.name,'') as productgroup, " +
-                    "           coalesce(p.not_buy,false) as not_buy " +
+                    "           coalesce(p.not_buy,false) as not_buy, " +
+                    "           coalesce(p.not_sell,false) as not_sell " +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
@@ -92,6 +95,7 @@ public class RemainsRepository {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper('%" + searchString + "%') or "+
                         "upper(p.article) like upper('%" + searchString + "%') or "+
+                        "upper(p.description) like upper('%" + searchString + "%') or "+
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or "+
                         "upper(pg.name) like upper('%" + searchString + "%')"+")";
             }
@@ -106,7 +110,9 @@ public class RemainsRepository {
             for(Object[] obj:queryList){
 
                 notBuy =(Boolean) obj[4] ;
-                if(!(hideNotBuyingProducts && notBuy)) {
+                notSell =(Boolean) obj[5] ;
+                if(!(hideNotBuyingProducts && notBuy)&&!(hideNotSellingProducts && notSell))
+                {//если не: ( [v] Скрывать не закупаемые товары и товар не закупаемый) и ( [v] Скрывать снятые с продажи и товар или услуга снят с продажи)
                     RemainsTableJSON doc=new RemainsTableJSON();
                     departmentQuantities.clear();
                     finalDepartmentQuantities.clear();
@@ -116,6 +122,7 @@ public class RemainsRepository {
                     doc.setArticle((String)         obj[2]);
                     doc.setProductgroup((String)    obj[3]);
                     doc.setNot_buy((Boolean)        obj[4]);
+                    doc.setNot_sell((Boolean)       obj[5]);
                     doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
                     doc.setQuantity(getQuantity(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList));
                     int estimateQuantity=doEstimateQuantity();
@@ -135,6 +142,7 @@ public class RemainsRepository {
             if(sortColumn.equals("min_quantity")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_DESC);}}
             if(sortColumn.equals("estimate_quantity")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_DESC);}}
             if(sortColumn.equals("not_buy")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_DESC);}}
+            if(sortColumn.equals("not_sell")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_DESC);}}
             int returnListSize=returnList.size();
             pagesList=getPagesList(result,offset, returnListSize);
             RemainsJSON remainsTableForm=new RemainsJSON();
@@ -268,7 +276,7 @@ public class RemainsRepository {
         return true;
     }
 
-
+    @SuppressWarnings("Duplicates")
     private boolean canSetRemainsOfAllTheseDepartments(RemainsForm request, Long myMasterId){
         if(securityRepositoryJPA.userHasPermissions_OR(18L,"232,233,234")){
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();

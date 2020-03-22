@@ -53,30 +53,34 @@ public class PricesRepository {
                                         Long priceTypeId,
                                         String priceTypesIdsList,
                                         Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(18L, "235,236,237"))
+        if(securityRepositoryJPA.userHasPermissions_OR(19L, "242,243"))
         {
             String stringQuery;
             List<Integer> pagesList;// информация для пагинации. Первые 3 места - "всего найдено", "страница", "всего страниц", остальное - номера страниц для пагинации
             Boolean hideNotBuyingProducts = filterOptionsIds.contains(3);// скрывать товары, у которых в карточке стоит флаг "Товар не закупается"
+            Boolean hideNotSellingProducts = filterOptionsIds.contains(4);// скрывать снятые с продажи товары (у которых в карточке стоит флаг "Снято с продажи")
 //            Boolean showNotAviable = filterOptionsIds.contains(0);// отображать товары с оценкой остатков "Отсутствует"
 //            Boolean showLess = filterOptionsIds.contains(1);// отображать товары с оценкой остатков "Мало"
 //            Boolean showMany = filterOptionsIds.contains(2);// отображать товары с оценкой остатков "Достаточно"
-//            Boolean notBuy = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Boolean notBuy = false;
+            Boolean notSell = false;
             // getProductMinRemains( productId, departmentId, departmentsIdsList, myMasterId)
             stringQuery = "select  p.id as id, " +
                     "           p.name as name, " +
                     "           p.article as article, " +
                     "           coalesce(pg.name,'') as productgroup, " +
-                    "           coalesce(p.not_buy,false) as not_buy " +
+                    "           coalesce(p.not_buy,false) as not_buy, " +
+                    "           coalesce(p.not_sell,false) as not_sell, " +
+                    "           p.description as description, " +
+                    "           p.ppr_id as ppr " +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_archive,false) !=true " +
                  (categoryId!=0?" and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id="+categoryId+") ":"");
-            stringQuery = stringQuery + " and p.id in (33,128,149)";
-            if (!securityRepositoryJPA.userHasPermissions_OR(18L, "235")) //Если нет прав по всем предприятиям"
+//            stringQuery = stringQuery + " and p.id in (33,128,149)";
+            if (!securityRepositoryJPA.userHasPermissions_OR(19L, "242")) //Если нет прав по всем предприятиям"
             {
                 //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -89,6 +93,7 @@ public class PricesRepository {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper('%" + searchString + "%') or "+
                         "upper(p.article) like upper('%" + searchString + "%') or "+
+                        "upper(p.description) like upper('%" + searchString + "%') or "+
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or "+
                         "upper(pg.name) like upper('%" + searchString + "%')"+")";
             }
@@ -103,8 +108,10 @@ public class PricesRepository {
             List<PricesTableJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){
 
-                notBuy =(Boolean) obj[4] ;
-                if(!(hideNotBuyingProducts && notBuy)) {//если не: ( [v] Скрывать не закупаемые товары и товар закупаемый)
+                notBuy  =(Boolean) obj[4] ;
+                notSell =(Boolean) obj[5] ;
+                if(!(hideNotBuyingProducts && notBuy)&&!(hideNotSellingProducts && notSell))
+                {//если не: ( [v] Скрывать не закупаемые товары и товар не закупаемый) и ( [v] Скрывать снятые с продажи и товар или услуга снят с продажи)
                     PricesTableJSON doc=new PricesTableJSON();
 
                     doc.setId(Long.parseLong (      obj[0].toString()));
@@ -112,17 +119,21 @@ public class PricesRepository {
                     doc.setArticle((String)         obj[2]);
                     doc.setProductgroup((String)    obj[3]);
                     doc.setNot_buy((Boolean)        obj[4]);
+                    doc.setNot_sell((Boolean)       obj[5]);
+                    doc.setDescription((String)     obj[6]);
+                    doc.setPpr_id((Integer)         obj[7]);
                     doc.setPrice(getProductPrices(Long.parseLong(obj[0].toString()), priceTypeId, priceTypesIdsList, myMasterId));
 
-                        returnList.add(doc);
-                    }
+                    returnList.add(doc);
                 }
+    }
 
             if(sortColumn.equals("p.name")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NAME_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NAME_DESC);}}
             if(sortColumn.equals("p.article")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_DESC);}}
             if(sortColumn.equals("productgroup")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);}}
             if(sortColumn.equals("price")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_DESC);}}
             if(sortColumn.equals("not_buy")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_DESC);}}
+            if(sortColumn.equals("not_sell")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_DESC);}}
             int returnListSize=returnList.size();
             pagesList=getPagesList(result,offset, returnListSize);
             PricesJSON pricesTableJSON=new PricesJSON();
@@ -246,8 +257,8 @@ public class PricesRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long userId = userRepository.getUserId();
         //Если есть право на "Установка остатков по всем предприятиям", ИЛИ
-//        if(canSetRemainsOfAllTheseDepartments(request, myMasterId))
-//        {
+        if(canSetPricesOfAllTheseDepartments(request, myMasterId))
+        {
             if (clearProductPrices(request, myMasterId))
             {
                 if (request.getPriceTypeId()==0) //если 0 значит были выбраны все типы цен, и нужно установить цены по всем типам цен во всех товарах.
@@ -274,7 +285,7 @@ public class PricesRepository {
                 }
                 return true;
             } else return false;
-//        } else return false;
+        } else return false;
     }
 
     @SuppressWarnings("Duplicates")
@@ -294,6 +305,7 @@ public class PricesRepository {
             query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("ERROR: ", e);
             return false;
         }
         return true;
@@ -320,6 +332,7 @@ public class PricesRepository {
             return true;
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("ERROR: ", e);
             return false;
         }
     }
@@ -350,8 +363,22 @@ public class PricesRepository {
             return true;
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("ERROR: ", e);
             return false;
         }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private boolean canSetPricesOfAllTheseDepartments(PricesForm request, Long myMasterId){
+        if(securityRepositoryJPA.userHasPermissions_OR(19L,"239,240")){
+            Long MY_COMPANY_ID = Long.valueOf(userRepositoryJPA.getMyCompanyId());
+            Long REQUEST_COMPANY_ID = request.getCompanyId();
+            return
+                    //если есть право "Установка цен по всем предприятиям" и предприятие владельца аккаунта или
+                    (securityRepositoryJPA.userHasPermissions_OR(19L, "239") && securityRepositoryJPA.isItAllMyMastersDocuments("companies", request.getCompanyId().toString())) ||
+                    //на своё предприятие и оно по id действительно моё  или
+                    (securityRepositoryJPA.userHasPermissions_OR(19L, "240") && REQUEST_COMPANY_ID.equals(MY_COMPANY_ID));
+        }else return false;
     }
 }
 

@@ -62,8 +62,11 @@ public class Products {
     @Column(name = "is_archive")//Удалён
     private Boolean is_archive;
 
-    @Column(name = "not_buy")//товар не закупается (нужно, чтобы отфильтровать из товарных остатков товары, которые больше не закупаются)
+    @Column(name = "not_buy")//товар не закупается (нужно, чтобы отфильтровать товары, которые больше не закупаются)
     private Boolean not_buy;
+
+    @Column(name = "not_sell")//товар сянт с продажи (нужно, чтобы отфильтровать товары, которые сняты с продажи)
+    private Boolean not_sell;
 
     @ManyToOne
     @JoinColumn(name = "group_id")     // группа товаров или услуг
@@ -156,6 +159,14 @@ public class Products {
 
     public void setProductCategories(Set<ProductCategories> productCategories) {
         this.productCategories = productCategories;
+    }
+
+    public Boolean getNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(Boolean not_sell) {
+        this.not_sell = not_sell;
     }
 
     public String getName() {

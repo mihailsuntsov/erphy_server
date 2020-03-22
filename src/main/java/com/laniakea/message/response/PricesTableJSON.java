@@ -6,10 +6,13 @@ import java.util.Comparator;
 public class PricesTableJSON  implements Comparable<PricesTableJSON> {
     private Long        id;
     private String      name;
+    private String      description;
     private String      article;
     private String      productgroup;
     private BigDecimal  price;
     private Boolean     not_buy;
+    private Boolean     not_sell;
+    private Integer     ppr_id;
 
     public Long getId() {
         return id;
@@ -17,6 +20,30 @@ public class PricesTableJSON  implements Comparable<PricesTableJSON> {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Boolean getNot_sell() {
+        return not_sell;
+    }
+
+    public void setNot_sell(Boolean not_sell) {
+        this.not_sell = not_sell;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Integer getPpr_id() {
+        return ppr_id;
+    }
+
+    public void setPpr_id(Integer ppr_id) {
+        this.ppr_id = ppr_id;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getName() {
@@ -113,6 +140,17 @@ public class PricesTableJSON  implements Comparable<PricesTableJSON> {
     public static Comparator<PricesTableJSON> COMPARE_BY_NOTBUY_DESC = new Comparator<PricesTableJSON>() {
         public int compare(PricesTableJSON one, PricesTableJSON other) {
             return other.not_buy.compareTo(one.not_buy);
+        }
+    };
+
+    public static Comparator<PricesTableJSON> COMPARE_BY_NOTSELL_ASC = new Comparator<PricesTableJSON>() {
+        public int compare(PricesTableJSON one, PricesTableJSON other) {
+            return one.not_sell.compareTo(other.not_sell);
+        }
+    };
+    public static Comparator<PricesTableJSON> COMPARE_BY_NOTSELL_DESC = new Comparator<PricesTableJSON>() {
+        public int compare(PricesTableJSON one, PricesTableJSON other) {
+            return other.not_sell.compareTo(one.not_sell);
         }
     };
 }

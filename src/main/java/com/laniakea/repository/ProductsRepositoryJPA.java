@@ -78,7 +78,8 @@ public class ProductsRepositoryJPA {
                     "           p.description as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
-                    "           coalesce(p.not_buy, false) as not_buy " +
+                    "           coalesce(p.not_buy, false) as not_buy, " +
+                    "           coalesce(p.not_sell, false) as not_sell " +
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -198,7 +199,8 @@ public class ProductsRepositoryJPA {
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.description as description, " +
-                    "           coalesce(p.not_buy, false) as not_buy " +
+                    "           coalesce(p.not_buy, false) as not_buy, " +
+                    "           coalesce(p.not_sell, false) as not_sell " +
 
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -343,6 +345,8 @@ public class ProductsRepositoryJPA {
                     product.setMarkable_group  (ed);}
                 //не закупаемый товар (Boolean)
                 product.setNot_buy(request.isNot_buy());
+                //снятый с продажи товар (Boolean)
+                product.setNot_sell(request.isNot_sell());
 
                 User changer = userService.getUserByUsername(userService.getUserName());
                 product.setChanger(changer);//кто изменил
@@ -506,6 +510,8 @@ public class ProductsRepositoryJPA {
                     }
                     //не закупаемый товар (Boolean)
                     newDocument.setNot_buy(request.isNot_buy());
+                    //товар снят с продажи (Boolean)
+                    newDocument.setNot_sell(request.isNot_sell());
 
                     entityManager.persist(newDocument);
                     entityManager.flush();
@@ -734,6 +740,8 @@ public class ProductsRepositoryJPA {
             newDocument.setVolume_edizm(response.getVolume_edizm());
             //товар не закупается
             newDocument.setNot_buy(response.getNot_buy());
+            //товар снят с продажи
+            newDocument.setNot_sell(response.getNot_sell());
 
             newDocument.setProductCategories(response.getProductCategories());
 
