@@ -74,7 +74,8 @@ public class RemainsRepository {
                     "           p.article as article, " +
                     "           coalesce(pg.name,'') as productgroup, " +
                     "           coalesce(p.not_buy,false) as not_buy, " +
-                    "           coalesce(p.not_sell,false) as not_sell " +
+                    "           coalesce(p.not_sell,false) as not_sell, " +
+                    "           p.description as description " +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
@@ -123,6 +124,7 @@ public class RemainsRepository {
                     doc.setProductgroup((String)    obj[3]);
                     doc.setNot_buy((Boolean)        obj[4]);
                     doc.setNot_sell((Boolean)       obj[5]);
+                    doc.setDescription((String)     obj[6]);
                     doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
                     doc.setQuantity(getQuantity(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList));
                     int estimateQuantity=doEstimateQuantity();
@@ -136,6 +138,7 @@ public class RemainsRepository {
                 }
             }
             if(sortColumn.equals("p.name")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_DESC);}}
+            if(sortColumn.equals("description")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_DESC);}}
             if(sortColumn.equals("p.article")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_DESC);}}
             if(sortColumn.equals("productgroup")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);}}
             if(sortColumn.equals("quantity")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_DESC);}}

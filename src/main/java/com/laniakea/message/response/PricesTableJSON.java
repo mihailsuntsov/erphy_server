@@ -101,6 +101,16 @@ public class PricesTableJSON  implements Comparable<PricesTableJSON> {
             return other.name.compareTo(one.name);
         }
     };
+    public static Comparator<PricesTableJSON> COMPARE_BY_DESCRIPTION_ASC= new Comparator<PricesTableJSON>() {
+        public int compare(PricesTableJSON one, PricesTableJSON other) {
+            return one.description.compareTo(other.description);
+        }
+    };
+    public static Comparator<PricesTableJSON> COMPARE_BY_DESCRIPTION_DESC= new Comparator<PricesTableJSON>() {
+        public int compare(PricesTableJSON one, PricesTableJSON other) {
+            return other.description.compareTo(one.description);
+        }
+    };
     public static Comparator<PricesTableJSON> COMPARE_BY_ARTICLE_ASC = new Comparator<PricesTableJSON>() {
         public int compare(PricesTableJSON one, PricesTableJSON other) {
             return one.article.compareTo(other.article);

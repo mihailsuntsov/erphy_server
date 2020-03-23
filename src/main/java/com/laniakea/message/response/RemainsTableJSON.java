@@ -6,6 +6,7 @@ import java.util.Comparator;
 public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
     private Long        id;
     private String      name;
+    private String      description;
     private String      article;
     private String      productgroup;
     private BigDecimal  quantity;
@@ -20,6 +21,14 @@ public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getName() {
@@ -99,6 +108,16 @@ public class RemainsTableJSON implements Comparable<RemainsTableJSON> {
     public static Comparator<RemainsTableJSON> COMPARE_BY_NAME_DESC= new Comparator<RemainsTableJSON>() {
         public int compare(RemainsTableJSON one, RemainsTableJSON other) {
             return other.name.compareTo(one.name);
+        }
+    };
+    public static Comparator<RemainsTableJSON> COMPARE_BY_DESCRIPTION_ASC= new Comparator<RemainsTableJSON>() {
+        public int compare(RemainsTableJSON one, RemainsTableJSON other) {
+            return one.description.compareTo(other.description);
+        }
+    };
+    public static Comparator<RemainsTableJSON> COMPARE_BY_DESCRIPTION_DESC= new Comparator<RemainsTableJSON>() {
+        public int compare(RemainsTableJSON one, RemainsTableJSON other) {
+            return other.description.compareTo(one.description);
         }
     };
     public static Comparator<RemainsTableJSON> COMPARE_BY_ARTICLE_ASC = new Comparator<RemainsTableJSON>() {

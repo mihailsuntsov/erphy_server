@@ -621,7 +621,7 @@ public class ProductsRepositoryJPA {
     public boolean copyProducts (UniversalForm request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "163,164"))//  Группы товаров : "Создание"
         {
-            int numCopies = request.getId1()>5L?5:(request.getId1().intValue());  // количество копий. Проверка на случай если пошлют более 5
+            int numCopies = request.getId1()>4L?1000:(request.getId1().intValue());  // количество копий. Проверка на случай если пошлют более 5
             try
             {
                 for (int i = 0; i < numCopies; i++) { //цикл по заданному количеству копий.
