@@ -75,7 +75,15 @@ public class RemainsRepository {
                     "           coalesce(pg.name,'') as productgroup, " +
                     "           coalesce(p.not_buy,false) as not_buy, " +
                     "           coalesce(p.not_sell,false) as not_sell, " +
-                    "           p.description as description " +
+                    "           p.description as description, " +
+                    " coalesce((select " +
+                    " sum(coalesce(quantity,0)) " +
+                    " from " +
+                    " products_history " +
+                    " where " +
+                    " product_id = p.id "+
+                    (departmentId>0L?" and department_id = "+departmentId:" and department_id in ("+departmentsIdsList+") ")+
+                    " group by id order by id desc limit 1),0) as quantity "+
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
@@ -106,7 +114,8 @@ public class RemainsRepository {
             stringQuery = stringQuery + " order by p.name asc";
             Query query = entityManager.createNativeQuery(stringQuery);
 
-            List<Object[]> queryList = query.getResultList();
+            List<Object[]> queryList = query.getResultList();//получили полный список товаров в лист
+
             List<RemainsTableJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){
 
@@ -125,16 +134,22 @@ public class RemainsRepository {
                     doc.setNot_buy((Boolean)        obj[4]);
                     doc.setNot_sell((Boolean)       obj[5]);
                     doc.setDescription((String)     obj[6]);
-                    doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
-                    doc.setQuantity(getQuantity(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList));
-                    int estimateQuantity=doEstimateQuantity();
-                    doc.setEstimate_quantity(estimateQuantity);
-                    if(     (showNotAviable && estimateQuantity==0) ||
+                    doc.setQuantity((BigDecimal)    obj[7]);
+                    //если сортировка по минимальному кол-ву - вычисляем (остальные довычислим потом)
+                    if(sortColumn.equals("min_quantity")) doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
+//                    doc.setQuantity(getQuantity(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList));
+                    //если сортировка по оценке кол-ва - вычисляем (остальные довычислим потом)
+                    if(sortColumn.equals("estimate_quantity")) {
+                        int estimateQuantity = doEstimateQuantity();
+                        doc.setEstimate_quantity(estimateQuantity);
+                    }
+
+/*                    if(     (showNotAviable && estimateQuantity==0) ||
                             (showLess && estimateQuantity==1) ||
                             (showMany && estimateQuantity==2))
-                    {
+                    {*/
                         returnList.add(doc);
-                    }
+                    /*}*/
                 }
             }
             if(sortColumn.equals("p.name")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_DESC);}}
@@ -146,10 +161,34 @@ public class RemainsRepository {
             if(sortColumn.equals("estimate_quantity")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_DESC);}}
             if(sortColumn.equals("not_buy")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_DESC);}}
             if(sortColumn.equals("not_sell")){if(sortAsc.equals("asc")){returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_ASC);}else{returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_DESC);}}
+
+            //вычисление пагинации
             int returnListSize=returnList.size();
             pagesList=getPagesList(result,offset, returnListSize);
+
+            //обрезаем лишнее
+            returnList=returnList.subList(offsetreal,(offsetreal+result)>returnListSize?returnListSize:(offsetreal+result));
+
+
+            /*Сейчас у того что осталось от обрезки, нужно довычислить столбцы, по которым не было сортировки,
+            и следовательно, не имело смысла вычислять всё количество товаров.*/
+            for(RemainsTableJSON obj:returnList){
+
+                //если сортировка была не по минимальному кол-ву - вычисляем (остальные довычислим потом)
+                if(!sortColumn.equals("min_quantity")) obj.setMin_quantity(getProductMinRemains(Long.parseLong(obj.getId().toString()), departmentId, departmentsIdsList, myMasterId));
+                //если сортировка была не по оценке кол-ва - вычисляем (остальные довычислим потом)
+                if(!sortColumn.equals("estimate_quantity")) {
+                    int estimateQuantity = doEstimateQuantity();
+                    obj.setEstimate_quantity(estimateQuantity);
+                }
+
+            }
+
+
+
+
             RemainsJSON remainsTableForm=new RemainsJSON();
-            remainsTableForm.setTable(returnList.subList(offsetreal,(offsetreal+result)>returnListSize?returnListSize:(offsetreal+result)));//проверка на IndexOutOfBoundsException
+            remainsTableForm.setTable(returnList);//проверка на IndexOutOfBoundsException
             remainsTableForm.setReceivedPagesList(pagesList);
             return remainsTableForm;
         } else return null;
