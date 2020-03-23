@@ -424,6 +424,10 @@ public class WriteoffRepositoryJPA {
                         for (WriteoffProductForm row : request.getWriteoffProductTable()) {
                             if (!addWriteoffProductHistory(row, request, myMasterId)) {//         //метод 3
                                 break;
+                            } else {
+                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
+                                    break;
+                                }
                             }
                             productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
@@ -569,6 +573,39 @@ public class WriteoffRepositoryJPA {
     }
 
 
+    @SuppressWarnings("Duplicates")
+    private Boolean setProductQuantity(WriteoffProductForm row, WriteoffForm request , Long masterId) {
+        String stringQuery;
+        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+
+        try {
+            stringQuery =
+                    " insert into product_quantity (" +
+                            " master_id," +
+                            " department_id," +
+                            " product_id," +
+                            " quantity" +
+                            ") values ("+
+                            masterId + ","+
+                            request.getDepartment_id() + ","+
+                            row.getProduct_id() + ","+
+                            lastQuantity +
+                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                            " DO update set " +
+                            " department_id = " + request.getDepartment_id() + ","+
+                            " product_id = " + row.getProduct_id() + ","+
+                            " master_id = "+ masterId + "," +
+                            " quantity = "+ lastQuantity;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Transactional
     @SuppressWarnings("Duplicates")

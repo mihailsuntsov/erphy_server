@@ -472,11 +472,11 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
                         for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
                             if (!addAcceptanceProductHistory(row, request, myMasterId)) {//       //сохранение истории операций с записью актуальной инфо о количестве товара в отделении
                                 break;
-                            }/* else {
-                                if (!addAcceptanceProductHistory(row, request, myMasterId)) {//         //запись о количестве товара в отделении в отдельной таблице
+                            } else {
+                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
                                     break;
                                 }
-                            }*/
+                            }
                             productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
                     }
@@ -629,57 +629,40 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
         }
     }
 
-//    @SuppressWarnings("Duplicates")
-//    private Boolean addAcceptanceProductQuantity(AcceptanceProductForm row, AcceptanceForm request , Long masterId) {
-//        String stringQuery;
-//        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-//        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-//        BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-//        BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-//        BigDecimal avgPurchasePrice = ((lastQuantity.multiply(lastAvgPurchasePrice)).add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-//        BigDecimal avgNetcostPrice =((lastQuantity.multiply(lastAvgNetcostPrice)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-//        //для последней закуп. цены нельзя брать row.getProduct_price(), т.к. она не учитывает НДС, если он не включен в цену. А row.getProduct_sumprice() учитывает.
-//        BigDecimal last_purchase_price=row.getProduct_sumprice().divide(row.getProduct_count(),2,BigDecimal.ROUND_HALF_UP);
-//
-//
-//        try {
-//            stringQuery =   " insert into products_history (" +
-//                    " master_id," +
-//                    " company_id," +
-//                    " department_id," +
-//                    " doc_type_id," +
-//                    " doc_id," +
-//                    " product_id," +
-//                    " quantity," +
-//                    " change," +
-//                    " avg_purchase_price," +
-//                    " avg_netcost_price," +
-//                    " last_purchase_price," +
-//                    " last_operation_price," +
-//                    " date_time_created"+
-//                    ") values ("+
-//                    masterId +","+
-//                    request.getCompany_id() +","+
-//                    request.getDepartment_id() + ","+
-//                    15 +","+
-//                    row.getAcceptance_id() + ","+
-//                    row.getProduct_id() + ","+
-//                    lastQuantity.add(row.getProduct_count())+","+
-//                    row.getProduct_count() +","+
-//                    avgPurchasePrice +","+
-//                    avgNetcostPrice +","+
-//                    last_purchase_price+","+//в операциях поступления (оприходование и приёмка) цена закупки (или оприходования) last_purchase_price равна цене операции last_operation_price,
-//                    last_purchase_price+","+//..в отличии от операций убытия (списания, продажа), где цена закупки остается старой
-//                    " now())";
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            query.executeUpdate();
-//            return true;
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean setProductQuantity(AcceptanceProductForm row, AcceptanceForm request , Long masterId) {
+        String stringQuery;
+        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+
+        try {
+            stringQuery =
+                    " insert into product_quantity (" +
+                    " master_id," +
+                    " department_id," +
+                    " product_id," +
+                    " quantity" +
+                    ") values ("+
+                    masterId + ","+
+                    request.getDepartment_id() + ","+
+                    row.getProduct_id() + ","+
+                    lastQuantity +
+                    ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                    " DO update set " +
+                    " department_id = " + request.getDepartment_id() + ","+
+                    " product_id = " + row.getProduct_id() + ","+
+                    " master_id = "+ masterId + "," +
+                    " quantity = "+ lastQuantity;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
 
     @Transactional

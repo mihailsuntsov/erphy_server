@@ -417,6 +417,10 @@ public class PostingRepository {
                         for (PostingProductForm row : request.getPostingProductTable()) {
                             if (!addPostingProductHistory(row, request, myMasterId)) {//         //метод 3
                                 break;
+                            } else {
+                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
+                                    break;
+                                }
                             }
                             productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
@@ -508,44 +512,6 @@ public class PostingRepository {
         }
     }
 
-//    @SuppressWarnings("Duplicates")
-//    private Boolean addPostingProductHistory(PostingProductForm row, PostingForm request , Long masterId) {
-//        String stringQuery;
-//        try {
-//            stringQuery =   " insert into products_history (" +
-//                    " master_id," +
-//                    " company_id," +
-//                    " department_id," +
-//                    " doc_type_id," +
-//                    " doc_id," +
-//                    " product_id," +
-//                    " quantity," +
-//                    " change," +
-//                    " date_time_created"+
-//                    ") values ("+
-//                    masterId +","+
-//                    request.getCompany_id() +","+
-//                    request.getDepartment_id() + ","+
-//                    16 +","+
-//                    row.getPosting_id() + ","+
-//                    row.getProduct_id() + ","+
-//                    "coalesce((select quantity "+
-//                    "          from products_history " +
-//                    "          where "+
-//                    "          product_id="+row.getProduct_id()+" and "+
-//                    "          department_id="+request.getDepartment_id()+
-//                    "          order by id desc limit 1),0)+"+row.getProduct_count()+","+
-//                    row.getProduct_count() +","+
-//                    " now())";
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            query.executeUpdate();
-//            return true;
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
     @SuppressWarnings("Duplicates")
     private Boolean addPostingProductHistory(PostingProductForm row, PostingForm request , Long masterId) {
     String stringQuery;
@@ -597,6 +563,39 @@ public class PostingRepository {
     }
 }
 
+    @SuppressWarnings("Duplicates")
+    private Boolean setProductQuantity(PostingProductForm row, PostingForm request , Long masterId) {
+        String stringQuery;
+        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+
+        try {
+            stringQuery =
+                    " insert into product_quantity (" +
+                            " master_id," +
+                            " department_id," +
+                            " product_id," +
+                            " quantity" +
+                            ") values ("+
+                            masterId + ","+
+                            request.getDepartment_id() + ","+
+                            row.getProduct_id() + ","+
+                            lastQuantity +
+                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                            " DO update set " +
+                            " department_id = " + request.getDepartment_id() + ","+
+                            " product_id = " + row.getProduct_id() + ","+
+                            " master_id = "+ masterId + "," +
+                            " quantity = "+ lastQuantity;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
