@@ -67,9 +67,11 @@ public class RemainsRepository {
             Boolean showMany = filterOptionsIds.contains(2);// отображать товары с оценкой остатков "Достаточно"
             Boolean notBuy = false;
             Boolean notSell = false;
+            Integer depthsCount=departmentsIdsList.split(",").length;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
            // getProductMinRemains( productId, departmentId, departmentsIdsList, myMasterId)
-            stringQuery = "select  p.id as id, " +
+            stringQuery =
+                    "select  p.id as id, " +
                     "           p.name as name, " +
                     "           p.article as article, " +
                     "           coalesce(pg.name,'') as productgroup, " +
@@ -79,17 +81,42 @@ public class RemainsRepository {
                     " coalesce((select " +
                     " sum(coalesce(quantity,0)) " +
                     " from " +
-                    " products_history " +
+                    " product_quantity " +
                     " where " +
                     " product_id = p.id "+
-                    (departmentId>0L?" and department_id = "+departmentId:" and department_id in ("+departmentsIdsList+") ")+
-                    " group by id order by id desc limit 1),0) as quantity "+
+                    (departmentId>0L?" and department_id = "+departmentId:" and department_id in ("+departmentsIdsList+") ")+"),0) as quantity, ";
+
+            if(departmentId>0L) {
+                stringQuery = stringQuery +
+                                "coalesce((select coalesce(min_quantity,0) from product_remains where product_id = p.id and department_id="+departmentId+"),0) a";
+            } else{
+                stringQuery = stringQuery +
+                    "CASE WHEN " +
+                    "   ((select count (*) from (select coalesce(min_quantity,0) as mq " +
+                    "   from product_remains where product_id = p.id and department_id in ("+departmentsIdsList+") " +
+                    "   group by mq)f) <2) " +
+                    " THEN " +
+                    "   coalesce((select coalesce(min_quantity,0) as mq1 " +
+                    "   from product_remains where product_id = p.id and department_id in ("+departmentsIdsList+") " +
+                    "   group by mq1),0)" +
+                    " ELSE -1 " +
+                    " END as min_remains";
+                    }
+
+            stringQuery = stringQuery +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_archive,false) !=true " +
                     "           and p.ppr_id in (1,2) " +
                     (categoryId!=0?" and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id="+categoryId+") ":"");
+
+//            //оценка количества в отделении (если запрошено конкретное отделение). Если запрошены все отделения - оценка качества вычисляется отдельно ниже ↓
+//            if(departmentId>0L) {
+//                stringQuery = stringQuery +
+//                        "";
+//            }
+
 
             if (!securityRepositoryJPA.userHasPermissions_OR(18L, "235")) //Если нет прав по всем предприятиям"
             {
@@ -117,6 +144,7 @@ public class RemainsRepository {
             List<Object[]> queryList = query.getResultList();//получили полный список товаров в лист
 
             List<RemainsTableJSON> returnList = new ArrayList<>();
+
             for(Object[] obj:queryList){
 
                 notBuy =(Boolean) obj[4] ;
@@ -135,11 +163,20 @@ public class RemainsRepository {
                     doc.setNot_sell((Boolean)       obj[5]);
                     doc.setDescription((String)     obj[6]);
                     doc.setQuantity((BigDecimal)    obj[7]);
+                    doc.setMin_quantity((BigDecimal)obj[8]);
                     //если сортировка по минимальному кол-ву - вычисляем (остальные довычислим потом)
-                    if(sortColumn.equals("min_quantity")) doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
+                    //if(sortColumn.equals("min_quantity")) doc.setMin_quantity(getProductMinRemains(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList, myMasterId));
 //                    doc.setQuantity(getQuantity(Long.parseLong(obj[0].toString()), departmentId, departmentsIdsList));
                     //если сортировка по оценке кол-ва - вычисляем (остальные довычислим потом)
+
+                    //Если сортировка по оценке количества, и запрошены все отделения (departmentId=0)
+                    //
                     if(sortColumn.equals("estimate_quantity")) {
+                        //нужно пробежаться по всему результату запроса и заполнить
+                        //инфу по отделениям с их мин. остатками для текущего товара в departmentQuantities
+                        fillMinRemains(doc.getId(), departmentId, departmentsIdsList, myMasterId );
+                        fillQuantity(doc.getId(), departmentId, departmentsIdsList);
+
                         int estimateQuantity = doEstimateQuantity();
                         doc.setEstimate_quantity(estimateQuantity);
                     }
@@ -169,23 +206,18 @@ public class RemainsRepository {
             //обрезаем лишнее
             returnList=returnList.subList(offsetreal,(offsetreal+result)>returnListSize?returnListSize:(offsetreal+result));
 
-
-            /*Сейчас у того что осталось от обрезки, нужно довычислить столбцы, по которым не было сортировки,
-            и следовательно, не имело смысла вычислять всё количество товаров.*/
-            for(RemainsTableJSON obj:returnList){
-
-                //если сортировка была не по минимальному кол-ву - вычисляем (остальные довычислим потом)
-                if(!sortColumn.equals("min_quantity")) obj.setMin_quantity(getProductMinRemains(Long.parseLong(obj.getId().toString()), departmentId, departmentsIdsList, myMasterId));
-                //если сортировка была не по оценке кол-ва - вычисляем (остальные довычислим потом)
-                if(!sortColumn.equals("estimate_quantity")) {
+            /*Сейчас у того что осталось от обрезки, нужно довычислить оценку количества, если по ней не было сортировки,
+            и следовательно, не имело смысла вычислять ее для всего количества товаров.*/
+            if(!sortColumn.equals("estimate_quantity")) {
+                for(RemainsTableJSON obj:returnList){
+                    departmentQuantities.clear();
+                    finalDepartmentQuantities.clear();
+                    fillMinRemains(obj.getId(), departmentId, departmentsIdsList, myMasterId );
+                    fillQuantity(obj.getId(), departmentId, departmentsIdsList);
                     int estimateQuantity = doEstimateQuantity();
                     obj.setEstimate_quantity(estimateQuantity);
                 }
-
             }
-
-
-
 
             RemainsJSON remainsTableForm=new RemainsJSON();
             remainsTableForm.setTable(returnList);//проверка на IndexOutOfBoundsException
@@ -193,8 +225,6 @@ public class RemainsRepository {
             return remainsTableForm;
         } else return null;
     }
-
-
 
     @SuppressWarnings("Duplicates")
     private List<Integer> getPagesList(int result,int offset, int size){
@@ -339,7 +369,36 @@ public class RemainsRepository {
         }else return false;
     }
 
+    @SuppressWarnings("Duplicates")
+    private void fillMinRemains(Long productId, Long departmentId, String departmentsIdsList, Long myMasterId){
 
+        String stringQuery;
+        stringQuery=
+                " select " +
+                        " coalesce(min_quantity,0), department_id " +
+                        " from " +
+                        " product_remains " +
+                        " where " +
+                        " product_id = " + productId +
+                        (departmentId>0L?" and department_id = "+departmentId:" and department_id in ("+departmentsIdsList+") ")+
+                        " and master_id = " + myMasterId +
+                        " and min_quantity != 0";// если мин.остаток 0 - считаем что его нет. Это нужно
+        // чтобы если, например, вернёт для всего 2х отделений 0 и null, то это определится как "Разные" мин.остатки, а должно как 0.
+
+        Query query = entityManager.createNativeQuery(stringQuery);
+        // запрашивается список объектов содержащих отделение и его мин. остатки
+        List<Object[]> queryList = query.getResultList();
+
+        if (queryList.size() > 0) // если для товара установлены 1 или несколько мин.остатков
+        {
+                for (Object[] obj : queryList) {
+                    DepartmentQuantity dmq = new DepartmentQuantity();
+                    dmq.setMin_quantity((BigDecimal) obj[0]);
+                    dmq.setDepartmentId((Long.parseLong(obj[1].toString())));
+                    departmentQuantities.add(dmq); // копим инфу по отделениям с их мин. остатками для текущего товара
+                }
+        }
+    }
 
     @SuppressWarnings("Duplicates")
     private BigDecimal getProductMinRemains(Long productId, Long departmentId, String departmentsIdsList, Long myMasterId){
@@ -398,7 +457,7 @@ public class RemainsRepository {
 }
 
     @SuppressWarnings("Duplicates")
-    private BigDecimal getQuantity(Long productId, Long departmentId, String departmentsIdsList){
+    private void fillQuantity(Long productId, Long departmentId, String departmentsIdsList){
         BigDecimal returnQuantity = new BigDecimal("0");
         if (departmentId >0){//если отделение выбрано конкретное, то по нему придет ид больше 0, и нужно лишь запросить актуальное количество товара в данном отделении
             returnQuantity=getProductQuantity(productId, departmentId);// запрашиваем количество товара в этом отделении
@@ -406,7 +465,7 @@ public class RemainsRepository {
             dmq.setQuantity(returnQuantity);
             dmq.setDepartmentId(departmentId);
             departmentQuantities.add(dmq);// копим инфу по отделениям с их мин. остатками для текущего товара
-            return returnQuantity;
+//            return returnQuantity;
         } else {//если пришел 0 т.е. выбраны все доступные пользователю отделения (прилетели в departmentsIdsList в виде строки 1,3,4,9)
                 //то нужно запрашивать количество для каждого отделения, и всё суммировать
             List<Long> depIds = Stream.of(departmentsIdsList.split(",")).map(Long::valueOf).collect(Collectors.toList());
@@ -421,7 +480,7 @@ public class RemainsRepository {
                 if(depQuantity==null){depQuantity = new BigDecimal("0");}
                 returnQuantity=returnQuantity.add(depQuantity);
             }
-            return returnQuantity;
+//            return returnQuantity;
         }
     }
 
@@ -432,17 +491,13 @@ public class RemainsRepository {
                         " select " +
                         " quantity " +
                         " from " +
-                        " products_history " +
+                        " product_quantity " +
                         " where " +
                         " product_id = " + productId +
-                        " and department_id = "+departmentId+
-                        " order by id desc limit 1";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<BigDecimal> returnList = query.getResultList();
-        BigDecimal[] array = new BigDecimal[returnList.size()];
-        returnList.toArray(array);
+                        " and department_id = "+departmentId;
+        List returnList = entityManager.createNativeQuery(stringQuery).getResultList();
         if(returnList.size()>0) {
-            return array[0];}
+            return (BigDecimal) returnList.get(0);}
             else{ return new BigDecimal("0");}
     }
 

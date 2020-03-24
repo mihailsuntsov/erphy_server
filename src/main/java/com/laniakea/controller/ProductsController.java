@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -707,5 +709,19 @@ public class ProductsController {
         return responseEntity;
 
     }
+
+    @PostMapping("/api/auth/syncQuantityProducts")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> syncQuantityProducts(@RequestBody UniversalForm request) { //синхронизирует кол-во товаров в products_history и в product_quantity
+        try {
+            Boolean ret = productsRepositoryJPA.syncQuantityProducts(request);
+            return new ResponseEntity<>(ret, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+        }
+    }
+
 
 }
