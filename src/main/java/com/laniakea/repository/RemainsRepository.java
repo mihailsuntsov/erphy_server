@@ -75,25 +75,66 @@ public class RemainsRepository {
                         " coalesce((select coalesce(min_quantity,0) from product_remains where product_id = p.id and department_id=" + departmentId + "),0) a ";
             } else {
                 stringQuery = stringQuery +
-                        " CASE WHEN " +
+                        " CASE WHEN " + // одинаковые значения (т.е. было например 30,30,30, сгруппировали - стало 30 - везде одинаково - можно вывести 30)
                         "   ((select count (*) from (select coalesce(min_quantity,0) as mq " +
                         "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
-                        "   group by mq)f) =1" +
-                        "and" +
+                        "   group by mq)f) =1 " +
+                        " and " +
                         "   (select count (*) from (select coalesce(min_quantity,0) as mq " +
                         "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ")" +
                         "   )f) =" + depthsCount +
-                        ") " + // одинаковые значения (т.е. было например 30,30,30, сгруппировали - стало 30 - везде одинаково - можно вывести 30)
+                        ") " +
                         " THEN " +
                         "   coalesce((select coalesce(min_quantity,0) as mq1 " +
                         "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
                         "   group by mq1),0)" +
+
+                        " WHEN " +  // когда в "таблице с записями о мин. кол-ве aka product_remains" по данному товару только один или несколько 0
+                                    // или мин. остатков нет вообще ни по одному из отделений (например, товар только что создан)
+                        "(select coalesce(sum(min_quantity),0) from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") "+
+                        ")=0"+
+                        " THEN 0" +
+
+//                        " WHEN " +// когда в "таблице с записями о мин. кол-ве aka product_remains" по данному товару нет ни по одному отделению (например, товар только что создан)
+//                        "   (select count (*) " +
+//                        "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
+//                        " ) =0 " +
+//                        " THEN 0" +
+
                         " ELSE -1 " +
                         " END as min_remains ";
             }
 
             stringQuery = stringQuery +
                     ", CASE " +
+// кол-во товара не задано ни для одного отделения (т.е. даже нет строк в product_quantity с такими product_id и department_id)
+//                    " WHEN    " +
+//                    "       (select  count(*)" +
+//                    "       from product_quantity " +
+//                    "       where " +
+//                    "       product_id = p.id and " +
+//                    "       department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + "))=0 "+
+//                    " THEN 0  " +
+// кол-во товара задано не для всех отделений (т.е. не для всех отделений есть строка в product_quantity)
+                    " WHEN    " +
+                    " (select count (*) from product_quantity where product_id = p.id and department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + "))" +
+                    " < " +(departmentId > 0L ? 1 : depthsCount)+
+                    " THEN 0  " +
+
+                    " WHEN    " +
+                    " (select count(*) from product_quantity " +
+                    "       where product_id = p.id and " +
+                    "       department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") and quantity=0)>0 " +
+                    " THEN 0  " +
+// когда в product_quantity по данному товару только один или несколько 0
+//                    " WHEN " +
+//                    "   (select count (*) " +
+//                    "   from product_quantity where product_id = p.id and " +
+//                    "       department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ")"+
+//                    "   and quantity =0 " +
+//                    " group by quantity) =1 " +
+//                    " THEN 0" +
+
 // мин. остаток задан для всех отделений и в каждом из отделений кол-во товара больше, чем минимальный остаток в этом отделении
                     " WHEN " +
                     "(" +
@@ -109,7 +150,7 @@ public class RemainsRepository {
                     " )=" + (departmentId > 0L ? 1 : depthsCount) +
                     " ) " +
                     " THEN 2  " +
-// мин. остаток задан не для всех отделений, и в каждом отделении кол-во товара больше 0
+// мин. остаток задан не для всех отделений, и в каждом отделении где он задан кол-во товара больше 0
                     " WHEN    " +
                     " ( " +
                     " select count (*) " +
@@ -129,33 +170,22 @@ public class RemainsRepository {
                     "       quantity>0 " +
                     "   )=" + (departmentId > 0L ? 1 : depthsCount) +
                     " THEN 2  " +
-// мин. остаток задан для всех отделений и товара 0
-                    " WHEN    " +
-                    " ( " +
-                    " select count (*) " +
-                    " from " +
-                    " product_remains pr2 " +
-                    " where " +
-                    " pr2.product_id = p.id and " +
-                    " pr2.department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") and  " +
-                    " (select coalesce(quantity,0) from product_quantity where product_id = p.id and department_id=pr2.department_id)=0  " +
-                    " )>0 " +
-                    " THEN 0  " +
+
 // мин. остаток задан не для всех отделений, и кол-во товара в любом из отделений = 0
-                    " WHEN    " +
-                    " ( " +
-                    " select count (*) " +
-                    " from " +
-                    " product_remains pr2 " +
-                    " where " +
-                    " pr2.product_id = p.id and " +
-                    " pr2.department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") " +
-                    "   )<" + (departmentId > 0L ? 1 : depthsCount) +// мин. остаток задан не для всех отделений
-                    " and " +
-                    " (select count(*) from product_quantity " +
-                    "       where product_id = p.id and " +
-                    "       department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") and quantity=0)>0 " +
-                    " THEN 0  " +
+//                    " WHEN    " +
+//                    " ( " +
+//                    " select count (*) " +
+//                    " from " +
+//                    " product_remains pr2 " +
+//                    " where " +
+//                    " pr2.product_id = p.id and " +
+//                    " pr2.department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") " +
+//                    "   )<" + (departmentId > 0L ? 1 : depthsCount) +// мин. остаток задан не для всех отделений
+//                    " and " +
+//                    " (select count(*) from product_quantity " +
+//                    "       where product_id = p.id and " +
+//                    "       department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + ") and quantity=0)>0 " +
+//                    " THEN 0  " +
                     " ELSE 1   " +
                     " END as estimate";
 

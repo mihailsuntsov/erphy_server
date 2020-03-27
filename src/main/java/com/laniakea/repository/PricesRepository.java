@@ -35,9 +35,6 @@ public class PricesRepository {
 
     // Инициализация логера
     private static final Logger log = Logger.getLogger(PricesRepository.class);
-    private BigDecimal priceValue = new BigDecimal("0");
-    private List<ProductPrice> productPrices = new ArrayList<>();
-    private Set<ProductPrice> finalProductPrices = new HashSet<>();
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -59,12 +56,10 @@ public class PricesRepository {
             List<Integer> pagesList;// информация для пагинации. Первые 3 места - "всего найдено", "страница", "всего страниц", остальное - номера страниц для пагинации
             Boolean hideNotBuyingProducts = filterOptionsIds.contains(3);// скрывать товары, у которых в карточке стоит флаг "Товар не закупается"
             Boolean hideNotSellingProducts = filterOptionsIds.contains(4);// скрывать снятые с продажи товары (у которых в карточке стоит флаг "Снято с продажи")
-//            Boolean showNotAviable = filterOptionsIds.contains(0);// отображать товары с оценкой остатков "Отсутствует"
-//            Boolean showLess = filterOptionsIds.contains(1);// отображать товары с оценкой остатков "Мало"
-//            Boolean showMany = filterOptionsIds.contains(2);// отображать товары с оценкой остатков "Достаточно"
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Boolean notBuy = false;
             Boolean notSell = false;
+            Integer pricesCount = priceTypesIdsList.split(",").length;
             // getProductMinRemains( productId, departmentId, departmentsIdsList, myMasterId)
             stringQuery = "select  p.id as id, " +
                     "           p.name as name, " +
@@ -73,7 +68,54 @@ public class PricesRepository {
                     "           coalesce(p.not_buy,false) as not_buy, " +
                     "           coalesce(p.not_sell,false) as not_sell, " +
                     "           p.description as description, " +
-                    "           p.ppr_id as ppr " +
+                    "           p.ppr_id as ppr, ";
+
+
+
+
+
+
+            if (priceTypeId > 0L) { // "Разные" -1 / "Не установлено" 0
+                stringQuery = stringQuery +
+                        " coalesce((select coalesce(price_value,0) from product_prices where product_id = p.id and price_type_id=" + priceTypeId + "),0) a ";
+            } else {
+                stringQuery = stringQuery +
+                        " CASE WHEN " +// одинаковые значения (т.е. было например 30,30,30, сгруппировали - стало 30 - везде одинаково - можно вывести 30)
+                        "   ((select count (*) from (select coalesce(price_value,0) as mq " +
+                        "   from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") " +
+                        "   group by mq)f) =1 " +
+                        " and " +
+                        "   ( select count (*) from (select coalesce(price_value,0) as mq " +
+                        "   from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ")" +
+                        "   )ff) =" + pricesCount +
+                        ") " +
+                        " THEN " +
+                        "   coalesce((select coalesce(price_value,0) as mq1 " +
+                        "   from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") " +
+                        "   group by mq1),0)" +
+//                        " THEN 1.000" +
+
+                        " WHEN " + // когда в "таблице с записями о цене aka product_prices" по данному товару только один или несколько 0
+                                    // или цен нет вообще ни по одному из типов цен (например, товар только что создан)
+                        "(select coalesce(sum(price_value),0) from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") "+
+                        ")=0"+
+                        " THEN 0" +
+//                        " THEN  0.001"+
+
+//                        " WHEN " +// когда в "таблице с записями о цене  aka product_prices" по данному товару нет ни по одному типу цен (например, товар только что создан)
+//                        "   (select count (*) " +
+//                        "   from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") " +
+//                        " ) =0 " +
+//                        " THEN 0" +
+//                        " THEN  0.002"+
+
+                        " ELSE -1 " +
+                        " END as price ";
+            }
+
+
+
+            stringQuery = stringQuery +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
@@ -122,7 +164,8 @@ public class PricesRepository {
                     doc.setNot_sell((Boolean)       obj[5]);
                     doc.setDescription((String)     obj[6]);
                     doc.setPpr_id((Integer)         obj[7]);
-                    doc.setPrice(getProductPrices(Long.parseLong(obj[0].toString()), priceTypeId, priceTypesIdsList, myMasterId));
+                    doc.setPrice((BigDecimal) obj[8]);
+                    //doc.setPrice(getProductPrices(Long.parseLong(obj[0].toString()), priceTypeId, priceTypesIdsList, myMasterId));
 
                     returnList.add(doc);
                 }
@@ -380,48 +423,5 @@ public class PricesRepository {
                     //на своё предприятие и оно по id действительно моё  или
                     (securityRepositoryJPA.userHasPermissions_OR(19L, "240") && REQUEST_COMPANY_ID.equals(MY_COMPANY_ID));
         }else return false;
-    }
-}
-
-class ProductPrice {
-    Long priceTypeId;
-    BigDecimal priceValue;
-
-    public Long getPriceTypeId() {
-        return priceTypeId;
-    }
-
-    public void setPriceTypeId(Long priceTypeId) {
-        this.priceTypeId = priceTypeId;
-    }
-
-    public BigDecimal getPriceValue() {
-        return priceValue;
-    }
-
-    public void setPriceValue(BigDecimal priceValue) {
-        this.priceValue = priceValue;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ProductPrice that = (ProductPrice) o;
-
-        return new EqualsBuilder()
-                .append(priceTypeId, that.priceTypeId)
-                .append(priceValue, that.priceValue)
-                .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(priceTypeId)
-                .append(priceValue)
-                .toHashCode();
     }
 }
