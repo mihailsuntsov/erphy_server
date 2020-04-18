@@ -100,15 +100,6 @@ public class PricesRepository {
                         "(select coalesce(sum(price_value),0) from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") "+
                         ")=0"+
                         " THEN 0" +
-//                        " THEN  0.001"+
-
-//                        " WHEN " +// когда в "таблице с записями о цене  aka product_prices" по данному товару нет ни по одному типу цен (например, товар только что создан)
-//                        "   (select count (*) " +
-//                        "   from product_prices where product_id = p.id and price_type_id in (" + priceTypesIdsList + ") " +
-//                        " ) =0 " +
-//                        " THEN 0" +
-//                        " THEN  0.002"+
-
                         " ELSE -1 " +
                         " END as price ";
             }
