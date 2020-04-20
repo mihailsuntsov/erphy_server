@@ -7,10 +7,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/f8dcf923-2995-45f7-975e-6bde0f326ba3.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/f8dcf923-2995-45f7-975e-6bde0f326ba3.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war/laniakea_crm_war.war" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsSettings.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/UsersController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/UsersController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsSettings.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/UsersController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/controller/UsersController.class" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -63,947 +69,33 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/RemainsController.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/UploadController.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="102">
-              <caret line="6" column="20" selection-start-line="6" selection-start-column="20" selection-end-line="6" selection-end-column="20" />
+            <state relative-caret-position="737">
+              <caret line="76" column="5" lean-forward="true" selection-start-line="76" selection-start-column="5" selection-end-line="76" selection-end-column="5" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-180">
-              <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
+            <state relative-caret-position="644">
+              <caret line="214" selection-start-line="214" selection-end-line="220" selection-end-column="9" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1207">
+              <caret line="71" column="41" selection-start-line="71" selection-start-column="41" selection-end-line="71" selection-end-column="41" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="e#2358#2359#0" expanded="true" />
+                <element signature="e#2412#2413#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="uml://MAVEN/laniakea:laniakea:1.0-SNAPSHOT">
-          <provider selected="true" editor-type-id="UmlEditorProvider">
-            <state>
-              <ID>MAVEN</ID>
-              <OriginalElement>laniakea:laniakea:1.0-SNAPSHOT</OriginalElement>
-              <nodes>
-                <node x="3578.3271325472933" y="724.0">laniakea:laniakea:1.0-SNAPSHOT</node>
-                <node x="124.0" y="515.0">commons-dbcp:commons-dbcp:jar:1.2.2</node>
-                <node x="125.5" y="396.0">commons-dbcp:commons-dbcp:jar:1.2.2/commons-pool:commons-pool:jar:1.3</node>
-                <node x="5056.015198161873" y="396.0">org.hibernate:hibernate-core:jar:5.2.17.Final</node>
-                <node x="5213.50257785147" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss.logging:jboss-logging:jar:3.3.1.Final</node>
-                <node x="4785.469495345" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.javassist:javassist:jar:3.22.0-GA</node>
-                <node x="4573.469495345" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:jar:1.0.1.Final</node>
-                <node x="5339.50257785147" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss:jandex:jar:2.0.3.Final</node>
-                <node x="5425.50257785147" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/com.fasterxml:classmate:jar:1.3.0</node>
-                <node x="4487.469495345" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/dom4j:dom4j:jar:1.6.1</node>
-                <node x="4884.156995345" y="277.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final</node>
-                <node x="4934.156995345" y="178.0">org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final/org.jboss.logging:jboss-logging:jar:3.3.0.Final</node>
-                <node x="5289.265198161873" y="515.0">org.hibernate:hibernate-validator:jar:5.3.5.Final</node>
-                <node x="5330.515198161873" y="396.0">org.hibernate:hibernate-validator:jar:5.3.5.Final/javax.validation:validation-api:jar:1.1.0.Final</node>
-                <node x="5204.515198161873" y="396.0">org.hibernate:hibernate-validator:jar:5.3.5.Final/org.jboss.logging:jboss-logging:jar:3.3.1.Final</node>
-                <node x="5454.515198161873" y="396.0">org.hibernate:hibernate-validator:jar:5.3.5.Final/com.fasterxml:classmate:jar:1.3.1</node>
-                <node x="4324.469495345" y="277.0">org.hibernate.javax.persistence:hibernate-jpa-2.1-api:jar:1.0.0.Final</node>
-                <node x="4614.93129921396" y="515.0">org.hibernate:hibernate-entitymanager:jar:5.2.17.Final</node>
-                <node x="4675.698662011666" y="396.0">org.hibernate:hibernate-entitymanager:jar:5.2.17.Final/net.bytebuddy:byte-buddy:jar:1.6.14</node>
-                <node x="1762.140328678333" y="0.0">commons-logging:commons-logging:jar:1.2</node>
-                <node x="4449.93129921396" y="515.0">commons-collections:commons-collections:jar:3.2.2</node>
-                <node x="5776.765198161873" y="277.0">antlr:antlr:jar:2.7.7</node>
-                <node x="3076.8400778514697" y="79.0">org.springframework:spring-core:jar:4.3.18.RELEASE</node>
-                <node x="2774.71451223689" y="277.0">org.springframework:spring-context:jar:4.3.18.RELEASE</node>
-                <node x="3133.5360314952063" y="178.0">org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE</node>
-                <node x="2903.9104658806273" y="178.0">org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE</node>
-                <node x="3017.9104658806273" y="277.0">org.springframework:spring-aop:jar:4.3.18.RELEASE</node>
-                <node x="4147.327132547293" y="515.0">org.springframework:spring-orm:jar:4.3.18.RELEASE</node>
-                <node x="4189.202698161873" y="277.0">org.springframework:spring-orm:jar:4.3.18.RELEASE/org.springframework:spring-tx:jar:4.3.18.RELEASE</node>
-                <node x="2881.8400778514697" y="396.0">org.springframework:spring-web:jar:4.3.18.RELEASE</node>
-                <node x="2973.6604658806273" y="515.0">org.springframework:spring-webmvc:jar:4.3.18.RELEASE</node>
-                <node x="2285.1604658806273" y="515.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE</node>
-                <node x="1666.1187992139603" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/aopalliance:aopalliance:jar:1.0</node>
-                <node x="2022.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE</node>
-                <node x="2286.2591497747762" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-aop:jar:4.3.9.RELEASE</node>
-                <node x="2105.410465880627" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.9.RELEASE</node>
-                <node x="2396.2591497747762" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.9.RELEASE</node>
-                <node x="1993.4104658806268" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.9.RELEASE</node>
-                <node x="1776.1187992139603" y="277.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-expression:jar:4.3.9.RELEASE</node>
-                <node x="2179.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE</node>
-                <node x="2670.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.18.RELEASE</node>
-                <node x="2412.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE</node>
-                <node x="2524.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE</node>
-                <node x="2300.640328678333" y="396.0">org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-web:jar:4.3.9.RELEASE</node>
-                <node x="1565.6187992139603" y="515.0">org.springframework.security:spring-security-config:jar:4.2.3.RELEASE</node>
-                <node x="1428.5" y="178.0">org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-aop:jar:4.3.18.RELEASE</node>
-                <node x="1712.5000000000002" y="396.0">org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE</node>
-                <node x="1472.5" y="396.0">org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.18.RELEASE</node>
-                <node x="1600.5" y="396.0">org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE</node>
-                <node x="3558.3271325472933" y="515.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE</node>
-                <node x="3310.327698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE</node>
-                <node x="3360.3400778514697" y="277.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE/org.springframework:spring-core:jar:4.3.13.RELEASE</node>
-                <node x="3472.3400778514697" y="277.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE/org.springframework:spring-beans:jar:4.3.13.RELEASE</node>
-                <node x="3758.202698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-orm:jar:4.3.13.RELEASE</node>
-                <node x="3481.327698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-context:jar:4.3.13.RELEASE</node>
-                <node x="3870.202698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-aop:jar:4.3.13.RELEASE</node>
-                <node x="3643.952698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-tx:jar:4.3.13.RELEASE</node>
-                <node x="3834.2021325472933" y="277.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE</node>
-                <node x="3610.452698161873" y="277.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE</node>
-                <node x="3980.202698161873" y="396.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.aspectj:aspectjrt:jar:1.8.12</node>
-                <node x="3254.5360314952063" y="178.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:slf4j-api:jar:1.7.25</node>
-                <node x="3243.3400778514697" y="277.0">org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:jcl-over-slf4j:jar:1.7.25</node>
-                <node x="4345.93129921396" y="515.0">javax.annotation:jsr250-api:jar:1.0</node>
-                <node x="4076.202698161873" y="396.0">org.springframework:spring-jdbc:jar:4.3.18.RELEASE</node>
-                <node x="290.5" y="515.0">cglib:cglib:jar:3.2.2</node>
-                <node x="327.5" y="396.0">cglib:cglib:jar:3.2.2/org.ow2.asm:asm:jar:5.0.4</node>
-                <node x="259.5" y="396.0">cglib:cglib:jar:3.2.2/org.apache.ant:ant:jar:1.9.6</node>
-                <node x="235.0" y="277.0">cglib:cglib:jar:3.2.2/org.apache.ant:ant:jar:1.9.6/org.apache.ant:ant-launcher:jar:1.9.6</node>
-                <node x="5147.515198161873" y="515.0">javax.servlet:javax.servlet-api:jar:3.1.0</node>
-                <node x="689.0061789035567" y="515.0">displaytag:displaytag:jar:1.2</node>
-                <node x="730.5" y="396.0">displaytag:displaytag:jar:1.2/commons-collections:commons-collections:jar:3.1</node>
-                <node x="1052.5" y="396.0">displaytag:displaytag:jar:1.2/commons-lang:commons-lang:jar:2.3</node>
-                <node x="402.5" y="396.0">displaytag:displaytag:jar:1.2/com.lowagie:itext:jar:1.3</node>
-                <node x="895.5" y="396.0">displaytag:displaytag:jar:1.2/commons-beanutils:commons-beanutils:jar:1.7.0</node>
-                <node x="594.5" y="396.0">displaytag:displaytag:jar:1.2/org.slf4j:jcl104-over-slf4j:jar:1.4.2</node>
-                <node x="476.5" y="396.0">displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2</node>
-                <node x="445.5" y="277.0">displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2/org.slf4j:slf4j-api:jar:1.4.2</node>
-                <node x="539.5" y="277.0">displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2/log4j:log4j:jar:1.2.13</node>
-                <node x="5727.015198161873" y="515.0">junit:junit:jar:4.12</node>
-                <node x="5700.515198161873" y="396.0">junit:junit:jar:4.12/org.hamcrest:hamcrest-core:jar:1.3</node>
-                <node x="0.0" y="515.0">javax.validation:validation-api:jar:2.0.1.Final</node>
-                <node x="1342.5" y="396.0">com.fasterxml.jackson.core:jackson-core:jar:2.7.4</node>
-                <node x="1222.75" y="515.0">com.fasterxml.jackson.core:jackson-databind:jar:2.7.4</node>
-                <node x="1184.5" y="396.0">com.fasterxml.jackson.core:jackson-databind:jar:2.7.4/com.fasterxml.jackson.core:jackson-annotations:jar:2.7.0</node>
-                <node x="5828.515198161873" y="515.0">org.codehaus.jackson:jackson-mapper-asl:jar:1.9.13</node>
-                <node x="5838.015198161873" y="396.0">org.codehaus.jackson:jackson-mapper-asl:jar:1.9.13/org.codehaus.jackson:jackson-core-asl:jar:1.9.13</node>
-                <node x="2895.6604658806273" y="515.0">log4j:log4j:jar:1.2.17</node>
-                <node x="832.6403286783329" y="515.0">javax.servlet.jsp.jstl:javax.servlet.jsp.jstl-api:jar:1.2.1</node>
-                <node x="3808.1771325472937" y="515.0">org.postgresql:postgresql:jar:42.2.5</node>
-                <node x="5594.015198161873" y="515.0">io.jsonwebtoken:jjwt:jar:0.9.0</node>
-                <node x="5557.515198161873" y="396.0">io.jsonwebtoken:jjwt:jar:0.9.0/com.fasterxml.jackson.core:jackson-databind:jar:2.8.9</node>
-              </nodes>
-              <notes />
-              <edges>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-web:jar:4.3.18.RELEASE">
-                  <point x="-9.54838709677415" y="-14.5" />
-                  <point x="3605.7787454505196" y="594.0" />
-                  <point x="2884.140328678333" y="594.0" />
-                  <point x="2884.140328678333" y="495.0" />
-                  <point x="2904.8400778514697" y="495.0" />
-                  <point x="-23.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="37.0" y="-14.5" />
-                  <point x="1676.6187992139603" y="485.0" />
-                  <point x="1763.0000000000002" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE/org.springframework:spring-tx:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="19.75" y="-14.5" />
-                  <point x="4248.452698161873" y="148.0" />
-                  <point x="3143.284522295914" y="148.0" />
-                  <point x="20.444444444444343" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE">
-                  <point x="38.85714285714266" y="-14.5" />
-                  <point x="2392.0176087377695" y="485.0" />
-                  <point x="2587.640328678333" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/dom4j:dom4j:jar:1.6.1">
-                  <point x="-50.625" y="-14.5" />
-                  <point x="4645.30629921396" y="485.0" />
-                  <point x="4503.969495345" y="485.0" />
-                  <point x="-16.5" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/commons-lang:commons-lang:jar:2.3">
-                  <point x="35.83333333333303" y="-14.5" />
-                  <point x="767.8395122368897" y="495.0" />
-                  <point x="1108.5" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="-13.5" y="-14.5" />
-                  <point x="2815.21451223689" y="128.0" />
-                  <point x="3081.951188962581" y="128.0" />
-                  <point x="-40.88888888888869" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-jdbc:jar:4.3.18.RELEASE">
-                  <point x="4.774193548387302" y="-14.5" />
-                  <point x="3620.1013260956806" y="574.0" />
-                  <point x="4099.202698161873" y="574.0" />
-                  <point x="-23.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.9.RELEASE">
-                  <point x="11.416666666666515" y="-14.5" />
-                  <point x="2102.5569953449995" y="356.0" />
-                  <point x="2155.910465880627" y="356.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:jcl-over-slf4j:jar:1.7.25">
-                  <point x="-56.625" y="-14.5" />
-                  <point x="3329.202698161873" y="376.0" />
-                  <point x="3315.3400778514697" y="376.0" />
-                  <point x="24.0" y="14.5" />
-                </edge>
-                <edge source="cglib:cglib:jar:3.2.2" target="cglib:cglib:jar:3.2.2/org.apache.ant:ant:jar:1.9.6">
-                  <point x="-14.25" y="-14.5" />
-                  <point x="304.75" y="495.0" />
-                  <point x="283.5" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-orm:jar:4.3.18.RELEASE">
-                  <point x="7.1612903225804985" y="-14.5" />
-                  <point x="3622.488422869874" y="584.0" />
-                  <point x="4193.327132547293" y="584.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-context:jar:4.3.18.RELEASE">
-                  <point x="-11.9354838709678" y="-14.5" />
-                  <point x="3603.3916486763255" y="604.0" />
-                  <point x="2789.140328678333" y="604.0" />
-                  <point x="2789.140328678333" y="376.0" />
-                  <point x="2792.71451223689" y="376.0" />
-                  <point x="-36.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="antlr:antlr:jar:2.7.7">
-                  <point x="33.41935483870975" y="-14.5" />
-                  <point x="3648.7464873860035" y="694.0" />
-                  <point x="5818.015198161873" y="694.0" />
-                  <point x="13.75" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/org.slf4j:jcl104-over-slf4j:jar:1.4.2">
-                  <point x="-7.16666666666697" y="-14.5" />
-                  <point x="724.8395122368897" y="475.0" />
-                  <point x="652.5" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-web:jar:4.3.9.RELEASE">
-                  <point x="0.0" y="-14.5" />
-                  <point x="2353.1604658806273" y="495.0" />
-                  <point x="2346.640328678333" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="commons-collections:commons-collections:jar:3.2.2">
-                  <point x="14.322580645161452" y="-14.5" />
-                  <point x="3629.6497131924552" y="614.0" />
-                  <point x="4522.43129921396" y="614.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE" target="org.springframework:spring-jdbc:jar:4.3.18.RELEASE">
-                  <point x="-34.5" y="-14.5" />
-                  <point x="4158.827132547293" y="495.0" />
-                  <point x="4145.202698161873" y="495.0" />
-                  <point x="23.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE" target="org.springframework:spring-orm:jar:4.3.18.RELEASE/org.springframework:spring-tx:jar:4.3.18.RELEASE">
-                  <point x="11.5" y="-14.5" />
-                  <point x="4204.827132547293" y="485.0" />
-                  <point x="4248.452698161873" y="485.0" />
-                  <point x="19.75" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE/org.springframework:spring-beans:jar:4.3.13.RELEASE">
-                  <point x="56.625" y="-14.5" />
-                  <point x="3442.452698161873" y="376.0" />
-                  <point x="3522.8400778514697" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE">
-                  <point x="-47.5" y="-14.5" />
-                  <point x="2983.1604658806273" y="485.0" />
-                  <point x="2828.71451223689" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/commons-beanutils:commons-beanutils:jar:1.7.0">
-                  <point x="21.5" y="-14.5" />
-                  <point x="753.5061789035567" y="485.0" />
-                  <point x="964.0" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2">
-                  <point x="-21.5" y="-14.5" />
-                  <point x="710.5061789035567" y="485.0" />
-                  <point x="525.5" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-aop:jar:4.3.18.RELEASE">
-                  <point x="-40.5" y="-14.5" />
-                  <point x="2788.21451223689" y="257.0" />
-                  <point x="1496.0" y="257.0" />
-                  <point x="22.5" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="47.5" y="-14.5" />
-                  <point x="3078.1604658806273" y="495.0" />
-                  <point x="3181.3069953449995" y="495.0" />
-                  <point x="3181.3069953449995" y="257.0" />
-                  <point x="3192.452698161873" y="257.0" />
-                  <point x="8.416666666666515" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/dom4j:dom4j:jar:1.6.1">
-                  <point x="-36.0" y="-14.5" />
-                  <point x="5074.015198161873" y="356.0" />
-                  <point x="4536.969495345" y="356.0" />
-                  <point x="16.5" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-validator:jar:5.3.5.Final" target="org.hibernate:hibernate-validator:jar:5.3.5.Final/com.fasterxml:classmate:jar:1.3.1">
-                  <point x="44.0" y="-14.5" />
-                  <point x="5399.265198161873" y="495.0" />
-                  <point x="5496.015198161873" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-validator:jar:5.3.5.Final" target="org.hibernate:hibernate-validator:jar:5.3.5.Final/org.jboss.logging:jboss-logging:jar:3.3.1.Final">
-                  <point x="-44.0" y="-14.5" />
-                  <point x="5311.265198161873" y="495.0" />
-                  <point x="5284.015198161873" y="495.0" />
-                  <point x="26.5" y="14.5" />
-                </edge>
-                <edge source="cglib:cglib:jar:3.2.2" target="cglib:cglib:jar:3.2.2/org.ow2.asm:asm:jar:5.0.4">
-                  <point x="14.25" y="-14.5" />
-                  <point x="333.25" y="495.0" />
-                  <point x="354.5" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.18.RELEASE">
-                  <point x="-12.333333333333258" y="-14.5" />
-                  <point x="1627.285465880627" y="475.0" />
-                  <point x="1526.5" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-tx:jar:4.3.13.RELEASE">
-                  <point x="5.699999999999818" y="-14.5" />
-                  <point x="3621.027132547293" y="455.0" />
-                  <point x="3683.452698161873" y="455.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="-5.699999999999818" y="-14.5" />
-                  <point x="3609.6271325472935" y="445.0" />
-                  <point x="3633.452698161873" y="445.0" />
-                  <point x="-23.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-web:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="11.5" y="-14.5" />
-                  <point x="2939.3400778514697" y="376.0" />
-                  <point x="2933.3400778514697" y="376.0" />
-                  <point x="2933.3400778514697" y="247.0" />
-                  <point x="3158.7860314952063" y="247.0" />
-                  <point x="-25.25" y="14.5" />
-                </edge>
-                <edge source="io.jsonwebtoken:jjwt:jar:0.9.0" target="io.jsonwebtoken:jjwt:jar:0.9.0/com.fasterxml.jackson.core:jackson-databind:jar:2.8.9">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="log4j:log4j:jar:1.2.17">
-                  <point x="-7.1612903225804985" y="-14.5" />
-                  <point x="3608.165842224713" y="584.0" />
-                  <point x="2924.6604658806273" y="584.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate.javax.persistence:hibernate-jpa-2.1-api:jar:1.0.0.Final">
-                  <point x="-70.875" y="-14.5" />
-                  <point x="4625.05629921396" y="495.0" />
-                  <point x="4377.636162011666" y="495.0" />
-                  <point x="4377.636162011666" y="376.0" />
-                  <point x="4395.969495345" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-expression:jar:4.3.9.RELEASE">
-                  <point x="-34.25" y="-14.5" />
-                  <point x="2056.890328678333" y="356.0" />
-                  <point x="1839.1187992139603" y="356.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.aspectj:aspectjrt:jar:1.8.12">
-                  <point x="51.30000000000018" y="-14.5" />
-                  <point x="3666.6271325472935" y="495.0" />
-                  <point x="4018.202698161873" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE">
-                  <point x="-9.5" y="-14.5" />
-                  <point x="3021.1604658806273" y="465.0" />
-                  <point x="2998.4104658806273" y="465.0" />
-                  <point x="31.5" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final/org.jboss.logging:jboss-logging:jar:3.3.0.Final">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss.logging:jboss-logging:jar:3.3.1.Final">
-                  <point x="12.0" y="-14.5" />
-                  <point x="5122.015198161873" y="346.0" />
-                  <point x="5266.50257785147" y="346.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="-19.42857142857156" y="-14.5" />
-                  <point x="2333.7318944520557" y="465.0" />
-                  <point x="2230.140328678333" y="465.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="io.jsonwebtoken:jjwt:jar:0.9.0">
-                  <point x="28.64516129032245" y="-14.5" />
-                  <point x="3643.9722938376162" y="674.0" />
-                  <point x="5619.015198161873" y="674.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.hibernate.javax.persistence:hibernate-jpa-2.1-api:jar:1.0.0.Final">
-                  <point x="9.54838709677415" y="-14.5" />
-                  <point x="3624.875519644068" y="594.0" />
-                  <point x="4311.11879921396" y="594.0" />
-                  <point x="4311.11879921396" y="376.0" />
-                  <point x="4348.302828678333" y="376.0" />
-                  <point x="-47.66666666666674" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:slf4j-api:jar:1.7.25">
-                  <point x="-51.30000000000018" y="-14.5" />
-                  <point x="3564.027132547293" y="495.0" />
-                  <point x="3226.148411184803" y="495.0" />
-                  <point x="3226.148411184803" y="257.0" />
-                  <point x="3266.8693648285393" y="257.0" />
-                  <point x="-24.66666666666697" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE">
-                  <point x="13.5" y="-14.5" />
-                  <point x="2842.21451223689" y="227.0" />
-                  <point x="2935.4104658806273" y="227.0" />
-                  <point x="-31.5" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-validator:jar:5.3.5.Final" target="org.hibernate:hibernate-validator:jar:5.3.5.Final/javax.validation:validation-api:jar:1.1.0.Final">
-                  <point x="0.0" y="-14.5" />
-                  <point x="5355.265198161873" y="495.0" />
-                  <point x="5382.515198161873" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.9.RELEASE">
-                  <point x="57.083333333333485" y="-14.5" />
-                  <point x="2148.2236620116664" y="376.0" />
-                  <point x="2450.2591497747762" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-validator:jar:5.3.5.Final/org.jboss.logging:jboss-logging:jar:3.3.1.Final">
-                  <point x="70.875" y="-14.5" />
-                  <point x="4766.80629921396" y="495.0" />
-                  <point x="5231.015198161873" y="495.0" />
-                  <point x="-26.5" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-aop:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="22.5" y="-14.5" />
-                  <point x="3085.4104658806273" y="257.0" />
-                  <point x="3175.61936482854" y="257.0" />
-                  <point x="-8.416666666666515" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE">
-                  <point x="-16.709677419354648" y="-14.5" />
-                  <point x="3598.617455127939" y="624.0" />
-                  <point x="1639.6187992139603" y="624.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE">
-                  <point x="61.66666666666674" y="-14.5" />
-                  <point x="1701.285465880627" y="495.0" />
-                  <point x="2056.890328678333" y="495.0" />
-                  <point x="-34.25" y="14.5" />
-                </edge>
-                <edge source="commons-dbcp:commons-dbcp:jar:1.2.2" target="commons-dbcp:commons-dbcp:jar:1.2.2/commons-pool:commons-pool:jar:1.3">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/aopalliance:aopalliance:jar:1.0">
-                  <point x="-58.28571428571422" y="-14.5" />
-                  <point x="2294.8747515949126" y="485.0" />
-                  <point x="1824.0000000000002" y="485.0" />
-                  <point x="1824.0000000000002" y="376.0" />
-                  <point x="1711.1187992139603" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="12.333333333333258" y="-14.5" />
-                  <point x="1651.9521325472936" y="495.0" />
-                  <point x="1646.5" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/com.lowagie:itext:jar:1.3">
-                  <point x="-35.83333333333303" y="-14.5" />
-                  <point x="696.1728455702237" y="495.0" />
-                  <point x="429.5" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE">
-                  <point x="-38.85714285714266" y="-14.5" />
-                  <point x="2314.303323023484" y="475.0" />
-                  <point x="2125.390328678333" y="475.0" />
-                  <point x="34.25" y="14.5" />
-                </edge>
-                <edge source="com.fasterxml.jackson.core:jackson-databind:jar:2.7.4" target="com.fasterxml.jackson.core:jackson-core:jar:2.7.4">
-                  <point x="30.75" y="-14.5" />
-                  <point x="1315.0" y="495.0" />
-                  <point x="1367.0" y="495.0" />
-                  <point x="-24.5" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE">
-                  <point x="-14.322580645161452" y="-14.5" />
-                  <point x="3601.0045519021323" y="614.0" />
-                  <point x="2353.1604658806273" y="614.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-jdbc:jar:4.3.18.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="0.0" y="-14.5" />
-                  <point x="4122.202698161873" y="356.0" />
-                  <point x="3909.9521325472933" y="356.0" />
-                  <point x="25.25" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/aopalliance:aopalliance:jar:1.0">
-                  <point x="-37.0" y="-14.5" />
-                  <point x="1602.6187992139603" y="485.0" />
-                  <point x="1462.0" y="485.0" />
-                  <point x="1462.0" y="376.0" />
-                  <point x="1681.1187992139603" y="376.0" />
-                  <point x="-30.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-web:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="-11.5" y="-14.5" />
-                  <point x="2916.3400778514697" y="366.0" />
-                  <point x="2893.21451223689" y="366.0" />
-                  <point x="2893.21451223689" y="138.0" />
-                  <point x="3092.173411184803" y="138.0" />
-                  <point x="-30.666666666666515" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-aop:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="-22.5" y="-14.5" />
-                  <point x="3040.4104658806273" y="158.0" />
-                  <point x="3112.6178556292475" y="158.0" />
-                  <point x="-10.222222222222172" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="com.fasterxml.jackson.core:jackson-core:jar:2.7.4">
-                  <point x="-19.0967741935483" y="-14.5" />
-                  <point x="3596.230358353745" y="634.0" />
-                  <point x="1416.0" y="634.0" />
-                  <point x="24.5" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-jdbc:jar:4.3.18.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="-30.666666666666515" y="-14.5" />
-                  <point x="4091.5360314952063" y="366.0" />
-                  <point x="3679.452698161873" y="366.0" />
-                  <point x="23.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-jdbc:jar:4.3.18.RELEASE" target="org.springframework:spring-orm:jar:4.3.18.RELEASE/org.springframework:spring-tx:jar:4.3.18.RELEASE">
-                  <point x="30.666666666666515" y="-14.5" />
-                  <point x="4152.869364828539" y="376.0" />
-                  <point x="4208.952698161873" y="376.0" />
-                  <point x="-19.75" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:jcl-over-slf4j:jar:1.7.25" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:slf4j-api:jar:1.7.25">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate.javax.persistence:hibernate-jpa-2.1-api:jar:1.0.0.Final">
-                  <point x="-48.0" y="-14.5" />
-                  <point x="5062.015198161873" y="366.0" />
-                  <point x="4443.636162011666" y="366.0" />
-                  <point x="47.66666666666674" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2" target="displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2/org.slf4j:slf4j-api:jar:1.4.2">
-                  <point x="-24.5" y="-14.5" />
-                  <point x="501.0" y="376.0" />
-                  <point x="482.5" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final">
-                  <point x="30.375" y="-14.5" />
-                  <point x="4726.30629921396" y="475.0" />
-                  <point x="4818.689512236891" y="475.0" />
-                  <point x="4818.689512236891" y="376.0" />
-                  <point x="4935.656995345" y="376.0" />
-                  <point x="-51.5" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="junit:junit:jar:4.12">
-                  <point x="31.0322580645161" y="-14.5" />
-                  <point x="3646.3593906118094" y="684.0" />
-                  <point x="5754.015198161873" y="684.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="junit:junit:jar:4.12" target="junit:junit:jar:4.12/org.hamcrest:hamcrest-core:jar:1.3">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.codehaus.jackson:jackson-mapper-asl:jar:1.9.13">
-                  <point x="35.8064516129034" y="-14.5" />
-                  <point x="3651.1335841601967" y="704.0" />
-                  <point x="5896.515198161873" y="704.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="javax.servlet.jsp.jstl:javax.servlet.jsp.jstl-api:jar:1.2.1">
-                  <point x="-23.8709677419356" y="-14.5" />
-                  <point x="3591.4561648053577" y="654.0" />
-                  <point x="907.6403286783329" y="654.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="javax.servlet:javax.servlet-api:jar:3.1.0">
-                  <point x="23.8709677419356" y="-14.5" />
-                  <point x="3639.198100289229" y="654.0" />
-                  <point x="5205.015198161873" y="654.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2" target="displaytag:displaytag:jar:1.2/org.slf4j:slf4j-log4j12:jar:1.4.2/log4j:log4j:jar:1.2.13">
-                  <point x="24.5" y="-14.5" />
-                  <point x="550.0" y="376.0" />
-                  <point x="568.5" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/com.fasterxml:classmate:jar:1.3.0">
-                  <point x="36.0" y="-14.5" />
-                  <point x="5146.015198161873" y="366.0" />
-                  <point x="5467.00257785147" y="366.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-expression:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="0.0" y="-14.5" />
-                  <point x="2966.9104658806273" y="148.0" />
-                  <point x="3102.3956334070253" y="148.0" />
-                  <point x="-20.444444444444343" y="14.5" />
-                </edge>
-                <edge source="org.codehaus.jackson:jackson-mapper-asl:jar:1.9.13" target="org.codehaus.jackson:jackson-mapper-asl:jar:1.9.13/org.codehaus.jackson:jackson-core-asl:jar:1.9.13">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.postgresql:postgresql:jar:42.2.5">
-                  <point x="2.387096774193651" y="-14.5" />
-                  <point x="3617.7142293214874" y="564.0" />
-                  <point x="3852.1771325472937" y="564.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="28.5" y="-14.5" />
-                  <point x="3059.1604658806273" y="485.0" />
-                  <point x="3118.4104658806273" y="485.0" />
-                  <point x="3118.4104658806273" y="158.0" />
-                  <point x="3122.8400778514697" y="158.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="javax.validation:validation-api:jar:2.0.1.Final">
-                  <point x="-35.8064516129034" y="-14.5" />
-                  <point x="3579.52068093439" y="704.0" />
-                  <point x="52.0" y="704.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final">
-                  <point x="50.625" y="-14.5" />
-                  <point x="4746.55629921396" y="485.0" />
-                  <point x="5083.015198161873" y="485.0" />
-                  <point x="-27.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="40.5" y="-14.5" />
-                  <point x="2869.21451223689" y="237.0" />
-                  <point x="3141.952698161873" y="237.0" />
-                  <point x="-42.083333333333485" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="0.0" y="-14.5" />
-                  <point x="3184.0360314952063" y="158.0" />
-                  <point x="3133.062300073692" y="158.0" />
-                  <point x="10.222222222222172" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="displaytag:displaytag:jar:1.2">
-                  <point x="-26.258064516129252" y="-14.5" />
-                  <point x="3589.0690680311645" y="664.0" />
-                  <point x="732.0061789035567" y="664.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="cglib:cglib:jar:3.2.2">
-                  <point x="-31.0322580645161" y="-14.5" />
-                  <point x="3584.2948744827772" y="684.0" />
-                  <point x="319.0" y="684.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss:jandex:jar:2.0.3.Final">
-                  <point x="24.0" y="-14.5" />
-                  <point x="5134.015198161873" y="356.0" />
-                  <point x="5372.50257785147" y="356.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-context:jar:4.3.18.RELEASE">
-                  <point x="58.28571428571422" y="-14.5" />
-                  <point x="2411.446180166341" y="495.0" />
-                  <point x="2724.640328678333" y="495.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:jcl-over-slf4j:jar:1.7.25">
-                  <point x="-39.90000000000009" y="-14.5" />
-                  <point x="3575.4271325472937" y="485.0" />
-                  <point x="3267.3400778514697" y="485.0" />
-                  <point x="-24.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-context:jar:4.3.13.RELEASE">
-                  <point x="-17.100000000000364" y="-14.5" />
-                  <point x="3598.227132547293" y="465.0" />
-                  <point x="3535.327698161873" y="465.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="displaytag:displaytag:jar:1.2" target="displaytag:displaytag:jar:1.2/commons-collections:commons-collections:jar:3.1">
-                  <point x="7.16666666666697" y="-14.5" />
-                  <point x="739.1728455702237" y="475.0" />
-                  <point x="803.0" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE/org.springframework:spring-core:jar:4.3.13.RELEASE">
-                  <point x="18.875" y="-14.5" />
-                  <point x="3404.702698161873" y="376.0" />
-                  <point x="3406.3400778514697" y="376.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="cglib:cglib:jar:3.2.2/org.apache.ant:ant:jar:1.9.6" target="cglib:cglib:jar:3.2.2/org.apache.ant:ant:jar:1.9.6/org.apache.ant:ant-launcher:jar:1.9.6">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="19.0967741935483" y="-14.5" />
-                  <point x="3634.4239067408416" y="634.0" />
-                  <point x="4873.656995345" y="634.0" />
-                  <point x="4873.656995345" y="128.0" />
-                  <point x="3163.7289667403584" y="128.0" />
-                  <point x="40.88888888888869" y="14.5" />
-                </edge>
-                <edge source="com.fasterxml.jackson.core:jackson-databind:jar:2.7.4" target="com.fasterxml.jackson.core:jackson-databind:jar:2.7.4/com.fasterxml.jackson.core:jackson-annotations:jar:2.7.0">
-                  <point x="-30.75" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-web:jar:4.3.18.RELEASE" target="org.springframework:spring-aop:jar:4.3.18.RELEASE">
-                  <point x="34.5" y="-14.5" />
-                  <point x="2962.3400778514697" y="376.0" />
-                  <point x="3032.9104658806273" y="376.0" />
-                  <point x="-30.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="19.42857142857156" y="-14.5" />
-                  <point x="2372.589037309199" y="475.0" />
-                  <point x="2458.640328678333" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.javassist:javassist:jar:3.22.0-GA">
-                  <point x="-12.0" y="-14.5" />
-                  <point x="5098.015198161873" y="336.0" />
-                  <point x="4841.719495345" y="336.0" />
-                  <point x="18.75" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE">
-                  <point x="-28.5" y="-14.5" />
-                  <point x="3586.8271325472933" y="475.0" />
-                  <point x="3385.827698161873" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="antlr:antlr:jar:2.7.7">
-                  <point x="48.0" y="-14.5" />
-                  <point x="5158.015198161873" y="376.0" />
-                  <point x="5790.515198161873" y="376.0" />
-                  <point x="-13.75" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE">
-                  <point x="0.0" y="-14.5" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:jar:1.0.1.Final">
-                  <point x="-24.0" y="-14.5" />
-                  <point x="5086.015198161873" y="346.0" />
-                  <point x="4717.469495345" y="346.0" />
-                  <point x="48.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-aop:jar:4.3.13.RELEASE">
-                  <point x="39.899999999999636" y="-14.5" />
-                  <point x="3655.227132547293" y="485.0" />
-                  <point x="3915.202698161873" y="485.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE" target="org.springframework:spring-core:jar:4.3.18.RELEASE">
-                  <point x="34.5" y="-14.5" />
-                  <point x="4227.827132547293" y="495.0" />
-                  <point x="4278.702698161873" y="495.0" />
-                  <point x="4278.702698161873" y="138.0" />
-                  <point x="3153.506744518136" y="138.0" />
-                  <point x="30.666666666666515" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-core:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.hibernate.common:hibernate-commons-annotations:jar:5.0.1.Final">
-                  <point x="0.0" y="-14.5" />
-                  <point x="5110.015198161873" y="326.0" />
-                  <point x="5038.656995345" y="326.0" />
-                  <point x="51.5" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final">
-                  <point x="16.709677419354648" y="-14.5" />
-                  <point x="3632.0368099666484" y="624.0" />
-                  <point x="4695.93129921396" y="624.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-aop:jar:4.3.18.RELEASE">
-                  <point x="-2.387096774193651" y="-14.5" />
-                  <point x="3612.9400357731" y="564.0" />
-                  <point x="3201.5986620116664" y="564.0" />
-                  <point x="3201.5986620116664" y="376.0" />
-                  <point x="3092.9104658806273" y="376.0" />
-                  <point x="30.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/aopalliance:aopalliance:jar:1.0">
-                  <point x="-57.08333333333326" y="-14.5" />
-                  <point x="2034.0569953449997" y="366.0" />
-                  <point x="1741.1187992139603" y="366.0" />
-                  <point x="30.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-core:jar:4.3.18.RELEASE" target="commons-logging:commons-logging:jar:1.2">
-                  <point x="0.0" y="-14.5" />
-                  <point x="3122.8400778514697" y="54.0" />
-                  <point x="1860.390328678333" y="54.0" />
-                  <point x="32.75" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.hibernate:hibernate-validator:jar:5.3.5.Final">
-                  <point x="26.258064516129252" y="-14.5" />
-                  <point x="3641.585197063423" y="664.0" />
-                  <point x="5355.265198161873" y="664.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="javax.annotation:jsr250-api:jar:1.0">
-                  <point x="11.9354838709678" y="-14.5" />
-                  <point x="3627.262616418261" y="604.0" />
-                  <point x="4387.93129921396" y="604.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-aop:jar:4.3.18.RELEASE">
-                  <point x="9.5" y="-14.5" />
-                  <point x="3040.1604658806273" y="475.0" />
-                  <point x="3062.9104658806273" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE/org.springframework:spring-tx:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="-19.75" y="-14.5" />
-                  <point x="4208.952698161873" y="237.0" />
-                  <point x="3226.11936482854" y="237.0" />
-                  <point x="42.083333333333485" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.hibernate:hibernate-core:jar:5.2.17.Final">
-                  <point x="21.48387096774195" y="-14.5" />
-                  <point x="3636.8110035150357" y="644.0" />
-                  <point x="5137.015198161873" y="644.0" />
-                  <point x="27.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.javassist:javassist:jar:3.22.0-GA">
-                  <point x="10.125" y="-14.5" />
-                  <point x="4706.05629921396" y="465.0" />
-                  <point x="4804.219495345" y="465.0" />
-                  <point x="-18.75" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-core:jar:5.2.17.Final/org.jboss.spec.javax.transaction:jboss-transaction-api_1.2_spec:jar:1.0.1.Final">
-                  <point x="-30.375" y="-14.5" />
-                  <point x="4665.55629921396" y="475.0" />
-                  <point x="4621.469495345" y="475.0" />
-                  <point x="-48.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-aop:jar:4.3.9.RELEASE">
-                  <point x="34.25" y="-14.5" />
-                  <point x="2125.390328678333" y="366.0" />
-                  <point x="2331.2591497747762" y="366.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final" target="org.hibernate:hibernate-entitymanager:jar:5.2.17.Final/net.bytebuddy:byte-buddy:jar:1.6.14">
-                  <point x="-10.125" y="-14.5" />
-                  <point x="4685.80629921396" y="455.0" />
-                  <point x="4722.698662011666" y="455.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-orm:jar:4.3.13.RELEASE">
-                  <point x="28.5" y="-14.5" />
-                  <point x="3643.8271325472933" y="475.0" />
-                  <point x="3804.202698161873" y="475.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework.data:spring-data-commons:jar:1.13.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.slf4j:slf4j-api:jar:1.7.25">
-                  <point x="-18.875" y="-14.5" />
-                  <point x="3366.952698161873" y="376.0" />
-                  <point x="3349.8400778514697" y="376.0" />
-                  <point x="3349.8400778514697" y="257.0" />
-                  <point x="3316.2026981618733" y="257.0" />
-                  <point x="24.66666666666697" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="org.springframework:spring-webmvc:jar:4.3.18.RELEASE">
-                  <point x="-4.774193548387302" y="-14.5" />
-                  <point x="3610.552938998906" y="574.0" />
-                  <point x="3030.6604658806273" y="574.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-webmvc:jar:4.3.18.RELEASE" target="org.springframework:spring-web:jar:4.3.18.RELEASE">
-                  <point x="-28.5" y="-14.5" />
-                  <point x="3002.1604658806273" y="475.0" />
-                  <point x="2950.8400778514697" y="475.0" />
-                  <point x="23.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="commons-dbcp:commons-dbcp:jar:1.2.2">
-                  <point x="-33.41935483870975" y="-14.5" />
-                  <point x="3581.907777708584" y="694.0" />
-                  <point x="182.5" y="694.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-config:jar:4.2.3.RELEASE/org.springframework:spring-aop:jar:4.3.18.RELEASE">
-                  <point x="-61.66666666666674" y="-14.5" />
-                  <point x="1577.9521325472936" y="495.0" />
-                  <point x="1451.0" y="495.0" />
-                  <point x="-22.5" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="com.fasterxml.jackson.core:jackson-databind:jar:2.7.4">
-                  <point x="-21.48387096774195" y="-14.5" />
-                  <point x="3593.843261579552" y="644.0" />
-                  <point x="1284.25" y="644.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="laniakea:laniakea:1.0-SNAPSHOT" target="commons-logging:commons-logging:jar:1.2">
-                  <point x="-28.64516129032245" y="-14.5" />
-                  <point x="3586.6819712569713" y="674.0" />
-                  <point x="392.0" y="674.0" />
-                  <point x="392.0" y="54.0" />
-                  <point x="1794.890328678333" y="54.0" />
-                  <point x="-32.75" y="14.5" />
-                </edge>
-                <edge source="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE" target="org.springframework.data:spring-data-jpa:jar:1.11.9.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="17.100000000000364" y="-14.5" />
-                  <point x="3632.4271325472937" y="465.0" />
-                  <point x="3747.702698161873" y="465.0" />
-                  <point x="3747.702698161873" y="376.0" />
-                  <point x="3859.4521325472933" y="376.0" />
-                  <point x="-25.25" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-orm:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE/org.springframework:spring-beans:jar:4.3.18.RELEASE">
-                  <point x="-11.5" y="-14.5" />
-                  <point x="4181.827132547293" y="495.0" />
-                  <point x="4178.702698161873" y="495.0" />
-                  <point x="4178.702698161873" y="247.0" />
-                  <point x="3209.2860314952063" y="247.0" />
-                  <point x="25.25" y="14.5" />
-                </edge>
-                <edge source="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE" target="org.springframework.security:spring-security-web:jar:4.2.3.RELEASE/org.springframework.security:spring-security-core:jar:4.2.3.RELEASE/org.springframework:spring-core:jar:4.3.9.RELEASE">
-                  <point x="-11.416666666666742" y="-14.5" />
-                  <point x="2079.7236620116664" y="346.0" />
-                  <point x="2039.4104658806268" y="346.0" />
-                  <point x="0.0" y="14.5" />
-                </edge>
-                <edge source="org.springframework:spring-web:jar:4.3.18.RELEASE" target="org.springframework:spring-context:jar:4.3.18.RELEASE">
-                  <point x="-34.5" y="-14.5" />
-                  <point x="2893.3400778514697" y="376.0" />
-                  <point x="2864.71451223689" y="376.0" />
-                  <point x="36.0" y="14.5" />
-                </edge>
-              </edges>
-              <settings layout="Hierarchic Group" zoom="0.6" x="2830.981402663926" y="130.49311863462663" />
-              <SelectedNodes />
-              <Categories />
-              <VISIBILITY>All</VISIBILITY>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/AppInit.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
             </state>
           </provider>
         </entry>
@@ -1018,37 +110,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="12" column="13" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/SpringSecurityInitializer.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="51">
-              <caret line="3" column="13" selection-start-line="3" selection-start-column="13" selection-end-line="3" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebConfig.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="339">
-              <caret line="34" column="13" selection-start-line="34" selection-start-column="13" selection-end-line="34" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="986">
-              <caret line="62" column="35" selection-start-line="62" selection-start-column="35" selection-end-line="62" selection-end-column="35" />
+            <state relative-caret-position="17">
+              <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -1057,10 +122,39 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/pom.xml">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="268">
-              <caret line="137" column="24" selection-start-line="137" selection-start-column="24" selection-end-line="137" selection-end-column="24" />
+            <state relative-caret-position="425">
+              <caret line="25" column="1" lean-forward="true" selection-start-line="25" selection-start-column="1" selection-end-line="25" selection-end-column="1" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="567">
+              <caret line="37" column="10" selection-start-line="37" selection-start-column="10" selection-end-line="37" selection-end-column="10" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#1014#1045#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3406">
+              <caret line="232" column="5" lean-forward="true" selection-start-line="180" selection-end-line="232" selection-end-column="5" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="method#getPagesList#0;class#PricesRepository#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -1073,16 +167,13 @@
         <option value="Jsp File" />
         <option value="AnnotationType" />
         <option value="Interface" />
-        <option value="Class" />
         <option value="XSLT Stylesheet" />
+        <option value="Class" />
       </list>
     </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>addAcceptanceProductQuantity</find>
-      <find>product_quantity</find>
-      <find>addAcceptanceProductHistory</find>
       <find>uni</find>
       <find>products_history</find>
       <find>myM</find>
@@ -1110,6 +201,9 @@
       <find>insertRemain</find>
       <find>PersistenceAnnotationBeanPostProcessor</find>
       <find>entityManagerFactory</find>
+      <find>getMyCompanyId</find>
+      <find>signin</find>
+      <find>@get</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -1118,11 +212,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/PostingController.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/AcceptanceJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Acceptance.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/AcceptanceProductForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/AcceptanceForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PostingProductForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ShortInfoAboutProductJSON.java" />
@@ -1164,11 +253,16 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/stylesheet.xsl" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductsController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/AuthRestAPIs.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java" />
       </list>
     </option>
   </component>
@@ -1267,6 +361,24 @@
               <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
+              <item name="controller" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
+              <item name="repository" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="462c0819:PsiDirectoryNode" />
               <item name="resources" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -1287,10 +399,6 @@
             </path>
             <path>
               <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
               <item name="Scratches and Consoles" type="1a2a3e82:ScratchProjectViewPane$MyProjectNode" />
             </path>
           </expand>
@@ -1303,7 +411,7 @@
     <property name="DatabaseDriversLRU" value="postgresql" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1586377248458" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1587415603728" />
     <property name="database.console.LAST_STATE" value="false" />
     <property name="last.edited.regexp" value="Sample Text" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -1725,7 +833,7 @@
       <workItem from="1584605428275" duration="136076000" />
       <workItem from="1586327063833" duration="9501000" />
       <workItem from="1586464919853" duration="795000" />
-      <workItem from="1587247448764" duration="1529000" />
+      <workItem from="1587247448764" duration="17576000" />
     </task>
     <task id="LOCAL-00001" summary="Функционал &quot;Цены&quot; готов, перед правами">
       <created>1584708726526</created>
@@ -1787,7 +895,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2275736000" />
+    <option name="totallyTimeSpent" value="2291783000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1800,6 +908,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="2575" height="1415" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16978131" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -1811,7 +920,7 @@
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" visible="true" weight="0.33437255" />
+      <window_info active="true" anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" visible="true" weight="0.21044427" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.18418202" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -1831,7 +940,7 @@
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.2496" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info active="true" anchor="right" id="Maven" order="3" visible="true" weight="0.17654076" />
+      <window_info anchor="right" id="Maven" order="3" weight="0.17654076" />
       <window_info anchor="right" id="Palette" order="4" />
       <window_info anchor="right" id="Capture Analysis" order="5" />
       <window_info anchor="right" id="Palette&#9;" order="6" />
@@ -1948,101 +1057,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysTimeZonesController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="16" column="40" lean-forward="true" selection-start-line="15" selection-start-column="4" selection-end-line="16" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/DepartmentsController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="239">
-          <caret line="217" selection-start-line="217" selection-end-line="226" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" column="49" selection-start-line="10" selection-start-column="49" selection-end-line="10" selection-end-column="49" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#320#321#0" expanded="true" />
-            <element signature="e#393#394#0" expanded="true" />
-            <element signature="e#451#452#0" expanded="true" />
-            <element signature="e#498#499#0" expanded="true" />
-            <element signature="e#526#527#0" expanded="true" />
-            <element signature="e#583#584#0" expanded="true" />
-            <element signature="e#617#618#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PriceTypesListJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="29" column="5" lean-forward="true" selection-start-line="29" selection-start-column="5" selection-end-line="29" selection-end-column="5" />
-          <folding>
-            <element signature="e#177#178#0" expanded="true" />
-            <element signature="e#202#203#0" expanded="true" />
-            <element signature="e#236#237#0" expanded="true" />
-            <element signature="e#264#265#0" expanded="true" />
-            <element signature="e#295#296#0" expanded="true" />
-            <element signature="e#322#323#0" expanded="true" />
-            <element signature="e#362#363#0" expanded="true" />
-            <element signature="e#394#395#0" expanded="true" />
-            <element signature="e#432#433#0" expanded="true" />
-            <element signature="e#466#467#0" expanded="true" />
-            <element signature="e#520#521#0" expanded="true" />
-            <element signature="e#566#567#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/RemainsJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" column="21" lean-forward="true" selection-start-line="17" selection-start-column="21" selection-end-line="17" selection-end-column="21" />
-          <folding>
-            <element signature="e#277#278#0" expanded="true" />
-            <element signature="e#317#318#0" expanded="true" />
-            <element signature="e#390#391#0" expanded="true" />
-            <element signature="e#448#449#0" expanded="true" />
-            <element signature="e#491#492#0" expanded="true" />
-            <element signature="e#519#520#0" expanded="true" />
-            <element signature="e#572#573#0" expanded="true" />
-            <element signature="e#606#607#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="534">
-          <caret line="321" selection-start-line="321" selection-end-line="321" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="248">
-          <caret line="235" column="5" lean-forward="true" selection-start-line="235" selection-start-column="5" selection-end-line="235" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/request/RemainsForm.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="12" column="24" selection-start-line="12" selection-start-column="24" selection-end-line="12" selection-end-column="24" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#2674#2675#0" expanded="true" />
-            <element signature="e#2706#2707#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravTypePricesController.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="572">
@@ -2240,21 +1254,7 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/stylesheet.xsl" />
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/AuthRestAPIs.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-663">
-          <caret line="46" column="4" selection-start-line="46" selection-start-column="4" selection-end-line="46" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/PostingController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3083">
-          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-3083">
           <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
@@ -2275,17 +1275,6 @@
           <caret line="34" lean-forward="true" selection-start-line="34" selection-end-line="34" />
           <folding>
             <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3576">
-          <caret line="102" column="37" lean-forward="true" selection-start-line="102" selection-start-column="37" selection-end-line="102" selection-end-column="37" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="method#getPagesList#0;class#PricesRepository#0" />
           </folding>
         </state>
       </provider>
@@ -2362,20 +1351,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsMapping.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="12" column="13" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/SpringSecurityInitializer.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="51">
@@ -2390,30 +1365,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="986">
-          <caret line="62" column="35" selection-start-line="62" selection-start-column="35" selection-end-line="62" selection-end-column="35" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/AppInit.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="289">
           <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-180">
-          <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -3333,8 +2288,138 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pom.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="268">
-          <caret line="137" column="24" selection-start-line="137" selection-start-column="24" selection-end-line="137" selection-end-column="24" />
+        <state relative-caret-position="217">
+          <caret line="134" column="21" lean-forward="true" selection-start-line="134" selection-start-column="21" selection-end-line="134" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtProvider.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="816">
+          <caret line="57" column="32" selection-start-line="57" selection-start-column="32" selection-end-line="57" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/TestRestAPIs.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Hello.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/FilesController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-555">
+          <caret line="40" column="31" selection-start-line="40" selection-start-column="31" selection-end-line="40" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/AuthRestAPIs.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="30" selection-start-line="30" selection-end-line="31" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="714">
+          <caret line="64" column="41" selection-start-line="64" selection-start-column="35" selection-end-line="64" selection-end-column="41" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="686">
+          <caret line="316" column="42" selection-start-line="316" selection-start-column="42" selection-end-line="316" selection-end-column="42" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/UploadController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="737">
+          <caret line="76" column="5" lean-forward="true" selection-start-line="76" selection-start-column="5" selection-end-line="76" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="644">
+          <caret line="214" selection-start-line="214" selection-end-line="220" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3406">
+          <caret line="232" column="5" lean-forward="true" selection-start-line="180" selection-end-line="232" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#getPagesList#0;class#PricesRepository#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="567">
+          <caret line="37" column="10" selection-start-line="37" selection-start-column="10" selection-end-line="37" selection-end-column="10" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1014#1045#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1207">
+          <caret line="71" column="41" selection-start-line="71" selection-start-column="41" selection-end-line="71" selection-end-column="41" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#2358#2359#0" expanded="true" />
+            <element signature="e#2412#2413#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsMapping.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="22" column="32" selection-start-line="22" selection-start-column="32" selection-end-line="22" selection-end-column="32" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="25" column="1" lean-forward="true" selection-start-line="25" selection-start-column="1" selection-end-line="25" selection-end-column="1" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
