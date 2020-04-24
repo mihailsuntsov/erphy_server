@@ -3,8 +3,6 @@ package com.laniakea.service.company;
 import com.laniakea.message.request.CompanyForm;
 import com.laniakea.model.Companies;
 import com.laniakea.message.response.CompaniesJSON;
-import org.omg.CORBA.LongHolder;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +24,4 @@ public interface CompanyService {
     public boolean deleteCompaniesByNumber(ArrayList<Long> delNumbers);
 
     public List<Companies> getCompaniesList();
-
-
 }

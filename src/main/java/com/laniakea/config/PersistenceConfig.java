@@ -63,7 +63,7 @@ public class PersistenceConfig {
     dataSource.setDriverClassName("org.postgresql.Driver");
     dataSource.setUrl("jdbc:postgresql://localhost:5432/laniakea");
     dataSource.setUsername("postgres");
-    dataSource.setPassword("111111");
+    dataSource.setPassword("111111");// ***ИЗМЕНИТЬ ДЛЯ ПРОДА***
     return dataSource;}
 
 //    @Bean

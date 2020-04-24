@@ -2,9 +2,9 @@ package com.laniakea.message.response;
 
 import java.util.List;
 
-public class PricesJSON {
+public class SitesTableJSON {
     private List<Integer> receivedPagesList;
-    private List<PricesTableJSON> table;
+    private List<SitesJSON> table;
 
     public List<Integer> getReceivedPagesList() {
         return receivedPagesList;
@@ -14,11 +14,11 @@ public class PricesJSON {
         this.receivedPagesList = receivedPagesList;
     }
 
-    public List<PricesTableJSON> getTable() {
+    public List<SitesJSON> getTable() {
         return table;
     }
 
-    public void setTable(List<PricesTableJSON> table) {
+    public void setTable(List<SitesJSON> table) {
         this.table = table;
     }
 }

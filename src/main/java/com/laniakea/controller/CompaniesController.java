@@ -204,7 +204,7 @@ public class CompaniesController {
 
     @PostMapping("/api/auth/updateCompany")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCompany(@RequestBody CompanyForm companyRequest) throws ParseException {
+    public ResponseEntity<?> updateCompany(@RequestBody CompanyForm companyRequest) {
         if(companyService.updateCompany(companyRequest)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -260,6 +260,7 @@ public class CompaniesController {
         company.setCompDateTimeCreated(timestamp);
         company.setSt_prefix_barcode_packed(companyRequest.getSt_prefix_barcode_packed());
         company.setSt_prefix_barcode_pieced(companyRequest.getSt_prefix_barcode_pieced());
+        company.setCurrency_id(companyRequest.getCurrency_id());
 
         Long idNewCompany=companyService.insertCompany(company);
 

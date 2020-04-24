@@ -62,6 +62,7 @@ public class CompanyRepositoryJPA {
                     "rs='" + company.getRs() + "'," +
                     "bank='" + company.getBank() + "'," +
 
+                    "currency_id='" + company.getCurrency_id() + "'," +
                     "st_prefix_barcode_packed=" + company.getSt_prefix_barcode_packed() + ", " +
                     "st_prefix_barcode_pieced=" + company.getSt_prefix_barcode_pieced() +
                     " where id=" + company.getId();
@@ -106,6 +107,7 @@ public class CompanyRepositoryJPA {
                     "           p.addressfact as addressfact, " +
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
                     "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
+                    "           p.currency_id as currency_id, " +
                     "           coalesce(p.opf,'0') as opf_id, " +
                     "           (select name from sprav_sys_opf where id=p.opf) as opf_name, " +
                     "           p.inn as inn, " +
@@ -181,6 +183,7 @@ public class CompanyRepositoryJPA {
                     "           p.korschet as korschet, " +
                     "           p.bank as bank, " +
                     "           p.bik as bik, " +
+                    "           p.currency_id as currency_id, " +
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
                     "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
                     "           p.date_time_created as date_time_created, " +

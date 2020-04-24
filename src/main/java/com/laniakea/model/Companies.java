@@ -92,6 +92,10 @@ public class Companies {
     @Column(name="st_prefix_barcode_packed")
     private Integer st_prefix_barcode_packed;
 
+    @Column(name="currency_id")
+    private Integer currency_id;
+
+
     public Long getCompId() {
         return compId;
     }
@@ -114,6 +118,14 @@ public class Companies {
 
     public void setSt_prefix_barcode_packed(Integer st_prefix_barcode_packed) {
         this.st_prefix_barcode_packed = st_prefix_barcode_packed;
+    }
+
+    public Integer getCurrency_id() {
+        return currency_id;
+    }
+
+    public void setCurrency_id(Integer currency_id) {
+        this.currency_id = currency_id;
     }
 
     public String getCompName() {

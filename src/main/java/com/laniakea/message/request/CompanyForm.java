@@ -20,7 +20,15 @@ public class CompanyForm {
     private String checked;
     private Integer st_prefix_barcode_pieced;
     private Integer st_prefix_barcode_packed;
+    private Integer currency_id;
 
+    public Integer getCurrency_id() {
+        return currency_id;
+    }
+
+    public void setCurrency_id(Integer currency_id) {
+        this.currency_id = currency_id;
+    }
 
     public String getChecked() {
         return checked;

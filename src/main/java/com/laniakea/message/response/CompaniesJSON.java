@@ -44,6 +44,7 @@ public class CompaniesJSON {
     private String bik;
     private String st_prefix_barcode_pieced;
     private String st_prefix_barcode_packed;
+    private String currency_id;
 
 
     public Long getId() {
@@ -72,6 +73,14 @@ public class CompaniesJSON {
 
     public void setSt_prefix_barcode_pieced(String st_prefix_barcode_pieced) {
         this.st_prefix_barcode_pieced = st_prefix_barcode_pieced;
+    }
+
+    public String getCurrency_id() {
+        return currency_id;
+    }
+
+    public void setCurrency_id(String currency_id) {
+        this.currency_id = currency_id;
     }
 
     public String getSt_prefix_barcode_packed() {
