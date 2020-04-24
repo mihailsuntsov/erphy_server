@@ -7,21 +7,16 @@ import com.laniakea.message.response.UsersTableJSON;
 import com.laniakea.model.Companies;
 import com.laniakea.model.Departments;
 import com.laniakea.model.User;
-
 import com.laniakea.model.UserGroup;
 import com.laniakea.security.services.UserDetailsServiceImpl;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 

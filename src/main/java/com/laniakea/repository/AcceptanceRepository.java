@@ -8,8 +8,6 @@ import com.laniakea.message.response.AcceptanceJSON;
 import com.laniakea.message.response.FilesAcceptanceJSON;
 import com.laniakea.message.response.ProductHistoryJSON;
 import com.laniakea.model.*;
-import com.laniakea.model.Sprav.SpravSysEdizm;
-import com.laniakea.model.Sprav.SpravSysNds;
 import com.laniakea.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;

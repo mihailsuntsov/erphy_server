@@ -1,29 +1,19 @@
 package com.laniakea.repository;
 
-import com.laniakea.message.request.SignUpForm;
 import com.laniakea.message.request.UserGroupForm;
 import com.laniakea.message.response.UserGroupJSON;
 import com.laniakea.message.response.UserGroupTableJSON;
 import com.laniakea.message.response.UserGroupListJSON;
-import com.laniakea.message.response.UsersJSON;
-import com.laniakea.model.Departments;
 import com.laniakea.model.Permissions;
 import com.laniakea.model.User;
 import com.laniakea.model.UserGroup;
 import com.laniakea.security.services.UserDetailsServiceImpl;
-
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.persistence.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 

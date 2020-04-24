@@ -2,8 +2,6 @@ package com.laniakea.repository;
 import com.laniakea.message.request.*;
 import com.laniakea.message.response.*;
 import com.laniakea.security.services.UserDetailsServiceImpl;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -11,8 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Repository
 public class PricesRepository {

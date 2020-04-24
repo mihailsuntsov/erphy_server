@@ -5,7 +5,6 @@ import com.laniakea.message.request.UniversalForm;
 import com.laniakea.message.response.Sprav.SpravSysEdizmJSON;
 import com.laniakea.message.response.Sprav.SpravSysEdizmTableJSON;
 import com.laniakea.model.Sprav.SpravSysEdizm;
-import com.laniakea.model.Sprav.SpravSysEdizmTypes;
 import com.laniakea.model.User;
 import com.laniakea.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;

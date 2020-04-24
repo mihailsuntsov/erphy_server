@@ -4,27 +4,20 @@ import com.laniakea.message.request.TradeResultsForm;
 import com.laniakea.message.response.TradeResultsJSON;
 import com.laniakea.message.response.TradeResultsSumByPeriodJSON;
 import com.laniakea.message.response.TradeResultsTableReportJSON;
-import com.laniakea.model.Permissions;
 import com.laniakea.model.TradeResults;
 import com.laniakea.model.User;
 import com.laniakea.security.services.UserDetailsServiceImpl;
-import com.laniakea.service.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
 import javax.persistence.*;
-
 import com.laniakea.message.response.TradeResultsTableJSON;
-
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Repository("TradeResultsRepositoryJPA")
 public class TradeResultsRepositoryJPA {

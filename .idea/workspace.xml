@@ -7,28 +7,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysCurrencyController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesTableJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsSettings.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesJSON.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CompanyForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CompanyForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsSettings.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesJSON.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CompaniesController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CompanyForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CompaniesJSON.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Companies.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Companies.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CompanyRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CompaniesController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CompanyForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CompaniesJSON.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Companies.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/model/Companies.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CompanyRepositoryJPA.class" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -79,84 +80,7 @@
     <favorites_list name="laniakea_crm" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="663">
-              <caret line="77" column="36" selection-start-line="77" selection-start-column="36" selection-end-line="77" selection-end-column="36" />
-              <folding>
-                <element signature="e#2234#2235#0" expanded="true" />
-                <element signature="e#2288#2289#0" expanded="true" />
-                <element signature="e#2334#2335#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="122" column="37" selection-start-line="122" selection-start-column="37" selection-end-line="122" selection-end-column="37" />
-              <folding>
-                <element signature="e#3315#3316#0" expanded="true" />
-                <element signature="e#3370#3371#0" expanded="true" />
-                <element signature="e#3416#3417#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1017">
-              <caret line="146" column="29" selection-start-line="146" selection-start-column="16" selection-end-line="146" selection-end-column="29" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CompanyForm.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="14" column="27" lean-forward="true" selection-start-line="14" selection-start-column="27" selection-end-line="14" selection-end-column="27" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="521">
-              <caret line="198" column="40" lean-forward="true" selection-start-line="198" selection-start-column="40" selection-end-line="198" selection-end-column="40" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="15" column="25" selection-start-line="15" selection-start-column="25" selection-end-line="15" selection-end-column="25" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyServiceImpl.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="408">
-              <caret line="37" column="29" selection-start-line="37" selection-start-column="29" selection-end-line="37" selection-end-column="29" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -217,14 +141,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TypePricesListJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravTypePricesController.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PricesTableForm.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PricesJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/RemainsTableJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/PricesController.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/RemainsJSON_.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PricesForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/PricesController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductsForm.java" />
@@ -233,15 +149,12 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Products.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesTableJSON.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/RemainsTableJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/stylesheet.xsl" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductsController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/AuthRestAPIs.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SiteController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SitesJsSON.java" />
@@ -250,7 +163,6 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/RemainsController.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesTableJSON.java" />
@@ -268,6 +180,18 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" />
       </list>
     </option>
   </component>
@@ -443,7 +367,7 @@
     <property name="DatabaseDriversLRU" value="postgresql" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1587761125309" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1587761278511" />
     <property name="database.console.LAST_STATE" value="false" />
     <property name="last.edited.regexp" value="Sample Text" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -867,7 +791,7 @@
       <workItem from="1586464919853" duration="795000" />
       <workItem from="1587247448764" duration="43722000" />
       <workItem from="1587709602969" duration="223000" />
-      <workItem from="1587722155878" duration="9798000" />
+      <workItem from="1587722155878" duration="10791000" />
     </task>
     <task id="LOCAL-00001" summary="Функционал &quot;Цены&quot; готов, перед правами">
       <created>1584708726526</created>
@@ -932,11 +856,18 @@
       <option name="project" value="LOCAL" />
       <updated>1587420122427</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="В Предприятие добавлены валюты">
+      <created>1587761161814</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1587761161814</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2327950000" />
+    <option name="totallyTimeSpent" value="2328943000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -949,9 +880,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="2575" height="1415" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" weight="0.17097415" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17097415" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -1092,7 +1022,8 @@
     <MESSAGE value="Товарные остатки переделаны полностью" />
     <MESSAGE value="Товарные остатки переделаны полностью + исправлены ошибки" />
     <MESSAGE value="Отдаёт тестовые данные по сайту. Перед созданием Сайты" />
-    <option name="LAST_COMMIT_MESSAGE" value="Отдаёт тестовые данные по сайту. Перед созданием Сайты" />
+    <MESSAGE value="В Предприятие добавлены валюты" />
+    <option name="LAST_COMMIT_MESSAGE" value="В Предприятие добавлены валюты" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
@@ -1138,225 +1069,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysBarcodeController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysTimeZonesController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravTypePricesController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1666">
-          <caret line="29" column="13" selection-start-line="29" selection-start-column="13" selection-end-line="29" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysPPRController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysNdsController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysMarkableGroupController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="28" column="13" selection-start-line="28" selection-start-column="13" selection-end-line="28" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/WebConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="34" column="13" selection-start-line="34" selection-start-column="13" selection-end-line="34" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/SpringSecurityInitializer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="3" column="13" selection-start-line="3" selection-start-column="13" selection-end-line="3" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="12" column="13" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="24" lean-forward="true" selection-start-line="24" selection-end-line="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="7" column="17" selection-start-line="7" selection-start-column="17" selection-end-line="7" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientServiceImpl.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="11" column="13" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/util/DateTimeService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="13" selection-start-line="2" selection-start-column="13" selection-end-line="2" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONDeserialize.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="15" column="13" selection-start-line="15" selection-start-column="13" selection-end-line="15" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/application.properties">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="35" column="13" selection-start-line="35" selection-start-column="13" selection-end-line="35" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/TablePagesService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#187#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/AppInit.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="11" column="13" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/hibernate.properties">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/log4j.properties">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONSerializer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="25" column="1" selection-start-line="25" selection-start-column="1" selection-end-line="25" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4947">
-          <caret line="304" column="29" selection-start-line="304" selection-start-column="29" selection-end-line="304" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsMapping.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Permissions.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="17" column="13" selection-start-line="17" selection-start-column="13" selection-end-line="17" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/ProductGroupFields.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/KassaOperations.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/DepartmentsController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3083">
-          <caret line="28" column="13" selection-start-line="28" selection-start-column="13" selection-end-line="28" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="759">
-          <caret line="378" column="13" lean-forward="true" selection-start-line="378" selection-start-column="13" selection-end-line="378" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1598">
-          <caret line="205" column="65" lean-forward="true" selection-start-line="205" selection-start-column="65" selection-end-line="205" selection-end-column="65" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysMarkableGroupJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" lean-forward="true" selection-start-line="10" selection-end-line="10" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentsTableJSON.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
@@ -1487,14 +1199,15 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="122" column="37" selection-start-line="122" selection-start-column="37" selection-end-line="122" selection-end-column="37" />
+        <state relative-caret-position="1122">
+          <caret line="83" column="5" lean-forward="true" selection-start-line="83" selection-start-column="5" selection-end-line="83" selection-end-column="5" />
           <folding>
-            <element signature="e#3315#3316#0" expanded="true" />
-            <element signature="e#3370#3371#0" expanded="true" />
-            <element signature="e#3416#3417#0" expanded="true" />
+            <element signature="e#2200#2201#0" expanded="true" />
+            <element signature="e#2234#2235#0" expanded="true" />
+            <element signature="e#2288#2289#0" expanded="true" />
+            <element signature="e#2334#2335#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1503,6 +1216,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="14" column="27" lean-forward="true" selection-start-line="14" selection-start-column="27" selection-end-line="14" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="521">
+          <caret line="198" column="40" lean-forward="true" selection-start-line="198" selection-start-column="40" selection-end-line="198" selection-end-column="40" />
         </state>
       </provider>
     </entry>
@@ -1516,13 +1236,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="521">
-          <caret line="198" column="40" lean-forward="true" selection-start-line="198" selection-start-column="40" selection-end-line="198" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyServiceImpl.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="408">
@@ -1530,21 +1243,306 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="13" column="23" lean-forward="true" selection-start-line="13" selection-start-column="23" selection-end-line="13" selection-end-column="23" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/DepartmentRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1017">
+        <state relative-caret-position="2278">
           <caret line="146" column="29" selection-start-line="146" selection-start-column="16" selection-end-line="146" selection-end-column="29" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ClientRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="663">
-          <caret line="77" column="36" selection-start-line="77" selection-start-column="36" selection-end-line="77" selection-end-column="36" />
+        <state relative-caret-position="255">
+          <caret line="15" column="13" selection-start-line="15" selection-start-column="13" selection-end-line="15" selection-end-column="13" />
           <folding>
-            <element signature="e#2234#2235#0" expanded="true" />
-            <element signature="e#2288#2289#0" expanded="true" />
-            <element signature="e#2334#2335#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/CagentRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="23" column="13" selection-start-line="23" selection-start-column="13" selection-end-line="23" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="10" selection-start-line="10" selection-end-line="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/FileRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="22" column="13" selection-start-line="22" selection-start-column="13" selection-end-line="22" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="24" column="13" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupFieldsRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" column="13" selection-start-line="15" selection-start-column="13" selection-end-line="15" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="20" column="13" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/RoleRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="11" column="17" selection-start-line="11" selection-start-column="17" selection-end-line="11" selection-end-column="17" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SecurityRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3485">
+          <caret line="205" column="65" lean-forward="true" selection-start-line="205" selection-start-column="65" selection-end-line="205" selection-end-column="65" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="22" column="13" selection-start-line="22" selection-start-column="13" selection-end-line="22" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="16" selection-start-line="16" selection-end-line="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="16" selection-start-line="16" selection-end-line="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="19" selection-start-line="19" selection-end-line="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="408">
+          <caret line="24" column="13" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Acceptance.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" selection-start-line="5" selection-end-line="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Cagents.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="14" column="13" selection-start-line="14" selection-start-column="13" selection-end-line="14" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Client.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="8" selection-start-line="2" selection-start-column="8" selection-end-line="2" selection-end-column="8" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1955">
+          <caret line="125" lean-forward="true" selection-start-line="125" selection-end-line="125" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Departments.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="12" column="13" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/DocumentsDirectories.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" selection-start-line="2" selection-end-line="2" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/DocumentsMenu.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/KassaOperations.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="10" column="21" lean-forward="true" selection-start-line="10" selection-start-column="21" selection-end-line="10" selection-end-column="21" />
+          <folding>
+            <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -3,7 +3,6 @@ package com.laniakea.repository;
 import com.laniakea.message.request.*;
 import com.laniakea.message.response.*;
 import com.laniakea.security.services.UserDetailsServiceImpl;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
