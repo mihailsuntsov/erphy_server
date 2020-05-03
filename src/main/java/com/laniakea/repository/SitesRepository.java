@@ -1,11 +1,15 @@
 package com.laniakea.repository;
 
 import com.laniakea.message.response.*;
+import com.laniakea.model.Sites;
+import com.laniakea.model.User;
 import com.laniakea.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
+import java.sql.Timestamp;
+import java.util.UUID;
 import java.util.*;
 
 @Repository
@@ -22,6 +26,8 @@ public class SitesRepository {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    private EntityManagerFactory emf;
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -253,10 +259,59 @@ public class SitesRepository {
     }
 
 
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Long insertSite(SitesJSON request) {
+        if(securityRepositoryJPA.userHasPermissions_OR(20L,"248,249"))//  "Создание"
+        {
+            Sites newDocument = new Sites();
+            EntityManager emgr = emf.createEntityManager();
+            //владелец
+            User master = userRepository.getUserByUsername(
+                    userRepositoryJPA.getUsernameById(
+                            userRepositoryJPA.getUserMasterIdByUsername(
+                                    userRepository.getUserName() )));
 
+            if(companyRepositoryJPA.getCompanyById((request.getCompany_id())).getMaster().getId()==master.getId())
+            {//проверка на то, что предприятие, для которого содается документ, находится под главным аккаунтом
+                newDocument.setMaster(master);
+                //предприятие
+                newDocument.setCompany(companyRepositoryJPA.getCompanyById((request.getCompany_id())));
+                //дата и время создания
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                newDocument.setDate_time_created(timestamp);//
+                //создатель
+                User creator = userRepository.getUserByUsername(userRepository.getUserName());
+                newDocument.setCreator(creator);
+                //название сайта
+                newDocument.setName(request.getName());
+                //UUID
+                newDocument.setUid(UUID.randomUUID());
+                //дополнительная информация
+                newDocument.setDescription(request.getDescription());
+                entityManager.persist(newDocument);
+                entityManager.flush();
+                return newDocument.getId();
+            } else return null;
+        } else return null;
+    }
 
-
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean deleteSite (String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(20L,"250") && securityRepositoryJPA.isItAllMyMastersDocuments("sites",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(20L,"251") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sites",delNumbers)))
+        {
+            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            stringQuery = "Update sites p" +
+                    " set is_archive=true " +
+                    " where p.id in ("+delNumbers+")";
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+            return true;
+        } else return false;
+    }
 
 
 

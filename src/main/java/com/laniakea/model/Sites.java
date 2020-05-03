@@ -1,11 +1,13 @@
 package com.laniakea.model;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name="sites")
@@ -43,9 +45,10 @@ public class Sites {
     @JsonDeserialize(using = com.laniakea.util.JSONDeserialize.class)
     private Timestamp date_time_changed;
 
-    @Column(name = "uid")
-    @Size(max = 36)
-    private String uid; //uid типа a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11, не используется сейчас
+//    @Column(name = "uid")
+//    @Size(max = 36)
+    @Column(name="uid", columnDefinition = "UUID")
+    private UUID uid; //uid типа a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11, не используется сейчас
 
     @Column(name = "name")
     @Size(max = 128)
@@ -125,10 +128,10 @@ public class Sites {
     }
 
     public String getUid() {
-        return uid;
+        return uid.toString();
     }
 
-    public void setUid(String uid) {
+    public void setUid(UUID uid) {
         this.uid = uid;
     }
 

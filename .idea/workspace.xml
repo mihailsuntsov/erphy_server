@@ -9,27 +9,33 @@
     <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CompaniesController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CompanyForm.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CompaniesJSON.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Companies.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Companies.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CompanyRepositoryJPA.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/CagentCategories.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/CagentCategories.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Documents.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Documents.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/AcceptanceRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/AcceptanceRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/PricesRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/PricesRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/RemainsRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/RemainsRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SpravSysEdizmJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SpravSysEdizmJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CompaniesController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CompanyForm.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CompaniesJSON.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Companies.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/model/Companies.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CompanyRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/CagentCategories.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/model/CagentCategories.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Documents.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/model/Documents.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/AcceptanceRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/AcceptanceRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/PricesRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/PricesRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/RemainsRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/RemainsRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SpravSysEdizmJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SpravSysEdizmJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserRepositoryJPA.class" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
@@ -80,7 +86,80 @@
     <favorites_list name="laniakea_crm" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="459">
+              <caret line="27" column="5" selection-start-line="27" selection-start-column="5" selection-end-line="27" selection-end-column="5" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="10030">
+              <caret line="609" selection-start-line="609" selection-end-line="629" selection-end-column="5" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="5134">
+              <caret line="312" column="28" selection-start-line="311" selection-start-column="24" selection-end-line="312" selection-end-column="28" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="80">
+              <caret line="98" column="26" lean-forward="true" selection-start-line="98" selection-start-column="26" selection-end-line="98" selection-end-column="26" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-59">
+              <caret line="57" column="68" selection-start-line="57" selection-start-column="68" selection-end-line="57" selection-end-column="68" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1632">
+              <caret line="136" selection-start-line="136" selection-end-line="136" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3162">
+              <caret line="199" selection-start-line="199" selection-end-line="208" selection-end-column="5" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -95,10 +174,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>doEstimateQuantity</find>
-      <find>case</find>
-      <find>tproduct_remains</find>
-      <find>department_iddepartment_id</find>
       <find>assemblySetDepartmentQuantity</find>
       <find>CASE</find>
       <find>mq</find>
@@ -125,6 +200,10 @@
       <find>getSpravSysCurrency</find>
       <find>api/auth/updateCompany</find>
       <find>insertCompany</find>
+      <find>emf</find>
+      <find>delete fr</find>
+      <find>delete</find>
+      <find>storePreparation</find>
     </findStrings>
     <dirStrings>
       <dir>C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\message\response\Sprav</dir>
@@ -141,7 +220,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PricesForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/PricesController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductsForm.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductsJSON.java" />
@@ -161,16 +239,13 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SitesSON.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesSON.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/RemainsController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesTableJSON.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesJSON.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysCurrency.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysCurrencyController.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.java" />
@@ -192,6 +267,10 @@
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java" />
       </list>
     </option>
   </component>
@@ -244,6 +323,7 @@
     </navigator>
     <panes>
       <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -293,44 +373,6 @@
               <item name="main" type="462c0819:PsiDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="laniakea" type="462c0819:PsiDirectoryNode" />
-              <item name="controller" type="462c0819:PsiDirectoryNode" />
-              <item name="Sprav" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="response" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
-              <item name="model" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
               <item name="repository" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -344,30 +386,19 @@
             </path>
             <path>
               <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="laniakea" type="462c0819:PsiDirectoryNode" />
-              <item name="service" type="462c0819:PsiDirectoryNode" />
-              <item name="company" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
               <item name="Scratches and Consoles" type="1a2a3e82:ScratchProjectViewPane$MyProjectNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="DatabaseDriversLRU" value="postgresql" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1587761278511" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1588249334782" />
     <property name="database.console.LAST_STATE" value="false" />
     <property name="last.edited.regexp" value="Sample Text" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -791,7 +822,8 @@
       <workItem from="1586464919853" duration="795000" />
       <workItem from="1587247448764" duration="43722000" />
       <workItem from="1587709602969" duration="223000" />
-      <workItem from="1587722155878" duration="10791000" />
+      <workItem from="1587722155878" duration="21494000" />
+      <workItem from="1588490766763" duration="1722000" />
     </task>
     <task id="LOCAL-00001" summary="Функционал &quot;Цены&quot; готов, перед правами">
       <created>1584708726526</created>
@@ -863,11 +895,18 @@
       <option name="project" value="LOCAL" />
       <updated>1587761161814</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Убрал лишние импорты">
+      <created>1587762289373</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1587762289373</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2328943000" />
+    <option name="totallyTimeSpent" value="2341368000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -880,8 +919,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="2575" height="1415" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17097415" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.17256461" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -891,7 +931,7 @@
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" weight="0.3491816" />
+      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" visible="true" weight="0.28059235" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.18418202" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -1023,7 +1063,8 @@
     <MESSAGE value="Товарные остатки переделаны полностью + исправлены ошибки" />
     <MESSAGE value="Отдаёт тестовые данные по сайту. Перед созданием Сайты" />
     <MESSAGE value="В Предприятие добавлены валюты" />
-    <option name="LAST_COMMIT_MESSAGE" value="В Предприятие добавлены валюты" />
+    <MESSAGE value="Убрал лишние импорты" />
+    <option name="LAST_COMMIT_MESSAGE" value="Убрал лишние импорты" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
@@ -1069,119 +1110,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentsTableJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PostingJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="3" column="13" selection-start-line="3" selection-start-column="13" selection-end-line="3" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesTableJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="5" column="13" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FileCategoriesTableJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="51">
-          <caret line="4" column="13" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ClientJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysBarcodeJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysEdizmJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="10" column="32" lean-forward="true" selection-start-line="10" selection-start-column="32" selection-end-line="10" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysWriteoffController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="18" column="35" lean-forward="true" selection-start-line="18" selection-start-column="35" selection-end-line="18" selection-end-column="35" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysWriteoffJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="13" selection-start-line="2" selection-start-column="13" selection-end-line="2" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="578">
-          <caret line="34" column="41" lean-forward="true" selection-start-line="34" selection-start-column="41" selection-end-line="34" selection-end-column="41" />
-          <folding>
-            <element signature="e#560#561#0" expanded="true" />
-            <element signature="e#593#594#0" expanded="true" />
-            <element signature="e#631#632#0" expanded="true" />
-            <element signature="e#667#668#0" expanded="true" />
-            <element signature="e#706#707#0" expanded="true" />
-            <element signature="e#745#746#0" expanded="true" />
-            <element signature="e#797#798#0" expanded="true" />
-            <element signature="e#845#846#0" expanded="true" />
-            <element signature="e#886#887#0" expanded="true" />
-            <element signature="e#927#928#0" expanded="true" />
-            <element signature="e#983#984#0" expanded="true" />
-            <element signature="e#1035#1036#0" expanded="true" />
-            <element signature="e#1074#1075#0" expanded="true" />
-            <element signature="e#1113#1114#0" expanded="true" />
-            <element signature="e#1165#1166#0" expanded="true" />
-            <element signature="e#1213#1214#0" expanded="true" />
-            <element signature="e#1257#1258#0" expanded="true" />
-            <element signature="e#1301#1302#0" expanded="true" />
-            <element signature="e#1363#1364#0" expanded="true" />
-            <element signature="e#1421#1422#0" expanded="true" />
-            <element signature="e#1442#1443#0" expanded="true" />
-            <element signature="e#1485#1486#0" expanded="true" />
-            <element signature="e#1546#1547#0" expanded="true" />
-            <element signature="e#1602#1603#0" expanded="true" />
-            <element signature="e#1471#1472#0" expanded="true" />
-            <element signature="e#1521#1522#0" expanded="true" />
-            <element signature="e#1708#1709#0" expanded="true" />
-            <element signature="e#1751#1752#0" expanded="true" />
-            <element signature="e#1811#1812#0" expanded="true" />
-            <element signature="e#1867#1868#0" expanded="true" />
-            <element signature="e#1910#1911#0" expanded="true" />
-            <element signature="e#1952#1953#0" expanded="true" />
-            <element signature="e#2011#2012#0" expanded="true" />
-            <element signature="e#2065#2066#0" expanded="true" />
-            <element signature="e#2110#2111#0" expanded="true" />
-            <element signature="e#2155#2156#0" expanded="true" />
-            <element signature="e#2219#2220#0" expanded="true" />
-            <element signature="e#2279#2280#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysCurrencyController.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="127">
@@ -1189,13 +1117,6 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="55" column="5" selection-start-line="46" selection-start-column="4" selection-end-line="55" selection-end-column="5" />
         </state>
       </provider>
     </entry>
@@ -1263,13 +1184,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2278">
-          <caret line="146" column="29" selection-start-line="146" selection-start-column="16" selection-end-line="146" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ClientRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -1290,13 +1204,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" selection-start-line="10" selection-end-line="10" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/FileRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="374">
@@ -1304,13 +1211,6 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="24" column="13" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
         </state>
       </provider>
     </entry>
@@ -1344,16 +1244,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="20" column="13" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="85">
@@ -1375,26 +1265,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="272">
           <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" selection-start-line="7" selection-end-line="7" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3485">
-          <caret line="205" column="65" lean-forward="true" selection-start-line="205" selection-start-column="65" selection-end-line="205" selection-end-column="65" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -1443,16 +1313,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="323">
           <caret line="19" selection-start-line="19" selection-end-line="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="408">
-          <caret line="24" column="13" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1544,6 +1404,153 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" column="13" selection-start-line="9" selection-start-column="13" selection-end-line="9" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="331">
+          <caret line="49" lean-forward="true" selection-start-line="49" selection-end-line="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" selection-start-line="27" selection-end-line="28" selection-end-column="37" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="229">
+          <caret line="389" column="23" selection-start-line="389" selection-start-column="17" selection-end-line="389" selection-end-column="23" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" column="13" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/RemainsController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-482">
+          <caret line="38" column="15" selection-start-line="38" selection-start-column="15" selection-end-line="38" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Writeoff.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/AcceptanceController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="663">
+          <caret line="159" column="4" lean-forward="true" selection-start-line="159" selection-start-column="4" selection-end-line="168" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductGroupFieldsController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="281">
+          <caret line="82" selection-start-line="82" selection-end-line="92" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="1015" selection-start-line="1015" selection-end-line="1040" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/message/request/SignUpForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" column="13" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="27" column="5" selection-start-line="27" selection-start-column="5" selection-end-line="27" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="10030">
+          <caret line="609" selection-start-line="609" selection-end-line="629" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5134">
+          <caret line="312" column="28" selection-start-line="311" selection-start-column="24" selection-end-line="312" selection-end-column="28" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1632">
+          <caret line="136" selection-start-line="136" selection-end-line="136" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3162">
+          <caret line="199" selection-start-line="199" selection-end-line="208" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="80">
+          <caret line="98" column="26" lean-forward="true" selection-start-line="98" selection-start-column="26" selection-end-line="98" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-59">
+          <caret line="57" column="68" selection-start-line="57" selection-start-column="68" selection-end-line="57" selection-end-column="68" />
         </state>
       </provider>
     </entry>

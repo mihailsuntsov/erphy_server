@@ -1,5 +1,7 @@
 package com.laniakea.controller;
+import com.laniakea.message.request.AcceptanceForm;
 import com.laniakea.message.request.SearchForm;
+import com.laniakea.message.request.SignUpForm;
 import com.laniakea.message.request.UniversalForm;
 import com.laniakea.message.response.SitesJSON;
 import com.laniakea.message.response.SitesTableJSON;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.text.ParseException;
 
 @Controller
 public class SitesController {
@@ -115,6 +118,8 @@ public class SitesController {
         return responseEntity;
     }
 
+
+
     @PostMapping("/api/auth/getSiteValuesById")
     public ResponseEntity<?> getSiteValuesById(@RequestBody UniversalForm request) {
         SitesJSON response;
@@ -122,8 +127,36 @@ public class SitesController {
         response=sitesRepository.getSiteValuesById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/api/auth/insertSite")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> insertSite(@RequestBody SitesJSON request){
+        Long newDocument = sitesRepository.insertSite(request);
+        if(newDocument!=null && newDocument>0){
+            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+        }
+    }
+
     //get user agent
     private String getUserAgent() {
         return request.getHeader("Referer");
     }
+
+
+    @PostMapping("/api/auth/deleteSite")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> deleteSite(@RequestBody SignUpForm request) {
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        if(sitesRepository.deleteSite(checked)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+
+
 }

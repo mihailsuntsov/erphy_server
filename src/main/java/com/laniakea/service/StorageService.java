@@ -55,6 +55,7 @@ public class StorageService {
     private MultipartFile file;         //сам файл
     private Path UPLOADED_FOLDER;       //путь загрузки файла
     private Path UPLOADED_THUMBS_FOLDER;//путь для превьюшек
+    private Path UPLOADED_FOLDER_SITES; //путь загрузки файлов сайта
     private String originalFilename;    //оригинальное имя файла
     private String fileExtention;       //расширение
     private String generatedFileName;   //сгенерированное имя файла, БЕЗ расширения (нужно для искл-ния дублирования имен файлов, под ним файл сохраняется на диске, а originalFilename записывается в БД)
@@ -87,6 +88,7 @@ public class StorageService {
             String THUMBS_FOLDER = "thumbs//";
             this.UPLOADED_FOLDER= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR);
             this.UPLOADED_THUMBS_FOLDER= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR + THUMBS_FOLDER);
+            this.UPLOADED_FOLDER_SITES= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR);
             // в итоге получается путь для файла вида /usr/dokio/files/133/1/2019
             // год нужен чтобы не скапливалось много файлов в одной папке
             this.file=file;
