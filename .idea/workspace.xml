@@ -6,834 +6,7 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/CorsMapping.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/CorsSettings.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentCategoriesForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/FileCategoriesForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/LoginForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductCategoriesForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductCustomFieldsSaveForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductGroupsForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentProductForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/UserForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/UserGroupForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/UserPermForm.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsListJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/FilesPostingJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/IsItMy_JSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/JwtResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ProductsListJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/RemainsJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ResponseMessage.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ShipmentJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/SiteFilesList.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysBarcodeJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysMarkableGroupJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysNdsJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysPPRJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysTimeZonesJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysWriteoffJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/DocumentsMenu.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductCagentsKey.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductFieldsKey.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Role.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/RoleName.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Shipment.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysBarcode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysChequeTypes.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysEdizmTypes.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysKassaOperations.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysMarkableGroup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysNds.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysOPF.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysOPFJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysPPR.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysPriceRole.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysPriceRoleJSON.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravSysTradingEquipment.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/UserDepartment.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/util/JSONDeserialize.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/util/JSONSerializer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/AppInit.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsMapping.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/PersistenceConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/SpringSecurityInitializer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/WebConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/config/WebSecurityConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/AcceptanceController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/AuthRestAPIs.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CagentsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/ClientController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/DepartmentsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/FilesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Hello.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/PostingController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/PricesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/ProductGroupFieldsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/ProductGroupsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/ProductsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/RemainsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/SecurityController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/SitesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysBarcodeController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysCurrencyController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysEdizmController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysMarkableGroupController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysNdsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysOPFController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysPPRController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysPriceRoleController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysTimeZonesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravSysWriteoffController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/Sprav/SpravTypePricesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/TestRestAPIs.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/TradeResultsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/UploadController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/UserGroupController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/UsersController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/controller/WriteoffController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/AcceptanceForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/AcceptanceProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CagentCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CagentsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ClientForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/DepartmentForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/FileCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/FilesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/LoginForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/PostingForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/PostingProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/PricesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductCustomFieldsSaveForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductGroupFieldsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductGroupsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductHistoryForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/ProductsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/RemainsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/SearchForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/SignUpForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/Sprav/SpravSysEdizmForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/TradeResultsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/TypePricesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/UniversalForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/UserForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/UserGroupForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/UserPermForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/WriteoffForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/request/WriteoffProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/AcceptanceJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CagentCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CagentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CagentsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CagentsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ClientJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/DepartmentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FileCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesAcceptanceJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesPostingJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesProductImagesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/FilesWriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/IsItMy_JSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/IsItMy_Sprav_JSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/JwtResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PostingJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PriceTypesListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$11.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$12.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$13.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$14.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/PricesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductBarcodesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductBarcodesPrefixes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductCagentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductFieldValuesListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductGroupFieldJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductGroupFieldTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductGroupsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductGroupsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductGroupsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductHistoryJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ProductsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$11.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$12.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$13.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$14.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$15.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$16.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$17.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$18.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/RemainsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ResponseMessage.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/ShortInfoAboutProductJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/SitesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysBarcodeJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysEdizmJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysEdizmTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysMarkableGroupJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysNdsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysPPRJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysTimeZonesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/Sprav/SpravSysWriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/TradeResultsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/TradeResultsSumByPeriodJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/TradeResultsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/TradeResultsTableReportJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/TypePricesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UserGroupJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UserGroupListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UserGroupTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UsersJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UsersListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/UsersTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/message/response/WriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Acceptance.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/CagentCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Cagents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Client.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Companies.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Departments.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Documents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/DocumentsDirectories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/DocumentsMenu.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/FileCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Files.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/KassaOperations.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ManyToManyKeys/ProductCagents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ManyToManyKeys/ProductCagentsKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ManyToManyKeys/ProductFields.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ManyToManyKeys/ProductFieldsKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Permissions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Posting.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ProductCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ProductGroupFields.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/ProductGroups.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Products.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Role.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/RoleName.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/SellPositions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sessions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sites.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/DepartmentTypeprice.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysBarcode.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysChequeTypes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysCompaniesList.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysDepartmentsList.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysEdizm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysEdizmTypes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysKassaOperations.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysMarkableGroup.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysNds.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysOPF.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysOPFJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysPPR.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysPriceRole.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysPriceRoleJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravSysTradingEquipment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravTypePrices.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Sprav/SpravTypePricesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/TradeResults.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/TradingEquipment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/User.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/UserDepartment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/UserGroup.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/model/Writeoff.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/AcceptanceRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CagentRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/ClientRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/DepartmentRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/FileRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/PostingRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/PricesRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/ProductGroupFieldsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/ProductGroupRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/ProductsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/RemainsRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/RoleRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SecurityRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SiteRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SitesRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/SpravSysEdizmJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/UserRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/repository/WriteoffRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/security/jwt/JwtAuthEntryPoint.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/security/jwt/JwtAuthTokenFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/security/jwt/JwtProvider.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/security/services/UserDetailsServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/security/services/UserPrinciple.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/StorageService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/client/ClientService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/client/ClientServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/company/CompanyService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/company/CompanyServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/department/DepartmentService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/department/DepartmentServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/user/UserService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/service/user/UserServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/util/DateTimeService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/util/JSONDeserialize.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/laniakea/util/JSONSerializer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/pages/hello.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/pages/hello.jsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/hello.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/hello.jsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/index.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/index.jsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/AppInit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/AppInit.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsMapping.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/CorsSettings.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/PersistenceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/SpringSecurityInitializer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/WebConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/config/WebSecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/WebSecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/AcceptanceController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/AuthRestAPIs.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/CagentsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ClientController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/CompaniesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/DepartmentsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/FilesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Hello.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/PostingController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/PricesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductGroupFieldsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductGroupsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/ProductsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/RemainsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SecurityController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/SitesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysBarcodeController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysCurrencyController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysEdizmController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysMarkableGroupController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysNdsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysOPFController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysPPRController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysPriceRoleController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysTimeZonesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravSysWriteoffController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/Sprav/SpravTypePricesController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/TestRestAPIs.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/TradeResultsController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UploadController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UserGroupController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/UsersController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/controller/WriteoffController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/TestForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/AcceptanceForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/AcceptanceForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/AcceptanceProductForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/AcceptanceProductForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CagentCategoriesForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CagentsForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ClientForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ClientForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/CompanyForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CompanyForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/DepartmentForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/DepartmentForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/FileCategoriesForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/FilesForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/FilesForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/LoginForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PostingForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/PostingForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PostingProductForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/PostingProductForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/PricesForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/PricesForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductCategoriesForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductCustomFieldsSaveForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductGroupFieldsForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductGroupFieldsForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductGroupsForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductHistoryForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductHistoryForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/ProductsForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductsForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/RemainsForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/RemainsForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/SearchForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/SearchForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/SignUpForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/SignUpForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/Sprav/SpravSysEdizmForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/Sprav/SpravSysEdizmForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/TradeResultsForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/TradeResultsForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/TypePricesForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/TypePricesForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/UniversalForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/UniversalForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/UserForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/UserGroupForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/UserPermForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/WriteoffForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/WriteoffForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/request/WriteoffProductForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/WriteoffProductForm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/AcceptanceJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/AcceptanceJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentCategoriesTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentsJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentsListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CagentsTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsTableJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ClientJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ClientJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/CompaniesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/DepartmentsJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/DepartmentsJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FileCategoriesTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesAcceptanceJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/FilesJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesPostingJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesProductImagesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/FilesTableJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/FilesWriteoffJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/IsItMy_JSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/IsItMy_Sprav_JSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/JwtResponse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PostingJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/PostingJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PriceTypesListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/PricesTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductBarcodesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductBarcodesPrefixes.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductCagentsJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductCategoriesTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductFieldValuesListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductGroupFieldJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductGroupFieldTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductGroupsJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductGroupsListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductGroupsTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductHistoryJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductsJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ProductsJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductsListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ProductsTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/RemainsJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/RemainsTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ResponseMessage.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/ShortInfoAboutProductJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/SitesTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysBarcodeJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysCurrencyJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysEdizmJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysEdizmJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysEdizmTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysEdizmTableJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysMarkableGroupJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysNdsJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysPPRJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysTimeZonesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/Sprav/SpravSysWriteoffJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TradeResultsJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TradeResultsSumByPeriodJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TradeResultsTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TradeResultsTableReportJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/TypePricesTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UserGroupJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/UserGroupJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UserGroupListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UserGroupTableJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UsersJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/UsersJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UsersListJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/UsersTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/UsersTableJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/message/response/WriteoffJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/WriteoffJSON.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Acceptance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Acceptance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/CagentCategories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/CagentCategories.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Cagents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Cagents.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Client.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Companies.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Companies.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Departments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Departments.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Documents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Documents.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/DocumentsDirectories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/DocumentsDirectories.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/DocumentsMenu.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/FileCategories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/FileCategories.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Files.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Files.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/KassaOperations.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/KassaOperations.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductBarcodes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductBarcodes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductBarcodesKey.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductBarcodesKey.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductCagents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductCagents.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductCagentsKey.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductFields.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ManyToManyKeys/ProductFields.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ManyToManyKeys/ProductFieldsKey.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Permissions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Permissions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Posting.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Posting.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ProductCategories.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ProductCategories.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ProductGroupFields.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ProductGroupFields.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/ProductGroups.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/ProductGroups.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Products.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Products.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Role.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/RoleName.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/SellPositions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/SellPositions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sessions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sessions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sites.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sites.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/DepartmentTypeprice.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/DepartmentTypeprice.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysBarcode.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysChequeTypes.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysCompaniesList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysDepartmentsList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysEdizm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysEdizmTypes.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysKassaOperations.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysMarkableGroup.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysNds.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysOPF.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysOPFJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysPPR.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysPriceRole.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysPriceRoleJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravSysTradingEquipment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravTypePrices.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravTypePrices.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Sprav/SpravTypePricesJSON.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/TradeResults.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/TradeResults.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/TradingEquipment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/TradingEquipment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/User.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/UserDepartment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/UserGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/UserGroup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/model/Writeoff.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Writeoff.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CagentRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ClientRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DepartmentRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/FileRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupFieldsRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RoleRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SecurityRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/repository/_Permissions Id" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtAuthEntryPoint.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtAuthTokenFilter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtProvider.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/security/services/UserDetailsServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/security/services/UserPrinciple.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/TablePagesService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/department/DepartmentService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/department/DepartmentServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/user/UserService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/service/user/UserServiceImpl.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/util/DateTimeService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONDeserialize.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONSerializer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/AppInit.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsMapping.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/CorsSettings.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/PersistenceConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/SpringSecurityInitializer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/WebConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/config/WebSecurityConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/AcceptanceController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/AuthRestAPIs.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CagentsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/ClientController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/CompaniesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/DepartmentsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/FilesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Hello.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/PostingController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/PricesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/ProductGroupFieldsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/ProductGroupsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/ProductsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/RemainsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/SecurityController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/SitesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysBarcodeController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysCurrencyController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysEdizmController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysMarkableGroupController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysNdsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysOPFController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysPPRController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysPriceRoleController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysTimeZonesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravSysWriteoffController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/Sprav/SpravTypePricesController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/TestRestAPIs.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/TradeResultsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/UploadController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/UserGroupController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/UsersController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/controller/WriteoffController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/AcceptanceForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/AcceptanceProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CagentCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CagentsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ClientForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/CompanyForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/DepartmentForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/FileCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/FilesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/LoginForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/PostingForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/PostingProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/PricesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductCategoriesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductCustomFieldsSaveForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductGroupFieldsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductGroupsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductHistoryForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/ProductsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/RemainsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/SearchForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/SignUpForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/Sprav/SpravSysEdizmForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/TradeResultsForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/TypePricesForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/UniversalForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/UserForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/UserGroupForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/UserPermForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/WriteoffForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/request/WriteoffProductForm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/AcceptanceJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CagentCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CagentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CagentsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CagentsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ClientJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/CompaniesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/DepartmentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FileCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesAcceptanceJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesPostingJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesProductImagesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/FilesWriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/IsItMy_JSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/IsItMy_Sprav_JSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/JwtResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PostingJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PriceTypesListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$11.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$12.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$13.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$14.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/PricesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductBarcodesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductBarcodesPrefixes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductCagentsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductCategoriesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductFieldValuesListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductGroupFieldJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductGroupFieldTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductGroupsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductGroupsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductGroupsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductHistoryJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductsListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ProductsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$11.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$12.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$13.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$14.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$15.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$16.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$17.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$18.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/RemainsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ResponseMessage.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/ShortInfoAboutProductJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$10.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$4.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$5.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$6.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$7.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$8.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON$9.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/SitesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysBarcodeJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysCurrencyJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysEdizmJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysEdizmTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysMarkableGroupJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysNdsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysPPRJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysTimeZonesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/Sprav/SpravSysWriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/TradeResultsJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/TradeResultsSumByPeriodJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/TradeResultsTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/TradeResultsTableReportJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/TypePricesTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UserGroupJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UserGroupListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UserGroupTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UsersJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UsersListJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/UsersTableJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/message/response/WriteoffJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Acceptance.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/CagentCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Cagents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Client.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Companies.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Departments.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Documents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/DocumentsDirectories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/DocumentsMenu.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/FileCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Files.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/KassaOperations.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ManyToManyKeys/ProductCagents.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ManyToManyKeys/ProductCagentsKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ManyToManyKeys/ProductFields.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ManyToManyKeys/ProductFieldsKey.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Permissions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Posting.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ProductCategories.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ProductGroupFields.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/ProductGroups.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Products.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Role.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/RoleName.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/SellPositions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sessions.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sites.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/DepartmentTypeprice.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysBarcode.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysChequeTypes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysCompaniesList.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysDepartmentsList.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysEdizm.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysEdizmTypes.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysKassaOperations.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysMarkableGroup.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysNds.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysOPF.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysOPFJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysPPR.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysPriceRole.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysPriceRoleJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravSysTradingEquipment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravTypePrices.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Sprav/SpravTypePricesJSON.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/TradeResults.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/TradingEquipment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/User.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/UserDepartment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/UserGroup.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/model/Writeoff.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/AcceptanceRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CagentRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/ClientRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/CompanyRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/DepartmentRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/DocumentsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/FileRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/PostingRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/PricesRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/ProductGroupFieldsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/ProductGroupRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/ProductsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/RemainsRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/RoleRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SecurityRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SiteRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SitesRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/SpravSysEdizmJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TradeResultsRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/TypePricesRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserGroupRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/UserRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/repository/WriteoffRepositoryJPA.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/security/jwt/JwtAuthEntryPoint.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/security/jwt/JwtAuthTokenFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/security/jwt/JwtProvider.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/security/services/UserDetailsServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/security/services/UserPrinciple.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/StorageService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/client/ClientService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/client/ClientServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/company/CompanyService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/company/CompanyServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/department/DepartmentService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/department/DepartmentServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/user/UserService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/service/user/UserServiceImpl.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/util/DateTimeService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/util/JSONDeserialize.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/laniakea/util/JSONSerializer.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/hello.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/web/hello.jsp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/index.jsp" beforeDir="false" afterPath="$PROJECT_DIR$/web/index.jsp" afterDir="false" />
-    </list>
+    <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -884,7 +57,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductsRepositoryJPA.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="467">
@@ -892,6 +65,72 @@
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/web/hello.jsp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="56" selection-start-column="56" selection-end-column="56" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/web/index.jsp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="56" selection-start-column="56" selection-end-column="56" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/Documents.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="224">
+              <caret line="52" column="53" selection-start-line="52" selection-start-column="53" selection-end-line="52" selection-end-column="53" />
+              <folding>
+                <element signature="e#1709#1724#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/SpringSecurityInitializer.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="85">
+              <caret line="18" column="1" lean-forward="true" selection-start-line="18" selection-start-column="1" selection-end-line="18" selection-end-column="1" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysMarkableGroupController.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="85">
+              <caret line="27" column="13" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="367">
+              <caret line="236" column="21" lean-forward="true" selection-start-line="236" selection-start-column="21" selection-end-line="236" selection-end-column="21" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="232">
+              <caret line="142" column="79" lean-forward="true" selection-start-line="142" selection-start-column="79" selection-end-line="142" selection-end-column="79" />
             </state>
           </provider>
         </entry>
@@ -923,8 +162,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>childre</find>
-      <find>183</find>
       <find>product_quantity</find>
       <find>getProductPricesTable</find>
       <find>getShortInfoAboutProduct</find>
@@ -951,8 +188,10 @@
       <find>insert into products_history</find>
       <find>docName</find>
       <find>laniakea</find>
-      <find>products_history</find>
       <find>time zone</find>
+      <find>products_history</find>
+      <find>javax.validation</find>
+      <find>javax.servlet</find>
     </findStrings>
     <dirStrings>
       <dir>C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\message\response\Sprav</dir>
@@ -969,7 +208,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/TradeResults.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/TradingEquipment.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/User.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/UserDepartment.java" />
@@ -1020,6 +258,7 @@
         <option value="$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp" />
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java" />
       </list>
     </option>
   </component>
@@ -1355,7 +594,7 @@
     <property name="DatabaseDriversLRU" value="postgresql" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1596203259144" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1596203542315" />
     <property name="database.console.LAST_STATE" value="false" />
     <property name="last.edited.regexp" value="5/78/yui.txt" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -1786,7 +1025,7 @@
       <workItem from="1594220642912" duration="599000" />
       <workItem from="1594734778957" duration="8274000" />
       <workItem from="1594913986887" duration="21366000" />
-      <workItem from="1595422151265" duration="28153000" />
+      <workItem from="1595422151265" duration="28540000" />
     </task>
     <task id="LOCAL-00001" summary="Функционал &quot;Цены&quot; готов, перед правами">
       <created>1584708726526</created>
@@ -1865,11 +1104,18 @@
       <option name="project" value="LOCAL" />
       <updated>1587762289373</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="С лицензией2">
+      <created>1596203381276</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1596203381276</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2426154000" />
+    <option name="totallyTimeSpent" value="2426541000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1884,7 +1130,7 @@
     <frame x="-6" y="-6" width="1933" height="1053" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2064" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2064" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -1894,7 +1140,7 @@
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.89707476" />
-      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" visible="true" weight="0.23076923" />
+      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" weight="0.23076923" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.08573656" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -1903,8 +1149,8 @@
       <window_info anchor="bottom" id="Spring" order="8" weight="0.1603467" />
       <window_info anchor="bottom" id="Terminal" order="9" weight="0.28169015" />
       <window_info anchor="bottom" id="Docker" order="10" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.12426667" side_tool="true" weight="0.19176598" />
-      <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.4992" weight="0.21901792" />
+      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.5050667" side_tool="true" visible="true" weight="0.21885157" />
+      <window_info active="true" anchor="bottom" id="Messages" order="12" sideWeight="0.49493334" visible="true" weight="0.21885157" />
       <window_info anchor="bottom" id="Java Enterprise" order="13" weight="0.32936078" />
       <window_info anchor="bottom" id="Database Changes" order="14" weight="0.32936078" />
       <window_info anchor="bottom" id="Version Control" order="15" weight="0.13639906" />
@@ -2027,7 +1273,9 @@
     <MESSAGE value="Отдаёт тестовые данные по сайту. Перед созданием Сайты" />
     <MESSAGE value="В Предприятие добавлены валюты" />
     <MESSAGE value="Убрал лишние импорты" />
-    <option name="LAST_COMMIT_MESSAGE" value="Убрал лишние импорты" />
+    <MESSAGE value="С лицензией" />
+    <MESSAGE value="С лицензией2" />
+    <option name="LAST_COMMIT_MESSAGE" value="С лицензией2" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
@@ -2073,46 +1321,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/DocumentsRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2211#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/FileRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#39477#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/PostingRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#53956#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/PricesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#23812#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductGroupFieldsRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
@@ -2406,12 +1614,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/web/hello.jsp">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/web/index.jsp">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -2426,13 +1628,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="527">
           <caret line="64" selection-start-line="64" selection-end-line="64" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-170">
-          <caret line="26" column="21" selection-start-line="26" selection-start-column="21" selection-end-line="26" selection-end-column="21" />
         </state>
       </provider>
     </entry>
@@ -2512,6 +1707,58 @@
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/web/hello.jsp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="56" selection-start-column="56" selection-end-column="56" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/web/index.jsp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="56" selection-start-column="56" selection-end-column="56" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/Documents.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="224">
+          <caret line="52" column="53" selection-start-line="52" selection-start-column="53" selection-end-line="52" selection-end-column="53" />
+          <folding>
+            <element signature="e#1709#1724#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/SpringSecurityInitializer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="18" column="1" lean-forward="true" selection-start-line="18" selection-start-column="1" selection-end-line="18" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysMarkableGroupController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="27" column="13" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="367">
+          <caret line="236" column="21" lean-forward="true" selection-start-line="236" selection-start-column="21" selection-end-line="236" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="232">
+          <caret line="142" column="79" lean-forward="true" selection-start-line="142" selection-start-column="79" selection-end-line="142" selection-end-column="79" />
         </state>
       </provider>
     </entry>
