@@ -24,7 +24,6 @@ public class ShipmentProductForm {
     private Long edizm_id;
     private BigDecimal product_price;
     private BigDecimal product_sumprice;
-//    private BigDecimal product_netcost;
     private Long nds_id;
     private Long   price_type_id;
     private String price_type;

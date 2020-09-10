@@ -35,10 +35,10 @@ import java.nio.file.Paths;
 @Service
 @Repository
 public class StorageServiceSite extends StorageService{
-    @PersistenceContext
-    private EntityManager entityManager;
-    @Autowired
-    private EntityManagerFactory emf;
+//    @PersistenceContext
+//    private EntityManager entityManager;
+//    @Autowired
+//    private EntityManagerFactory emf;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired

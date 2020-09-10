@@ -142,7 +142,7 @@ public class ShipmentRepositoryJPA {
                 doc.setDepartment_id(Long.parseLong(          obj[8].toString()));
                 doc.setDepartment((String)                    obj[9]);
                 doc.setDoc_number(Long.parseLong(             obj[10].toString()));
-                doc.setShipment_date((String)(                 obj[11]));
+                doc.setShipment_date((String)(                obj[11]));
                 doc.setCompany((String)                       obj[12]);
                 doc.setDate_time_created((String)             obj[13]);
                 doc.setDate_time_changed((String)             obj[14]);
@@ -274,7 +274,7 @@ public class ShipmentRepositoryJPA {
         } else return null;
     }
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      CRUD      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -447,14 +447,14 @@ public class ShipmentRepositoryJPA {
                     }//удаление лишних строк
                     deleteShipmentProductTableExcessRows(productIds.length()>0?productIds:"0", request.getId());
 
-                    //если завершается приемка - запись в историю товара
+                    //если завершается отгрузка - запись в историю товара
                     if(request.isIs_completed()){
                         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
                         for (ShipmentProductForm row : request.getShipmentProductTable()) {
                             if (!addShipmentProductHistory(row, request, myMasterId)) {//         //метод 3
                                 break;
                             } else {//если запись в историю изменений товара прошла успешно
-                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
+                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении (складе) в отдельной таблице
                                     break;
                                 }
                             }
@@ -555,7 +555,6 @@ public class ShipmentRepositoryJPA {
             return false;
         }
     }
-
     @SuppressWarnings("Duplicates")
     private Boolean addShipmentProductHistory(ShipmentProductForm row, ShipmentForm request , Long masterId) {
         String stringQuery;
@@ -604,8 +603,6 @@ public class ShipmentRepositoryJPA {
             return false;
         }
     }
-
-
     @SuppressWarnings("Duplicates")
     private Boolean setProductQuantity(ShipmentProductForm row, ShipmentForm request , Long masterId) {
         String stringQuery;
@@ -639,7 +636,6 @@ public class ShipmentRepositoryJPA {
             return false;
         }
     }
-
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean deleteShipment (String delNumbers) {
@@ -839,7 +835,7 @@ public class ShipmentRepositoryJPA {
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
     public List<FilesShipmentJSON> getListOfShipmentFiles(Long shipmentId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(21L, "260,261"))//Просмотр документов
+        if(securityRepositoryJPA.userHasPermissions_OR(21L, "260,261,262,263"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             boolean needToSetParameter_MyDepthsIds = false;

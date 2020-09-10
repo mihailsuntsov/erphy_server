@@ -878,7 +878,7 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
     public List<FilesAcceptanceJSON> getListOfAcceptanceFiles(Long acceptanceId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189"))//Просмотр документов
+        if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();

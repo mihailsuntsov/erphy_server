@@ -15,7 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.service;
 
 import com.dokio.repository.FileRepositoryJPA;
-import com.dokio.repository.ProductsRepositoryJPA;
+//import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+//import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.awt.*;
@@ -49,14 +49,14 @@ public class StorageService {
 
     @PersistenceContext
     private EntityManager entityManager;
-    @Autowired
-    private EntityManagerFactory emf;
+//    @Autowired
+//    private EntityManagerFactory emf;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userRepository;
-    @Autowired
-    private ProductsRepositoryJPA productsRepository;
+//    @Autowired
+//    private ProductsRepositoryJPA productsRepository;
     @Autowired
     private FileRepositoryJPA frj;
 

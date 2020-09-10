@@ -810,7 +810,7 @@ private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long dep
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
     public List<FilesPostingJSON> getListOfPostingFiles(Long postingId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(16L, "207,208"))//Просмотр документов
+        if(securityRepositoryJPA.userHasPermissions_OR(16L, "207,208,209,210"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             boolean needToSetParameter_MyDepthsIds = false;

@@ -6,7 +6,114 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="" />
+    <list default="true" id="d7f96fa7-716b-42f9-9fe7-e6101f907963" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/CustomersOrdersController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravStatusDockController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCitiesController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCountriesController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysRegionsController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsContactsForm.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsPaymentAccountsForm.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersForm.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersProductForm.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CustomersOrdersJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/IdAndName.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravStatusDockJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravStatusListJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysCitiesJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysCountriesJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysRegionsJSON.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/CustomersOrders.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Cities.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Countries.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Regions.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravStatusDocks.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/CustomersOrdersRepositoryJPA.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/SpravStatusDockRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/config/PersistenceConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/config/PersistenceConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/config/WebConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/config/WebConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/controller/CagentsController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/controller/CagentsController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/controller/ClientController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/controller/Sprav/SpravSysOPFController.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/controller/Sprav/SpravSysOPFController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/CagentsForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/CagentsForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/ClientForm.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/SearchForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/SearchForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/ShipmentProductForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/request/ShipmentProductForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/response/CagentsJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/response/CagentsJSON.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/response/CagentsListJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/response/CagentsTableJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/message/response/ClientJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/model/Cagents.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/model/Cagents.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/model/Client.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/AcceptanceRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/AcceptanceRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/CagentRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/CagentRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/ClientRepositoryJPA.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/PostingRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/PostingRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/ShipmentRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/ShipmentRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/WriteoffRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/WriteoffRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/StorageService.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/StorageService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/StorageServiceSite.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/StorageServiceSite.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/client/ClientService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/service/client/ClientServiceImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/util/DateTimeService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/hibernate.properties" beforeDir="false" afterPath="$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/hibernate.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/config/WebConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/config/WebConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/controller/CagentsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/CagentsController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/controller/ClientController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysOPFController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysOPFController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ClientForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/SearchForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/SearchForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentProductForm.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentProductForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsJSON.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsListJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/CagentsListJSON.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsTableJSON.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsTableJSON.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/message/response/ClientJSON.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/model/Cagents.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/model/Cagents.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/model/Client.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/AcceptanceRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/AcceptanceRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/CagentRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/CagentRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/ClientRepositoryJPA.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/PostingRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/PostingRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/ShipmentRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/ShipmentRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/WriteoffRepositoryJPA.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/WriteoffRepositoryJPA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/repository/_Permissions Id" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/repository/_Permissions Id" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/service/StorageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/service/StorageService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/service/StorageServiceSite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/service/StorageServiceSite.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/service/client/ClientService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dokio/message/request/Sprav/SpravStatusDockForm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/service/client/ClientServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dokio/util/DateTimeService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/hibernate.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/hibernate.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/config/PersistenceConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/config/PersistenceConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/config/WebConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/config/WebConfig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/controller/CagentsController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/controller/CagentsController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/controller/ClientController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/controller/Sprav/SpravSysOPFController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/controller/Sprav/SpravSysOPFController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/request/CagentsForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/message/request/CagentsForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/request/ClientForm.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/request/SearchForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/message/request/SearchForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/request/ShipmentProductForm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/message/request/ShipmentProductForm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/response/CagentsJSON.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/message/response/CagentsJSON.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/response/CagentsListJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/response/CagentsTableJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/message/response/ClientJSON.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/model/Cagents.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/model/Cagents.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/model/Client.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/AcceptanceRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/repository/AcceptanceRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/CagentRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/repository/CagentRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/ClientRepositoryJPA.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/PostingRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/repository/PostingRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/ShipmentRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/repository/ShipmentRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/repository/WriteoffRepositoryJPA.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/repository/WriteoffRepositoryJPA.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/service/StorageService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/service/StorageService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/service/StorageServiceSite.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dokio/service/StorageServiceSite.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/service/client/ClientService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/service/client/ClientServiceImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dokio/util/DateTimeService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/hibernate.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/hibernate.properties" afterDir="false" />
+    </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -58,43 +165,70 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductsRepositoryJPA.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/CagentRepositoryJPA.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="467">
-              <caret line="596" column="79" selection-start-line="596" selection-start-column="71" selection-end-line="596" selection-end-column="79" />
+            <state relative-caret-position="300">
+              <caret line="43" column="48" lean-forward="true" selection-start-line="43" selection-start-column="48" selection-end-line="43" selection-end-column="48" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="method#getCagentsTable#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentsSize#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentsPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentsContacts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentValues#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#updateCagents#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#deleteCagentPaymentAccountsExcessRows#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#deleteCagentContactsExcessRows#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#insertCagentContacts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#updateCagentContacts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#insertCagentPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#updateCagentPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#updateCagentBaseFields#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#insertCagent#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#insertCagentBaseFields#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#deleteCagents#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentsList#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCategoriesSetBySetOfCategoriesId#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentsCategoriesIdsByCagentId#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCagentCategoriesTrees#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#searchCagentCategory#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getCategoriesRootIds#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getRootCagentCategories#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#getChildrensCagentCategories#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#insertCagentCategory#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#updateCagentCategory#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#deleteCagentCategory#0;class#CagentRepositoryJPA#0" />
+                <element signature="method#saveChangeCategoriesOrder#0;class#CagentRepositoryJPA#0" />
+                <element signature="e#81187#81902#0" />
+                <element signature="method#addSetOfCagentCategories#0;class#CagentRepositoryJPA#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/web/hello.jsp">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/CorsSettings.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="56" selection-start-column="56" selection-end-column="56" />
+            <state relative-caret-position="102">
+              <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="68">
+              <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/web/index.jsp">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/AppInit.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="56" selection-start-column="56" selection-end-column="56" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/Documents.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="224">
-              <caret line="52" column="53" selection-start-line="52" selection-start-column="53" selection-end-line="52" selection-end-column="53" />
-              <folding>
-                <element signature="e#1709#1724#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="85">
+              <caret line="25" column="13" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
             </state>
           </provider>
         </entry>
@@ -102,47 +236,74 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/SpringSecurityInitializer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="18" column="1" lean-forward="true" selection-start-line="18" selection-start-column="1" selection-end-line="18" selection-end-column="1" />
+            <state relative-caret-position="68">
+              <caret line="17" column="38" selection-start-line="17" selection-start-column="13" selection-end-line="17" selection-end-column="38" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysMarkableGroupController.java">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsPaymentAccountsForm.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="85">
-              <caret line="27" column="13" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="13" />
+            <state relative-caret-position="510">
+              <caret line="55" column="7" lean-forward="true" selection-start-line="55" selection-start-column="7" selection-end-line="59" selection-end-column="7" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/pom.xml">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsContactsForm.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="367">
-              <caret line="236" column="21" lean-forward="true" selection-start-line="236" selection-start-column="21" selection-end-line="236" selection-end-column="21" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="232">
-              <caret line="142" column="79" lean-forward="true" selection-start-line="142" selection-start-column="79" selection-end-line="142" selection-end-column="79" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/WriteoffRepositoryJPA.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="346">
-              <caret line="88" column="81" lean-forward="true" selection-start-line="88" selection-start-column="81" selection-end-line="88" selection-end-column="81" />
+            <state relative-caret-position="901">
+              <caret line="53" selection-start-line="53" selection-start-column="2" selection-end-line="59" selection-end-column="7" />
               <folding>
-                <element signature="imports" expanded="true" />
+                <element signature="e#0#2706#0" expanded="true" />
+                <element signature="e#1221#1222#0" expanded="true" />
+                <element signature="e#1246#1247#0" expanded="true" />
+                <element signature="e#1280#1281#0" expanded="true" />
+                <element signature="e#1308#1309#0" expanded="true" />
+                <element signature="e#1342#1343#0" expanded="true" />
+                <element signature="e#1374#1375#0" expanded="true" />
+                <element signature="e#1422#1423#0" expanded="true" />
+                <element signature="e#1464#1465#0" expanded="true" />
+                <element signature="e#1499#1500#0" expanded="true" />
+                <element signature="e#1532#1533#0" expanded="true" />
+                <element signature="e#1582#1583#0" expanded="true" />
+                <element signature="e#1626#1627#0" expanded="true" />
+                <element signature="e#1812#1813#0" expanded="true" />
+                <element signature="e#1838#1839#0" expanded="true" />
+                <element signature="e#1876#1877#0" expanded="true" />
+                <element signature="e#1906#1907#0" expanded="true" />
+                <element signature="e#1941#1942#0" expanded="true" />
+                <element signature="e#1972#1973#0" expanded="true" />
+                <element signature="e#2020#2021#0" expanded="true" />
+                <element signature="e#2060#2061#0" expanded="true" />
+                <element signature="e#2096#2097#0" expanded="true" />
+                <element signature="e#2128#2129#0" expanded="true" />
+                <element signature="e#2178#2179#0" expanded="true" />
+                <element signature="e#2220#2221#0" expanded="true" />
+                <element signature="e#2252#2253#0" expanded="true" />
+                <element signature="e#2280#2281#0" expanded="true" />
+                <element signature="e#2322#2323#0" expanded="true" />
+                <element signature="e#2356#2357#0" expanded="true" />
+                <element signature="e#2393#2394#0" expanded="true" />
+                <element signature="e#2426#2427#0" expanded="true" />
+                <element signature="e#2478#2479#0" expanded="true" />
+                <element signature="e#2522#2523#0" expanded="true" />
+                <element signature="e#2562#2563#0" expanded="true" />
+                <element signature="e#2597#2598#0" expanded="true" />
+                <element signature="e#2654#2655#0" expanded="true" />
+                <element signature="e#2702#2703#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/CagentsController.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="27">
+              <caret line="240" column="9" lean-forward="true" selection-start-line="240" selection-start-column="9" selection-end-line="240" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -162,36 +323,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>product_quantity</find>
-      <find>getProductPricesTable</find>
-      <find>getShortInfoAboutProduct</find>
-      <find>product_prices_history</find>
-      <find>shortinfo</find>
-      <find>values</find>
-      <find>номер</find>
-      <find>nds</find>
-      <find>AcceptanceProductForm</find>
-      <find>save</find>
-      <find>newDocument.setCagent</find>
-      <find>cagent</find>
-      <find>getShipmentProductTable</find>
-      <find>updateShipment</find>
-      <find>cagen</find>
-      <find>add</find>
-      <find>getacceptanceProductTable</find>
-      <find>17</find>
-      <find>last_operation_price</find>
-      <find>1721</find>
-      <find>getProductHistoryTableReport</find>
-      <find>getProductHistoryTable</find>
-      <find>dockTypesIds</find>
-      <find>insert into products_history</find>
-      <find>docName</find>
-      <find>laniakea</find>
-      <find>time zone</find>
-      <find>products_history</find>
-      <find>javax.validation</find>
-      <find>javax.servlet</find>
+      <find>getMyId</find>
+      <find>userService</find>
+      <find>to_date</find>
+      <find>Jr_ip_reg_date</find>
+      <find>getmyid</find>
+      <find>getId</find>
+      <find>getCategoriesSetBySetOfCategoriesId</find>
+      <find>!categories.isEmpty</find>
+      <find>traderesults</find>
+      <find>insert</find>
+      <find>rollback</find>
+      <find>emgr</find>
+      <find>jr_status_id</find>
+      <find>jr_city_id</find>
+      <find>jr_region_id</find>
+      <find>region</find>
+      <find>jdbc</find>
+      <find>sprav_status_countries</find>
+      <find>kpp</find>
+      <find>famil</find>
+      <find>insertCagentC</find>
+      <find>getCagentsPaymentAccounts</find>
+      <find>Error when requesting getCagentsPaymentAccounts</find>
+      <find>a.</find>
+      <find>getCagent</find>
+      <find>cagents_contacts</find>
+      <find>delete</find>
+      <find>not in</find>
+      <find>111111</find>
+      <find>ids</find>
     </findStrings>
     <dirStrings>
       <dir>C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\message\response\Sprav</dir>
@@ -208,57 +369,57 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/TradingEquipment.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/User.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/UserDepartment.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/UserGroup.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/model/Writeoff.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/AcceptanceRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CagentRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ClientRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/CompanyRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DepartmentRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/DocumentsRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/FileRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PostingRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/PricesRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupFieldsRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductGroupRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ProductsRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RemainsRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/RoleRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SecurityRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/ShipmentRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SiteRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SitesRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/SpravSysEdizmJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TradeResultsRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/TypePricesRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserGroupRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepository.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/UserRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/repository/WriteoffRepositoryJPA.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtAuthEntryPoint.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtAuthTokenFilter.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/security/jwt/JwtProvider.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/security/services/UserDetailsServiceImpl.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/security/services/UserPrinciple.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientService.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/client/ClientServiceImpl.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyService.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/company/CompanyServiceImpl.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/department/DepartmentService.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/department/DepartmentServiceImpl.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageService.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/service/StorageServiceSite.java" />
-        <option value="$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONDeserialize.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/laniakea/util/JSONSerializer.java" />
         <option value="$PROJECT_DIR$/web/hello.jsp" />
         <option value="$PROJECT_DIR$/web/index.jsp" />
         <option value="$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp" />
         <option value="$PROJECT_DIR$/pom.xml" />
-        <option value="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" />
         <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/Sprav/SpravStatusDockForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravStatusDockJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/Sprav/SpravStatusDocks.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Cities.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Regions.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/Geo/Countries.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysCountriesJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysRegions.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysRegionsJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravSysCitiesJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/SearchForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentProductForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/_Permissions Id" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/CustomersOrdersController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/util/Pagination.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/SpravStatusListJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/SpravStatusDockRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravStatusDockController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersProductForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CustomersOrdersJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/CustomersOrders.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/WriteoffRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/PostingRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/AcceptanceRepository.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsTableJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/CagentsListJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/CustomersOrdersRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/ShipmentRepositoryJPA.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/CagentsController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/config/WebSecurityConfig.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/IdAndName.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCountriesController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysRegionsController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCitiesController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/model/Cagents.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsJSON.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysOPFController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsPaymentAccountsForm.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsContactsForm.java" />
+        <option value="$PROJECT_DIR$/src/main/resources/hibernate.properties" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/controller/ClientController.java" />
+        <option value="$PROJECT_DIR$/src/main/java/com/dokio/repository/CagentRepositoryJPA.java" />
       </list>
     </option>
   </component>
@@ -267,7 +428,7 @@
     <option name="FILTER_WARNINGS" value="false" />
     <option name="FILTER_INFO" value="false" />
     <option name="FILTER_DEBUG" value="false" />
-    <option name="CUSTOM_FILTER" />
+    <option name="CUSTOM_FILTER" value="" />
   </component>
   <component name="MavenProjectNavigator">
     <treeState>
@@ -297,10 +458,10 @@
     </treeState>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-12" />
-    <option name="y" value="-12" />
-    <option name="width" value="3866" />
-    <option name="height" value="2106" />
+    <option name="x" value="2424" />
+    <option name="y" value="-14" />
+    <option name="width" value="484" />
+    <option name="height" value="274" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
@@ -310,264 +471,13 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
               <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
               <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="config" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="controller" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="controller" type="462c0819:PsiDirectoryNode" />
-              <item name="Sprav" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="request" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="request" type="462c0819:PsiDirectoryNode" />
-              <item name="Sprav" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="response" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="message" type="462c0819:PsiDirectoryNode" />
-              <item name="response" type="462c0819:PsiDirectoryNode" />
-              <item name="Sprav" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="model" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="model" type="462c0819:PsiDirectoryNode" />
-              <item name="ManyToManyKeys" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="model" type="462c0819:PsiDirectoryNode" />
-              <item name="Sprav" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="repository" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="security" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="security" type="462c0819:PsiDirectoryNode" />
-              <item name="jwt" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="security" type="462c0819:PsiDirectoryNode" />
-              <item name="services" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="service" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="service" type="462c0819:PsiDirectoryNode" />
-              <item name="client" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="service" type="462c0819:PsiDirectoryNode" />
-              <item name="company" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="service" type="462c0819:PsiDirectoryNode" />
-              <item name="department" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="dokio" type="462c0819:PsiDirectoryNode" />
-              <item name="util" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="462c0819:PsiDirectoryNode" />
-              <item name="resources" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="web" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="web" type="462c0819:PsiDirectoryNode" />
-              <item name="WEB-INF" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
-              <item name="laniakea_crm" type="462c0819:PsiDirectoryNode" />
-              <item name="web" type="462c0819:PsiDirectoryNode" />
-              <item name="WEB-INF" type="462c0819:PsiDirectoryNode" />
-              <item name="pages" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
@@ -583,18 +493,31 @@
               <item name="Scratches and Consoles" type="1a2a3e82:ScratchProjectViewPane$MyProjectNode" />
               <item name="Extensions" type="d62648e6:ScratchProjectViewPane$MyRootNode" />
             </path>
+            <path>
+              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Scratches and Consoles" type="1a2a3e82:ScratchProjectViewPane$MyProjectNode" />
+              <item name="Extensions" type="d62648e6:ScratchProjectViewPane$MyRootNode" />
+              <item name="com.intellij.database" type="1e004dc1:ScratchProjectViewPane$MyRootNode$1$1" />
+            </path>
+            <path>
+              <item name="laniakea_crm" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Scratches and Consoles" type="1a2a3e82:ScratchProjectViewPane$MyProjectNode" />
+              <item name="Extensions" type="d62648e6:ScratchProjectViewPane$MyRootNode" />
+              <item name="com.intellij.database" type="1e004dc1:ScratchProjectViewPane$MyRootNode$1$1" />
+              <item name="schema" type="1e004dc1:ScratchProjectViewPane$MyRootNode$1$1" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="DatabaseDriversLRU" value="postgresql" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1596203542315" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1599758474434" />
     <property name="database.console.LAST_STATE" value="false" />
     <property name="last.edited.regexp" value="5/78/yui.txt" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -608,12 +531,9 @@
     <property name="settings.editor.selected.configurable" value="editor.preferences.appearance" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\controller" />
-      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\model" />
-      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\message\response" />
-      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\repository" />
-      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\resources" />
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="com.laniakea.message.response" />
+      <recent name="com.laniakea" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="com.laniakea.message.response" />
@@ -626,9 +546,12 @@
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.laniakea.model" />
     </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="com.laniakea.message.response" />
-      <recent name="com.laniakea" />
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\controller" />
+      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\model" />
+      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\message\response" />
+      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\java\com\laniakea\repository" />
+      <recent name="C:\Users\Папа\IdeaProjects\laniakea_crm\src\main\resources" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -1026,6 +949,13 @@
       <workItem from="1594734778957" duration="8274000" />
       <workItem from="1594913986887" duration="21366000" />
       <workItem from="1595422151265" duration="28540000" />
+      <workItem from="1597585589909" duration="213000" />
+      <workItem from="1597585822257" duration="3992000" />
+      <workItem from="1597738800432" duration="12108000" />
+      <workItem from="1597870234985" duration="10752000" />
+      <workItem from="1597938759295" duration="8659000" />
+      <workItem from="1598178451627" duration="70042000" />
+      <workItem from="1598808625272" duration="109121000" />
     </task>
     <task id="LOCAL-00001" summary="Функционал &quot;Цены&quot; готов, перед правами">
       <created>1584708726526</created>
@@ -1115,7 +1045,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="2426541000" />
+    <option name="totallyTimeSpent" value="2641428000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1128,9 +1058,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-6" y="-6" width="1933" height="1053" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2064" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20533334" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -1140,8 +1069,8 @@
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.89707476" />
-      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" weight="0.23076923" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.08573656" />
+      <window_info anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.87413335" weight="0.18526544" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.37811485" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32936078" />
@@ -1149,11 +1078,11 @@
       <window_info anchor="bottom" id="Spring" order="8" weight="0.1603467" />
       <window_info anchor="bottom" id="Terminal" order="9" weight="0.28169015" />
       <window_info anchor="bottom" id="Docker" order="10" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.5050667" side_tool="true" visible="true" weight="0.21885157" />
-      <window_info active="true" anchor="bottom" id="Messages" order="12" sideWeight="0.49493334" visible="true" weight="0.21885157" />
+      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.12586667" side_tool="true" weight="0.2881907" />
+      <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.4944" weight="0.21885157" />
       <window_info anchor="bottom" id="Java Enterprise" order="13" weight="0.32936078" />
       <window_info anchor="bottom" id="Database Changes" order="14" weight="0.32936078" />
-      <window_info anchor="bottom" id="Version Control" order="15" weight="0.13639906" />
+      <window_info anchor="bottom" id="Version Control" order="15" visible="true" weight="0.16143012" />
       <window_info anchor="bottom" id="Database Console" order="16" weight="0.40262583" />
       <window_info anchor="bottom" id="Duplicate detector" order="17" weight="0.32936078" />
       <window_info anchor="bottom" id="REST Client" order="18" weight="0.33044422" />
@@ -1166,47 +1095,8 @@
       <window_info anchor="right" id="Palette&#9;" order="6" />
       <window_info anchor="right" id="Theme Preview" order="7" />
       <window_info anchor="right" id="Database" order="8" weight="0.0656" />
-      <window_info anchor="right" id="Bean Validation" order="9" weight="0.32922465" />
+      <window_info anchor="right" id="Bean Validation" order="9" weight="0.32906666" />
     </layout>
-    <layout-to-restore>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.18666667" />
-      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info id="Designer" order="2" />
-      <window_info id="Image Layers" order="3" />
-      <window_info id="Capture Tool" order="4" />
-      <window_info id="UI Designer" order="5" />
-      <window_info id="Favorites" order="6" side_tool="true" />
-      <window_info id="Web" order="7" side_tool="true" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info active="true" anchor="bottom" x="11" y="186" width="1875" height="548" id="Run" order="2" sideWeight="0.8757333" visible="true" weight="0.4452871" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49946696" weight="0.08573656" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" weight="0.32936078" />
-      <window_info anchor="bottom" id="Application Servers" order="7" weight="0.32936078" />
-      <window_info anchor="bottom" id="Spring" order="8" weight="0.1603467" />
-      <window_info anchor="bottom" id="Terminal" order="9" weight="0.28169015" />
-      <window_info anchor="bottom" id="Docker" order="10" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.12426667" side_tool="true" weight="0.19176598" />
-      <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.4992" weight="0.21901792" />
-      <window_info anchor="bottom" id="Java Enterprise" order="13" weight="0.32936078" />
-      <window_info anchor="bottom" id="Database Changes" order="14" weight="0.32936078" />
-      <window_info anchor="bottom" id="Version Control" order="15" weight="0.13639906" />
-      <window_info anchor="bottom" id="Database Console" order="16" weight="0.40262583" />
-      <window_info anchor="bottom" id="Duplicate detector" order="17" weight="0.32936078" />
-      <window_info anchor="bottom" id="REST Client" order="18" weight="0.33044422" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.2496" />
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Maven" order="3" weight="0.17654076" />
-      <window_info anchor="right" id="Palette" order="4" />
-      <window_info anchor="right" id="Capture Analysis" order="5" />
-      <window_info anchor="right" id="Palette&#9;" order="6" />
-      <window_info anchor="right" id="Theme Preview" order="7" />
-      <window_info anchor="right" id="Database" order="8" weight="0.0656" />
-      <window_info anchor="right" id="Bean Validation" order="9" weight="0.32922465" />
-    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -1250,7 +1140,18 @@
       <map>
         <entry key="Branch">
           <value>
-            <list />
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="master" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="HEAD" />
+                </option>
+              </RecentGroup>
+            </list>
           </value>
         </entry>
         <entry key="User">
@@ -1321,334 +1222,152 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductGroupFieldsRepositoryJPA.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersProductForm.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
+        <state relative-caret-position="85">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductsForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="19" column="13" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CustomersOrdersForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="27" column="32" lean-forward="true" selection-start-line="27" selection-start-column="32" selection-end-line="27" selection-end-column="32" />
           <folding>
-            <element signature="e#0#10765#0" expanded="true" />
+            <element signature="e#2107#2108#0" expanded="true" />
+            <element signature="e#2136#2137#0" expanded="true" />
+            <element signature="e#2180#2181#0" expanded="true" />
+            <element signature="e#2216#2217#0" expanded="true" />
+            <element signature="e#2247#2248#0" expanded="true" />
+            <element signature="e#2274#2275#0" expanded="true" />
+            <element signature="e#2314#2315#0" expanded="true" />
+            <element signature="e#2346#2347#0" expanded="true" />
+            <element signature="e#2377#2378#0" expanded="true" />
+            <element signature="e#2404#2405#0" expanded="true" />
+            <element signature="e#2444#2445#0" expanded="true" />
+            <element signature="e#2476#2477#0" expanded="true" />
+            <element signature="e#2862#2863#0" expanded="true" />
+            <element signature="e#2894#2895#0" expanded="true" />
+            <element signature="e#3373#3374#0" expanded="true" />
+            <element signature="e#3408#3409#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductGroupRepositoryJPA.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/AcceptanceJSON.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
+        <state relative-caret-position="68">
+          <caret line="17" column="13" selection-start-line="17" selection-start-column="13" selection-end-line="17" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/ClientJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="30" column="13" selection-start-line="30" selection-start-column="13" selection-end-line="30" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/IsItMy_JSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsTableJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="24" column="22" lean-forward="true" selection-start-line="24" selection-start-column="22" selection-end-line="24" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentCategoriesTableJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="19" column="13" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/CustomersOrdersController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="756">
+          <caret line="102" column="55" selection-start-line="102" selection-start-column="28" selection-end-line="102" selection-end-column="55" />
           <folding>
-            <element signature="e#0#24417#0" expanded="true" />
+            <element signature="imports" expanded="true" />
+            <element signature="method#getCustomersOrdersTable#0;class#CustomersOrdersController#0" />
+            <element signature="method#getCustomersOrdersPagesList#0;class#CustomersOrdersController#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/RemainsRepository.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/ShipmentJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="16" column="13" selection-start-line="16" selection-start-column="13" selection-end-line="16" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentForm.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
+          <caret line="27" column="4" selection-start-line="27" selection-start-column="4" selection-end-line="27" selection-end-column="58" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravStatusDockController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="841">
+          <caret line="205" selection-start-line="205" selection-end-line="205" />
           <folding>
-            <element signature="e#0#23346#0" expanded="true" />
+            <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/RoleRepository.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/Sprav/SpravStatusDockForm.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1219#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="255">
+          <caret line="28" column="81" selection-start-line="28" selection-start-column="81" selection-end-line="28" selection-end-column="81" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/SecurityRepositoryJPA.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductsRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#25190#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/SiteRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2631#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/SitesRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#16975#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/SpravSysEdizmJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#16757#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/TradeResultsRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#38903#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/TypePricesRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#17269#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/UserGroupRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#15173#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/UserRepository.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2294#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/UserRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#21860#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/security/jwt/JwtAuthEntryPoint.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2351#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/security/jwt/JwtAuthTokenFilter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-68">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#3571#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/security/jwt/JwtProvider.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2999#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="758">
+          <caret line="596" column="99" selection-start-line="596" selection-start-column="58" selection-end-line="596" selection-end-column="99" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/security/services/UserDetailsServiceImpl.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
+        <state relative-caret-position="357">
+          <caret line="47" column="19" selection-start-line="47" selection-start-column="19" selection-end-line="47" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/UserRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="38" column="30" selection-start-line="38" selection-start-column="13" selection-end-line="38" selection-end-column="30" />
           <folding>
-            <element signature="e#0#3555#0" expanded="true" />
+            <element signature="e#6644#6645#0" expanded="true" />
+            <element signature="e#6731#6732#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/security/services/UserPrinciple.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-757">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#3492#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/client/ClientService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1431#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/client/ClientServiceImpl.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2210#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/company/CompanyService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1620#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/company/CompanyServiceImpl.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2450#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/department/DepartmentService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1809#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/department/DepartmentServiceImpl.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-119">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#2735#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/util/DateTimeService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="13" selection-start-line="2" selection-start-column="13" selection-end-line="2" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/util/JSONDeserialize.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1782#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/util/JSONSerializer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
-          <folding>
-            <element signature="e#0#1571#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/application.properties">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/log4j.properties">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/StorageService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-4103">
-          <caret line="48" column="13" selection-start-line="48" selection-start-column="13" selection-end-line="48" selection-end-column="13" />
-          <folding>
-            <element signature="e#0#14069#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/StorageServiceSite.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" column="3" lean-forward="true" selection-start-line="13" selection-start-column="3" selection-end-line="13" selection-end-column="3" />
-          <folding>
-            <element signature="e#0#5687#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/web/WEB-INF/pages/hello.jsp">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/laniakea_crm.iml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="18" column="9" lean-forward="true" selection-start-line="18" selection-start-column="9" selection-end-line="18" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/ProductCustomFieldsSaveForm.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="64" selection-start-line="64" selection-end-line="64" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/WebConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="258">
-          <caret line="48" column="13" selection-start-line="48" selection-start-column="13" selection-end-line="48" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/WebSecurityConfig.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/AppInit.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/CagentCategories.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="85">
-          <caret line="25" column="13" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
+          <caret line="25" column="32" lean-forward="true" selection-start-line="25" selection-start-column="32" selection-end-line="25" selection-end-column="32" />
         </state>
       </provider>
     </entry>
@@ -1659,6 +1378,293 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/ShipmentProductForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="20" selection-start-line="20" selection-end-line="32" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ShipmentRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="209" column="42" selection-start-line="209" selection-start-column="42" selection-end-line="209" selection-end-column="42" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#getShipmentTable#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#getShipmentSize#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#getShipmentValuesById#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#insertShipment#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#updateShipment#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#updateShipmentWithoutTable#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#saveShipmentProductTable#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#deleteShipmentProductTableExcessRows#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#addShipmentProductHistory#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#setProductQuantity#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="e#39266#39280#0" />
+            <element signature="method#deleteShipment#0;class#ShipmentRepositoryJPA#0" />
+            <element signature="method#getLastProductHistoryRecord#0;class#ShipmentRepositoryJPA#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/ShipmentController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="178">
+          <caret line="93" column="4" selection-start-line="93" selection-start-column="4" selection-end-line="100" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/SearchForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="22" column="13" selection-start-line="22" selection-start-column="13" selection-end-line="22" selection-end-column="13" />
+          <folding>
+            <element signature="e#0#6491#0" expanded="true" />
+            <element signature="e#3434#3435#0" expanded="true" />
+            <element signature="e#3460#3461#0" expanded="true" />
+            <element signature="e#3495#3496#0" expanded="true" />
+            <element signature="e#3525#3526#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/CagentsListJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="24" lean-forward="true" selection-start-line="17" selection-start-column="4" selection-end-line="18" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#1210#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/Sprav/IdAndName.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="476">
+          <caret line="36" column="4" selection-start-line="36" selection-start-column="4" selection-end-line="36" selection-end-column="4" />
+          <folding>
+            <element signature="e#0#919#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/WebConfig.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="46" column="13" selection-start-line="46" selection-start-column="13" selection-end-line="46" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/WebSecurityConfig.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="680">
+          <caret line="73" column="35" lean-forward="true" selection-start-line="73" selection-start-column="35" selection-end-line="73" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/CustomersOrdersRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4732">
+          <caret line="423" column="57" selection-start-line="423" selection-start-column="38" selection-end-line="423" selection-end-column="57" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysRegionsController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="867">
+          <caret line="81" column="43" selection-start-line="81" selection-start-column="40" selection-end-line="81" selection-end-column="43" />
+          <folding>
+            <element signature="e#3238#3269#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCitiesController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="320">
+          <caret line="48" column="59" lean-forward="true" selection-start-line="48" selection-start-column="59" selection-end-line="48" selection-end-column="59" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/_Permissions Id">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="118">
+          <caret line="169" column="47" selection-start-line="169" selection-start-column="47" selection-end-line="169" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysCountriesController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="544">
+          <caret line="60" column="8" lean-forward="true" selection-start-line="60" selection-start-column="8" selection-end-line="60" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/CagentsJSON.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+          <folding>
+            <element signature="e#11312#11313#0" expanded="true" />
+            <element signature="e#11372#11373#0" expanded="true" />
+            <element signature="e#12061#12062#0" expanded="true" />
+            <element signature="e#12092#12093#0" expanded="true" />
+            <element signature="e#12140#12141#0" expanded="true" />
+            <element signature="e#12180#12181#0" expanded="true" />
+            <element signature="e#12218#12219#0" expanded="true" />
+            <element signature="e#12252#12253#0" expanded="true" />
+            <element signature="e#12306#12307#0" expanded="true" />
+            <element signature="e#12352#12353#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysOPFController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="34" column="44" lean-forward="true" selection-start-line="34" selection-start-column="44" selection-end-line="34" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="217">
+          <caret line="369" column="36" selection-start-line="369" selection-start-column="36" selection-end-line="369" selection-end-column="36" />
+          <folding>
+            <element signature="e#4296#4297#0" expanded="true" />
+            <element signature="e#4326#4327#0" expanded="true" />
+            <element signature="e#4858#4859#0" expanded="true" />
+            <element signature="e#4899#4900#0" expanded="true" />
+            <element signature="e#8760#8761#0" expanded="true" />
+            <element signature="e#8803#8804#0" expanded="true" />
+            <element signature="e#9310#9311#0" expanded="true" />
+            <element signature="e#9341#9342#0" expanded="true" />
+            <element signature="e#9389#9390#0" expanded="true" />
+            <element signature="e#9429#9430#0" expanded="true" />
+            <element signature="e#9467#9468#0" expanded="true" />
+            <element signature="e#9501#9502#0" expanded="true" />
+            <element signature="e#9555#9556#0" expanded="true" />
+            <element signature="e#9601#9602#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/Cagents.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="344">
+          <caret line="212" column="36" selection-start-line="212" selection-start-column="20" selection-end-line="212" selection-end-column="36" />
+          <folding>
+            <element signature="e#9270#9271#0" expanded="true" />
+            <element signature="e#9299#9300#0" expanded="true" />
+            <element signature="e#9543#9544#0" expanded="true" />
+            <element signature="e#9572#9573#0" expanded="true" />
+            <element signature="e#10169#10170#0" expanded="true" />
+            <element signature="e#10198#10199#0" expanded="true" />
+            <element signature="e#12557#12558#0" expanded="true" />
+            <element signature="e#12586#12587#0" expanded="true" />
+            <element signature="e#13659#13660#0" expanded="true" />
+            <element signature="e#13690#13691#0" expanded="true" />
+            <element signature="e#13738#13739#0" expanded="true" />
+            <element signature="e#13778#13779#0" expanded="true" />
+            <element signature="e#13816#13817#0" expanded="true" />
+            <element signature="e#13850#13851#0" expanded="true" />
+            <element signature="e#13904#13905#0" expanded="true" />
+            <element signature="e#13950#13951#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/UniversalForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/SpravStatusDockRepository.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-264">
+          <caret line="254" column="66" selection-start-line="254" selection-start-column="66" selection-end-line="254" selection-end-column="66" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#getStatusDocksValues#0;class#SpravStatusDockRepository#0" />
+            <element signature="method#updateStatusDocks#0;class#SpravStatusDockRepository#0" />
+            <element signature="method#insertStatusDocks#0;class#SpravStatusDockRepository#0" />
+            <element signature="method#deleteStatusDocks#0;class#SpravStatusDockRepository#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/CagentsController.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="27">
+          <caret line="240" column="9" lean-forward="true" selection-start-line="240" selection-start-column="9" selection-end-line="240" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsContactsForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="901">
+          <caret line="53" selection-start-line="53" selection-start-column="2" selection-end-line="59" selection-end-column="7" />
+          <folding>
+            <element signature="e#0#2706#0" expanded="true" />
+            <element signature="e#1221#1222#0" expanded="true" />
+            <element signature="e#1246#1247#0" expanded="true" />
+            <element signature="e#1280#1281#0" expanded="true" />
+            <element signature="e#1308#1309#0" expanded="true" />
+            <element signature="e#1342#1343#0" expanded="true" />
+            <element signature="e#1374#1375#0" expanded="true" />
+            <element signature="e#1422#1423#0" expanded="true" />
+            <element signature="e#1464#1465#0" expanded="true" />
+            <element signature="e#1499#1500#0" expanded="true" />
+            <element signature="e#1532#1533#0" expanded="true" />
+            <element signature="e#1582#1583#0" expanded="true" />
+            <element signature="e#1626#1627#0" expanded="true" />
+            <element signature="e#1812#1813#0" expanded="true" />
+            <element signature="e#1838#1839#0" expanded="true" />
+            <element signature="e#1876#1877#0" expanded="true" />
+            <element signature="e#1906#1907#0" expanded="true" />
+            <element signature="e#1941#1942#0" expanded="true" />
+            <element signature="e#1972#1973#0" expanded="true" />
+            <element signature="e#2020#2021#0" expanded="true" />
+            <element signature="e#2060#2061#0" expanded="true" />
+            <element signature="e#2096#2097#0" expanded="true" />
+            <element signature="e#2128#2129#0" expanded="true" />
+            <element signature="e#2178#2179#0" expanded="true" />
+            <element signature="e#2220#2221#0" expanded="true" />
+            <element signature="e#2252#2253#0" expanded="true" />
+            <element signature="e#2280#2281#0" expanded="true" />
+            <element signature="e#2322#2323#0" expanded="true" />
+            <element signature="e#2356#2357#0" expanded="true" />
+            <element signature="e#2393#2394#0" expanded="true" />
+            <element signature="e#2426#2427#0" expanded="true" />
+            <element signature="e#2478#2479#0" expanded="true" />
+            <element signature="e#2522#2523#0" expanded="true" />
+            <element signature="e#2562#2563#0" expanded="true" />
+            <element signature="e#2597#2598#0" expanded="true" />
+            <element signature="e#2654#2655#0" expanded="true" />
+            <element signature="e#2702#2703#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/request/CagentsPaymentAccountsForm.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="55" column="7" lean-forward="true" selection-start-line="55" selection-start-column="7" selection-end-line="59" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/CorsSettings.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
@@ -1666,99 +1672,106 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/AppInit.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="292">
-          <caret line="62" column="37" selection-start-line="62" selection-start-column="37" selection-end-line="62" selection-end-column="37" />
+        <state relative-caret-position="85">
+          <caret line="25" column="13" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/hibernate.properties">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/ClientController.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="16" column="26" selection-start-line="16" selection-start-column="26" selection-end-line="16" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ShipmentRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="178">
-          <caret line="569" column="50" selection-start-line="569" selection-start-column="34" selection-end-line="569" selection-end-column="50" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/WriteoffRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="346">
-          <caret line="88" column="81" lean-forward="true" selection-start-line="88" selection-start-column="81" selection-end-line="88" selection-end-column="81" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ProductsRepositoryJPA.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="467">
-          <caret line="596" column="79" selection-start-line="596" selection-start-column="71" selection-end-line="596" selection-end-column="79" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/web/hello.jsp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="56" selection-start-column="56" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/web/index.jsp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="56" selection-start-column="56" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/model/Documents.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="52" column="53" selection-start-line="52" selection-start-column="53" selection-end-line="52" selection-end-column="53" />
-          <folding>
-            <element signature="e#1709#1724#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="-2244">
+          <caret line="34" column="13" selection-start-line="34" selection-start-column="13" selection-end-line="34" selection-end-column="13" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/SpringSecurityInitializer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="18" column="1" lean-forward="true" selection-start-line="18" selection-start-column="1" selection-end-line="18" selection-end-column="1" />
+        <state relative-caret-position="68">
+          <caret line="17" column="38" selection-start-line="17" selection-start-column="13" selection-end-line="17" selection-end-column="38" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/controller/Sprav/SpravSysMarkableGroupController.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/ClientRepositoryJPA.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="29" column="13" selection-start-line="29" selection-start-column="13" selection-end-line="29" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/service/client/ClientService.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="85">
-          <caret line="27" column="13" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="13" />
+          <caret line="18" column="22" selection-start-line="18" selection-start-column="22" selection-end-line="18" selection-end-column="22" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pom.xml">
+    <entry file="file://$APPLICATION_CONFIG_DIR$/extensions/com.intellij.database/schema/Generate POJOs.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="367">
-          <caret line="236" column="21" lean-forward="true" selection-start-line="236" selection-start-column="21" selection-end-line="236" selection-end-column="21" />
+        <state>
+          <folding>
+            <element signature="e#0#43#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/message/response/PricesTableJSON.java">
+    <entry file="file://$PROJECT_DIR$/src/main/resources/hibernate.properties">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/repository/CagentRepositoryJPA.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="232">
-          <caret line="142" column="79" lean-forward="true" selection-start-line="142" selection-start-column="79" selection-end-line="142" selection-end-column="79" />
+        <state relative-caret-position="300">
+          <caret line="43" column="48" lean-forward="true" selection-start-line="43" selection-start-column="48" selection-end-line="43" selection-end-column="48" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#getCagentsTable#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentsSize#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentsPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentsContacts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentValues#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#updateCagents#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#deleteCagentPaymentAccountsExcessRows#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#deleteCagentContactsExcessRows#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#insertCagentContacts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#updateCagentContacts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#insertCagentPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#updateCagentPaymentAccounts#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#updateCagentBaseFields#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#insertCagent#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#insertCagentBaseFields#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#deleteCagents#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentsList#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCategoriesSetBySetOfCategoriesId#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentsCategoriesIdsByCagentId#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCagentCategoriesTrees#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#searchCagentCategory#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getCategoriesRootIds#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getRootCagentCategories#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#getChildrensCagentCategories#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#insertCagentCategory#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#updateCagentCategory#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#deleteCagentCategory#0;class#CagentRepositoryJPA#0" />
+            <element signature="method#saveChangeCategoriesOrder#0;class#CagentRepositoryJPA#0" />
+            <element signature="e#81187#81902#0" />
+            <element signature="method#addSetOfCagentCategories#0;class#CagentRepositoryJPA#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/out/artifacts/laniakea_crm_war_exploded/WEB-INF/classes/com/dokio/repository/AcceptanceRepository.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1122">
+          <folding>
+            <element signature="e#0#43722#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/dokio/config/PersistenceConfig.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
         </state>
       </provider>
     </entry>

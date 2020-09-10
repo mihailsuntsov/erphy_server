@@ -1,3 +1,17 @@
+/*
+Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
+Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
+Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
+соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
+программного обеспечения;
+Эта программа распространяется в расчете на то, что она окажется полезной, но
+БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
+ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
+лицензией GNU для получения более подробной информации.
+Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
+программой. Если Вы ее не получили, то перейдите по адресу:
+<http://www.gnu.org/licenses/>
+ */
 package com.dokio.config;
 
 import java.util.Properties;
@@ -20,20 +34,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages= "com.dokio.repository")
 
-/*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+
 public class PersistenceConfig {
 
 
@@ -75,7 +76,7 @@ public class PersistenceConfig {
     public static DataSource getDataSource() {
     DriverManagerDataSource dataSource = new DriverManagerDataSource();
     dataSource.setDriverClassName("org.postgresql.Driver");
-    dataSource.setUrl("jdbc:postgresql://localhost:5432/laniakea");
+    dataSource.setUrl("jdbc:postgresql://localhost:5432/laniakea?useUnicode=true&characterEncoding=utf8");
     dataSource.setUsername("postgres");
     dataSource.setPassword("111111");// ***ИЗМЕНИТЬ ДЛЯ ПРОДА***
     return dataSource;}

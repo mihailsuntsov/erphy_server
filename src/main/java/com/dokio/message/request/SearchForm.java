@@ -22,6 +22,7 @@ package com.dokio.message.request;
 
 public class SearchForm {
     private int id;
+    private int id2;
     private String masterId; //id владельца (аккаунта) записи
     private String searchString; //строка поиска
     private String companyId; //id предприятия
@@ -80,6 +81,14 @@ public class SearchForm {
 
     public String getCompanyId() {
         return companyId;
+    }
+
+    public int getId2() {
+        return id2;
+    }
+
+    public void setId2(int id2) {
+        this.id2 = id2;
     }
 
     public String getSearchString() {

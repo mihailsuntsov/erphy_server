@@ -16,6 +16,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -60,7 +61,7 @@ public class CagentsController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<CagentsTableJSON> returnList;
+        List<CagentsJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -168,7 +169,7 @@ public class CagentsController {
     public ResponseEntity<?> getCagentValuesById(@RequestBody SearchForm request) {
         CagentsJSON response;
         int id = request.getId();
-        response=cagentsRepositoryJPA.getCagentValues(id);//результат запроса помещается в экземпляр класса
+        response=cagentsRepositoryJPA.getCagentValues(id);
         try
         {
             List<Integer> valuesListId =cagentsRepositoryJPA.getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
@@ -182,42 +183,42 @@ public class CagentsController {
 
     @PostMapping("/api/auth/insertCagent")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertCagent(@RequestBody CagentsForm request) throws ParseException {
+    public ResponseEntity<?> insertCagent(@RequestBody CagentsForm request){
         Long newDocument = cagentsRepositoryJPA.insertCagent(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
     @PostMapping("/api/auth/updateCagents")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCagents(@RequestBody CagentsForm request) throws ParseException{
+    public ResponseEntity<?> updateCagents(@RequestBody CagentsForm request){
         if(cagentsRepositoryJPA.updateCagents(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting updateCagents", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/deleteCagents")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteCagents(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteCagents(@RequestBody SignUpForm request){
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(cagentsRepositoryJPA.deleteCagents(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCagents", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
-    @PostMapping("/api/auth/getCagentsList")//заполнение Autocomplete для поля "Группа товаров" документа "Товары и услуги"
+    @PostMapping("/api/auth/getCagentsList")//заполнение Autocomplete
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsList(@RequestBody SearchForm searchRequest) {
         int companyId;
@@ -231,13 +232,30 @@ public class CagentsController {
         return responseEntity;
     }
 
+    @PostMapping("/api/auth/getCagentsPaymentAccounts")// отдаёт список банковских счетов контрагента
+    public ResponseEntity<?> getCagentsPaymentAccounts(@RequestBody UniversalForm searchRequest) {
+        try {
+            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Error when requesting getCagentsPaymentAccounts", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/api/auth/getCagentsContacts")// отдаёт список контактных лиц контрагента
+    public ResponseEntity<?> getCagentsContacts(@RequestBody UniversalForm searchRequest) {
+        try {
+            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsContacts(searchRequest.getId()), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Error when requesting getCagentsContacts", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************
     @PostMapping("/api/auth/getCagentCategoriesTrees")
     @SuppressWarnings("Duplicates")
     //отправляет ID предприятия. По нему в getCategoriesRootIds ищутся id корневых категорий, и уже по ним грузятся деревья категорий
-    public ResponseEntity<?> getCagentCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
+    public ResponseEntity<?> getCagentCategoriesTrees(@RequestBody SearchForm request){
         List<CagentCategories> returnList;
         List<Integer> categoriesRootIds = cagentsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
         try {
@@ -245,7 +263,7 @@ public class CagentsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting getCagentCategoriesTrees", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -254,14 +272,14 @@ public class CagentsController {
     @SuppressWarnings("Duplicates")
     //отдает только список корневых категорий, без детей
     //нужно для изменения порядка вывода корневых категорий
-    public ResponseEntity<?> getRootCagentCategories(@RequestBody SearchForm request) throws ParseException {
+    public ResponseEntity<?> getRootCagentCategories(@RequestBody SearchForm request){
         List<CagentCategoriesTableJSON> returnList ;//
         try {
             returnList = cagentsRepositoryJPA.getRootCagentCategories(Long.valueOf(Integer.parseInt((request.getCompanyId()))));
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting getRootCagentCategories", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -270,21 +288,21 @@ public class CagentsController {
     @SuppressWarnings("Duplicates")
     //отдает только список детей, без их детей
     //нужно для изменения порядка вывода категорий
-    public ResponseEntity<?> getChildrensCagentCategories(@RequestBody CagentCategoriesForm request) throws ParseException {
+    public ResponseEntity<?> getChildrensCagentCategories(@RequestBody CagentCategoriesForm request){
         List<CagentCategoriesTableJSON> returnList;
         try {
             returnList = cagentsRepositoryJPA.getChildrensCagentCategories(request.getParentCategoryId());
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting getChildrensCagentCategories", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/searchCagentCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> searchCagentCategory(@RequestBody SearchForm request) throws ParseException {
+    public ResponseEntity<?> searchCagentCategory(@RequestBody SearchForm request){
         Long companyId=Long.valueOf(Integer.parseInt((request.getCompanyId())));
         List<CagentCategoriesTableJSON> returnList;
         try {
@@ -292,13 +310,13 @@ public class CagentsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting searchCagentCategory", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
     @PostMapping("/api/auth/insertCagentCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertCagentCategory(@RequestBody CagentCategoriesForm request) throws ParseException {
+    public ResponseEntity<?> insertCagentCategory(@RequestBody CagentCategoriesForm request){
         try {
             Long categoryId = cagentsRepositoryJPA.insertCagentCategory(request);
             ResponseEntity<Long> responseEntity = new ResponseEntity<>(categoryId, HttpStatus.OK);
@@ -306,42 +324,42 @@ public class CagentsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            ResponseEntity<Long> responseEntity = new ResponseEntity<>(0L, HttpStatus.BAD_REQUEST);
+            ResponseEntity<Long> responseEntity = new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/updateCagentCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCagentCategory(@RequestBody CagentCategoriesForm request) throws ParseException{
+    public ResponseEntity<?> updateCagentCategory(@RequestBody CagentCategoriesForm request){
         if(cagentsRepositoryJPA.updateCagentCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting updateCagentCategory", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/deleteCagentCategory")
-    public ResponseEntity<?> deleteCagentCategory(@RequestBody CagentCategoriesForm request) throws ParseException{
+    public ResponseEntity<?> deleteCagentCategory(@RequestBody CagentCategoriesForm request){
         if(cagentsRepositoryJPA.deleteCagentCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCagentCategory", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/saveChangeCagentCategoriesOrder")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveChangeCagentCategoriesOrder(@RequestBody List<CagentCategoriesForm> request) throws ParseException {
+    public ResponseEntity<?> saveChangeCagentCategoriesOrder(@RequestBody List<CagentCategoriesForm> request){
         if(cagentsRepositoryJPA.saveChangeCategoriesOrder(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when saving", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting saveChangeCagentCategoriesOrder", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

@@ -39,7 +39,7 @@ public class SpravSysOPFController {
         List<SpravSysOPFJSON> resultList;
         String stringQuery=
                 "select p.id as id, p.name as name, p.abbreviation as abbreviation, p.description as description" +
-                " from sprav_sys_opf p where p.name !=' '";
+                " from sprav_sys_opf p where p.name !=' ' order by p.id asc";
         Query query =  entityManager.createNativeQuery(stringQuery, SpravSysOPFJSON.class);
         resultList=query.getResultList();
         ResponseEntity<List> responseEntity = new ResponseEntity<>(resultList, HttpStatus.OK);

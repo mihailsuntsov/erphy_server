@@ -15,27 +15,25 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.CagentCategoriesForm;
+import com.dokio.message.request.CagentsContactsForm;
 import com.dokio.message.request.CagentsForm;
+import com.dokio.message.request.CagentsPaymentAccountsForm;
 import com.dokio.message.response.CagentCategoriesTableJSON;
 import com.dokio.message.response.CagentsJSON;
-import com.dokio.message.response.CagentsListJSON;
-import com.dokio.message.response.CagentsTableJSON;
+import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.model.Cagents;
 import com.dokio.model.Companies;
-import com.dokio.model.Sprav.SpravSysOPF;
-import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
 
-@Repository
-public class CagentRepositoryJPA {
+    @Repository
+    public class CagentRepositoryJPA {
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -50,18 +48,13 @@ public class CagentRepositoryJPA {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
-    @Autowired
-    private UserDetailsServiceImpl userService;
-
-
-
-    @Transactional
     @SuppressWarnings("Duplicates")
-    public List<CagentsTableJSON> getCagentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId) {
+    public List<CagentsJSON> getCagentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -75,22 +68,62 @@ public class CagentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           sso.name as opf, "+
                     "           sso.id as opf_id, "+
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
-                    "           p.description as description " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           p.description as description, " +
+                    // Апдейт Контрагентов
+                    "           p.code as code, " +
+                    "           p.telephone as telephone, " +
+                    "           p.fax as fax, " +
+                    "           p.email as email, " +
+                    "           p.zip_code as zip_code, " +
+                    "           p.country_id as country_id, " +
+                    "           p.region_id as region_id, " +
+                    "           p.city_id as city_id, " +
+                    "           p.street as street, " +
+                    "           p.home as home, " +
+                    "           p.flat as flat, " +
+                    "           p.additional_address as additional_address, " +
+                    "           p.status_id as status_id, " +
+                    "           p.price_type_id as price_type_id, " +
+                    "           p.discount_card as discount_card, " +
+                    "           p.jr_jur_full_name as jr_jur_full_name, " +
+                    "           p.jr_jur_kpp as jr_jur_kpp, " +
+                    "           p.jr_jur_ogrn as jr_jur_ogrn, " +
+                    "           p.jr_zip_code as jr_zip_code, " +
+                    "           p.jr_country_id as jr_country_id, " +
+                    "           p.jr_region_id as jr_region_id, " +
+                    "           p.jr_city_id as jr_city_id, " +
+                    "           p.jr_street as jr_street, " +
+                    "           p.jr_home as jr_home, " +
+                    "           p.jr_flat as jr_flat, " +
+                    "           p.jr_additional_address as jr_additional_address, " +
+                    "           p.jr_inn as jr_inn, " +
+                    "           p.jr_okpo as jr_okpo, " +
+                    "           p.jr_fio_family as jr_fio_family, " +
+                    "           p.jr_fio_name as jr_fio_name, " +
+                    "           p.jr_fio_otchestvo as jr_fio_otchestvo, " +
+                    "           p.jr_ip_ogrnip as jr_ip_ogrnip, " +
+                    "           p.jr_ip_svid_num as jr_ip_svid_num, " +
+                    "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description " +
+
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_archive,false) !=true " +
                     (categoryId!=0?" and p.id in (select ccc.cagent_id from cagent_cagentcategories ccc where ccc.category_id="+categoryId+") ":"");
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Меню - таблица - "Контрагенты" по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
-                //остается только на своё предприятие (110)
+                //остается только на своё предприятие (134)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
@@ -103,15 +136,74 @@ public class CagentRepositoryJPA {
             }
 
             stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            Query query = entityManager.createNativeQuery(stringQuery, CagentsTableJSON.class)
+
+
+            Query query = entityManager.createNativeQuery(stringQuery)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+            List<Object[]> queryList = query.getResultList();
+            List<CagentsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                CagentsJSON doc=new CagentsJSON();
 
-            return query.getResultList();
+                doc.setId(Long.parseLong(                           obj[0].toString()));
+                doc.setMaster((String)                              obj[1]);
+                doc.setName((String)                                obj[2]);
+                doc.setCreator((String)                             obj[3]);
+                doc.setChanger((String)                             obj[4]);
+                doc.setMaster_id(Long.parseLong(                    obj[5].toString()));
+                doc.setCreator_id(Long.parseLong(                   obj[6].toString()));
+                doc.setChanger_id(obj[7]!=null?Long.parseLong(      obj[7].toString()):null);
+                doc.setCompany_id(Long.parseLong(                   obj[8].toString()));
+                doc.setCompany((String)                             obj[9]);
+                doc.setOpf((String)                                 obj[10]);
+                doc.setOpf_id((Integer)                             obj[11]);
+                doc.setDate_time_created((String)                   obj[12]);
+                doc.setDate_time_changed((String)                   obj[13]);
+                doc.setDescription((String)                         obj[14]);
+                doc.setCode((String)                                obj[15]);
+                doc.setTelephone((String)                           obj[16]);
+                doc.setFax((String)                                 obj[17]);
+                doc.setEmail((String)                               obj[18]);
+                doc.setZip_code((String)                            obj[19]);
+                doc.setCountry_id((Integer)                         obj[20]);
+                doc.setRegion_id((Integer)                          obj[21]);
+                doc.setCity_id((Integer)                            obj[22]);
+                doc.setStreet((String)                              obj[23]);
+                doc.setHome((String)                                obj[24]);
+                doc.setFlat((String)                                obj[25]);
+                doc.setAdditional_address((String)                  obj[26]);
+                doc.setStatus_id(obj[27]!=null?Long.parseLong(      obj[27].toString()):null);
+                doc.setPrice_type_id(obj[28]!=null?Long.parseLong(  obj[28].toString()):null);
+                doc.setDiscount_card((String)                       obj[29]);
+                doc.setJr_jur_full_name((String)                    obj[30]);
+                doc.setJr_jur_kpp(obj[31]!=null?Long.parseLong(     obj[31].toString()):null);
+                doc.setJr_jur_ogrn(obj[32]!=null?Long.parseLong(    obj[32].toString()):null);
+                doc.setJr_zip_code((String)                         obj[33]);
+                doc.setJr_country_id((Integer)                      obj[34]);
+                doc.setJr_region_id((Integer)                       obj[35]);
+                doc.setJr_city_id((Integer)                         obj[36]);
+                doc.setJr_street((String)                           obj[37]);
+                doc.setJr_home((String)                             obj[38]);
+                doc.setJr_flat((String)                             obj[39]);
+                doc.setJr_additional_address((String)               obj[40]);
+                doc.setJr_inn(obj[41]!=null?Long.parseLong(         obj[41].toString()):null);
+                doc.setJr_okpo(obj[42]!=null?Long.parseLong(        obj[42].toString()):null);
+                doc.setJr_fio_family((String)                       obj[43]);
+                doc.setJr_fio_name((String)                         obj[44]);
+                doc.setJr_fio_otchestvo((String)                    obj[45]);
+                doc.setJr_ip_ogrnip(obj[46]!=null?Long.parseLong(   obj[46].toString()):null);
+                doc.setJr_ip_svid_num((String)                      obj[47]);
+                doc.setJr_ip_reg_date((String)                      obj[48]);
+                doc.setStatus_name((String)                         obj[49]);
+                doc.setStatus_color((String)                        obj[50]);
+                doc.setStatus_description((String)                  obj[51]);
+                returnList.add(doc);
+            }
+            return returnList;
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    @Transactional
     public int getCagentsSize(String searchString, int companyId, int categoryId) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
         {
@@ -143,23 +235,117 @@ public class CagentRepositoryJPA {
         } else return 0;
     }
 
+    @SuppressWarnings("Duplicates")// отдаёт список банковских счетов контрагента
+    public List<CagentsPaymentAccountsForm> getCagentsPaymentAccounts(Long docId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//(см. файл Permissions Id)
+        {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            stringQuery =   " select " +
+                    " ap.id," +
+                    " ap.master_id," +
+                    " ap.company_id," +
+                    " ap.output_order," +
+                    " ap.bik," +
+                    " ap.name," +
+                    " ap.address," +
+                    " ap.payment_account," +
+                    " ap.corr_account" +
+                    " from " +
+                    " cagents_payment_accounts ap " +
+                    " where ap.master_id = " + myMasterId +
+                    " and ap.cagent_id = " + docId;
+
+            if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            {
+                //остается только на своё предприятие (134)
+                stringQuery = stringQuery + " and ap.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            stringQuery = stringQuery + " order by ap.output_order asc ";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CagentsPaymentAccountsForm> returnList = new ArrayList<>();
+
+            for(Object[] obj:queryList){
+                CagentsPaymentAccountsForm doc=new CagentsPaymentAccountsForm();
+                doc.setId(Long.parseLong(                               obj[0].toString()));
+                doc.setMaster_id(Long.parseLong(                        obj[1].toString()));
+                doc.setCompany_id(Long.parseLong(                       obj[2].toString()));
+                doc.setOutput_order((Integer)                           obj[3]);
+                doc.setBik(obj[4]!=null?Long.parseLong(                 obj[4].toString()):null);
+                doc.setName((String)                                    obj[5]);
+                doc.setAddress((String)                                 obj[6]);
+                doc.setPayment_account((String)                         obj[7]);
+                doc.setCorr_account((String)                            obj[8]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } else return null;
+    }
+
+    @SuppressWarnings("Duplicates")// отдаёт список контактных лиц контрагента
+    public List<CagentsContactsForm> getCagentsContacts(Long docId) {
+            if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//(см. файл Permissions Id)
+            {
+                String stringQuery;
+                Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+                stringQuery =   " select " +
+                        " ap.id," +
+                        " ap.master_id," +
+                        " ap.company_id," +
+                        " ap.output_order," +
+                        " ap.fio," +
+                        " ap.position," +
+                        " ap.telephone," +
+                        " ap.email," +
+                        " ap.additional" +
+                        " from " +
+                        " cagents_contacts ap " +
+                        " where ap.master_id = " + myMasterId +
+                        " and ap.cagent_id = " + docId;
+
+                if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Просмотр документов по всем предприятиям"
+                {
+                    //остается только на своё предприятие (134)
+                    stringQuery = stringQuery + " and ap.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                }
+                stringQuery = stringQuery + " order by ap.output_order asc ";
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                List<CagentsContactsForm> returnList = new ArrayList<>();
+
+                for(Object[] obj:queryList){
+                    CagentsContactsForm doc=new CagentsContactsForm();
+                    doc.setId(Long.parseLong(                               obj[0].toString()));
+                    doc.setMaster_id(Long.parseLong(                        obj[1].toString()));
+                    doc.setCompany_id(Long.parseLong(                       obj[2].toString()));
+                    doc.setOutput_order((Integer)                           obj[3]);
+                    doc.setFio((String)                                     obj[4]);
+                    doc.setPosition((String)                                obj[5]);
+                    doc.setTelephone((String)                               obj[6]);
+                    doc.setEmail((String)                                   obj[7]);
+                    doc.setAdditional((String)                              obj[8]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } else return null;
+        }
+
 //*****************************************************************************************************************************************************
 //****************************************************   C  R  U  D   *********************************************************************************
 //*****************************************************************************************************************************************************
 
-    @Transactional
     @SuppressWarnings("Duplicates")
     public CagentsJSON getCagentValues(int id) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           p.name as name, " +
-                    "           sso.name as opf, " +
-                    "           sso.id as opf_id, " +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
                     "           p.master_id as master_id, " +
@@ -167,16 +353,72 @@ public class CagentRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
-                    "           p.date_time_created as date_time_created, " +
-                    "           p.date_time_changed as date_time_changed, " +
-                    "           p.description as description " +
+                    "           sso.name as opf, "+
+                    "           sso.id as opf_id, "+
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           p.description as description, " +
+                    // Апдейт Контрагентов
+                    "           p.code as code, " +
+                    "           p.telephone as telephone, " +
+                    "           p.fax as fax, " +
+                    "           p.email as email, " +
+                    "           p.zip_code as zip_code, " +
+                    "           p.country_id as country_id, " +
+                    "           p.region_id as region_id, " +
+                    "           p.city_id as city_id, " +
+                    "           p.street as street, " +
+                    "           p.home as home, " +
+                    "           p.flat as flat, " +
+                    "           p.additional_address as additional_address, " +
+                    "           p.status_id as status_id, " +
+                    "           p.price_type_id as price_type_id, " +
+                    "           p.discount_card as discount_card, " +
+                    "           p.jr_jur_full_name as jr_jur_full_name, " +
+                    "           p.jr_jur_kpp as jr_jur_kpp, " +
+                    "           p.jr_jur_ogrn as jr_jur_ogrn, " +
+                    "           p.jr_zip_code as jr_zip_code, " +
+                    "           p.jr_country_id as jr_country_id, " +
+                    "           p.jr_region_id as jr_region_id, " +
+                    "           p.jr_city_id as jr_city_id, " +
+                    "           p.jr_street as jr_street, " +
+                    "           p.jr_home as jr_home, " +
+                    "           p.jr_flat as jr_flat, " +
+                    "           p.jr_additional_address as jr_additional_address, " +
+                    "           p.jr_inn as jr_inn, " +
+                    "           p.jr_okpo as jr_okpo, " +
+                    "           p.jr_fio_family as jr_fio_family, " +
+                    "           p.jr_fio_name as jr_fio_name, " +
+                    "           p.jr_fio_otchestvo as jr_fio_otchestvo, " +
+                    "           p.jr_ip_ogrnip as jr_ip_ogrnip, " +
+                    "           p.jr_ip_svid_num as jr_ip_svid_num, " +
+                    "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description, " +
+                    "           ctr.name_ru as country, " +
+                    "           jr_ctr.name_ru as jr_country, " +
+                    "           reg.name_ru as region, " +
+                    "           jr_reg.name_ru as jr_region, " +
+                    "           cty.name_ru as city, " +
+                    "           jr_cty.name_ru as jr_city, " +
+                    "           coalesce(cty.area_ru,'') as area, " +
+                    "           coalesce(jr_cty.area_ru,'') as jr_area " +
+
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
-                    "           where p.id= " + id+
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+                    "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
+                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
+                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
+                    "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
+                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
+                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
+                    "           where p.id= " + id +
                     "           and  p.master_id=" + myMasterId;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Просмотр документов по всем предприятиям"
@@ -185,15 +427,75 @@ public class CagentRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
 
-            Query query = entityManager.createNativeQuery(stringQuery, CagentsJSON.class);
-            try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
-                CagentsJSON response = (CagentsJSON) query.getSingleResult();
-                return response;}
-            catch(NoResultException nre){return null;}
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            CagentsJSON doc = new CagentsJSON();
+
+            doc.setId(Long.parseLong(                                       queryList.get(0)[0].toString()));
+            doc.setMaster((String)                                          queryList.get(0)[1]);
+            doc.setName((String)                                            queryList.get(0)[2]);
+            doc.setCreator((String)                                         queryList.get(0)[3]);
+            doc.setChanger((String)                                         queryList.get(0)[4]);
+            doc.setMaster_id(Long.parseLong(                                queryList.get(0)[5].toString()));
+            doc.setCreator_id(Long.parseLong(                               queryList.get(0)[6].toString()));
+            doc.setChanger_id(queryList.get(0)[7]!=null?Long.parseLong(     queryList.get(0)[7].toString()):null);
+            doc.setCompany_id(Long.parseLong(                               queryList.get(0)[8].toString()));
+            doc.setCompany((String)                                         queryList.get(0)[9]);
+            doc.setOpf((String)                                             queryList.get(0)[10]);
+            doc.setOpf_id((Integer)                                         queryList.get(0)[11]);
+            doc.setDate_time_created((String)                               queryList.get(0)[12]);
+            doc.setDate_time_changed((String)                               queryList.get(0)[13]);
+            doc.setDescription((String)                                     queryList.get(0)[14]);
+            doc.setCode((String)                                            queryList.get(0)[15]);
+            doc.setTelephone((String)                                       queryList.get(0)[16]);
+            doc.setFax((String)                                             queryList.get(0)[17]);
+            doc.setEmail((String)                                           queryList.get(0)[18]);
+            doc.setZip_code((String)                                        queryList.get(0)[19]);
+            doc.setCountry_id((Integer)                                     queryList.get(0)[20]);
+            doc.setRegion_id((Integer)                                      queryList.get(0)[21]);
+            doc.setCity_id((Integer)                                        queryList.get(0)[22]);
+            doc.setStreet((String)                                          queryList.get(0)[23]);
+            doc.setHome((String)                                            queryList.get(0)[24]);
+            doc.setFlat((String)                                            queryList.get(0)[25]);
+            doc.setAdditional_address((String)                              queryList.get(0)[26]);
+            doc.setStatus_id(queryList.get(0)[27]!=null?Long.parseLong(     queryList.get(0)[27].toString()):null);
+            doc.setPrice_type_id(queryList.get(0)[28]!=null?Long.parseLong( queryList.get(0)[28].toString()):null);
+            doc.setDiscount_card((String)                                   queryList.get(0)[29]);
+            doc.setJr_jur_full_name((String)                                queryList.get(0)[30]);
+            doc.setJr_jur_kpp(queryList.get(0)[31]!=null?Long.parseLong(    queryList.get(0)[31].toString()):null);
+            doc.setJr_jur_ogrn(queryList.get(0)[32]!=null?Long.parseLong(   queryList.get(0)[32].toString()):null);
+            doc.setJr_zip_code((String)                                     queryList.get(0)[33]);
+            doc.setJr_country_id((Integer)                                  queryList.get(0)[34]);
+            doc.setJr_region_id((Integer)                                   queryList.get(0)[35]);
+            doc.setJr_city_id((Integer)                                     queryList.get(0)[36]);
+            doc.setJr_street((String)                                       queryList.get(0)[37]);
+            doc.setJr_home((String)                                         queryList.get(0)[38]);
+            doc.setJr_flat((String)                                         queryList.get(0)[39]);
+            doc.setJr_additional_address((String)                           queryList.get(0)[40]);
+            doc.setJr_inn(queryList.get(0)[41]!=null?Long.parseLong(        queryList.get(0)[41].toString()):null);
+            doc.setJr_okpo(queryList.get(0)[42]!=null?Long.parseLong(       queryList.get(0)[42].toString()):null);
+            doc.setJr_fio_family((String)                                   queryList.get(0)[43]);
+            doc.setJr_fio_name((String)                                     queryList.get(0)[44]);
+            doc.setJr_fio_otchestvo((String)                                queryList.get(0)[45]);
+            doc.setJr_ip_ogrnip(queryList.get(0)[46]!=null?Long.parseLong(  queryList.get(0)[46].toString()):null);
+            doc.setJr_ip_svid_num((String)                                  queryList.get(0)[47]);
+            doc.setJr_ip_reg_date((String)                                  queryList.get(0)[48]);
+            doc.setStatus_name((String)                                     queryList.get(0)[49]);
+            doc.setStatus_color((String)                                    queryList.get(0)[50]);
+            doc.setStatus_description((String)                              queryList.get(0)[51]);
+            doc.setCountry((String)                                         queryList.get(0)[52]);
+            doc.setJr_country((String)                                      queryList.get(0)[53]);
+            doc.setRegion((String)                                          queryList.get(0)[54]);
+            doc.setJr_region((String)                                       queryList.get(0)[55]);
+            doc.setCity((String)                                            queryList.get(0)[56]);
+            doc.setJr_city((String)                                         queryList.get(0)[57]);
+            doc.setArea((String)                                            queryList.get(0)[58]);
+            doc.setJr_area((String)                                         queryList.get(0)[59]);
+            return doc;
         } else return null;
     }
 
-
+    @Transactional
     @SuppressWarnings("Duplicates")
     public boolean updateCagents(CagentsForm request) {
 
@@ -205,43 +507,297 @@ public class CagentRepositoryJPA {
         Long DocumentMasterId=document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());//владелец моего аккаунта
         boolean isItMyMastersDock =(DocumentMasterId.equals(myMasterId));
-
         if(((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 ||(!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
                 && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
-            try
-            {
-                emgr.getTransaction().begin();
+            if(updateCagentBaseFields(request)){//Сначала сохраняем документ без контактных лиц и банковских счетов
+                try {//если сохранился...
+                    //Сохраняем контактные лица
+                    //удаление лишних контактных лиц(которые удалили в фронтэнде)
+                    String ids = "";
+                    //собираем id контактов, которые есть на сохранение, и удаляем из базы те, которых в этой сборке нет
+                    if (request.getCagentsContactsTable()!=null && request.getCagentsContactsTable().size() > 0) {
 
-                document.setName          (request.getName() == null ? "": request.getName());
-                document.setDescription   (request.getDescription() == null ? "": request.getDescription());
+                        for (CagentsContactsForm row : request.getCagentsContactsTable()) {
+                            ids = ids + ((!ids.equals("")&&row.getId()!=null)?",":"") + (row.getId()==null?"":row.getId().toString());
+                        }
+                    }
+                    ids=(!ids.equals("")?ids:"0");
+                    if(deleteCagentContactsExcessRows(ids, request.getId())){
+                        //если удаление прошло успешно...
+                        for (CagentsContactsForm row : request.getCagentsContactsTable()) {
+                            if(row.getId()!=null){//контакт содержит id, значит он есть в БД, и нужно его апдейтить
+                                updateCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
+                            }else{//контакт не содержит id, значит его нет в БД, и нужно его инсертить
+                                insertCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
+                            }
+                        }
+                    }
 
-                //организационно-правовая форма предприятия
-                document.setCagentOpf(emgr.find(SpravSysOPF.class, request.getOpf_id()));
-                //категории
-                Set<Long> categories = request.getSelectedCagentCategories();
-                if (!categories.isEmpty()) { //если есть выбранные чекбоксы категорий
-                    Set<CagentCategories> setCategoriesOfCagent= getCategoriesSetBySetOfCategoriesId(categories);
-                    document.setCagentCategories(setCategoriesOfCagent);
-                } else { // если ни один чекбокс категорий не выбран
-                    document.setCagentCategories(null);
+                    //удаление лишних банковских счетов (которые удалили в фронтэнде)
+                    ids = "";
+                    //собираем id банковских счетов, которые есть на сохранение, и удаляем из базы те, которых в этой сборке нет
+                    if (request.getCagentsPaymentAccountsTable()!=null && request.getCagentsPaymentAccountsTable().size() > 0) {
+                        for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
+                            ids = ids + ((!ids.equals("")&&row.getId()!=null)?",":"") + (row.getId()==null?"":row.getId().toString());
+                        }
+                    }
+                    ids=(!ids.equals("")?ids:"0");
+                    if(deleteCagentPaymentAccountsExcessRows(ids, request.getId())){
+                        //если удаление прошло успешно...
+                        for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
+                            if(row.getId()!=null){//счет содержит id, значит он есть в БД, и нужно его апдейтить
+                                updateCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
+                            }else{//счет не содержит id, значит его нет в БД, и нужно его инсертить
+                                insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
+                            }
+                        }
+                    }
+                    deleteAllCagentCategories(request.getId());
+                    Set<Long> categories = request.getSelectedCagentCategories();
+                    if (categories!=null && categories.size()>0) { //если есть выбранные чекбоксы категорий
+                       addSetOfCagentCategories(request.getId(),categories);
+                    }
+
+                    return true;
+                } catch (Exception e){
+                    e.printStackTrace();
+                    return false;
                 }
+            } else return false;
+        } else return false;
+    }
 
-                User changer = userService.getUserByUsername(userService.getUserName());
-                document.setChanger(changer);//кто изменил
+    @SuppressWarnings("Duplicates")
+    //удаление лишних расчетных счетов (которые удалили в фронтэнде)
+    private Boolean deleteCagentPaymentAccountsExcessRows(String accountsIds, Long cagent_id) {
+        String stringQuery;
+        try {
+            stringQuery =   " delete from cagents_payment_accounts " +
+                    " where cagent_id=" + cagent_id +
+                    " and id not in (" + accountsIds + ")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                document.setDate_time_changed(timestamp);//дату изменения
+    @SuppressWarnings("Duplicates")
+    //удаление лишних контактных лиц (которые удалили в фронтэнде)
+    private Boolean deleteCagentContactsExcessRows(String contactsIds, Long cagent_id) {
+        String stringQuery;
+        try {
+            stringQuery =   " delete from cagents_contacts " +
+                    " where cagent_id=" + cagent_id +
+                    " and id not in (" + contactsIds + ")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-                emgr.getTransaction().commit();
-                emgr.close();
+    @SuppressWarnings("Duplicates")
+    private Boolean insertCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) {
+
+            String stringQuery;
+            try {
+                stringQuery =   " insert into cagents_contacts (" +
+                        "master_id," +
+                        "company_id," +
+                        "cagent_id," +
+                        "fio," +
+                        "position," +
+                        "telephone," +
+                        "email," +
+                        "additional," +
+                        "output_order"+
+                        ") values ("
+                        + master_id +", "
+                        + company_id +", "
+                        + cagent_id +", '"
+                        + (row.getFio()!=null?row.getFio():"") + "', '"
+                        + (row.getPosition()!=null?row.getPosition():"") +"', '"
+                        + (row.getTelephone()!=null?row.getTelephone():"") +"', '"
+                        + (row.getEmail()!=null?row.getEmail():"") +"', '"
+                        + (row.getAdditional()!=null?row.getAdditional():"") + "', "
+                        + row.getOutput_order() + ")";
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
                 return true;
-            }catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
-        } else return false;
+
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean updateCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) {
+
+        String stringQuery;
+        try {
+            stringQuery =   " update cagents_contacts set " +
+                            " fio = '" + row.getFio() + "', " +
+                            " position = '" + row.getPosition() +"', " +
+                            " telephone = '" + row.getTelephone() +"', " +
+                            " email = '" + row.getEmail() +"', " +
+                            " additional = '" + (row.getAdditional()!=null?row.getAdditional():"") + "', " +
+                            " output_order = "+ row.getOutput_order() +
+                            " where " +
+                            " id="+row.getId()+" and "+
+                            " master_id="+master_id+" and "+
+                            " company_id="+company_id+" and "+
+                            " cagent_id="+ cagent_id;
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean insertCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) {
+
+        String stringQuery;
+        try {
+            stringQuery =   " insert into cagents_payment_accounts (" +
+                    "master_id," +
+                    "company_id," +
+                    "cagent_id," +
+                    "bik," +
+                    "name," +
+                    "address," +
+                    "corr_account," +
+                    "payment_account," +
+                    "output_order"+
+                    ") values ("
+                    + master_id +", "
+                    + company_id +", "
+                    + cagent_id +", "
+                    + row.getBik() + ", "
+                    + "'" + (row.getName()!=null?row.getName():"") +"', "
+                    + "'" + (row.getAddress()!=null?row.getAddress():"") +"', "
+                    + "'" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', "
+                    + "'" + (row.getPayment_account()!=null?row.getPayment_account():"") + "', "
+                    + row.getOutput_order() + ")";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean updateCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) {
+
+        String stringQuery;
+        try {
+            stringQuery =   " update cagents_payment_accounts set " +
+                    " bik = " + row.getBik() + ", " +
+                    " name = '" + (row.getName()!=null?row.getName():"") +"', " +
+                    " address = '" + (row.getAddress()!=null?row.getAddress():"") +"', " +
+                    " corr_account = '" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', " +
+                    " payment_account = '" + (row.getPayment_account()!=null?row.getPayment_account():"") + "', " +
+                    " output_order = "+ row.getOutput_order() +
+                    " where " +
+                    " id="+row.getId()+" and "+
+                    " master_id="+master_id+" and "+
+                    " company_id="+company_id+" and "+
+                    " cagent_id="+ cagent_id;
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean updateCagentBaseFields(CagentsForm request){//Апдейт документа без контактных лиц и банковских счетов
+        EntityManager emgr = emf.createEntityManager();
+        Long myId = userRepositoryJPA.getMyId();
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        try
+        {
+            String stringQuery;
+            stringQuery =   " update cagents set " +
+                            " name = '" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+                            " description = '" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                            " opf_id = " + request.getOpf_id() + ", " +//организационно-правовая форма предприятия
+                            " changer_id = " + myId + ", " +// кто изменил
+                            " date_time_changed = now() " + ", " +//дату изменения
+                            " code = '" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
+                            " telephone = '" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
+                            " fax = '" + (request.getFax() == null ? "": request.getFax()) +"', " +//факс
+                            " email = '" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
+                            //фактический адрес
+                            " zip_code = '" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +// почтовый индекс
+                            " country_id = " + request.getCountry_id() + ", " +//страна
+                            " region_id = " + request.getRegion_id() + ", " +//область
+                            " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
+                            " street = '" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
+                            " home = '" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
+                            " flat = '" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
+                            " additional_address = '" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
+                            " status_id = " + request.getStatus_id() + ", " +//статус контрагента
+                            " price_type_id = " + request.getPrice_type_id() + ", " +//тип цен, назначенный для контрагента
+                            " discount_card = '" + (request.getDiscount_card() == null ? "": request.getDiscount_card()) +"', " +//номер дисконтной карты
+                    //Юридические реквизиты
+                            " jr_jur_full_name = '" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
+                            " jr_jur_kpp = " + request.getJr_jur_kpp() + ", " +//кпп (для юрлиц)
+                            " jr_jur_ogrn = " + request.getJr_jur_ogrn() + ", " +//огрн (для юрлиц)
+                            //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
+                            " jr_zip_code = '" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +// почтовый индекс
+                            " jr_country_id = " + request.getJr_country_id() + ", " +//страна
+                            " jr_region_id = " + request.getJr_region_id() + ", " +//область
+                            " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
+                            " jr_street = '" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
+                            " jr_home = '" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
+                            " jr_flat = '" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
+                            " jr_additional_address = '" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
+                            " jr_inn = " + request.getJr_inn() + ", " +//ИНН
+                            " jr_okpo = " + request.getJr_okpo() + ", " +//ОКПО
+                            " jr_fio_family = '" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия (для ИП или физлица)
+                            " jr_fio_name = '" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя (для ИП или физлица)
+                            " jr_fio_otchestvo = '" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество (для ИП или физлица)
+                            " jr_ip_ogrnip = " + request.getJr_ip_ogrnip() + ", " +//ОГРНИП (для ИП)
+                            " jr_ip_svid_num = '" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
+
+                            " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
+                            " where " +
+                            " id = " + request.getId() +
+                            " and master_id = " + myMasterId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     @SuppressWarnings("Duplicates")
@@ -251,10 +807,10 @@ public class CagentRepositoryJPA {
         {
             EntityManager emgr = emf.createEntityManager();
             Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
-            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
+            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            Long createdCagentId = null;
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(12L, "129") &&
                     Long.valueOf(myCompanyId) != request.getCompany_id()) || DocumentMasterId != myMasterId )
@@ -265,43 +821,142 @@ public class CagentRepositoryJPA {
             {
                 try
                 {
-                    Cagents newDocument = new Cagents();
-                    //создатель
-                    User creator = userRepository.getUserByUsername(userRepository.getUserName());
-                    newDocument.setCreator(creator);//создателя
-                    //владелец
-                    User master = userRepository.getUserByUsername(
-                            userRepositoryJPA.getUsernameById(
-                                    userRepositoryJPA.getUserMasterIdByUsername(
-                                            userRepository.getUserName())));
-                    newDocument.setMaster(master);
-                    //дата и время создания
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    newDocument.setDate_time_created(timestamp);//
-                    //предприятие
-                    newDocument.setCompany(companyRepositoryJPA.getCompanyById(request.getCompany_id()));
-                    //Наименование
-                    newDocument.setName(request.getName() == null ? "" : request.getName());
-                    //дополнительная информация
-                    newDocument.setDescription(request.getDescription() == null ? "" : request.getDescription());
-                    //организационно-правовая форма предприятия
-                    newDocument.setCagentOpf(emgr.find(SpravSysOPF.class, request.getOpf_id()));
-
-                    Set<Long> categories = request.getSelectedCagentCategories();
-                    if (!categories.isEmpty()) {
-                        Set<CagentCategories> setCategoriesOfCagent = getCategoriesSetBySetOfCategoriesId(categories);
-                        newDocument.setCagentCategories(setCategoriesOfCagent);
-                    }
-
-                    entityManager.persist(newDocument);
-                    entityManager.flush();
-                    return newDocument.getId();
+                    createdCagentId = insertCagentBaseFields(request,myMasterId);
+                    if(createdCagentId!=null){//Сначала создаём документ без контактных лиц и банковских счетов
+                        try {//если создался...
+                            //Сохраняем контактные лица
+                                for (CagentsContactsForm row : request.getCagentsContactsTable()) {
+                                        insertCagentContacts(row, myMasterId, request.getCompany_id(),createdCagentId);
+                                }
+                                for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
+                                        insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),createdCagentId);
+                                }
+                            Set<Long> categories = request.getSelectedCagentCategories();
+                            if (categories!=null && categories.size()>0) { //если есть выбранные чекбоксы категорий
+                                addSetOfCagentCategories(createdCagentId,categories);
+                            }
+                            return createdCagentId;
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            return null;
+                        }
+                    } else return null;
                 } catch (Exception e) {
                     e.printStackTrace();
                     return null;
                 }
             }
         } else return null;
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Long insertCagentBaseFields(CagentsForm request,Long myMasterId){
+        String stringQuery;
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        Long myId = userRepository.getUserId();
+        Long newDockId;
+        stringQuery =   "insert into cagents (" +
+                " master_id," + //мастер-аккаунт
+                " creator_id," + //создатель
+                " company_id," + //предприятие, для которого создается документ
+                " date_time_created," + //дата и время создания
+                " name," + //наименование
+                " description," +//описание
+                " opf_id,"+//организационно-правовая форма предприятия
+                " code,"+//код
+                " telephone,"+//телефон
+                " fax,"+//факс
+                " email,"+//емейл
+                //фактический адрес
+                " zip_code,"+// почтовый индекс
+                " country_id,"+//страна
+                " region_id,"+//область
+                " city_id,"+//город/нас.пункт
+                " street,"+//улица
+                " home,"+//дом
+                " flat,"+//квартира
+                " additional_address,"+//дополнение к адресу
+                " status_id,"+//статус контрагента
+                " price_type_id,"+//тип цен, назначенный для контрагента
+                " discount_card,"+//номер дисконтной карты
+                //Юридические реквизиты
+                " jr_jur_full_name,"+//полное название (для юрлиц)
+                " jr_jur_kpp,"+//кпп (для юрлиц)
+                " jr_jur_ogrn,"+//огрн (для юрлиц)
+                //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
+                " jr_zip_code,"+// почтовый индекс
+                " jr_country_id,"+//страна
+                " jr_region_id,"+//область
+                " jr_city_id,"+//город/нас.пункт
+                " jr_street,"+//улица
+                " jr_home,"+//дом
+                " jr_flat,"+//квартира
+                " jr_additional_address,"+//дополнение к адресу
+                " jr_inn,"+//ИНН
+                " jr_okpo,"+//ОКПО
+                " jr_fio_family,"+//Фамилия
+                " jr_fio_name,"+//Имя
+                " jr_fio_otchestvo,"+//Отчество
+                " jr_ip_ogrnip,"+//ОГРНИП (для ИП)
+                " jr_ip_svid_num,"+//номер свидетельства (для ИП)
+                " jr_ip_reg_date" + //дата регистрации (для ИП)
+                ") values (" +
+                myMasterId + ", "+
+                myId + ", "+
+                request.getCompany_id() + ", "+
+                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+                "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                request.getOpf_id() + ", " +//организационно-правовая форма предприятия
+                "'" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
+                "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
+                "'" + (request.getFax() == null ? "": request.getFax()) +"', " +//факс
+                "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
+                //фактический адрес
+                "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
+                request.getCountry_id() + ", " +//страна
+                request.getRegion_id() + ", " +//область
+                request.getCity_id() + ", " +//город/нас.пункт
+                "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
+                "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
+                "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
+                "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
+                request.getStatus_id() + ", " +//статус контрагента
+                request.getPrice_type_id() + ", " +//тип цен, назначенный для контрагента
+                "'" + (request.getDiscount_card() == null ? "": request.getDiscount_card()) +"', " +//номер дисконтной карты
+                //Юридические реквизиты
+                "'" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
+                request.getJr_jur_kpp() + ", " +//кпп (для юрлиц)
+                request.getJr_jur_ogrn() + ", " +//огрн (для юрлиц)
+                //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
+                "'" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +//почтовый индекс
+                request.getJr_country_id() + ", " +//страна
+                request.getJr_region_id() + ", " +//область
+                request.getJr_city_id() + ", " +//город/нас.пункт
+                "'" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
+                "'" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
+                "'" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
+                "'" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
+                request.getJr_inn() + ", " +//ИНН
+                request.getJr_okpo() + ", " +//ОКПО
+                "'" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия
+                "'" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя
+                "'" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество
+                request.getJr_ip_ogrnip() + ", " +//ОГРНИП (для ИП)
+                "'" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
+                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
+                ")";
+        try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDockId=Long.valueOf(query2.getSingleResult().toString());
+                return newDockId;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
     }
 
     @Transactional
@@ -327,7 +982,7 @@ public class CagentRepositoryJPA {
     }
 
     //отдает список наименований контрагентов по поисковой подстроке и предприятию
-    @Transactional// тут не надо прописывать права, т.к. это сервисный запрос
+    // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
     public List getCagentsList(String searchString, int companyId) {
         String stringQuery;
@@ -360,6 +1015,7 @@ public class CagentRepositoryJPA {
         return returnList;
     }
 
+
 //*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
 //*****************************************************************************************************************************************************
@@ -383,7 +1039,6 @@ public class CagentRepositoryJPA {
         List<Integer> depIds = query.getResultList();
         return depIds;
     }
-
 
     @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
     @SuppressWarnings("Duplicates") //возвращает набор деревьев категорий по их корневым id
@@ -489,7 +1144,6 @@ public class CagentRepositoryJPA {
         } else return null;
     }
 
-
     @Transactional
     @SuppressWarnings("Duplicates")
     public Long insertCagentCategory(CagentCategoriesForm request)
@@ -520,9 +1174,7 @@ public class CagentRepositoryJPA {
                         "parent_id," +
                         "company_id," +
                         "date_time_created" +
-
                         ") values ( " +
-
                         "'"+request.getName()+"', "+
                         myMasterId+","+
                         myId+","+
@@ -533,6 +1185,7 @@ public class CagentRepositoryJPA {
                 {
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if(query.executeUpdate()==1){
+//                        Long id = (Long)query.getSingleResult();
                         stringQuery="" +
                                 "select id from cagent_categories where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -642,4 +1295,50 @@ public class CagentRepositoryJPA {
             }
         } else return false;
     }
+
+    @SuppressWarnings("Duplicates")
+    //удаление всех категорий из контрагента - нужно для сохранения контрагента на стадии сохранения его категорий - они перезаписываются заново
+    //т.к. некоторые могли быть добавлены, а какие-то удалены.
+    private Boolean deleteAllCagentCategories(Long cagent_id) {
+        String stringQuery;
+        try {
+            stringQuery =   " delete from cagent_cagentcategories " +
+                    " where cagent_id=" + cagent_id;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")//добавляет контрагенту все выбранные в карточке контрагента категории
+    private Boolean addSetOfCagentCategories(Long cagent_id, Set<Long> categories) {
+        String stringQuery;
+        int i=0;
+        try {
+            stringQuery =   " insert into cagent_cagentcategories (" +
+                            " cagent_id," +
+                            " category_id" +
+                            ") values ";
+            for(long category_id:categories){
+                i++;
+                stringQuery =  stringQuery + "(" + cagent_id + "," + category_id + ") ";
+                if (i < categories.size()){
+                    stringQuery =  stringQuery + ", ";
+                }
+            }
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
 }
