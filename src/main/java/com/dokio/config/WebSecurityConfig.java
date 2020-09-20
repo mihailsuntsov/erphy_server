@@ -27,7 +27,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import com.dokio.security.jwt.JwtAuthEntryPoint;
 import com.dokio.security.jwt.JwtAuthTokenFilter;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -74,7 +73,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 authorizeRequests()
                 .antMatchers("/api/auth/**").authenticated()//по данному адресу разрешен доступ не всем
                 .antMatchers("/api/public/**").permitAll()//по данному адресу разрешен доступ всем
-//                .antMatchers("/api/res/**").permitAll()//для ресурсов (картинки, доки). Доступ всем но с проверкой ресурса на открытость внешнему миру
                 .anyRequest().authenticated()// все остальные запросы - нужна аутентификация
                 .and()
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
