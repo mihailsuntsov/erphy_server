@@ -13,71 +13,42 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 <http://www.gnu.org/licenses/>
  */
 package com.dokio.controller;
+import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.CompaniesJSON;
-import com.dokio.message.request.CompanyForm;
+import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.SearchForm;
-import com.dokio.model.Companies;
-import com.dokio.model.Sprav.SpravSysOPF;
-import com.dokio.model.User;
-import com.dokio.repository.UserRepositoryJPA;
-import com.dokio.security.services.UserDetailsServiceImpl;
-import com.dokio.service.company.CompanyService;
+import com.dokio.message.response.FilesCompaniesJSON;
+import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.repository.CompanyRepositoryJPA;
+import com.dokio.repository.UserGroupRepositoryJPA;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Timestamp;
-
-import java.util.Date;
 
 @Controller
 public class CompaniesController {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @Autowired
-    private EntityManagerFactory emf;
-
+    CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    CompanyService companyService;
-
-    @Autowired
-    private UserDetailsServiceImpl userRepository;
-
-    @Autowired
-    private UserRepositoryJPA userRepositoryJPA;
+    UserGroupRepositoryJPA userGroupRepositoryJPA;
 
     @PostMapping("/api/auth/getCompaniesTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCompaniesTableRequest(@RequestBody SearchForm searchRequest) {
+    public ResponseEntity<?> getCompaniesTable(@RequestBody SearchForm searchRequest) {
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        //String masterId;
-        List<Companies> companiesList;
-        // чтобы не показывать в html реальные наименования методов в Companies
-        if (sortColumn != null && sortColumn.equals("columnName")) {
-            sortColumn = "name";
-//        } else if (sortColumn != null && sortColumn.equals("columnDate")) {
-//            sortColumn = "cli_datebirth";
-        }else if (sortColumn != null && sortColumn.equals("columnId")) {
-            sortColumn = "id";
-        }
+        List<CompaniesJSON> returnList;
+
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
         } else {
@@ -95,44 +66,41 @@ public class CompaniesController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        //masterId = searchRequest.getMasterId();
-        companiesList = companyService.getCompaniesTable(result, offsetreal, searchString, sortColumn, sortAsc);//запрос списка: взять кол-во rezult, начиная с offsetreal
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(companiesList, HttpStatus.OK);
+        returnList = companyRepositoryJPA.getCompaniesTable(result, offsetreal, searchString, sortColumn, sortAsc);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @PostMapping("/api/auth/getCompaniesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesList() {
-        List<Companies> companiesList;
-        companiesList = companyService.getCompaniesList();
+        List<IdAndName> companiesList;
+        companiesList = companyRepositoryJPA.getCompaniesList();
         return new ResponseEntity<>(companiesList, HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/getMyCompanyList")//возвращает List из 1 предприятия.
+    @PostMapping("/api/auth/insertCompany")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getMyCompanyList() {
-        List<Companies> companiesList;
-        companiesList = companyService.getCompaniesList();
-        return new ResponseEntity<>(companiesList, HttpStatus.OK);
+    public ResponseEntity<?> insertCompany(@RequestBody CompaniesForm request){
+        Long newDocument = companyRepositoryJPA.insertCompany(request);
+        if(newDocument!=null && newDocument>0){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
     }
 
     @PostMapping("/api/auth/deleteCompanies")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteCompanies(@RequestBody CompanyForm companyRequest) throws ParseException{
-        String checked = companyRequest.getChecked() == null ? "": companyRequest.getChecked();
-        ArrayList<Long> decArray = new ArrayList<Long>();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-
-        for( String s : checked.split(",") ){
-            decArray.add( new Long(s) );
-        }
-        if(companyService.deleteCompaniesByNumber(decArray)){
+    public  ResponseEntity<?> deleteCompanies(@RequestBody SignUpForm request){
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        if(companyRepositoryJPA.deleteCompanies(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCompanies", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -143,9 +111,7 @@ public class CompaniesController {
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
-        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -156,9 +122,7 @@ public class CompaniesController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        //disabledLINK=pagenum;
-        int size = companyService.getCompaniesSize(searchString);//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = companyRepositoryJPA.getCompaniesSize(searchString);//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -204,86 +168,69 @@ public class CompaniesController {
         return responseEntity;
     }
 
-    //Отдает ЗНАЧЕНИЯ из таблицы companies по id предприятия
-    @PostMapping("/api/auth/getCompanyValuesById")
+    @PostMapping("/api/auth/getCompanyValues")//Отдает ЗНАЧЕНИЯ из таблицы companies по id предприятия
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCompanyValuesById(@RequestBody CompanyForm companyRequest) {
+    public ResponseEntity<?> getCompanyValues(@RequestBody CompaniesForm companyRequest) {
         CompaniesJSON company;
-        int id = companyRequest.getId();
-        company=companyService.getCompanyValuesById(id);//результат запроса помещается в объект
+        Long id = companyRequest.getId();
+        company=companyRepositoryJPA.getCompanyValues(id);//результат запроса помещается в объект
         ResponseEntity<CompaniesJSON> responseEntity = new ResponseEntity<>(company, HttpStatus.OK);
         return responseEntity;
     }
 
-
     @PostMapping("/api/auth/updateCompany")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCompany(@RequestBody CompanyForm companyRequest) {
-        if(companyService.updateCompany(companyRequest)){
+    public ResponseEntity<?> updateCompany(@RequestBody CompaniesForm companyRequest) {
+        if(companyRepositoryJPA.updateCompany(companyRequest)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-
-    @PostMapping("/api/auth/insertCompany")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertCompany(@RequestBody CompanyForm companyRequest) throws ParseException {
-
-        String name = companyRequest.getNameShort() == null ? "": companyRequest.getNameShort();
-
-        SpravSysOPF opf;
-        if (companyRequest.getOpf_id() != null && !companyRequest.getOpf_id().isEmpty() && companyRequest.getOpf_id().trim().length() > 0 && companyRequest.getOpf_id() != "0")  {
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        opf = em.find(SpravSysOPF.class, Long.valueOf(Integer.parseInt(companyRequest.getOpf_id())));
-        em.close();}
-        else{opf=null;}
-
-        DateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-        Date dateReg =null;
-        if (companyRequest.getDateReg() != null && !companyRequest.getDateReg().isEmpty() && companyRequest.getDateReg().trim().length() > 0) {
-            dateReg = format.parse(companyRequest.getDateReg());
+    @PostMapping("/api/auth/getCompaniesPaymentAccounts")// отдаёт список банковских счетов контрагента
+    public ResponseEntity<?> getCompaniesPaymentAccounts(@RequestBody UniversalForm searchRequest) {
+        try {
+            return  new ResponseEntity<>(companyRepositoryJPA.getCompanyPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Error when requesting getCompanyPaymentAccounts", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
 
-        User creator =  userRepository.getUserByUsername(userRepository.getUserName());
-        User master = userRepository.getUserByUsername(
-                        userRepositoryJPA.getUsernameById(
-                              userRepositoryJPA.getUserMasterIdByUsername(
-                                    userRepository.getUserName() )));
+//*****************************************************************************************************************************************************
+//****************************************************   F   I   L   E   S   **************************************************************************
+//*****************************************************************************************************************************************************
 
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+    @PostMapping("/api/auth/getListOfCompanyFiles")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getListOfCompanyFiles(@RequestBody UniversalForm request)  {
+        Long companyId=request.getId();
+        List<FilesCompaniesJSON> returnList;
+        try {
+            returnList = companyRepositoryJPA.getListOfCompanyFiles(companyId);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Error when requesting list of files", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        Companies company = new Companies();
-        company.setCompName(name);
-        company.setCreator(creator);
-        company.setMaster(master);
-        company.setCompNameFull(companyRequest.getNameFull());
-        company.setCompAddressFact(companyRequest.getAddressfact());
-        company.setCompAddressJur(companyRequest.getAddressjur());
-        company.setCompBank(companyRequest.getBank());
-        company.setCompbik(companyRequest.getBik());
-        company.setCompDateReg(dateReg);
-        company.setCompInn(companyRequest.getInn());
-        company.setCompKorschet(companyRequest.getKorschet());
-        company.setCompOpf(opf);
-        company.setCompReg_num(companyRequest.getReg_num());
-        company.setCompRs(companyRequest.getRs());
-        company.setCompWho_got(companyRequest.getWho_got());
-        company.setCompDateTimeCreated(timestamp);
-        company.setSt_prefix_barcode_packed(companyRequest.getSt_prefix_barcode_packed());
-        company.setSt_prefix_barcode_pieced(companyRequest.getSt_prefix_barcode_pieced());
-        company.setCurrency_id(companyRequest.getCurrency_id());
+    @PostMapping("/api/auth/deleteCompanyFile")
+    public ResponseEntity<?> deleteCompanyFile(@RequestBody SearchForm request) {
+        if(companyRepositoryJPA.deleteCompanyFile(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error when deleting file", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        Long idNewCompany=companyService.insertCompany(company);
-
-
-        if(idNewCompany !=null){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + idNewCompany+"\n" +  "]", HttpStatus.OK);
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/addFilesToCompany")
+    public ResponseEntity<?> addFilesToCompany(@RequestBody UniversalForm request) {
+        if(companyRepositoryJPA.addFilesToCompany(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when adding file", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

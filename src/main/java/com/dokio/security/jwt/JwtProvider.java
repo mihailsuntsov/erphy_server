@@ -30,7 +30,7 @@ public class JwtProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
-    @Value("jwtGrokonezSecretKey")
+    @Value("jwtDokioSecretKey_QRds43wsd49_76")
     private String jwtSecret;
 
     @Value("86400")

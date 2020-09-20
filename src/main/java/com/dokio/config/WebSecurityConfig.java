@@ -72,11 +72,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable().
                 authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()//по данному адресу БУДЕТ разрешен доступ не всем
+                .antMatchers("/api/auth/**").authenticated()//по данному адресу разрешен доступ не всем
                 .antMatchers("/api/public/**").permitAll()//по данному адресу разрешен доступ всем
-                //.antMatchers(HttpMethod.GET,"/gift/**").permitAll();
-               // .antMatchers("/api/auth/**").denyAll()
-                //.antMatchers("/**").denyAll()
+//                .antMatchers("/api/res/**").permitAll()//для ресурсов (картинки, доки). Доступ всем но с проверкой ресурса на открытость внешнему миру
                 .anyRequest().authenticated()// все остальные запросы - нужна аутентификация
                 .and()
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()

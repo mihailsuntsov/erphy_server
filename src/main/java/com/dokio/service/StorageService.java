@@ -228,9 +228,12 @@ public class StorageService {
         return resultList;
     }
 
-    //***************************************************************************
+//***************************************************************************
 //***************************** U T I L S ***********************************
 //***************************************************************************
+
+
+
     String getFileExtension(String name) {
         int lastIndexOf = name.lastIndexOf(".");
         if (lastIndexOf == -1) {
@@ -304,8 +307,14 @@ public class StorageService {
 
     }
 
+    public String GetOriginalFileName(String fileName){
+        String stringQuery="select original_name from files where name = '"+fileName+"'";
+        Query query = entityManager.createNativeQuery(stringQuery);
+        String originName = query.getSingleResult().toString();
+        return originName;
+    }
+
     public String GetImgThumbPathByFileName(String fileName){
-//        String stringQuery="select path||'\\thumbs\\'||name from files where name = '"+fileName+"'";
         String stringQuery="select path||'//thumbs//'||name from files where name = '"+fileName+"'";
         Query query = entityManager.createNativeQuery(stringQuery);
         return query.getSingleResult().toString();

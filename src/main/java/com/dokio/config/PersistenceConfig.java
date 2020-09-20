@@ -17,7 +17,9 @@ package com.dokio.config;
 import java.util.Properties;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,21 +35,23 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages= "com.dokio.repository")
-
-
+@PropertySource("classpath:application.properties")
+//@PropertySource(value="file:${app.home}/app.properties", ignoreResourceNotFound=true)
+// Если значения PropertySource дублируются, последние перезаписывают предыдущие.
+// ignoreResourceNotFound игнорирует ненайденные файлы со свойствами для PropertySource, не вызывая FileNotFoundException
 public class PersistenceConfig {
 
+    @Autowired
+    private Environment env;
 
     @Bean
-    public PlatformTransactionManager transactionManager()
-    {
+    public PlatformTransactionManager transactionManager() {
         EntityManagerFactory factory = entityManagerFactory().getObject();
         return new JpaTransactionManager(factory);
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory()
-    {
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         vendorAdapter.setGenerateDdl(Boolean.TRUE);
@@ -67,26 +71,23 @@ public class PersistenceConfig {
     }
 
     @Bean
-    public HibernateExceptionTranslator hibernateExceptionTranslator()
-    {
+    public HibernateExceptionTranslator hibernateExceptionTranslator() {
         return new HibernateExceptionTranslator();
     }
 
     @Bean
-    public static DataSource getDataSource() {
-    DriverManagerDataSource dataSource = new DriverManagerDataSource();
-    dataSource.setDriverClassName("org.postgresql.Driver");
-    dataSource.setUrl("jdbc:postgresql://localhost:5432/laniakea?useUnicode=true&characterEncoding=utf8");
-    dataSource.setUsername("postgres");
-    dataSource.setPassword("111111");// ***ИЗМЕНИТЬ ДЛЯ ПРОДА***
-    return dataSource;}
+    public DataSource getDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        String jdbcURl = env.getProperty("spring.datasource.url");
+        String dbUsername = env.getProperty("spring.datasource.username");
+        String dbPassword = env.getProperty("spring.datasource.password");
 
-//    @Bean
-//    public ObjectMapper objectMapper() {
-//        DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy'T'HH:mm:ss");
-//        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Yekaterinburg"));
-//        ObjectMapper mapper = new ObjectMapper();
-//        mapper.setDateFormat(dateFormat);
-//        return mapper;
-//    }
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        dataSource.setUrl(jdbcURl);
+        dataSource.setUsername(dbUsername);
+        dataSource.setPassword(dbPassword);
+        return dataSource;
+    }
+
 }

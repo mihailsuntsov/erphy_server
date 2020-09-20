@@ -12,114 +12,77 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-//Класс для формирования JSON
-package com.dokio.message.response;
+//Класс для преобразования CRUD-запросов в объект
+package com.dokio.message.request;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.sql.Timestamp;
+import java.util.Set;
 
-public class CompaniesJSON {
-
-//    private String namefull;
+public class CompaniesForm {
+//    private String nameShort;
+//    private String nameFull;
 //    private String addressjur;
 //    private String addressfact;
 //    private String inn;
 //    private String reg_num;
 //    private String who_got;
-//    private String datereg;
+//    private String dateReg;
 //    private String korschet;
 //    private String rs;
 //    private String bank;
 //    private String bik;
-//    private String st_prefix_barcode_pieced;
-//    private String st_prefix_barcode_packed;
+//    private String checked;
+//    private Integer st_prefix_barcode_pieced;
+//    private Integer st_prefix_barcode_packed;
 
     private Long id;
-    private Long master_id;
-    private Long creator_id;
-    private Long changer_id;
-    private String name;
-    private String date_time_created;
-    private String date_time_changed;
-    private String master;
-    private String creator;
-    private String changer;
     private Integer currency_id;
-    private String opf;
     private Integer opf_id;
+    private String checked;//для удаления
 
-    // Апдейт Предприятий:
-
-    private String  code;
-    private String  telephone;
-    private String  fax;
-    private String  email;
-    private String  zip_code;
+    // Апдейт Предприятия:
+    private String name;
+    private String code;
+    private String telephone;
+    private String fax;
+    private String email;
+    private String zip_code;
     private Integer country_id;
     private Integer region_id;
     private Integer city_id;
-    private String  street;
-    private String  home;
-    private String  flat;
-    private String  additional_address;
-
-    private Long    status_id;
-
-    private String  jr_jur_full_name;
-    private Long    jr_jur_kpp;
-    private Long    jr_jur_ogrn;
-    private String  jr_zip_code;
+    private String street;
+    private String home;
+    private String flat;
+    private String additional_address;
+    private Long status_id;
+    private String jr_jur_full_name;
+    private Long jr_jur_kpp;
+    private Long jr_jur_ogrn;
+    private String jr_zip_code;
     private Integer jr_country_id;
     private Integer jr_region_id;
     private Integer jr_city_id;
-    private String  jr_street;
-    private String  jr_home;
-    private String  jr_flat;
-    private String  jr_additional_address;
-
-    private Long   jr_inn;
-    private Long   jr_okpo;
+    private String jr_street;
+    private String jr_home;
+    private String jr_flat;
+    private String jr_additional_address;
+    private Long jr_inn;
+    private Long jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
     private String jr_fio_otchestvo;
-    private Long   jr_ip_ogrnip;
+    private Long jr_ip_ogrnip;
     private String jr_ip_svid_num; // string т.к. оно может быть типа "серия 77 №42343232"
     private String jr_ip_reg_date;
+    private Set<CompaniesPaymentAccountsForm> companiesPaymentAccountsTable;//банковские счета
 
     private Boolean nds_payer;
     private String fio_director;
     private String director_position;
     private String fio_glavbuh;
-    private Long   director_signature_id;
-    private Long   glavbuh_signature_id;
-    private Long   stamp_id;
-    private Long   card_template_id;
-
-    private String status_name;
-    private String status_color;
-    private String status_description;
-    private String country;
-    private String region;
-    private String city;
-    private String area;
-    private String jr_country;
-    private String jr_region;
-    private String jr_city;
-    private String jr_area;
-    private String currency_name;
-    private String director_signature_filename;
-    private String glavbuh_signature_filename;
-    private String stamp_filename;
-    private String card_template_filename;
-
-    public String getCard_template_filename() {
-        return card_template_filename;
-    }
-
-    public void setCard_template_filename(String card_template_filename) {
-        this.card_template_filename = card_template_filename;
-    }
+    private Long director_signature_id;
+    private Long glavbuh_signature_id;
+    private Long stamp_id;
+    private Long card_template_id;
 
     public Long getCard_template_id() {
         return card_template_id;
@@ -127,30 +90,6 @@ public class CompaniesJSON {
 
     public void setCard_template_id(Long card_template_id) {
         this.card_template_id = card_template_id;
-    }
-
-    public String getDirector_signature_filename() {
-        return director_signature_filename;
-    }
-
-    public void setDirector_signature_filename(String director_signature_filename) {
-        this.director_signature_filename = director_signature_filename;
-    }
-
-    public String getGlavbuh_signature_filename() {
-        return glavbuh_signature_filename;
-    }
-
-    public void setGlavbuh_signature_filename(String glavbuh_signature_filename) {
-        this.glavbuh_signature_filename = glavbuh_signature_filename;
-    }
-
-    public String getStamp_filename() {
-        return stamp_filename;
-    }
-
-    public void setStamp_filename(String stamp_filename) {
-        this.stamp_filename = stamp_filename;
     }
 
     public Long getStamp_id() {
@@ -169,78 +108,6 @@ public class CompaniesJSON {
         this.id = id;
     }
 
-    public Long getMaster_id() {
-        return master_id;
-    }
-
-    public void setMaster_id(Long master_id) {
-        this.master_id = master_id;
-    }
-
-    public Long getCreator_id() {
-        return creator_id;
-    }
-
-    public void setCreator_id(Long creator_id) {
-        this.creator_id = creator_id;
-    }
-
-    public Long getChanger_id() {
-        return changer_id;
-    }
-
-    public void setChanger_id(Long changer_id) {
-        this.changer_id = changer_id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDate_time_created() {
-        return date_time_created;
-    }
-
-    public void setDate_time_created(String date_time_created) {
-        this.date_time_created = date_time_created;
-    }
-
-    public String getDate_time_changed() {
-        return date_time_changed;
-    }
-
-    public void setDate_time_changed(String date_time_changed) {
-        this.date_time_changed = date_time_changed;
-    }
-
-    public String getMaster() {
-        return master;
-    }
-
-    public void setMaster(String master) {
-        this.master = master;
-    }
-
-    public String getCreator() {
-        return creator;
-    }
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public String getChanger() {
-        return changer;
-    }
-
-    public void setChanger(String changer) {
-        this.changer = changer;
-    }
-
     public Integer getCurrency_id() {
         return currency_id;
     }
@@ -249,20 +116,20 @@ public class CompaniesJSON {
         this.currency_id = currency_id;
     }
 
-    public String getOpf() {
-        return opf;
-    }
-
-    public void setOpf(String opf) {
-        this.opf = opf;
-    }
-
     public Integer getOpf_id() {
         return opf_id;
     }
 
     public void setOpf_id(Integer opf_id) {
         this.opf_id = opf_id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getCode() {
@@ -275,6 +142,14 @@ public class CompaniesJSON {
 
     public String getTelephone() {
         return telephone;
+    }
+
+    public String getChecked() {
+        return checked;
+    }
+
+    public void setChecked(String checked) {
+        this.checked = checked;
     }
 
     public void setTelephone(String telephone) {
@@ -521,6 +396,14 @@ public class CompaniesJSON {
         this.jr_ip_reg_date = jr_ip_reg_date;
     }
 
+    public Set<CompaniesPaymentAccountsForm> getCompaniesPaymentAccountsTable() {
+        return companiesPaymentAccountsTable;
+    }
+
+    public void setCompaniesPaymentAccountsTable(Set<CompaniesPaymentAccountsForm> companiesPaymentAccountsTable) {
+        this.companiesPaymentAccountsTable = companiesPaymentAccountsTable;
+    }
+
     public Boolean getNds_payer() {
         return nds_payer;
     }
@@ -567,101 +450,5 @@ public class CompaniesJSON {
 
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
-    }
-
-    public String getStatus_name() {
-        return status_name;
-    }
-
-    public void setStatus_name(String status_name) {
-        this.status_name = status_name;
-    }
-
-    public String getStatus_color() {
-        return status_color;
-    }
-
-    public void setStatus_color(String status_color) {
-        this.status_color = status_color;
-    }
-
-    public String getStatus_description() {
-        return status_description;
-    }
-
-    public void setStatus_description(String status_description) {
-        this.status_description = status_description;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getArea() {
-        return area;
-    }
-
-    public void setArea(String area) {
-        this.area = area;
-    }
-
-    public String getJr_country() {
-        return jr_country;
-    }
-
-    public void setJr_country(String jr_country) {
-        this.jr_country = jr_country;
-    }
-
-    public String getJr_region() {
-        return jr_region;
-    }
-
-    public void setJr_region(String jr_region) {
-        this.jr_region = jr_region;
-    }
-
-    public String getJr_city() {
-        return jr_city;
-    }
-
-    public void setJr_city(String jr_city) {
-        this.jr_city = jr_city;
-    }
-
-    public String getJr_area() {
-        return jr_area;
-    }
-
-    public void setJr_area(String jr_area) {
-        this.jr_area = jr_area;
-    }
-
-    public String getCurrency_name() {
-        return currency_name;
-    }
-
-    public void setCurrency_name(String currency_name) {
-        this.currency_name = currency_name;
     }
 }

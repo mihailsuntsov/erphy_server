@@ -19,15 +19,11 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.repository.*;
-import com.dokio.security.services.UserDetailsServiceImpl;
-import com.dokio.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,27 +31,13 @@ import java.util.List;
 public class CagentsController {
 
     @Autowired
-    UserRepository userRepository;
-    @Autowired
-    UserRepositoryJPA userRepositoryJPA;
-    @Autowired
-    CompanyRepositoryJPA companyRepositoryJPA;
-    @Autowired
-    UserDetailsServiceImpl userRepository2;
-    @Autowired
-    UserGroupRepositoryJPA userGroupRepositoryJPA;
-    @Autowired
     CagentRepositoryJPA cagentsRepositoryJPA;
-    @Autowired
-    StorageService storageService;
-
 
     @PostMapping("/api/auth/getCagentsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsTable(@RequestBody SearchForm searchRequest) {
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
         int categoryId;//по какой категории товаров показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
@@ -94,6 +76,7 @@ public class CagentsController {
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
+
     @PostMapping("/api/auth/getCagentsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsPagesList(@RequestBody SearchForm searchRequest) {
@@ -163,7 +146,6 @@ public class CagentsController {
         return responseEntity;
     }
 
-
     @PostMapping("/api/auth/getCagentValues")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentValuesById(@RequestBody SearchForm request) {
@@ -193,6 +175,7 @@ public class CagentsController {
             return responseEntity;
         }
     }
+
     @PostMapping("/api/auth/updateCagents")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCagents(@RequestBody CagentsForm request){
@@ -240,6 +223,7 @@ public class CagentsController {
             return new ResponseEntity<>("Error when requesting getCagentsPaymentAccounts", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @PostMapping("/api/auth/getCagentsContacts")// отдаёт список контактных лиц контрагента
     public ResponseEntity<?> getCagentsContacts(@RequestBody UniversalForm searchRequest) {
         try {
@@ -249,7 +233,7 @@ public class CagentsController {
         }
     }
 
-    //*************************************************************************************************************************************************
+//*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************
     @PostMapping("/api/auth/getCagentCategoriesTrees")
@@ -314,6 +298,7 @@ public class CagentsController {
             return responseEntity;
         }
     }
+
     @PostMapping("/api/auth/insertCagentCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCagentCategory(@RequestBody CagentCategoriesForm request){

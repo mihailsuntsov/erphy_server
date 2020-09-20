@@ -78,8 +78,8 @@ public class Cagents {
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Timestamp date_time_changed;
 
-    @Column(name = "is_archive")//Удалён
-    private Boolean is_archive;
+    @Column(name = "is_deleted")//Удалён
+    private Boolean is_deleted;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "cagent_cagentcategories",
@@ -222,7 +222,7 @@ public class Cagents {
     private String jr_ip_svid_num;
 
     @Column(name="jr_ip_reg_date")
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)// Дата отгрузки
+    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)// Дата регистрации ИП
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Date jr_ip_reg_date;
 
@@ -307,20 +307,20 @@ public class Cagents {
         this.date_time_changed = date_time_changed;
     }
 
-    public Boolean getIs_archive() {
-        return is_archive;
-    }
-
-    public void setIs_archive(Boolean is_archive) {
-        this.is_archive = is_archive;
-    }
-
     public Set<CagentCategories> getCagentCategories() {
         return cagentCategories;
     }
 
     public void setCagentCategories(Set<CagentCategories> cagentCategories) {
         this.cagentCategories = cagentCategories;
+    }
+
+    public Boolean getIs_deleted() {
+        return is_deleted;
+    }
+
+    public void setIs_deleted(Boolean is_deleted) {
+        this.is_deleted = is_deleted;
     }
 
     public Set<Products> getProducts() {

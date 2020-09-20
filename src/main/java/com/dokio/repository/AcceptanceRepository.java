@@ -86,7 +86,7 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
                 "           cg.name as cagent, " +
                 "           p.doc_number as doc_number, " +
                 "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
-                "           (select abbreviation from sprav_sys_opf where id=cmp.opf)||' '||cmp.name as company, " +
+                "           cmp.name as company, " +
                 "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                 "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                 "           p.description as description, " +
@@ -325,7 +325,7 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
                     "           cg.name as cagent, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
-                    "           (select abbreviation from sprav_sys_opf where id=cmp.opf)||' '||cmp.name as company, " +
+                    "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
@@ -936,13 +936,13 @@ public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, Strin
     public boolean deleteAcceptanceFile(SearchForm request)
     {
             //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance", String.valueOf(request.getId()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance", String.valueOf(request.getAny_id()))) ||
             //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-            (securityRepositoryJPA.userHasPermissions_OR(15L,"191") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",String.valueOf(request.getId())))||
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"191") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",String.valueOf(request.getAny_id())))||
             //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-            (securityRepositoryJPA.userHasPermissions_OR(15L,"197") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",String.valueOf(request.getId())))||
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"197") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",String.valueOf(request.getAny_id())))||
             //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-            (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",String.valueOf(request.getId()))))
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;

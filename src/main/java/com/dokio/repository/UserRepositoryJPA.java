@@ -253,7 +253,15 @@ public class UserRepositoryJPA {
             return  (Integer) query.getSingleResult();
         }else return null;
     }
-
+    @SuppressWarnings("Duplicates")
+    public Long getMyCompanyId_(){
+        Long userId=userRepository.getUserId();
+        if(userId!=null) {
+            String stringQuery = "select u.company_id from users u where u.id= " + userId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return  (Long) query.getSingleResult();
+        }else return null;
+    }
     @SuppressWarnings("Duplicates")
     public List<Integer> getMyDepartmentsIdWithTheirParents(){
         Long userId=userRepository.getUserId();

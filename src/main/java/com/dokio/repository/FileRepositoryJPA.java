@@ -17,6 +17,7 @@ package com.dokio.repository;
 import com.dokio.message.request.FileCategoriesForm;
 import com.dokio.message.request.FilesForm;
 import com.dokio.message.response.FileCategoriesTableJSON;
+import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.FilesJSON;
 import com.dokio.message.response.FilesTableJSON;
 import com.dokio.model.Companies;
@@ -56,7 +57,7 @@ public class FileRepositoryJPA {
 
 
 
-    @Transactional
+//    @Transactional
     @SuppressWarnings("Duplicates")
     public List<FilesTableJSON> getFilesTable(
             int     result,
@@ -128,7 +129,7 @@ public class FileRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    @Transactional
+//    @Transactional
     public int getFilesSize(String searchString, int companyId, int categoryId, Boolean trash,Boolean anonyme) {
         if(securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//"Группы товаров" (см. файл Permissions Id)
         {
@@ -167,7 +168,6 @@ public class FileRepositoryJPA {
 //****************************************************   C  R  U  D   *********************************************************************************
 //*****************************************************************************************************************************************************
 
-    @Transactional
     @SuppressWarnings("Duplicates")
     public FilesJSON getFileValues(int id) {
         if(securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
@@ -448,6 +448,58 @@ public class FileRepositoryJPA {
         } else return false;
     }
 
+    @SuppressWarnings("Duplicates")//отдача данных о файле если есть права или если он открыт на общий доступ
+    public FileInfoJSON getFileAuth(String filename) {
+        //сначала проверим, не открыт ли он для общего доступа:
+        if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery;
+            stringQuery = "select " +
+                    "           p.original_name as original_name, " +
+                    "           p.path as path " +
+                    "           from files p " +
+                    "           where p.name= '" + filename + "' and  p.master_id=" + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(13L, "150")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            {
+                //остается только на своё предприятие (151)
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            if(queryList.size()>0) {//есть права на просмотр и скачивание файла
+                FileInfoJSON doc = new FileInfoJSON();
+                doc.setOriginal_name((String) queryList.get(0)[0]);
+                doc.setPath((String) queryList.get(0)[1]);
+                return doc;
+            }
+            else { // нет прав на файл, но может он открыт на общий доступ? Данный случай может наступить,
+                   // если файл не входит в предприятие пользователя, а прав на все предприятия нет, либо файл вне зоны ответственности мастер-аккаунта
+                return getFilePublic(filename);
+            }
+        } else return null;
+    }
+
+    @SuppressWarnings("Duplicates")//отдача данных о файле если он открыт на общий доступ
+    public FileInfoJSON getFilePublic(String filename) {
+        String stringQuery;
+        stringQuery = "select " +
+                "           p.original_name as original_name, " +
+                "           p.path as path " +
+                "           from files p " +
+                "           where p.name= '" + filename + "' and p.anonyme_access = true ";
+
+        Query query = entityManager.createNativeQuery(stringQuery );
+        List<Object[]> queryList = query.getResultList();
+        if(queryList.size()>0) {//файл открыт для общего доступа
+            FileInfoJSON doc = new FileInfoJSON();
+            doc.setOriginal_name((String) queryList.get(0)[0]);
+            doc.setPath((String) queryList.get(0)[1]);
+            return doc;
+        }
+        else return null;
+    }
+
     @SuppressWarnings("Duplicates")// права не нужны, т.к. не вызывается по API
     private List<String> getPathsByIds(String ids){
         String stringQuery;
@@ -496,7 +548,7 @@ public class FileRepositoryJPA {
         return depIds;
     }
 
-    @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
+//    @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
     @SuppressWarnings("Duplicates") //возвращает набор деревьев категорий по их корневым id
     public List<FileCategories> getFileCategoriesTrees(List<Integer> rootIds) {
         List<FileCategories> returnTreesList = new ArrayList<>();

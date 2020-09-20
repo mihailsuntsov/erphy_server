@@ -39,6 +39,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
 	@Override
 	@Transactional
+	/*переопределяем метод loadUserByUsername(), чтобы Spring Security понимал, как взять пользователя по его имени из хранилища.
+	Имея этот метод, Spring Security может сравнить переданный пароль с настоящим и аутентифицировать пользователя (либо не аутентифицировать)*/
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		User user = userRepository.findByUsername(username).orElseThrow(
 				() -> new UsernameNotFoundException("User Not Found with -> username or email : " + username));
@@ -48,11 +50,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	public Long getUserId() {
 		String username = getUserName();
 		if(!username.equals("anonymousUser")) {
-//			String stringQuery = "select p.id from users p where username="+username;
-//			Query query = entityManager.createNativeQuery(stringQuery);
 			Long id = userRepository.findByUsername(username).get().getId();
 			return id;
-			//return Long.valueOf(query.getFirstResult());
 		}else{
 			return null;
 		}

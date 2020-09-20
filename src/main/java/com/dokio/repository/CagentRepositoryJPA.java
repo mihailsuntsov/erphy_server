@@ -118,7 +118,7 @@ import java.util.*;
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) !=true " +
                     (categoryId!=0?" and p.id in (select ccc.cagent_id from cagent_cagentcategories ccc where ccc.category_id="+categoryId+") ":"");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Просмотр документов по всем предприятиям"
@@ -213,7 +213,7 @@ import java.util.*;
             stringQuery = "select  p.id as id " +
                     "           from cagents p " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) !=true " +
                     (categoryId!=0?" and p.id in (select ppg.cagent_id from cagent_cagentcategories ppg where ppg.category_id="+categoryId+") ":"");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на "Меню - таблица - "Контрагенты" по всем предприятиям"
@@ -739,7 +739,7 @@ import java.util.*;
     private Boolean updateCagentBaseFields(CagentsForm request){//Апдейт документа без контактных лиц и банковских счетов
         EntityManager emgr = emf.createEntityManager();
         Long myId = userRepositoryJPA.getMyId();
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
+//        Long myMasterId = userRepositoryJPA.getMyMasterId();
         try
         {
             String stringQuery;
@@ -788,8 +788,8 @@ import java.util.*;
 
                             " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
                             " where " +
-                            " id = " + request.getId() +
-                            " and master_id = " + myMasterId;
+                            " id = " + request.getId();
+//                            " and master_id = " + myMasterId;// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -970,7 +970,7 @@ import java.util.*;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "Update cagents p" +
-                    " set is_archive=true " +
+                    " set is_deleted=true " +
                     " where p.master_id=" +myMasterId+
                     " and p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -992,7 +992,7 @@ import java.util.*;
                 "           p.name as name "+
                 "           from cagents p " +
                 "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_archive,false) !=true ";
+                "           and coalesce(p.is_deleted,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper('%" + searchString + "%') or "+

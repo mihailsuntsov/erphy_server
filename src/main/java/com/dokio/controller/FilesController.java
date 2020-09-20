@@ -21,11 +21,14 @@ import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +50,8 @@ public class FilesController {
     FileRepositoryJPA filesRepositoryJPA;
     @Autowired
     StorageService storageService;
-
+    @Autowired
+    FileRepositoryJPA fileRepository;
 
     @PostMapping("/api/auth/getFilesTable")
     @SuppressWarnings("Duplicates")
@@ -278,6 +282,56 @@ public class FilesController {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    @GetMapping("/api/public/getFile/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> getFilePublic(@PathVariable String filename) throws UnsupportedEncodingException {
+        FileInfoJSON fileInfo = fileRepository.getFilePublic(filename);
+        if(fileInfo !=null){
+            String filePath=fileInfo.getPath()+"//"+filename;
+            String originalFileName = fileInfo.getOriginal_name();
+            Resource file = storageService.loadFile(filePath);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
+                    .body(file);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+            return responseEntity;}
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @GetMapping("/api/auth/getFile/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> getFileAuth(@PathVariable String filename) throws UnsupportedEncodingException {
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
+        if(fileInfo !=null){
+            String filePath=fileInfo.getPath()+"//"+filename;
+            String originalFileName = fileInfo.getOriginal_name();
+            Resource file = storageService.loadFile(filePath);
+            HttpHeaders h = new HttpHeaders();
+            h.add("Content-type", "text/html;charset=UTF-8");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
+                    .body(file);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+            return responseEntity;}
+    }
+
+    @SuppressWarnings("Duplicates")
+    @GetMapping("/api/auth/getFileImageThumb/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> getFileImageThumb(@PathVariable String filename) throws UnsupportedEncodingException {
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
+        if(fileInfo !=null){
+            String filePath=fileInfo.getPath()+"//thumbs//"+filename;
+            String originalFileName = fileInfo.getOriginal_name();
+            Resource file = storageService.loadFile(filePath);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
+                    .body(file);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+            return responseEntity;}
+    }
     //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************

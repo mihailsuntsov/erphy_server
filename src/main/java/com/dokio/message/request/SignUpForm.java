@@ -35,7 +35,7 @@ public class SignUpForm {
     private String company_id;
     private String checked;
     private String password;
-    private Long time_zone_id ;
+    private Long time_zone_id;
 
     public String getName() {
         return name;

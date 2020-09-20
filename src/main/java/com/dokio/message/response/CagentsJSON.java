@@ -33,7 +33,6 @@ public class CagentsJSON {
     private Integer opf_id;
     private String date_time_created;
     private String date_time_changed;
-//    @ElementCollection(fetch = FetchType.LAZY)
     private List<Integer> cagent_categories_id;
 
     // Апдейт Контрагентов:

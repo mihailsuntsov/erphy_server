@@ -47,17 +47,20 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
 
 	private static final Logger logger = LoggerFactory.getLogger(JwtAuthTokenFilter.class);
 
-	@Override //вызывается оттуда же, из OncePerRequestFilter
+	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		try {
 		//сначала запрос попадает сюда
+//			1.При каждом запросе из заголовка Authorization берем JWT-токен (он начинается с  префикса “Bearer“).
 			String jwt = getJwt(request);
+			//если валидация токена успешна, выполняется п.2:
 			if (jwt != null && tokenProvider.validateJwtToken(jwt)) {
-				//если юзер залогинен (jwt !=null), выполняется :
+//				2.Извлекаем из него имя пользователя (которое записывали при формировании токена).
 				String username = tokenProvider.getUserNameFromJwtToken(jwt);
-
+//				3. Извлекаем userDetails из репо юзера по username
 				UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+//				4. Создаем authentication, и всталвяем в неё userDetails
 				UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 						userDetails, null, userDetails.getAuthorities());
 				authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -74,12 +77,10 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
 	private String getJwt(HttpServletRequest request) {
 //в хеадере отправляется параметр Authorization, и в нём параметр вида "Bearer <JWT-ключ>"
 		String authHeader = request.getHeader("Authorization");
-
 // если Authorization начинается с "Bearer " - убираем "Bearer ", остается ключ
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			return authHeader.replace("Bearer ", "");
 		}
-
 		return null;
 	}
 }

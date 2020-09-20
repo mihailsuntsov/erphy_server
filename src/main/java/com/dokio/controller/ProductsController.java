@@ -22,13 +22,10 @@ import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,6 +48,7 @@ public class ProductsController {
     ProductsRepositoryJPA productsRepositoryJPA;
     @Autowired
     StorageService storageService;
+
 
     @PostMapping("/api/auth/getProductsTable")
     @SuppressWarnings("Duplicates")
@@ -401,41 +399,16 @@ public class ProductsController {
 //**********************************************************  I M A G E S  ************************************************************************
 //*************************************************************************************************************************************************
 
-    @GetMapping("/api/public/getProductImage/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getProductImage(@PathVariable String filename) {
-        Resource file = storageService.loadFile(storageService.GetFilePathByFileName(filename));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
-    }
+//    @GetMapping("/api/public/getProductImage/{filename:.+}")
+//    @ResponseBody
+//    public ResponseEntity<Resource> getProductImage(@PathVariable String filename) {
+//        Resource file = storageService.loadFile(storageService.GetFilePathByFileName(filename));
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
+//                .body(file);
+//    }
 
-    @GetMapping("/api/public/getProductThumb/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getProductThumb(@PathVariable String filename) {
-        Resource file = storageService.loadFile(storageService.GetImgThumbPathByFileName(filename));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
-    }
 
-    @GetMapping("/api/auth/getFile/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
-        Resource file = storageService.loadFile(storageService.GetFilePathByFileName(filename));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
-    }
-
-    @GetMapping("/api/auth/getFileImageThumb/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getFileImageThumb(@PathVariable String filename) {
-        Resource file = storageService.loadFile(storageService.GetImgThumbPathByFileName(filename));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
-    }
 
     @PostMapping("/api/auth/getListOfProductImages")
     @SuppressWarnings("Duplicates")

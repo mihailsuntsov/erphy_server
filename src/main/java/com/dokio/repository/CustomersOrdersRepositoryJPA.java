@@ -79,7 +79,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           dp.name || ' ' || dp.address as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as shipment_date, " +
-                    "           (select abbreviation from sprav_sys_opf where id=cmp.opf)||' '||cmp.name as company, " +
+                    "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
@@ -158,7 +158,7 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setDate_time_changed((String)             obj[14]);
                 doc.setDescription((String)                   obj[15]);
                 doc.setIs_completed((Boolean)                 obj[16]);
-                doc.setStatus_id(Long.parseLong(              obj[20].toString()));
+                doc.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
                 doc.setStatus_name((String)                   obj[21]);
                 doc.setStatus_color((String)                  obj[22]);
                 doc.setStatus_description((String)            obj[23]);

@@ -207,7 +207,7 @@ public class ProductsRepositoryJPA {
                     "           p.creator_id as creator_id, " +
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
-                    "           (select abbreviation from sprav_sys_opf where id=cmp.opf)||' '||cmp.name as company, " +
+                    "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +

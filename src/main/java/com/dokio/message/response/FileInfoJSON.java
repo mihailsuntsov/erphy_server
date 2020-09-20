@@ -12,30 +12,27 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.service.company;
+package com.dokio.message.response;
 
-import com.dokio.message.request.CompanyForm;
-import com.dokio.model.Companies;
-import com.dokio.message.response.CompaniesJSON;
-import java.util.ArrayList;
-import java.util.List;
+public class FileInfoJSON {
 
-public interface CompanyService {
+    private String original_name;
+    private String path;
 
+    public String getPath() {
+        return path;
+    }
 
-    List<Companies> getCompaniesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc);
+    public void setPath(String path) {
+        this.path = path;
+    }
 
-    public Companies getCompanyById(Long id);
+    public String getOriginal_name() {
+        return original_name;
+    }
 
-    public CompaniesJSON getCompanyValuesById(int id);
+    public void setOriginal_name(String original_name) {
+        this.original_name = original_name;
+    }
 
-    public int getCompaniesSize(String searchString);
-
-    public Long insertCompany(Companies company);
-
-    public boolean updateCompany(CompanyForm company);
-
-    public boolean deleteCompaniesByNumber(ArrayList<Long> delNumbers);
-
-    public List<Companies> getCompaniesList();
 }

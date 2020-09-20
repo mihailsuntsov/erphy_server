@@ -43,7 +43,7 @@ import com.dokio.security.jwt.JwtProvider;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/public")
 public class AuthRestAPIs {
 
 	@Autowired

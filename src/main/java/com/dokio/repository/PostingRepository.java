@@ -78,7 +78,7 @@ public class PostingRepository {
                     "           dp.name || ' ' || dp.address as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.posting_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as posting_date, " +
-                    "           (select abbreviation from sprav_sys_opf where id=cmp.opf)||' '||cmp.name as company, " +
+                    "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
@@ -868,13 +868,13 @@ private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long dep
     public boolean deletePostingFile(SearchForm request)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(16L,"211") && securityRepositoryJPA.isItAllMyMastersDocuments("posting", String.valueOf(request.getId()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(16L,"211") && securityRepositoryJPA.isItAllMyMastersDocuments("posting", String.valueOf(request.getAny_id()))) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(16L,"212") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("posting",String.valueOf(request.getId())))||
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"212") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("posting",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(16L,"213") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("posting",String.valueOf(request.getId())))||
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"213") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("posting",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(16L,"214") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",String.valueOf(request.getId()))))
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"214") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
