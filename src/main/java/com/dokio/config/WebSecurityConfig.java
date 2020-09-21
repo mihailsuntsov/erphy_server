@@ -16,6 +16,7 @@ package com.dokio.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -33,16 +34,22 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
+@ComponentScan(basePackages = {"com.dokio"})
 @EnableGlobalMethodSecurity(
         prePostEnabled = true
 )
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
+    final
     UserDetailsServiceImpl userDetailsService;
 
+    private final JwtAuthEntryPoint unauthorizedHandler;
+
     @Autowired
-    private JwtAuthEntryPoint unauthorizedHandler;
+    public WebSecurityConfig(UserDetailsServiceImpl userDetailsService, JwtAuthEntryPoint unauthorizedHandler) {
+        this.userDetailsService = userDetailsService;
+        this.unauthorizedHandler = unauthorizedHandler;
+    }
 
     @Bean
     public JwtAuthTokenFilter authenticationJwtTokenFilter() {
