@@ -30,6 +30,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class SpravStatusDockRepository {
@@ -54,12 +55,14 @@ public class SpravStatusDockRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<SpravStatusDockJSON> getStatusDocksTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int documentId) {
+
+
+    public List<SpravStatusDockJSON> getStatusDocksTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int documentId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "275,276"))//"Статусы документов" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -87,7 +90,7 @@ public class SpravStatusDockRepository {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (documentId != 0 ? " and p.dock_id = " + documentId + " " : "");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(22L, "275")) //Если нет прав на "Меню - таблица - "Статусы документов" по всем предприятиям"
@@ -142,16 +145,16 @@ public class SpravStatusDockRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getStatusDocksSize(String searchString, int companyId, int documentId) {
+    public int getStatusDocksSize(String searchString, int companyId, int documentId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "275,276"))//"Статусы документов" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id " +
                     "           from sprav_status_dock p " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (documentId != 0 ? " and p.dock_id = " + documentId + " " : "");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(22L, "275")) //Если нет прав на "Меню - таблица - "Статусы документов" по всем предприятиям"
@@ -369,7 +372,7 @@ public class SpravStatusDockRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "Update sprav_status_dock p" +
-                    " set is_archive=true " +
+                    " set is_deleted=true " +
                     " where p.master_id=" + myMasterId +
                     " and p.id in (" + delNumbers + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -380,7 +383,26 @@ public class SpravStatusDockRepository {
         } else return false;
     }
 
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean undeleteStatusDocks(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(22L, "274") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_status_dock", delNumbers))) {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery;
+            stringQuery = "Update sprav_status_dock p" +
+                    " set is_deleted=false " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                int count = query.executeUpdate();
+                return true;
+            } else return false;
+        } else return false;
+    }
 //*****************************************************************************************************************************************************
 //*******************************************************************  U T I L S **********************************************************************
 //*****************************************************************************************************************************************************
@@ -428,6 +450,7 @@ public class SpravStatusDockRepository {
                     "           where  p.master_id=" + myMasterId +
                     "           and p.dock_id = " + documentId +
                     "           and p.company_id=" + companyId +
+                    "           and p.is_deleted=false " +
                     "           order by p.output_order asc";
 
             Query query = entityManager.createNativeQuery(stringQuery);

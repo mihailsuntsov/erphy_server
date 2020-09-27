@@ -448,7 +448,7 @@ public class FileRepositoryJPA {
         } else return false;
     }
 
-    @SuppressWarnings("Duplicates")//отдача данных о файле если есть права или если он открыт на общий доступ
+    @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права или если он открыт на общий доступ
     public FileInfoJSON getFileAuth(String filename) {
         //сначала проверим, не открыт ли он для общего доступа:
         if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
@@ -548,7 +548,8 @@ public class FileRepositoryJPA {
         return depIds;
     }
 
-//    @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
+    //права не нужны т.к. не вызывается по API, только из контроллера
+    @Transactional//транзакция тут нужна для заполнения hibernate'ом детей категорий в Lazy режиме
     @SuppressWarnings("Duplicates") //возвращает набор деревьев категорий по их корневым id
     public List<FileCategories> getFileCategoriesTrees(List<Integer> rootIds) {
         List<FileCategories> returnTreesList = new ArrayList<>();
@@ -557,7 +558,7 @@ public class FileRepositoryJPA {
         stringQuery = stringQuery + " left join fetch p.children";
         entityManager.createQuery(stringQuery, FileCategories.class).getResultList();
         for(int rootId : rootIds) {
-            returnTreesList.add(entityManager.find(FileCategories.class, Long.valueOf(rootId)));
+            returnTreesList.add(entityManager.find(FileCategories.class, (long) rootId));
         }
         return returnTreesList;
     }

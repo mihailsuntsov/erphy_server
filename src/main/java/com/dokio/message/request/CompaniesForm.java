@@ -18,32 +18,15 @@ package com.dokio.message.request;
 import java.util.Set;
 
 public class CompaniesForm {
-//    private String nameShort;
-//    private String nameFull;
-//    private String addressjur;
-//    private String addressfact;
-//    private String inn;
-//    private String reg_num;
-//    private String who_got;
-//    private String dateReg;
-//    private String korschet;
-//    private String rs;
-//    private String bank;
-//    private String bik;
-//    private String checked;
-//    private Integer st_prefix_barcode_pieced;
-//    private Integer st_prefix_barcode_packed;
-
     private Long id;
     private Integer currency_id;
     private Integer opf_id;
     private String checked;//для удаления
-
     // Апдейт Предприятия:
     private String name;
     private String code;
     private String telephone;
-    private String fax;
+    private String site;
     private String email;
     private String zip_code;
     private Integer country_id;
@@ -55,8 +38,8 @@ public class CompaniesForm {
     private String additional_address;
     private Long status_id;
     private String jr_jur_full_name;
-    private Long jr_jur_kpp;
-    private Long jr_jur_ogrn;
+    private String jr_jur_kpp;
+    private String jr_jur_ogrn;
     private String jr_zip_code;
     private Integer jr_country_id;
     private Integer jr_region_id;
@@ -65,16 +48,15 @@ public class CompaniesForm {
     private String jr_home;
     private String jr_flat;
     private String jr_additional_address;
-    private Long jr_inn;
-    private Long jr_okpo;
+    private String jr_inn;
+    private String jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
     private String jr_fio_otchestvo;
-    private Long jr_ip_ogrnip;
+    private String jr_ip_ogrnip;
     private String jr_ip_svid_num; // string т.к. оно может быть типа "серия 77 №42343232"
     private String jr_ip_reg_date;
     private Set<CompaniesPaymentAccountsForm> companiesPaymentAccountsTable;//банковские счета
-
     private Boolean nds_payer;
     private String fio_director;
     private String director_position;
@@ -156,12 +138,12 @@ public class CompaniesForm {
         this.telephone = telephone;
     }
 
-    public String getFax() {
-        return fax;
+    public String getSite() {
+        return site;
     }
 
-    public void setFax(String fax) {
-        this.fax = fax;
+    public void setSite(String site) {
+        this.site = site;
     }
 
     public String getEmail() {
@@ -252,22 +234,6 @@ public class CompaniesForm {
         this.jr_jur_full_name = jr_jur_full_name;
     }
 
-    public Long getJr_jur_kpp() {
-        return jr_jur_kpp;
-    }
-
-    public void setJr_jur_kpp(Long jr_jur_kpp) {
-        this.jr_jur_kpp = jr_jur_kpp;
-    }
-
-    public Long getJr_jur_ogrn() {
-        return jr_jur_ogrn;
-    }
-
-    public void setJr_jur_ogrn(Long jr_jur_ogrn) {
-        this.jr_jur_ogrn = jr_jur_ogrn;
-    }
-
     public String getJr_zip_code() {
         return jr_zip_code;
     }
@@ -332,22 +298,6 @@ public class CompaniesForm {
         this.jr_additional_address = jr_additional_address;
     }
 
-    public Long getJr_inn() {
-        return jr_inn;
-    }
-
-    public void setJr_inn(Long jr_inn) {
-        this.jr_inn = jr_inn;
-    }
-
-    public Long getJr_okpo() {
-        return jr_okpo;
-    }
-
-    public void setJr_okpo(Long jr_okpo) {
-        this.jr_okpo = jr_okpo;
-    }
-
     public String getJr_fio_family() {
         return jr_fio_family;
     }
@@ -370,14 +320,6 @@ public class CompaniesForm {
 
     public void setJr_fio_otchestvo(String jr_fio_otchestvo) {
         this.jr_fio_otchestvo = jr_fio_otchestvo;
-    }
-
-    public Long getJr_ip_ogrnip() {
-        return jr_ip_ogrnip;
-    }
-
-    public void setJr_ip_ogrnip(Long jr_ip_ogrnip) {
-        this.jr_ip_ogrnip = jr_ip_ogrnip;
     }
 
     public String getJr_ip_svid_num() {
@@ -442,6 +384,46 @@ public class CompaniesForm {
 
     public void setDirector_signature_id(Long director_signature_id) {
         this.director_signature_id = director_signature_id;
+    }
+
+    public String getJr_jur_kpp() {
+        return jr_jur_kpp;
+    }
+
+    public void setJr_jur_kpp(String jr_jur_kpp) {
+        this.jr_jur_kpp = jr_jur_kpp;
+    }
+
+    public String getJr_jur_ogrn() {
+        return jr_jur_ogrn;
+    }
+
+    public void setJr_jur_ogrn(String jr_jur_ogrn) {
+        this.jr_jur_ogrn = jr_jur_ogrn;
+    }
+
+    public String getJr_inn() {
+        return jr_inn;
+    }
+
+    public void setJr_inn(String jr_inn) {
+        this.jr_inn = jr_inn;
+    }
+
+    public String getJr_okpo() {
+        return jr_okpo;
+    }
+
+    public void setJr_okpo(String jr_okpo) {
+        this.jr_okpo = jr_okpo;
+    }
+
+    public String getJr_ip_ogrnip() {
+        return jr_ip_ogrnip;
+    }
+
+    public void setJr_ip_ogrnip(String jr_ip_ogrnip) {
+        this.jr_ip_ogrnip = jr_ip_ogrnip;
     }
 
     public Long getGlavbuh_signature_id() {

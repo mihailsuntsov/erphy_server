@@ -28,7 +28,7 @@ public class CagentsForm {
 
     private String code;
     private String telephone;
-    private String fax;
+    private String site;
     private String email;
     private String zip_code;
     private Integer country_id;
@@ -42,8 +42,8 @@ public class CagentsForm {
     private Long price_type_id;
     private String discount_card;
     private String jr_jur_full_name;
-    private Long jr_jur_kpp;
-    private Long jr_jur_ogrn;
+    private String jr_jur_kpp;
+    private String jr_jur_ogrn;
     private String jr_zip_code;
     private Integer jr_country_id;
     private Integer jr_region_id;
@@ -52,12 +52,12 @@ public class CagentsForm {
     private String jr_home;
     private String jr_flat;
     private String jr_additional_address;
-    private Long jr_inn;
-    private Long jr_okpo;
+    private String jr_inn;
+    private String jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
     private String jr_fio_otchestvo;
-    private Long jr_ip_ogrnip;
+    private String jr_ip_ogrnip;
     private String jr_ip_svid_num; // string т.к. оно может быть типа "серия 77 №42343232"
     private String jr_ip_reg_date;
     private Set<CagentsContactsForm> cagentsContactsTable;//контактные лица
@@ -127,12 +127,12 @@ public class CagentsForm {
         this.telephone = telephone;
     }
 
-    public String getFax() {
-        return fax;
+    public String getSite() {
+        return site;
     }
 
-    public void setFax(String fax) {
-        this.fax = fax;
+    public void setSite(String site) {
+        this.site = site;
     }
 
     public String getEmail() {
@@ -141,6 +141,14 @@ public class CagentsForm {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getZip_code() {
+        return zip_code;
+    }
+
+    public void setZip_code(String zip_code) {
+        this.zip_code = zip_code;
     }
 
     public Integer getCountry_id() {
@@ -231,20 +239,28 @@ public class CagentsForm {
         this.jr_jur_full_name = jr_jur_full_name;
     }
 
-    public Long getJr_jur_kpp() {
+    public String getJr_jur_kpp() {
         return jr_jur_kpp;
     }
 
-    public void setJr_jur_kpp(Long jr_jur_kpp) {
+    public void setJr_jur_kpp(String jr_jur_kpp) {
         this.jr_jur_kpp = jr_jur_kpp;
     }
 
-    public Long getJr_jur_ogrn() {
+    public String getJr_jur_ogrn() {
         return jr_jur_ogrn;
     }
 
-    public void setJr_jur_ogrn(Long jr_jur_ogrn) {
+    public void setJr_jur_ogrn(String jr_jur_ogrn) {
         this.jr_jur_ogrn = jr_jur_ogrn;
+    }
+
+    public String getJr_zip_code() {
+        return jr_zip_code;
+    }
+
+    public void setJr_zip_code(String jr_zip_code) {
+        this.jr_zip_code = jr_zip_code;
     }
 
     public Integer getJr_country_id() {
@@ -303,19 +319,19 @@ public class CagentsForm {
         this.jr_additional_address = jr_additional_address;
     }
 
-    public Long getJr_inn() {
+    public String getJr_inn() {
         return jr_inn;
     }
 
-    public void setJr_inn(Long jr_inn) {
+    public void setJr_inn(String jr_inn) {
         this.jr_inn = jr_inn;
     }
 
-    public Long getJr_okpo() {
+    public String getJr_okpo() {
         return jr_okpo;
     }
 
-    public void setJr_okpo(Long jr_okpo) {
+    public void setJr_okpo(String jr_okpo) {
         this.jr_okpo = jr_okpo;
     }
 
@@ -343,11 +359,11 @@ public class CagentsForm {
         this.jr_fio_otchestvo = jr_fio_otchestvo;
     }
 
-    public Long getJr_ip_ogrnip() {
+    public String getJr_ip_ogrnip() {
         return jr_ip_ogrnip;
     }
 
-    public void setJr_ip_ogrnip(Long jr_ip_ogrnip) {
+    public void setJr_ip_ogrnip(String jr_ip_ogrnip) {
         this.jr_ip_ogrnip = jr_ip_ogrnip;
     }
 
@@ -381,21 +397,5 @@ public class CagentsForm {
 
     public void setCagentsPaymentAccountsTable(Set<CagentsPaymentAccountsForm> cagentsPaymentAccountsTable) {
         this.cagentsPaymentAccountsTable = cagentsPaymentAccountsTable;
-    }
-
-    public String getZip_code() {
-        return zip_code;
-    }
-
-    public void setZip_code(String zip_code) {
-        this.zip_code = zip_code;
-    }
-
-    public String getJr_zip_code() {
-        return jr_zip_code;
-    }
-
-    public void setJr_zip_code(String jr_zip_code) {
-        this.jr_zip_code = jr_zip_code;
     }
 }

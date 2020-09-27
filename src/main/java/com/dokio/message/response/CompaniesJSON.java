@@ -15,25 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 //Класс для формирования JSON
 package com.dokio.message.response;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.sql.Timestamp;
-
 public class CompaniesJSON {
-
-//    private String namefull;
-//    private String addressjur;
-//    private String addressfact;
-//    private String inn;
-//    private String reg_num;
-//    private String who_got;
-//    private String datereg;
-//    private String korschet;
-//    private String rs;
-//    private String bank;
-//    private String bik;
-//    private String st_prefix_barcode_pieced;
-//    private String st_prefix_barcode_packed;
 
     private Long id;
     private Long master_id;
@@ -46,14 +28,12 @@ public class CompaniesJSON {
     private String creator;
     private String changer;
     private Integer currency_id;
-    private String opf;
+    private String  opf;
     private Integer opf_id;
-
     // Апдейт Предприятий:
-
     private String  code;
     private String  telephone;
-    private String  fax;
+    private String  site;
     private String  email;
     private String  zip_code;
     private Integer country_id;
@@ -63,12 +43,10 @@ public class CompaniesJSON {
     private String  home;
     private String  flat;
     private String  additional_address;
-
     private Long    status_id;
-
     private String  jr_jur_full_name;
-    private Long    jr_jur_kpp;
-    private Long    jr_jur_ogrn;
+    private String    jr_jur_kpp;
+    private String    jr_jur_ogrn;
     private String  jr_zip_code;
     private Integer jr_country_id;
     private Integer jr_region_id;
@@ -77,16 +55,14 @@ public class CompaniesJSON {
     private String  jr_home;
     private String  jr_flat;
     private String  jr_additional_address;
-
-    private Long   jr_inn;
-    private Long   jr_okpo;
+    private String   jr_inn;
+    private String   jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
     private String jr_fio_otchestvo;
-    private Long   jr_ip_ogrnip;
+    private String   jr_ip_ogrnip;
     private String jr_ip_svid_num; // string т.к. оно может быть типа "серия 77 №42343232"
     private String jr_ip_reg_date;
-
     private Boolean nds_payer;
     private String fio_director;
     private String director_position;
@@ -95,7 +71,6 @@ public class CompaniesJSON {
     private Long   glavbuh_signature_id;
     private Long   stamp_id;
     private Long   card_template_id;
-
     private String status_name;
     private String status_color;
     private String status_description;
@@ -111,55 +86,8 @@ public class CompaniesJSON {
     private String director_signature_filename;
     private String glavbuh_signature_filename;
     private String stamp_filename;
+    private String card_template_original_filename;
     private String card_template_filename;
-
-    public String getCard_template_filename() {
-        return card_template_filename;
-    }
-
-    public void setCard_template_filename(String card_template_filename) {
-        this.card_template_filename = card_template_filename;
-    }
-
-    public Long getCard_template_id() {
-        return card_template_id;
-    }
-
-    public void setCard_template_id(Long card_template_id) {
-        this.card_template_id = card_template_id;
-    }
-
-    public String getDirector_signature_filename() {
-        return director_signature_filename;
-    }
-
-    public void setDirector_signature_filename(String director_signature_filename) {
-        this.director_signature_filename = director_signature_filename;
-    }
-
-    public String getGlavbuh_signature_filename() {
-        return glavbuh_signature_filename;
-    }
-
-    public void setGlavbuh_signature_filename(String glavbuh_signature_filename) {
-        this.glavbuh_signature_filename = glavbuh_signature_filename;
-    }
-
-    public String getStamp_filename() {
-        return stamp_filename;
-    }
-
-    public void setStamp_filename(String stamp_filename) {
-        this.stamp_filename = stamp_filename;
-    }
-
-    public Long getStamp_id() {
-        return stamp_id;
-    }
-
-    public void setStamp_id(Long stamp_id) {
-        this.stamp_id = stamp_id;
-    }
 
     public Long getId() {
         return id;
@@ -281,12 +209,12 @@ public class CompaniesJSON {
         this.telephone = telephone;
     }
 
-    public String getFax() {
-        return fax;
+    public String getSite() {
+        return site;
     }
 
-    public void setFax(String fax) {
-        this.fax = fax;
+    public void setSite(String site) {
+        this.site = site;
     }
 
     public String getEmail() {
@@ -377,19 +305,19 @@ public class CompaniesJSON {
         this.jr_jur_full_name = jr_jur_full_name;
     }
 
-    public Long getJr_jur_kpp() {
+    public String getJr_jur_kpp() {
         return jr_jur_kpp;
     }
 
-    public void setJr_jur_kpp(Long jr_jur_kpp) {
+    public void setJr_jur_kpp(String jr_jur_kpp) {
         this.jr_jur_kpp = jr_jur_kpp;
     }
 
-    public Long getJr_jur_ogrn() {
+    public String getJr_jur_ogrn() {
         return jr_jur_ogrn;
     }
 
-    public void setJr_jur_ogrn(Long jr_jur_ogrn) {
+    public void setJr_jur_ogrn(String jr_jur_ogrn) {
         this.jr_jur_ogrn = jr_jur_ogrn;
     }
 
@@ -457,19 +385,19 @@ public class CompaniesJSON {
         this.jr_additional_address = jr_additional_address;
     }
 
-    public Long getJr_inn() {
+    public String getJr_inn() {
         return jr_inn;
     }
 
-    public void setJr_inn(Long jr_inn) {
+    public void setJr_inn(String jr_inn) {
         this.jr_inn = jr_inn;
     }
 
-    public Long getJr_okpo() {
+    public String getJr_okpo() {
         return jr_okpo;
     }
 
-    public void setJr_okpo(Long jr_okpo) {
+    public void setJr_okpo(String jr_okpo) {
         this.jr_okpo = jr_okpo;
     }
 
@@ -497,11 +425,11 @@ public class CompaniesJSON {
         this.jr_fio_otchestvo = jr_fio_otchestvo;
     }
 
-    public Long getJr_ip_ogrnip() {
+    public String getJr_ip_ogrnip() {
         return jr_ip_ogrnip;
     }
 
-    public void setJr_ip_ogrnip(Long jr_ip_ogrnip) {
+    public void setJr_ip_ogrnip(String jr_ip_ogrnip) {
         this.jr_ip_ogrnip = jr_ip_ogrnip;
     }
 
@@ -567,6 +495,22 @@ public class CompaniesJSON {
 
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
+    }
+
+    public Long getStamp_id() {
+        return stamp_id;
+    }
+
+    public void setStamp_id(Long stamp_id) {
+        this.stamp_id = stamp_id;
+    }
+
+    public Long getCard_template_id() {
+        return card_template_id;
+    }
+
+    public void setCard_template_id(Long card_template_id) {
+        this.card_template_id = card_template_id;
     }
 
     public String getStatus_name() {
@@ -663,5 +607,45 @@ public class CompaniesJSON {
 
     public void setCurrency_name(String currency_name) {
         this.currency_name = currency_name;
+    }
+
+    public String getDirector_signature_filename() {
+        return director_signature_filename;
+    }
+
+    public void setDirector_signature_filename(String director_signature_filename) {
+        this.director_signature_filename = director_signature_filename;
+    }
+
+    public String getGlavbuh_signature_filename() {
+        return glavbuh_signature_filename;
+    }
+
+    public void setGlavbuh_signature_filename(String glavbuh_signature_filename) {
+        this.glavbuh_signature_filename = glavbuh_signature_filename;
+    }
+
+    public String getStamp_filename() {
+        return stamp_filename;
+    }
+
+    public void setStamp_filename(String stamp_filename) {
+        this.stamp_filename = stamp_filename;
+    }
+
+    public String getCard_template_original_filename() {
+        return card_template_original_filename;
+    }
+
+    public void setCard_template_original_filename(String card_template_original_filename) {
+        this.card_template_original_filename = card_template_original_filename;
+    }
+
+    public String getCard_template_filename() {
+        return card_template_filename;
+    }
+
+    public void setCard_template_filename(String card_template_filename) {
+        this.card_template_filename = card_template_filename;
     }
 }

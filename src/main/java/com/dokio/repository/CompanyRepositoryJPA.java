@@ -17,19 +17,25 @@ import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.CompaniesPaymentAccountsForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository("CompanyRepositoryJPA")
 public class CompanyRepositoryJPA {
@@ -52,12 +58,13 @@ public class CompanyRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public List<CompaniesJSON> getCompaniesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc) {
+    public List<CompaniesJSON> getCompaniesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(3L, "5,6"))//"Предприятия" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select  p.id as id, " +
                     "           p.master_id as master_id, " +
@@ -75,7 +82,7 @@ public class CompanyRepositoryJPA {
                     // Апдейт Предприятий
                     "           p.code as code, " +
                     "           p.telephone as telephone, " +
-                    "           p.fax as fax, " +
+                    "           p.site as site, " +
                     "           p.email as email, " +
                     "           p.zip_code as zip_code, " +
                     "           p.country_id as country_id, " +
@@ -122,7 +129,7 @@ public class CompanyRepositoryJPA {
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_deleted,false) !=true";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
@@ -131,8 +138,7 @@ public class CompanyRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.name) like upper('%" + searchString + "%'))";
             }
 
             stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
@@ -159,7 +165,7 @@ public class CompanyRepositoryJPA {
                 doc.setOpf_id((Integer)                             obj[12]);
                 doc.setCode((String)                                obj[13]);
                 doc.setTelephone((String)                           obj[14]);
-                doc.setFax((String)                                 obj[15]);
+                doc.setSite((String)                                obj[15]);
                 doc.setEmail((String)                               obj[16]);
                 doc.setZip_code((String)                            obj[17]);
                 doc.setCountry_id((Integer)                         obj[18]);
@@ -171,8 +177,8 @@ public class CompanyRepositoryJPA {
                 doc.setAdditional_address((String)                  obj[24]);
                 doc.setStatus_id(obj[25]!=null?Long.parseLong(      obj[25].toString()):null);
                 doc.setJr_jur_full_name((String)                    obj[26]);
-                doc.setJr_jur_kpp(obj[27]!=null?Long.parseLong(     obj[27].toString()):null);
-                doc.setJr_jur_ogrn(obj[28]!=null?Long.parseLong(    obj[28].toString()):null);
+                doc.setJr_jur_kpp((String)                          obj[27]);
+                doc.setJr_jur_ogrn((String)                         obj[28]);
                 doc.setJr_zip_code((String)                         obj[29]);
                 doc.setJr_country_id((Integer)                      obj[30]);
                 doc.setJr_region_id((Integer)                       obj[31]);
@@ -181,12 +187,12 @@ public class CompanyRepositoryJPA {
                 doc.setJr_home((String)                             obj[34]);
                 doc.setJr_flat((String)                             obj[35]);
                 doc.setJr_additional_address((String)               obj[36]);
-                doc.setJr_inn(obj[37]!=null?Long.parseLong(         obj[37].toString()):null);
-                doc.setJr_okpo(obj[38]!=null?Long.parseLong(        obj[38].toString()):null);
+                doc.setJr_inn((String)                              obj[37]);
+                doc.setJr_okpo((String)                             obj[38]);
                 doc.setJr_fio_family((String)                       obj[39]);
                 doc.setJr_fio_name((String)                         obj[40]);
                 doc.setJr_fio_otchestvo((String)                    obj[41]);
-                doc.setJr_ip_ogrnip(obj[42]!=null?Long.parseLong(   obj[42].toString()):null);
+                doc.setJr_ip_ogrnip((String)                        obj[42]);
                 doc.setJr_ip_svid_num((String)                      obj[43]);
                 doc.setJr_ip_reg_date((String)                      obj[44]);
                 doc.setNds_payer((Boolean)                          obj[45]);
@@ -205,26 +211,25 @@ public class CompanyRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public int getCompaniesSize(String searchString) {
+    public int getCompaniesSize(SearchForm searchRequest) {
         if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//"Контрагенты" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            boolean showDeleted = searchRequest.getFilterOptionsIds().contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id " +
                     "           from companies p " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_deleted,false) !=true ";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Меню - таблица - "Контрагенты" по всем предприятиям"
             {
                 //остается только на своё предприятие (5)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-            if (searchString != null && !searchString.isEmpty()) {
+            if (searchRequest.getSearchString() != null && !searchRequest.getSearchString().isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.name) like upper('%" + searchRequest.getSearchString() + "%'))";
             }
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -270,7 +275,7 @@ public class CompanyRepositoryJPA {
                 doc.setMaster_id(Long.parseLong(                        obj[1].toString()));
                 doc.setCompany_id(Long.parseLong(                       obj[2].toString()));
                 doc.setOutput_order((Integer)                           obj[3]);
-                doc.setBik(obj[4]!=null?Long.parseLong(                 obj[4].toString()):null);
+                doc.setBik((String)                                     obj[4]);
                 doc.setName((String)                                    obj[5]);
                 doc.setAddress((String)                                 obj[6]);
                 doc.setPayment_account((String)                         obj[7]);
@@ -309,7 +314,7 @@ public class CompanyRepositoryJPA {
                     // Апдейт Предприятий
                     "           p.code as code, " +
                     "           p.telephone as telephone, " +
-                    "           p.fax as fax, " +
+                    "           p.site as site, " +
                     "           p.email as email, " +
                     "           p.zip_code as zip_code, " +
                     "           p.country_id as country_id, " +
@@ -361,7 +366,8 @@ public class CompanyRepositoryJPA {
                     "           (select f.original_name from files f where f.id=p.glavbuh_signature_id) as glavbuh_signature_filename, " +
                     "           (select f.original_name from files f where f.id=p.stamp_id) as stamp_filename, " +
                     "           p.card_template_id as card_template_id, " +
-                    "           (select f.original_name from files f where f.id=p.card_template_id) as card_template_filename " +
+                    "           (select f.original_name from files f where f.id=p.card_template_id) as card_template_original_filename, " +
+                    "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename " +
 
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -403,7 +409,7 @@ public class CompanyRepositoryJPA {
             doc.setOpf_id((Integer)                                         queryList.get(0)[12]);
             doc.setCode(queryList.get(0)[13]!=null?                 (String)queryList.get(0)[13]:"");
             doc.setTelephone(queryList.get(0)[14]!=null?            (String)queryList.get(0)[14]:"");
-            doc.setFax(queryList.get(0)[15]!=null?                  (String)queryList.get(0)[15]:"");
+            doc.setSite(queryList.get(0)[15]!=null?                  (String)queryList.get(0)[15]:"");
             doc.setEmail(queryList.get(0)[16]!=null?                (String)queryList.get(0)[16]:"");
             doc.setZip_code(queryList.get(0)[17]!=null?             (String)queryList.get(0)[17]:"");
             doc.setCountry_id((Integer)                                     queryList.get(0)[18]);
@@ -415,8 +421,8 @@ public class CompanyRepositoryJPA {
             doc.setAdditional_address(queryList.get(0)[24]!=null?   (String)queryList.get(0)[24]:"");
             doc.setStatus_id( queryList.get(0)[25]!=null?Long.parseLong(    queryList.get(0)[25].toString()):null);
             doc.setJr_jur_full_name(queryList.get(0)[26]!=null?     (String)queryList.get(0)[26]:"");
-            doc.setJr_jur_kpp( queryList.get(0)[27]!=null?Long.parseLong(   queryList.get(0)[27].toString()):null);
-            doc.setJr_jur_ogrn( queryList.get(0)[28]!=null?Long.parseLong(  queryList.get(0)[28].toString()):null);
+            doc.setJr_jur_kpp( queryList.get(0)[27]!=null?          (String)queryList.get(0)[27]:"");
+            doc.setJr_jur_ogrn( queryList.get(0)[28]!=null?         (String)queryList.get(0)[28]:"");
             doc.setJr_zip_code(queryList.get(0)[29]!=null?          (String)queryList.get(0)[29]:"");
             doc.setJr_country_id((Integer)                                  queryList.get(0)[30]);
             doc.setJr_region_id((Integer)                                   queryList.get(0)[31]);
@@ -425,12 +431,12 @@ public class CompanyRepositoryJPA {
             doc.setJr_home(queryList.get(0)[34]!=null?              (String)queryList.get(0)[34]:"");
             doc.setJr_flat(queryList.get(0)[35]!=null?              (String)queryList.get(0)[35]:"");
             doc.setJr_additional_address(queryList.get(0)[36]!=null?(String)queryList.get(0)[36]:"");
-            doc.setJr_inn( queryList.get(0)[37]!=null?Long.parseLong(       queryList.get(0)[37].toString()):null);
-            doc.setJr_okpo( queryList.get(0)[38]!=null?Long.parseLong(      queryList.get(0)[38].toString()):null);
+            doc.setJr_inn( queryList.get(0)[37]!=null?              (String)queryList.get(0)[37]:"");
+            doc.setJr_okpo( queryList.get(0)[38]!=null?             (String)queryList.get(0)[38]:"");
             doc.setJr_fio_family(queryList.get(0)[39]!=null?        (String)queryList.get(0)[39]:"");
             doc.setJr_fio_name(queryList.get(0)[40]!=null?          (String)queryList.get(0)[40]:"");
             doc.setJr_fio_otchestvo(queryList.get(0)[41]!=null?     (String)queryList.get(0)[41]:"");
-            doc.setJr_ip_ogrnip( queryList.get(0)[42]!=null?Long.parseLong( queryList.get(0)[42].toString()):null);
+            doc.setJr_ip_ogrnip( queryList.get(0)[42]!=null?        (String)queryList.get(0)[42]:"");
             doc.setJr_ip_svid_num(queryList.get(0)[43]!=null?       (String)queryList.get(0)[43]:"");
             doc.setJr_ip_reg_date(queryList.get(0)[44]!=null?       (String)queryList.get(0)[44]:"");
             doc.setNds_payer((Boolean)                                      queryList.get(0)[45]);
@@ -455,7 +461,8 @@ public class CompanyRepositoryJPA {
             doc.setGlavbuh_signature_filename(queryList.get(0)[64]!=null?(String)queryList.get(0)[64]:"");
             doc.setStamp_filename(queryList.get(0)[65]!=null?(String)queryList.get(0)[65]:"");
             doc.setCard_template_id(queryList.get(0)[66]!=null?Long.parseLong(queryList.get(0)[66].toString()):null);
-            doc.setCard_template_filename(queryList.get(0)[67]!=null?(String)queryList.get(0)[67]:"");
+            doc.setCard_template_original_filename(queryList.get(0)[67]!=null?(String)queryList.get(0)[67]:"");
+            doc.setCard_template_filename(queryList.get(0)[68]!=null?(String)queryList.get(0)[68]:"");
 
             return doc;
         } else return null;
@@ -521,7 +528,7 @@ public class CompanyRepositoryJPA {
                     " code = '" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
                     " currency_id = " + request.getCurrency_id() + ", " +//основная валюта
                     " telephone = '" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                    " fax = '" + (request.getFax() == null ? "": request.getFax()) +"', " +//факс
+                    " site = '" + (request.getSite() == null ? "": request.getSite()) +"', " +//сайт
                     " email = '" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
                     //фактический адрес
                     " zip_code = '" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +// почтовый индекс
@@ -535,8 +542,8 @@ public class CompanyRepositoryJPA {
                     " status_id = " + request.getStatus_id() + ", " +//статус предприятия
                     //Юридические реквизиты
                     " jr_jur_full_name = '" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
-                    " jr_jur_kpp = " + request.getJr_jur_kpp() + ", " +//кпп (для юрлиц)
-                    " jr_jur_ogrn = " + request.getJr_jur_ogrn() + ", " +//огрн (для юрлиц)
+                    " jr_jur_kpp = '" + (request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()) +"', " +//кпп (для юрлиц)
+                    " jr_jur_ogrn = '" + (request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()) + "', " +//огрн (для юрлиц)
                     //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                     " jr_zip_code = '" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +// почтовый индекс
                     " jr_country_id = " + request.getJr_country_id() + ", " +//страна
@@ -546,12 +553,12 @@ public class CompanyRepositoryJPA {
                     " jr_home = '" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                     " jr_flat = '" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
                     " jr_additional_address = '" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
-                    " jr_inn = " + request.getJr_inn() + ", " +//ИНН
-                    " jr_okpo = " + request.getJr_okpo() + ", " +//ОКПО
+                    " jr_inn = '" + (request.getJr_inn() == null ? "": request.getJr_inn()) + "', " +//ИНН
+                    " jr_okpo = '" + (request.getJr_okpo() == null ? "": request.getJr_okpo()) + "', " +//ОКПО
                     " jr_fio_family = '" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия (для ИП или физлица)
                     " jr_fio_name = '" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя (для ИП или физлица)
                     " jr_fio_otchestvo = '" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество (для ИП или физлица)
-                    " jr_ip_ogrnip = " + request.getJr_ip_ogrnip() + ", " +//ОГРНИП (для ИП)
+                    " jr_ip_ogrnip = '" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) + "', " +//ОГРНИП (для ИП)
                     " jr_ip_svid_num = '" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
                     " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY'), " +
                     " nds_payer = " + request.getNds_payer() + ", " +//плательщик НДС
@@ -595,7 +602,7 @@ public class CompanyRepositoryJPA {
     private Boolean insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) {
         String stringQuery;
         try {
-            stringQuery =   " insert into cagents_payment_accounts (" +
+            stringQuery =   " insert into companies_payment_accounts (" +
                     "master_id," +
                     "company_id," +
                     "bik," +
@@ -607,7 +614,7 @@ public class CompanyRepositoryJPA {
                     ") values ("
                     + master_id +", "
                     + company_id +", "
-                    + row.getBik() + ", "
+                    + "'" + (row.getBik()!=null?row.getBik():"") +"', "
                     + "'" + (row.getName()!=null?row.getName():"") +"', "
                     + "'" + (row.getAddress()!=null?row.getAddress():"") +"', "
                     + "'" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', "
@@ -629,8 +636,8 @@ public class CompanyRepositoryJPA {
     private Boolean updateCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) {
         String stringQuery;
         try {
-            stringQuery =   " update cagents_payment_accounts set " +
-                    " bik = " + row.getBik() + ", " +
+            stringQuery =   " update companies_payment_accounts set " +
+                    " bik = '" +  (row.getBik()!=null?row.getBik():"") + "', " +
                     " name = '" + (row.getName()!=null?row.getName():"") +"', " +
                     " address = '" + (row.getAddress()!=null?row.getAddress():"") +"', " +
                     " corr_account = '" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', " +
@@ -654,42 +661,30 @@ public class CompanyRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public Long insertCompany(CompaniesForm request) {
-        if(securityRepositoryJPA.userHasPermissions_OR(3L,"8,7"))//  Предприятия : "Создание"
+        if(securityRepositoryJPA.userHasPermissions_OR(3L,"3"))//  Предприятия : "Создание" (см. файл Permissions Id)
         {
-            EntityManager emgr = emf.createEntityManager();
-            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();// моё предприятие
-            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getId());//предприятие для создаваемого документа
-            Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long createdCompanyId = null;
-            //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-            if ((!securityRepositoryJPA.userHasPermissions_OR(3L, "8") &&
-                    Long.valueOf(myCompanyId) != request.getId()) || DocumentMasterId != myMasterId )
-            {
+            Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+            Long createdCompanyId;
+            try
+            {   //Сначала создаём документ без банковских счетов
+                createdCompanyId = insertCompanyBaseFields(request,myMasterId);
+                if(createdCompanyId!=null){
+                    try {//если создался...
+                        //Сохраняем банковские реквизиты
+                        for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
+                            insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
+                        }
+                        return createdCompanyId;
+                    } catch (Exception e){
+                        e.printStackTrace();
+                        return null;
+                    }
+                } else return null;
+            } catch (Exception e) {
+                e.printStackTrace();
                 return null;
             }
-            else
-            {
-                try
-                {
-                    createdCompanyId = insertCompanyBaseFields(request,myMasterId);
-                    if(createdCompanyId!=null){//Сначала создаём документ без контактных лиц и банковских счетов
-                        try {//если создался...
-                            //Сохраняем банковские реквизиты
-                            for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
-                                insertCompanyPaymentAccounts(row, myMasterId, request.getId());
-                            }
-                            return createdCompanyId;
-                        } catch (Exception e){
-                            e.printStackTrace();
-                            return null;
-                        }
-                    } else return null;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
+
         } else return null;
     }
 
@@ -707,7 +702,7 @@ public class CompanyRepositoryJPA {
                 " opf_id,"+//организационно-правовая форма предприятия
                 " code,"+//код
                 " telephone,"+//телефон
-                " fax,"+//факс
+                " site,"+//сайт
                 " email,"+//емейл
                 " currency_id,"+//валюта предприятия
                 " status_id,"+//статус предприятия
@@ -740,14 +735,11 @@ public class CompanyRepositoryJPA {
                 " jr_fio_otchestvo,"+//Отчество
                 " jr_ip_ogrnip,"+//ОГРНИП (для ИП)
                 " jr_ip_svid_num,"+//номер свидетельства (для ИП)
-                " jr_ip_reg_date" + //дата регистрации (для ИП)
+                " jr_ip_reg_date, " + //дата регистрации (для ИП)
                 " nds_payer,"+//является ли плательщиком НДС
                 " fio_director,"+//ФИО управляющего
                 " director_position,"+//должность управляющего
                 " fio_glavbuh"+//ФИО главбуха
-//                " director_signature_id,"+//Подпись управляющего - ссылка на таблицу files
-//                " glavbuh_signature_id,"+//Подпись главбуха - ссылка на таблицу files
-//                " card_template_id"+//Шаблон карточки предприятия - ссылка на таблицу files
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -756,7 +748,7 @@ public class CompanyRepositoryJPA {
                 request.getOpf_id() + ", " +//организационно-правовая форма предприятия
                 "'" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
                 "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                "'" + (request.getFax() == null ? "": request.getFax()) +"', " +//факс
+                "'" + (request.getSite() == null ? "": request.getSite()) +"', " +//сайт
                 "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
                 request.getCurrency_id() + ", " +//валюта
                 request.getStatus_id() + ", " +//статус документа
@@ -771,8 +763,8 @@ public class CompanyRepositoryJPA {
                 "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
                 //Юридические реквизиты
                 "'" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
-                request.getJr_jur_kpp() + ", " +//кпп (для юрлиц)
-                request.getJr_jur_ogrn() + ", " +//огрн (для юрлиц)
+                "'" + (request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()) + "', " +//кпп (для юрлиц)
+                "'" + (request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()) + "', " +//огрн (для юрлиц)
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                 "'" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +//почтовый индекс
                 request.getJr_country_id() + ", " +//страна
@@ -782,28 +774,25 @@ public class CompanyRepositoryJPA {
                 "'" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                 "'" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
                 "'" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
-                request.getJr_inn() + ", " +//ИНН
-                request.getJr_okpo() + ", " +//ОКПО
+                "'" + (request.getJr_inn() == null ? "": request.getJr_inn()) + "', " +//ИНН
+                "'" + (request.getJr_okpo() == null ? "": request.getJr_okpo()) + "', " + //ОКПО
                 "'" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия
                 "'" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя
                 "'" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество
-                request.getJr_ip_ogrnip() + ", " +//ОГРНИП (для ИП)
+                "'" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) + "', " + //ОГРНИП (для ИП)
                 "'" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
-                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
+                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY'), " +
                 request.getNds_payer() + ", " +//является ли плательщиком НДС
                 "'" + (request.getFio_director() == null ? "": request.getFio_director()) + "', " +//ФИО управляющего
                 "'" + (request.getDirector_position() == null ? "": request.getDirector_position()) + "', " +//должность управляющего
                 "'" + (request.getFio_glavbuh() == null ? "": request.getFio_glavbuh()) + "' " +//ФИО главбуха
-//                request.getDirector_signature_id() + ", " +//Подпись управляющего - ссылка на таблицу files
-//                request.getGlavbuh_signature_id()  + ", " +//Подпись главбуха - ссылка на таблицу files
-//                request.getCard_template_id() + //Шаблон карточки предприятия - ссылка на таблицу files
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
-            newDockId=(Long)query2.getSingleResult();
+            newDockId=Long.valueOf(query2.getSingleResult().toString());
             return newDockId;
         } catch (Exception e) {
             e.printStackTrace();
@@ -818,8 +807,11 @@ public class CompanyRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(3L,"4") && securityRepositoryJPA.isItAllMyMastersDocuments("companies",delNumbers))
         {
             String stringQuery;
-            stringQuery = "Update companies p" +
-                    " set is_deleted=true " +
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update companies p set " +
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " + //метка об удалении
                     " where p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
             try{
@@ -830,7 +822,28 @@ public class CompanyRepositoryJPA {
             }
         } else return false;
     }
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean undeleteCompanies(String delNumbers) {//восстанавливает документ из удаленных
+        //Если есть право на "Удаление" и все id для документов принадлежат владельцу мастер-аккаунта
+        if(securityRepositoryJPA.userHasPermissions_OR(3L,"4") && securityRepositoryJPA.isItAllMyMastersDocuments("companies",delNumbers))
+        {
+            String stringQuery;
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update companies p set " +
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //метка об удалении
+                    " where p.id in (" + delNumbers+")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            try{
+                query.executeUpdate();
+                return true;
+            }catch(Exception e){
+                return false;
+            }
+        } else return false;
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public List<IdAndName> getCompaniesList() {
@@ -841,7 +854,8 @@ public class CompanyRepositoryJPA {
                 "           p.id as id, " +
                 "           p.name as name " +
                 "           from companies p " +
-                "           where  p.master_id=" + companyOwnerId;
+                "           where  p.master_id=" + companyOwnerId +
+                "           and coalesce(p.is_deleted,false)=false ";
 
         stringQuery = stringQuery + " group by p.id order by p.name asc";
         Query query = entityManager.createNativeQuery(stringQuery);
@@ -866,8 +880,8 @@ public class CompanyRepositoryJPA {
         Long companyId = request.getId1();
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(3L,"8") && securityRepositoryJPA.isItAllMyMastersDocuments("companies",companyId.toString())) ||
-        //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-        (securityRepositoryJPA.userHasPermissions_OR(3L,"7") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("companies",companyId.toString())))
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(3L,"7") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("companies",companyId.toString())))
         {
             try
             {
@@ -984,5 +998,96 @@ public class CompanyRepositoryJPA {
                 return false;
             }
         } else return false;
+    }
+
+    @SuppressWarnings("Duplicates")
+    public Long getCompanyIdByFilename(String fileName){
+        String stringQuery;
+        stringQuery  =  " select company_id from files where name = '" + fileName +"'" ;
+        try {
+            return Long.parseLong(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public Resource getCompanyCard(FileInfoJSON fileInfo) {
+
+        GenerateDocumentsDocxService gt = new GenerateDocumentsDocxService();
+
+
+        //запросим данные по предприятию, найдя его через название файла
+        Long companyId=getCompanyIdByFilename(fileInfo.getOriginal_name());
+        CompaniesJSON company=getCompanyValues(companyId);
+
+        //создадим данные для подмены плейсхолдеров вида "Имя-Значение", например, "TM_NAME" - "ООО Докио"
+        Map<String,String> changeMap = new HashMap<String,String>();
+        changeMap.put("TMFIODIRECTOR", company.getFio_director());
+        changeMap.put("TMNAME", company.getName());
+        changeMap.put("TMDIRECTORPOSITION", company.getDirector_position());
+
+        String orgType;
+
+        List<Map<String,String>> mapAsList=new ArrayList<Map<String, String>>();
+        //создадим данные для заполнения таблицы
+
+        switch (company.getOpf_id()) {
+            case  (1):// Индивидуальный предприниматель
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Полное наименование","Индивидуальный предприниматель " + company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ИНН",company.getJr_inn()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ОГРНИП",company.getJr_ip_ogrnip()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ОКПО",company.getJr_okpo()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Номер свидетельства",company.getJr_ip_svid_num()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Дата регистрации",company.getJr_ip_reg_date()}));
+                break;
+            case (2): // Самозанятый
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ФИО", company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ИНН",company.getJr_inn()}));
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Полное наименование",company.getJr_jur_full_name()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ИНН",company.getJr_inn()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"КПП",company.getJr_jur_kpp()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ОГРН",company.getJr_jur_ogrn()}));
+                mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"ОКПО",company.getJr_okpo()}));
+                break;
+        }
+        //Банковские реквизиты (если они есть). Берутся самые верхние из списка карточек банковских реквизитов
+        List<CompaniesPaymentAccountsForm> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
+        if(companyPaymentAccounts.size()>0){
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Банковские реквизиты:",""}));
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Наименование", companyPaymentAccounts.get(0).getName()}));
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"БИК",companyPaymentAccounts.get(0).getBik()}));
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Адрес", companyPaymentAccounts.get(0).getAddress()}));
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Кор. счёт", companyPaymentAccounts.get(0).getCorr_account()}));
+            mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Расчётный счёт", companyPaymentAccounts.get(0).getPayment_account()}));
+        }
+
+
+
+
+
+
+        String filePath=fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
+        File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
+        String outputDocument = fileInfo.getPath()+"/Карточка предприятия.docx";
+
+        try
+        {
+            if(gt.generateDocument(template, outputDocument, changeMap, mapAsList)) {
+                Path file = Paths.get(outputDocument);
+                Resource resource = new UrlResource(file.toUri());
+                if (resource.exists() || resource.isReadable()) {
+                    return resource;
+                } else {
+                    throw new RuntimeException("Fail to load from filepath '" + outputDocument + "'");
+                }
+            } else return null;
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+outputDocument+"'");
+        }
     }
 }

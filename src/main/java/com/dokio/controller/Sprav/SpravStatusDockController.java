@@ -70,7 +70,7 @@ public class SpravStatusDockController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = repository.getStatusDocksTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, documentId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = repository.getStatusDocksTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, documentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -83,11 +83,9 @@ public class SpravStatusDockController {
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать документы/ 0 - по всем
         int documentId;//по какому документу показывать / 0 - ничего не показываем, пока не выберут
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
         documentId = Integer.parseInt(searchRequest.getDocumentId());
-        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -98,8 +96,7 @@ public class SpravStatusDockController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = repository.getStatusDocksSize(searchString,companyId,documentId);//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = repository.getStatusDocksSize(searchString,companyId,documentId,searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -157,45 +154,59 @@ public class SpravStatusDockController {
 
     @PostMapping("/api/auth/insertSpravStatusDocks")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertSpravStatusDocks(@RequestBody SpravStatusDockForm request) throws ParseException {
+    public ResponseEntity<?> insertSpravStatusDocks(@RequestBody SpravStatusDockForm request){
         Long newDocument = repository.insertStatusDocks(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.BAD_REQUEST);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/updateSpravStatusDocks")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateSpravStatusDocks(@RequestBody SpravStatusDockForm request) throws ParseException{
+    public ResponseEntity<?> updateSpravStatusDocks(@RequestBody SpravStatusDockForm request){
         if(repository.updateStatusDocks(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.BAD_REQUEST);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/deleteSpravStatusDocks")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteSpravStatusDocks(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteSpravStatusDocks(@RequestBody SignUpForm request){
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
+//        checked=checked.replace("[","");
+//        checked=checked.replace("]","");
 
         if(repository.deleteStatusDocks(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
+    @PostMapping("/api/auth/undeleteSpravStatusDocks")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteSpravStatusDocks(@RequestBody SignUpForm request){
+        String checked = request.getChecked() == null ? "": request.getChecked();
+//        checked=checked.replace("[","");
+//        checked=checked.replace("]","");
 
+        if(repository.undeleteStatusDocks(checked)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
     @PostMapping("/api/auth/getStatusList")//отдает список статусов документа по его id (таблица documents) и id предприятия
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getStatusList(@RequestBody SearchForm searchRequest) {

@@ -6,7 +6,7 @@ public class CompaniesPaymentAccountsForm {
     private Long master_id;
     private Long company_id;
     private Integer output_order;
-    private Long bik;
+    private String bik;
     private String name;
     private String address;
     private String payment_account;
@@ -44,11 +44,11 @@ public class CompaniesPaymentAccountsForm {
         this.output_order = output_order;
     }
 
-    public Long getBik() {
+    public String getBik() {
         return bik;
     }
 
-    public void setBik(Long bik) {
+    public void setBik(String bik) {
         this.bik = bik;
     }
 

@@ -20,6 +20,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 //    //Запрос преобразовывается в объект (в данном случае в данный класс)
 package com.dokio.message.request;
 
+import java.util.Set;
+
 public class SearchForm {
     private int id;
     private int id2;
@@ -46,6 +48,7 @@ public class SearchForm {
     private boolean any_boolean;// универсальная для любого логического параметра запроса
     private boolean any_boolean2;// универсальная для любого логического параметра запроса
     private Integer any_id;// универсальная для любого id
+    private Set<Integer> filterOptionsIds;
 
     public int getId() {
         return id;
@@ -65,6 +68,14 @@ public class SearchForm {
 
     public Integer getAny_id() {
         return any_id;
+    }
+
+    public Set<Integer> getFilterOptionsIds() {
+        return filterOptionsIds;
+    }
+
+    public void setFilterOptionsIds(Set<Integer> filterOptionsIds) {
+        this.filterOptionsIds = filterOptionsIds;
     }
 
     public void setAny_id(Integer any_id) {

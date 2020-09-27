@@ -259,7 +259,7 @@ public class UserRepositoryJPA {
         if(userId!=null) {
             String stringQuery = "select u.company_id from users u where u.id= " + userId;
             Query query = entityManager.createNativeQuery(stringQuery);
-            return  (Long) query.getSingleResult();
+            return new Long ((Integer) query.getSingleResult());
         }else return null;
     }
     @SuppressWarnings("Duplicates")

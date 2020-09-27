@@ -7,20 +7,14 @@
     <groupId>dokio</groupId>
     <artifactId>dokio</artifactId>
     <version>1.0-SNAPSHOT</version>
+
     <build>
         <plugins>
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-compiler-plugin</artifactId>-->
-                <!--<configuration>-->
-                    <!--<source>8</source>-->
-                    <!--<target>8</target>-->
-                <!--</configuration>-->
-            <!--</plugin>-->
             <!--maven-war-plugin с помощтю него отключается необходимость web.xml файла.-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.1</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
@@ -35,11 +29,10 @@
             </plugin>
         </plugins>
     </build>
-
+    <name>dokio server</name>
     <properties>
         <commons-dbcp.version>1.2.2</commons-dbcp.version>
     </properties>
-
 
     <dependencies>
 
@@ -50,7 +43,6 @@
         </dependency>
 
         <!-- JDBC Connector start -->
-
         <!-- Hibernate -->
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -73,7 +65,6 @@
             <version>5.2.17.Final</version>
         </dependency>
 
-
         <!-- Hibernate Library dependency start -->
         <dependency>
             <groupId>commons-logging</groupId>
@@ -90,7 +81,6 @@
             <artifactId>antlr</artifactId>
             <version>2.7.7</version>
         </dependency>
-
 
         <!-- Spring -->
         <dependency>
@@ -147,7 +137,6 @@
             <version>1.0</version>
         </dependency>
 
-
         <!--for pagination-->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -174,13 +163,6 @@
             <artifactId>displaytag</artifactId>
             <version>1.2</version>
         </dependency>
-
-
-
-
-
-
-
 
         <!-- JUnit -->
         <dependency>
@@ -212,33 +194,32 @@
             <version>1.9.13</version>
         </dependency>
 
-
+        <!--Logging-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>1.7.7</version>
+            <version>1.7.25</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
+            <version>1.7.25</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.7</version>
+            <version>1.7.5</version>
         </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-        </dependency>
+        <!--<dependency>--><!--на этой версии проект не стартует-->
+            <!--<groupId>log4j</groupId>-->
+            <!--<artifactId>log4j</artifactId>-->
+            <!--<version>1.2.17</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.14</version>
         </dependency>
-
 
         <!-- Web -->
         <dependency>
@@ -253,15 +234,12 @@
             <version>3.1.0</version>
         </dependency>
 
-
-
-        <!-- Postgresql -->
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.2.5</version>
         </dependency>
-
 
         <!-- For Working with Json Web Tokens (JWT) -->
         <dependency>
@@ -275,15 +253,17 @@
             <version>2.0.1.Final</version>
         </dependency>
 
+        <!--Working with files-->
+        <dependency>
+            <groupId>org.docx4j</groupId>
+            <artifactId>docx4j</artifactId>
+            <version>6.1.2</version>
+        </dependency>
+        <dependency><!--getting mime-types from files-->
+            <groupId>com.j256.simplemagic</groupId>
+            <artifactId>simplemagic</artifactId>
+            <version>1.6</version>
+        </dependency>
+
     </dependencies>
-
-
-
-
-
-
-
-
-
-
 </project>

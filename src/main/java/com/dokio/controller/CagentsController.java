@@ -72,7 +72,7 @@ public class CagentsController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = cagentsRepositoryJPA.getCagentsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,categoryId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = cagentsRepositoryJPA.getCagentsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,categoryId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -100,7 +100,7 @@ public class CagentsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = cagentsRepositoryJPA.getCagentsSize(searchString,companyId,categoryId);//  - общее количество записей выборки
+        int size = cagentsRepositoryJPA.getCagentsSize(searchString,companyId,categoryId,searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -171,7 +171,7 @@ public class CagentsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -183,7 +183,7 @@ public class CagentsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting updateCagents", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -196,11 +196,22 @@ public class CagentsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCagents", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
-
+    @PostMapping("/api/auth/undeleteCagents")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteCagents(@RequestBody SignUpForm request){
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        if(cagentsRepositoryJPA.undeleteCagents(checked)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
     @PostMapping("/api/auth/getCagentsList")//заполнение Autocomplete
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsList(@RequestBody SearchForm searchRequest) {
@@ -220,7 +231,7 @@ public class CagentsController {
         try {
             return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting getCagentsPaymentAccounts", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки банковских счетов контрагента", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -229,7 +240,7 @@ public class CagentsController {
         try {
             return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsContacts(searchRequest.getId()), HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting getCagentsContacts", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки контактных лиц контрагента", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -40,11 +40,8 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 )
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    final
-    UserDetailsServiceImpl userDetailsService;
-
+    private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthEntryPoint unauthorizedHandler;
-
     @Autowired
     public WebSecurityConfig(UserDetailsServiceImpl userDetailsService, JwtAuthEntryPoint unauthorizedHandler) {
         this.userDetailsService = userDetailsService;

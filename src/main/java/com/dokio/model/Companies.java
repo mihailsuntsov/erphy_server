@@ -14,22 +14,18 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.model;
 
-import com.dokio.model.Geo.Cities;
+/*import com.dokio.model.Geo.Cities;
 import com.dokio.model.Geo.Countries;
 import com.dokio.model.Geo.Regions;
 import com.dokio.model.Sprav.SpravStatusDocks;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dokio.model.Sprav.SpravSysOPF;
+import com.dokio.model.Sprav.SpravSysOPF;*/
 
 import javax.persistence.*;
-import javax.validation.constraints.Size;
+/*import javax.validation.constraints.Size;
 import java.sql.Timestamp;
-import java.util.Date;
-
-@NamedQueries({
-        @NamedQuery(name="Companies.deleteCompaniesByNumber", query="delete from com.dokio.model.Companies obj where obj.compId in(:delNumbers) ")
-})
+import java.util.Date;*/
 
 @Entity
 @Table(name="companies")
@@ -41,13 +37,13 @@ public class Companies {
     @GeneratedValue(generator = "companies_id_seq")
     private Long compId;
 
-    @Column(name = "name")
-    private String compName;
+ /*   @Column(name = "name")
+    private String compName;*/
 
     @ManyToOne
     @JoinColumn(name = "master_id", nullable = false)
     private User master;
-
+/*
     @ManyToOne
     @JoinColumn(name = "creator_id")
     private User creator;
@@ -66,44 +62,9 @@ public class Companies {
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Timestamp compDateTimeChanged;
 
-    @Column(name="namefull")
-    private String compNameFull;
-
-    @Column(name="addressjur")
-    private String compAddressJur;
-
-    @Column(name="addressfact")
-    private String compAddressFact;
-
     @ManyToOne
     @JoinColumn(name = "opf_id")
     private SpravSysOPF compOpf;
-
-    @Column(name="inn")
-    private String compInn;
-
-    @Column(name="reg_num")
-    private String compReg_num;
-
-    @Column(name="who_got")
-    private String compWho_got;
-
-    @Column(name="datereg")
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Date compDateReg;
-
-    @Column(name="korschet")
-    private String compKorschet;
-
-    @Column(name="rs")
-    private String compRs;
-
-    @Column(name="bank")
-    private String compBank;
-
-    @Column(name="bik")
-    private String compbik;
 
     @Column(name="st_prefix_barcode_pieced")
     private Integer st_prefix_barcode_pieced;
@@ -124,9 +85,9 @@ public class Companies {
     @Size(max = 60)
     private String telephone;
 
-    @Column(name = "fax")
+    @Column(name = "site")
     @Size(max = 120)
-    private String fax;
+    private String site;
 
     @Column(name = "email")
     @Size(max = 254)
@@ -262,15 +223,15 @@ public class Companies {
     private Long glavbuh_signature_id;
 
     @Column(name = "stamp_id")
-    private Long stamp_id;
+    private Long stamp_id;*/
 
-    public Long getStamp_id() {
+ /*   public Long getStamp_id() {
         return stamp_id;
     }
 
     public void setStamp_id(Long stamp_id) {
         this.stamp_id = stamp_id;
-    }
+    }*/
 
     public Long getCompId() {
         return compId;
@@ -280,7 +241,14 @@ public class Companies {
         this.compId = compId;
     }
 
-    public Integer getSt_prefix_barcode_pieced() {
+    public User getMaster() {
+        return master;
+    }
+
+    public void setMaster(User master) {
+        this.master = master;
+    }
+/*    public Integer getSt_prefix_barcode_pieced() {
         return st_prefix_barcode_pieced;
     }
 
@@ -352,103 +320,7 @@ public class Companies {
         this.compDateTimeChanged = compDateTimeChanged;
     }
 
-    public String getCompNameFull() {
-        return compNameFull;
-    }
-
-    public void setCompNameFull(String compNameFull) {
-        this.compNameFull = compNameFull;
-    }
-
-    public String getCompAddressJur() {
-        return compAddressJur;
-    }
-
-    public void setCompAddressJur(String compAddressJur) {
-        this.compAddressJur = compAddressJur;
-    }
-
-    public String getCompAddressFact() {
-        return compAddressFact;
-    }
-
-    public void setCompAddressFact(String compAddressFact) {
-        this.compAddressFact = compAddressFact;
-    }
-
-    public SpravSysOPF getCompOpf() {
-        return compOpf;
-    }
-
-    public void setCompOpf(SpravSysOPF compOpf) {
-        this.compOpf = compOpf;
-    }
-
-    public String getCompInn() {
-        return compInn;
-    }
-
-    public void setCompInn(String compInn) {
-        this.compInn = compInn;
-    }
-
-    public String getCompReg_num() {
-        return compReg_num;
-    }
-
-    public void setCompReg_num(String compReg_num) {
-        this.compReg_num = compReg_num;
-    }
-
-    public String getCompWho_got() {
-        return compWho_got;
-    }
-
-    public void setCompWho_got(String compWho_got) {
-        this.compWho_got = compWho_got;
-    }
-
-    public Date getCompDateReg() {
-        return compDateReg;
-    }
-
-    public void setCompDateReg(Date compDateReg) {
-        this.compDateReg = compDateReg;
-    }
-
-    public String getCompKorschet() {
-        return compKorschet;
-    }
-
-    public void setCompKorschet(String compKorschet) {
-        this.compKorschet = compKorschet;
-    }
-
-    public String getCompRs() {
-        return compRs;
-    }
-
-    public void setCompRs(String compRs) {
-        this.compRs = compRs;
-    }
-
-    public String getCompBank() {
-        return compBank;
-    }
-
-    public void setCompBank(String compBank) {
-        this.compBank = compBank;
-    }
-
-    public String getCompbik() {
-        return compbik;
-    }
-
-    public void setCompbik(String compbik) {
-        this.compbik = compbik;
-    }
-
-    public String getCode() {
+   public String getCode() {
         return code;
     }
 
@@ -462,14 +334,6 @@ public class Companies {
 
     public void setTelephone(String telephone) {
         this.telephone = telephone;
-    }
-
-    public String getFax() {
-        return fax;
-    }
-
-    public void setFax(String fax) {
-        this.fax = fax;
     }
 
     public String getEmail() {
@@ -751,4 +615,12 @@ public class Companies {
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
     }
+
+    public SpravSysOPF getCompOpf() {
+        return compOpf;
+    }
+
+    public void setCompOpf(SpravSysOPF compOpf) {
+        this.compOpf = compOpf;
+    }*/
 }

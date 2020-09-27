@@ -18,16 +18,25 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.SearchForm;
+import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.repository.CompanyRepositoryJPA;
+import com.dokio.repository.FileRepositoryJPA;
 import com.dokio.repository.UserGroupRepositoryJPA;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.dokio.service.StorageService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +47,10 @@ public class CompaniesController {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     UserGroupRepositoryJPA userGroupRepositoryJPA;
+    @Autowired
+    StorageService storageService;
+    @Autowired
+    FileRepositoryJPA fileRepository;
 
     @PostMapping("/api/auth/getCompaniesTable")
     @SuppressWarnings("Duplicates")
@@ -66,7 +79,7 @@ public class CompaniesController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = companyRepositoryJPA.getCompaniesTable(result, offsetreal, searchString, sortColumn, sortAsc);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = companyRepositoryJPA.getCompaniesTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -91,11 +104,12 @@ public class CompaniesController {
             return responseEntity;
         }
     }
-
     @PostMapping("/api/auth/deleteCompanies")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCompanies(@RequestBody SignUpForm request){
         String checked = request.getChecked() == null ? "": request.getChecked();
+//        checked=checked.replace("[","");
+//        checked=checked.replace("]","");
         if(companyRepositoryJPA.deleteCompanies(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -104,7 +118,20 @@ public class CompaniesController {
             return responseEntity;
         }
     }
-
+    @PostMapping("/api/auth/undeleteCompanies")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteCompanies(@RequestBody SignUpForm request){
+        String checked = request.getChecked() == null ? "": request.getChecked();
+//        checked=checked.replace("[","");
+//        checked=checked.replace("]","");
+        if(companyRepositoryJPA.undeleteCompanies(checked)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCompanies", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
     @PostMapping("/api/auth/getCompaniesPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesPagesList(@RequestBody SearchForm searchRequest) {
@@ -122,7 +149,7 @@ public class CompaniesController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = companyRepositoryJPA.getCompaniesSize(searchString);//  - общее количество записей выборки
+        int size = companyRepositoryJPA.getCompaniesSize(searchRequest);//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -234,4 +261,24 @@ public class CompaniesController {
             return responseEntity;
         }
     }
+
+    @SuppressWarnings("Duplicates")
+    @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
+        if(fileInfo !=null){
+            fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
+            Resource file = companyRepositoryJPA.getCompanyCard(fileInfo);//и отправим экземпляр класса FileInfoJSON с путём к файлу и системным именем файла на получение карточки
+            if(file!=null) {//если файл есть - значит docx4j отработал, и успешно записал файл Карточка предприятия.docx.
+                String fileName = "Карточка предприятия.docx";
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
+                        .body(file);
+            }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
+                return responseEntity;}
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+            return responseEntity;}
+    }
+
 }
