@@ -370,9 +370,12 @@ public class SpravStatusDockRepository {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(22L, "274") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_status_dock", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update sprav_status_dock p" +
-                    " set is_deleted=true " +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
                     " and p.id in (" + delNumbers + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -391,9 +394,12 @@ public class SpravStatusDockRepository {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(22L, "274") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_status_dock", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update sprav_status_dock p" +
-                    " set is_deleted=false " +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " +
                     " where p.master_id=" + myMasterId +
                     " and p.id in (" + delNumbers + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -450,7 +456,7 @@ public class SpravStatusDockRepository {
                     "           where  p.master_id=" + myMasterId +
                     "           and p.dock_id = " + documentId +
                     "           and p.company_id=" + companyId +
-                    "           and p.is_deleted=false " +
+                    "           and coalesce(p.is_deleted,false)=false" +
                     "           order by p.output_order asc";
 
             Query query = entityManager.createNativeQuery(stringQuery);

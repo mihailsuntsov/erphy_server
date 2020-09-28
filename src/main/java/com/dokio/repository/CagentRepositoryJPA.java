@@ -969,9 +969,12 @@ public class CagentRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update cagents p" +
-                    " set is_deleted=true " +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
                     " where p.master_id=" +myMasterId+
                     " and p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -990,9 +993,12 @@ public class CagentRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update cagents p" +
-                    " set is_deleted=false " +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " +
                     " where p.master_id=" +myMasterId+
                     " and p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1008,7 +1014,6 @@ public class CagentRepositoryJPA {
     public List getCagentsList(String searchString, int companyId) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
         stringQuery = "select  p.id as id, " +
                 "           p.name as name "+
                 "           from cagents p " +

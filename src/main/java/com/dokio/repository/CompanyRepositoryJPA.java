@@ -1073,7 +1073,7 @@ public class CompanyRepositoryJPA {
 
         String filePath=fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
         File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
-        String outputDocument = fileInfo.getPath()+"/Карточка предприятия.docx";
+        String outputDocument = fileInfo.getPath()+"/company_card.docx";
 
         try
         {
