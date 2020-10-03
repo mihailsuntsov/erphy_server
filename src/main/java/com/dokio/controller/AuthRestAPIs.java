@@ -19,6 +19,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,8 @@ import com.dokio.security.jwt.JwtProvider;
 @RestController
 @RequestMapping("/api/public")
 public class AuthRestAPIs {
+
+	Logger logger = Logger.getLogger("AuthRestAPIs");
 
 	@Autowired
 	AuthenticationManager authenticationManager;
@@ -79,6 +82,7 @@ public class AuthRestAPIs {
 		String jwt = jwtProvider.generateJwtToken(authentication);
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+		logger.info("signin: " + userDetails.getUsername());
 		return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
 	}
 
