@@ -20,7 +20,7 @@ public class CagentsForm {
     private Long id;
     private String name;
     private String description;
-    private Long opf_id;
+    private Integer opf_id;
     private Long company_id;
     private Set<Long> selectedCagentCategories;
 
@@ -87,11 +87,11 @@ public class CagentsForm {
         this.description = description;
     }
 
-    public Long getOpf_id() {
+    public Integer getOpf_id() {
         return opf_id;
     }
 
-    public void setOpf_id(Long opf_id) {
+    public void setOpf_id(Integer opf_id) {
         this.opf_id = opf_id;
     }
 

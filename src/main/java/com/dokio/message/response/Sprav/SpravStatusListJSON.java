@@ -20,6 +20,7 @@ public class SpravStatusListJSON {
     private String name;
     private String color;
     private String description;
+    private boolean is_default;
     /*getters-setters*/
 
     public Long getId() {
@@ -36,6 +37,14 @@ public class SpravStatusListJSON {
 
     public void setStatus_type(int status_type) {
         this.status_type = status_type;
+    }
+
+    public boolean isIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(boolean is_default) {
+        this.is_default = is_default;
     }
 
     public int getOutput_order() {

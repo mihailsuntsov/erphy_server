@@ -26,11 +26,20 @@ public class SpravStatusDockForm {
     private String color;
     private int output_order;
     private String description;
+    private boolean is_default;
     private List<Long> statusesIdsInOrderOfList;//List id статусов для упорядочивания по порядку вывода
     /*getters-setters*/
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(boolean is_default) {
+        this.is_default = is_default;
     }
 
     public void setId(Long id) {

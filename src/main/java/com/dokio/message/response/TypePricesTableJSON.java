@@ -34,12 +34,21 @@ public class TypePricesTableJSON {
     private String date_time_created;
     private String date_time_changed;
     private String name;
+    private boolean is_default;
     private String description;
     private String pricerole_id;
     private String pricerole;
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(boolean is_default) {
+        this.is_default = is_default;
     }
 
     public void setId(Long id) {

@@ -19,6 +19,7 @@ import java.util.Set;
 
 import javax.validation.Valid;
 
+import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,25 +62,26 @@ public class AuthRestAPIs {
 	@Autowired
 	JwtProvider jwtProvider;
 
-
-	@RequestMapping(path = "/example", method = RequestMethod.GET, headers = "X-Custom")
-	public String example() {
-		return "example-view-name";
-	}
-
+	@Autowired
+	UserDetailsServiceImpl userDetailsService;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
 
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
-		SecurityContextHolder.getContext().setAuthentication(authentication);
-
-		String jwt = jwtProvider.generateJwtToken(authentication);
-
-		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
+//Если логин или пароль неверны, запрос дальше не идет, authenticationManager возвращает {status: 401, error: "Unauthorized", message: "Error -> Unauthorized"}
+		if(userDetailsService.isUserNotBlocked(loginRequest)) {
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+			String jwt = jwtProvider.generateJwtToken(authentication);
+			UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
+		} else return  new ResponseEntity<>(
+		  "{\n" +
+				"\"status\": 401,\n" +
+				"\"error\": \"Unauthorized\",\n" +
+				"\"message\": \"Error -> Unauthorized\"\n" +
+				"}\n", HttpStatus.UNAUTHORIZED);
 	}
 
 	@SuppressWarnings("Duplicates")

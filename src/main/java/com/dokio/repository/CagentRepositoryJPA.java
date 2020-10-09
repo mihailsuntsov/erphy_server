@@ -109,7 +109,9 @@ public class CagentRepositoryJPA {
                     "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
+                    "           stat.description as status_description, " +
+                    "           p.date_time_created as date_time_created_sort, " +
+                    "           p.date_time_changed as date_time_changed_sort " +
 
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -825,12 +827,16 @@ public class CagentRepositoryJPA {
                     createdCagentId = insertCagentBaseFields(request,myMasterId);
                     if(createdCagentId!=null){//Сначала создаём документ без контактных лиц и банковских счетов
                         try {//если создался...
-                            //Сохраняем контактные лица
-                            for (CagentsContactsForm row : request.getCagentsContactsTable()) {
-                                insertCagentContacts(row, myMasterId, request.getCompany_id(),createdCagentId);
-                            }
-                            for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
-                                insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),createdCagentId);
+                            //Сохраняем контактные лица (если есть)
+                            if (request.getCagentsContactsTable() != null && request.getCagentsContactsTable().size()>0) {
+                                for (CagentsContactsForm row : request.getCagentsContactsTable()) {
+                                    insertCagentContacts(row, myMasterId, request.getCompany_id(),createdCagentId);
+                                }
+                            }//Сохраняем банковские реквизиты (если есть)
+                            if(request.getCagentsPaymentAccountsTable()!=null &&  request.getCagentsPaymentAccountsTable().size()>0) {
+                                for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
+                                    insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(), createdCagentId);
+                                }
                             }
                             Set<Long> categories = request.getSelectedCagentCategories();
                             if (categories!=null && categories.size()>0) { //если есть выбранные чекбоксы категорий
@@ -1040,6 +1046,7 @@ public class CagentRepositoryJPA {
         }
         return returnList;
     }
+
 
 
 //*****************************************************************************************************************************************************

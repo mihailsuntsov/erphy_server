@@ -19,23 +19,28 @@ import java.util.Set;
 public class CustomersOrdersForm {
     private Long id;
     private Long company_id;
-    private String description;
     private Long department_id;
+    private String name;//наименование сделки
+    private Long status_id;
     private Long cagent_id;
-    private String doc_number;
+    private String new_cagent;
     private String shipment_date;//планируемая дата отгрузки
-    private boolean is_completed;
-    private Set<CustomersOrdersProductForm> customersOrdersProductTable;
+    private String doc_number;
     private boolean nds;
     private boolean nds_included;
+    private String description;
 
-    private String name;//наименование сделки
+
+    private Set<CustomersOrdersProductForm> customersOrdersProductTable;
+
+
+
 
 //--------- address --------------
-    private String fio;
+
     private String email;
     private String telephone;
-    private Integer zip_code;
+    private String zip_code;
     private Integer country_id;
     private Integer region_id;
     private Integer city_id;
@@ -44,7 +49,7 @@ public class CustomersOrdersForm {
     private String flat;
     private String additional_address;
     private String track_number;
-    private Long status_id;
+
 
     public Long getId() {
         return id;
@@ -64,6 +69,14 @@ public class CustomersOrdersForm {
 
     public String getStreet() {
         return street;
+    }
+
+    public String getNew_cagent() {
+        return new_cagent;
+    }
+
+    public void setNew_cagent(String new_cagent) {
+        this.new_cagent = new_cagent;
     }
 
     public void setStreet(String street) {
@@ -126,14 +139,6 @@ public class CustomersOrdersForm {
         this.shipment_date = shipment_date;
     }
 
-    public boolean isIs_completed() {
-        return is_completed;
-    }
-
-    public void setIs_completed(boolean is_completed) {
-        this.is_completed = is_completed;
-    }
-
     public Set<CustomersOrdersProductForm> getCustomersOrdersProductTable() {
         return customersOrdersProductTable;
     }
@@ -166,14 +171,6 @@ public class CustomersOrdersForm {
         this.name = name;
     }
 
-    public String getFio() {
-        return fio;
-    }
-
-    public void setFio(String fio) {
-        this.fio = fio;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -190,11 +187,11 @@ public class CustomersOrdersForm {
         this.telephone = telephone;
     }
 
-    public Integer getZip_code() {
+    public String getZip_code() {
         return zip_code;
     }
 
-    public void setZip_code(Integer zip_code) {
+    public void setZip_code(String zip_code) {
         this.zip_code = zip_code;
     }
 

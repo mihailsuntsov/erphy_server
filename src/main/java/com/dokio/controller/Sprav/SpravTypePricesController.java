@@ -16,6 +16,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.TypePricesForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PriceTypesListJSON;
 import com.dokio.message.response.TypePricesTableJSON;
 import com.dokio.model.Sprav.SpravTypePricesJSON;
@@ -168,31 +169,31 @@ public class SpravTypePricesController {
     }
     @PostMapping("/api/auth/insertTypePrices")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertTypePrices(@RequestBody TypePricesForm request) throws ParseException {
+    public ResponseEntity<?> insertTypePrices(@RequestBody TypePricesForm request){
         Long newDocument = typePricesRepositoryJPA.insertTypePrices(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
     @PostMapping("/api/auth/updateTypePrices")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateTypePrices(@RequestBody TypePricesForm request) throws ParseException{
+    public ResponseEntity<?> updateTypePrices(@RequestBody TypePricesForm request){
         if(typePricesRepositoryJPA.updateTypePrices(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
 
     @PostMapping("/api/auth/deleteTypePrices")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteTypePrices(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteTypePrices(@RequestBody SignUpForm request){
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");
@@ -201,7 +202,7 @@ public class SpravTypePricesController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -215,6 +216,18 @@ public class SpravTypePricesController {
         priceTypesList = typePricesRepositoryJPA.getPriceTypesList(companyId);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(priceTypesList, HttpStatus.OK);
         return responseEntity;
+    }
+
+    @PostMapping("/api/auth/setDefaultPriceType")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setDefaultPriceType(@RequestBody UniversalForm request){
+        if(typePricesRepositoryJPA.setDefaultPriceType(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка назначения типа цены по-умолчанию", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
     }
 
 }

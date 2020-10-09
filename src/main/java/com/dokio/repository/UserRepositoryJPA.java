@@ -31,6 +31,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -223,8 +224,7 @@ public class UserRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public List<Long> getMyDepartmentsId_LONG() {
         Long myId = getMyId();
-        String stringQuery="" +
-                "select p.department_id as did" +
+        String stringQuery="select p.department_id as did" +
                 " from " +
                 " user_department p," +
                 " departments dpts" +
@@ -233,7 +233,10 @@ public class UserRepositoryJPA {
                 " and p.department_id=dpts.id " +
                 " and coalesce(dpts.is_archive,false)!=true";
         Query query = entityManager.createNativeQuery(stringQuery);
-        List<Long> depIds = query.getResultList();
+        List<Long> depIds = new ArrayList<>();
+        for(Object i: query.getResultList()){
+            depIds.add(new Long(i.toString()));
+        }//иначе в этом листе будут интеджеры
         return depIds;
     }
     @SuppressWarnings("Duplicates")

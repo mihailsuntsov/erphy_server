@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravStatusDockForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Sprav.SpravStatusDockJSON;
 import com.dokio.message.response.Sprav.SpravStatusListJSON;
 import com.dokio.model.Companies;
@@ -82,7 +83,8 @@ public class SpravStatusDockRepository {
                     "           p.color as color, " +
                     "           p.description as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort  " +
+                    "           p.date_time_changed as date_time_changed_sort,  " +
+                    "           coalesce(p.is_default, false) as is_default " +
                     "           from sprav_status_dock p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -136,6 +138,7 @@ public class SpravStatusDockRepository {
                 doc.setDock((String) obj[15]);
                 doc.setColor((String) obj[16]);
                 doc.setDescription((String) obj[17]);
+                doc.setIs_default((Boolean) obj[20]);
                 returnList.add(doc);
             }
             return returnList;
@@ -205,7 +208,8 @@ public class SpravStatusDockRepository {
                     "           p.output_order as output_order, " +
                     "           dc.name as dock, " +
                     "           p.color as color, " +
-                    "           p.description as description " +
+                    "           p.description as description, " +
+                    "           coalesce(p.is_default, false) as is_default " +
                     "           from sprav_status_dock p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -246,6 +250,7 @@ public class SpravStatusDockRepository {
                 doc.setDock((String) obj[15]);
                 doc.setColor((String) obj[16]);
                 doc.setDescription((String) obj[17]);
+                doc.setIs_default((Boolean) obj[18]);
             }
             return doc;
         } else return null;
@@ -385,7 +390,39 @@ public class SpravStatusDockRepository {
             } else return false;
         } else return false;
     }
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public boolean setDefaultStatusDock(UniversalForm request) {// id : предприятие, id2 : документ в реестре всех док-тов системы, id3 : статус
+        EntityManager emgr = emf.createEntityManager();
+        SpravStatusDocks document = emgr.find(SpravStatusDocks.class, request.getId3());//сохраняемый документ
+        boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "278"); // "Редактирование док-тов своего предприятия"
+        boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "277"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
+        boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getId()));//сохраняется документ моего предприятия
+        Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
+        Long myMasterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
+        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));
 
+        if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
+                || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
+                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+        {
+            try
+            {
+                String stringQuery;
+                stringQuery =   " update sprav_status_dock set is_default=(" +
+                        " case when (dock_id="+request.getId2()+" and id="+request.getId3()+") then true else false end) " +
+                        " where " +
+                        " company_id= "+request.getId()+
+                        " and dock_id= "+request.getId2();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean undeleteStatusDocks(String delNumbers) {
@@ -451,7 +488,8 @@ public class SpravStatusDockRepository {
                     "           p.status_type as status_type, " +//тип статуса: 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                     "           p.output_order as output_order, " +
                     "           p.color as color, " +
-                    "           p.description as description  " +
+                    "           p.description as description,  " +
+                    "           coalesce(p.is_default,false) as is_default  " +
                     "           from sprav_status_dock p " +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.dock_id = " + documentId +
@@ -472,6 +510,7 @@ public class SpravStatusDockRepository {
                 doc.setOutput_order((Integer) obj[3]);
                 doc.setColor((String) obj[4]);
                 doc.setDescription((String) obj[5]);
+                doc.setIs_default((Boolean) obj[6]);
                 returnList.add(doc);
             }
             return returnList;

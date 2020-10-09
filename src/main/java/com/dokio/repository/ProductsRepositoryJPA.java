@@ -798,7 +798,7 @@ public class ProductsRepositoryJPA {
                 "           on pb.product_id=p.id" +
                 "           left outer join" +
                 "           files f " +
-                "           on f.id=(select file_id from product_files where product_id=p.id and output_order=1)" +
+                "           on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_archive,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -1281,7 +1281,7 @@ public class ProductsRepositoryJPA {
                     " pgf.group_id as group_id, " +
                     " pgf.output_order as output_order, " +
                     //field_type: 1 - сеты (наборы) полей, 2 - поля
-                    (field_type == 1 ? "''" : "(select coalesce (pf.field_value,'') from product_fields pf where pf.field_id=pgf.id and pf.product_id=p.id)") + " as value, " +
+                    (field_type == 1 ? "''" : "(select coalesce (pf.field_value,'') from product_fields pf where pf.field_id=pgf.id and pf.product_id=p.id limit 1)") + " as value, " +
                     " pgf.parent_set_id as parent_set_id " +
                     " from  " +
                     " product_group_fields pgf," +
@@ -1552,7 +1552,6 @@ public class ProductsRepositoryJPA {
                     "           on pf.file_id=f.id" +
                     "           where" +
                     "           p.id= " + productId +
-                    "           and p.master_id=" + myMasterId +
                     "           and f.trash is not true" +
                     "           and p.master_id= " + myMasterId;
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Просмотр документов по всем предприятиям"

@@ -207,7 +207,7 @@ public class CustomersOrdersController {
         if(customersOrdersRepositoryJPA.updateCustomersOrders(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка сохранения", HttpStatus.BAD_REQUEST);
         }
     }
 

@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.TypePricesForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PriceTypesListJSON;
 import com.dokio.message.response.TypePricesTableJSON;
 import com.dokio.model.Sprav.SpravSysPriceRole;
@@ -53,7 +54,6 @@ public class TypePricesRepositoryJPA {
     UserRepository userService;
 
 
-    @Transactional
     @SuppressWarnings("Duplicates")
     public List<TypePricesTableJSON> getTypePricesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
         if(securityRepositoryJPA.userHasPermissions_OR(9L, "91,92"))//типы цен (см. файл Permissions Id)
@@ -78,7 +78,8 @@ public class TypePricesRepositoryJPA {
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +
-                    "           p.description as description " +
+                    "           p.description as description, " +
+                    "           coalesce(p.is_default, false) as is_default " +
                     "           from sprav_type_prices p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -109,7 +110,6 @@ public class TypePricesRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    @Transactional
     public int getTypePricesSize(String searchString, int companyId) {
         if(securityRepositoryJPA.userHasPermissions_OR(9L, "91,92"))//типы цен (см. файл Permissions Id)
         {
@@ -158,7 +158,6 @@ public class TypePricesRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
     public SpravTypePricesJSON getTypePricesValuesById (int id) {
         if (securityRepositoryJPA.userHasPermissions_OR(9L, "95,96,97,98"))//Типы цен: см. _Permissions Id.txt
         {
@@ -324,5 +323,37 @@ public class TypePricesRepositoryJPA {
             returnList.add(doc);
         }
         return returnList;
+    }
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public boolean setDefaultPriceType(UniversalForm request) {// id : предприятие, id3 : Тип цены
+        EntityManager emgr = emf.createEntityManager();
+        SpravTypePrices document = emgr.find(SpravTypePrices.class, request.getId3());//сохраняемый документ
+        boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(9L, "98"); // "Редактирование док-тов своего предприятия"
+        boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(9L, "97"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
+        boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getId()));//сохраняется документ моего предприятия
+        Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
+        Long myMasterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
+        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));
+
+        if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
+                || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
+                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+        {
+            try
+            {
+                String stringQuery;
+                stringQuery =   " update sprav_type_prices set is_default=(" +
+                        " case when (id="+request.getId3()+") then true else false end) " +
+                        " where " +
+                        " company_id= "+request.getId();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
     }
 }

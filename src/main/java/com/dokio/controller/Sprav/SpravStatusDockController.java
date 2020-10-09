@@ -3,6 +3,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.Sprav.SpravStatusDockForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Sprav.SpravStatusDockJSON;
 import com.dokio.message.response.Sprav.SpravStatusListJSON;
 import com.dokio.repository.*;
@@ -160,7 +161,19 @@ public class SpravStatusDockController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
+
+    @PostMapping("/api/auth/setDefaultStatusDock")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setDefaultStatusDock(@RequestBody UniversalForm request){
+        if(repository.setDefaultStatusDock(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка назначения статуса по-умолчанию", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -172,7 +185,7 @@ public class SpravStatusDockController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

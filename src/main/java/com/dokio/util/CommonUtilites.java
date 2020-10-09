@@ -12,37 +12,38 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.repository;
-import com.dokio.model.Documents;
-import com.dokio.security.services.UserDetailsServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
+package com.dokio.util;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.util.List;
-
+import javax.persistence.*;
 @Repository
-public class DocumentsRepositoryJPA {
+public class CommonUtilites {
     @PersistenceContext
     private EntityManager entityManager;
-    @Autowired
-    private UserRepositoryJPA userRepositoryJPA;
-    @Autowired
-    private UserDetailsServiceImpl userRepository;
 
-    @Transactional
     @SuppressWarnings("Duplicates")
-    public List<Documents> getDocumentsWithPermissionList(String searchString) {
-        String stringQuery;
-        Long documentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        stringQuery="from Documents p where p.show =1";
-        if(searchString!= null && !searchString.isEmpty()){
-            stringQuery = stringQuery+" and upper(p.name) like upper('%"+searchString+"%')";
+    //возвращает id статуса, установленного по-умолчанию
+    public Long getDocumentsDefaultStatus(Long companyId, int documentId){
+        try {
+            String stringQuery;
+            stringQuery = "select id from sprav_status_dock where company_id=" + companyId + " and dock_id=" + documentId + " and is_default=true";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
-        stringQuery = stringQuery+" order by p.name asc";
-        Query query =  entityManager.createQuery(stringQuery,Documents.class);
-        return query.getResultList();
+    }
+    @SuppressWarnings("Duplicates")
+    //возвращает id типа цены, установленного по-умолчанию
+    public Long getPriceTypeDefault(Long companyId){
+        try {
+            String stringQuery;
+            stringQuery = "select id from sprav_type_prices where company_id=" + companyId + " and is_default=true ";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
     }
 }

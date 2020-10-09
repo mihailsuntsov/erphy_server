@@ -21,6 +21,7 @@ public class CustomersOrdersJSON
     private String date_time_changed;
     private String description;
     private Long department_type_price_id;//тип цены для отделения в этом Заказе покупателя
+    private Long cagent_type_price_id;//тип цены для покупателя в этом Заказе покупателя
     private boolean is_completed;
     private boolean nds;
     private boolean nds_included;
@@ -34,16 +35,20 @@ public class CustomersOrdersJSON
     private String fio;
     private String email;
     private String telephone;
-    private Integer zip_code;
+    private String zip_code;
     private Integer country_id;
     private Integer region_id;
     private Integer city_id;
     private String additional_address;
     private String track_number;
-
     private String country;
     private String region;
+    private String area;
     private String city;
+    private String street;
+    private String home;
+    private String flat;
+
 
     public Long getId() {
         return id;
@@ -55,6 +60,46 @@ public class CustomersOrdersJSON
 
     public String getMaster() {
         return master;
+    }
+
+    public Long getCagent_type_price_id() {
+        return cagent_type_price_id;
+    }
+
+    public void setCagent_type_price_id(Long cagent_type_price_id) {
+        this.cagent_type_price_id = cagent_type_price_id;
+    }
+
+    public String getArea() {
+        return area;
+    }
+
+    public void setArea(String area) {
+        this.area = area;
+    }
+
+    public String getStreet() {
+        return street;
+    }
+
+    public void setStreet(String street) {
+        this.street = street;
+    }
+
+    public String getHome() {
+        return home;
+    }
+
+    public void setHome(String home) {
+        this.home = home;
+    }
+
+    public String getFlat() {
+        return flat;
+    }
+
+    public void setFlat(String flat) {
+        this.flat = flat;
     }
 
     public void setMaster(String master) {
@@ -285,11 +330,11 @@ public class CustomersOrdersJSON
         this.telephone = telephone;
     }
 
-    public Integer getZip_code() {
+    public String getZip_code() {
         return zip_code;
     }
 
-    public void setZip_code(Integer zip_code) {
+    public void setZip_code(String zip_code) {
         this.zip_code = zip_code;
     }
 

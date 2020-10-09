@@ -229,7 +229,7 @@ public class UserGroupController {
     }
     @PostMapping("/api/auth/deleteUserGroups")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request){
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");

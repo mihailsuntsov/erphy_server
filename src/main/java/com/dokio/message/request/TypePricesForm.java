@@ -24,9 +24,17 @@ public class TypePricesForm {
     private String name;
     private String description;
     private String pricerole_id;
-
+    private boolean is_default;
     public Long getId() {
         return id;
+    }
+
+    public boolean isIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(boolean is_default) {
+        this.is_default = is_default;
     }
 
     public void setId(Long id) {

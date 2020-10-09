@@ -212,7 +212,7 @@ public class CompanyRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public int getCompaniesSize(SearchForm searchRequest) {
-        if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//"Контрагенты" (см. файл Permissions Id)
+        if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//"Предприятия" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -225,7 +225,7 @@ public class CompanyRepositoryJPA {
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Меню - таблица - "Контрагенты" по всем предприятиям"
             {
                 //остается только на своё предприятие (5)
-                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                stringQuery = stringQuery + " and p.id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchRequest.getSearchString() != null && !searchRequest.getSearchString().isEmpty()) {
                 stringQuery = stringQuery + " and (" +
@@ -387,7 +387,7 @@ public class CompanyRepositoryJPA {
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
                 //остается только на своё предприятие (5)
-                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                stringQuery = stringQuery + " and p.id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
 
             Query query = entityManager.createNativeQuery(stringQuery);

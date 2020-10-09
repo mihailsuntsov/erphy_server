@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.security.services;
 
+import com.dokio.message.request.LoginForm;
 import com.dokio.model.User;
 import com.dokio.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.math.BigInteger;
 
 
 @Service
@@ -72,6 +74,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		return user;
 	}
 
+	public boolean isUserNotBlocked(LoginForm loginRequest){
+		String stringQuery;
+		stringQuery=" select count(*) from users where username='"+loginRequest.getUsername()+"' and status_account=2 ";//1-не верифицирован 2-активный 3-заблокирован 4-удалён
+		Query query = entityManager.createNativeQuery(stringQuery);
+		return (query.getSingleResult()).toString().equals("1");
+	}
 	public String getUserName(){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		return auth.getName(); // auth так же может давать список ролей юзера
