@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.message.response.Sprav.SpravSysBarcodeJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -26,11 +27,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysBarcodeController {
+    Logger logger = Logger.getLogger("SpravSysBarcodeController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysBarcode")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysBarcode() {
+        logger.info("Processing post request for path /api/auth/getSpravSysBarcode");
+
         List<SpravSysBarcodeJSON> resultList;
         String stringQuery=
                 "select p.id as id, p.name as name, p.description as description" +

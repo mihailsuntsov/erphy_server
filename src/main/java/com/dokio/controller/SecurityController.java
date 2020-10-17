@@ -19,6 +19,7 @@ import com.dokio.message.response.IsItMy_JSON;
 import com.dokio.message.response.IsItMy_Sprav_JSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,8 @@ import java.util.List;
 
 @Controller
 public class SecurityController {
+    Logger logger = Logger.getLogger("SecurityController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -53,6 +56,8 @@ public class SecurityController {
     @PostMapping("/api/auth/giveMeMyPermissions")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> giveMeMyPermissions(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/giveMeMyPermissions: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         List<Integer> depList =securityRepositoryJPA.giveMeMyPermissions(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
@@ -62,6 +67,8 @@ public class SecurityController {
     @PostMapping("/api/auth/getAllMyPermissions")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getAllMyPermissions(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/getAllMyPermissions: " + request.toString());
+
         List<Integer> depList =securityRepositoryJPA.getAllMyPermissions();
         ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
         return responseEntity;
@@ -70,6 +77,8 @@ public class SecurityController {
     @PostMapping("/api/auth/isItMyCompany")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isItMyCompany(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/isItMyCompany: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         boolean isItMyCompany =securityRepositoryJPA.isItMyCompany(id);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyCompany, HttpStatus.OK);
@@ -79,6 +88,8 @@ public class SecurityController {
     @PostMapping("/api/auth/isItMyDepartment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isItMyDepartment(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/isItMyDepartment: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         boolean isItMyDepartment =securityRepositoryJPA.isItMyDepartment(id);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyDepartment, HttpStatus.OK);
@@ -88,6 +99,8 @@ public class SecurityController {
     @PostMapping("/api/auth/isItMyUser")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isItMyUser(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/isItMyUser: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         boolean isItMyUser =securityRepositoryJPA.isItMyUser(id);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyUser, HttpStatus.OK);
@@ -97,6 +110,8 @@ public class SecurityController {
     @PostMapping("/api/auth/isItMyUserGroup")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isItMyUserGroup(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/isItMyUserGroup: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         boolean isItMyUserGroup =securityRepositoryJPA.isItMyUserGroup(id);
         ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyUserGroup, HttpStatus.OK);
@@ -106,6 +121,8 @@ public class SecurityController {
     @PostMapping("/api/auth/getIsItMy_TradeResults_JSON")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getIsItMy_TradeResults_JSON(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/getIsItMy_TradeResults_JSON: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         IsItMy_JSON response;
         response=securityRepositoryJPA.getIsItMy_TradeResults_JSON(id);
@@ -116,6 +133,8 @@ public class SecurityController {
     @PostMapping("/api/auth/getIsItMy_SpravSysEdizm_JSON")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getIsItMy_SpravSysEdizm_JSON(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/getIsItMy_SpravSysEdizm_JSON: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         IsItMy_Sprav_JSON response;
         response=securityRepositoryJPA.getIsItMy_SpravSysEdizm_JSON(id);
@@ -126,6 +145,8 @@ public class SecurityController {
     @PostMapping("/api/auth/getIsItMy_TypePrices_JSON")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getIsItMy_TypePrices_JSON(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/getIsItMy_TypePrices_JSON: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         IsItMy_Sprav_JSON response;
         response=securityRepositoryJPA.getIsItMy_TypePrices_JSON(id);
@@ -136,6 +157,8 @@ public class SecurityController {
     @PostMapping("/api/auth/getIsItMy_ProductGroups_JSON")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getIsItMy_ProductGroups_JSON(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/getIsItMy_ProductGroups_JSON: " + request.toString());
+
         Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
         IsItMy_Sprav_JSON response;
         response=securityRepositoryJPA.getIsItMy_ProductGroups_JSON(id);

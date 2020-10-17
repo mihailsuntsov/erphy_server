@@ -61,4 +61,10 @@ public class ProductCustomFieldsSaveForm {
     public void setValue(String value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "ProductCustomFieldsSaveForm: id=" + this.id + ", product_id=" + this.product_id + ", name=" + this.name +
+                ", parent_set_id=" + this.parent_set_id + ", value=" + this.value;
+    }
 }

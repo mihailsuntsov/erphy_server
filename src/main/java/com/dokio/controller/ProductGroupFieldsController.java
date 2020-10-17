@@ -17,6 +17,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.text.ParseException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class ProductGroupFieldsController {
+    Logger logger = Logger.getLogger("ProductGroupFieldsController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -44,6 +48,8 @@ public class ProductGroupFieldsController {
     @PostMapping("/api/auth/getProductGroupFieldsList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductGroupFieldsList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductGroupFieldsList: " + searchRequest.toString());
+
         int groupId; // id группы товаров, которой принадлежат поля или сеты
         int field_type; // тип: 1 - сеты (наборы) полей, 2 - поля
         int parentSetId;// родительский сет поля
@@ -73,6 +79,9 @@ public class ProductGroupFieldsController {
     @PostMapping("/api/auth/saveChangeFieldsOrder")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveChangeFieldsOrder(@RequestBody List<ProductGroupFieldsForm> request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/saveChangeFieldsOrder: [" + request.stream().
+                map(ProductGroupFieldsForm::toString).collect(Collectors.joining(", ")) + "]");
+
         if(productGroupFieldsRepositoryJPA.saveChangeFieldsOrder(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -85,6 +94,8 @@ public class ProductGroupFieldsController {
     @PostMapping("/api/auth/updateProductGroupField")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProductGroupField(@RequestBody ProductGroupFieldsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductGroupField: " + request.toString());
+
         if(productGroupFieldsRepositoryJPA.updateProductGroupField(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -96,6 +107,8 @@ public class ProductGroupFieldsController {
     @PostMapping("/api/auth/deleteProductGroupField")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> deleteProductGroupField(@RequestBody ProductGroupFieldsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteProductGroupField: " + request.toString());
+
         if(productGroupFieldsRepositoryJPA.deleteProductGroupField(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -107,6 +120,8 @@ public class ProductGroupFieldsController {
     @PostMapping("/api/auth/insertProductGroupField")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertProductGroupField(@RequestBody ProductGroupFieldsForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertProductGroupField: " + request.toString());
+
         //Long newDocument = productGroupFieldsRepositoryJPA.insertProductGroupField(request);
         //if(newDocument!=null && newDocument>0){
         if(productGroupFieldsRepositoryJPA.insertProductGroupField(request)){

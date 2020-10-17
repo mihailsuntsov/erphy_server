@@ -74,4 +74,10 @@ public class ProductCategoriesForm {
     public void setCompanyId(Long companyId) {
         this.companyId = companyId;
     }
+
+    @Override
+    public String toString() {
+        return "ProductCategoriesForm: id=" + this.id + ", parentCategoryId=" + this.parentCategoryId + ", categoryId=" + this.categoryId +
+                ", name=" + this.name + ", companyId=" + this.companyId;
+    }
 }

@@ -74,4 +74,10 @@ public class CagentCategoriesForm {
     public void setOutput_order(int output_order) {
         this.output_order = output_order;
     }
+
+    @Override
+    public String toString() {
+        return "CagentCategoriesForm: id=" + this.id + ", parentCategoryId=" + this.parentCategoryId +
+                ", categoryId=" + this.categoryId + ", name=" + this.name + ", companyId=" + this.companyId;
+    }
 }

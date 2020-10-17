@@ -73,6 +73,7 @@ public class AuthRestAPIs {
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
+		logger.info("Processing post request for path /signin: " + loginRequest.toString());
 
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -82,13 +83,14 @@ public class AuthRestAPIs {
 		String jwt = jwtProvider.generateJwtToken(authentication);
 
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		logger.info("signin: " + userDetails.getUsername());
+
 		return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
 	}
 
 	@SuppressWarnings("Duplicates")
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
+		logger.info("Processing post request for path /signup: " + signUpRequest.toString());
 
 		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
 			return new ResponseEntity<>(new ResponseMessage("Такой логин уже зарегистрирован"),

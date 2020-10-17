@@ -116,4 +116,10 @@ public class ShipmentForm {
     public void setShipmentProductTable(Set<ShipmentProductForm> shipmentProductTable) {
         this.shipmentProductTable = shipmentProductTable;
     }
+
+    @Override
+    public String toString() {
+        return "ShipmentForm: id=" + this.id + ", company_id=" + this.company_id +
+                ", department_id=" + this.department_id + ", cagent_id=" + this.cagent_id;
+    }
 }

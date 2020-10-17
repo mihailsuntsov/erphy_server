@@ -17,6 +17,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import java.util.List;
 
 @Controller
 public class ProductGroupsController {
+    Logger logger = Logger.getLogger("ProductGroupsController");
 
     @Autowired
     UserRepository userRepository;
@@ -46,6 +48,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/getProductGroupsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductGroupsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductGroupsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -85,6 +89,7 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/getProductGroupsList")//заполнение Autocomplete для поля "Группа товаров" документа "Товары и услуги"
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductGroupsList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductGroupsList: " + searchRequest.toString());
 
         int companyId;
 
@@ -103,6 +108,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/getProductFieldsValuesList")//заполнение Autocomplete для настраиваеммых полей во вкладке "Поля" документа "Товары и услуги"
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductFieldsValuesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductFieldsValuesList: " + searchRequest.toString());
+
         int fieldId = searchRequest.getId();
         String searchString = searchRequest.getSearchString();
         List<ProductFieldValuesListJSON> returnList;
@@ -114,6 +121,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/getProductGroupsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductGroupsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductGroupsPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -181,6 +190,8 @@ public class ProductGroupsController {
 
     @PostMapping("/api/auth/getProductGroupValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody ProductGroupsForm request) {
+        logger.info("Processing post request for path /api/auth/getProductGroupValuesById: " + request.toString());
+
         ProductGroupsJSON response;
         Long id = request.getId();
         response=productGroupRepositoryJPA.getProductGroupValuesById(id);//результат запроса помещается в экземпляр класса
@@ -191,6 +202,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/insertProductGroups")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertProductGroups(@RequestBody ProductGroupsForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertProductGroups: " + request.toString());
+
         Long newDocument = productGroupRepositoryJPA.insertProductGroups(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -203,6 +216,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/updateProductGroups")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProductGroups(@RequestBody ProductGroupsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductGroups: " + request.toString());
+
         if(productGroupRepositoryJPA.updateProductGroups(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -215,6 +230,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/deleteProductGroups")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteProductGroups(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteProductGroups: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");
@@ -231,6 +248,8 @@ public class ProductGroupsController {
     @PostMapping("/api/auth/copyProductGroups")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> copyProductGroups(@RequestBody ProductGroupsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/copyProductGroups: " + request.toString());
+
         if(productGroupRepositoryJPA.copyProductGroups(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

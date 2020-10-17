@@ -100,4 +100,10 @@ public class SpravStatusDockForm {
     public void setStatusesIdsInOrderOfList(List<Long> statusesIdsInOrderOfList) {
         this.statusesIdsInOrderOfList = statusesIdsInOrderOfList;
     }
+
+    @Override
+    public String toString() {
+        return "SpravStatusDockForm: id=" + this.id + ", company_id" + this.company_id + ", dock_id" + this.dock_id +
+                ", name" + this.name;
+    }
 }

@@ -18,6 +18,7 @@ import com.dokio.message.response.RemainsJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class RemainsController {
+    Logger logger = Logger.getLogger("RemainsController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -44,6 +47,8 @@ public class RemainsController {
     @PostMapping("/api/auth/getProductRemainsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductsTable(@RequestBody RemainsForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductRemainsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -114,6 +119,8 @@ public class RemainsController {
     @PostMapping("/api/auth/saveRemains")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveRemains(@RequestBody RemainsForm request){
+        logger.info("Processing post request for path /api/auth/saveRemains: " + request.toString());
+
         if(remainsRepository.saveRemains(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {

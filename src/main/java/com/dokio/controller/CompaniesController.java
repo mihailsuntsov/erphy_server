@@ -24,6 +24,7 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.FileRepositoryJPA;
 import com.dokio.repository.UserGroupRepositoryJPA;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.dokio.service.StorageService;
 import org.springframework.core.io.Resource;
@@ -42,6 +43,7 @@ import java.util.List;
 
 @Controller
 public class CompaniesController {
+    Logger logger = Logger.getLogger("CompaniesController");
 
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
@@ -55,6 +57,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/getCompaniesTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCompaniesTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         String searchString = searchRequest.getSearchString();
@@ -87,6 +91,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/getCompaniesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesList() {
+        logger.info("Processing post request for path /api/auth/getCompaniesList");
+
         List<IdAndName> companiesList;
         companiesList = companyRepositoryJPA.getCompaniesList();
         return new ResponseEntity<>(companiesList, HttpStatus.OK);
@@ -95,6 +101,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/insertCompany")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCompany(@RequestBody CompaniesForm request){
+        logger.info("Processing post request for path /api/auth/insertCompany: " + request.toString());
+
         Long newDocument = companyRepositoryJPA.insertCompany(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -107,6 +115,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/deleteCompanies")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCompanies(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/deleteCompanies: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
 //        checked=checked.replace("[","");
 //        checked=checked.replace("]","");
@@ -121,6 +131,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/undeleteCompanies")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> undeleteCompanies(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteCompanies: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
 //        checked=checked.replace("[","");
 //        checked=checked.replace("]","");
@@ -135,6 +147,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/getCompaniesPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCompaniesPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -198,6 +212,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/getCompanyValues")//Отдает ЗНАЧЕНИЯ из таблицы companies по id предприятия
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompanyValues(@RequestBody CompaniesForm companyRequest) {
+        logger.info("Processing post request for path /api/auth/getCompanyValues: " + companyRequest.toString());
+
         CompaniesJSON company;
         Long id = companyRequest.getId();
         company=companyRepositoryJPA.getCompanyValues(id);//результат запроса помещается в объект
@@ -208,6 +224,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/updateCompany")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCompany(@RequestBody CompaniesForm companyRequest) {
+        logger.info("Processing post request for path /api/auth/updateCompany: " + companyRequest.toString());
+
         if(companyRepositoryJPA.updateCompany(companyRequest)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -217,6 +235,8 @@ public class CompaniesController {
 
     @PostMapping("/api/auth/getCompaniesPaymentAccounts")// отдаёт список банковских счетов контрагента
     public ResponseEntity<?> getCompaniesPaymentAccounts(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCompaniesPaymentAccounts: " + searchRequest.toString());
+
         try {
             return  new ResponseEntity<>(companyRepositoryJPA.getCompanyPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
         } catch (Exception e){
@@ -231,6 +251,8 @@ public class CompaniesController {
     @PostMapping("/api/auth/getListOfCompanyFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfCompanyFiles(@RequestBody UniversalForm request)  {
+        logger.info("Processing post request for path /api/auth/getListOfCompanyFiles: " + request.toString());
+
         Long companyId=request.getId();
         List<FilesCompaniesJSON> returnList;
         try {
@@ -243,6 +265,8 @@ public class CompaniesController {
 
     @PostMapping("/api/auth/deleteCompanyFile")
     public ResponseEntity<?> deleteCompanyFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/deleteCompanyFile: " + request.toString());
+
         if(companyRepositoryJPA.deleteCompanyFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -253,6 +277,8 @@ public class CompaniesController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToCompany")
     public ResponseEntity<?> addFilesToCompany(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/addFilesToCompany: " + request.toString());
+
         if(companyRepositoryJPA.addFilesToCompany(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -266,6 +292,8 @@ public class CompaniesController {
     @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/auth/getCompanyCard: fileId=" + fileId);
+
         FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
         if(fileInfo !=null){
             fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)

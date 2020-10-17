@@ -18,6 +18,7 @@ import com.dokio.message.response.PricesJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class PricesController {
+    Logger logger = Logger.getLogger("PricesController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -44,6 +47,8 @@ public class PricesController {
     @PostMapping("/api/auth/getProductPricesTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductPricesTable(@RequestBody PricesForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductPricesTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -102,6 +107,8 @@ public class PricesController {
     @PostMapping("/api/auth/savePrices")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> savePrices(@RequestBody PricesForm request){
+        logger.info("Processing post request for path /api/auth/savePrices: " + request.toString());
+
         if(pricesRepository.savePrices(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {

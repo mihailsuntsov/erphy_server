@@ -20,6 +20,7 @@ import com.dokio.message.response.FilesShipmentJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,8 @@ import java.util.List;
 
 @Controller
 public class ShipmentController {
+    Logger logger = Logger.getLogger("ShipmentController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -49,6 +52,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/getShipmentTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getShipmentTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getShipmentTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -94,6 +99,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/getShipmentProductTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getShipmentProductTable(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getShipmentProductTable: " + searchRequest.toString());
+
         Long docId = searchRequest.getId();//
         List<ShipmentProductForm> returnList;
         returnList = shipmentRepositoryJPA.getShipmentProductTable(docId);
@@ -103,6 +110,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/getShipmentPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getShipmentPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getShipmentPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -172,6 +181,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/insertShipment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertShipment(@RequestBody ShipmentForm request){
+        logger.info("Processing post request for path api/auth/insertShipment: " + request.toString());
+
         Long newDocument = shipmentRepositoryJPA.insertShipment(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -183,6 +194,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/isShipmentNumberUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isShipmentNumberUnical(@RequestBody UniversalForm request) { // id1 - document_id, id2 - company_id
+        logger.info("Processing post request for path api/auth/isShipmentNumberUnical: " + request.toString());
+
         try {
             Boolean ret = shipmentRepositoryJPA.isShipmentNumberUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -195,6 +208,8 @@ public class ShipmentController {
 
     @PostMapping("/api/auth/getShipmentValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/getShipmentValuesById: " + request.toString());
+
         ShipmentJSON response;
         Long id = request.getId();
         response=shipmentRepositoryJPA.getShipmentValuesById(id);
@@ -204,6 +219,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/updateShipment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateShipment(@RequestBody ShipmentForm request){
+        logger.info("Processing post request for path api/auth/updateShipment: " + request.toString());
+
         if(shipmentRepositoryJPA.updateShipment(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -214,6 +231,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/deleteShipment")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteShipment(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path api/auth/deleteShipment: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(shipmentRepositoryJPA.deleteShipment(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -225,6 +244,8 @@ public class ShipmentController {
     @PostMapping("/api/auth/getListOfShipmentFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfShipmentFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path api/auth/getListOfShipmentFiles: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<FilesShipmentJSON> returnList;
         try {
@@ -237,6 +258,8 @@ public class ShipmentController {
 
     @PostMapping("/api/auth/deleteShipmentFile")
     public ResponseEntity<?> deleteShipmentFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteShipmentFile: " + request.toString());
+
         if(shipmentRepositoryJPA.deleteShipmentFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -247,6 +270,8 @@ public class ShipmentController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToShipment")
     public ResponseEntity<?> addFilesToShipment(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToShipment: " + request.toString());
+
         if(shipmentRepositoryJPA.addFilesToShipment(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

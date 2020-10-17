@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller.Sprav;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.response.Sprav.SpravSysCitiesJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,11 +31,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysCitiesController {
+    Logger logger = Logger.getLogger("SpravSysCitiesController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysCities")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysCities(@RequestBody SearchForm request ) {
+        logger.info("Processing post request for path /api/auth/getSpravSysCities");
+
         String searchString=request.getSearchString();
         int countryId=request.getId();
         int regionId=request.getId2();

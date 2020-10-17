@@ -19,6 +19,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.repository.*;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,9 +27,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class CagentsController {
+    Logger logger = Logger.getLogger("CagentsController");
 
     @Autowired
     CagentRepositoryJPA cagentsRepositoryJPA;
@@ -36,6 +39,8 @@ public class CagentsController {
     @PostMapping("/api/auth/getCagentsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCagentsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
@@ -80,6 +85,8 @@ public class CagentsController {
     @PostMapping("/api/auth/getCagentsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCagentsPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -149,6 +156,8 @@ public class CagentsController {
     @PostMapping("/api/auth/getCagentValues")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentValuesById(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getCagentValues: " + request.toString());
+
         CagentsJSON response;
         int id = request.getId();
         response=cagentsRepositoryJPA.getCagentValues(id);
@@ -166,6 +175,8 @@ public class CagentsController {
     @PostMapping("/api/auth/insertCagent")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCagent(@RequestBody CagentsForm request){
+        logger.info("Processing post request for path /api/auth/insertCagent: " + request.toString());
+
         Long newDocument = cagentsRepositoryJPA.insertCagent(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -179,6 +190,8 @@ public class CagentsController {
     @PostMapping("/api/auth/updateCagents")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCagents(@RequestBody CagentsForm request){
+        logger.info("Processing post request for path /api/auth/updateCagents: " + request.toString());
+
         if(cagentsRepositoryJPA.updateCagents(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -191,6 +204,8 @@ public class CagentsController {
     @PostMapping("/api/auth/deleteCagents")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCagents(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/deleteCagents: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(cagentsRepositoryJPA.deleteCagents(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -203,6 +218,8 @@ public class CagentsController {
     @PostMapping("/api/auth/undeleteCagents")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> undeleteCagents(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteCagents: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(cagentsRepositoryJPA.undeleteCagents(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -215,6 +232,8 @@ public class CagentsController {
     @PostMapping("/api/auth/getCagentsList")//заполнение Autocomplete
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCagentsList: " + searchRequest.toString());
+
         int companyId;
         String searchString = searchRequest.getSearchString();
         if (searchRequest.getCompanyId() != null && !searchRequest.getCompanyId().isEmpty() && searchRequest.getCompanyId().trim().length() > 0) {
@@ -228,6 +247,8 @@ public class CagentsController {
 
     @PostMapping("/api/auth/getCagentsPaymentAccounts")// отдаёт список банковских счетов контрагента
     public ResponseEntity<?> getCagentsPaymentAccounts(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCagentsPaymentAccounts: " + searchRequest.toString());
+
         try {
             return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
         } catch (Exception e){
@@ -237,6 +258,8 @@ public class CagentsController {
 
     @PostMapping("/api/auth/getCagentsContacts")// отдаёт список контактных лиц контрагента
     public ResponseEntity<?> getCagentsContacts(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCagentsContacts: " + searchRequest.toString());
+
         try {
             return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsContacts(searchRequest.getId()), HttpStatus.OK);
         } catch (Exception e){
@@ -251,6 +274,8 @@ public class CagentsController {
     @SuppressWarnings("Duplicates")
     //отправляет ID предприятия. По нему в getCategoriesRootIds ищутся id корневых категорий, и уже по ним грузятся деревья категорий
     public ResponseEntity<?> getCagentCategoriesTrees(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/getCagentCategoriesTrees: " + request.toString());
+
         List<CagentCategories> returnList;
         List<Integer> categoriesRootIds = cagentsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
         try {
@@ -268,6 +293,8 @@ public class CagentsController {
     //отдает только список корневых категорий, без детей
     //нужно для изменения порядка вывода корневых категорий
     public ResponseEntity<?> getRootCagentCategories(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/getRootCagentCategories: " + request.toString());
+
         List<CagentCategoriesTableJSON> returnList ;//
         try {
             returnList = cagentsRepositoryJPA.getRootCagentCategories(Long.valueOf(Integer.parseInt((request.getCompanyId()))));
@@ -284,6 +311,8 @@ public class CagentsController {
     //отдает только список детей, без их детей
     //нужно для изменения порядка вывода категорий
     public ResponseEntity<?> getChildrensCagentCategories(@RequestBody CagentCategoriesForm request){
+        logger.info("Processing post request for path /api/auth/getChildrensCagentCategories: " + request.toString());
+
         List<CagentCategoriesTableJSON> returnList;
         try {
             returnList = cagentsRepositoryJPA.getChildrensCagentCategories(request.getParentCategoryId());
@@ -298,6 +327,8 @@ public class CagentsController {
     @PostMapping("/api/auth/searchCagentCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> searchCagentCategory(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/searchCagentCategory: " + request.toString());
+
         Long companyId=Long.valueOf(Integer.parseInt((request.getCompanyId())));
         List<CagentCategoriesTableJSON> returnList;
         try {
@@ -313,6 +344,8 @@ public class CagentsController {
     @PostMapping("/api/auth/insertCagentCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCagentCategory(@RequestBody CagentCategoriesForm request){
+        logger.info("Processing post request for path /api/auth/insertCagentCategory: " + request.toString());
+
         try {
             Long categoryId = cagentsRepositoryJPA.insertCagentCategory(request);
             ResponseEntity<Long> responseEntity = new ResponseEntity<>(categoryId, HttpStatus.OK);
@@ -328,6 +361,8 @@ public class CagentsController {
     @PostMapping("/api/auth/updateCagentCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCagentCategory(@RequestBody CagentCategoriesForm request){
+        logger.info("Processing post request for path /api/auth/updateCagentCategory: " + request.toString());
+
         if(cagentsRepositoryJPA.updateCagentCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -339,6 +374,8 @@ public class CagentsController {
 
     @PostMapping("/api/auth/deleteCagentCategory")
     public ResponseEntity<?> deleteCagentCategory(@RequestBody CagentCategoriesForm request){
+        logger.info("Processing post request for path /api/auth/deleteCagentCategory: " + request.toString());
+
         if(cagentsRepositoryJPA.deleteCagentCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -351,6 +388,9 @@ public class CagentsController {
     @PostMapping("/api/auth/saveChangeCagentCategoriesOrder")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveChangeCagentCategoriesOrder(@RequestBody List<CagentCategoriesForm> request){
+        logger.info("Processing post request for path /api/auth/saveChangeCagentCategoriesOrder: [" + request.stream().
+                map(CagentCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
+
         if(cagentsRepositoryJPA.saveChangeCategoriesOrder(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

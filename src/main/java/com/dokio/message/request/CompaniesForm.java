@@ -433,4 +433,10 @@ public class CompaniesForm {
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
     }
+
+    @Override
+    public String toString() {
+        return "CompaniesForm: id=" + this.id + ", currency_id=" + this.currency_id +
+                ", opf_id=" + this.opf_id + ", name=" + this.name + ", checked=" + this.checked;
+    }
 }

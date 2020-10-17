@@ -20,6 +20,7 @@ import com.dokio.model.FileCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -32,9 +33,11 @@ import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class FilesController {
+    Logger logger = Logger.getLogger("FilesController");
 
     @Autowired
     UserRepository userRepository;
@@ -56,6 +59,8 @@ public class FilesController {
     @PostMapping("/api/auth/getFilesTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getFilesTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getFilesTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -112,6 +117,8 @@ public class FilesController {
     @PostMapping("/api/auth/getFilesPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getFilesPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getFilesPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -191,6 +198,8 @@ public class FilesController {
     @PostMapping("/api/auth/getFileValues")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTypePricesValuesById(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getFileValues: " + request.toString());
+
         FilesJSON response;
         int id = request.getId();
         response=filesRepositoryJPA.getFileValues(id);//результат запроса помещается в экземпляр класса
@@ -221,6 +230,8 @@ public class FilesController {
     @PostMapping("/api/auth/updateFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateFiles(@RequestBody FilesForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateFiles: " + request.toString());
+
         if(filesRepositoryJPA.updateFiles(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -233,6 +244,8 @@ public class FilesController {
     @PostMapping("/api/auth/deleteFiles")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteFiles(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteFiles: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(filesRepositoryJPA.deleteFiles(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -246,6 +259,8 @@ public class FilesController {
     @PostMapping("/api/auth/recoverFilesFromTrash")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> recoverFilesFromTrash(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/recoverFilesFromTrash: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(filesRepositoryJPA.recoverFilesFromTrash(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -259,6 +274,8 @@ public class FilesController {
     @PostMapping("/api/auth/deleteFilesFromTrash")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteFilesFromTrash(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteFilesFromTrash: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(filesRepositoryJPA.deleteFilesFromTrash(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -272,6 +289,8 @@ public class FilesController {
     @PostMapping("/api/auth/clearTrash")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> clearTrash(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/clearTrash: " + request.toString());
+
         Integer companyId = Integer.parseInt(request.getCompany_id());
         if(filesRepositoryJPA.clearTrash(companyId)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -286,6 +305,8 @@ public class FilesController {
     @GetMapping("/api/public/getFile/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getFilePublic(@PathVariable String filename) throws UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/public/getFile: filename=" + filename);
+
         FileInfoJSON fileInfo = fileRepository.getFilePublic(filename);
         if(fileInfo !=null){
             String filePath=fileInfo.getPath()+"//"+filename;
@@ -303,6 +324,8 @@ public class FilesController {
     @GetMapping("/api/auth/getFile/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getFileAuth(@PathVariable String filename) throws UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/auth/getFile: filename=" + filename);
+
         FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
         if(fileInfo !=null){
             String filePath=fileInfo.getPath()+"//"+filename;
@@ -321,6 +344,8 @@ public class FilesController {
     @GetMapping("/api/auth/getFileImageThumb/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getFileImageThumb(@PathVariable String filename) throws UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/auth/getFileImageThumb: filename=" + filename);
+
         FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
         if(fileInfo !=null){
             String filePath=fileInfo.getPath()+"//thumbs//"+filename;
@@ -338,6 +363,8 @@ public class FilesController {
     @PostMapping("/api/auth/getFileCategoriesTrees")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getFileCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getFileCategoriesTrees: " + request.toString());
+
         List<FileCategories> returnList;
         List<Integer> categoriesRootIds = filesRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
         try {
@@ -355,6 +382,8 @@ public class FilesController {
     //отдает только список корневых категорий, без детей
     //нужно для изменения порядка вывода корневых категорий
     public ResponseEntity<?> getRootFileCategories(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getRootFileCategories: " + request.toString());
+
         List<FileCategoriesTableJSON> returnList ;//
         try {
             returnList = filesRepositoryJPA.getRootFileCategories(Long.valueOf(Integer.parseInt((request.getCompanyId()))));
@@ -370,6 +399,8 @@ public class FilesController {
     @PostMapping("/api/auth/getChildrensFileCategories")//нужно для изменения порядка вывода категорий
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getChildrensFileCategories(@RequestBody FileCategoriesForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getChildrensFileCategories: " + request.toString());
+
         List<FileCategoriesTableJSON> returnList;
         try {
             returnList = filesRepositoryJPA.getChildrensFileCategories(request.getParentCategoryId());
@@ -384,6 +415,8 @@ public class FilesController {
     @PostMapping("/api/auth/searchFileCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> searchFileCategory(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/searchFileCategory: " + request.toString());
+
         Long companyId=Long.valueOf(Integer.parseInt((request.getCompanyId())));
         List<FileCategoriesTableJSON> returnList;
         try {
@@ -398,6 +431,8 @@ public class FilesController {
     @PostMapping("/api/auth/insertFileCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertFileCategory(@RequestBody FileCategoriesForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertFileCategory: " + request.toString());
+
         try {
             Long categoryId = filesRepositoryJPA.insertFileCategory(request);
             ResponseEntity<Long> responseEntity = new ResponseEntity<>(categoryId, HttpStatus.OK);
@@ -413,6 +448,8 @@ public class FilesController {
     @PostMapping("/api/auth/updateFileCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateFileCategory(@RequestBody FileCategoriesForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateFileCategory: " + request.toString());
+
         if(filesRepositoryJPA.updateFileCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -424,6 +461,8 @@ public class FilesController {
 
     @PostMapping("/api/auth/deleteFileCategory")
     public ResponseEntity<?> deleteFileCategory(@RequestBody FileCategoriesForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteFileCategory: " + request.toString());
+
         if(filesRepositoryJPA.deleteFileCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -436,6 +475,9 @@ public class FilesController {
     @PostMapping("/api/auth/saveChangeFileCategoriesOrder")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveChangeFileCategoriesOrder(@RequestBody List<FileCategoriesForm> request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/saveChangeFileCategoriesOrder: [" + request.stream().
+                map(FileCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
+
         if(filesRepositoryJPA.saveChangeCategoriesOrder(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

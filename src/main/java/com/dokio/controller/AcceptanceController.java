@@ -20,6 +20,7 @@ import com.dokio.message.response.FilesAcceptanceJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,8 @@ import java.util.List;
 
 @Controller
 public class AcceptanceController {
+    Logger logger = Logger.getLogger("AcceptanceController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -51,6 +54,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/getAcceptanceTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getAcceptanceTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getAcceptanceTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -96,6 +101,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/getAcceptanceProductTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getAcceptanceProductTable(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getAcceptanceProductTable: " + searchRequest.toString());
+
         Long docId = searchRequest.getId();//
         List<AcceptanceProductForm> returnList;
         returnList = acceptanceRepositoryJPA.getAcceptanceProductTable(docId);
@@ -105,6 +112,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/getAcceptancePagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getAcceptancePagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getAcceptancePagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -174,6 +183,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/insertAcceptance")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertAcceptance(@RequestBody AcceptanceForm request){
+        logger.info("Processing post request for path /api/auth/insertAcceptance: " + request.toString());
+
         Long newDocument = acceptanceRepositoryJPA.insertAcceptance(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -185,6 +196,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/isAcceptanceNumberUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isAcceptanceNumberUnical(@RequestBody UniversalForm request) { // id1 - document_id, id2 - company_id
+        logger.info("Processing post request for path /api/auth/isAcceptanceNumberUnical: " + request.toString());
+
         try {
             Boolean ret = acceptanceRepositoryJPA.isAcceptanceNumberUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -197,6 +210,8 @@ public class AcceptanceController {
 
     @PostMapping("/api/auth/getAcceptanceValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getAcceptanceValuesById: " + request.toString());
+
         AcceptanceJSON response;
         Long id = request.getId();
         response=acceptanceRepositoryJPA.getAcceptanceValuesById(id);
@@ -206,6 +221,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/updateAcceptance")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateAcceptance(@RequestBody AcceptanceForm request){
+        logger.info("Processing post request for path /api/auth/updateAcceptance: " + request.toString());
+
         if(acceptanceRepositoryJPA.updateAcceptance(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -216,6 +233,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/deleteAcceptance")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteAcceptance(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteAcceptance: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(acceptanceRepositoryJPA.deleteAcceptance(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -227,6 +246,8 @@ public class AcceptanceController {
     @PostMapping("/api/auth/getListOfAcceptanceFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfAcceptanceFiles(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getListOfAcceptanceFiles: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<FilesAcceptanceJSON> returnList;
         try {
@@ -239,6 +260,8 @@ public class AcceptanceController {
 
     @PostMapping("/api/auth/deleteAcceptanceFile")
     public ResponseEntity<?> deleteAcceptanceFile(@RequestBody SearchForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteAcceptanceFile: " + request.toString());
+
         if(acceptanceRepositoryJPA.deleteAcceptanceFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -249,6 +272,8 @@ public class AcceptanceController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToAcceptance")
     public ResponseEntity<?> addFilesToAcceptance(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/addFilesToAcceptance: " + request.toString());
+
         if(acceptanceRepositoryJPA.addFilesToAcceptance(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

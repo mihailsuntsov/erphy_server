@@ -98,4 +98,10 @@ public class FilesForm {
     public void setSelectedFileCategories(Set<Long> selectedFileCategories) {
         this.selectedFileCategories = selectedFileCategories;
     }
+
+    @Override
+    public String toString() {
+        return "FilesForm: id" + this.id + ", name=" + this.name +
+                ", original_name=" + this.original_name;
+    }
 }

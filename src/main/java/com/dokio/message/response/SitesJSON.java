@@ -228,4 +228,9 @@ public class SitesJSON implements Comparable<SitesJSON> {
             return other.domain_associated.compareTo(one.domain_associated);
         }
     };
+
+    @Override
+    public String toString() {
+        return "SitesJSON: id=" + this.id + ", name=" + this.name;
+    }
 }

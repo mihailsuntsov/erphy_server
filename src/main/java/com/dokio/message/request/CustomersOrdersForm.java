@@ -245,4 +245,10 @@ public class CustomersOrdersForm {
     public void setStatus_id(Long status_id) {
         this.status_id = status_id;
     }
+
+    @Override
+    public String toString() {
+        return "CustomersOrdersForm: id=" + this.id + ", company_id=" + this.company_id +
+                ", department_id=" + this.department_id + ", cagent_id=" + this.cagent_id + ", name=" + this.name;
+    }
 }

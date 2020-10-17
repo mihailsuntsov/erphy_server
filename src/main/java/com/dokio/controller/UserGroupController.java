@@ -28,6 +28,7 @@ import com.dokio.repository.UserRepository;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +43,8 @@ import java.util.List;
 
 @Controller
 public class UserGroupController {
+    Logger logger = Logger.getLogger("UserGroupController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -61,6 +64,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/getDocumentsWithPermissionList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDocumentsWithPermissionList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getDocumentsWithPermissionList: " + searchRequest.toString());
+
         String searchString = searchRequest.getSearchString();
         List<Documents> returnList=documentsRepositoryJPA.getDocumentsWithPermissionList(searchString);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
@@ -70,6 +75,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/getUserGroupTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserGroupTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getUserGroupTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -109,6 +116,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/getUserGroupPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserGroupPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getUserGroupPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -177,6 +186,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/updateUserGroup")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateUserGroup(@RequestBody UserGroupForm request) throws ParseException{
+        logger.info("Processing post request for path api/auth/updateUserGroup: " + request.toString());
+
         if(userGroupRepositoryJPA.updateUserGroup(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -189,6 +200,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/insertUserGroup")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertUserGroup(@RequestBody UserGroupForm request) throws ParseException{
+        logger.info("Processing post request for path api/auth/insertUserGroup: " + request.toString());
+
         Long newUserGroup = userGroupRepositoryJPA.insertUserGroup(request);
         if(newUserGroup!=null && newUserGroup>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newUserGroup)+"\n" +  "]", HttpStatus.OK);
@@ -203,6 +216,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/getUserGroupValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserGroupValuesById(@RequestBody UserGroupForm request) {
+        logger.info("Processing post request for path api/auth/getUserGroupValuesById: " + request.toString());
+
         UserGroupJSON usergroup;
         int id = request.getId();
         usergroup=userGroupRepositoryJPA.getUserGroupValuesById(id);//результат запроса помещается в экземпляр класса
@@ -221,6 +236,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/getUserGroupListByCompanyId")//возвращает список групп пользователей по id предприятия
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserGroupListByCompanyId(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getUserGroupListByCompanyId: " + searchRequest.toString());
+
         int companyId=Integer.parseInt(searchRequest.getCompanyId());
         List<UserGroupListJSON> userGroupList;
         userGroupList = userGroupRepositoryJPA.getUserGroupListByCompanyId(companyId);
@@ -230,6 +247,8 @@ public class UserGroupController {
     @PostMapping("/api/auth/deleteUserGroups")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path api/auth/deleteUserGroups: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");

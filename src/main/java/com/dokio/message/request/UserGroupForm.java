@@ -62,4 +62,10 @@ public class UserGroupForm {
     public void setCompany_id(String company_id) {
         this.company_id = company_id;
     }
+
+    @Override
+    public String toString() {
+        return "UserGroupForm: id=" + this.id + ", name=" + this.name + ", description=" + this.description  +
+                ", company_id=" + this.company_id;
+    }
 }

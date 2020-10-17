@@ -88,4 +88,10 @@ public class TypePricesForm {
     public void setPricerole_id(String pricerole_id) {
         this.pricerole_id = pricerole_id;
     }
+
+    @Override
+    public String toString() {
+        return "TypePricesForm: id=" + this.id + ", company_id=" + this.company_id + ", master_id=" + this.master_id  +
+                ", creator_id=" + this.creator_id + ", changer_id=" + this.changer_id  + ", name=" + this.name;
+    }
 }

@@ -21,6 +21,7 @@ import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,9 +32,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class ProductsController {
+    Logger logger = Logger.getLogger("ProductsController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -53,6 +57,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -97,6 +103,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductsPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -171,6 +179,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductValues")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTypePricesValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getProductValues: " + request.toString());
+
         ProductsJSON response;
         Long id = request.getId();
         response=productsRepositoryJPA.getProductValues(id);//результат запроса помещается в экземпляр класса
@@ -191,6 +201,8 @@ public class ProductsController {
     @PostMapping("/api/auth/insertProduct")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertProduct(@RequestBody ProductsForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertProduct: " + request.toString());
+
         Long newDocument = productsRepositoryJPA.insertProduct(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -203,6 +215,8 @@ public class ProductsController {
     @PostMapping("/api/auth/updateProducts")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProducts(@RequestBody ProductsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProducts: " + request.toString());
+
         if(productsRepositoryJPA.updateProducts(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -215,6 +229,9 @@ public class ProductsController {
     @PostMapping("/api/auth/updateProductCustomFields")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProductCustomFields(@RequestBody List<ProductCustomFieldsSaveForm> request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductCustomFields: [" + request.stream().
+                map(ProductCustomFieldsSaveForm::toString).collect(Collectors.joining(", ")) + "]");
+
         if(productsRepositoryJPA.updateProductCustomFields(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -228,6 +245,8 @@ public class ProductsController {
     @PostMapping("/api/auth/deleteProducts")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteProducts(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteProducts: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(productsRepositoryJPA.deleteProducts(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -241,6 +260,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductsList")//заполнение Autocomplete для поля "Группа товаров" документа "Товары и услуги"
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductsList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductsLists: " + searchRequest.toString());
+
         int companyId;
         int departmentId;
         String searchString = searchRequest.getSearchString();
@@ -260,6 +281,8 @@ public class ProductsController {
     // аналогично getProductGroupFieldsList, но отдает поля со значениями (если есть). Используется в документе Товары и услуги
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductGroupFieldsListWithValues(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductGroupFieldsListWithValues: " + searchRequest.toString());
+
         int field_type; // тип: 1 - сеты (наборы) полей, 2 - поля
         int productId;// id товара, значения полей которого хотим получить
 
@@ -285,6 +308,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductCategoriesTrees")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getProductCategoriesTrees: " + request.toString());
+
         List<ProductCategories> returnList;
         List<Integer> categoriesRootIds = productsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
         try {
@@ -300,6 +325,8 @@ public class ProductsController {
     @PostMapping("/api/auth/searchProductCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> searchProductCategory(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/searchProductCategory: " + request.toString());
+
         Long companyId=Long.valueOf(Integer.parseInt((request.getCompanyId())));
         List<ProductCategoriesTableJSON> returnList;
         try {
@@ -314,6 +341,8 @@ public class ProductsController {
     @PostMapping("/api/auth/insertProductCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertProductCategory: " + request.toString());
+
         //Long newDocument = productGroupFieldsRepositoryJPA.insertProductGroupField(request);
         //if(newDocument!=null && newDocument>0){
         try {
@@ -331,6 +360,8 @@ public class ProductsController {
     @PostMapping("/api/auth/updateProductCategory")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductCategory: " + request.toString());
+
         if(productsRepositoryJPA.updateProductCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -342,6 +373,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/deleteProductCategory")
     public ResponseEntity<?> deleteProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteProductCategory: " + request.toString());
+
         if(productsRepositoryJPA.deleteProductCategory(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -354,6 +387,9 @@ public class ProductsController {
     @PostMapping("/api/auth/saveChangeCategoriesOrder")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveChangeCategoriesOrder(@RequestBody List<ProductCategoriesForm> request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/saveChangeCategoriesOrder: [" + request.stream().
+                map(ProductCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
+
         if(productsRepositoryJPA.saveChangeCategoriesOrder(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -368,6 +404,8 @@ public class ProductsController {
     //отдает только список корневых категорий, без детей
     //нужно для изменения порядка вывода корневых категорий
     public ResponseEntity<?> getRootProductCategories(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getRootProductCategories: " + request.toString());
+
         List<ProductCategoriesTableJSON> returnList ;//
         try {
             returnList = productsRepositoryJPA.getRootProductCategories(Long.valueOf(Integer.parseInt((request.getCompanyId()))));
@@ -384,6 +422,8 @@ public class ProductsController {
     //отдает только список детей, без их детей
     //нужно для изменения порядка вывода категорий
     public ResponseEntity<?> getChildrensProductCategories(@RequestBody CagentCategoriesForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getChildrensProductCategories: " + request.toString());
+
         List<ProductCategoriesTableJSON> returnList;
         try {
             returnList = productsRepositoryJPA.getChildrensProductCategories(request.getParentCategoryId());
@@ -413,6 +453,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getListOfProductImages")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfProductImages(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getListOfProductImages: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         boolean fullSize=request.isAny_boolean();
         List<FilesProductImagesJSON> returnList;
@@ -428,6 +470,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/deleteProductImage")
     public ResponseEntity<?> deleteProductImage(@RequestBody SearchForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteProductImage: " + request.toString());
+
         if(productsRepositoryJPA.deleteProductImage(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -440,6 +484,8 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addImagesToProduct")
     public ResponseEntity<?> addImagesToProduct(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/addImagesToProduct: " + request.toString());
+
         if(productsRepositoryJPA.addImagesToProduct(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -452,6 +498,8 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addCagentsToProduct")
     public ResponseEntity<?> addCagentsToProduct(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/addCagentsToProduct: " + request.toString());
+
         if(productsRepositoryJPA.addCagentsToProduct(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -464,6 +512,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getListOfProductCagents")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfProductCagents(@RequestBody SearchForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/getListOfProductCagents: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<ProductCagentsJSON> returnList;
         try {
@@ -478,6 +528,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/updateProductCagentProperties")
     public ResponseEntity<?> updateProductCagentProperties(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductCagentProperties: " + request.toString());
+
         if(productsRepositoryJPA.updateProductCagentProperties(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -489,6 +541,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/deleteProductCagent")
     public ResponseEntity<?> deleteProductCagent(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/deleteProductCagent: " + request.toString());
+
         if(productsRepositoryJPA.deleteProductCagent(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -501,6 +555,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/insertProductBarcode")
     public ResponseEntity<?> insertProductBarcode(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/insertProductBarcode: " + request.toString());
+
         if(productsRepositoryJPA.insertProductBarcode(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -513,6 +569,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getListOfProductBarcodes")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfProductBarcodes(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/getListOfProductBarcodes: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<ProductBarcodesJSON> returnList;
         try {
@@ -528,6 +586,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/updateProductBarcode")
     public ResponseEntity<?> updateProductBarcode(@RequestBody UniversalForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateProductBarcode: " + request.toString());
+
         if(productsRepositoryJPA.updateProductBarcode(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -539,6 +599,8 @@ public class ProductsController {
 
     @PostMapping("/api/auth/deleteProductBarcode")
     public ResponseEntity<?> deleteProductBarcode(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/deleteProductBarcode: " + request.toString());
+
         if(productsRepositoryJPA.deleteProductBarcode(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             //responseEntity = ResponseEntity.ok("");
@@ -553,6 +615,8 @@ public class ProductsController {
     @PostMapping("/api/auth/generateWeightProductCode")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> generateWeightProductCode(@RequestBody UniversalForm request) { // id1 - product_id, id2 - company_id
+        logger.info("Processing post request for path /api/auth/generateWeightProductCode: " + request.toString());
+
         try {
             Integer weightProductCode = productsRepositoryJPA.generateWeightProductCode(request);
             return new ResponseEntity<>(weightProductCode, HttpStatus.OK);
@@ -566,6 +630,8 @@ public class ProductsController {
     @PostMapping("/api/auth/isProductCodeFreeUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isProductCodeFreeUnical(@RequestBody UniversalForm request) { // id1 - product_id, id2 - company_id
+        logger.info("Processing post request for path /api/auth/isProductCodeFreeUnical: " + request.toString());
+
         try {
             Boolean ret = productsRepositoryJPA.isProductCodeFreeUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -579,6 +645,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductBarcodesPrefixes")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductBarcodesPrefixes(@RequestBody UniversalForm request) { // id1 - company_id
+        logger.info("Processing post request for path /api/auth/getProductBarcodesPrefixes: " + request.toString());
+
         try {
             Object prefixes = productsRepositoryJPA.getProductBarcodesPrefixes(request);
             return new ResponseEntity<>(prefixes, HttpStatus.OK);
@@ -592,6 +660,8 @@ public class ProductsController {
     @PostMapping("/api/auth/copyProducts")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> copyProducts(@RequestBody UniversalForm request) { //
+        logger.info("Processing post request for path /api/auth/copyProducts: " + request.toString());
+
         try {
             Boolean ret = productsRepositoryJPA.copyProducts(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -606,6 +676,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getShortInfoAboutProduct")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getShortInfoAboutProduct(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getShortInfoAboutProduct: " + request.toString());
+
 
         Long department_id = request.getId1();
         Long product_id  = request.getId2();
@@ -625,6 +697,8 @@ public class ProductsController {
     @PostMapping("/api/auth/getProductHistoryTableReport")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductHistoryTableReport(@RequestBody ProductHistoryForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getProductHistoryTableReport: " + searchRequest.toString());
+
         Long companyId;//по какому предприятию показывать
         String departmentId;//по какому/каким отделениям показывать / 0 - по всем отделениям пользователя
         Long productId;//по какому товару показывать
@@ -699,6 +773,8 @@ public class ProductsController {
     @PostMapping("/api/auth/syncQuantityProducts")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> syncQuantityProducts(@RequestBody UniversalForm request) { //синхронизирует кол-во товаров в products_history и в product_quantity
+        logger.info("Processing post request for path /api/auth/syncQuantityProducts: " + request.toString());
+
         try {
             Boolean ret = productsRepositoryJPA.syncQuantityProducts(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);

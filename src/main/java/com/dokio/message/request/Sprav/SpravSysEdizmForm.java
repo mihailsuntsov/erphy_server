@@ -97,4 +97,11 @@ public class SpravSysEdizmForm {
     public void setChanger_id(String changer_id) {
         this.changer_id = changer_id;
     }
+
+    @Override
+    public String toString() {
+        return "SpravSysEdizmForm: id=" + this.id + ", name" + this.name + ", short_name" + this.short_name +
+                ", type_id" + this.type_id + ", company_id" + this.company_id + ", master_id" + this.master_id +
+                ", creator_id" + this.creator_id + ", changer_id" + this.changer_id;
+    }
 }

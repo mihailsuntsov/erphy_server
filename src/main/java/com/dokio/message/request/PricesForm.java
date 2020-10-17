@@ -159,4 +159,10 @@ public class PricesForm {
     public void setFilterOptionsIds(Set<Integer> filterOptionsIds) {
         this.filterOptionsIds = filterOptionsIds;
     }
+
+    @Override
+    public String toString() {
+        return "PricesForm: companyId=" + this.companyId + ", cagentId" + this.cagentId + ", categoryId" + this.categoryId +
+                ", priceTypeId" + this.priceTypeId + ", priceTypesIdsList" + this.priceTypesIdsList;
+    }
 }
