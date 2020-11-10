@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.model.Sprav.SpravSysDepartmentsList;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -201,14 +203,15 @@ public class DepartmentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<Departments> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
+    public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         String stringQuery;
 
         Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery="select " +
                 "           p.id as id, " +
-                "           p.name ||' '||p.address as name " +
+                "           p.name as name, " +
+                "           p.price_id as pricetype_id " +
                 "           from departments p " +
                 "           where  p.master_id="+companyOwnerId;
 
@@ -223,12 +226,21 @@ public class DepartmentRepositoryJPA {
         }
         stringQuery = stringQuery+" order by p.name asc";
 
-        Query query =  entityManager.createNativeQuery(stringQuery, SpravSysDepartmentsList.class);
-        return query.getResultList();
+        Query query =  entityManager.createNativeQuery(stringQuery);
+        List<Object[]> queryList = query.getResultList();
+        List<DepartmentsListJSON> returnList = new ArrayList<>();
+        for(Object[] obj:queryList) {
+            DepartmentsListJSON doc = new DepartmentsListJSON();
+            doc.setId(Long.parseLong(                                           obj[0].toString()));
+            doc.setName((String)                                                obj[1]);
+            doc.setPricetype_id(obj[2]!=null?Long.parseLong(                    obj[2].toString()):null);
+            returnList.add(doc);
+        }
+        return returnList;
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<Departments> getMyDepartmentsListByCompanyId(int company_id, boolean has_parent) {
+    public List<DepartmentsListJSON> getMyDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         String stringQuery;
 
         Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -238,7 +250,8 @@ public class DepartmentRepositoryJPA {
 
         stringQuery="select " +
                 "           p.id as id, " +
-                "           p.name ||' '||p.address as name " +
+                "           p.name as name, " +
+                "           p.price_id as pricetype_id " +
                 "           from departments p " +
                 "           where  p.master_id="+companyOwnerId+
                 "           and p.id in ("+ids+")";
@@ -251,9 +264,17 @@ public class DepartmentRepositoryJPA {
             stringQuery = stringQuery+" and p.parent_id is null";
         }
         stringQuery = stringQuery+" order by p.name asc";
-        Query query =  entityManager.createNativeQuery(stringQuery, SpravSysDepartmentsList.class);
-        //query.setParameter("param", userRepositoryJPA.getMyDepartmentsId());
-        return query.getResultList();
+        Query query =  entityManager.createNativeQuery(stringQuery);
+        List<Object[]> queryList = query.getResultList();
+        List<DepartmentsListJSON> returnList = new ArrayList<>();
+        for(Object[] obj:queryList) {
+            DepartmentsListJSON doc = new DepartmentsListJSON();
+            doc.setId(Long.parseLong(                                           obj[0].toString()));
+            doc.setName((String)                                                obj[1]);
+            doc.setPricetype_id(obj[2]!=null?Long.parseLong(                    obj[2].toString()):null);
+            returnList.add(doc);
+        }
+        return returnList;
     }
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -267,7 +288,7 @@ public class DepartmentRepositoryJPA {
 
         stringQuery="select " +
                 "           p.id as id, " +
-                "           p.name ||' '||p.address as name " +
+                "           p.name as name " +
                 "           from departments p " +
                 "           where  p.master_id="+companyOwnerId+
                 "           and p.id in ("+ids+")";

@@ -14,19 +14,11 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.response;
 
-import java.math.BigDecimal;
+public class DepartmentsListJSON {
 
-public class ProductsListJSON {
     private Long id;
     private String name;
-    private Integer nds_id;
-    private Long edizm_id;
-    private String filename;
-    private BigDecimal total;
-    private BigDecimal reserved;
-    private BigDecimal total_in_all_my_depths;//всего товаров во всех моих отделениях (складах)
-    private BigDecimal reserved_in_all_my_depths;//зарезервировано товаров во всех моих отделениях (складах)
-
+    private Long pricetype_id;
 
     public Long getId() {
         return id;
@@ -40,63 +32,15 @@ public class ProductsListJSON {
         return name;
     }
 
-    public String getFilename() {
-        return filename;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
 
-    public Integer getNds_id() {
-        return nds_id;
+    public Long getPricetype_id() {
+        return pricetype_id;
     }
 
-    public void setNds_id(Integer nds_id) {
-        this.nds_id = nds_id;
-    }
-
-    public Long getEdizm_id() {
-        return edizm_id;
-    }
-
-    public void setEdizm_id(Long edizm_id) {
-        this.edizm_id = edizm_id;
-    }
-
-    public BigDecimal getTotal() {
-        return total;
-    }
-
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
-
-    public BigDecimal getReserved() {
-        return reserved;
-    }
-
-    public void setReserved(BigDecimal reserved) {
-        this.reserved = reserved;
-    }
-
-    public BigDecimal getTotal_in_all_my_depths() {
-        return total_in_all_my_depths;
-    }
-
-    public void setTotal_in_all_my_depths(BigDecimal total_in_all_my_depths) {
-        this.total_in_all_my_depths = total_in_all_my_depths;
-    }
-
-    public BigDecimal getReserved_in_all_my_depths() {
-        return reserved_in_all_my_depths;
-    }
-
-    public void setReserved_in_all_my_depths(BigDecimal reserved_in_all_my_depths) {
-        this.reserved_in_all_my_depths = reserved_in_all_my_depths;
+    public void setPricetype_id(Long pricetype_id) {
+        this.pricetype_id = pricetype_id;
     }
 }

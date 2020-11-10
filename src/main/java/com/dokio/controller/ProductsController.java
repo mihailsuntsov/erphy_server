@@ -17,6 +17,7 @@ package com.dokio.controller;
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
 import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -26,6 +27,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -238,22 +241,20 @@ public class ProductsController {
         }
     }
 
-    @PostMapping("/api/auth/getProductsList")//заполнение Autocomplete для поля "Группа товаров" документа "Товары и услуги"
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getProductsList(@RequestBody SearchForm searchRequest) {
-        int companyId;
-        int departmentId;
-        String searchString = searchRequest.getSearchString();
-        if (searchRequest.getCompanyId() != null && !searchRequest.getCompanyId().isEmpty() && searchRequest.getCompanyId().trim().length() > 0) {
-            companyId = Integer.parseInt(searchRequest.getCompanyId());
-        } else { return null; }
-        if (searchRequest.getDepartmentId() != null && !searchRequest.getCompanyId().isEmpty() && searchRequest.getCompanyId().trim().length() > 0) {
-            departmentId = Integer.parseInt(searchRequest.getCompanyId());
-        } else { return null; }
-        List<ProductsListJSON> returnList;
-        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-        return responseEntity;
+
+    @RequestMapping(
+            value = "/api/auth/getProductsList",
+            params = {"searchString", "companyId", "departmentId", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductsList(
+            @RequestParam("searchString") String searchString,
+            @RequestParam("companyId") Long companyId,
+            @RequestParam("departmentId") Long departmentId,
+            @RequestParam("document_id") Long document_id)
+    {
+        List returnList;
+        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId, document_id);
+        return new ResponseEntity<>(returnList, HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getProductGroupFieldsListWithValues")
@@ -421,7 +422,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -432,7 +433,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -444,7 +445,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -456,7 +457,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -471,7 +472,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -482,7 +483,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -493,7 +494,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -505,7 +506,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -521,7 +522,7 @@ public class ProductsController {
             return responseEntity;
         } catch (Exception e){
             e.printStackTrace();
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -532,7 +533,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -544,7 +545,7 @@ public class ProductsController {
             //responseEntity = ResponseEntity.ok("");
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -559,7 +560,7 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(0, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(0, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -572,7 +573,7 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -585,7 +586,7 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(0, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(0, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -598,18 +599,21 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-
-    @PostMapping("/api/auth/getShortInfoAboutProduct")
+    //отдает краткую информацию о товаре
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getShortInfoAboutProduct(@RequestBody UniversalForm request) {
-
-        Long department_id = request.getId1();
-        Long product_id  = request.getId2();
-        Long price_type_id = request.getId3();
+    @RequestMapping(
+            value = "/api/auth/getShortInfoAboutProduct",
+            params = {"department_id", "product_id", "price_type_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getShortInfoAboutProduct(
+            @RequestParam("department_id") Long department_id,
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("price_type_id") Long price_type_id)
+    {
 
         try {
             ShortInfoAboutProductJSON response=productsRepositoryJPA.getShortInfoAboutProduct(department_id,product_id,price_type_id);
@@ -617,7 +621,29 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    //отдает краткую информацию о товаре
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductPrice",
+            params = {"company_id", "product_id", "price_type_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductPrice(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("price_type_id") Long price_type_id)
+    {
+
+        try {
+            BigDecimal response=productsRepositoryJPA.getProductPrice(company_id,product_id,price_type_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -705,7 +731,7 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

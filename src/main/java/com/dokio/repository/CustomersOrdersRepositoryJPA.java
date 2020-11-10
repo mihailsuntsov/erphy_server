@@ -16,11 +16,8 @@ package com.dokio.repository;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.model.Geo.Cities;
-import com.dokio.model.Geo.Countries;
-import com.dokio.model.Geo.Regions;
-import com.dokio.model.Sprav.SpravStatusDocks;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Repository
@@ -55,6 +49,7 @@ public class CustomersOrdersRepositoryJPA {
     private CagentRepositoryJPA cagentRepository;
     @Autowired
     private CommonUtilites commonUtilites;
+    @Autowired ProductsRepositoryJPA productsRepository;
 
     //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -223,12 +218,13 @@ public class CustomersOrdersRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public List<CustomersOrdersProductForm> getCustomersOrdersProductTable(Long docId) {
+    public List<CustomersOrdersProductTableJSON> getCustomersOrdersProductTable(Long docId) {
         if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
             stringQuery =   " select " +
                     " ap.product_id," +
                     " ap.customers_orders_id," +
@@ -238,12 +234,30 @@ public class CustomersOrdersRepositoryJPA {
                     " ap.edizm_id," +
                     " p.name as name," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm," +
-                    " coalesce(ap.additional,'')," +
                     " ap.nds_id," +
                     " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
                     " ap.price_type_id," +
                     " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
-                    " ap.reserved as reserved " +
+                    " ap.reserve as reserve, " +
+
+
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
+                    " coalesce((" +                     //зарезервировано
+                    "   select " +
+                    //                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                    "   from " +
+                    "   customers_orders_product " +
+                    "   where " +
+                    "   product_id=ap.product_id "+
+                    "   and reserve=true" +
+                 /*   "   and department_id in (" + myDepthsIds + ") " +*/
+                    "   and department_id = ap.department_id "+
+                    "   and customers_orders_id!=ap.customers_orders_id),0) as reserved, "+//чтобы не брать в счёт свой документ, из которого вызывается запрос
+                    "   0 as shipped, "+//!!!!!!!!!!!!!!!!!!!!!!!!пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                    " ap.department_id as department_id, " +
+                    " (select name from departments where id= ap.department_id) as department, "+
+                    " ap.id  as row_id" +
                     " from " +
                     " customers_orders_product ap " +
                     " INNER JOIN customers_orders a ON ap.customers_orders_id=a.id " +
@@ -269,23 +283,28 @@ public class CustomersOrdersRepositoryJPA {
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
             List<Object[]> queryList = query.getResultList();
-            List<CustomersOrdersProductForm> returnList = new ArrayList<>();
+            List<CustomersOrdersProductTableJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){
-                CustomersOrdersProductForm doc=new CustomersOrdersProductForm();
+                CustomersOrdersProductTableJSON doc=new CustomersOrdersProductTableJSON();
                 doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
-                doc.setCustomers_orders_id(Long.parseLong(                      obj[1].toString()));
+                doc.setCustomers_orders_id(Long.parseLong(              obj[1].toString()));
                 doc.setProduct_count((BigDecimal)                       obj[2]);
                 doc.setProduct_price((BigDecimal)                       obj[3]);
                 doc.setProduct_sumprice((BigDecimal)                    obj[4]);
                 doc.setEdizm_id(obj[7]!=null?Long.parseLong(            obj[5].toString()):null);
                 doc.setName((String)                                    obj[6]);
                 doc.setEdizm((String)                                   obj[7]);
-                doc.setAdditional((String)                              obj[8]);
-                doc.setNds_id(Long.parseLong(                           obj[9].toString()));
-                doc.setNds((String)                                     obj[10]);
-                doc.setPrice_type_id(Long.parseLong(                    obj[11].toString()));
-                doc.setPrice_type((String)                              obj[12]);
-                doc.setReserved((Boolean)                                obj[13]);
+                doc.setNds_id(Long.parseLong(                           obj[8].toString()));
+                doc.setNds((String)                                     obj[9]);
+                doc.setPrice_type_id(Long.parseLong(                    obj[10].toString()));
+                doc.setPrice_type((String)                              obj[11]);
+                doc.setReserve((Boolean)                                obj[12]);
+                doc.setTotal((BigDecimal)                               obj[13]);
+                doc.setReserved((BigDecimal)                            obj[14]);
+                doc.setShipped(BigDecimal.valueOf((Integer)             obj[15]));//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                doc.setDepartment_id(Long.parseLong(                    obj[16].toString()));
+                doc.setDepartment((String)                              obj[17]);
+                doc.setId(Long.parseLong(                               obj[18].toString()));
                 returnList.add(doc);
             }
             return returnList;
@@ -346,11 +365,12 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.street as street, " +
                     "           p.home as home, " +
                     "           p.flat as flat, " +
-                    "           ctr.name_ru as country, " +
-                    "           reg.name_ru as region, " +
-                    "           cty.name_ru as city, " +
+                    "           coalesce(ctr.name_ru,'') as country, " +
+                    "           coalesce(reg.name_ru,'') as region, " +
+                    "           coalesce(cty.name_ru,'') as city, " +
                     "           coalesce(cty.area_ru,'') as area, " +
-                    "           coalesce(cg.price_type_id,0) as cagent_type_price_id " +
+                    "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
+                    "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id " +
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -365,6 +385,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id+
                     "           and coalesce(p.is_deleted,false) !=true";
+
             if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
                 if (!securityRepositoryJPA.userHasPermissions_OR(23L, "288")) //Если нет прав на просм по своему предприятию
@@ -430,6 +451,7 @@ public class CustomersOrdersRepositoryJPA {
                 returnObj.setCity((String)                              obj[44]);
                 returnObj.setArea((String)                              obj[45]);
                 returnObj.setCagent_type_price_id(Long.parseLong(       obj[46].toString()));
+                returnObj.setDefault_type_price_id(Long.parseLong(      obj[47].toString()));
             }
             return returnObj;
         } else return null;
@@ -573,7 +595,7 @@ public class CustomersOrdersRepositoryJPA {
     }
 
     @Transactional
-    public  Boolean updateCustomersOrders(CustomersOrdersForm request) {
+    public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request)  throws Exception{
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -583,45 +605,42 @@ public class CustomersOrdersRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",request.getId().toString())))
         {
-            if(updateCustomersOrdersWithoutTable(request)){                                      //метод 1
+            CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет об апдейте
+            Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
+            updateResults.setFail_to_reserve(0);// иначе NullPointerException, т.к. там сейчас null
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            if(updateCustomersOrdersWithoutTable(request)){               //метод 1 - сохранение всех полей документа
                 try {//сохранение таблицы
                     String productIds = "";
                     if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {
-                        for (CustomersOrdersProductForm row : request.getCustomersOrdersProductTable()) {
-                            if (!saveCustomersOrdersProductTable(row, request.getId())) {//         //метод 2
-                                break;
+                        for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
+                            updateProductRowResult = saveCustomersOrdersProductTable(row, request.getCompany_id(), myMasterId);  //метод 2 - сохранение таблицы товаров
+                            if (updateProductRowResult==null) {//
+                                throw new Exception("Can't update Customers orders table row!");
                             }
+                            //если при сохранении позиции товара не удалось сохранить включенным резерв - добавляем этот случай к сумме таких случаев по всем позициям (для отчета о сохранении)
+                            updateResults.setFail_to_reserve((updateResults.getFail_to_reserve()+updateProductRowResult));
+                            //копим id сохранённых товаров
                             productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
-                    }//удаление лишних строк
-                    deleteCustomersOrdersProductTableExcessRows(productIds.length()>0?productIds:"0", request.getId());
+                    }//удаление лишних
+                    if (productIds.length()>0) {
+                        deleteCustomersOrdersProductTableExcessRows(productIds, request.getId());
+                    }
 
-                    //если завершается приемка - запись в историю товара
-                    /*if(request.isIs_completed()){
-                        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                        for (CustomersOrdersProductForm row : request.getCustomersOrdersProductTable()) {
-                            if (!addCustomersOrdersProductHistory(row, request, myMasterId)) {//         //метод 3
-                                break;
-                            } else {//если запись в историю изменений товара прошла успешно
-                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-                                    break;
-                                }
-                            }
-                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
-                        }
-                    }*/
-                    return true;
+
+                    updateResults.setSuccess(true);
+                    return updateResults;
                 } catch (Exception e){
                     e.printStackTrace();
-                    return false;
+                    return null;
                 }
-            } else return false;
-        } else return false;
+            } else return null;
+        } else return null;
     }
 
     @SuppressWarnings("Duplicates")
     private Boolean updateCustomersOrdersWithoutTable(CustomersOrdersForm request) {
-        EntityManager emgr = emf.createEntityManager();
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         try
         {
@@ -658,54 +677,100 @@ public class CustomersOrdersRepositoryJPA {
             return false;
         }
     }
-    private Boolean saveCustomersOrdersProductTable(CustomersOrdersProductForm row, Long customers_orders_id) {
+
+
+    private Integer saveCustomersOrdersProductTable(CustomersOrdersProductTableForm row, Long company_id, Long master_id) {
+        String stringQuery;
+        Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
+                                // Исключение - было списание товара, и Резерв стал больше Доступно. Тогда при сохранении  позиции товара резерв отменится
+        BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
+                                // сумма резервов по складу не превышала общее количество товара на складе - перед сохранением позиции проверяем еще раз.
+        if(row.getReserve()) {
+            available = productsRepository.getAvailableExceptMyDock(row.getProduct_id(), row.getDepartment_id(), row.getCustomers_orders_id());
+            if(row.getProduct_count().compareTo(available) > 0){
+                row.setReserve(false);// и если превышает - резерв отменяется
+                saveResult=1;
+            }
+        }
+        try {
+            stringQuery =
+                    " insert into customers_orders_product (" +
+                    "master_id, " +
+                    "company_id, " +
+                    "product_id, " +
+                    "customers_orders_id, " +
+                    "product_count, " +
+                    "product_price, " +
+                    "product_sumprice, " +
+                    "edizm_id, " +
+                    "price_type_id, " +
+                    "nds_id, " +
+                    "department_id, " +
+                    "product_price_of_type_price, " +
+                    "reserve " +
+                    ") values (" +
+                    master_id + "," +
+                    company_id + "," +
+                    row.getProduct_id() + "," +
+                    row.getCustomers_orders_id() + "," +
+                    row.getProduct_count() + "," +
+                    row.getProduct_price() + "," +
+                    row.getProduct_sumprice() + "," +
+                    row.getEdizm_id() + "," +
+                    row.getPrice_type_id() + "," +
+                    row.getNds_id() + ", " +
+                    row.getDepartment_id() + ", " +
+                    row.getProduct_price_of_type_price() + ", " +
+                    row.getReserve() +
+                    " ) " +
+                    "ON CONFLICT ON CONSTRAINT customers_orders_product_uq " +// "upsert"
+                    " DO update set " +
+                    " product_id = " + row.getProduct_id() + ","+
+                    " customers_orders_id = " + row.getCustomers_orders_id() + ","+
+                    " product_count = " + row.getProduct_count() + ","+
+                    " product_price = " + row.getProduct_price() + ","+
+                    " product_sumprice = " + row.getProduct_sumprice() + ","+
+                    " edizm_id = " + row.getEdizm_id() + ","+
+                    " price_type_id = " + row.getPrice_type_id() + ","+
+                    " nds_id = " + row.getNds_id() + ","+
+                    " department_id = " + row.getDepartment_id() + ","+
+                    " product_price_of_type_price = " + row.getProduct_price_of_type_price() + ","+
+                    " reserve = " + row.getReserve();
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return saveResult;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    //удаление 1 строки из таблицы товаров
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean deleteCustomersOrdersProductTableRow(Long id) {
+        if(canDeleteProductTableRow(id)){
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
-            String empty="";
             try {
-                stringQuery =
-                        " insert into customers_orders_product (" +
-                        "product_id, " +
-                        "customers_orders_id, " +
-                        "product_count, " +
-                        "product_price, " +
-                        "product_sumprice, " +
-                        "edizm_id, " +
-                        "price_type_id, " +
-                        "nds_id, " +
-                        "reserved, " +
-                        "additional" +
-                        ") values (" +
-                        row.getProduct_id() + "," +
-                        row.getCustomers_orders_id() + "," +
-                        row.getProduct_count() + "," +
-                        row.getProduct_price() + "," +
-                        row.getProduct_sumprice() + "," +
-                        row.getEdizm_id() + "," +
-                        row.getPrice_type_id() + "," +
-                        row.getNds_id() + ", " +
-                        row.getReserved() + ", '" +
-                        (row.getAdditional()!=null?row.getAdditional():empty) +
-                        " ') " +
-                        "ON CONFLICT ON CONSTRAINT customers_orders_product_uq " +// "upsert"
-                        " DO update set " +
-                        " product_id = " + row.getProduct_id() + ","+
-                        " customers_orders_id = " + row.getCustomers_orders_id() + ","+
-                        " product_count = " + row.getProduct_count() + ","+
-                        " product_price = " + row.getProduct_price() + ","+
-                        " product_sumprice = " + row.getProduct_sumprice() + ","+
-                        " edizm_id = " + row.getEdizm_id() + ","+
-                        " price_type_id = " + row.getPrice_type_id() + ","+
-                        " nds_id = " + row.getNds_id() + ","+
-                        " reserved = " + row.getReserved() + ","+
-                        " additional = " + (row.getAdditional()!=null?row.getAdditional():empty);
+                stringQuery = " delete from customers_orders_product " +
+                " where id="+id+" and master_id="+myMasterId;
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                return true;
+                return query.executeUpdate() == 1;
             }
             catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
+        } else return false;
+    }
+
+    @SuppressWarnings("Duplicates")
+        // Нельзя удалять товарные позиции, по которым уже есть Отгрузка, т.к. товар могут сначала отгрузить, а потом завершить (закрыть) Отгрузку.
+        // И если между этими 2 действиями удалить товарную позицию, товар физически уйдет со склада, но будет числисться в системе.
+    private boolean canDeleteProductTableRow(Long row_id){
+//        !!!!!!!!!!!!!!!!!!!!!!!!!  тут вставить проверку того, есть ли данная позиция в Отгрузке
+        return true;
     }
 
     @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении заказа (те позиции, которые ранее были в заказе, но потом их удалили)
@@ -724,6 +789,77 @@ public class CustomersOrdersRepositoryJPA {
             return false;
         }
     }
+    @SuppressWarnings("Duplicates")
+    public List<CustomersOrdersReservesTable> getReservesTable(Long companyId, Long departmentId, Long productId, Long documentId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
+        {
+            String stringQuery;
+            String myTimeZone = userRepository.getUserTimeZone();
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+            stringQuery = "select  p.id as id, " +
+                    "           u.name as creator, " +
+                    "           p.name as custome_order_name, " +
+                    "           cop.product_count-0 as non_shipped, " + // !!!!!!!!!!!!!!!!!!!!!!!!! ноль потом заменить на вычисленное отгруженное по всем Отгрузкам данного Заказа покупателя
+                    "           p.doc_number as doc_number, " +
+                    "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as shipment_date, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           p.description as description, " +
+                    "           coalesce(p.is_completed,false) as is_completed, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           cg.name as cagent, " +
+                    "           p.is_deleted as is_deleted, " +
+                    "           dp.name as department, " +
+                    "           p.date_time_created as date_time_created_sort " +
+                    "           from customers_orders p " +
+                    "           INNER JOIN users u ON p.creator_id=u.id " +
+                    "           INNER JOIN customers_orders_product cop on p.id=cop.customers_orders_id" +
+                    "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
+                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+                    "           where " +
+                    "           p.company_id=" + companyId +
+                    "           and cop.product_id=" + productId +
+                    "           and p.master_id=" + myMasterId +
+                    "           and coalesce(cop.reserve,false)=true" +
+                    "           and cop.product_count>0";// !!!!!!!!!!!!!!!!!!!!!!!!! ноль потом заменить на вычисленное отгруженное по всем Отгрузкам данного Заказа покупателя
+            if(departmentId>0L){
+                stringQuery=stringQuery +" and cop.department_id=" + departmentId;
+            }
+            if(documentId>0L){
+                stringQuery=stringQuery +" and p.id !=" + documentId;
+            }
+            stringQuery = stringQuery + "  order by date_time_created_sort asc";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CustomersOrdersReservesTable> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                CustomersOrdersReservesTable doc=new CustomersOrdersReservesTable();
+                doc.setId(Long.parseLong(                     obj[0].toString()));
+                doc.setCreator((String)                       obj[1]);
+                doc.setName((String)                          obj[2]);
+                doc.setNon_shipped((BigDecimal)               obj[3]);
+                doc.setDoc_number(Long.parseLong(             obj[4].toString()));
+                doc.setShipment_date((String)(                obj[5]));
+                doc.setDate_time_created((String)             obj[6]);
+                doc.setDescription((String)                   obj[7]);
+                doc.setIs_completed((Boolean)                 obj[8]);
+                doc.setStatus_name((String)                   obj[9]);
+                doc.setStatus_color((String)                  obj[10]);
+                doc.setCagent((String)                        obj[11]);
+                doc.setIs_deleted((Boolean)                   obj[12]);
+                doc.setDepartment((String)                    obj[13]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } else return null;
+    }
+
+
+
+
+
 /*
     @SuppressWarnings("Duplicates")
     private Boolean addCustomersOrdersProductHistory(CustomersOrdersProductForm row, CustomersOrdersForm request , Long masterId) {
@@ -831,6 +967,99 @@ public class CustomersOrdersRepositoryJPA {
         } else return false;
     }
 
+    @SuppressWarnings("Duplicates")
+    //отдает список отделений в виде их Id с зарезервированным количеством и общим количеством товара в отделении
+    public List<IdAndCount> getProductCount(Long product_id, Long company_id, Long document_id) {
+
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery = "select" +
+                " d.id as id, " +
+                " (select coalesce(quantity,0) from product_quantity where department_id = d.id and product_id = "+product_id+") as total, " +
+                " coalesce((" +
+                "   select " +
+                //                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   reserve=true" +
+                "   and product_id="+product_id+
+                "   and department_id=d.id" +
+                "   and customers_orders_id!="+document_id+"),0) as reserved "+//чтобы не брать в счёт свой документ, из которого вызывается запрос
+                " from" +
+                " departments d " +
+                " where" +
+                " d.company_id= " + company_id +
+                " and d.master_id= " + myMasterId +
+                " and coalesce(d.is_deleted,false)=false";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndCount> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                IdAndCount product = new IdAndCount();
+                product.setId(Long.parseLong(obj[0].toString()));
+                product.setTotal((BigDecimal) obj[1]);
+                product.setReserved((BigDecimal) obj[2]);
+                returnList.add(product);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    //отдает информацию о состоянии товара(кол-во всего, зарезервировано и цена) по его id ,в отделении по его id, по цене по её id, для документа Заказ покупателя по его id
+    public ProductsPriceAndRemainsJSON getProductsPriceAndRemains(Long department_id, Long product_id, Long price_type_id, Long document_id) {
+
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
+        String stringQuery = "select" +
+                                " coalesce((select quantity from product_quantity where product_id = "+product_id+" and department_id = d.id),0) as total, "+ //всего на складе (т.е остаток)
+                                " coalesce((" +                     //зарезервировано
+                                "   select " +
+                                //                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                                "   from " +
+                                "   customers_orders_product " +
+                                "   where " +
+                                "   product_id="+product_id+
+                                "   and reserve=true" +
+                                "   and department_id = d.id " +
+                                "   and customers_orders_id!="+document_id+"),0) as reserved ";//чтобы не брать в счёт свой документ, из которого вызывается запрос
+        if(price_type_id!=0) {//если тип цены был выбран
+            stringQuery=stringQuery+", coalesce((select price_value from product_prices where product_id = " + product_id + " and price_type_id = " + price_type_id + " and company_id = d.company_id),0) as price ";// цена по типу цены
+        }
+        stringQuery=stringQuery+" from" +
+                                " departments d " +
+                                " where" +
+                                " d.id= " + department_id +
+                                " and d.master_id= " + myMasterId;
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            ProductsPriceAndRemainsJSON returnObj = new ProductsPriceAndRemainsJSON();
+
+            for (Object[] obj : queryList) {
+                returnObj.setTotal((BigDecimal)                             obj[0]);
+                returnObj.setReserved((BigDecimal)                          obj[1]);
+                if (price_type_id != 0) {
+                    returnObj.setPrice((BigDecimal)                         obj[2]);
+                } else {
+                    returnObj.setPrice(                      BigDecimal.valueOf(0));
+                }
+
+            }
+            return returnObj;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************

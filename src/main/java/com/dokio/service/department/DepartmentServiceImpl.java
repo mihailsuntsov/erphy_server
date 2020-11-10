@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.service.department;
 
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.repository.DepartmentRepositoryJPA;
@@ -66,7 +67,7 @@ public class DepartmentServiceImpl implements DepartmentService{
     }
 
     @Override
-    public List<Departments> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
+    public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         return rep.getDepartmentsListByCompanyId(company_id,has_parent);
     }
 

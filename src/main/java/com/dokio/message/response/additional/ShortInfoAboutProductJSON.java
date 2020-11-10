@@ -12,19 +12,20 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.message.response;
+package com.dokio.message.response.additional;
+
 import java.math.BigDecimal;
 public class ShortInfoAboutProductJSON {
 
 
-    private BigDecimal  quantity;
-    private BigDecimal  change;
-    private BigDecimal  avg_purchase_price;
-    private BigDecimal  last_purchase_price;
-    private BigDecimal  avg_netcost_price;
-    private BigDecimal  department_sell_price;
-    private String      department_type_price;
-    private String      date_time_created;
+    private BigDecimal      quantity;
+    private BigDecimal      change;
+    private BigDecimal      avg_purchase_price;
+    private BigDecimal      last_purchase_price;
+    private BigDecimal      avg_netcost_price;
+    private BigDecimal      department_sell_price;
+    private String          department_type_price;
+    private String          date_time_created;
 
     public String getDepartment_type_price() {
         return department_type_price;

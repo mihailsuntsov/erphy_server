@@ -12,36 +12,19 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.service.department;
+package com.dokio.message.response.additional;
 
-import com.dokio.message.request.DepartmentForm;
-import com.dokio.message.response.DepartmentsListJSON;
-import com.dokio.model.Departments;
-import com.dokio.message.response.DepartmentsJSON;
-
-import java.util.ArrayList;
 import java.util.List;
 
-public interface DepartmentService {
+public class ProductCountJSON {
 
-    List<Departments> getDepartmentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId);
+    private List<IdAndCount> count;
 
-    public Departments getCompanyById(int id);
+    public List<IdAndCount> getCount() {
+        return count;
+    }
 
-    public DepartmentsJSON getDepartmentValuesById(int id);
-
-    public int getDepartmentsSize(String searchString, int companyId);
-
-    public Long insertDepartment(Departments department);
-
-    public List<Departments> getDeptChildrens(int parentDeptId);
-
-    public boolean updateDepartment(DepartmentForm company);
-
-    public boolean deleteDepartmentsByNumber(ArrayList<Long> delNumbers);
-
-    public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent);
-
-
-
+    public void setCount(List<IdAndCount> count) {
+        this.count = count;
+    }
 }

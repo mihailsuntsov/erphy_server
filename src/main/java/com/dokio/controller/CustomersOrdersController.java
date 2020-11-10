@@ -17,6 +17,7 @@ package com.dokio.controller;
 import com.dokio.message.request.*;
 import com.dokio.message.response.CustomersOrdersJSON;
 //import com.dokio.message.response.FilesCustomersOrdersJSON;
+import com.dokio.message.response.additional.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
@@ -24,8 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,11 +92,13 @@ public class CustomersOrdersController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getCustomersOrdersProductTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCustomersOrdersProductTable(@RequestBody UniversalForm searchRequest) {
-        Long docId = searchRequest.getId();//
-        List<CustomersOrdersProductForm> returnList;
+    @RequestMapping(
+            value = "/api/auth/getCustomersOrdersProductTable",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCustomersOrdersProductTable( @RequestParam("id") Long docId) {
+        List<CustomersOrdersProductTableJSON> returnList;
         returnList = customersOrdersRepositoryJPA.getCustomersOrdersProductTable(docId);
         return  new ResponseEntity<>(returnList, HttpStatus.OK);
     }
@@ -176,7 +179,7 @@ public class CustomersOrdersController {
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -189,7 +192,7 @@ public class CustomersOrdersController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -203,11 +206,12 @@ public class CustomersOrdersController {
 
     @PostMapping("/api/auth/updateCustomersOrders")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request){
-        if(customersOrdersRepositoryJPA.updateCustomersOrders(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
+        CustomersOrdersUpdateReportJSON updateResults = customersOrdersRepositoryJPA.updateCustomersOrders(request);
+        if(updateResults.getSuccess()){
+            return new ResponseEntity<>(updateResults, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -221,6 +225,90 @@ public class CustomersOrdersController {
             return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    //отдает таблицу Заказов покупателя с неотгруженными резервами по товару в требуемом отделении (или department_id=0 - во всех), за исключением документа document_id,  из которого выполняется запрос (document_id=0 - во всех документах)
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getReservesTable",
+            params = {"product_id", "company_id", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getReservesTable(
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("document_id") Long document_id,
+            @RequestParam("department_id") Long department_id)
+    {
+        List<CustomersOrdersReservesTable> returnList;
+        try {
+            returnList=customersOrdersRepositoryJPA.getReservesTable(company_id,department_id, product_id, document_id);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //отдает список отделений в виде их Id с доступным количеством и общим количеством товара в отделении
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductCount",
+            params = {"product_id", "company_id", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductCount(
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("document_id") Long document_id)
+    {
+        List<IdAndCount> returnList;
+        try {
+            returnList=customersOrdersRepositoryJPA.getProductCount(product_id, company_id, document_id);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //удаление 1 строки из таблицы товаров
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/deleteCustomersOrdersProductTableRow",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
+            @RequestParam("id") Long id)
+    {
+        boolean result;
+        try {
+            result=customersOrdersRepositoryJPA.deleteCustomersOrdersProductTableRow(id);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //отдает краткую информацию о товаре
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductsPriceAndRemains",
+            params = {"department_id", "product_id", "price_type_id", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductsPriceAndRemains(
+            @RequestParam("department_id") Long department_id,
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("price_type_id") Long price_type_id,
+            @RequestParam("document_id") Long document_id)
+    {
+        try {
+
+            ProductsPriceAndRemainsJSON response=customersOrdersRepositoryJPA.getProductsPriceAndRemains(department_id,product_id,price_type_id,document_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 /*
     @PostMapping("/api/auth/getListOfCustomersOrdersFiles")
     @SuppressWarnings("Duplicates")
@@ -231,7 +319,7 @@ public class CustomersOrdersController {
             returnList = customersOrdersRepositoryJPA.getListOfCustomersOrdersFiles(productId);
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -240,7 +328,7 @@ public class CustomersOrdersController {
         if(customersOrdersRepositoryJPA.deleteCustomersOrdersFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -251,7 +339,7 @@ public class CustomersOrdersController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }*/

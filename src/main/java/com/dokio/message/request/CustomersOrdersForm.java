@@ -29,15 +29,7 @@ public class CustomersOrdersForm {
     private boolean nds;
     private boolean nds_included;
     private String description;
-
-
-    private Set<CustomersOrdersProductForm> customersOrdersProductTable;
-
-
-
-
 //--------- address --------------
-
     private String email;
     private String telephone;
     private String zip_code;
@@ -49,7 +41,8 @@ public class CustomersOrdersForm {
     private String flat;
     private String additional_address;
     private String track_number;
-
+//------------- таблица товаров -----------------
+    private Set<CustomersOrdersProductTableForm> customersOrdersProductTable;
 
     public Long getId() {
         return id;
@@ -139,11 +132,11 @@ public class CustomersOrdersForm {
         this.shipment_date = shipment_date;
     }
 
-    public Set<CustomersOrdersProductForm> getCustomersOrdersProductTable() {
+    public Set<CustomersOrdersProductTableForm> getCustomersOrdersProductTable() {
         return customersOrdersProductTable;
     }
 
-    public void setCustomersOrdersProductTable(Set<CustomersOrdersProductForm> customersOrdersProductTable) {
+    public void setCustomersOrdersProductTable(Set<CustomersOrdersProductTableForm> customersOrdersProductTable) {
         this.customersOrdersProductTable = customersOrdersProductTable;
     }
 

@@ -70,13 +70,13 @@ public class AuthRestAPIs {
 
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-//Если логин или пароль неверны, запрос дальше не идет, authenticationManager возвращает {status: 401, error: "Unauthorized", message: "Error -> Unauthorized"}
-		if(userDetailsService.isUserNotBlocked(loginRequest)) {
+//Тут, если логин или пароль неверны, код далее не выполняется, и authenticationManager возвращает: {status: 401, error: "Unauthorized", message: "Error -> Unauthorized"}
+		if(userDetailsService.isUserNotBlocked(loginRequest)) {// если пользователь не заблокирован
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			String jwt = jwtProvider.generateJwtToken(authentication);
 			UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities()));
-		} else return  new ResponseEntity<>(
+		} else return  new ResponseEntity<>(//иначе отправляем то же самое, когда логин-пароль не верны
 		  "{\n" +
 				"\"status\": 401,\n" +
 				"\"error\": \"Unauthorized\",\n" +

@@ -19,6 +19,7 @@ import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.response.DepartmentsJSON;
+import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravTypePrices;
 import com.dokio.repository.UserRepositoryJPA;
@@ -244,7 +245,7 @@ public class DepartmentsController {
     public ResponseEntity<?> getDepartmentsListByCompanyId(@RequestBody SearchForm searchRequest) {
         int companyId=Integer.parseInt(searchRequest.getCompanyId());
         boolean has_parent=searchRequest.isHas_parent();
-        List<Departments> departmentsList;
+        List<DepartmentsListJSON> departmentsList;
         departmentsList = departmentService.getDepartmentsListByCompanyId(companyId,has_parent);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(departmentsList, HttpStatus.OK);
         return responseEntity;
@@ -255,7 +256,7 @@ public class DepartmentsController {
     public ResponseEntity<?> getMyDepartmentsListByCompanyId(@RequestBody SearchForm searchRequest) {
         int companyId=Integer.parseInt(searchRequest.getCompanyId());
         boolean has_parent=searchRequest.isHas_parent();
-        List<Departments> departmentsList;
+        List<DepartmentsListJSON> departmentsList;
         departmentsList = departmentRepositoryJPA.getMyDepartmentsListByCompanyId(companyId,has_parent);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(departmentsList, HttpStatus.OK);
         return responseEntity;

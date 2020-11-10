@@ -16,7 +16,7 @@ package com.dokio.message.request;
 
 public class ProductHistoryForm {
 
-    private Long    companyId; //шв предприятия
+    private Long    companyId; //id предприятия
     private String  departmentId;//стринг т.к. может быть как номер, так и строка номеров через запятую
     private Long    productId;  // id товара
     private String  dateFrom; //с даты

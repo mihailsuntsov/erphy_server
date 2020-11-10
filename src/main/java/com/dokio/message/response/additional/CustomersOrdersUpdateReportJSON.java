@@ -12,36 +12,35 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.service.department;
+package com.dokio.message.response.additional;
 
-import com.dokio.message.request.DepartmentForm;
-import com.dokio.message.response.DepartmentsListJSON;
-import com.dokio.model.Departments;
-import com.dokio.message.response.DepartmentsJSON;
+public class CustomersOrdersUpdateReportJSON {
 
-import java.util.ArrayList;
-import java.util.List;
+    private Boolean success; // успешно или нет прошло сохранение
+    private Integer fail_to_reserve; // количество позиций, не поставленных в резерв (например кто-то успел поставить в резерв раньше нас, и доступное кол-во стало меньше нашего резерва, а сумма резервов не может быть больше общего кол-ва товара)
+    private Integer fail_to_delete;  // количество позиций, не принятых к удалению (например по ним уже началась отгрузка)
 
-public interface DepartmentService {
+    public Integer getFail_to_reserve() {
+        return fail_to_reserve;
+    }
 
-    List<Departments> getDepartmentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId);
+    public void setFail_to_reserve(Integer fail_to_reserve) {
+        this.fail_to_reserve = fail_to_reserve;
+    }
 
-    public Departments getCompanyById(int id);
+    public Integer getFail_to_delete() {
+        return fail_to_delete;
+    }
 
-    public DepartmentsJSON getDepartmentValuesById(int id);
+    public void setFail_to_delete(Integer fail_to_delete) {
+        this.fail_to_delete = fail_to_delete;
+    }
 
-    public int getDepartmentsSize(String searchString, int companyId);
+    public Boolean getSuccess() {
+        return success;
+    }
 
-    public Long insertDepartment(Departments department);
-
-    public List<Departments> getDeptChildrens(int parentDeptId);
-
-    public boolean updateDepartment(DepartmentForm company);
-
-    public boolean deleteDepartmentsByNumber(ArrayList<Long> delNumbers);
-
-    public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent);
-
-
-
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
 }

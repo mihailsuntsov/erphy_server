@@ -22,6 +22,7 @@ public class CustomersOrdersJSON
     private String description;
     private Long department_type_price_id;//тип цены для отделения в этом Заказе покупателя
     private Long cagent_type_price_id;//тип цены для покупателя в этом Заказе покупателя
+    private Long default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
     private boolean is_completed;
     private boolean nds;
     private boolean nds_included;
@@ -64,6 +65,14 @@ public class CustomersOrdersJSON
 
     public Long getCagent_type_price_id() {
         return cagent_type_price_id;
+    }
+
+    public Long getDefault_type_price_id() {
+        return default_type_price_id;
+    }
+
+    public void setDefault_type_price_id(Long default_type_price_id) {
+        this.default_type_price_id = default_type_price_id;
     }
 
     public void setCagent_type_price_id(Long cagent_type_price_id) {

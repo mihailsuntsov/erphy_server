@@ -12,36 +12,36 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.service.department;
+package com.dokio.message.response.additional;
 
-import com.dokio.message.request.DepartmentForm;
-import com.dokio.message.response.DepartmentsListJSON;
-import com.dokio.model.Departments;
-import com.dokio.message.response.DepartmentsJSON;
+import java.math.BigDecimal;
 
-import java.util.ArrayList;
-import java.util.List;
+public class ProductsPriceAndRemainsJSON {
+    private BigDecimal total;
+    private BigDecimal price;
+    private BigDecimal reserved;
 
-public interface DepartmentService {
+    public BigDecimal getTotal() {
+        return total;
+    }
 
-    List<Departments> getDepartmentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId);
+    public void setTotal(BigDecimal total) {
+        this.total = total;
+    }
 
-    public Departments getCompanyById(int id);
+    public BigDecimal getPrice() {
+        return price;
+    }
 
-    public DepartmentsJSON getDepartmentValuesById(int id);
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
 
-    public int getDepartmentsSize(String searchString, int companyId);
+    public BigDecimal getReserved() {
+        return reserved;
+    }
 
-    public Long insertDepartment(Departments department);
-
-    public List<Departments> getDeptChildrens(int parentDeptId);
-
-    public boolean updateDepartment(DepartmentForm company);
-
-    public boolean deleteDepartmentsByNumber(ArrayList<Long> delNumbers);
-
-    public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent);
-
-
-
+    public void setReserved(BigDecimal reserved) {
+        this.reserved = reserved;
+    }
 }

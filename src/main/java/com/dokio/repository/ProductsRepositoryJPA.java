@@ -16,6 +16,8 @@ package com.dokio.repository;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.ProductsPriceAndRemainsJSON;
+import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.Sprav.SpravSysMarkableGroup;
@@ -781,26 +783,94 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    @Transactional// тут не надо прописывать права, т.к. это сервисный запрос
+    // возвращает доступное количество товара в отделении (складе), исключая позиции, добавленные в документ "Заказ клиента" с id document_id
+    public BigDecimal getAvailableExceptMyDock(Long product_id, Long department_id, Long document_id){
+        // всего единиц товара в отделении (складе):
+        String stringQuery = " select (select coalesce(quantity,0) from product_quantity where department_id = "+ department_id +" and product_id = "+product_id+") as total, " +
+                " coalesce((" +
+                "   select " +
+//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   reserve=true" +
+                "   and product_id="+ product_id +
+                "   and department_id=" + department_id +
+                "   and customers_orders_id!="+document_id+"),0) as reserved ";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            ProductsPriceAndRemainsJSON res = new ProductsPriceAndRemainsJSON();
+
+            for (Object[] obj : queryList) {
+                res.setTotal((BigDecimal)                             obj[0]);
+                res.setReserved((BigDecimal)                          obj[1]);
+            }
+            return res.getTotal().subtract(res.getReserved());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+
+    }
+
+
+    // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
-    public List getProductsList(String searchString, int companyId, int departmentId) {
+    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
         stringQuery = "select  p.id as id, " +
                 "           p.name as name, " +
                 "           p.nds_id as nds_id, " +
                 "           coalesce(p.edizm_id,0) as edizm_id, " +
-                "           f.name as filename " +
-                "           from products p " +
-                "           left outer join" +
-                "           product_barcodes pb " +
-                "           on pb.product_id=p.id" +
-                "           left outer join" +
-                "           files f " +
-                "           on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
-                "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_archive,false) !=true ";
+                "           f.name as filename, " +
+
+                // всего единиц товара в отделении (складе):
+                " (select coalesce(quantity,0) from product_quantity where department_id = "+ departmentId +" and product_id = p.id) as total, " +
+
+                // зарезервировано единиц товара в отделении (складе):
+                " coalesce((" +
+                "   select " +
+//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   reserve=true" +
+                "   and product_id=p.id"+
+                "   and department_id=" + departmentId +
+                "   and customers_orders_id!="+document_id+"),0) as reserved, "+
+
+                //всего единиц товара во всех моих отделениях (складах)
+                " (select sum(coalesce(quantity,0)) from product_quantity where department_id in ("+ myDepthsIds +") and product_id = p.id) as total_in_all_my_depths, " +
+
+                //всего зарезервировано единиц товара во всех моих отделениях (складах)
+                " coalesce((" +
+                "   select " +
+//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   reserve=true" +
+                "   and product_id=p.id"+
+                "   and department_id in (" + myDepthsIds + ") " +
+                "   and customers_orders_id!="+document_id+"),0) as reserved_in_all_my_depths "+
+
+                " from products p " +
+                " left outer join" +
+                "   product_barcodes pb " +
+                "   on pb.product_id=p.id" +
+                " left outer join" +
+                "   files f " +
+                "   on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
+                " where  p.master_id=" + myMasterId +
+                " and coalesce(p.is_archive,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper('%" + searchString + "%') or " +
@@ -823,9 +893,37 @@ public class ProductsRepositoryJPA {
             product.setNds_id((Integer) obj[2]);
             product.setEdizm_id(Long.parseLong(obj[3].toString()));
             product.setFilename((String) obj[4]);
+            product.setTotal((BigDecimal) obj[5]);
+            product.setReserved((BigDecimal) obj[6]);
+            product.setTotal_in_all_my_depths((BigDecimal) obj[7]);
+            product.setReserved_in_all_my_depths((BigDecimal) obj[8]);
             returnList.add(product);
         }
         return returnList;
+    }
+
+    @SuppressWarnings("Duplicates")
+    //отдает информацию состоянии товара (кол-во, последняя поставка) в отделении, и средним ценам (закупочной и себестоимости) товара
+    public BigDecimal getProductPrice(Long company_id, Long product_id, Long price_type_id) {
+
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery =
+                "       select " +
+                "           price_value as price" +
+                "       from " +
+                "           product_prices " +
+                "       where " +
+                "               product_id = "+product_id +
+                "           and price_type_id = "+price_type_id +
+                "           and company_id=" + company_id +
+                "           and master_id=" + myMasterId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (BigDecimal) query.getSingleResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -882,7 +980,8 @@ public class ProductsRepositoryJPA {
     }
 
 
-    //*****************************************************************************************************************************************************
+
+//*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -902,7 +1001,7 @@ public class ProductsRepositoryJPA {
         return categoriesSet;
     }
 
-    //права не нужны т.к. не вызывается по API, только из контроллера
+    @SuppressWarnings("Duplicates")//права не нужны т.к. не вызывается по API, только из контроллера
     public Set<Long> getProductsCategoriesSetIdsByProductId(Long id) {
         String stringQuery = "select p.category_id from product_productcategories p where p.product_id= " + id;
         List<Integer> depIds = entityManager.createNativeQuery(stringQuery).getResultList();
