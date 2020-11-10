@@ -188,4 +188,9 @@ public class SignUpForm {
     public void setSelectedUserDepartments(Set<Long> selectedUserDepartments) {
         this.selectedUserDepartments = selectedUserDepartments;
     }
+
+    @Override
+    public String toString() {
+        return "SignUpForm: id=" + this.id + ", name" + this.name + ", userName" + this.username;
+    }
 }

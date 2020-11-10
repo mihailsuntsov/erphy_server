@@ -398,4 +398,9 @@ public class CagentsForm {
     public void setCagentsPaymentAccountsTable(Set<CagentsPaymentAccountsForm> cagentsPaymentAccountsTable) {
         this.cagentsPaymentAccountsTable = cagentsPaymentAccountsTable;
     }
+
+    @Override
+    public String toString() {
+        return "CagentsForm: id=" + this.id + ", name=" + this.name + ", company_id" + company_id;
+    }
 }

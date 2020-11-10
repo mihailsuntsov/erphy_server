@@ -159,4 +159,10 @@ public class RemainsForm {
     public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
     }
+
+    @Override
+    public String toString() {
+        return "RemainsForm: productsIdsList" + this.productsIdsList + ", departmentsIdsList=" + this.departmentsIdsList +
+                ", companyId=" + this.companyId + ", cagentId=" + this.cagentId + ", categoryId=" + this.categoryId;
+    }
 }

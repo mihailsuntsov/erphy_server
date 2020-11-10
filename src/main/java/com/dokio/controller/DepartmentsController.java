@@ -26,6 +26,7 @@ import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.repository.DepartmentRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.department.DepartmentService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,8 @@ import java.sql.Timestamp;
 
 @Controller
 public class DepartmentsController {
+    Logger logger = Logger.getLogger("DepartmentsController");
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -64,6 +67,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getDepartmentsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDepartmentsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDepartmentsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -104,6 +109,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getDepartmentsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDepartmentsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDepartmentsPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -173,6 +180,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getDeptChildrens")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDeptChildrens(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDeptChildrens: " + searchRequest.toString());
+
         int parentId=Integer.parseInt(searchRequest.getParentId());
         List<Departments> departmentsList;
         departmentsList = departmentService.getDeptChildrens(parentId);
@@ -183,6 +192,7 @@ public class DepartmentsController {
     @PostMapping("/api/auth/insertDepartment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertDepartment(@RequestBody DepartmentForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertDepartment: " + request.toString());
 
         String name = request.getName() == null ? "": request.getName();
 
@@ -243,6 +253,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getDepartmentsListByCompanyId")//возвращает список отделений предприятия по его id
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDepartmentsListByCompanyId(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDepartmentsListByCompanyId: " + searchRequest.toString());
+
         int companyId=Integer.parseInt(searchRequest.getCompanyId());
         boolean has_parent=searchRequest.isHas_parent();
         List<DepartmentsListJSON> departmentsList;
@@ -254,6 +266,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getMyDepartmentsListByCompanyId")//возвращает список отделений предприятия по его id
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getMyDepartmentsListByCompanyId(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getMyDepartmentsListByCompanyId: " + searchRequest.toString());
+
         int companyId=Integer.parseInt(searchRequest.getCompanyId());
         boolean has_parent=searchRequest.isHas_parent();
         List<DepartmentsListJSON> departmentsList;
@@ -266,6 +280,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/getDepartmentValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDepartmentValuesById(@RequestBody DepartmentForm request) {
+        logger.info("Processing post request for path /api/auth/getDepartmentValuesById: " + request.toString());
+
         DepartmentsJSON department;
         int id = request.getId();
         department=departmentService.getDepartmentValuesById(id);//результат запроса помещается в объект
@@ -276,6 +292,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/updateDepartment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateDepartment(@RequestBody DepartmentForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/updateDepartment: " + request.toString());
+
         if(departmentService.updateDepartment(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -287,6 +305,8 @@ public class DepartmentsController {
     @PostMapping("/api/auth/deleteDepartments")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteDepartments(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteDepartments: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");

@@ -74,4 +74,9 @@ public class FileCategoriesForm {
     public void setOutput_order(int output_order) {
         this.output_order = output_order;
     }
+
+    @Override
+    public String toString() {
+        return "FileCategoriesForm: id=" + this.id + ", parentCategoryId" + this.parentCategoryId + ", categoryId" + this.categoryId;
+    }
 }

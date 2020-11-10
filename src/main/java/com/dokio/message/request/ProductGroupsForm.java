@@ -52,4 +52,9 @@ public class ProductGroupsForm {
         this.description = description;
     }
 
+    @Override
+    public String toString() {
+        return "ProductGroupsForm: id=" + this.id + ", company_id" + this.company_id + ", name" + this.name +
+                ", description" + this.description;
+    }
 }

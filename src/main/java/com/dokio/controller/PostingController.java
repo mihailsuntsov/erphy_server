@@ -20,6 +20,7 @@ import com.dokio.message.response.FilesPostingJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,8 @@ import java.util.List;
 
 @Controller
 public class PostingController {
+    Logger logger = Logger.getLogger("PostingController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -49,6 +52,8 @@ public class PostingController {
     @PostMapping("/api/auth/getPostingTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getPostingTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getPostingTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -94,6 +99,8 @@ public class PostingController {
     @PostMapping("/api/auth/getPostingProductTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getPostingProductTable(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getPostingProductTable: " + searchRequest.toString());
+
         Long docId = searchRequest.getId();//
         List<PostingProductForm> returnList;
         returnList = postingRepositoryJPA.getPostingProductTable(docId);
@@ -103,6 +110,8 @@ public class PostingController {
     @PostMapping("/api/auth/getPostingPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getPostingPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getPostingPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -172,6 +181,8 @@ public class PostingController {
     @PostMapping("/api/auth/insertPosting")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertPosting(@RequestBody PostingForm request){
+        logger.info("Processing post request for path /api/auth/insertPosting: " + request.toString());
+
         Long newDocument = postingRepositoryJPA.insertPosting(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -183,6 +194,8 @@ public class PostingController {
     @PostMapping("/api/auth/isPostingNumberUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isPostingNumberUnical(@RequestBody UniversalForm request) { // id1 - document_id, id2 - company_id
+        logger.info("Processing post request for path /api/auth/isPostingNumberUnical: " + request.toString());
+
         try {
             Boolean ret = postingRepositoryJPA.isPostingNumberUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -195,6 +208,8 @@ public class PostingController {
 
     @PostMapping("/api/auth/getPostingValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getPostingValuesById: " + request.toString());
+
         PostingJSON response;
         Long id = request.getId();
         response=postingRepositoryJPA.getPostingValuesById(id);
@@ -204,6 +219,8 @@ public class PostingController {
     @PostMapping("/api/auth/updatePosting")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updatePosting(@RequestBody PostingForm request){
+        logger.info("Processing post request for path /api/auth/updatePosting: " + request.toString());
+
         if(postingRepositoryJPA.updatePosting(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -214,6 +231,8 @@ public class PostingController {
     @PostMapping("/api/auth/deletePosting")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deletePosting(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deletePosting: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(postingRepositoryJPA.deletePosting(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -225,6 +244,8 @@ public class PostingController {
     @PostMapping("/api/auth/getListOfPostingFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfPostingFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path /api/auth/getListOfPostingFiles: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<FilesPostingJSON> returnList;
         try {
@@ -237,6 +258,8 @@ public class PostingController {
 
     @PostMapping("/api/auth/deletePostingFile")
     public ResponseEntity<?> deletePostingFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/deletePostingFile: " + request.toString());
+
         if(postingRepositoryJPA.deletePostingFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -247,6 +270,8 @@ public class PostingController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToPosting")
     public ResponseEntity<?> addFilesToPosting(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/addFilesToPosting: " + request.toString());
+
         if(postingRepositoryJPA.addFilesToPosting(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

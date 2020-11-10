@@ -25,6 +25,7 @@ import com.dokio.repository.SpravSysEdizmJPA;
 import com.dokio.repository.UserRepository;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,8 @@ import java.util.List;
 
 @Controller
 public class SpravSysEdizmController {
+    Logger logger = Logger.getLogger("SpravSysEdizmController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -52,6 +55,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/getSpravSysEdizmTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysEdizmTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getSpravSysEdizmTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -90,6 +95,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/getSpravSysEdizmPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysEdizmPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getSpravSysEdizmPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -158,6 +165,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/getSpravSysEdizmValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysEdizmValuesById(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getSpravSysEdizmValuesById: " + request.toString());
+
         SpravSysEdizmJSON response;
         int id = request.getId();
         response=spravSysEdizmRepositoryJPA.getSpravSysEdizmValuesById(id);//результат запроса помещается в экземпляр класса
@@ -167,6 +176,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/insertSpravSysEdizm")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertSpravSysEdizm(@RequestBody SpravSysEdizmForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertSpravSysEdizm: " + request.toString());
+
         Long newDocument = spravSysEdizmRepositoryJPA.insertSpravSysEdizm(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -179,6 +190,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/updateSpravSysEdizm")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateSpravSysEdizm(@RequestBody SpravSysEdizmForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateSpravSysEdizm: " + request.toString());
+
         if(spravSysEdizmRepositoryJPA.updateSpravSysEdizm(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -191,6 +204,8 @@ public class SpravSysEdizmController {
     @PostMapping("/api/auth/deleteSpravSysEdizm")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteSpravSysEdizm(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteSpravSysEdizm: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");
@@ -207,6 +222,8 @@ public class SpravSysEdizmController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/getSpravSysEdizm")
     public ResponseEntity<?> getSpravSysEdizm(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/getSpravSysEdizm: " + request.toString());
+
         List<SpravSysEdizmTableJSON> returnList;
         try {
             returnList = spravSysEdizmRepositoryJPA.getSpravSysEdizm(request);

@@ -17,6 +17,7 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.response.CagentsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.Sprav.SpravSysCountriesJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -32,11 +33,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysCountriesController {
+    Logger logger = Logger.getLogger("SpravSysCountriesController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysCountries")
     @SuppressWarnings("Duplicates")
     private ResponseEntity<?> getSpravSysCountries() {
+        logger.info("Processing post request for path /api/auth/getSpravSysCountries");
+
         String stringQuery=
                 "select " +
                         " p.id as id, " +
@@ -56,8 +61,9 @@ public class SpravSysCountriesController {
 
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/getCountryIdByRegionId")
-    private ResponseEntity<?> getCountryIdByRegionId(@RequestBody SearchForm request)
-    {
+    private ResponseEntity<?> getCountryIdByRegionId(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getCountryIdByRegionId: " + request.toString());
+
         IdAndName doc = new IdAndName();
         try{
             String stringQuery="select p.country_id as id, (select name_ru from sprav_sys_countries where id=p.country_id) as name from sprav_sys_regions p where p.id = "+request.getId();

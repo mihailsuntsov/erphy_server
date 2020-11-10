@@ -21,6 +21,7 @@ import com.dokio.message.response.additional.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,8 @@ import java.util.List;
 
 @Controller
 public class CustomersOrdersController {
+    Logger logger = Logger.getLogger("CustomersOrdersController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -50,6 +53,8 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/getCustomersOrdersTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCustomersOrdersTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCustomersOrdersTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -98,6 +103,7 @@ public class CustomersOrdersController {
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getCustomersOrdersProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing post request for path /api/auth/getCustomersOrdersProductTable with CustomersOrders id=" + docId.toString());
         List<CustomersOrdersProductTableJSON> returnList;
         returnList = customersOrdersRepositoryJPA.getCustomersOrdersProductTable(docId);
         return  new ResponseEntity<>(returnList, HttpStatus.OK);
@@ -106,6 +112,8 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/getCustomersOrdersPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCustomersOrdersPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getCustomersOrdersPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -175,6 +183,8 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/insertCustomersOrders")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCustomersOrders(@RequestBody CustomersOrdersForm request){
+        logger.info("Processing post request for path /api/auth/insertCustomersOrders: " + request.toString());
+
         Long newDocument = customersOrdersRepositoryJPA.insertCustomersOrders(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -186,6 +196,8 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/isCustomersOrdersNumberUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isCustomersOrdersNumberUnical(@RequestBody UniversalForm request) { // id1 - document_id, id2 - company_id
+        logger.info("Processing post request for path /api/auth/isCustomersOrdersNumberUnical: " + request.toString());
+
         try {
             Boolean ret = customersOrdersRepositoryJPA.isCustomersOrdersNumberUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -198,6 +210,8 @@ public class CustomersOrdersController {
 
     @PostMapping("/api/auth/getCustomersOrdersValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getCustomersOrdersValuesById: " + request.toString());
+
         CustomersOrdersJSON response;
         Long id = request.getId();
         response=customersOrdersRepositoryJPA.getCustomersOrdersValuesById(id);
@@ -207,6 +221,7 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/updateCustomersOrders")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
+        logger.info("Processing post request for path /api/auth/updateCustomersOrders: " + request.toString());
         CustomersOrdersUpdateReportJSON updateResults = customersOrdersRepositoryJPA.updateCustomersOrders(request);
         if(updateResults.getSuccess()){
             return new ResponseEntity<>(updateResults, HttpStatus.OK);
@@ -218,6 +233,8 @@ public class CustomersOrdersController {
     @PostMapping("/api/auth/deleteCustomersOrders")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCustomersOrders(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteCustomersOrders: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(customersOrdersRepositoryJPA.deleteCustomersOrders(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);

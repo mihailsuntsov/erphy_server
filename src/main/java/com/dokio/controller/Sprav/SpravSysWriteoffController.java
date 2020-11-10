@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.message.response.Sprav.SpravSysWriteoffJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -27,11 +28,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysWriteoffController {
+    Logger logger = Logger.getLogger("SpravSysWriteoffController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysWriteoff")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysWriteoff() {
+        logger.info("Processing post request for path /api/auth/getSpravSysWriteoff");
+
         String stringQuery=
                 "select " +
                         " p.id as id, " +

@@ -141,6 +141,11 @@ public class AcceptanceForm {
         this.acceptanceProductTable = acceptanceProductTable;
     }
 
+    @Override
+    public String toString() {
+        return "AcceptanceForm: id=" + this.id + ", company_id=" + this.company_id;
+    }
+
 //    public Set<Long> getTestSet() {
 //        return testSet;
 //    }

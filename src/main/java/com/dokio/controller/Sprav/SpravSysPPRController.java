@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.message.response.Sprav.SpravSysPPRJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -26,11 +27,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysPPRController { //признак предмета расчета (товар, услуга, работа...)
+    Logger logger = Logger.getLogger("SpravSysPPRController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysPPR")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysPPR() {
+        logger.info("Processing post request for path /api/auth/getSpravSysPPR");
+
         List<SpravSysPPRJSON> resultList;
         String stringQuery=
                 "select p.id as id, p.name as name, p.abbreviation as abbreviation, p.description as description" +

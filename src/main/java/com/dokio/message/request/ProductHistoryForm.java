@@ -106,4 +106,10 @@ public class ProductHistoryForm {
     public void setDockTypesIds(String dockTypesIds) {
         this.dockTypesIds = dockTypesIds;
     }
+
+    @Override
+    public String toString() {
+        return "ProductHistoryForm: companyId=" + this.companyId + ", departmentId=" + this.departmentId +
+                ", productId=" + this.productId;
+    }
 }

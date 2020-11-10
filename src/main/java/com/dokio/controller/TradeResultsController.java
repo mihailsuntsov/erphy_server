@@ -21,6 +21,7 @@ import com.dokio.message.response.TradeResultsTableJSON;
 import com.dokio.message.response.TradeResultsTableReportJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,8 @@ import java.util.List;
 
 @Controller
 public class TradeResultsController {
+    Logger logger = Logger.getLogger("TradeResultsController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -54,6 +57,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/getTradeResultsTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTradeResultsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getTradeResultsTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -98,6 +103,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/getTradeResultsPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTradeResultsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getTradeResultsPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -168,6 +175,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/getTradeResultsValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTradeResultsValuesById(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getTradeResultsValuesById: " + request.toString());
+
         TradeResultsJSON response;
         int id = request.getId();
         response=tradeResultsRepositoryJPA.getTradeResultsValuesById(id);//результат запроса помещается в экземпляр класса
@@ -177,6 +186,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/insertTradeResults")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertTradeResults(@RequestBody TradeResultsForm request) throws ParseException {
+        logger.info("Processing post request for path /api/auth/insertTradeResults: " + request.toString());
+
         Long newDocument = tradeResultsRepositoryJPA.insertTradeResults(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -189,6 +200,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/updateTradeResults")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateTradeResults(@RequestBody TradeResultsForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/updateTradeResults: " + request.toString());
+
         if(tradeResultsRepositoryJPA.updateTradeResults(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -201,6 +214,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/deleteTradeResults")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteTradeResults(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path /api/auth/deleteTradeResults: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         checked=checked.replace("[","");
         checked=checked.replace("]","");
@@ -217,6 +232,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/getTradeResultsTableReport")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTradeResultsTableReport(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getTradeResultsTableReport: " + searchRequest.toString());
+
         int companyId;//по какому предприятию показывать / 0 - по всем
         int departmentId;//по какому отделению показывать / 0 - по всем
         int employeeId;//по какому сотруднику показывать / 0 - по всем
@@ -264,6 +281,8 @@ public class TradeResultsController {
     @PostMapping("/api/auth/getTradeResultsSumByPeriod")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTradeResultsSumByPeriod(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getTradeResultsSumByPeriod: " + searchRequest.toString());
+
         int companyId;//по какому предприятию показывать / 0 - по всем
         int departmentId;//по какому отделению показывать / 0 - по всем
         int employeeId;//по какому сотруднику показывать / 0 - по всем

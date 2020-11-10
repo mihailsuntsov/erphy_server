@@ -20,6 +20,7 @@ import java.util.Set;
 import javax.validation.Valid;
 
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,8 @@ import com.dokio.security.jwt.JwtProvider;
 @RequestMapping("/api/public")
 public class AuthRestAPIs {
 
+	Logger logger = Logger.getLogger("AuthRestAPIs");
+
 	@Autowired
 	AuthenticationManager authenticationManager;
 
@@ -67,6 +70,7 @@ public class AuthRestAPIs {
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
+		logger.info("Processing post request for path /signin: " + loginRequest.toString());
 
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
@@ -87,6 +91,7 @@ public class AuthRestAPIs {
 	@SuppressWarnings("Duplicates")
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
+		logger.info("Processing post request for path /signup: " + signUpRequest.toString());
 
 		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
 			return new ResponseEntity<>(new ResponseMessage("Такой логин уже зарегистрирован"),

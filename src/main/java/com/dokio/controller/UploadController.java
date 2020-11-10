@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +36,7 @@ import com.dokio.service.StorageService;
 
 @Controller
 public class UploadController {
+    Logger logger = Logger.getLogger("UploadController");
 
     @Autowired
     StorageService storageService;
@@ -48,6 +50,10 @@ public class UploadController {
             @RequestParam("anonyme_access") Boolean anonyme_access,
             @RequestParam("description") String description,
             @RequestParam("categoryId") Integer categoryId) {
+        logger.info("Processing post request for path api/auth/postFile: " + "fileName=" + file.getName()
+                + "companyId=" + companyId  + "categoryId=" + categoryId);
+
+
         String message;
         try {
             storageService.store(file,companyId,anonyme_access,categoryId,description);
@@ -62,6 +68,8 @@ public class UploadController {
 
     @GetMapping("/api/auth/getallfiles")
     public ResponseEntity<List<String>> getListFiles(Model model) {
+        logger.info("Processing get request for path api/auth/getallfiles");
+
         List<String> fileNames = files
                 .stream().map(fileName -> MvcUriComponentsBuilder
                         .fromMethodName(UploadController.class, "getFile", fileName).build().toString())
@@ -73,6 +81,8 @@ public class UploadController {
     @GetMapping("/api/auth/files/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getFile(@PathVariable String filename) {
+        logger.info("Processing get request for path api/auth/files: " + "fileName=" + filename);
+
         Resource file = storageService.loadFile(filename);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")

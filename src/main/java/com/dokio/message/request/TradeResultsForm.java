@@ -240,4 +240,10 @@ public class TradeResultsForm {
     public void setEncashment_cashless(String encashment_cashless) {
         this.encashment_cashless = encashment_cashless;
     }
+
+    @Override
+    public String toString() {
+        return "TradeResultsForm: id=" + this.id + ", company" + this.company + ", company_id" + this.company_id +
+                ", department" + this.department + ", department_id" + this.department_id;
+    }
 }

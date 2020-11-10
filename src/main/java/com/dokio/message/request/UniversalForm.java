@@ -99,4 +99,10 @@ public class UniversalForm {
     public void setId4(Long id4) {
         this.id4 = id4;
     }
+
+    @Override
+    public String toString() {
+        return "UniversalForm: id=" + this.id + ", id1=" + this.id1 + ", id2=" + this.id2  + ", id3=" + this.id3  +
+                ", id4=" + this.id4 + ", string1=" + this.string1  + ", string2=" + this.string2  + ", string3=" + this.string3;
+    }
 }

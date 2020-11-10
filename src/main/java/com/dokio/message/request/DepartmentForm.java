@@ -124,4 +124,10 @@ public class DepartmentForm {
     public void setAdditional(String additional) {
         this.additional = additional;
     }
+
+    @Override
+    public String toString() {
+        return "DepartmentForm: id" + this.id + ", company_id=" + this.company_id +
+                ", name=" + this.name + ", address=" + this.address + ", master_id=" + this.master_id;
+    }
 }

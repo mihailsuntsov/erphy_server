@@ -98,4 +98,9 @@ public class PostingForm {
     public void setPostingProductTable(Set<PostingProductForm> postingProductTable) {
         this.postingProductTable = postingProductTable;
     }
+
+    @Override
+    public String toString() {
+        return "SitesJSON: id=" + this.id + ", company_id=" + this.company_id;
+    }
 }

@@ -21,6 +21,7 @@ import com.dokio.message.response.SitesTableJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageServiceSite;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -34,6 +35,8 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 public class SitesController {
+
+    Logger logger = Logger.getLogger("SitesController");
 
     @Autowired
     UserRepository userRepository;
@@ -90,6 +93,8 @@ public class SitesController {
     @PostMapping("/api/auth/getSitesTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSitesTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getSitesTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -139,6 +144,8 @@ public class SitesController {
 
     @PostMapping("/api/auth/getSiteValuesById")
     public ResponseEntity<?> getSiteValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path /api/auth/getSiteValuesById: " + request.toString());
+
         SitesJSON response;
         Long id = request.getId();
         response=sitesRepository.getSiteValuesById(id);
@@ -148,6 +155,8 @@ public class SitesController {
     @PostMapping("/api/auth/insertSite")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertSite(@RequestBody SitesJSON request){
+        logger.info("Processing post request for path /api/auth/insertSite: " + request.toString());
+
         Long newDocument = sitesRepository.insertSite(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -165,6 +174,8 @@ public class SitesController {
     @PostMapping("/api/auth/deleteSite")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteSite(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteSite: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(sitesRepository.deleteSite(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -186,22 +197,32 @@ public class SitesController {
 
     @GetMapping("/api/public/getSiteFile/{masterId}/{companyId}/sites/{siteId}/{filePathAndName:.+}")
     @ResponseBody public ResponseEntity<Resource> getSiteFile(@PathVariable String masterId,@PathVariable String companyId,@PathVariable String siteId,@PathVariable String filePathAndName) {
+        logger.info("Processing get request for path /api/public/getSiteFile: masterId=" + masterId + ", companyId=" + companyId +
+                ", siteId=" + siteId + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
     @GetMapping("/api/public/getSiteFile/{masterId}/{companyId}/sites/{siteId}/{lvl1}/{filePathAndName:.+}")
     @ResponseBody public ResponseEntity<Resource> getSiteFile(@PathVariable String masterId,@PathVariable String companyId,@PathVariable String siteId,@PathVariable String lvl1,@PathVariable String filePathAndName) {
+        logger.info("Processing get request for path /api/public/getSiteFile: masterId=" + masterId + ", companyId=" + companyId +
+                ", siteId=" + siteId + ", lvl1" + lvl1 + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+lvl1+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
     @GetMapping("/api/public/getSiteFile/{masterId}/{companyId}/sites/{siteId}/{lvl1}/{lvl2}/{filePathAndName:.+}")
     @ResponseBody public ResponseEntity<Resource> getSiteFile(@PathVariable String masterId,@PathVariable String companyId,@PathVariable String siteId,@PathVariable String lvl1,@PathVariable String lvl2,@PathVariable String filePathAndName) {
+        logger.info("Processing get request for path /api/public/getSiteFile: masterId=" + masterId + ", companyId=" + companyId +
+                ", siteId=" + siteId + ", lvl1" + lvl1 + ", lvl2" + lvl2 + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+lvl1+"//"+lvl2+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
     @GetMapping("/api/public/getSiteFile/{masterId}/{companyId}/sites/{siteId}/{lvl1}/{lvl2}/{lvl3}/{filePathAndName:.+}")
     @ResponseBody public ResponseEntity<Resource> getSiteFile(@PathVariable String masterId,@PathVariable String companyId,@PathVariable String siteId,@PathVariable String lvl1,@PathVariable String lvl2,@PathVariable String lvl3,@PathVariable String filePathAndName) {
+        logger.info("Processing get request for path /api/public/getSiteFile: masterId=" + masterId + ", companyId=" + companyId +
+                ", siteId=" + siteId + ", lvl1" + lvl1 + ", lvl2" + lvl2 + ", lvl3" + lvl3 + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+lvl1+"//"+lvl2+"//"+lvl3+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
     @GetMapping("/api/public/getSiteFile/{masterId}/{companyId}/sites/{siteId}/{lvl1}/{lvl2}/{lvl3}/{lvl4}/{filePathAndName:.+}")
     @ResponseBody public ResponseEntity<Resource> getSiteFile(@PathVariable String masterId,@PathVariable String companyId,@PathVariable String siteId,@PathVariable String lvl1,@PathVariable String lvl2,@PathVariable String lvl3,@PathVariable String lvl4,@PathVariable String filePathAndName) {
+        logger.info("Processing get request for path /api/public/getSiteFile: masterId=" + masterId + ", companyId=" + companyId +
+                ", siteId=" + siteId + ", lvl1" + lvl1 + ", lvl2" + lvl2 + ", lvl3" + lvl3 + ", lvl4" + lvl4 + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+lvl1+"//"+lvl2+"//"+lvl3+"//"+lvl4+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
 }

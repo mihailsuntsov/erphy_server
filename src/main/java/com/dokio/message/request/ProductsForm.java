@@ -235,4 +235,10 @@ public class ProductsForm {
     public void setExcizable(boolean excizable) {
         this.excizable = excizable;
     }
+
+    @Override
+    public String toString() {
+        return "ProductsForm: id=" + this.id + ", name=" + this.name + ", article=" + this.article +
+                ", company_id=" + this.company_id + ", productgroup_id=" + this.productgroup_id;
+    }
 }

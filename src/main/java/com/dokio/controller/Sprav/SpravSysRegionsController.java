@@ -16,6 +16,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.Sprav.SpravSysRegionsJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,11 +32,15 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysRegionsController {
+    Logger logger = Logger.getLogger("SpravSysRegionsController");
+
     @PersistenceContext
     private EntityManager entityManager;
     @PostMapping("/api/auth/getSpravSysRegions")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysRegions(@RequestBody SearchForm request ) {
+        logger.info("Processing post request for path /api/auth/getSpravSysRegions: " + request.toString());
+
         String searchString=request.getSearchString();
         int countryId=request.getId();
         String stringQuery;
@@ -68,8 +73,9 @@ public class SpravSysRegionsController {
     }
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/getRegionIdByCityId")
-    private ResponseEntity<?> getRegionIdByCityId(@RequestBody SearchForm request)
-    {
+    private ResponseEntity<?> getRegionIdByCityId(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getRegionIdByCityId" + request.toString());
+
         IdAndName doc = new IdAndName();
         try {
             String stringQuery = "select " +

@@ -20,6 +20,7 @@ import com.dokio.message.response.FilesWriteoffJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,8 @@ import java.util.List;
 
 @Controller
 public class WriteoffController {
+    Logger logger = Logger.getLogger("WriteoffController");
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -49,6 +52,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/getWriteoffTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getWriteoffTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getWriteoffTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -94,6 +99,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/getWriteoffProductTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getWriteoffProductTable(@RequestBody UniversalForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getWriteoffProductTable: " + searchRequest.toString());
+
         Long docId = searchRequest.getId();//
         List<WriteoffProductForm> returnList;
         returnList = writeoffRepositoryJPA.getWriteoffProductTable(docId);
@@ -103,6 +110,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/getWriteoffPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getWriteoffPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getWriteoffPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -172,6 +181,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/insertWriteoff")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertWriteoff(@RequestBody WriteoffForm request){
+        logger.info("Processing post request for path api/auth/insertWriteoff: " + request.toString());
+
         Long newDocument = writeoffRepositoryJPA.insertWriteoff(request);
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
@@ -183,6 +194,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/isWriteoffNumberUnical")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> isWriteoffNumberUnical(@RequestBody UniversalForm request) { // id1 - document_id, id2 - company_id
+        logger.info("Processing post request for path api/auth/isWriteoffNumberUnical: " + request.toString());
+
         try {
             Boolean ret = writeoffRepositoryJPA.isWriteoffNumberUnical(request);
             return new ResponseEntity<>(ret, HttpStatus.OK);
@@ -195,6 +208,8 @@ public class WriteoffController {
 
     @PostMapping("/api/auth/getWriteoffValuesById")
     public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/getWriteoffValuesById: " + request.toString());
+
         WriteoffJSON response;
         Long id = request.getId();
         response=writeoffRepositoryJPA.getWriteoffValuesById(id);
@@ -204,6 +219,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/updateWriteoff")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateWriteoff(@RequestBody WriteoffForm request){
+        logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
+
         if(writeoffRepositoryJPA.updateWriteoff(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -214,6 +231,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/deleteWriteoff")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteWriteoff(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(writeoffRepositoryJPA.deleteWriteoff(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
@@ -225,6 +244,8 @@ public class WriteoffController {
     @PostMapping("/api/auth/getListOfWriteoffFiles")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getListOfWriteoffFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path api/auth/getListOfWriteoffFiles: " + request.toString());
+
         Long productId=Long.valueOf(request.getId());
         List<FilesWriteoffJSON> returnList;
         try {
@@ -237,6 +258,8 @@ public class WriteoffController {
 
     @PostMapping("/api/auth/deleteWriteoffFile")
     public ResponseEntity<?> deleteWriteoffFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteWriteoffFile: " + request.toString());
+
         if(writeoffRepositoryJPA.deleteWriteoffFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
@@ -247,6 +270,8 @@ public class WriteoffController {
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToWriteoff")
     public ResponseEntity<?> addFilesToWriteoff(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToWriteoff: " + request.toString());
+
         if(writeoffRepositoryJPA.addFilesToWriteoff(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;

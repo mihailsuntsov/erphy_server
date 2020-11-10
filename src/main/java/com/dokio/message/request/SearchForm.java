@@ -249,4 +249,9 @@ public class SearchForm {
     public void setParentSetId(String parentSetId) {
         this.parentSetId = parentSetId;
     }
+
+    @Override
+    public String toString() {
+        return "SearchForm: id=" + this.id + ", masterId=" + this.masterId + ", searchString=" + this.searchString;
+    }
 }

@@ -98,4 +98,11 @@ public class WriteoffForm {
     public void setWriteoffProductTable(Set<WriteoffProductForm> writeoffProductTable) {
         this.writeoffProductTable = writeoffProductTable;
     }
+
+    @Override
+    public String toString() {
+        return "WriteoffForm: id=" + this.id + ", company_id=" + this.company_id + ", description=" + this.description
+                + ", department_id=" + this.department_id  + ", cagent_id=" + this.cagent_id + ", doc_number=" + this.doc_number
+                + ", is_completed=";
+    }
 }

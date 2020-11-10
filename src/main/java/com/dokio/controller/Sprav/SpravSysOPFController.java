@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.model.Sprav.SpravSysOPFJSON;
+import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,7 @@ import java.util.List;
 @Controller
 @Repository
 public class SpravSysOPFController {
+    Logger logger = Logger.getLogger("SpravSysOPFController");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -35,6 +37,7 @@ public class SpravSysOPFController {
     @PostMapping("/api/auth/getSpravSysOPF")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysOPF() {
+        logger.info("Processing post request for path /api/auth/getSpravSysOPF");
 
         List<SpravSysOPFJSON> resultList;
         String stringQuery=

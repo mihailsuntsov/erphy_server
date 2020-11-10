@@ -92,4 +92,10 @@ public class ProductGroupFieldsForm {
     public void setOutput_order(String output_order) {
         this.output_order = output_order;
     }
+
+    @Override
+    public String toString() {
+        return "ProductGroupFieldsForm: id=" + this.id + ", company_id" + this.company_id + ", name" + this.name +
+                ", group_id" + this.group_id;
+    }
 }

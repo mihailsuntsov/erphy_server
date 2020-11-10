@@ -23,6 +23,7 @@ import com.dokio.message.response.UsersTableJSON;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,7 @@ import java.util.Set;
 
 @Controller
 public class UsersController {
+    Logger logger = Logger.getLogger("UsersController");
 
     @Autowired
     UserRepository userRepository;
@@ -69,6 +71,8 @@ public class UsersController {
     @PostMapping("/api/auth/addUser")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> addUser(@Valid @RequestBody SignUpForm signUpRequest) {
+        logger.info("Processing post request for path api/auth/addUser: " + signUpRequest.toString());
+
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "22"))// Пользователи:"Создание"
         {
             if (userRepository.existsByUsername(signUpRequest.getUsername())) {
@@ -144,6 +148,8 @@ public class UsersController {
     @PostMapping("/api/auth/getUserValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserValuesById(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path api/auth/getUserValuesById: " + request.toString());
+
         UsersJSON user;
         int id = request.getId();
         user=userRepositoryJPA.getUserValuesById(id);//результат запроса помещается в объект
@@ -168,6 +174,8 @@ public class UsersController {
     @PostMapping("/api/auth/getUserDepartments")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserDepartments(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path api/auth/getUserDepartments: " + request.toString());
+
         int id = request.getId();
         List<Integer> depList =userRepositoryJPA.getUserDepartmentsId(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
@@ -177,6 +185,8 @@ public class UsersController {
     @PostMapping("/api/auth/updateUser")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateUser(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path api/auth/updateUser: " + request.toString());
+
         if(userRepositoryJPA.updateUser(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -189,6 +199,8 @@ public class UsersController {
     @PostMapping("/api/auth/getUsersTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getUsersTable: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -229,6 +241,8 @@ public class UsersController {
     @PostMapping("/api/auth/getUsersPagesList")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path api/auth/getUsersPagesList: " + searchRequest.toString());
+
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
@@ -297,6 +311,8 @@ public class UsersController {
     @PostMapping("/api/auth/deleteUsers")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteUsers(@RequestBody SignUpForm request) throws ParseException{
+        logger.info("Processing post request for path api/auth/deleteUsers: " + request.toString());
+
         String checked = request.getChecked() == null ? "": request.getChecked();
         ArrayList<Long> decArray = new ArrayList<Long>();
         checked=checked.replace("[","");
@@ -314,6 +330,8 @@ public class UsersController {
     @PostMapping("/api/auth/getUsersListByDepartmentId")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersListByDepartmentId(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path api/auth/getUsersListByDepartmentId: " + request.toString());
+
         int id = request.getId();
         List<UsersListJSON> usersList =userRepositoryJPA.getUsersListByDepartmentId(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(usersList, HttpStatus.OK);
@@ -323,6 +341,8 @@ public class UsersController {
     @GetMapping("/api/auth/getMyId")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getMyId() {
+        logger.info("Processing get request for path api/auth/getMyId");
+
         Long id=userRepositoryJPA.getMyId();
         ResponseEntity<Long> responseEntity = new ResponseEntity<>(id, HttpStatus.OK);
         return responseEntity;
@@ -331,6 +351,8 @@ public class UsersController {
     @GetMapping("/api/auth/getMyCompanyId")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getMyCompanyId() {
+        logger.info("Processing get request for path api/auth/getMyCompanyId");
+
         int id=userRepositoryJPA.getMyCompanyId();
         ResponseEntity<Integer> responseEntity = new ResponseEntity<>(id, HttpStatus.OK);
         return responseEntity;
