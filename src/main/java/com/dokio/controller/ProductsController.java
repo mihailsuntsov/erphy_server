@@ -17,6 +17,7 @@ package com.dokio.controller;
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
 import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
@@ -211,7 +212,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -224,7 +225,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -239,7 +240,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -260,6 +261,23 @@ public class ProductsController {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductPrices",
+            params = {"productId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductPrices( @RequestParam("productId") Long productId) {
+        logger.info("Processing get request for path /api/auth/getProductPrices with productId=" + productId.toString());
+        List<ProductPricesJSON> returnList;
+        try {
+            returnList = productsRepositoryJPA.getProductPrices(productId);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @RequestMapping(
             value = "/api/auth/getProductsList",
@@ -321,7 +339,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -338,7 +356,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -356,7 +374,7 @@ public class ProductsController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            ResponseEntity<Long> responseEntity = new ResponseEntity<>(0L, HttpStatus.BAD_REQUEST);
+            ResponseEntity<Long> responseEntity = new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -370,7 +388,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -383,7 +401,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -398,7 +416,7 @@ public class ProductsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when saving", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when saving", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -416,7 +434,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -434,7 +452,7 @@ public class ProductsController {
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -442,17 +460,6 @@ public class ProductsController {
 //*************************************************************************************************************************************************
 //**********************************************************  I M A G E S  ************************************************************************
 //*************************************************************************************************************************************************
-
-//    @GetMapping("/api/public/getProductImage/{filename:.+}")
-//    @ResponseBody
-//    public ResponseEntity<Resource> getProductImage(@PathVariable String filename) {
-//        Resource file = storageService.loadFile(storageService.GetFilePathByFileName(filename));
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-//                .body(file);
-//    }
-
-
 
     @PostMapping("/api/auth/getListOfProductImages")
     @SuppressWarnings("Duplicates")
@@ -680,19 +687,19 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/getShortInfoAboutProduct",
-            params = {"department_id", "product_id", "price_type_id"},
+            params = {"department_id", "product_id"/*, "price_type_id"*/},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getShortInfoAboutProduct(
             @RequestParam("department_id") Long department_id,
-            @RequestParam("product_id") Long product_id,
-            @RequestParam("price_type_id") Long price_type_id)
+            @RequestParam("product_id") Long product_id)
+//            @RequestParam("price_type_id") Long price_type_id)
     {
-        logger.info("Processing post request for path /api/auth/getShortInfoAboutProduct with parameters: " +
+        logger.info("Processing get request for path /api/auth/getShortInfoAboutProduct with parameters: " +
                 "department_id: "+ department_id.toString() +
-                ", product_id: " + product_id.toString() +
-                ", price_type_id: "+ price_type_id.toString());
+                ", product_id: " + product_id.toString());
+//                ", price_type_id: "+ price_type_id.toString());
         try {
-            ShortInfoAboutProductJSON response=productsRepositoryJPA.getShortInfoAboutProduct(department_id,product_id,price_type_id);
+            ShortInfoAboutProductJSON response=productsRepositoryJPA.getShortInfoAboutProduct(department_id,product_id/*,price_type_id*/);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -712,7 +719,7 @@ public class ProductsController {
             @RequestParam("product_id") Long product_id,
             @RequestParam("price_type_id") Long price_type_id)
     {
-        logger.info("Processing post request for path /api/auth/getProductPrice with parameters: " +
+        logger.info("Processing get request for path /api/auth/getProductPrice with parameters: " +
                 "company_id: "+company_id.toString()+
                 ", product_id: "+product_id.toString()+
                 ", price_type_id: "+price_type_id.toString());

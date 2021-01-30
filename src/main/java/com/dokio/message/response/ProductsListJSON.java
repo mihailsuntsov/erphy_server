@@ -22,11 +22,14 @@ public class ProductsListJSON {
     private Integer nds_id;
     private Long edizm_id;
     private String filename;
-    private BigDecimal total;
-    private BigDecimal reserved;
+    private BigDecimal total;//всего товаров
+    private BigDecimal reserved;//зарезервировано в других документах Заказ покупателя
     private BigDecimal total_in_all_my_depths;//всего товаров во всех моих отделениях (складах)
     private BigDecimal reserved_in_all_my_depths;//зарезервировано товаров во всех моих отделениях (складах)
-
+    private String ppr_name_api_atol; //Признак предмета расчета в системе Атол
+//    private String nds_name_api_atol; //НДС в системе Атол
+    private Boolean is_material; //определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
+    private BigDecimal reserved_current;// зарезервировано единиц товара в отделении (складе) в ЭТОМ (текущем) Заказе покупателя:
 
     public Long getId() {
         return id;
@@ -60,6 +63,14 @@ public class ProductsListJSON {
         this.nds_id = nds_id;
     }
 
+    public BigDecimal getReserved_current() {
+        return reserved_current;
+    }
+
+    public void setReserved_current(BigDecimal reserved_current) {
+        this.reserved_current = reserved_current;
+    }
+
     public Long getEdizm_id() {
         return edizm_id;
     }
@@ -91,6 +102,29 @@ public class ProductsListJSON {
     public void setTotal_in_all_my_depths(BigDecimal total_in_all_my_depths) {
         this.total_in_all_my_depths = total_in_all_my_depths;
     }
+
+    public String getPpr_name_api_atol() {
+        return ppr_name_api_atol;
+    }
+
+    public void setPpr_name_api_atol(String ppr_name_api_atol) {
+        this.ppr_name_api_atol = ppr_name_api_atol;
+    }
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
+    }
+//    public String getNds_name_api_atol() {
+//        return nds_name_api_atol;
+//    }
+//
+//    public void setNds_name_api_atol(String nds_name_api_atol) {
+//        this.nds_name_api_atol = nds_name_api_atol;
+//    }
 
     public BigDecimal getReserved_in_all_my_depths() {
         return reserved_in_all_my_depths;

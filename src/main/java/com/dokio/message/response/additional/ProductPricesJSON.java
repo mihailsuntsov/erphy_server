@@ -12,51 +12,55 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.model.Sprav;
+package com.dokio.message.response.additional;
 
-import com.dokio.model.TradingEquipment;
+import java.math.BigDecimal;
 
-import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+public class ProductPricesJSON {
 
-@Entity
-@Table(name="sprav_sys_trading_equipment")
-public class SpravSysTradingEquipment {
+    private Long price_type_id;
+    private String price_name;
+    private String price_description;
+    private BigDecimal price_value;
+    private int row_id;
 
-    @Id
-    @Column(name="id")
-    @SequenceGenerator(name="sprav_sys_trading_equipment_id_seq", sequenceName="sprav_sys_trading_equipment_id_seq", allocationSize=1)
-    @GeneratedValue(generator="sprav_sys_trading_equipment_id_seq")
-    private Long id;
-
-    @Column(name = "name")
-    private String name;
-
-    @OneToMany(mappedBy = "spravSysTradingEquipment", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<TradingEquipment> tradingEquipment = new HashSet<TradingEquipment>();
-
-    public Long getId() {
-        return id;
+    public int getRow_id() {
+        return row_id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setRow_id(int row_id) {
+        this.row_id = row_id;
     }
 
-    public String getName() {
-        return name;
+    public Long getPrice_type_id() {
+        return price_type_id;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPrice_type_id(Long price_type_id) {
+        this.price_type_id = price_type_id;
     }
 
-    public Set<TradingEquipment> getTradingEquipment() {
-        return tradingEquipment;
+    public String getPrice_name() {
+        return price_name;
     }
 
-    public void setTradingEquipment(Set<TradingEquipment> tradingEquipment) {
-        this.tradingEquipment = tradingEquipment;
+    public void setPrice_name(String price_name) {
+        this.price_name = price_name;
+    }
+
+    public BigDecimal getPrice_value() {
+        return price_value;
+    }
+
+    public void setPrice_value(BigDecimal price_value) {
+        this.price_value = price_value;
+    }
+
+    public String getPrice_description() {
+        return price_description;
+    }
+
+    public void setPrice_description(String price_description) {
+        this.price_description = price_description;
     }
 }

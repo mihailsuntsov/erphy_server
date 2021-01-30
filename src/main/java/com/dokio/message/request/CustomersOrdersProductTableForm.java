@@ -29,8 +29,8 @@ import java.math.BigDecimal;
         private BigDecimal product_price;               // цена продажи
         private BigDecimal product_price_of_type_price; // цена по типу цены на момент составления документа
         private BigDecimal product_sumprice;            // сумма (цена*кол-во)
-        private Boolean reserve;                        // зарезервирован да-нет
         private BigDecimal shipped;                     // отгружено (высчитывается, не сохраняется)
+        private BigDecimal reserved_current;            // сколько зарезервировано в данном документе
 
         public BigDecimal getAvailable() {
             return available;
@@ -54,6 +54,14 @@ import java.math.BigDecimal;
 
         public void setDepartment_id(Long department_id) {
             this.department_id = department_id;
+        }
+
+        public BigDecimal getReserved_current() {
+            return reserved_current;
+        }
+
+        public void setReserved_current(BigDecimal reserved_current) {
+            this.reserved_current = reserved_current;
         }
 
         public Long getEdizm_id() {
@@ -118,14 +126,6 @@ import java.math.BigDecimal;
 
         public void setProduct_sumprice(BigDecimal product_sumprice) {
             this.product_sumprice = product_sumprice;
-        }
-
-        public Boolean getReserve() {
-            return reserve;
-        }
-
-        public void setReserve(Boolean reserve) {
-            this.reserve = reserve;
         }
 
         public BigDecimal getShipped() {

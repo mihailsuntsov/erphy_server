@@ -18,6 +18,7 @@ import com.dokio.message.request.SignUpForm;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.model.User;
@@ -26,7 +27,9 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.persistence.*;
+import com.dokio.repository.UserRepository;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -52,10 +55,16 @@ public class UserRepositoryJPA {
     private EntityManagerFactory emf;
 
     @Autowired
-    private UserDetailsServiceImpl userRepository;
+    private UserDetailsServiceImpl userDetailService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public boolean putUserToCompany(Long userId, Long companyId){
         EntityManager em = emf.createEntityManager();
@@ -73,17 +82,26 @@ public class UserRepositoryJPA {
         User usr = em.find(User.class, userId);
         return usr;
     }
+    // меняет пароль пользователя
+    public void changeUserPassword(final User user, final String password) {
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+    }
 
+    //сравнивает пароль oldPassword с паролем пользователя
+    public boolean checkIfValidOldPassword(final User user, final String oldPassword) {
+        return passwordEncoder.matches(oldPassword, user.getPassword());
+    }
     //@Transactional
     @SuppressWarnings("Duplicates")
     public boolean updateUser(SignUpForm request) {
         boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
         boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "27"); // Пользователи:"Редактирование всех"
-        boolean requestUserIdEqualMyUserId=(userRepository.getUserId()==Long.valueOf(request.getId()));
+        boolean requestUserIdEqualMyUserId=(userDetailService.getUserId()==Long.valueOf(request.getId()));
 
         if(((requestUserIdEqualMyUserId && userHasPermissions_OwnUpdate)//(если пользователь сохраняет свой аккаунт и у него есть на это права
-        ||(!requestUserIdEqualMyUserId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
-        && securityRepositoryJPA.isItMyMastersUser(Long.valueOf(request.getId()))) //и сохраняемый аккаунт под юрисдикцией главного аккаунта
+                ||(!requestUserIdEqualMyUserId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
+                && securityRepositoryJPA.isItMyMastersUser(Long.valueOf(request.getId()))) //и сохраняемый аккаунт под юрисдикцией главного аккаунта
         {
             EntityManager em = emf.createEntityManager();
             DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
@@ -117,13 +135,15 @@ public class UserRepositoryJPA {
             user.setDepartments(setDepartmentsOfUser);
             user.setUsergroup(setUserGroup);
 
-            User changer = userRepository.getUserByUsername(userRepository.getUserName());
+            User changer = userDetailService.getUserByUsername(userDetailService.getUserName());
             user.setChanger(changer);//кто изменил
 
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             user.setDate_time_changed(timestamp);//дату изменения
 
             user.setTime_zone_id(request.getTime_zone_id());
+
+            user.setVatin(request.getVatin());
 
             em.getTransaction().commit();
             em.close();
@@ -137,14 +157,14 @@ public class UserRepositoryJPA {
     //Все аккаунты, созданные дочерними аккаунтами, также являются дочерними к родителю создавшего их аккаунта
     @SuppressWarnings("Duplicates")
     public Long getUserMasterIdByUsername(String username) {
-        Long userId = userRepository.getUserIdByUsername(userRepository.getUserName());
+        Long userId = userDetailService.getUserIdByUsername(userDetailService.getUserName());
         String stringQuery;
         stringQuery="select u.master_id from users u where u.id = "+userId;
         Query query = entityManager.createNativeQuery(stringQuery);
         return  Long.valueOf((Integer) query.getSingleResult());
     }
     public Long getMyId() {
-        return userRepository.getUserIdByUsername(userRepository.getUserName());
+        return userDetailService.getUserIdByUsername(userDetailService.getUserName());
     }
 
     @SuppressWarnings("Duplicates")
@@ -239,7 +259,7 @@ public class UserRepositoryJPA {
         List<Long> depIds = new ArrayList<>();
         for(Object i: query.getResultList()){
             depIds.add(new Long(i.toString()));
-        }//иначе в этом листе будут интеджеры
+        }//иначе в этом листе будут интеджеры, хоть он и лонг
         return depIds;
     }
     @SuppressWarnings("Duplicates")
@@ -252,7 +272,7 @@ public class UserRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public Integer getMyCompanyId(){
-        Long userId=userRepository.getUserId();
+        Long userId=userDetailService.getUserId();
         if(userId!=null) {
             String stringQuery = "select u.company_id from users u where u.id= " + userId;
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -261,7 +281,17 @@ public class UserRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     public Long getMyCompanyId_(){
-        Long userId=userRepository.getUserId();
+        Long userId=userDetailService.getUserId();
+        if(userId!=null) {
+            String stringQuery = "select u.company_id from users u where u.id= " + userId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return new Long ((Integer) query.getSingleResult());
+        }else return null;
+    }
+    //возвращает id предприятия пользователя по его username
+    @SuppressWarnings("Duplicates")
+    public Long getUserCompanyId(String username){
+        Long userId=userDetailService.getUserIdByUsername(username);
         if(userId!=null) {
             String stringQuery = "select u.company_id from users u where u.id= " + userId;
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -270,7 +300,7 @@ public class UserRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     public List<Integer> getMyDepartmentsIdWithTheirParents(){
-        Long userId=userRepository.getUserId();
+        Long userId=userDetailService.getUserId();
         if(userId!=null) {
             String stringQuery = "select ud.department_id from user_department ud where ud.user_id="+ userId+
                     " UNION " +
@@ -282,7 +312,7 @@ public class UserRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     public List<Long> getMyDepartmentsIdWithTheirParents_Long(){
-        Long userId=userRepository.getUserId();
+        Long userId=userDetailService.getUserId();
         if(userId!=null) {
             String stringQuery = "select ud.department_id from user_department ud where ud.user_id="+ userId+
                     " UNION " +
@@ -298,7 +328,7 @@ public class UserRepositoryJPA {
     public UsersJSON getUserValuesById(int id) {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25,26,27")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
         {
-            Long myId = userRepository.getUserId();
+            Long myId = userDetailService.getUserId();
             String stringQuery = "select p.id as id, " +
                     "           p.name as name, " +
                     "           p.master_id as master_id, " +
@@ -319,6 +349,7 @@ public class UserRepositoryJPA {
                     "           p.sex as sex, " +
                     "           p.status_account as status_account, " +
                     "           p.time_zone_id  as time_zone_id, " +
+                    "           coalesce(p.vatin,'')  as vatin, " +
                     "           to_char(p.date_birthday,'DD.MM.YYYY') as date_birthday, " +
                     "           p.additional as additional " +
                     "           from users p" +
@@ -343,16 +374,55 @@ public class UserRepositoryJPA {
 
         } else return null;
     }
+    @SuppressWarnings("Duplicates")
+    public MyShortInfoJSON getMyShortInfo() {
+        Long myId = userDetailService.getUserId();
+        String stringQuery = "select " +
+                "           p.username as username, " +
+                "           coalesce(p.vatin,'') as vatin, " +
+                "           p.fio_family as fio_family, " +
+                "           p.fio_name as fio_name, " +
+                "           p.fio_otchestvo as fio_otchestvo, " +
+                "           p.name as name, " +
+                "           p.email as email, " +
+                "           coalesce(p.company_id,'0') as company_id, " +
+                "           p.status_account as status_account, " +
+                "           p.time_zone_id  as time_zone_id, " +
+                "           p.sex as sex, " +
+                "           to_char(p.date_birthday,'DD.MM.YYYY') as date_birthday " +
+                "           from users p" +
+                " where p.id= " + myId;
+        Query query = entityManager.createNativeQuery(stringQuery);
+
+        List<Object[]> queryList = query.getResultList();
+        MyShortInfoJSON doc = new MyShortInfoJSON();
+        for(Object[] obj:queryList){
+            doc.setId(myId);
+            doc.setUsername((String)                         obj[0]);
+            doc.setVatin((String)                            obj[1]);
+            doc.setFio_family((String)                       obj[2]);
+            doc.setFio_name((String)                         obj[3]);
+            doc.setFio_otchestvo((String)                    obj[4]);
+            doc.setName((String)                             obj[5]);
+            doc.setEmail((String)                            obj[6]);
+            doc.setCompany_id(Long.parseLong(                obj[7].toString()));
+            doc.setStatus_account((Integer)                  obj[8]);
+            doc.setTime_zone_id((Integer)                    obj[9]);
+            doc.setSex((String)                              obj[10]);
+            doc.setDate_birthday((String)                    obj[11]);
+        }
+        return doc;
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public int getUsersSize(String searchString, int companyId) {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "20,21"))// Пользователи: "Меню - таблица - все пользователи","Меню - таблица - только свой документ"
         {
             String stringQuery;
-            Long documentOwnerId = getUserMasterIdByUsername(userRepository.getUserName());
+            Long documentOwnerId = getUserMasterIdByUsername(userDetailService.getUserName());
             stringQuery="from User p where p.master="+documentOwnerId;
             if (!securityRepositoryJPA.userHasPermissions_OR(5L, "20")) {//если нет прав на "Меню - все пользователи"
-                stringQuery = stringQuery + " and p.id=" + userRepository.getUserId();
+                stringQuery = stringQuery + " and p.id=" + userDetailService.getUserId();
             }
             if(searchString!= null && !searchString.isEmpty()){
                 stringQuery = stringQuery+" and upper(p.name) like upper('%"+searchString+"%')";
@@ -372,7 +442,7 @@ public class UserRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "20,69,21"))// Пользователи: "Меню - таблица - пользователи всех предприятий","Меню - таблица - пользователи только своего предприятия","Меню - таблица - только свой документ"
         {
             String stringQuery;
-            Long documentOwnerId = getUserMasterIdByUsername(userRepository.getUserName());
+            Long documentOwnerId = getUserMasterIdByUsername(userDetailService.getUserName());
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
@@ -405,10 +475,10 @@ public class UserRepositoryJPA {
             if (!securityRepositoryJPA.userHasPermissions_OR(5L, "20")) {//если нет прав на "Меню - таблица - пользователи всех предприятий"
                 //остаются Своего предприятия и Только свои
                 if (!securityRepositoryJPA.userHasPermissions_OR(5L, "69")) {//если нет прав на "Меню - таблица - пользователи только своего предприятия"
-                //остаются Только свои
-                    stringQuery = stringQuery + " and p.id=" + userRepository.getUserId();
+                    //остаются Только свои
+                    stringQuery = stringQuery + " and p.id=" + userDetailService.getUserId();
                 }else //иначе остаются Своего предприятия и Только свои
-                    stringQuery = stringQuery + " and (p.id=" + userRepository.getUserId()+" or p.id in(select id from users where company_id="+ getMyCompanyId()+"))";
+                    stringQuery = stringQuery + " and (p.id=" + userDetailService.getUserId()+" or p.id in(select id from users where company_id="+ getMyCompanyId()+"))";
             }
 
             if (searchString != null && !searchString.isEmpty()) {
@@ -429,7 +499,7 @@ public class UserRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public boolean deleteUsersById(String delNumbers) {
         if(securityRepositoryJPA.userHasPermissions_OR(5L,"23")&& //Пользователи : "Удаление"
-           securityRepositoryJPA.isItAllMyMastersUsers(delNumbers))  //все ли пользователи принадлежат текущему хозяину
+                securityRepositoryJPA.isItAllMyMastersUsers(delNumbers))  //все ли пользователи принадлежат текущему хозяину
         {
             String stringQuery;
             stringQuery="Update users p" +

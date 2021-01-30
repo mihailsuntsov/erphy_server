@@ -12,29 +12,17 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.model.Sprav;
-
-import com.dokio.model.KassaOperations;
-
-import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
-
-@Entity
-@Table(name="sprav_sys_kassa_operations")
-public class SpravSysKassaOperations {
-
-    @Id
-    @Column(name="id")
-    @SequenceGenerator(name="sprav_sys_kassa_operations_id_seq", sequenceName="sprav_sys_kassa_operations_id_seq", allocationSize=1)
-    @GeneratedValue(generator="sprav_sys_kassa_operations_id_seq")
+package com.dokio.message.response;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.sql.Timestamp;
+public class FilesUniversalJSON {
     private Long id;
-
-    @Column(name = "name")
     private String name;
-
-    @OneToMany(mappedBy = "spravSysKassaOperation", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<KassaOperations> kassaOperations = new HashSet<KassaOperations>();
+    private String original_name;
+    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+    private Timestamp date_time_created;
 
     public Long getId() {
         return id;
@@ -52,11 +40,19 @@ public class SpravSysKassaOperations {
         this.name = name;
     }
 
-    public Set<KassaOperations> getKassaOperations() {
-        return kassaOperations;
+    public String getOriginal_name() {
+        return original_name;
     }
 
-    public void setKassaOperations(Set<KassaOperations> kassaOperations) {
-        this.kassaOperations = kassaOperations;
+    public void setOriginal_name(String original_name) {
+        this.original_name = original_name;
+    }
+
+    public Timestamp getDate_time_created() {
+        return date_time_created;
+    }
+
+    public void setDate_time_created(Timestamp date_time_created) {
+        this.date_time_created = date_time_created;
     }
 }

@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,6 +138,7 @@ public class PricesRepository {
                         "upper(p.name) like upper('%" + searchString + "%') or "+
                         "upper(p.article) like upper('%" + searchString + "%') or "+
                         "upper(p.description) like upper('%" + searchString + "%') or "+
+                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or "+
                         "upper(pg.name) like upper('%" + searchString + "%')"+")";
             }
@@ -188,59 +190,8 @@ public class PricesRepository {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")
-    private BigDecimal getProductPrices(Long productId, Long priceTypeId, String priceTypesIdsList, Long myMasterId){
-/*
-* Если запрос идет по конкретному типу цен (т.е. priceTypeId != 0), то запрос вернет только 1 строку с этим типом цены, и проблем нет, но!
-* Если запрашиваются "Все типы цен" (priceTypeId=0) то нужно вывести:
-* -если цена по всем типам цен одинаковая - эту цену
-* -если цена 0 или цены нет - 0
-* -если цена разная (>0,0,null) то -1, что будет отображено в таблице как "Разные"
-* данная задача и решается в этом методе
-*/
 
-        String stringQuery;
-        stringQuery=
-                " select " +
-                        " coalesce(price_value,0), price_type_id " +
-                        " from " +
-                        " product_prices " +
-                        " where " +
-                        " product_id = " + productId +
-                        (priceTypeId>0L?" and price_type_id = "+priceTypeId:" and price_type_id in ("+priceTypesIdsList+") ")+
-                        " and master_id = " + myMasterId +
-                        " and price_value != 0";// если цена 0 - считаем что цены нет. Это нужно
-                        // чтобы если, например, вернёт для всего 2х типов цен 0 и null, то это определится как "Разные" цены, а должно как 0.
 
-        Query query = entityManager.createNativeQuery(stringQuery);
-// запрашивается список объектов содержащих тип цены и ее значение
-        List<Object[]> queryList = query.getResultList();
-
-        if (queryList.size() > 0) // если для товара установлены 1 или несколько типов цены
-        {// если запрошены "Все типы цен", и количество установленных для товара цен равно общему количеств типов цен
-         // ИЛИ запрос по конкретному типу цен
-            if ((priceTypeId==0 && queryList.size() == priceTypesIdsList.split(",").length)||priceTypeId>0)
-            {
-                List<BigDecimal> returnList = new ArrayList<>();//коллеция, куда будут собираться значения всех типов цен товара для дальнейшего их анализа
-                for (Object[] obj : queryList) {
-                    returnList.add((BigDecimal) obj[0]);// собираем мин. остатки по отделениям
-//                    ProductPrice dmq = new ProductPrice();
-//                    dmq.setPriceValue((BigDecimal) obj[0]);
-//                    dmq.setPriceTypeId((Long.parseLong(obj[1].toString())));
-//                    productPrices.add(dmq); // копим инфу по ценам для текущего товара
-                }
-
-                BigDecimal[] array = new BigDecimal[returnList.size()];
-                returnList.toArray(array);
-
-                if (isElementsOfArrayAreEachEquals(array)) {// если во всех типах цен цены равны между собой
-                    return array[0];// возвращаем первую попавшуюся цену в качестве цены для всех типов цен
-                } else {
-                    return new BigDecimal(-1);//если не равны между собой - возвращаем -1, в таблице будет отображаться как "Разные"
-                }
-            } else return new BigDecimal(-1);//если не равны между собой - возвращаем -1, в таблице будет отображаться как "Разные"
-        } else return new BigDecimal("0");// если цены для товара не заданы - возвращается 0
-    }
 
     @SuppressWarnings("Duplicates")
     private List<Integer> getPagesList(int result,int offset, int size){

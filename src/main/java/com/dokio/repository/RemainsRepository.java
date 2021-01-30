@@ -187,6 +187,7 @@ public class RemainsRepository {
                         "upper(p.name) like upper('%" + searchString + "%') or " +
                         "upper(p.article) like upper('%" + searchString + "%') or " +
                         "upper(p.description) like upper('%" + searchString + "%') or " +
+                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
                         "upper(pg.name) like upper('%" + searchString + "%')" + ")";
             }

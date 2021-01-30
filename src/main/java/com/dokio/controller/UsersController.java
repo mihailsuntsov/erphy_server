@@ -20,6 +20,7 @@ import com.dokio.message.response.ResponseMessage;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -29,9 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.sql.Timestamp;
@@ -58,11 +57,9 @@ public class UsersController {
     @Autowired
     UserGroupRepositoryJPA userGroupRepositoryJPA;
     @Autowired
-    UserDetailsServiceImpl userRepository2;
-    @Autowired
     RoleRepository roleRepository;
     @Autowired
-    private UserDetailsServiceImpl userService;
+    private UserDetailsServiceImpl userDetailService;
     @Autowired
     PasswordEncoder encoder;
     @Autowired
@@ -113,13 +110,13 @@ public class UsersController {
                 e.printStackTrace();
             }
 
-            User creator = userService.getUserByUsername(userService.getUserName());
+            User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
             user.setCreator(creator);//создателя
 
-            User master = userRepository2.getUserByUsername(
+            User master = userDetailService.getUserByUsername(
                     userRepositoryJPA.getUsernameById(
                             userRepositoryJPA.getUserMasterIdByUsername(
-                                    userRepository2.getUserName())));
+                                    userDetailService.getUserName())));
             user.setMaster(master);//владельца
 
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -144,7 +141,7 @@ public class UsersController {
 
     }
 
-    //Отдает ЗНАЧЕНИЯ из таблицы users по id отделения
+    //Отдает ЗНАЧЕНИЯ из таблицы users по id
     @PostMapping("/api/auth/getUserValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserValuesById(@RequestBody SignUpForm request) {
@@ -170,6 +167,7 @@ public class UsersController {
         }
         catch(NullPointerException npe){return null;}
     }
+
     //Id отделений пользователя
     @PostMapping("/api/auth/getUserDepartments")
     @SuppressWarnings("Duplicates")
@@ -357,8 +355,79 @@ public class UsersController {
         ResponseEntity<Integer> responseEntity = new ResponseEntity<>(id, HttpStatus.OK);
         return responseEntity;
     }
+    // возвращает true если пользователь может работать с кассовым аппаратом в рамках текущей сессии другого пользователя:
+    // пара login-пароль есть в системе, И пользователь принадлежит к тому же предприятию что и пользователь сессии, И пользователь не заблокирован
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/isUserCanWorkWithKKM",
+            params = {"username", "password"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> isUserCanWorkWithKKM(
+            @RequestParam("username") String username,
+            @RequestParam("password") String password)
+    {
+        logger.info("Processing get request for path /api/auth/isUserCanWorkWithKKM with parameters: " +
+                "username: " + username +
+                ", password: ******");
+        boolean yesItIs;
+        try {
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            Long userCompanyId = userRepositoryJPA.getUserCompanyId(username);
+            yesItIs=userRepositoryJPA.checkIfValidOldPassword(userDetailService.getUserByUsername(username),password) && myCompanyId.equals(userCompanyId) && userDetailService.isUserNotBlocked_byUsername(username);
+            return new ResponseEntity<>(yesItIs, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    // возвращает true если пользователь может работать с кассовым аппаратом в рамках текущей сессии другого пользователя:
+    // пара login-пароль есть в системе, И пользователь принадлежит к тому же предприятию что и пользователь сессии, И пользователь не заблокирован
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getUserByLoginInfo",
+            params = {"username", "password"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getUserByLoginInfo(
+            @RequestParam("username") String username,
+            @RequestParam("password") String password)
+    {
+        logger.info("Processing get request for path /api/auth/getUserByLoginInfo with parameters: " +
+                "username: " + username +
+                ", password: ******");
+        try {
+            if(userRepositoryJPA.checkIfValidOldPassword(userDetailService.getUserByUsername(username),password) && userDetailService.isUserNotBlocked_byUsername(username)){
+                MyShortInfoJSON response=new MyShortInfoJSON();
+                User user = userDetailService.getUserByUsername(username);
+                response.setName(user.getName());
+                response.setVatin(user.getVatin());
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else return  new ResponseEntity<>(null, HttpStatus.OK);
 
-
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //загрузка краткой информации о пользователе
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getMyShortInfo",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getMyShortInfo()
+    {
+        logger.info("Processing get request for path /api/auth/getMyShortInfo without request parameters");
+        MyShortInfoJSON response;
+        try {
+            response=userRepositoryJPA.getMyShortInfo();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки информации о пользователе", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 
 

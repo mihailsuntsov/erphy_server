@@ -16,6 +16,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.message.response.additional.ProductsPriceAndRemainsJSON;
 import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
 import com.dokio.model.*;
@@ -53,7 +54,7 @@ public class ProductsRepositoryJPA {
     private UserDetailsServiceImpl userService;
 
     // Инициализация логера
-    private static final Logger log = Logger.getLogger(ProductsRepositoryJPA.class);
+    private static final Logger logger = Logger.getLogger(ProductsRepositoryJPA.class);
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -115,6 +116,7 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper('%" + searchString + "%') or " +
                         "upper(p.article) like upper('%" + searchString + "%') or " +
+                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
                         "upper(pg.name) like upper('%" + searchString + "%')" + ")";
             }
@@ -156,6 +158,7 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper('%" + searchString + "%') or " +
                         "upper(p.article) like upper('%" + searchString + "%') or " +
+                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
                         "upper(pg.name) like upper('%" + searchString + "%')" + ")";
             }
@@ -236,6 +239,10 @@ public class ProductsRepositoryJPA {
                 ProductsJSON response = (ProductsJSON) query.getSingleResult();
                 return response;
             } catch (NoResultException nre) {
+                logger.error("Exception in method getProductValues. SQL query:"+stringQuery, nre);
+                return null;
+            } catch (Exception e) {
+                logger.error("Exception in method getProductValues. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -244,10 +251,14 @@ public class ProductsRepositoryJPA {
     @Transactional
     // апдейчу в 3 захода (3 метода), т.к. если делать все в одном методе, получаю ошибку Executing an update/delete query
     // т.к. транзакция entityManager не коммитится пока нет выхода из метода
-    public boolean updateProducts(ProductsForm request) {
+    public boolean updateProducts(ProductsForm request){
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
         if (updateProductsWithoutOrders(request)) {                                      //метод 1
 
-            try {//сохранение порядка поставщиков товара
+            //сохранение порядка поставщиков товара
+            try
+            {
                 if (request.getCagentsIdsInOrderOfList().size() > 1) {
                     int c = 0;
                     for (Long field : request.getCagentsIdsInOrderOfList()) {
@@ -257,8 +268,16 @@ public class ProductsRepositoryJPA {
                         }
                     }
                 }
+            } catch (Exception e) {
+                logger.error("Exception in method updateProducts. Этап сохранение порядка поставщиков товара.", e);
+                e.printStackTrace();
+                return false;
+            }
 
-                //сохранение порядка картинок товара
+
+            //сохранение порядка картинок товара
+            try
+            {
                 if (request.getImagesIdsInOrderOfList().size() > 1) {
                     int i = 0;
                     for (Long field : request.getImagesIdsInOrderOfList()) {
@@ -269,16 +288,65 @@ public class ProductsRepositoryJPA {
                     }
                 }
             } catch (Exception e) {
+                logger.error("Exception in method updateProducts. Этап сохранения порядка картинок товара", e);
                 e.printStackTrace();
                 return false;
             }
+
+
+            // сохранение цен
+            try
+            {
+                if (request.getProductPricesTable().size() > 1) {
+                    for (ProductPricesJSON field : request.getProductPricesTable()) {
+                        if (!savePrice(field.getPrice_type_id(), request.getId(), myMasterId, request.getCompany_id(), field.getPrice_value())) {//         //метод 4
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Exception in method updateProducts. Этап сохранения цен", e);
+                e.printStackTrace();
+                return false;
+            }
+
+
 
             return true;
         } else return false;
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    private boolean savePrice(Long priceTypeId, Long productId, Long myMasterId, Long companyId, BigDecimal priceValue){
+        String stringQuery;
+        stringQuery=
+                "   insert into product_prices (" +
+                        "   product_id," +
+                        "   price_type_id," +
+                        "   price_value," +
+                        "   master_id, " +
+                        "   company_id " +
+                        "   ) values (" +
+                        "(select id from products where id="+productId +" and master_id="+myMasterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
+                        priceTypeId+", "+
+                        (priceValue==null?"0":priceValue.toString()) + "," +
+                        myMasterId + ", "+ companyId + ")" +
+                        "ON CONFLICT ON CONSTRAINT product_prices_uq " +// "upsert"
+                        " DO update set " +
+                        "price_value = " + (priceValue==null?"0":priceValue.toString());
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method savePrice. SQL query:" + stringQuery, e);
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+//    @Transactional
     public boolean updateProductsWithoutOrders(ProductsForm request) {
         EntityManager emgr = emf.createEntityManager();
         Products document = emgr.find(Products.class, request.getId());//сохраняемый документ
@@ -384,6 +452,7 @@ public class ProductsRepositoryJPA {
                 emgr.getTransaction().commit();
                 emgr.close();
             } catch (Exception e) {
+                logger.error("Exception in method updateProductsWithoutOrders.", e);
                 e.printStackTrace();
                 return false;
             }
@@ -393,9 +462,9 @@ public class ProductsRepositoryJPA {
 
     // сохранение порядка картинок товара (права не нужны, т.к. вызывается после проверки всех прав)
     @SuppressWarnings("Duplicates")
-    @Transactional
-    public boolean saveChangeProductImagesOrder(Long ProductImageId, Long productId, int order) {
-        String stringQuery;
+//    @Transactional
+    private boolean saveChangeProductImagesOrder(Long ProductImageId, Long productId, int order) {
+        String stringQuery="";
         try {
             stringQuery = " update product_files set " +
                     " output_order=" + order +
@@ -405,6 +474,7 @@ public class ProductsRepositoryJPA {
             query.executeUpdate();
             return true;
         } catch (Exception e) {
+            logger.error("Exception in method saveChangeProductImagesOrder. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -412,9 +482,9 @@ public class ProductsRepositoryJPA {
 
     // сохранение порядка картинок товара (права не нужны, т.к. вызывается после проверки всех прав)
     @SuppressWarnings("Duplicates")
-    @Transactional
-    public boolean saveChangeProductCagentsOrder(Long cagentId, Long productId, int order) {
-        String stringQuery;
+//    @Transactional
+    private boolean saveChangeProductCagentsOrder(Long cagentId, Long productId, int order) {
+        String stringQuery="";
         try {
             stringQuery = " update product_cagents set " +
                     " output_order=" + order +
@@ -424,6 +494,7 @@ public class ProductsRepositoryJPA {
             query.executeUpdate();
             return true;
         } catch (Exception e) {
+            logger.error("Exception in method saveChangeProductCagentsOrder. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -540,6 +611,7 @@ public class ProductsRepositoryJPA {
                     entityManager.flush();
                     return newDocument.getId();
                 } catch (Exception e) {
+                    logger.error("Exception in method insertProduct.", e);
                     e.printStackTrace();
                     return null;
                 }
@@ -643,7 +715,7 @@ public class ProductsRepositoryJPA {
     public boolean copyProducts(UniversalForm request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "163,164"))//  Группы товаров : "Создание"
         {
-            int numCopies = request.getId1() > 4L ? 1000 : (request.getId1().intValue());  // количество копий. Проверка на случай если пошлют более 5
+            int numCopies = request.getId1() > 4L ? 4 : (request.getId1().intValue());  // количество копий. Проверка на случай если пошлют более 5
             try {
                 for (int i = 0; i < numCopies; i++) { //цикл по заданному количеству копий.
                     if (!copyProduct(request, i + 1)) {
@@ -652,6 +724,7 @@ public class ProductsRepositoryJPA {
                 }
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method copyProducts.", e);
                 e.printStackTrace();
                 return false;
             }
@@ -694,6 +767,7 @@ public class ProductsRepositoryJPA {
                 createCustomField(newProductId, Long.parseLong(String.valueOf(val[1])), String.valueOf(val[2]));
             }
         } catch (Exception e) {
+            logger.error("Exception in method copyProduct.", e);
             e.printStackTrace();
             return false;
         }
@@ -778,6 +852,7 @@ public class ProductsRepositoryJPA {
             return newDocument.getId();//временно
 
         } catch (Exception e) {
+            logger.error("Exception in method copyProducts_createBaseDocument.", e);
             e.printStackTrace();
             return 0L;
         }
@@ -787,17 +862,15 @@ public class ProductsRepositoryJPA {
     public BigDecimal getAvailableExceptMyDock(Long product_id, Long department_id, Long document_id){
         // всего единиц товара в отделении (складе):
         String stringQuery = " select (select coalesce(quantity,0) from product_quantity where department_id = "+ department_id +" and product_id = "+product_id+") as total, " +
-                " coalesce((" +
-                "   select " +
-//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                " (select " +
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
                 "   from " +
                 "   customers_orders_product " +
                 "   where " +
-                "   reserve=true" +
-                "   and product_id="+ product_id +
-                "   and department_id=" + department_id +
-                "   and customers_orders_id!="+document_id+"),0) as reserved ";
+                "   product_id="+product_id+
+                "   and department_id =" + department_id +
+                "   and customers_orders_id!="+document_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
 
@@ -805,11 +878,12 @@ public class ProductsRepositoryJPA {
             ProductsPriceAndRemainsJSON res = new ProductsPriceAndRemainsJSON();
 
             for (Object[] obj : queryList) {
-                res.setTotal((BigDecimal)                             obj[0]);
-                res.setReserved((BigDecimal)                          obj[1]);
+                res.setTotal(                                         obj[0]==null?BigDecimal.ZERO:(BigDecimal)obj[0]);
+                res.setReserved(                                      obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
             }
             return res.getTotal().subtract(res.getReserved());
         } catch (Exception e) {
+            logger.error("Exception in method getAvailableExceptMyDock. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -833,42 +907,47 @@ public class ProductsRepositoryJPA {
                 // всего единиц товара в отделении (складе):
                 " (select coalesce(quantity,0) from product_quantity where department_id = "+ departmentId +" and product_id = p.id) as total, " +
 
-                // зарезервировано единиц товара в отделении (складе):
-                " coalesce((" +
-                "   select " +
-//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                // зарезервировано единиц товара в отделении (складе) в других Заказах покупателя:
+                "(select " +
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
                 "   from " +
                 "   customers_orders_product " +
                 "   where " +
-                "   reserve=true" +
-                "   and product_id=p.id"+
+                "   product_id=p.id"+
                 "   and department_id=" + departmentId +
-                "   and customers_orders_id!="+document_id+"),0) as reserved, "+
+                "   and customers_orders_id!="+document_id+") as reserved, "+//зарезервировано в этом отделении в других Заказах покупателя
 
                 //всего единиц товара во всех моих отделениях (складах)
                 " (select sum(coalesce(quantity,0)) from product_quantity where department_id in ("+ myDepthsIds +") and product_id = p.id) as total_in_all_my_depths, " +
 
                 //всего зарезервировано единиц товара во всех моих отделениях (складах)
-                " coalesce((" +
-                "   select " +
-//                "   sum(coalesce(product_count)-coalesce(shipped_count)) " + !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(product_count)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "(select " +
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
                 "   from " +
                 "   customers_orders_product " +
                 "   where " +
-                "   reserve=true" +
-                "   and product_id=p.id"+
+                "   product_id=p.id"+
                 "   and department_id in (" + myDepthsIds + ") " +
-                "   and customers_orders_id!="+document_id+"),0) as reserved_in_all_my_depths "+
+                "   and customers_orders_id!="+document_id+") as reserved_in_all_my_depths, " +
+
+                " (select name_api_atol from sprav_sys_ppr where id=p.ppr_id) as ppr_name_api_atol, " +
+                " (select is_material from sprav_sys_ppr where id=p.ppr_id) as is_material," +
+
+                // зарезервировано единиц товара в отделении (складе) в ЭТОМ Заказе покупателя:
+                "(select " +
+                "   coalesce(reserved_current,0)" +
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   product_id=p.id"+
+                "   and department_id=" + departmentId +
+                "   and customers_orders_id="+document_id+") as reserved_current "+
 
                 " from products p " +
-                " left outer join" +
-                "   product_barcodes pb " +
-                "   on pb.product_id=p.id" +
-                " left outer join" +
-                "   files f " +
-                "   on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
+                " left outer join product_barcodes pb on pb.product_id=p.id" +
+                " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
                 " and coalesce(p.is_archive,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -883,23 +962,33 @@ public class ProductsRepositoryJPA {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
         stringQuery = stringQuery + " group by p.id,f.name  order by p.name asc";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Object[]> queryList = query.getResultList();
-        List<ProductsListJSON> returnList = new ArrayList<>();
-        for (Object[] obj : queryList) {
-            ProductsListJSON product = new ProductsListJSON();
-            product.setId(Long.parseLong(obj[0].toString()));
-            product.setName((String) obj[1]);
-            product.setNds_id((Integer) obj[2]);
-            product.setEdizm_id(Long.parseLong(obj[3].toString()));
-            product.setFilename((String) obj[4]);
-            product.setTotal((BigDecimal) obj[5]);
-            product.setReserved((BigDecimal) obj[6]);
-            product.setTotal_in_all_my_depths((BigDecimal) obj[7]);
-            product.setReserved_in_all_my_depths((BigDecimal) obj[8]);
-            returnList.add(product);
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<ProductsListJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                ProductsListJSON product = new ProductsListJSON();
+                product.setId(Long.parseLong(                               obj[0].toString()));
+                product.setName((String)                                    obj[1]);
+                product.setNds_id((Integer)                                 obj[2]);
+                product.setEdizm_id(Long.parseLong(                         obj[3].toString()));
+                product.setFilename((String)                                obj[4]);
+                product.setTotal(                                           obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
+                product.setReserved(                                        obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
+                product.setTotal_in_all_my_depths(                          obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
+                product.setReserved_in_all_my_depths(                       obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
+                product.setPpr_name_api_atol((String)                       obj[9]);
+                product.setIs_material((Boolean)                            obj[10]);
+                product.setReserved_current(                                obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+                returnList.add(product);
+            }
+            return returnList;
+        } catch (Exception e) {
+            logger.error("Exception in method getProductsList. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
         }
-        return returnList;
+
     }
 
     @SuppressWarnings("Duplicates")
@@ -921,15 +1010,75 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             return (BigDecimal) query.getSingleResult();
         } catch (Exception e) {
+            logger.error("Exception in method getProductPrice. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
 
 
+    // возвращает все типы цен (названия, id) с их значениеми для товара с id = productId
+    @SuppressWarnings("Duplicates")
+    public List<ProductPricesJSON> getProductPrices(Long productId){
+
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myCompanyId= userRepositoryJPA.getMyCompanyId_();
+        String stringQuery;
+        stringQuery=
+                        "select "+
+                        " p.id                                  as price_type_id, " +
+                        " p.name                                as price_name, " +
+                        " p.description                         as price_description, " +
+
+                        " coalesce(" +
+                            "(select coalesce(price_value,0) " +
+                            "from product_prices " +
+                            "where " +
+                            "product_id="+productId+" and " +
+                            "price_type_id=p.id) " +
+                            ",0)                                as price_value " +
+
+                        " from " +
+                        " sprav_type_prices p " +
+                        " where " +
+                        " coalesce(p.is_archive,false) = false " +
+                        " and company_id = " + myCompanyId +
+                        " and p.master_id = " + myMasterId +
+                        " order by p.name asc ";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            List<ProductPricesJSON> returnList = new ArrayList<>();
+
+            for(Object[] obj:queryList){
+                ProductPricesJSON doc=new ProductPricesJSON();
+                doc.setPrice_type_id(Long.parseLong(                    obj[0].toString()));
+                doc.setPrice_name((String)                              obj[1]);
+                doc.setPrice_description((String)                       obj[2]);
+                doc.setPrice_value((BigDecimal)                         obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getProductPrices. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+
+
+
+
+
     @SuppressWarnings("Duplicates")
     //отдает информацию состоянии товара (кол-во, последняя поставка) в отделении, и средним ценам (закупочной и себестоимости) товара
-    public ShortInfoAboutProductJSON getShortInfoAboutProduct(Long department_id, Long product_id, Long price_type_id) {
+    public ShortInfoAboutProductJSON getShortInfoAboutProduct(Long department_id, Long product_id/*, Long price_type_id*/) {
 
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
@@ -939,11 +1088,9 @@ public class ProductsRepositoryJPA {
                 "           p.avg_purchase_price as avg_purchase_price," +
                 "           p.last_purchase_price as last_purchase_price," +
                 "           p.avg_netcost_price as avg_netcost_price," +
-                "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY') as date_time_created, " +
-
-                "           '-' as department_type_price, " +
-
-                "           coalesce((select price_value from product_prices where product_id = "+product_id+" and price_type_id = "+price_type_id+"),0) as department_sell_price " +
+                "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY') as date_time_created " +
+                /*"           '-' as department_type_price, " +
+                "           coalesce((select price_value from product_prices where product_id = "+product_id+" and price_type_id = "+price_type_id+"),0) as department_sell_price " +*/
 
                 "           from" +
                 "           products_history p " +
@@ -969,11 +1116,12 @@ public class ProductsRepositoryJPA {
                 returnObj.setLast_purchase_price((BigDecimal) obj[3]);
                 returnObj.setAvg_netcost_price((BigDecimal) obj[4]);
                 returnObj.setDate_time_created((String) obj[5]);
-                returnObj.setDepartment_type_price((String) obj[6]);
-                returnObj.setDepartment_sell_price((BigDecimal) obj[7]);
+                /*returnObj.setDepartment_type_price((String) obj[6]);
+                returnObj.setDepartment_sell_price((BigDecimal) obj[7]);*/
             }
             return returnObj;
         } catch (Exception e) {
+            logger.error("Exception in method getShortInfoAboutProduct. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -1098,6 +1246,7 @@ public class ProductsRepositoryJPA {
                         return Long.valueOf(Integer.parseInt(query2.getSingleResult().toString()));
                     } else return (0L);
                 } catch (Exception e) {
+                    logger.error("Exception in method insertProductCategory. SQL query:"+stringQuery, e);
                     e.printStackTrace();
                     return 0L;
                 }
@@ -1130,6 +1279,7 @@ public class ProductsRepositoryJPA {
                 int i = query.executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method updateProductCategory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1157,6 +1307,7 @@ public class ProductsRepositoryJPA {
                 int i = query.executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method deleteProductCategory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1170,7 +1321,7 @@ public class ProductsRepositoryJPA {
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             User changer = userRepository.getUserByUsername(userRepository.getUserName());
-            String stringQuery;
+            String stringQuery="";
             try {
                 for (ProductCategoriesForm field : request) {
                     stringQuery = "update product_categories set " +
@@ -1187,6 +1338,7 @@ public class ProductsRepositoryJPA {
                 }
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method saveChangeCategoriesOrder. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1303,7 +1455,7 @@ public class ProductsRepositoryJPA {
                     return true;
                 } catch (Exception e) {
                     e.printStackTrace();
-                    //log.error("ERROR: ", e);
+                    logger.error("Exception in method updateProductCustomFields. ", e);
                     return false;
                 }
             } else {
@@ -1341,6 +1493,7 @@ public class ProductsRepositoryJPA {
             int i = query.executeUpdate();
             return true;
         } catch (Exception e) {
+            logger.error("Exception in method updateCustomField. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -1358,6 +1511,7 @@ public class ProductsRepositoryJPA {
                 return false;
             }
         } catch (Exception e) {
+            logger.error("Exception in method createCustomField. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -1412,7 +1566,7 @@ public class ProductsRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public boolean addCagentsToProduct(UniversalForm request) {
-        String stringQuery;
+        String stringQuery="";
         Set<Long> Ids = request.getSetOfLongs1();
         Long prouctId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id товара принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
@@ -1430,8 +1584,9 @@ public class ProductsRepositoryJPA {
                     }
                 }
                 return true;
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception e) {
+                logger.error("Exception in method addCagentsToProduct. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 return false;
             }
         } else return false;
@@ -1449,8 +1604,9 @@ public class ProductsRepositoryJPA {
                     .executeUpdate();
             entityManager.close();
             return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error("Exception in method manyToMany_productId_CagentId.", e);
+            e.printStackTrace();
             return false;
         }
     }
@@ -1472,8 +1628,9 @@ public class ProductsRepositoryJPA {
                     .executeUpdate();
             entityManager.close();
             return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error("Exception in method addCagentToProduct.", e);
+            e.printStackTrace();
             return false;
         }
     }
@@ -1522,9 +1679,10 @@ public class ProductsRepositoryJPA {
         if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", request.getId2().toString())) ||
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getId2().toString()))) {
+            String stringQuery="";
             try {
                 Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                String stringQuery;
+
                 stringQuery = "Update product_cagents p" +
                         " set  cagent_article= '" + (request.getString1() != null ? request.getString1() : "") + "'" +
                         "    , additional= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
@@ -1534,6 +1692,7 @@ public class ProductsRepositoryJPA {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method updateProductCagentProperties. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1557,6 +1716,7 @@ public class ProductsRepositoryJPA {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method deleteProductCagent. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1586,10 +1746,11 @@ public class ProductsRepositoryJPA {
         Long prouctId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id товара принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", prouctId.toString())) ||
-                //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", prouctId.toString()))) {
+            //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", prouctId.toString()))) {
+            String stringQuery="";
             try {
-                String stringQuery;
+
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
@@ -1601,8 +1762,9 @@ public class ProductsRepositoryJPA {
                     }
                 }
                 return true;
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception e) {
+                logger.error("Exception in method addImagesToProduct. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 return false;
             }
         } else return false;
@@ -1620,8 +1782,9 @@ public class ProductsRepositoryJPA {
                     .executeUpdate();
             entityManager.close();
             return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error("Exception in method manyToMany_productId_FileId.", e);
+            e.printStackTrace();
             return false;
         }
     }
@@ -1683,6 +1846,7 @@ public class ProductsRepositoryJPA {
                 int i = query.executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method deleteProductImage. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1713,8 +1877,9 @@ public class ProductsRepositoryJPA {
                         .executeUpdate();
                 entityManager.close();
                 return true;
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            } catch (Exception e) {
+                logger.error("Exception in method insertProductBarcode.", e);
+                e.printStackTrace();
                 return false;
             }
         } else return false;
@@ -1763,7 +1928,7 @@ public class ProductsRepositoryJPA {
         if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", getProductIdByBarcodeId(request.getId1()))) ||
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", getProductIdByBarcodeId(request.getId1())))) {
-            try {
+
                 Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
                 String stringQuery;
                 stringQuery = "Update product_barcodes p" +
@@ -1771,9 +1936,10 @@ public class ProductsRepositoryJPA {
                         "    , description= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
                         " where p.id=" + request.getId1() +
                         " and (select master_id from products where id=p.product_id)=" + myMasterId; //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
+            try {     entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method updateProductBarcode. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1798,6 +1964,7 @@ public class ProductsRepositoryJPA {
                 int i = query.executeUpdate();
                 return true;
             } catch (Exception e) {
+                logger.error("Exception in method deleteProductBarcode. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1830,6 +1997,7 @@ public class ProductsRepositoryJPA {
                     return Integer.parseInt(query2.getSingleResult().toString());
                 } else return (0);
             } catch (Exception e) {
+                logger.error("Exception in method generateWeightProductCode. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return 0;
             }
@@ -1845,6 +2013,7 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.parseLong(query.getSingleResult().toString(), 10);
         } catch (Exception e) {
+            logger.error("Exception in method generateFreeProductCode. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return 0L;
         }
@@ -1869,6 +2038,7 @@ public class ProductsRepositoryJPA {
                 return false;// код не уникальный
             else return true; // код уникальный
         } catch (Exception e) {
+            logger.error("Exception in method isProductCodeFreeUnical. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return true;
         }
@@ -1886,6 +2056,7 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             return query.getSingleResult();
         } catch (Exception e) {
+            logger.error("Exception in method getProductBarcodesPrefixes. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -1899,6 +2070,7 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             return query.getSingleResult().toString();
         } catch (Exception e) {
+            logger.error("Exception in method getProductIdByBarcodeId. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -1908,19 +2080,21 @@ public class ProductsRepositoryJPA {
     @SuppressWarnings("Duplicates")
         //используется при копировании (создании дубликата) документа
     boolean addBarcodeToProduct(ProductBarcodesJSON request, Long newProductId) {
+        String stringQuery =
+                "insert into product_barcodes " +
+                "(product_id, barcode_id, value, description) " +
+                "values " +
+                "(" + newProductId + ", " +
+                request.getBarcode_id() + ", '" +
+                request.getValue() + "', '" +
+                request.getDescription() + "')";
         try {
-            entityManager.createNativeQuery("" +
-                    "insert into product_barcodes " +
-                    "(product_id, barcode_id, value, description) " +
-                    "values " +
-                    "(" + newProductId + ", " +
-                    request.getBarcode_id() + ", '" +
-                    request.getValue() + "', '" +
-                    request.getDescription() + "')").executeUpdate();
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
             entityManager.close();
             return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            logger.error("Exception in method addBarcodeToProduct. SQL query:"+stringQuery, e);
+            e.printStackTrace();
             return false;
         }
     }
@@ -1954,6 +2128,7 @@ public class ProductsRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Exception in method syncQuantityProducts. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -1961,7 +2136,7 @@ public class ProductsRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     private Boolean setProductQuantity(Long masterId, Long product_id, Long department_id, BigDecimal quantity) {
-        String stringQuery;
+        String stringQuery="";
         try {
             stringQuery =
                     " insert into product_quantity (" +
@@ -1985,6 +2160,7 @@ public class ProductsRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Exception in method setProductQuantity. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -2018,6 +2194,7 @@ public class ProductsRepositoryJPA {
             return returnObj.getQuantity();
         }
         catch (Exception e) {
+            logger.error("Exception in method getLastProductHistoryQuantity. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

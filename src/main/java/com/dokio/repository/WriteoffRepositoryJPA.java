@@ -647,51 +647,51 @@ public class WriteoffRepositoryJPA {
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
-@SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
-{
-    String stringQuery;
-    stringQuery =
-            " select                                        "+
-                    " last_purchase_price   as last_purchase_price, "+
-                    " avg_purchase_price    as avg_purchase_price,  "+
-                    " avg_netcost_price     as avg_netcost_price,   "+
-                    " last_operation_price  as last_operation_price,"+
-                    " quantity              as quantity,            "+
-                    " change                as change               "+
-                    "          from products_history                "+
-                    "          where                                "+
-                    "          product_id="+product_id+" and        "+
-                    "          department_id="+department_id         +
-                    "          order by id desc limit 1             ";
-    try
+    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
+    public ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
     {
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Object[]> queryList = query.getResultList();
+        String stringQuery;
+        stringQuery =
+                " select                                        "+
+                        " last_purchase_price   as last_purchase_price, "+
+                        " avg_purchase_price    as avg_purchase_price,  "+
+                        " avg_netcost_price     as avg_netcost_price,   "+
+                        " last_operation_price  as last_operation_price,"+
+                        " quantity              as quantity,            "+
+                        " change                as change               "+
+                        "          from products_history                "+
+                        "          where                                "+
+                        "          product_id="+product_id+" and        "+
+                        "          department_id="+department_id         +
+                        "          order by id desc limit 1             ";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
 
-        ProductHistoryJSON returnObj=new ProductHistoryJSON();
-        if(queryList.size()==0){//если записей истории по данному товару ещё нет
-            returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-            returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
-            returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-            returnObj.setLast_operation_price(      (new BigDecimal(0)));
-            returnObj.setQuantity(                  (new BigDecimal(0)));
-        }else {
-            for (Object[] obj : queryList) {
-                returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                returnObj.setQuantity((BigDecimal)              obj[4]);
+            ProductHistoryJSON returnObj=new ProductHistoryJSON();
+            if(queryList.size()==0){//если записей истории по данному товару ещё нет
+                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
+                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
+                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
+                returnObj.setLast_operation_price(      (new BigDecimal(0)));
+                returnObj.setQuantity(                  (new BigDecimal(0)));
+            }else {
+                for (Object[] obj : queryList) {
+                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
+                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
+                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
+                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
+                    returnObj.setQuantity((BigDecimal)              obj[4]);
+                }
             }
+            return returnObj;
         }
-        return returnObj;
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
-    catch (Exception e) {
-        e.printStackTrace();
-        return null;
-    }
-}
 
     @SuppressWarnings("Duplicates")  //генератор номера документа
     private Long generateDocNumberCode(Long company_id)

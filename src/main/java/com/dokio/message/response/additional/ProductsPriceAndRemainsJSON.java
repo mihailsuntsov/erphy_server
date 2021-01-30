@@ -20,6 +20,7 @@ public class ProductsPriceAndRemainsJSON {
     private BigDecimal total;
     private BigDecimal price;
     private BigDecimal reserved;
+    private BigDecimal netCost;
 
     public BigDecimal getTotal() {
         return total;
@@ -43,5 +44,13 @@ public class ProductsPriceAndRemainsJSON {
 
     public void setReserved(BigDecimal reserved) {
         this.reserved = reserved;
+    }
+
+    public BigDecimal getNetCost() {
+        return netCost;
+    }
+
+    public void setNetCost(BigDecimal netCost) {
+        this.netCost = netCost;
     }
 }

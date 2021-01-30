@@ -36,6 +36,15 @@ public class SignUpForm {
     private String checked;
     private String password;
     private Long time_zone_id;
+    private String vatin;
+
+    public String getVatin() {
+        return vatin;
+    }
+
+    public void setVatin(String vatin) {
+        this.vatin = vatin;
+    }
 
     public String getName() {
         return name;

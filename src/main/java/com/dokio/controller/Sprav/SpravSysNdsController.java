@@ -19,11 +19,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.util.ArrayList;
 import java.util.List;
+
 @Controller
 @Repository
 public class SpravSysNdsController {
@@ -31,18 +34,38 @@ public class SpravSysNdsController {
 
     @PersistenceContext
     private EntityManager entityManager;
-    @PostMapping("/api/auth/getSpravSysNds")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getSpravSysNds() {
-        logger.info("Processing post request for path /api/auth/getSpravSysNds");
 
-        List<SpravSysNdsJSON> resultList;
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSpravSysNds",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSpravSysNds()
+    {
+        logger.info("Processing get request for path /api/auth/getSpravSysNds");
+
         String stringQuery=
-                "select p.id as id, p.name as name, p.description as description" +
-                        " from sprav_sys_nds p where p.name !=' '";
-        Query query =  entityManager.createNativeQuery(stringQuery, SpravSysNdsJSON.class);
-        resultList=query.getResultList();
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(resultList, HttpStatus.OK);
-        return responseEntity;
+                "select p.id as id, " +
+                        "p.name as name, " +
+                        "p.description as description," +
+                        "p.name_api_atol as name_api_atol," +
+                        "p.is_active as is_active," +
+                        "p.calculated as calculated" +
+                        " from sprav_sys_nds p where calculated != true";
+
+        Query query =  entityManager.createNativeQuery(stringQuery);
+
+        List<Object[]> queryList = query.getResultList();
+        List<SpravSysNdsJSON> returnList = new ArrayList<>();
+        for(Object[] obj:queryList) {
+            SpravSysNdsJSON doc=new SpravSysNdsJSON();
+            doc.setId(Long.parseLong(       obj[0].toString()));
+            doc.setName((String)            obj[1]);
+            doc.setDescription((String)     obj[2]);
+            doc.setName_api_atol((String)   obj[3]);
+            doc.setIs_active((Boolean)      obj[4]);
+            doc.setCalculated((Boolean)     obj[5]);
+            returnList.add(doc);
+        }
+        return new ResponseEntity<List>(returnList, HttpStatus.OK);
     }
 }

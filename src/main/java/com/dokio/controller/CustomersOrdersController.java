@@ -15,8 +15,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Settings.SettingsCustomersOrdersForm;
 import com.dokio.message.response.CustomersOrdersJSON;
 //import com.dokio.message.response.FilesCustomersOrdersJSON;
+import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -103,11 +105,18 @@ public class CustomersOrdersController {
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getCustomersOrdersProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing post request for path /api/auth/getCustomersOrdersProductTable with CustomersOrders id=" + docId.toString());
+        logger.info("Processing get request for path /api/auth/getCustomersOrdersProductTable with CustomersOrders id=" + docId.toString());
         List<CustomersOrdersProductTableJSON> returnList;
-        returnList = customersOrdersRepositoryJPA.getCustomersOrdersProductTable(docId);
-        return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        try {
+            returnList = customersOrdersRepositoryJPA.getCustomersOrdersProductTable(docId);
+            return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     @PostMapping("/api/auth/getCustomersOrdersPagesList")
     @SuppressWarnings("Duplicates")
@@ -189,7 +198,7 @@ public class CustomersOrdersController {
         if(newDocument!=null && newDocument>0){
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -218,6 +227,8 @@ public class CustomersOrdersController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+
     @PostMapping("/api/auth/updateCustomersOrders")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
@@ -230,6 +241,36 @@ public class CustomersOrdersController {
         }
     }
 
+    @PostMapping("/api/auth/saveSettingsCustomersOrders")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> saveSettingsCustomersOrders(@RequestBody SettingsCustomersOrdersForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsCustomersOrders: " + request.toString());
+
+        if(customersOrdersRepositoryJPA.saveSettingsCustomersOrders(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSettingsCustomersOrders",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsCustomersOrders()
+    {
+        logger.info("Processing get request for path /api/auth/getSettingsCustomersOrders without request parameters");
+        SettingsCustomersOrdersJSON response;
+        try {
+            response=customersOrdersRepositoryJPA.getSettingsCustomersOrders();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping("/api/auth/deleteCustomersOrders")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCustomersOrders(@RequestBody SignUpForm request) {
@@ -239,7 +280,7 @@ public class CustomersOrdersController {
         if(customersOrdersRepositoryJPA.deleteCustomersOrders(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     //отдает таблицу Заказов покупателя с неотгруженными резервами по товару в требуемом отделении (или department_id=0 - во всех), за исключением документа document_id,  из которого выполняется запрос (document_id=0 - во всех документах)
@@ -254,6 +295,11 @@ public class CustomersOrdersController {
             @RequestParam("document_id") Long document_id,
             @RequestParam("department_id") Long department_id)
     {
+        logger.info("Processing get request for path /api/auth/getReservesTable with parameters: " +
+                "product_id: " + product_id.toString() +
+                ", company_id: " + company_id.toString() +
+                ", department_id: " + department_id.toString() +
+                ", document_id: "+ document_id.toString());
         List<CustomersOrdersReservesTable> returnList;
         try {
             returnList=customersOrdersRepositoryJPA.getReservesTable(company_id,department_id, product_id, document_id);
@@ -275,6 +321,10 @@ public class CustomersOrdersController {
             @RequestParam("company_id") Long company_id,
             @RequestParam("document_id") Long document_id)
     {
+        logger.info("Processing get request for path /api/auth/getProductCount with parameters: " +
+                "product_id: " + product_id.toString() +
+                ", company_id: " + company_id.toString() +
+                ", document_id: "+ document_id.toString());
         List<IdAndCount> returnList;
         try {
             returnList=customersOrdersRepositoryJPA.getProductCount(product_id, company_id, document_id);

@@ -13,7 +13,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 <http://www.gnu.org/licenses/>
  */
 package com.dokio.controller.Sprav;
-import com.dokio.message.response.Sprav.SpravSysPPRJSON;
+import com.dokio.message.response.Sprav.SpravSysPaymentMethodsJSON;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,41 +29,37 @@ import java.util.List;
 
 @Controller
 @Repository
-public class SpravSysPPRController {
-    Logger logger = Logger.getLogger("SpravSysPPRController");
+public class SpravSysPaymentMethodsController {
+    Logger logger = Logger.getLogger("SpravSysPaymentMethodsController");
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSpravSysPPR",
+            value = "/api/auth/getSpravSysPaymentMethods",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSpravSysPPR()
+    public ResponseEntity<?> getSpravSysPaymentMethods()
     {
-        logger.info("Processing get request for path /api/auth/getSpravSysPPR");
+        logger.info("Processing get request for path /api/auth/getSpravSysPaymentMethods");
 
         String stringQuery=
-                "select  p.id as id, " +
+                "select p.id as id, " +
                         "p.name as name, " +
-                        "p.abbreviation as abbreviation," +
-                        "p.description as description," +
                         "p.id_api_atol as id_api_atol," +
-                        "p.name_api_atol as name_api_atol " +
-                        " from sprav_sys_ppr p ";
+                        "p.name_api_atol as name_api_atol" +
+                        " from sprav_sys_payment_methods";
 
         Query query =  entityManager.createNativeQuery(stringQuery);
 
         List<Object[]> queryList = query.getResultList();
-        List<SpravSysPPRJSON> returnList = new ArrayList<>();
+        List<SpravSysPaymentMethodsJSON> returnList = new ArrayList<>();
         for(Object[] obj:queryList) {
-            SpravSysPPRJSON doc=new SpravSysPPRJSON();
+            SpravSysPaymentMethodsJSON doc=new SpravSysPaymentMethodsJSON();
             doc.setId(Long.parseLong(       obj[0].toString()));
             doc.setName((String)            obj[1]);
-            doc.setAbbreviation((String)    obj[2]);
-            doc.setDescription((String)     obj[3]);
-            doc.setId_api_atol((Integer)    obj[4]);
-            doc.setName_api_atol((String)   obj[5]);
+            doc.setId_api_atol((Integer)    obj[2]);
+            doc.setName_api_atol((String)   obj[3]);
             returnList.add(doc);
         }
         return new ResponseEntity<List>(returnList, HttpStatus.OK);

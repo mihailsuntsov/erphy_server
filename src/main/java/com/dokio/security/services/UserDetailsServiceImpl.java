@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +35,13 @@ import java.math.BigInteger;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
+
 	@PersistenceContext
 	private EntityManager entityManager;
+
 	@Autowired
 	UserRepository userRepository;
+
 
 	@Override
 	@Transactional
@@ -58,7 +62,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			return null;
 		}
 	}
-
+	public String getUserShortNameByUsername(String username) {
+		if(!username.equals("anonymousUser")) {
+			return userRepository.findByUsername(username).get().getName();
+		}else{
+			return null;
+		}
+	}
 	public Long getUserIdByUsername(String username) {
 		if(!username.equals("anonymousUser")) {
 			Long id = userRepository.findByUsername(username).get().getId();
@@ -77,6 +87,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 	public boolean isUserNotBlocked(LoginForm loginRequest){
 		String stringQuery;
 		stringQuery=" select count(*) from users where username='"+loginRequest.getUsername()+"' and status_account=2 ";//1-не верифицирован 2-активный 3-заблокирован 4-удалён
+		Query query = entityManager.createNativeQuery(stringQuery);
+		return (query.getSingleResult()).toString().equals("1");
+	}
+	public boolean isUserNotBlocked_byUsername(String username){
+		String stringQuery;
+		stringQuery=" select count(*) from users where username='"+username+"' and status_account=2 ";//1-не верифицирован 2-активный 3-заблокирован 4-удалён
 		Query query = entityManager.createNativeQuery(stringQuery);
 		return (query.getSingleResult()).toString().equals("1");
 	}

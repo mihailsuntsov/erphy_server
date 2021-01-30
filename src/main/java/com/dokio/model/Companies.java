@@ -40,7 +40,7 @@ public class Companies {
  /*   @Column(name = "name")
     private String compName;*/
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "master_id", nullable = false)
     private User master;
 /*

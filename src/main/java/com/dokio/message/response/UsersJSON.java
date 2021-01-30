@@ -58,6 +58,15 @@ public class UsersJSON {
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Timestamp date_time_changed;
     private Long time_zone_id;
+    private String vatin;
+
+    public String getVatin() {
+        return vatin;
+    }
+
+    public void setVatin(String vatin) {
+        this.vatin = vatin;
+    }
 
     public Long getId() {
         return id;

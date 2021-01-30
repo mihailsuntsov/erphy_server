@@ -974,15 +974,14 @@ public class CagentRepositoryJPA {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update cagents p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
-                    " where p.master_id=" +myMasterId+
-                    " and p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
             if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                 query.executeUpdate();
@@ -998,15 +997,14 @@ public class CagentRepositoryJPA {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update cagents p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
-                    " where p.master_id=" +myMasterId+
-                    " and p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
             if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                 query.executeUpdate();

@@ -13,18 +13,41 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 <http://www.gnu.org/licenses/>
  */
 package com.dokio.message.response.Sprav;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 
-@Entity
 public class SpravSysNdsJSON {
-    @Id
     private Long id;
     private String name;
     private String description;
+    private String name_api_atol;
+    private boolean is_active;
+    private boolean calculated;
 
     public Long getId() {
         return id;
+    }
+
+    public String getName_api_atol() {
+        return name_api_atol;
+    }
+
+    public void setName_api_atol(String name_api_atol) {
+        this.name_api_atol = name_api_atol;
+    }
+
+    public boolean isIs_active() {
+        return is_active;
+    }
+
+    public void setIs_active(boolean is_active) {
+        this.is_active = is_active;
+    }
+
+    public boolean isCalculated() {
+        return calculated;
+    }
+
+    public void setCalculated(boolean calculated) {
+        this.calculated = calculated;
     }
 
     public void setId(Long id) {

@@ -12,29 +12,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.model.Sprav;
+package com.dokio.message.response.Sprav;
 
-import com.dokio.model.KassaOperations;
+public class SpravSysTaxationTypesJSON {
 
-import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
-
-@Entity
-@Table(name="sprav_sys_cheque_types")
-public class SpravSysChequeTypes {
-
-    @Id
-    @Column(name="id")
-    @SequenceGenerator(name="sprav_sys_cheque_types_id_seq", sequenceName="sprav_sys_cheque_types_id_seq", allocationSize=1)
-    @GeneratedValue(generator="sprav_sys_cheque_types_id_seq")
     private Long id;
-
-    @Column(name = "name")
     private String name;
-
-    @OneToMany(mappedBy = "spravSysChequeType", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Set<KassaOperations> kassaOperations = new HashSet<KassaOperations>();
+    private String name_api_atol;
+    private Boolean is_active;
 
     public Long getId() {
         return id;
@@ -52,11 +37,19 @@ public class SpravSysChequeTypes {
         this.name = name;
     }
 
-    public Set<KassaOperations> getKassaOperations() {
-        return kassaOperations;
+    public String getName_api_atol() {
+        return name_api_atol;
     }
 
-    public void setKassaOperations(Set<KassaOperations> kassaOperations) {
-        this.kassaOperations = kassaOperations;
+    public void setName_api_atol(String name_api_atol) {
+        this.name_api_atol = name_api_atol;
+    }
+
+    public Boolean getIs_active() {
+        return is_active;
+    }
+
+    public void setIs_active(Boolean is_active) {
+        this.is_active = is_active;
     }
 }

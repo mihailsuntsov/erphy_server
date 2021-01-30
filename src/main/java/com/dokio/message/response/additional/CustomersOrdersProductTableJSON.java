@@ -33,12 +33,23 @@ public class CustomersOrdersProductTableJSON {
     private String nds;
     private String edizm;
     private String additional;
-    private Boolean reserve; // стоит ли галка Резерв
-    private BigDecimal reserved; // сколько зарезервировано
+    private BigDecimal reserved; // сколько зарезервировано в других
+    private BigDecimal reserved_current; // сколько зарезервировано в данном документе
     private BigDecimal total; // всего на складе
     private BigDecimal shipped; //отгружено
-
+    private String ppr_name_api_atol; //Признак предмета расчета в системе Атол
+//    private String nds_name_api_atol; //НДС в системе Атол
+    private Boolean is_material; //определяет материальный ли товар/услуга. Нужен для отображения полей, относящихся к товару и их скрытия в случае если это услуга (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
     // доступно получаем из разницы total и reserved
+
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
+    }
 
     public Long getId() {
         return id;
@@ -90,6 +101,22 @@ public class CustomersOrdersProductTableJSON {
 
     public void setShipped(BigDecimal shipped) {
         this.shipped = shipped;
+    }
+
+    public String getPpr_name_api_atol() {
+        return ppr_name_api_atol;
+    }
+
+    public void setPpr_name_api_atol(String ppr_name_api_atol) {
+        this.ppr_name_api_atol = ppr_name_api_atol;
+    }
+
+    public BigDecimal getReserved_current() {
+        return reserved_current;
+    }
+
+    public void setReserved_current(BigDecimal reserved_current) {
+        this.reserved_current = reserved_current;
     }
 
     public void setProduct_id(Long product_id) {
@@ -190,14 +217,6 @@ public class CustomersOrdersProductTableJSON {
 
     public void setAdditional(String additional) {
         this.additional = additional;
-    }
-
-    public Boolean getReserve() {
-        return reserve;
-    }
-
-    public void setReserve(Boolean reserve) {
-        this.reserve = reserve;
     }
 }
 

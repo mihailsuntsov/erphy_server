@@ -16,13 +16,30 @@ package com.dokio.message.response.Sprav;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-@Entity
 public class SpravSysPPRJSON {
-    @Id
+
     private Long id;
     private String name;
     private String abbreviation;
     private String description;
+    private int id_api_atol;
+    private String name_api_atol;
+
+    public int getId_api_atol() {
+        return id_api_atol;
+    }
+
+    public void setId_api_atol(int id_api_atol) {
+        this.id_api_atol = id_api_atol;
+    }
+
+    public String getName_api_atol() {
+        return name_api_atol;
+    }
+
+    public void setName_api_atol(String name_api_atol) {
+        this.name_api_atol = name_api_atol;
+    }
 
     public Long getId() {
         return id;

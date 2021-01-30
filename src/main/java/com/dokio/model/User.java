@@ -81,15 +81,15 @@ public class User{
             inverseJoinColumns={@JoinColumn(name="department_id")})
     private Set<Departments> departments = new HashSet<Departments>();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = true)
     private Companies company;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = true)
     private User creator;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "changer_id", nullable = true)
     private User changer;
 
@@ -133,6 +133,8 @@ public class User{
     @Column(name = "time_zone_id")
     private Long time_zone_id;
 
+    @Column(name = "vatin")
+    private String vatin;
 
     public User() {}
 
@@ -317,5 +319,13 @@ public class User{
 
     public void setStatus_account(Integer status_account) {
         this.status_account = status_account;
+    }
+
+    public String getVatin() {
+        return vatin;
+    }
+
+    public void setVatin(String vatin) {
+        this.vatin = vatin;
     }
 }

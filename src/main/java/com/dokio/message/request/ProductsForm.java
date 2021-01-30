@@ -14,6 +14,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.request;
 
+import com.dokio.message.response.additional.ProductPricesJSON;
+
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +29,7 @@ public class ProductsForm {
     private Set<Long> selectedProductCategories;
     private List<Long> imagesIdsInOrderOfList;// List id файлов-картинок для упорядочивания по месту в списке картинок товара (вобщем, для сохранения порядка картинок)
     private List<Long> cagentsIdsInOrderOfList;//List id контрагентов для упорядочивания по месту в списке поставщиков товара
-
+    private Set<ProductPricesJSON> productPricesTable;
     private Integer product_code;
     private Long ppr_id;
     private boolean by_weight;
@@ -43,6 +45,7 @@ public class ProductsForm {
     private Long product_code_free;
     private boolean not_buy;
     private boolean not_sell;
+
 
     public Long getId() {
         return id;
@@ -130,6 +133,14 @@ public class ProductsForm {
 
     public void setImagesIdsInOrderOfList(List<Long> imagesIdsInOrderOfList) {
         this.imagesIdsInOrderOfList = imagesIdsInOrderOfList;
+    }
+
+    public Set<ProductPricesJSON> getProductPricesTable() {
+        return productPricesTable;
+    }
+
+    public void setProductPricesTable(Set<ProductPricesJSON> productPricesTable) {
+        this.productPricesTable = productPricesTable;
     }
 
     public List<Long> getCagentsIdsInOrderOfList() {

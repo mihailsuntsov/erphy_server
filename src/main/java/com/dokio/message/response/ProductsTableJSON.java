@@ -35,7 +35,6 @@ public class ProductsTableJSON {
     private String      date_time_changed;
     private String      productgroup_id;
     private String      productgroup;
-    ////////////////////////////////////////////////////////////////
     private String      product_code;
     private String      ppr_id;
     private Boolean     by_weight;
