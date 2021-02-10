@@ -65,12 +65,13 @@ public class CustomersOrdersRepositoryJPA {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<CustomersOrdersJSON> getCustomersOrdersTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId) {
+    public List<CustomersOrdersJSON> getCustomersOrdersTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             boolean needToSetParameter_MyDepthsIds = false;
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             stringQuery = "select  p.id as id, " +
@@ -82,7 +83,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name || ' ' || dp.address as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as shipment_date, " +
                     "           cmp.name as company, " +
@@ -96,7 +97,9 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
+                    "           stat.description as status_description, " +
+                    "           coalesce((select sum(coalesce(product_sumprice,0)) from customers_orders_product where customers_orders_id=p.id),0) as sum_price, " +
+                    "           p.name as name " +
 //                    "           cnt.name_ru, ' ', reg.name_ru, ' ', cty.name_ru, ' ',
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -106,7 +109,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_deleted,false) !=true ";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -168,6 +171,8 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setStatus_name((String)                   obj[21]);
                 doc.setStatus_color((String)                  obj[22]);
                 doc.setStatus_description((String)            obj[23]);
+                doc.setSum_price((BigDecimal)                 obj[24]);
+                doc.setName((String)                          obj[25]);
 
                 returnList.add(doc);
             }
@@ -175,11 +180,12 @@ public class CustomersOrdersRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    public int getCustomersOrdersSize(String searchString, int companyId, int departmentId) {
+    public int getCustomersOrdersSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
 //        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
 //        {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
@@ -189,7 +195,7 @@ public class CustomersOrdersRepositoryJPA {
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_deleted,false) !=true ";
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -511,24 +517,31 @@ public class CustomersOrdersRepositoryJPA {
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
                 if(request.getCagent_id()==null){
-                    CagentsForm cagentForm = new CagentsForm();
-                    cagentForm.setName(request.getNew_cagent());
-                    cagentForm.setCompany_id(request.getCompany_id());
-                    cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                    cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                    cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
-                    cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                    cagentForm.setTelephone(request.getTelephone());
-                    cagentForm.setEmail((request.getEmail()));
-                    cagentForm.setZip_code(request.getZip_code());
-                    cagentForm.setCountry_id(request.getCountry_id());
-                    cagentForm.setRegion_id(request.getRegion_id());
-                    cagentForm.setCity_id(request.getCity_id());
-                    cagentForm.setStreet(request.getStreet());
-                    cagentForm.setHome(request.getHome());
-                    cagentForm.setFlat(request.getFlat());
-                    cagentForm.setAdditional_address(request.getAdditional_address());
-                    request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                    try{
+                        CagentsForm cagentForm = new CagentsForm();
+                        cagentForm.setName(request.getNew_cagent());
+                        cagentForm.setCompany_id(request.getCompany_id());
+                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+                        cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
+                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+                        cagentForm.setTelephone(request.getTelephone());
+                        cagentForm.setEmail((request.getEmail()));
+                        cagentForm.setZip_code(request.getZip_code());
+                        cagentForm.setCountry_id(request.getCountry_id());
+                        cagentForm.setRegion_id(request.getRegion_id());
+                        cagentForm.setCity_id(request.getCity_id());
+                        cagentForm.setStreet(request.getStreet());
+                        cagentForm.setHome(request.getHome());
+                        cagentForm.setFlat(request.getFlat());
+                        cagentForm.setAdditional_address(request.getAdditional_address());
+                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                    }
+                    catch (Exception e) {
+                        logger.error("Exception in method insertCustomersOrders on creating Cagent.", e);
+                        e.printStackTrace();
+                        return null;
+                    }
                 }
 
 
@@ -593,6 +606,7 @@ public class CustomersOrdersRepositoryJPA {
                     newDockId=Long.valueOf(query2.getSingleResult().toString());
                     return newDockId;
                 } catch (Exception e) {
+                    logger.error("Exception in method insertCustomersOrders on inserting into customers_orders. SQL query:"+stringQuery, e);
                     e.printStackTrace();
                     return null;
                 }
@@ -1161,15 +1175,56 @@ public class CustomersOrdersRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(23L,"286") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update customers_orders p" +
-                    " set is_deleted=true " +
-                    " where p.id in ("+delNumbers+")"+
-                    " and coalesce(p.is_completed,false) !=true";
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
+                    " set is_deleted=true, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")";
+//                    " and coalesce(p.is_completed,false) !=true";
+            try{
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }catch (Exception e) {
+                logger.error("Exception in method deleteCustomersOrders. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
         } else return false;
     }
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean undeleteCustomersOrders(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(23L,"283") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"284") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",delNumbers))||
+                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"285") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",delNumbers))||
+                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"286") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update customers_orders p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return true;
+                } else return false;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteCustomersOrders. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
+    }
     @SuppressWarnings("Duplicates")
     //отдает список отделений в виде их Id с зарезервированным количеством и общим количеством товара в отделении
     public List<IdAndCount> getProductCount(Long product_id, Long company_id, Long document_id) {

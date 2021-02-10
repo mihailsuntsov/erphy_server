@@ -94,7 +94,7 @@ public class CustomersOrdersController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = customersOrdersRepositoryJPA.getCustomersOrdersTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = customersOrdersRepositoryJPA.getCustomersOrdersTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -143,7 +143,7 @@ public class CustomersOrdersController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = customersOrdersRepositoryJPA.getCustomersOrdersSize(searchString,companyId,departmentId);//  - общее количество записей выборки
+        int size = customersOrdersRepositoryJPA.getCustomersOrdersSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -281,6 +281,20 @@ public class CustomersOrdersController {
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/api/auth/undeleteCustomersOrders")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteCustomersOrders(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteCustomersOrders: " + request.toString());
+
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        if(customersOrdersRepositoryJPA.undeleteCustomersOrders(checked)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
         }
     }
     //отдает таблицу Заказов покупателя с неотгруженными резервами по товару в требуемом отделении (или department_id=0 - во всех), за исключением документа document_id,  из которого выполняется запрос (document_id=0 - во всех документах)

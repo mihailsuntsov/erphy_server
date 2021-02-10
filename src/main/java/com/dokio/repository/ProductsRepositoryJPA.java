@@ -297,7 +297,7 @@ public class ProductsRepositoryJPA {
             // сохранение цен
             try
             {
-                if (request.getProductPricesTable().size() > 1) {
+                if (request.getProductPricesTable().size() > 0) {
                     for (ProductPricesJSON field : request.getProductPricesTable()) {
                         if (!savePrice(field.getPrice_type_id(), request.getId(), myMasterId, request.getCompany_id(), field.getPrice_value())) {//         //метод 4
                             break;

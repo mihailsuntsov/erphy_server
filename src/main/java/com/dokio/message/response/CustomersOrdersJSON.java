@@ -14,6 +14,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.response;
 
+import java.math.BigDecimal;
+
 public class CustomersOrdersJSON
 {
     private Long id;
@@ -63,7 +65,7 @@ public class CustomersOrdersJSON
     private String street;
     private String home;
     private String flat;
-
+    private BigDecimal sum_price;
 
     public Long getId() {
         return id;
@@ -87,6 +89,14 @@ public class CustomersOrdersJSON
 
     public void setDefault_type_price_id(Long default_type_price_id) {
         this.default_type_price_id = default_type_price_id;
+    }
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
     }
 
     public void setCagent_type_price_id(Long cagent_type_price_id) {

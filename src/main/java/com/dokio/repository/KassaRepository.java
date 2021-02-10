@@ -452,7 +452,7 @@ public class KassaRepository {
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update kassa p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
                     " where p.id in (" + delNumbers+")";
