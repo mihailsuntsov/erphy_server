@@ -1,20 +1,22 @@
 /*
+Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
-опубликованной Фондом свободного программного обеспечения;
-Эта программа распространяется в расчёте на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3, опубликованной Фондом свободного
+программного обеспечения;
+Эта программа распространяется в расчете на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
-*/
+программой. Если Вы ее не получили, то перейдите по адресу:
+<http://www.gnu.org/licenses/>
+ */
 package com.dokio.message.response;
 
 import java.math.BigDecimal;
 
-public class CustomersOrdersJSON
+public class RetailSalesJSON
 {
     private Long id;
     private String master;
@@ -29,15 +31,13 @@ public class CustomersOrdersJSON
     private Long department_id;
     private String department;
     private Long doc_number;
-    private String shipment_date;//планируемая дата отгрузки
     private String company;
     private String date_time_created;
     private String date_time_changed;
     private String description;
-    private Long department_type_price_id;//тип цены для отделения в этом Заказе покупателя
-    private Long cagent_type_price_id;//тип цены для покупателя в этом Заказе покупателя
+    private Long department_type_price_id;//тип цены для отделения в этой Розничной продаже
+    private Long cagent_type_price_id;//тип цены для покупателя в этой Розничной продаже
     private Long default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
-    private boolean is_completed;
     private boolean nds;
     private boolean nds_included;
 
@@ -46,24 +46,18 @@ public class CustomersOrdersJSON
     private String status_color;
     private Long status_id;
     private String status_description;
-    //--------- address --------------
-    private String fio;
-    private String email;
-    private String telephone;
-    private String zip_code;
-    private Integer country_id;
-    private Integer region_id;
-    private Integer city_id;
-    private String additional_address;
-    private String track_number;
-    private String country;
-    private String region;
-    private String area;
-    private String city;
-    private String street;
-    private String home;
-    private String flat;
     private BigDecimal sum_price;
+    private Long customers_orders_id;
+    private Long shift_id;
+    private int shift_number;
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
+    }
 
     public Long getId() {
         return id;
@@ -75,62 +69,6 @@ public class CustomersOrdersJSON
 
     public String getMaster() {
         return master;
-    }
-
-    public Long getCagent_type_price_id() {
-        return cagent_type_price_id;
-    }
-
-    public Long getDefault_type_price_id() {
-        return default_type_price_id;
-    }
-
-    public void setDefault_type_price_id(Long default_type_price_id) {
-        this.default_type_price_id = default_type_price_id;
-    }
-
-    public BigDecimal getSum_price() {
-        return sum_price;
-    }
-
-    public void setSum_price(BigDecimal sum_price) {
-        this.sum_price = sum_price;
-    }
-
-    public void setCagent_type_price_id(Long cagent_type_price_id) {
-        this.cagent_type_price_id = cagent_type_price_id;
-    }
-
-    public String getArea() {
-        return area;
-    }
-
-    public void setArea(String area) {
-        this.area = area;
-    }
-
-    public String getStreet() {
-        return street;
-    }
-
-    public void setStreet(String street) {
-        this.street = street;
-    }
-
-    public String getHome() {
-        return home;
-    }
-
-    public void setHome(String home) {
-        this.home = home;
-    }
-
-    public String getFlat() {
-        return flat;
-    }
-
-    public void setFlat(String flat) {
-        this.flat = flat;
     }
 
     public void setMaster(String master) {
@@ -225,14 +163,6 @@ public class CustomersOrdersJSON
         this.doc_number = doc_number;
     }
 
-    public String getShipment_date() {
-        return shipment_date;
-    }
-
-    public void setShipment_date(String shipment_date) {
-        this.shipment_date = shipment_date;
-    }
-
     public String getCompany() {
         return company;
     }
@@ -273,12 +203,20 @@ public class CustomersOrdersJSON
         this.department_type_price_id = department_type_price_id;
     }
 
-    public boolean isIs_completed() {
-        return is_completed;
+    public Long getCagent_type_price_id() {
+        return cagent_type_price_id;
     }
 
-    public void setIs_completed(boolean is_completed) {
-        this.is_completed = is_completed;
+    public void setCagent_type_price_id(Long cagent_type_price_id) {
+        this.cagent_type_price_id = cagent_type_price_id;
+    }
+
+    public Long getDefault_type_price_id() {
+        return default_type_price_id;
+    }
+
+    public void setDefault_type_price_id(Long default_type_price_id) {
+        this.default_type_price_id = default_type_price_id;
     }
 
     public boolean isNds() {
@@ -337,99 +275,27 @@ public class CustomersOrdersJSON
         this.status_description = status_description;
     }
 
-    public String getFio() {
-        return fio;
+    public Long getCustomers_orders_id() {
+        return customers_orders_id;
     }
 
-    public void setFio(String fio) {
-        this.fio = fio;
+    public void setCustomers_orders_id(Long customers_orders_id) {
+        this.customers_orders_id = customers_orders_id;
     }
 
-    public String getEmail() {
-        return email;
+    public Long getShift_id() {
+        return shift_id;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setShift_id(Long shift_id) {
+        this.shift_id = shift_id;
     }
 
-    public String getTelephone() {
-        return telephone;
+    public int getShift_number() {
+        return shift_number;
     }
 
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
-    }
-
-    public String getZip_code() {
-        return zip_code;
-    }
-
-    public void setZip_code(String zip_code) {
-        this.zip_code = zip_code;
-    }
-
-    public Integer getCountry_id() {
-        return country_id;
-    }
-
-    public void setCountry_id(Integer country_id) {
-        this.country_id = country_id;
-    }
-
-    public Integer getRegion_id() {
-        return region_id;
-    }
-
-    public void setRegion_id(Integer region_id) {
-        this.region_id = region_id;
-    }
-
-    public Integer getCity_id() {
-        return city_id;
-    }
-
-    public void setCity_id(Integer city_id) {
-        this.city_id = city_id;
-    }
-
-    public String getAdditional_address() {
-        return additional_address;
-    }
-
-    public void setAdditional_address(String additional_address) {
-        this.additional_address = additional_address;
-    }
-
-    public String getTrack_number() {
-        return track_number;
-    }
-
-    public void setTrack_number(String track_number) {
-        this.track_number = track_number;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
+    public void setShift_number(int shift_number) {
+        this.shift_number = shift_number;
     }
 }
