@@ -13,9 +13,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Settings.SettingsRetailSalesForm;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
+import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -51,8 +56,6 @@ public class RetailSalesRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
-    @Autowired
-    private WriteoffRepositoryJPA writeoffRepository;
 
     //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -466,7 +469,7 @@ public class RetailSalesRepository {
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Long insertRetailSales(RetailSalesForm request) throws CantInsertProductRowException{
+    public Long insertRetailSales(RetailSalesForm request) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductQuantityException {
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
         Long dockDepartment=request.getDepartment_id();
@@ -479,131 +482,150 @@ public class RetailSalesRepository {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-//        try{
+        if ((//если есть право на создание по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(25L, "309")) ||
+                        //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                        (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
+                        //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
+                        (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
+                //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                DocumentMasterId.equals(myMasterId))
+        {
+            String stringQuery;
+            Long myId = userRepository.getUserId();
+            Long newDockId;
+            Long doc_number;//номер документа( = номер заказа)
 
-            if ((//если есть право на создание по всем предприятиям, или
-                    (securityRepositoryJPA.userHasPermissions_OR(25L, "309")) ||
-                            //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                            (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
-                            //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                            (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
-                    //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-                    DocumentMasterId.equals(myMasterId))
-            {
-                String stringQuery;
-                Long myId = userRepository.getUserId();
-                Long newDockId;
-                Long doc_number;//номер документа( = номер заказа)
+            //генерируем номер документа, если его (номера) нет
+            if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
+                doc_number=Long.valueOf(request.getDoc_number());
+            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"retail_sales");
 
-                //генерируем номер документа, если его (номера) нет
-                if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
-                    doc_number=Long.valueOf(request.getDoc_number());
-                } else doc_number=generateDocNumberCode(request.getCompany_id());
-
-                //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
-                //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-                if(request.getCagent_id()==null){
-                    try{
-                        CagentsForm cagentForm = new CagentsForm();
-                        cagentForm.setName(request.getNew_cagent());
-                        cagentForm.setCompany_id(request.getCompany_id());
-                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
-                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                        cagentForm.setTelephone("");
-                        cagentForm.setEmail("");
-                        cagentForm.setZip_code("");
-                        cagentForm.setCountry_id(null);
-                        cagentForm.setRegion_id(null);
-                        cagentForm.setCity_id(null);
-                        cagentForm.setStreet("");
-                        cagentForm.setHome("");
-                        cagentForm.setFlat("");
-                        cagentForm.setAdditional_address("");
-                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
-                    }
-                    catch (Exception e) {
-                        logger.error("Exception in method insertRetailSales on creating Cagent.", e);
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
-
-
-                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-
-                stringQuery =   "insert into retail_sales (" +
-                        " master_id," + //мастер-аккаунт
-                        " creator_id," + //создатель
-                        " company_id," + //предприятие, для которого создается документ
-                        " department_id," + //отделение, из(для) которого создается документ
-                        " cagent_id," +//контрагент
-                        " date_time_created," + //дата и время создания
-                        " doc_number," + //номер заказа
-                        " name," + //наименование заказа
-                        " description," +//доп. информация по заказу
-                        " nds," +// НДС
-                        " nds_included," +// НДС включен в цену
-                        " customers_orders_id, " + //родительский Заказ покупателя (если есть)
-                        " shift_id, " + // id смены
-                        " status_id"+//статус заказа
-                        ") values ("+
-                        myMasterId + ", "+//мастер-аккаунт
-                        myId + ", "+ //создатель
-                        request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                        request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
-                        request.getCagent_id() + ", "+//контрагент
-                        "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                        doc_number + ", "+//номер заказа
-                        "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                        "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
-                        request.isNds() + ", "+// НДС
-                        request.isNds_included() + ", "+// НДС включен в цену
-                        request.getCustomers_orders_id() + ", "+
-                        request.getShift_id() + ", "+
-                        request.getStatus_id() + ")";//статус продажи
+            //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
+            //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
+            if(request.getCagent_id()==null){
                 try{
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.executeUpdate();
-                    stringQuery="select id from retail_sales where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
-                    Query query2 = entityManager.createNativeQuery(stringQuery);
-                    newDockId=Long.valueOf(query2.getSingleResult().toString());
-
-                    RetailSalesInsertReportJSON updateResults = new RetailSalesInsertReportJSON();// отчет об апдейте
-                    Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
-
-                    //сохранение таблицы
-                    if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
-                        for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
-                            insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), myMasterId);  //метод 2 - сохранение таблицы товаров
-                            if (!insertProductRowResult) {
-                                throw new CantInsertProductRowException();
-                            }
-                        }
-                    }
-
-                    return newDockId;
-                } catch (CantInsertProductRowException e) {
-                    logger.error("Exception in method insertRetailSales on inserting into retail_sales_products.", e);
-                    e.printStackTrace();
-                    return 0L;
-                } catch (Exception e) {
-                    logger.error("Exception in method insertRetailSales on inserting into retail_sales. SQL query:"+stringQuery, e);
+                    CagentsForm cagentForm = new CagentsForm();
+                    cagentForm.setName(request.getNew_cagent());
+                    cagentForm.setCompany_id(request.getCompany_id());
+                    cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+                    cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+                    cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
+                    cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+                    cagentForm.setTelephone("");
+                    cagentForm.setEmail("");
+                    cagentForm.setZip_code("");
+                    cagentForm.setCountry_id(null);
+                    cagentForm.setRegion_id(null);
+                    cagentForm.setCity_id(null);
+                    cagentForm.setStreet("");
+                    cagentForm.setHome("");
+                    cagentForm.setFlat("");
+                    cagentForm.setAdditional_address("");
+                    request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                }
+                catch (Exception e) {
+                    logger.error("Exception in method insertRetailSales on creating Cagent.", e);
                     e.printStackTrace();
                     return null;
                 }
-            } else {
+            }
+
+
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+
+            stringQuery =   "insert into retail_sales (" +
+                    " master_id," + //мастер-аккаунт
+                    " creator_id," + //создатель
+                    " company_id," + //предприятие, для которого создается документ
+                    " department_id," + //отделение, из(для) которого создается документ
+                    " cagent_id," +//контрагент
+                    " date_time_created," + //дата и время создания
+                    " doc_number," + //номер заказа
+                    " name," + //наименование заказа
+                    " description," +//доп. информация по заказу
+                    " nds," +// НДС
+                    " nds_included," +// НДС включен в цену
+                    " customers_orders_id, " + //родительский Заказ покупателя (если есть)
+                    " shift_id, " + // id смены
+                    " status_id"+//статус заказа
+                    ") values ("+
+                    myMasterId + ", "+//мастер-аккаунт
+                    myId + ", "+ //создатель
+                    request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                    request.getCagent_id() + ", "+//контрагент
+                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                    doc_number + ", "+//номер заказа
+                    "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+                    "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                    request.isNds() + ", "+// НДС
+                    request.isNds_included() + ", "+// НДС включен в цену
+                    request.getCustomers_orders_id() + ", "+
+                    request.getShift_id() + ", "+
+                    request.getStatus_id() + ")";//статус продажи
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                stringQuery="select id from retail_sales where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDockId=Long.valueOf(query2.getSingleResult().toString());
+
+                Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
+
+                //сохранение таблицы
+                if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
+                    for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
+                        insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
+                        if (insertProductRowResult==null || !insertProductRowResult) {
+                            if (insertProductRowResult==null){
+                                throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
+                            }
+                            if (!insertProductRowResult){
+                                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+                            }
+                        } else { // если сохранили удачно - значит нужно сделать запись в историю изменения данного товара
+                            //создание записи в истории изменения товара
+                            if(!addRetailSalesProductHistory(doc_number, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request , myMasterId)){
+                                throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+                            } else {//создание записи актуального количества товара на складе
+                                if(!setProductQuantity(row.getProduct_id(),request.getDepartment_id(), myMasterId)){
+                                    throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return newDockId;
+            } catch (CantSaveProductQuantityException e) {
+                logger.error("Exception in method insertRetailSales on inserting into product_quantity cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantInsertProductRowCauseErrorException e) {
+                logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause oversell.", e);
+                e.printStackTrace();
+                return 0L;
+            } catch (CantSaveProductHistoryException e) {
+                logger.error("Exception in method insertRetailSales on inserting into products_history.", e);
+                e.printStackTrace();
+                return null;
+            } catch (Exception e) {
+                logger.error("Exception in method insertRetailSales on inserting into retail_sales. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 return null;
             }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return null;
-//        }
+        } else {
+            return null;
+        }
     }
 
         @Transactional
-        public Boolean updateRetailSales(RetailSalesForm request)  throws Exception{
+        public Boolean updateRetailSales(RetailSalesForm request){
             //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
             if(     (securityRepositoryJPA.userHasPermissions_OR(25L,"318") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",request.getId().toString())) ||
                     //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -641,7 +663,7 @@ public class RetailSalesRepository {
         @SuppressWarnings("Duplicates")
         private Boolean saveRetailSalesProductTable(RetailSalesProductTableForm row, Long company_id, Long master_id) {
             String stringQuery="";
-            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
+//            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
             BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
             try {
                 //вычисляем доступное количество товара на складе
@@ -700,33 +722,9 @@ public class RetailSalesRepository {
                 return null;
             }
         }
-//        @SuppressWarnings("Duplicates")
-//        private Boolean updateRetailSalesWithoutTable(RetailSalesForm request) {
-//            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-//
-//            String stringQuery;
-//            stringQuery =   " update retail_sales set " +
-//                    " changer_id = " + myId + ", "+
-//                    " date_time_changed= now()," +
-//                    " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
-//                    " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
-//                    " status_id = " + request.getStatus_id() +
-//                    " where " +
-//                    " id= "+request.getId();
-//            try
-//            {
-//                Query query = entityManager.createNativeQuery(stringQuery);
-//                query.executeUpdate();
-//                return true;
-//            }catch (Exception e) {
-//                logger.error("Exception in method updateRetailSalesWithoutTable. SQL query:"+stringQuery, e);
-//                e.printStackTrace();
-//                return false;
-//            }
-//        }
-    /*
 
-        //сохраняет настройки документа "Заказ покупателя"
+
+        //сохраняет настройки документа "Розничные продажи"
         @SuppressWarnings("Duplicates")
         @Transactional
         public Boolean saveSettingsRetailSales(SettingsRetailSalesForm row) {
@@ -750,7 +748,7 @@ public class RetailSalesRepository {
                                 "customer_id, "+        //покупатель по умолчанию
                                 "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
                                 "name, "+               //наименование заказа
-                                "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
+//                                "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
                                 "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
                                 "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
                                 ") values (" +
@@ -768,7 +766,7 @@ public class RetailSalesRepository {
                                 row.getCustomerId() + ",'"+
                                 row.getPriorityTypePriceSide() + "',"+
                                 "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                                row.getAutocreateOnStart()+ ", " +
+//                                row.getAutocreateOnStart()+ ", " +
                                 row.getAutocreateOnCheque() +", " +
                                 row.getStatusIdOnAutocreateOnCheque() +
                                 ") " +
@@ -786,7 +784,7 @@ public class RetailSalesRepository {
                                 " customer_id = "+row.getCustomerId()  + ","+
                                 " name = '" +(row.getName() == null ? "": row.getName()) + "',"+
                                 " priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'," +
-                                " autocreate_on_start = "+row.getAutocreateOnStart() + ","+
+//                                " autocreate_on_start = "+row.getAutocreateOnStart() + ","+
                                 " status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque() + ","+
                                 " autocreate_on_cheque = "+row.getAutocreateOnCheque();
 
@@ -821,7 +819,7 @@ public class RetailSalesRepository {
                     "           p.id as id, " +
                     "           p.company_id as company_id, " +
                     "           p.priority_type_price_side as priority_type_price_side," +
-                    "           coalesce(p.autocreate_on_start,false) as autocreate_on_start," +
+//                    "           coalesce(p.autocreate_on_start,false) as autocreate_on_start," +
                     "           coalesce(p.autocreate_on_cheque,false) as autocreate_on_cheque," +
                     "           p.name as name, " +
                     "           p.status_id_on_autocreate_on_cheque as status_id_on_autocreate_on_cheque " +
@@ -848,10 +846,10 @@ public class RetailSalesRepository {
                     returnObj.setId(Long.parseLong(                         obj[10].toString()));
                     returnObj.setCompanyId(Long.parseLong(                  obj[11].toString()));
                     returnObj.setPriorityTypePriceSide((String)             obj[12]);
-                    returnObj.setAutocreateOnStart((Boolean)                obj[13]);
-                    returnObj.setAutocreateOnCheque((Boolean)               obj[14]);
-                    returnObj.setName((String)                              obj[15]);
-                    returnObj.setStatusIdOnAutocreateOnCheque(obj[16]!=null?Long.parseLong(obj[16].toString()):null);
+//                    returnObj.setAutocreateOnStart((Boolean)                obj[13]);
+                    returnObj.setAutocreateOnCheque((Boolean)               obj[13]);
+                    returnObj.setName((String)                              obj[14]);
+                    returnObj.setStatusIdOnAutocreateOnCheque(obj[15]!=null?Long.parseLong(obj[15].toString()):null);
                 }
                 return returnObj;
             }
@@ -863,221 +861,62 @@ public class RetailSalesRepository {
 
         }
 
-    //        //Отдает список приоритетных типов цен (для склада, покупателя и тип цена по умолчанию)
-    //        @SuppressWarnings("Duplicates")
-    //        public PriorityTypePricesJSON getPriorityTypePrices(Long company_id) {
-    //
-    //            String stringQuery;
-    //            stringQuery = "select " +
-    //                    "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id " +
-    //                    "           coalesce((select price_type_id from cagents where id=p.company_id and is_default=true),0) as default_type_price_id " +
-    //                    "           p.change_price as change_price, " +
-    //                    "           p.plus_minus as plus_minus, " +
-    //                    "           p.change_price_type as change_price_type, " +
-    //                    "           p.hide_tenths as hide_tenths, " +
-    //                    "           p.save_settings as save_settings, " +
-    //                    "           p.department_id as department_id, " +
-    //                    "           p.customer_id as customer_id, " +
-    //                    "           cg.name as customer, " +
-    //                    "           p.id as id, " +
-    //                    "           p.company_id as company_id " +
-    //                    "           from settings_retail_sales p " +
-    //                    "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
-    //                    "           where p.user_id= " + myId;
-    //
-    //            Query query = entityManager.createNativeQuery(stringQuery);
-    //
-    //            List<Object[]> queryList = query.getResultList();
-    //
-    //            PriorityTypePricesJSON returnObj=new PriorityTypePricesJSON();
-    //
-    //            for(Object[] obj:queryList){
-    //                returnObj.setPricingType((String)                       obj[0]);
-    //                returnObj.setPriceTypeId(obj[1]!=null?Long.parseLong(   obj[1].toString()):null);
-    //                returnObj.setChangePrice((BigDecimal)                   obj[2]);
-    //                returnObj.setPlusMinus((String)                         obj[3]);
-    //                returnObj.setChangePriceType((String)                   obj[4]);
-    //                returnObj.setHideTenths((Boolean)                       obj[5]);
-    //                returnObj.setSaveSettings((Boolean)                     obj[6]);
-    //                returnObj.setDepartmentId(obj[7]!=null?Long.parseLong(  obj[7].toString()):null);
-    //                returnObj.setCustomerId(obj[8]!=null?Long.parseLong(    obj[8].toString()):null);
-    //                returnObj.setCustomer((String)                          obj[9]);
-    //                returnObj.setId(Long.parseLong(                         obj[10].toString()));
-    //                returnObj.setCompanyId(Long.parseLong(                  obj[11].toString()));
-    //            }
-    //            return returnObj;
-    //        }
-    //
-        //удаление 1 строки из таблицы товаров
-        @SuppressWarnings("Duplicates")
-        @Transactional
-        public Boolean deleteRetailSalesProductTableRow(Long id) {
-            if(canDeleteProductTableRow(id)){
-                Long myMasterId = userRepositoryJPA.getMyMasterId();
-                String stringQuery;
-                try {
-                    stringQuery = " delete from retail_sales_product " +
-                            " where id="+id+" and master_id="+myMasterId;
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    return query.executeUpdate() == 1;
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            } else return false;
-        }
 
         @SuppressWarnings("Duplicates")
-        // Нельзя удалять товарные позиции, по которым уже есть Отгрузка, т.к. товар могут сначала отгрузить, а потом завершить (закрыть) Отгрузку.
-        // И если между этими 2 действиями удалить товарную позицию, товар физически уйдет со склада, но будет числисться в системе.
-        private boolean canDeleteProductTableRow(Long row_id){
-    //        !!!!!!!!!!!!!!!!!!!!!!!!!  тут вставить проверку того, есть ли данная позиция в Отгрузке
-            return true;
-        }
+        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId) {
+            String stringQuery;
+            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,request.getDepartment_id());
+            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+            BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
+            BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
+            BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
 
-        @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении заказа (те позиции, которые ранее были в заказе, но потом их удалили)
-        private Boolean deleteRetailSalesProductTableExcessRows(String productIds, Long retail_sales_id) {
-            String stringQuery="";
+            stringQuery =
+                    " insert into products_history (" +
+                            " master_id," +
+                            " company_id," +
+                            " department_id," +
+                            " doc_type_id," +
+                            " doc_id," +
+                            " product_id," +
+                            " quantity," +
+                            " change," +
+                            " avg_purchase_price," +
+                            " avg_netcost_price," +
+                            " last_purchase_price," +
+                            " last_operation_price," +
+                            " date_time_created"+
+                            ") values ("+
+                            masterId +","+
+                            request.getCompany_id() +","+
+                            request.getDepartment_id() + ","+
+                            25 +","+
+                            retailSalesId + ","+
+                            product_id + ","+
+                            lastQuantity.subtract(product_count)+","+
+                            product_count.multiply(new BigDecimal(-1)) +","+
+                            lastAvgPurchasePrice +","+
+                            lastAvgNetcostPrice +","+
+                            lastPurchasePrice+","+
+                            product_price+","+
+                            " now())";
             try {
-                stringQuery =   " delete from retail_sales_product " +
-                        " where retail_sales_id=" + retail_sales_id +
-                        " and product_id not in (" + productIds + ")";
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
                 return true;
             }
             catch (Exception e) {
-                logger.error("Exception in method deleteRetailSalesProductTableExcessRows. SQL query:"+stringQuery, e);
+                logger.error("Exception in method addRetailSalesProductHistory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
         }
-        @SuppressWarnings("Duplicates")
-        public List<RetailSalesReservesTable> getReservesTable(Long companyId, Long departmentId, Long productId, Long documentId) {
-            if(securityRepositoryJPA.userHasPermissions_OR(25L, "315,316,317"))//(см. файл Permissions Id)
-            {
-                String stringQuery;
-                String myTimeZone = userRepository.getUserTimeZone();
-                Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-                stringQuery = "select  p.id as id, " +
-                        "           u.name as creator, " +
-                        "           p.name as custome_order_name, " +
-                        "           (coalesce(cop.reserved_current,0)-0) as non_shipped, " + // !!!!!!!!!!!!!!!!!!!!!!!!! ноль потом заменить на вычисленное отгруженное по всем Отгрузкам данного Заказа покупателя
-                        "           p.doc_number as doc_number, " +
-                        "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as shipment_date, " +
-                        "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                        "           p.description as description, " +
-                        "           coalesce(p.is_completed,false) as is_completed, " +
-                        "           stat.name as status_name, " +
-                        "           stat.color as status_color, " +
-                        "           cg.name as cagent, " +
-                        "           p.is_deleted as is_deleted, " +
-                        "           dp.name as department, " +
-                        "           p.date_time_created as date_time_created_sort " +
-                        "           from retail_sales p " +
-                        "           INNER JOIN users u ON p.creator_id=u.id " +
-                        "           INNER JOIN retail_sales_product cop on p.id=cop.retail_sales_id" +
-                        "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
-                        "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                        "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                        "           where " +
-                        "           p.company_id=" + companyId +
-                        "           and cop.product_id=" + productId +
-                        "           and p.master_id=" + myMasterId +
-                        "           and coalesce(cop.reserved_current,0)-0 > 0"; // !!!!!!!!!!!!!!!!!!!!!!!!! ноль потом заменить на вычисленное отгруженное по всем Отгрузкам данного Заказа покупателя
-                if(departmentId>0L){
-                    stringQuery=stringQuery +" and cop.department_id=" + departmentId;
-                }
-                if(documentId>0L){
-                    stringQuery=stringQuery +" and p.id !=" + documentId;
-                }
-                stringQuery = stringQuery + "  order by date_time_created_sort asc";
-                Query query = entityManager.createNativeQuery(stringQuery);
-                List<Object[]> queryList = query.getResultList();
-                List<RetailSalesReservesTable> returnList = new ArrayList<>();
-                for(Object[] obj:queryList){
-                    RetailSalesReservesTable doc=new RetailSalesReservesTable();
-                    doc.setId(Long.parseLong(                     obj[0].toString()));
-                    doc.setCreator((String)                       obj[1]);
-                    doc.setName((String)                          obj[2]);
-                    doc.setNon_shipped((BigDecimal)               obj[3]);
-                    doc.setDoc_number(Long.parseLong(             obj[4].toString()));
-                    doc.setShipment_date((String)(                obj[5]));
-                    doc.setDate_time_created((String)             obj[6]);
-                    doc.setDescription((String)                   obj[7]);
-                    doc.setIs_completed((Boolean)                 obj[8]);
-                    doc.setStatus_name((String)                   obj[9]);
-                    doc.setStatus_color((String)                  obj[10]);
-                    doc.setCagent((String)                        obj[11]);
-                    doc.setIs_deleted((Boolean)                   obj[12]);
-                    doc.setDepartment((String)                    obj[13]);
-                    returnList.add(doc);
-                }
-                return returnList;
-            } else return null;
-        }
 
 
-
-
-
-        /*
-            @SuppressWarnings("Duplicates")
-            private Boolean addRetailSalesProductHistory(RetailSalesProductForm row, RetailSalesForm request , Long masterId) {
-                String stringQuery;
-                ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-                BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-                BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-                BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-                BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
-
-                try {
-                    stringQuery =
-                            " insert into products_history (" +
-                                    " master_id," +
-                                    " company_id," +
-                                    " department_id," +
-                                    " doc_type_id," +
-                                    " doc_id," +
-                                    " product_id," +
-                                    " quantity," +
-                                    " change," +
-                                    " avg_purchase_price," +
-                                    " avg_netcost_price," +
-                                    " last_purchase_price," +
-                                    " last_operation_price," +
-                                    " date_time_created"+
-                                    ") values ("+
-                                    masterId +","+
-                                    request.getCompany_id() +","+
-                                    request.getDepartment_id() + ","+
-                                    21 +","+
-                                    row.getCustomers_orders_id() + ","+
-                                    row.getProduct_id() + ","+
-                                    lastQuantity.subtract(row.getProduct_count())+","+
-                                    row.getProduct_count().multiply(new BigDecimal(-1)) +","+
-                                    lastAvgPurchasePrice +","+
-                                    lastAvgNetcostPrice +","+
-                                    lastPurchasePrice+","+
-                                    row.getProduct_price()+","+
-                                    " now())";
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.executeUpdate();
-                    return true;
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                    return false;
-                }
-            }
-        */
-/*
     @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(RetailSalesProductForm row, RetailSalesForm request , Long masterId) {
+    private Boolean setProductQuantity(Long product_id, Long department_id , Long masterId) {
         String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,department_id);
         BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
 
         try {
@@ -1089,13 +928,13 @@ public class RetailSalesRepository {
                             " quantity" +
                             ") values ("+
                             masterId + ","+
-                            request.getDepartment_id() + ","+
-                            row.getProduct_id() + ","+
+                            department_id + ","+
+                            product_id + ","+
                             lastQuantity +
                             ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
                             " DO update set " +
-                            " department_id = " + request.getDepartment_id() + ","+
-                            " product_id = " + row.getProduct_id() + ","+
+                            " department_id = " + department_id + ","+
+                            " product_id = " + product_id + ","+
                             " master_id = "+ masterId + "," +
                             " quantity = "+ lastQuantity;
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1107,215 +946,83 @@ public class RetailSalesRepository {
             return false;
         }
     }
-*/
-/*     @Transactional
-    @SuppressWarnings("Duplicates")
-    public boolean deleteRetailSales (String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(25L,"312") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(25L,"313") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(25L,"314") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",delNumbers)))
-        {
-            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-            Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update retail_sales p" +
-                    " set is_deleted=true, " + //удален
-                    " changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")";
-//                    " and coalesce(p.is_completed,false) !=true";
-            try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e) {
-                logger.error("Exception in method deleteRetailSales. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return false;
-            }
-        } else return false;
-    }
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public boolean undeleteRetailSales(String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(25L,"312") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(25L,"313") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(25L,"314") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",delNumbers)))
-        {
-            // на MasterId не проверяю , т.к. выше уже проверено
-            Long myId = userRepositoryJPA.getMyId();
-            String stringQuery;
-            stringQuery = "Update retail_sales p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
-                    " date_time_changed = now(), " +//дату и время изменения
-                    " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
-            try{
-                Query query = entityManager.createNativeQuery(stringQuery);
-                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                    query.executeUpdate();
+
+    // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
+    // другие ситуации. Поэтому удаление пока оставляю закомментированным
+
+    /*     @Transactional
+        @SuppressWarnings("Duplicates")
+        public boolean deleteRetailSales (String delNumbers) {
+            //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+            if( (securityRepositoryJPA.userHasPermissions_OR(25L,"312") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",delNumbers)) ||
+                    //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"313") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",delNumbers))||
+                    //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"314") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",delNumbers)))
+            {
+                String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+                Long myId = userRepositoryJPA.getMyId();
+                stringQuery = "Update retail_sales p" +
+                        " set is_deleted=true, " + //удален
+                        " changer_id="+ myId + ", " + // кто изменил (удалил)
+                        " date_time_changed = now() " +//дату и время изменения
+                        " where p.id in ("+delNumbers+")";
+    //                    " and coalesce(p.is_completed,false) !=true";
+                try{
+                    entityManager.createNativeQuery(stringQuery).executeUpdate();
                     return true;
-                } else return false;
-            }catch (Exception e) {
-                logger.error("Exception in method undeleteRetailSales. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return false;
-            }
-        } else return false;
-    }
-    @SuppressWarnings("Duplicates")
-    //отдает список отделений в виде их Id с зарезервированным количеством и общим количеством товара в отделении
-    public List<IdAndCount> getProductCount(Long product_id, Long company_id, Long document_id) {
-
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-        String stringQuery = "select" +
-                " d.id as id, " +
-                " (select coalesce(quantity,0) from product_quantity where department_id = d.id and product_id = "+product_id+") as total, " +
-                " (select " +
-                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
-                "   from " +
-                "   retail_sales_product " +
-                "   where " +
-                "   product_id="+product_id+
-                "   and department_id = d.id "+
-                "   and retail_sales_id!="+document_id+") as reserved "+//зарезервировано в других документах Заказ покупателя
-
-                " from" +
-                " departments d " +
-                " where" +
-                " d.company_id= " + company_id +
-                " and d.master_id= " + myMasterId +
-                " and coalesce(d.is_deleted,false)=false";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<IdAndCount> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                IdAndCount product = new IdAndCount();
-                product.setId(Long.parseLong(              obj[0].toString()));
-                product.setTotal(                          obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
-                product.setReserved(                       obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
-                returnList.add(product);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    //отдает информацию о состоянии товара(кол-во всего, зарезервировано и цена) по его id ,в отделении по его id, по цене по её id, для документа Заказ покупателя по его id
-    public ProductsPriceAndRemainsJSON getProductsPriceAndRemains(Long department_id, Long product_id, Long price_type_id, Long document_id) {
-
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-//        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
-        //себестоимость
-        ProductHistoryJSON lastProductHistoryRecord =  writeoffRepository.getLastProductHistoryRecord(product_id,department_id);
-        BigDecimal netCost= lastProductHistoryRecord.getAvg_netcost_price();
-
-        String stringQuery = "select" +
-                " coalesce((select quantity from product_quantity where product_id = "+product_id+" and department_id = d.id),0) as total, "+ //всего на складе (т.е остаток)
-                " (select " +
-                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
-                "   from " +
-                "   retail_sales_product " +
-                "   where " +
-                "   product_id="+product_id+
-                "   and department_id = d.id "+
-                "   and retail_sales_id!="+document_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
-        if(price_type_id!=0) {//если тип цены был выбран
-            stringQuery=stringQuery+", coalesce((select price_value from product_prices where product_id = " + product_id + " and price_type_id = " + price_type_id + " and company_id = d.company_id),0) as price ";// цена по типу цены
-        }
-        stringQuery=stringQuery+" from" +
-                " departments d " +
-                " where" +
-                " d.id= " + department_id +
-                " and d.master_id= " + myMasterId;
-
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            List<Object[]> queryList = query.getResultList();
-            ProductsPriceAndRemainsJSON returnObj = new ProductsPriceAndRemainsJSON();
-
-            for (Object[] obj : queryList) {
-                returnObj.setTotal(                                         obj[0]==null?BigDecimal.ZERO:(BigDecimal)obj[0]);
-                returnObj.setReserved(                                      obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
-                if (price_type_id != 0) {
-                    returnObj.setPrice((BigDecimal)                         obj[2]);
-                } else {
-                    returnObj.setPrice(                      BigDecimal.valueOf(0));
+                }catch (Exception e) {
+                    logger.error("Exception in method deleteRetailSales. SQL query:"+stringQuery, e);
+                    e.printSckTrace();
+                    return false;
                 }
-                returnObj.setNetCost(netCost);
-            }
-            return returnObj;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            } else return false;
         }
-    }
+    /*    @Transactional
+        @SuppressWarnings("Duplicates")
+        public boolean undeleteRetailSales(String delNumbers) {
+            //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+            if( (securityRepositoryJPA.userHasPermissions_OR(25L,"312") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",delNumbers)) ||
+                    //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"313") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",delNumbers))||
+                    //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"314") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",delNumbers)))
+            {
+                // на MasterId не проверяю , т.к. выше уже проверено
+                Long myId = userRepositoryJPA.getMyId();
+                String stringQuery;
+                stringQuery = "Update retail_sales p" +
+                        " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                        " date_time_changed = now(), " +//дату и время изменения
+                        " is_deleted=false " + //не удалена
+                        " where p.id in (" + delNumbers+")";
+                try{
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                        query.executeUpdate();
+                        return true;
+                    } else return false;
+                }catch (Exception e) {
+                    logger.error("Exception in method undeleteRetailSales. SQL query:"+stringQuery, e);
+                    e.printStackTrace();
+                    return false;
+                }
+            } else return false;
+        }
+        */
+
 
 //*****************************************************************************************************************************************************
-//***************************************************      UTILS      *********************************************************************************
+//***************************************************      Exceptions      ****************************************************************************
 //*****************************************************************************************************************************************************
 
-*/
-    @SuppressWarnings("Duplicates")  //генератор номера документа
-    private Long generateDocNumberCode(Long company_id)
-    {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery;
-        stringQuery = "select coalesce(max(doc_number)+1,1) from retail_sales where company_id="+company_id+" and master_id="+myMasterId;
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return Long.parseLong(query.getSingleResult().toString(),10);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method generateDocNumberCode. SQL query:" + stringQuery, e);
-            return 0L;
-        }
-    }
-/*
-    @SuppressWarnings("Duplicates") // проверка на уникальность номера документа
-    public Boolean isRetailSalesNumberUnical(UniversalForm request)
-    {
-        Long company_id=request.getId1();
-        Long code=request.getId2();
-        Long doc_id=request.getId3();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery;
-        stringQuery = "" +
-                "select id from retail_sales where " +
-                "company_id="+company_id+
-                " and master_id="+myMasterId+
-                " and doc_number="+code;
-        if(doc_id>0) stringQuery=stringQuery+" and id !="+doc_id; // чтобы он не срабатывал сам на себя
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(query.getResultList().size()>0)
-                return false;// код не уникальный
-            else return true; // код уникальный
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return true;
-        }
-    }
-    */
+
+
 }
-class CantInsertProductRowException extends Exception {
+
+class CantSaveProductHistoryException extends Exception {
     @Override
     public void printStackTrace() {
-        System.err.println("Can't insert retail_sales_products table row because of available < product_count");
+        System.err.println("Can't insert products_history table row");
     }
 }

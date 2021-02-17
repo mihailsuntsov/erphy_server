@@ -10,47 +10,54 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.repository;
+package com.dokio.controller;
+
 import com.dokio.message.request.UniversalForm;
-import com.dokio.model.Documents;
-import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.util.List;
+@Controller
+public class CommonUtilitesController {
 
-@Repository
-public class DocumentsRepositoryJPA {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    Logger logger = Logger.getLogger("CommonUtilites");
+
     @Autowired
-    private UserRepositoryJPA userRepositoryJPA;
-    @Autowired
-    private UserDetailsServiceImpl userRepository;
+    CommonUtilites commonUtilites;
 
-    @Transactional
     @SuppressWarnings("Duplicates")
-    public List<Documents> getDocumentsWithPermissionList(String searchString) {
-        String stringQuery;
-        Long documentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        stringQuery="from Documents p where p.show =1";
-        if(searchString!= null && !searchString.isEmpty()){
-            stringQuery = stringQuery+" and upper(p.name) like upper('%"+searchString+"%')";
+    @RequestMapping(
+            value = "/api/auth/isDocumentNumberUnical",
+            params = {"company_id", "doc_number", "doc_id", "table"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+
+    public ResponseEntity<?> isDocumentNumberUnical(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("doc_number") Integer doc_number,
+            @RequestParam("doc_id") Long doc_id,
+            @RequestParam("table") String table)
+    {
+        logger.info("Processing get request for path /api/auth/isDocumentNumberUnical with parameters: " +
+                "company_id: " + company_id.toString() +
+                ", doc_number: " + doc_number.toString() +
+                ", doc_id: " + doc_id.toString() +
+                ", table: "+ table);
+        try {
+            Boolean ret = commonUtilites.isDocumentNumberUnical(company_id, doc_number, doc_id, table);
+            return new ResponseEntity<>(ret, HttpStatus.OK);
         }
-        stringQuery = stringQuery+" order by p.name asc";
-        Query query =  entityManager.createQuery(stringQuery,Documents.class);
-        return query.getResultList();
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

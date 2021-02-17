@@ -17,6 +17,7 @@ package com.dokio.controller;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.response.IsItMy_JSON;
 import com.dokio.message.response.IsItMy_Sprav_JSON;
+import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
@@ -24,8 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -53,16 +53,24 @@ public class SecurityController {
     SecurityRepositoryJPA securityRepositoryJPA;
 
     //Отдает набор прав пользователя из таблицы permissions по id документа
-    @PostMapping("/api/auth/giveMeMyPermissions")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> giveMeMyPermissions(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/giveMeMyPermissions: " + request.toString());
-
-        Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
-        List<Integer> depList =securityRepositoryJPA.giveMeMyPermissions(id);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
-        return responseEntity;
+    @RequestMapping(
+            value = "/api/auth/getMyPermissions",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getMyPermissions( @RequestParam("id") Long id) {
+        logger.info("Processing get request for path /api/auth/getMyPermissions with id=" + id.toString());
+        try {
+            List<Integer> returnList =securityRepositoryJPA.giveMeMyPermissions(id);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getMyPermissions", e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке прав", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
     //Отдает весь набор прав пользователя из таблицы permissions
     @PostMapping("/api/auth/getAllMyPermissions")
     @SuppressWarnings("Duplicates")

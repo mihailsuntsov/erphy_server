@@ -17,7 +17,9 @@ package com.dokio.controller;
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.IdAndCount;
 import com.dokio.message.response.additional.ProductPricesJSON;
+import com.dokio.message.response.additional.ProductsPriceAndRemainsJSON;
 import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
 import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
@@ -323,7 +325,52 @@ public class ProductsController {
         return responseEntity;
     }
 
-
+    //отдает список отделений в виде их Id с доступным количеством и общим количеством товара в отделении
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductCount",
+            params = {"product_id", "company_id", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductCount(
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("document_id") Long document_id)
+    {
+        logger.info("Processing get request for path /api/auth/getProductCount with parameters: " +
+                "product_id: " + product_id.toString() +
+                ", company_id: " + company_id.toString() +
+                ", document_id: "+ document_id.toString());
+        List<IdAndCount> returnList;
+        try {
+            returnList=productsRepositoryJPA.getProductCount(product_id, company_id, document_id);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //отдает краткую информацию о товаре
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductsPriceAndRemains",
+            params = {"department_id", "product_id", "price_type_id", "document_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductsPriceAndRemains(
+            @RequestParam("department_id") Long department_id,
+            @RequestParam("product_id") Long product_id,
+            @RequestParam("price_type_id") Long price_type_id,
+            @RequestParam("document_id") Long document_id)
+    {
+        try {
+            ProductsPriceAndRemainsJSON response=productsRepositoryJPA.getProductsPriceAndRemains(department_id,product_id,price_type_id,document_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************

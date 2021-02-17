@@ -53,6 +53,8 @@ public class WriteoffRepositoryJPA {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userService;
+    @Autowired
+    private ProductsRepositoryJPA productsRepositoryJPA;
 
 
 //*****************************************************************************************************************************************************
@@ -540,7 +542,7 @@ public class WriteoffRepositoryJPA {
     @SuppressWarnings("Duplicates")
     private Boolean addWriteoffProductHistory(WriteoffProductForm row, WriteoffForm request , Long masterId) {
         String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        ProductHistoryJSON lastProductHistoryRecord =  productsRepositoryJPA.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
         BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
         BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
         BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
@@ -590,7 +592,7 @@ public class WriteoffRepositoryJPA {
     @SuppressWarnings("Duplicates")
     private Boolean setProductQuantity(WriteoffProductForm row, WriteoffForm request , Long masterId) {
         String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        ProductHistoryJSON lastProductHistoryRecord =  productsRepositoryJPA.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
         BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
 
         try {
@@ -647,51 +649,6 @@ public class WriteoffRepositoryJPA {
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
-    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-    public ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
-    {
-        String stringQuery;
-        stringQuery =
-                " select                                        "+
-                        " last_purchase_price   as last_purchase_price, "+
-                        " avg_purchase_price    as avg_purchase_price,  "+
-                        " avg_netcost_price     as avg_netcost_price,   "+
-                        " last_operation_price  as last_operation_price,"+
-                        " quantity              as quantity,            "+
-                        " change                as change               "+
-                        "          from products_history                "+
-                        "          where                                "+
-                        "          product_id="+product_id+" and        "+
-                        "          department_id="+department_id         +
-                        "          order by id desc limit 1             ";
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-
-            ProductHistoryJSON returnObj=new ProductHistoryJSON();
-            if(queryList.size()==0){//если записей истории по данному товару ещё нет
-                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
-                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-                returnObj.setLast_operation_price(      (new BigDecimal(0)));
-                returnObj.setQuantity(                  (new BigDecimal(0)));
-            }else {
-                for (Object[] obj : queryList) {
-                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                    returnObj.setQuantity((BigDecimal)              obj[4]);
-                }
-            }
-            return returnObj;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     @SuppressWarnings("Duplicates")  //генератор номера документа
     private Long generateDocNumberCode(Long company_id)

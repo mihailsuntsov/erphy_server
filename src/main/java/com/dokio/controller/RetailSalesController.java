@@ -13,42 +13,44 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsCustomersOrdersForm;
-import com.dokio.message.response.CustomersOrdersJSON;
-import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
+import com.dokio.message.request.Settings.SettingsRetailSalesForm;
+import com.dokio.message.response.RetailSalesJSON;
+import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.repository.*;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
+import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class CustomersOrdersController {
+public class RetailSalesController {
+
     Logger logger = Logger.getLogger("CustomersOrdersController");
 
     @Autowired
-    CustomersOrdersRepositoryJPA customersOrdersRepositoryJPA;
+    RetailSalesRepository retailSalesRepository;
 
-    @PostMapping("/api/auth/getCustomersOrdersTable")
+    @PostMapping("/api/auth/getRetailSalesTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCustomersOrdersTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getCustomersOrdersTable: " + searchRequest.toString());
+    public ResponseEntity<?> getRetailSalesTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getRetailSalesTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
         int departmentId;//по какому отделению показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<CustomersOrdersJSON> returnList;
+        List<RetailSalesJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -77,21 +79,21 @@ public class CustomersOrdersController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = customersOrdersRepositoryJPA.getCustomersOrdersTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = retailSalesRepository.getRetailSalesTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getCustomersOrdersProductTable",
+            value = "/api/auth/getRetailSalesProductTable",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getCustomersOrdersProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getCustomersOrdersProductTable with CustomersOrders id=" + docId.toString());
-        List<CustomersOrdersProductTableJSON> returnList;
+    public ResponseEntity<?> getRetailSalesProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getRetailSalesProductTable with RetailSales id=" + docId.toString());
+        List<RetailSalesProductTableJSON> returnList;
         try {
-            returnList = customersOrdersRepositoryJPA.getCustomersOrdersProductTable(docId);
+            returnList = retailSalesRepository.getRetailSalesProductTable(docId);
             return  new ResponseEntity<>(returnList, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -100,11 +102,10 @@ public class CustomersOrdersController {
         }
     }
 
-
-    @PostMapping("/api/auth/getCustomersOrdersPagesList")
+    @PostMapping("/api/auth/getRetailSalesPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCustomersOrdersPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getCustomersOrdersPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getRetailSalesPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getRetailSalesPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -126,7 +127,7 @@ public class CustomersOrdersController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = customersOrdersRepositoryJPA.getCustomersOrdersSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = retailSalesRepository.getRetailSalesSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -172,73 +173,74 @@ public class CustomersOrdersController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertCustomersOrders")
+    @PostMapping("/api/auth/insertRetailSales")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertCustomersOrders(@RequestBody CustomersOrdersForm request){
-        logger.info("Processing post request for path /api/auth/insertCustomersOrders: " + request.toString());
+    public ResponseEntity<?> insertRetailSales(@RequestBody RetailSalesForm request) throws CantInsertProductRowCauseErrorException, CantSaveProductQuantityException, CantInsertProductRowCauseOversellException {
+        logger.info("Processing post request for path /api/auth/insertRetailSales: " + request.toString());
 
-        Long newDocument = customersOrdersRepositoryJPA.insertCustomersOrders(request);
-        if(newDocument!=null && newDocument>0){
+        Long newDocument = retailSalesRepository.insertRetailSales(request);
+        if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - возвращаем это
             return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка создания документа Заказ покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+        } else {//если null - значит на одной из стадий сохранения произошла ошибка
+            return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(
-            value = "/api/auth/getCustomersOrdersValuesById",
+            value = "/api/auth/getRetailSalesValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getCustomersOrdersValuesById(
+    public ResponseEntity<?> getRetailSalesValuesById(
             @RequestParam("id") Long id)
     {
         logger.info("Processing get request for path /api/auth/getRetailSalesValuesById with parameters: " + "id: " + id);
-        CustomersOrdersJSON response;
+        RetailSalesJSON response;
         try {
-            response=customersOrdersRepositoryJPA.getCustomersOrdersValuesById(id);
+            response=retailSalesRepository.getRetailSalesValuesById(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
-            logger.error("Exception in method getCustomersOrdersValuesById. id = " + id, e);
+            logger.error("Exception in method getRetailSalesValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Заказ покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/updateCustomersOrders")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
-        logger.info("Processing post request for path /api/auth/updateCustomersOrders: " + request.toString());
-        CustomersOrdersUpdateReportJSON updateResults = customersOrdersRepositoryJPA.updateCustomersOrders(request);
-        if(updateResults.getSuccess()){
+
+
+    @PostMapping("/api/auth/updateRetailSales")
+    public ResponseEntity<?> updateRetailSales(@RequestBody RetailSalesForm request){
+        logger.info("Processing post request for path /api/auth/updateRetailSales: " + request.toString());
+        Boolean updateResults = retailSalesRepository.updateRetailSales(request);
+        if(updateResults){
             return new ResponseEntity<>(updateResults, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка сохранения документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/saveSettingsCustomersOrders")
+    @PostMapping("/api/auth/saveSettingsRetailSales")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsCustomersOrders(@RequestBody SettingsCustomersOrdersForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsCustomersOrders: " + request.toString());
+    public ResponseEntity<?> saveSettingsRetailSales(@RequestBody SettingsRetailSalesForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsRetailSales: " + request.toString());
 
-        if(customersOrdersRepositoryJPA.saveSettingsCustomersOrders(request)){
+        if(retailSalesRepository.saveSettingsRetailSales(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.BAD_REQUEST);
         }
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSettingsCustomersOrders",
+            value = "/api/auth/getSettingsRetailSales",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsCustomersOrders()
+    public ResponseEntity<?> getSettingsRetailSales()
     {
-        logger.info("Processing get request for path /api/auth/getSettingsCustomersOrders without request parameters");
-        SettingsCustomersOrdersJSON response;
+        logger.info("Processing get request for path /api/auth/getSettingsRetailSales without request parameters");
+        SettingsRetailSalesJSON response;
         try {
-            response=customersOrdersRepositoryJPA.getSettingsCustomersOrders();
+            response=retailSalesRepository.getSettingsRetailSales();
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -246,115 +248,34 @@ public class CustomersOrdersController {
             return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @PostMapping("/api/auth/deleteCustomersOrders")
+    // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
+    // другие ситуации. Поэтому удаление пока оставляю закомментированным
+/*    @PostMapping("/api/auth/deleteRetailSales")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteCustomersOrders(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteCustomersOrders: " + request.toString());
+    public  ResponseEntity<?> deleteRetailSales(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteRetailSales: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(customersOrdersRepositoryJPA.deleteCustomersOrders(checked)){
+        if(retailSalesRepository.deleteRetailSales(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @PostMapping("/api/auth/undeleteCustomersOrders")
+
+    @PostMapping("/api/auth/undeleteRetailSales")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteCustomersOrders(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteCustomersOrders: " + request.toString());
+    public  ResponseEntity<?> undeleteRetailSales(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteRetailSales: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(customersOrdersRepositoryJPA.undeleteCustomersOrders(checked)){
+        if(retailSalesRepository.undeleteRetailSales(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
-    }
-    //отдает таблицу Заказов покупателя с неотгруженными резервами по товару в требуемом отделении (или department_id=0 - во всех), за исключением документа document_id,  из которого выполняется запрос (document_id=0 - во всех документах)
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/getReservesTable",
-            params = {"product_id", "company_id", "document_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getReservesTable(
-            @RequestParam("product_id") Long product_id,
-            @RequestParam("company_id") Long company_id,
-            @RequestParam("document_id") Long document_id,
-            @RequestParam("department_id") Long department_id)
-    {
-        logger.info("Processing get request for path /api/auth/getReservesTable with parameters: " +
-                "product_id: " + product_id.toString() +
-                ", company_id: " + company_id.toString() +
-                ", department_id: " + department_id.toString() +
-                ", document_id: "+ document_id.toString());
-        List<CustomersOrdersReservesTable> returnList;
-        try {
-            returnList=customersOrdersRepositoryJPA.getReservesTable(company_id,department_id, product_id, document_id);
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    //удаление 1 строки из таблицы товаров
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/deleteCustomersOrdersProductTableRow",
-            params = {"id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
-            @RequestParam("id") Long id)
-    {
-        logger.info("Processing get request for path /api/auth/getReservesTable with parameters: " +
-                "id: " + id);
-        boolean result;
-        try {
-            result=customersOrdersRepositoryJPA.deleteCustomersOrdersProductTableRow(id);
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-/*
-    @PostMapping("/api/auth/getListOfCustomersOrdersFiles")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getListOfCustomersOrdersFiles(@RequestBody SearchForm request)  {
-        Long productId=Long.valueOf(request.getId());
-        List<FilesCustomersOrdersJSON> returnList;
-        try {
-            returnList = customersOrdersRepositoryJPA.getListOfCustomersOrdersFiles(productId);
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/api/auth/deleteCustomersOrdersFile")
-    public ResponseEntity<?> deleteCustomersOrdersFile(@RequestBody SearchForm request) {
-        if(customersOrdersRepositoryJPA.deleteCustomersOrdersFile(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    @PostMapping("/api/auth/addFilesToCustomersOrders")
-    public ResponseEntity<?> addFilesToCustomersOrders(@RequestBody UniversalForm request) {
-        if(customersOrdersRepositoryJPA.addFilesToCustomersOrders(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
     }*/
+
 }

@@ -59,7 +59,7 @@ public class CustomersOrdersRepositoryJPA {
     @Autowired
     ProductsRepositoryJPA productsRepository;
     @Autowired
-    private WriteoffRepositoryJPA writeoffRepository;
+    private ProductsRepositoryJPA productsRepositoryJPA;
 
 //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -512,7 +512,7 @@ public class CustomersOrdersRepositoryJPA {
                 //генерируем номер документа, если его (номера) нет
                 if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
                     doc_number=Long.valueOf(request.getDoc_number());
-                } else doc_number=generateDocNumberCode(request.getCompany_id());
+                } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"customers_orders");
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
@@ -1045,7 +1045,7 @@ public class CustomersOrdersRepositoryJPA {
             if(departmentId>0L){
                 stringQuery=stringQuery +" and cop.department_id=" + departmentId;
             }
-            if(documentId>0L){
+            if(documentId>0L){//если запрос идет из Заказов покупателя или Розничной продажи, связанной с Заказом покупателя - нужно чтобы отчет возвращался без учета этого заказа
                 stringQuery=stringQuery +" and p.id !=" + documentId;
             }
             stringQuery = stringQuery + "  order by date_time_created_sort asc";
@@ -1226,100 +1226,6 @@ public class CustomersOrdersRepositoryJPA {
             }
         } else return false;
     }
-    @SuppressWarnings("Duplicates")
-    //отдает список отделений в виде их Id с зарезервированным количеством и общим количеством товара в отделении
-    public List<IdAndCount> getProductCount(Long product_id, Long company_id, Long document_id) {
-
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-        String stringQuery = "select" +
-                " d.id as id, " +
-                " (select coalesce(quantity,0) from product_quantity where department_id = d.id and product_id = "+product_id+") as total, " +
-                " (select " +
-                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
-                "   from " +
-                "   customers_orders_product " +
-                "   where " +
-                "   product_id="+product_id+
-                "   and department_id = d.id "+
-                "   and customers_orders_id!="+document_id+") as reserved "+//зарезервировано в других документах Заказ покупателя
-
-                " from" +
-                " departments d " +
-                " where" +
-                " d.company_id= " + company_id +
-                " and d.master_id= " + myMasterId +
-                " and coalesce(d.is_deleted,false)=false";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<IdAndCount> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                IdAndCount product = new IdAndCount();
-                product.setId(Long.parseLong(              obj[0].toString()));
-                product.setTotal(                          obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
-                product.setReserved(                       obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
-                returnList.add(product);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    //отдает информацию о состоянии товара(кол-во всего, зарезервировано и цена) по его id ,в отделении по его id, по цене по её id, для документа Заказ покупателя по его id
-    public ProductsPriceAndRemainsJSON getProductsPriceAndRemains(Long department_id, Long product_id, Long price_type_id, Long document_id) {
-
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-//        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
-        //себестоимость
-        ProductHistoryJSON lastProductHistoryRecord =  writeoffRepository.getLastProductHistoryRecord(product_id,department_id);
-        BigDecimal netCost= lastProductHistoryRecord.getAvg_netcost_price();
-
-        String stringQuery = "select" +
-                                " coalesce((select quantity from product_quantity where product_id = "+product_id+" and department_id = d.id),0) as total, "+ //всего на складе (т.е остаток)
-                                " (select " +
-                                //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
-                                "   from " +
-                                "   customers_orders_product " +
-                                "   where " +
-                                "   product_id="+product_id+
-                                "   and department_id = d.id "+
-                                "   and customers_orders_id!="+document_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
-        if(price_type_id!=0) {//если тип цены был выбран
-            stringQuery=stringQuery+", coalesce((select price_value from product_prices where product_id = " + product_id + " and price_type_id = " + price_type_id + " and company_id = d.company_id),0) as price ";// цена по типу цены
-        }
-        stringQuery=stringQuery+" from" +
-                                " departments d " +
-                                " where" +
-                                " d.id= " + department_id +
-                                " and d.master_id= " + myMasterId;
-
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            List<Object[]> queryList = query.getResultList();
-            ProductsPriceAndRemainsJSON returnObj = new ProductsPriceAndRemainsJSON();
-
-            for (Object[] obj : queryList) {
-                returnObj.setTotal(                                         obj[0]==null?BigDecimal.ZERO:(BigDecimal)obj[0]);
-                returnObj.setReserved(                                      obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
-                if (price_type_id != 0) {
-                    returnObj.setPrice((BigDecimal)                         obj[2]);
-                } else {
-                    returnObj.setPrice(                      BigDecimal.valueOf(0));
-                }
-                returnObj.setNetCost(netCost);
-            }
-            return returnObj;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
@@ -1369,53 +1275,7 @@ public class CustomersOrdersRepositoryJPA {
             return null;
         }
     }
-*/
 
-
-    @SuppressWarnings("Duplicates")  //генератор номера документа
-    private Long generateDocNumberCode(Long company_id)
-    {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery;
-        stringQuery = "select coalesce(max(doc_number)+1,1) from customers_orders where company_id="+company_id+" and master_id="+myMasterId;
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return Long.parseLong(query.getSingleResult().toString(),10);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return 0L;
-        }
-    }
-
-    @SuppressWarnings("Duplicates") // проверка на уникальность номера документа
-    public Boolean isCustomersOrdersNumberUnical(UniversalForm request)
-    {
-        Long company_id=request.getId1();
-        Long code=request.getId2();
-        Long doc_id=request.getId3();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery;
-        stringQuery = "" +
-                "select id from customers_orders where " +
-                "company_id="+company_id+
-                " and master_id="+myMasterId+
-                " and doc_number="+code;
-        if(doc_id>0) stringQuery=stringQuery+" and id !="+doc_id; // чтобы он не срабатывал сам на себя
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(query.getResultList().size()>0)
-                return false;// код не уникальный
-            else return true; // код уникальный
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return true;
-        }
-    }
-/*
     @SuppressWarnings("Duplicates") //удаление строки с товаром перед перезаписью
     private Boolean clearCustomersOrdersProductTable(Long product_id, Long customers_orders_id) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
