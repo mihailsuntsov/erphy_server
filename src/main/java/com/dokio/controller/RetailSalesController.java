@@ -180,9 +180,34 @@ public class RetailSalesController {
 
         Long newDocument = retailSalesRepository.insertRetailSales(request);
         if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - возвращаем это
-            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+            return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
             return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getSetOfTypePrices",
+            params = {"company_id","department_id","cagent_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSetOfTypePrices(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("department_id") Long department_id,
+            @RequestParam("cagent_id") Long cagent_id)
+    {
+        logger.info("Processing get request for path /api/auth/getSetOfTypePrices with parameters: " +
+                "company_id: " + company_id +
+                "department_id: " + department_id +
+                "cagent_id: " + cagent_id );
+        SetOfTypePricesJSON response;
+        try {
+            response=retailSalesRepository.getSetOfTypePrices(company_id, department_id, cagent_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getSetOfTypePrices. company_id=" + company_id + ", department_id=" + department_id + ", cagent_id=" + cagent_id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки набора типов цен", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -205,8 +230,6 @@ public class RetailSalesController {
             return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
 
     @PostMapping("/api/auth/updateRetailSales")
     public ResponseEntity<?> updateRetailSales(@RequestBody RetailSalesForm request){

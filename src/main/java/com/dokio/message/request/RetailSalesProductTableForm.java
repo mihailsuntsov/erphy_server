@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public class RetailSalesProductTableForm {
 
     private BigDecimal available;                   // кол-во доступно (на момент формирования документа) (высчитывается не сохраняется)
-    private Long customers_orders_id;               // id родиельского документа
+    private Long retail_sales_id;                   // id родиельского документа
     private Long department_id;                     // id отделения (склада) отгрузки
     private Long edizm_id;                          // id единицы измерения
     private Long nds_id;                            // id ндс
@@ -39,12 +39,12 @@ public class RetailSalesProductTableForm {
         this.available = available;
     }
 
-    public Long getCustomers_orders_id() {
-        return customers_orders_id;
+    public Long getRetail_sales_id() {
+        return retail_sales_id;
     }
 
-    public void setCustomers_orders_id(Long customers_orders_id) {
-        this.customers_orders_id = customers_orders_id;
+    public void setRetail_sales_id(Long retail_sales_id) {
+        this.retail_sales_id = retail_sales_id;
     }
 
     public Long getDepartment_id() {
