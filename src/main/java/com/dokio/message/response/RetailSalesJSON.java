@@ -50,6 +50,24 @@ public class RetailSalesJSON
     private Long customers_orders_id;
     private Long shift_id;
     private int shift_number;
+    private Long receipt_id;
+    private boolean hasSellReceipt;
+
+    public boolean isHasSellReceipt() {
+        return hasSellReceipt;
+    }
+
+    public void setHasSellReceipt(boolean hasSellReceipt) {
+        this.hasSellReceipt = hasSellReceipt;
+    }
+
+    public Long getReceipt_id() {
+        return receipt_id;
+    }
+
+    public void setReceipt_id(Long receipt_id) {
+        this.receipt_id = receipt_id;
+    }
 
     public BigDecimal getSum_price() {
         return sum_price;

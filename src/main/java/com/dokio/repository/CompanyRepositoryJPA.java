@@ -848,7 +848,21 @@ public class CompanyRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public List<IdAndName> getCompaniesList() {
         String stringQuery;
+
+        // Владелец предприятия (masterId)
         Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+        // Текущий пользователь (он может быть владельцем, а может и не быть).
+        // Владельцу (masterId) доступны все предприятия его аккаунта, пользователю - только одно предприятие владельца - то, к которому он привязан
+        Long myId = userRepositoryJPA.getMyId();
+
+        //Выясним, является ли пользователь одновременно и владельцем, и доступны ли ему все предприятия аккаунта
+        Boolean isIamMaster = myId==companyOwnerId;
+
+        Long myCompanyId=0L;
+
+        if(!isIamMaster) //если пользователь не владелец (не masterId) - найдем id его предприятия, для фильтрации списка предприятий (т.к. он не должен видеть остальные предприятия мастер-аккаунта)
+            myCompanyId=userRepositoryJPA.getMyCompanyId_();
 
         stringQuery = "select " +
                 "           p.id as id, " +
@@ -856,6 +870,9 @@ public class CompanyRepositoryJPA {
                 "           from companies p " +
                 "           where  p.master_id=" + companyOwnerId +
                 "           and coalesce(p.is_deleted,false)=false ";
+
+        //если пользователь не владелец (не masterId) - оставляем только его предприятие
+        if(!isIamMaster) stringQuery = stringQuery + " and p.id=" + myCompanyId;
 
         stringQuery = stringQuery + " group by p.id order by p.name asc";
         Query query = entityManager.createNativeQuery(stringQuery);

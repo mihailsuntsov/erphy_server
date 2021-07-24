@@ -336,6 +336,27 @@ public class UsersController {
         return responseEntity;
     }
 
+    //отдает сотрудников (пользователей) по id отделения
+    @RequestMapping(
+            value = "/api/auth/getEmployeeListByDepartmentId",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getEmployeeListByDepartmentId(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/getEmployeeListByDepartmentId with parameters: " +
+                "id: " + id);
+        try {
+            List<UsersListJSON> usersList = userRepositoryJPA.getEmployeeListByDepartmentId(id);
+            return new ResponseEntity<>(usersList, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Exception in method getEmployeeListByDepartmentId. id = " + id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки списка сотрудников", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/api/auth/getMyId")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getMyId() {

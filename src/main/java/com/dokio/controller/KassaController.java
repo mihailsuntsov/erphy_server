@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -184,14 +185,19 @@ public class KassaController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertKassa(@RequestBody KassaForm request){
         logger.info("Processing post request for path /api/auth/insertKassa: " + request.toString());
-
-        Long newDocument = kassaRepository.insertKassa(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
+        //перед созданием новой кассы идет проверка на ее уникальность.
+        if (kassaRepository.isKassaUnique(request.getZn_kkt(), request.getCompany_id(),0L)){
+            Long newDocument = kassaRepository.insertKassa(request);
+            if(newDocument!=null && newDocument>0){
+                ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+                return responseEntity;
+            } else {
+                ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
+                return responseEntity;
+            }
+        }else{
+            logger.info("Ошибка создания кассы. Касса не уникальна по заводскому номеру в данном предприятии.");
+            return new ResponseEntity<>("[\n" + "    0\n" +  "]", HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
         }
     }
 
@@ -199,16 +205,167 @@ public class KassaController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateKassa(@RequestBody KassaForm request){
         logger.info("Processing post request for path /api/auth/updateKassa: " + request.toString());
+        //перед сохранением кассы проверка на ее уникальность.
+        if (kassaRepository.isKassaUnique(request.getZn_kkt(), request.getCompany_id(), request.getId())){
+            if(kassaRepository.updateKassa(request)){
+                return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }else{
+            logger.info("Ошибка сохранения кассы. Касса не уникальна по заводскому номеру в данном предприятии.");
+            return new ResponseEntity<>("[\n" + "    0\n" +  "]", HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
+        }
 
-        if(kassaRepository.updateKassa(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
+    }
+
+    @RequestMapping(
+            value = "/api/auth/isKassaUnique",
+            params = {"zn_kkt","company_id","current_kassa_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> isKassaUnique(
+            @RequestParam("zn_kkt") String zn_kkt, //заводской номер ККТ
+            @RequestParam("company_id") Long company_id, // id предприятия
+            @RequestParam("current_kassa_id") Long current_kassa_id) //id кассы, которую не нужно принимать во внимание (чтобы не получилось так, что при сохранении мы стали проверять на уникальность, и нашли сохраняемую кассу, и сказали, что сохраняемая касса не уникальна)
+    {
+        logger.info("Processing get request for path /api/auth/isKassaUnique with parameters: " +
+                "company_id: " + company_id +
+                ", zn_kkt: " + zn_kkt +
+                ", current_kassa_id: " + current_kassa_id
+        );
+        Boolean response;
+        try {
+            response=kassaRepository.isKassaUnique(zn_kkt, company_id,current_kassa_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isKassaUnique. company_id=" + company_id + ", zn_kkt=" + zn_kkt + ", current_kassa_id=" + current_kassa_id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка запроса на уникальность ККТ", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // Запись в БД состояния смены (создание новой смены или изменение её статуса)
+    @RequestMapping(
+            value = "/api/auth/updateShiftStatus",
+            params = {"zn_kkt", "shiftStatusId", "shiftNumber", "shiftExpiredAt", "companyId", "kassaId", "fnSerial"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> updateShiftStatus(
+            @RequestParam("zn_kkt") String zn_kkt, //заводской номер ККТ
+            @RequestParam("shiftStatusId") String shiftStatusId, //статус смены: opened closed expired
+            @RequestParam("shiftNumber") Long shiftNumber, //номер смены, генерируется ККТ
+            @RequestParam("shiftExpiredAt") String shiftExpiredAt, // время истечения (экспирации) смены в текстовом формате, генерируемом самой ККТ. Вместе с kassa_id и shift_number используется для уникальности смены
+            @RequestParam("companyId") Long companyId, // id предприятия
+            @RequestParam("kassaId") Long kassaId, //id кассы
+            @RequestParam("fnSerial") String fnSerial) //Серийный номер ФН
+    {
+        logger.info("Processing get request for path /api/auth/updateShiftStatus with parameters: " +
+                    "company_id: " + companyId +
+                    ", zn_kkt: " + zn_kkt +
+                    ", shiftStatusId: " + shiftStatusId +
+                    ", shiftNumber: " + shiftNumber +
+                    ", shiftExpiredAt: " + shiftExpiredAt +
+                    ", kassaId: " + kassaId +
+                    ", fnSerial: " + fnSerial
+        );
+        try {
+            Boolean response=kassaRepository.updateShiftStatus(zn_kkt, shiftStatusId, shiftNumber, shiftExpiredAt, companyId, kassaId, fnSerial);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method updateShiftStatus. Parameters: company_id: " + companyId +
+                    ", zn_kkt: " + zn_kkt +
+                    ", shiftStatusId: " + shiftStatusId +
+                    ", shiftNumber: " + shiftNumber +
+                    ", shiftExpiredAt: " + shiftExpiredAt +
+                    ", kassaId: " + kassaId +
+                    ", fnSerial: " + fnSerial, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка запроса на запись состояния смены ККТ в базу данных", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Запись в БД чека
+    @RequestMapping(
+            value = "/api/auth/addReceipt",
+            params = {"zn_kkt", "shiftStatusId", "shiftNumber", "shiftExpiredAt", "companyId", "kassaId", "fnSerial"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> addReceipt(
+            @RequestParam("zn_kkt") String zn_kkt, //заводской номер ККТ
+            @RequestParam("shiftStatusId") String shiftStatusId, //статус смены: opened closed expired
+            @RequestParam("shiftNumber") Long shiftNumber, //номер смены, генерируется ККТ
+            @RequestParam("shiftExpiredAt") String shiftExpiredAt, // время истечения (экспирации) смены в текстовом формате, генерируемом самой ККТ. Вместе с kassa_id и shift_number используется для уникальности смены
+            @RequestParam("companyId") Long companyId, // id предприятия
+            @RequestParam("kassaId") Long kassaId, //id кассы
+            @RequestParam("fnSerial") String fnSerial, //Серийный номер ФН
+            @RequestParam("operationId") String operationId, //id операции (sell, buy и т.д.)
+            @RequestParam("sno") String sno, //система налогообложения кассы (из паспорта кассы)
+            @RequestParam("billing_address") String billing_address, //место расчетов
+            @RequestParam("payment_type") String payment_type, // тип оплаты (cash,electronically,mixed)
+            @RequestParam("cash") BigDecimal cash, //
+            @RequestParam("electronically") BigDecimal electronically, // электронными
+            @RequestParam("id") Long id, // id документа
+            @RequestParam("docId") int docId) // id наименования документа в таблице documents
+    {
+        logger.info("Processing get request for path /api/auth/addReceipt with parameters: " +
+                    "company_id: " + companyId +
+                    ", zn_kkt: " + zn_kkt +
+                    ", shiftStatusId: " + shiftStatusId +
+                    ", shiftNumber: " + shiftNumber +
+                    ", shiftExpiredAt: " + shiftExpiredAt +
+                    ", kassaId: " + kassaId +
+                    ", fnSerial: " + fnSerial +
+                    ", operationId: " + operationId +
+                    ", sno: " + sno +
+                    ", billing_address: " + billing_address +
+                    ", payment_type: " + payment_type +
+                    ", cash: " + cash +
+                    ", electronically: " + electronically +
+                    ", id: " + id +
+                    ", docId: " + docId
+        );
+        try {
+            Boolean response=kassaRepository.addReceipt(zn_kkt, shiftStatusId, shiftNumber, shiftExpiredAt, companyId, kassaId, fnSerial, operationId, sno, billing_address, payment_type, cash, electronically, id, docId);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method addReceipt. Parameters: company_id: " + companyId +
+                    ", zn_kkt: " + zn_kkt +
+                    ", shiftStatusId: " + shiftStatusId +
+                    ", shiftNumber: " + shiftNumber +
+                    ", shiftExpiredAt: " + shiftExpiredAt +
+                    ", kassaId: " + kassaId +
+                    ", fnSerial: " + fnSerial +
+                    ", operationId: " + operationId +
+                    ", sno: " + sno +
+                    ", billing_address: " + billing_address +
+                    ", payment_type: " + payment_type +
+                    ", cash: " + cash +
+                    ", electronically: " + electronically +
+                    ", id: " + id +
+                    ", docId: " + docId, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка запроса на запись чека в базу данных", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+//    //отдаёт номер смены для работы с ККМ в режиме разработчика. Т.к. в кассе может не быть ФН, то номер смены будет всегда 0, что не приемлемо.
+//    @SuppressWarnings("Duplicates")
+//    @RequestMapping(
+//            value = "/api/auth/getShiftNum",
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getShiftNum()
+//    {
+//        logger.info("Processing get request for path /api/auth/getShiftNum with no parameters. ");
+//        KassaCashierSettingsJSON response=kassaRepository.getKassaCashierSettings();
+//        try {
+//            return new ResponseEntity<>(response, HttpStatus.OK);
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//            return new ResponseEntity<>("Ошибка запроса getShiftNum", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
     @PostMapping("/api/auth/deleteKassa")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteKassa(@RequestBody SignUpForm request){

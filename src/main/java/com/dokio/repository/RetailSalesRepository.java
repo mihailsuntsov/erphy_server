@@ -32,6 +32,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -98,7 +99,8 @@ public class RetailSalesRepository {
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from retail_sales_product where retail_sales_id=p.id),0) as sum_price, " +
                     "           p.name as name, " +
-                    "           coalesce(sh.shift_number,0) as shift_number " +
+                    "           coalesce(sh.shift_number,0) as shift_number, " +
+                    "           (select count(*) from receipts rec where coalesce(rec.retail_sales_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt" + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
 
                     "           from retail_sales p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -171,6 +173,7 @@ public class RetailSalesRepository {
                     doc.setSum_price((BigDecimal)                 obj[23]);
                     doc.setName((String)                          obj[24]);
                     doc.setShift_number((Integer)                 obj[25]);
+                    doc.setHasSellReceipt(((BigInteger)           obj[26]).longValue() > 0L);//если есть чеки - вернется true
                     returnList.add(doc);
                 }
                 return returnList;
@@ -325,7 +328,6 @@ public class RetailSalesRepository {
                     doc.setPpr_name_api_atol((String)                       obj[17]);
                     doc.setIs_material((Boolean)                            obj[18]);
     //                doc.setReserved_current(                                obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
-
                     returnList.add(doc);
                 }
                 return returnList;
@@ -342,7 +344,9 @@ public class RetailSalesRepository {
         String stringQuery = "select coalesce(rs.customers_orders_id,0) from retail_sales rs where rs.id=" + retailSalesId;
         try{
             return Long.valueOf(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
-        } catch (Exception e) {
+        }
+        catch(NoResultException nre){return 0L;}
+        catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getParentCustomersOrdersId. SQL query:" + stringQuery, e);
             return null;
@@ -393,7 +397,8 @@ public class RetailSalesRepository {
                 "           stat.color as status_color, " +
                 "           stat.description as status_description, " +
                 "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
-                "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id " +
+                "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
+                "           coalesce(p.receipt_id,0) as receipt_id " +
                 "           from retail_sales p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN users u ON p.master_id=u.id " +
@@ -457,6 +462,7 @@ public class RetailSalesRepository {
                     returnObj.setStatus_description((String)                obj[29]);
                     returnObj.setCagent_type_price_id(Long.parseLong(       obj[30].toString()));
                     returnObj.setDefault_type_price_id(Long.parseLong(      obj[31].toString()));
+                    returnObj.setReceipt_id(Long.parseLong(                 obj[32].toString()));
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -513,8 +519,6 @@ public class RetailSalesRepository {
         boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
         Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
         Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-
-
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -660,11 +664,13 @@ public class RetailSalesRepository {
                     }
                 } else { // если сохранили удачно - значит нужно сделать запись в историю изменения данного товара
                     //создание записи в истории изменения товара
-                    if(!addRetailSalesProductHistory(newDockId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request , myMasterId)){
+                    if(!addRetailSalesProductHistory(newDockId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request , myMasterId, row.getIs_material())){
                         throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-                    } else {//создание записи актуального количества товара на складе
-                        if(!setProductQuantity(row.getProduct_id(),request.getDepartment_id(), myMasterId)){
-                            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+                    } else {//создание записи актуального количества товара на складе (таблица product_quantity)
+                        if(row.getIs_material()) { // но только если товар материален
+                            if (!setProductQuantity(row.getProduct_id(), request.getDepartment_id(), myMasterId)) {
+                                throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+                            }
                         }
                     }
                 }
@@ -717,9 +723,11 @@ public class RetailSalesRepository {
 //            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
             BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
             try {
-                //вычисляем доступное количество товара на складе
-                available = productsRepository.getAvailableExceptMyDock(row.getProduct_id(), row.getDepartment_id(), 0L); //****** пока 0 но потом розничная продажа будет создаваться так же и из Заказов покупателей
-                if (available.compareTo(row.getProduct_count()) > -1) //если доступное количество товара больше или равно количеству к продаже
+                if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
+                    //вычисляем доступное количество товара на складе
+                    available = productsRepository.getAvailableExceptMyDock(row.getProduct_id(), row.getDepartment_id(), 0L); //****** пока 0 но потом розничная продажа будет создаваться так же и из Заказов покупателей
+                else available= BigDecimal.valueOf(0L);
+                if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material()) //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.)
                 {
                     stringQuery =
                     " insert into retail_sales_product (" +
@@ -911,9 +919,34 @@ public class RetailSalesRepository {
 
         }
 
+        @SuppressWarnings("Duplicates") // проверка на наличие чека необходимой операции (operation id, например sell), определенного документа (например, розничной продажи, id в таблице documents = 25) с определенным id
+        public Boolean isReceiptPrinted(Long company_id, int document_id, Long id, String operation_id )
+        {
+            String stringQuery;
+            stringQuery = "" +
+                    " select 1 from receipts where " +
+                    " company_id="+company_id+
+                    " and document_id ="+document_id +
+                    " and operation_id = '" + operation_id + "'" +
+                    " and retail_sales_id = " + id;//потом название этой колонки нужно будет определять динамически через отдельный метод, засылая туда operation_id
+            try
+            {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                return(query.getResultList().size()>0);
+            }
+            catch (Exception e) {
+                logger.error("Exception in method isReceiptPrinted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return true;
+            }
+        }
 
-        @SuppressWarnings("Duplicates")
-        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId) {
+
+
+
+        //записывает историю изменения кол-ва товара
+        //на данный момент нематериальная номенклатура тоже записывается в products_history, для ее отображения в карточке номенклатуры в разделе Операции, чтобы там можно было видеть Розничные продажи и Возвраты покупателей
+        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId, boolean isMaterial) {
             String stringQuery;
             ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,request.getDepartment_id());
             BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
@@ -943,7 +976,7 @@ public class RetailSalesRepository {
                             25 +","+
                             retailSalesId + ","+
                             product_id + ","+
-                            lastQuantity.subtract(product_count)+","+
+                            (isMaterial?(lastQuantity.subtract(product_count)):(new BigDecimal(0)))+","+//если номенклатура не материальна - количество = 0
                             product_count.multiply(new BigDecimal(-1)) +","+
                             lastAvgPurchasePrice +","+
                             lastAvgNetcostPrice +","+

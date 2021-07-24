@@ -197,8 +197,8 @@ public class RetailSalesController {
     {
         logger.info("Processing get request for path /api/auth/getSetOfTypePrices with parameters: " +
                 "company_id: " + company_id +
-                "department_id: " + department_id +
-                "cagent_id: " + cagent_id );
+                " department_id: " + department_id +
+                " cagent_id: " + cagent_id );
         SetOfTypePricesJSON response;
         try {
             response=retailSalesRepository.getSetOfTypePrices(company_id, department_id, cagent_id);
@@ -211,6 +211,33 @@ public class RetailSalesController {
         }
     }
 
+    @RequestMapping(
+            value = "/api/auth/isReceiptPrinted",
+            params = {"company_id","document_id","id","operation_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> isReceiptPrinted(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("document_id") int document_id,
+            @RequestParam("id") Long id,
+            @RequestParam("operation_id") String operation_id)
+    {
+        logger.info("Processing get request for path /api/auth/isReceiptPrinted with parameters: " +
+                "company_id: " + company_id +
+                " document_id: " + document_id +
+                " id: " + id +
+                " operation_id: " + operation_id
+        );
+        Boolean response;
+        try {
+            response=retailSalesRepository.isReceiptPrinted(company_id, document_id, id, operation_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isReceiptPrinted. company_id=" + company_id + ", document_id=" + document_id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка запроса на наличие чека", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     @RequestMapping(
             value = "/api/auth/getRetailSalesValuesById",
             params = {"id"},

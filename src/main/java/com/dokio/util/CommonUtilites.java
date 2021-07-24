@@ -18,6 +18,10 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import javax.persistence.*;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Repository
 public class CommonUtilites {
 
@@ -97,5 +101,27 @@ public class CommonUtilites {
             e.printStackTrace();
             return true;
         }
+    }
+
+    //превращает сет Long в строку с заданным делимитером, началом и концом. Например (1,2,3,4,5)
+    public String SetOfLongToString(Set<Long> longList, String delimitter, String prefix, String suffix) {
+        String result = longList.stream()
+                .map(n -> String.valueOf(n))
+                .collect(Collectors.joining(delimitter, prefix, suffix));
+        return result;
+    }
+    //превращает список Long в строку с заданным делимитером, началом и концом. Например (1,2,3,4,5)
+    public String ListOfLongToString(List<Long> longList, String delimitter, String prefix, String suffix) {
+        String result = longList.stream()
+                .map(n -> String.valueOf(n))
+                .collect(Collectors.joining(delimitter, prefix, suffix));
+        return result;
+    }
+    //превращает список Integer в строку с заданным делимитером, началом и концом. Например (1,2,3,4,5)
+    public String ListOfIntToString(List<Integer> longList, String delimitter, String prefix, String suffix) {
+        String result = longList.stream()
+                .map(n -> String.valueOf(n))
+                .collect(Collectors.joining(delimitter, prefix, suffix));
+        return result;
     }
 }

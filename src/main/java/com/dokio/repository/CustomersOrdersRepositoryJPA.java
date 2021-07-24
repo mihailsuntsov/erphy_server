@@ -670,7 +670,7 @@ public class CustomersOrdersRepositoryJPA {
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
         BigDecimal reserved_current = row.getReserved_current()==null?new BigDecimal(0):row.getReserved_current(); // зарезервированное количество товара
         try {
-            //Проверка на то, чтобы зарезервированное кличество товара не превышало заказанное количество товара (графа Кол-во)
+            //Проверка на то, чтобы зарезервированное количество товара не превышало заказанное количество товара (графа Кол-во)
             if(reserved_current.compareTo(row.getProduct_count()) > 0) { //1, т.е. резерв превышает заказываемое количество товара
                 row.setReserved_current(new BigDecimal(0));// отменяем резерв, т.к. он превышает заказываемое количество товара
                 saveResult = 1;
@@ -1128,41 +1128,7 @@ public class CustomersOrdersRepositoryJPA {
         }
     }
 */
-/*
-    @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(CustomersOrdersProductForm row, CustomersOrdersForm request , Long masterId) {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
 
-        try {
-            stringQuery =
-                    " insert into product_quantity (" +
-                            " master_id," +
-                            " department_id," +
-                            " product_id," +
-                            " quantity" +
-                            ") values ("+
-                            masterId + ","+
-                            request.getDepartment_id() + ","+
-                            row.getProduct_id() + ","+
-                            lastQuantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                            " DO update set " +
-                            " department_id = " + request.getDepartment_id() + ","+
-                            " product_id = " + row.getProduct_id() + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ lastQuantity;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-*/
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean deleteCustomersOrders (String delNumbers) {

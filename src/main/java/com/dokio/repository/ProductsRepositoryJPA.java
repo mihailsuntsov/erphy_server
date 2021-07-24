@@ -1179,9 +1179,43 @@ public class ProductsRepositoryJPA {
         stringQuery = stringQuery + " left join fetch p.children";
         entityManager.createQuery(stringQuery, ProductCategories.class).getResultList();
         for (int rootId : rootIds) {
-            returnTreesList.add(entityManager.find(ProductCategories.class, Long.valueOf(rootId)));
+            returnTreesList.add(entityManager.find(ProductCategories.class, (long) rootId));
         }
         return returnTreesList;
+    }
+
+
+
+    //возвращает сет всех id дочерних категорий от id категории
+    @SuppressWarnings("Duplicates")
+    public Set<Long> getProductCategoryChildIds(Long parentId) {
+        String stringQuery="WITH RECURSIVE nodes(id) AS (" +
+                "    SELECT ps1.id " +
+                "    FROM product_categories ps1 WHERE parent_id = " + parentId +
+                "        UNION" +
+                "    SELECT ps2.id" +
+                "    FROM product_categories ps2, nodes ps1 WHERE ps2.parent_id = ps1.id" +
+                ")" +
+                "SELECT * FROM nodes;";
+        Query query = entityManager.createNativeQuery(stringQuery);
+        Set<Long> catIds = new HashSet<>();
+        for(Object i: query.getResultList()){
+            catIds.add(new Long(i.toString()));
+        }//иначе в этом листе будут интеджеры, хоть он и лонг
+        return catIds;
+    }
+
+
+    //возвращает сет id дочерних категорий от листа id присланных категорий
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Set<Long> getProductCategoriesChildIds(List<Long> parentIds) {
+        Set<Long> returnIdsSet = new HashSet<>();
+        for (Long parentId : parentIds) {
+            Set<Long> categoryChildsIds = getProductCategoryChildIds(parentId);
+            returnIdsSet.addAll(categoryChildsIds);
+        }
+        return returnIdsSet;
     }
 
     //права на просмотр документов в таблице меню
@@ -2249,7 +2283,13 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates")
+//*****************************************************************************************************************************************************
+//****************************************************  C O M M O N   U T I L I T E S   ***************************************************************
+//*****************************************************************************************************************************************************
+
+
+    //синхронизирует кол-во товаров в products_history и в product_quantity по предприятию
+    //данная операция для работы Докио не нужна, проводилась 1 раз, при введении таблицы product_quantity, необходимой для быстрой отдачи кол-ва товара
     @Transactional
     public boolean syncQuantityProducts(UniversalForm request) {
         Long companyId = request.getId();
@@ -2260,15 +2300,15 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Integer> queryList = query.getResultList();
 
-            for (Integer obj : queryList) {
+            for (Integer obj : queryList) { //цикл по id отделений предприятия
                 Long departmentId = Long.parseLong(obj.toString());
 
                 stringQuery = "select id from products where company_id=" + companyId;
                 query = entityManager.createNativeQuery(stringQuery);
                 List<Integer> queryList2 = query.getResultList();
-                for (Integer obj2 : queryList2) {
+                for (Integer obj2 : queryList2) {//цикл по всем товарам предприятия
                     Long productId = Long.parseLong(obj2.toString());
-                    BigDecimal quantity = getLastProductHistoryQuantity(productId,departmentId);
+                    BigDecimal quantity = getLastProductHistoryQuantity(productId,departmentId);//получили кол-во товара в текущем предприятии в таблице по истории изменения количества товара
 
                     if (!setProductQuantity(myMasterId, productId, departmentId, quantity)) {// запись о количестве товара в отделении в отдельной таблице
                         break;
@@ -2284,7 +2324,25 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    // определяет, материален ли товар, по его признаку предмета расчёта
+    public Boolean isProductMaterial(Long prodId){
+        String stringQuery="";
+        try {
+            stringQuery =
+                    " select is_material from sprav_sys_ppr where id= (" +
+                    " select ppr_id from products where id=" + prodId +")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean) query.getSingleResult();
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isProductMaterial. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     @SuppressWarnings("Duplicates")
+    //product_quantity - таблица, в которой хранится актуальное количество товара (при условии что товар материален, т.е. isProductMaterial возвращает true).
     private Boolean setProductQuantity(Long masterId, Long product_id, Long department_id, BigDecimal quantity) {
         String stringQuery="";
         try {

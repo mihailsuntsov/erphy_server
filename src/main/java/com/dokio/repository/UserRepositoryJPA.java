@@ -24,6 +24,7 @@ import com.dokio.model.Departments;
 import com.dokio.model.User;
 import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,8 @@ import java.util.Set;
 
 @Repository("UserRepositoryJPA")
 public class UserRepositoryJPA {
+
+    Logger logger = Logger.getLogger("UserRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -191,7 +194,7 @@ public class UserRepositoryJPA {
         List<String> depNames = query.getResultList();
         return depNames;
     }
-    //public getUsersListByDepartmentId
+
     @Transactional
     @SuppressWarnings("Duplicates")
     public List<UsersListJSON> getUsersListByDepartmentId(int did) {
@@ -208,6 +211,30 @@ public class UserRepositoryJPA {
 
         Query query =  entityManager.createNativeQuery(stringQuery, UsersListJSON.class);
         return query.getResultList();
+    }
+
+    //отдает сотрудников (пользователей) по id отделения
+    @SuppressWarnings("Duplicates")
+    public List<UsersListJSON> getEmployeeListByDepartmentId(Long did) {
+        String stringQuery;
+
+        stringQuery="select " +
+                "           u.id as id, " +
+                "           u.name as name " +
+                "           from users u " +
+                "           where u.status_account<4 and u.company_id="+getMyCompanyId()+
+                "           and u.id in(select user_id from user_department where department_id="+did+")";
+        stringQuery = stringQuery+" order by u.name asc";
+
+        try
+        {
+            Query query =  entityManager.createNativeQuery(stringQuery, UsersListJSON.class);
+            return query.getResultList();
+        }catch (Exception e) {
+            logger.error("Exception in method getEmployeeListByDepartmentId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @SuppressWarnings("Duplicates")

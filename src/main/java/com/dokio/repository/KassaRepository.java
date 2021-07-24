@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -83,7 +84,8 @@ public class KassaRepository {
                     "           p.server_address as server_address, " +
                     "           coalesce(p.allow_to_use,false) as allow_to_use, " +
                     "           coalesce(p.is_deleted,false) as is_deleted, " +
-                    "           p.billing_address as billing_address " +
+                    "           p.billing_address as billing_address, " +
+                    "           p.zn_kkt as zn_kkt" +
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -105,13 +107,13 @@ public class KassaRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
                         " upper(p.name) like upper('%" + searchString + "%') or "+
                         " upper(p.device_server_uid) like upper('%" + searchString + "%') or "+
                         " upper(dp.name) like upper('%" + searchString + "%') or "+
                         " upper(cmp.name) like upper('%" + searchString + "%') or "+
                         " upper(us.name) like upper('%" + searchString + "%') or "+
                         " upper(uc.name) like upper('%" + searchString + "%') or "+
+                        " upper(p.zn_kkt) like upper('%" + searchString + "%') or "+
                         " upper(p.description) like upper('%" + searchString + "%')"+")";
             }
             if (companyId > 0) {
@@ -154,6 +156,7 @@ public class KassaRepository {
                 doc.setAllow_to_use((Boolean)                 obj[21]);
                 doc.setIs_deleted((Boolean)                   obj[22]);
                 doc.setBilling_address((String)               obj[23]);
+                doc.setZn_kkt((String)                        obj[24]);
                 returnList.add(doc);
             }
             return returnList;
@@ -189,12 +192,12 @@ public class KassaRepository {
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
                     " upper(p.name) like upper('%" + searchString + "%') or "+
                     " upper(p.device_server_uid) like upper('%" + searchString + "%') or "+
                     " upper(dp.name) like upper('%" + searchString + "%') or "+
                     " upper(cmp.name) like upper('%" + searchString + "%') or "+
                     " upper(us.name) like upper('%" + searchString + "%') or "+
+                    " upper(p.zn_kkt) like upper('%" + searchString + "%') or "+
                     " upper(uc.name) like upper('%" + searchString + "%') or "+
                     " upper(p.description) like upper('%" + searchString + "%')"+")";
         }
@@ -247,7 +250,8 @@ public class KassaRepository {
                     "           p.server_address as server_address, " +
                     "           coalesce(p.allow_to_use,false) as allow_to_use, " +
                     "           coalesce(p.is_deleted,false) as is_deleted, " +
-                    "           p.billing_address as billing_address " +
+                    "           p.billing_address as billing_address, " +
+                    "           p.zn_kkt as zn_kkt" +
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -299,6 +303,7 @@ public class KassaRepository {
                 doc.setAllow_to_use((Boolean)                 obj[21]);
                 doc.setIs_deleted((Boolean)                   obj[22]);
                 doc.setBilling_address((String)               obj[23]);
+                doc.setZn_kkt((String)                        obj[24]);
             }
             return doc;
         } else return null;
@@ -350,6 +355,7 @@ public class KassaRepository {
                         " server_address," + // адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
                         " allow_to_use," + // разрешено исползовать
                         " billing_address," + // место расчетов
+                        " zn_kkt," +//заводской номер ККТ
                         " is_deleted" + // касса удалена
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -365,6 +371,7 @@ public class KassaRepository {
                         "'" + request.getServer_address() + "', " +//адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
                         true + ", " +// разрешено исползовать
                         "'" + (request.getBilling_address() == null ? "":request.getBilling_address())  + "', " +//место расчетов
+                        "'" + request.getZn_kkt() + "', " +//заводской номер ККТ
                         false + ")";// касса удалена
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -375,6 +382,7 @@ public class KassaRepository {
                     return newDockId;
                 } catch (Exception e) {
                     e.printStackTrace();
+                    logger.error("Exception in method insertKassa ", e);
                     return null;
                 }
             } else {
@@ -382,6 +390,7 @@ public class KassaRepository {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error("Exception in method insertKassa ", e);
             return null;
         }
     }
@@ -390,28 +399,31 @@ public class KassaRepository {
     @SuppressWarnings("Duplicates")
     public Boolean updateKassa(KassaForm request) {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+
+        String stringQuery;
+        stringQuery =   " update kassa set " +
+                " changer_id = " + myId + ", "+ //кто изменяет
+                " date_time_changed= now()," + //время изменения
+                " department_id = " + request.getDepartment_id() + ", "+//отделение
+                " name = '" + request.getName() + "', " +//наименование
+                " server_type ='" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
+                " sno1_id =" + request.getSno1_id() + ", " +// id системы налогообложения
+                " billing_address ='" + request.getBilling_address() + "', " +// место расчетов
+                " device_server_uid ='" + request.getDevice_server_uid() + "', " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
+                " additional ='" + request.getAdditional() + "', " +// дополнительная информация
+                " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
+                " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
+                " zn_kkt = '" + request.getZn_kkt() + "', " +
+                " is_deleted =" + request.getIs_deleted() + //  касса удалена
+                " where " +
+                " id= "+request.getId();
         try
         {
-            String stringQuery;
-            stringQuery =   " update kassa set " +
-                    " changer_id = " + myId + ", "+ //кто изменяет
-                    " date_time_changed= now()," + //время изменения
-                    " department_id = " + request.getDepartment_id() + ", "+//отделение
-                    " name = '" + request.getName() + "', " +//наименование
-                    " server_type ='" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
-                    " sno1_id =" + request.getSno1_id() + ", " +// id системы налогообложения
-                    " billing_address ='" + request.getBilling_address() + "', " +// место расчетов
-                    " device_server_uid ='" + request.getDevice_server_uid() + "', " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
-                    " additional ='" + request.getAdditional() + "', " +// дополнительная информация
-                    " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
-                    " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
-                    " is_deleted =" + request.getIs_deleted() + //  касса удалена
-                    " where " +
-                    " id= "+request.getId();
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
         }catch (Exception e) {
+            logger.error("Exception in method updateKassa. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -481,7 +493,8 @@ public class KassaRepository {
                     "           cmp.name as company_name, "+
                     "           cmp.email as company_email, "+
                     "           cmp.jr_inn as company_vatin, "+
-                    "           p.billing_address as billing_address " +
+                    "           p.billing_address as billing_address, " +
+                    "           p.zn_kkt as zn_kkt" +
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           where  p.master_id = " + myMasterId +
@@ -513,7 +526,7 @@ public class KassaRepository {
                     doc.setCompany_email((String)                 obj[10]);
                     doc.setCompany_vatin((String)                 obj[11]);
                     doc.setBilling_address((String)               obj[12]);
-
+                    doc.setZn_kkt((String)                        obj[13]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -564,35 +577,35 @@ public class KassaRepository {
         Long myId=userRepository.getUserId();
         try {
             stringQuery =
-            " insert into kassa_user_settings (" +
-            " user_id, " +
-            " master_id, " +
-            " company_id, " +
-            " selected_kassa_id, " + // id выбранной кассы
-            " cashier_value_id, " + // кассир: 'current'-текущая учетная запись, 'another'-другая учетная запись, 'custom' произвольные ФИО. Настройка "Другая учетная запись" во фронтенде сохраняется только до конца сессии, затем ставится по умолчанию current
-            " customCashierFio, " + // ФИО для кассира, выбранного по cashier_value_id = 'custom'
-            " customCashierVatin, " + // ИНН для кассира, выбранного по cashier_value_id = 'custom'
-            " billing_address, " + //выбор адреса места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
-            " custom_billing_address " + //адрес места расчётов для billing_address = 'custom'
-            ") values (" +
-            myId + "," +
-            myMasterId + ", " +
-            myCompanyId + ", " +
-            row.getSelected_kassa_id() + ", '" +
-            row.getCashier_value_id() + "', '" +
-            (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio())  + "', '" +
-            (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin())  + "', '" +
-            row.getBilling_address() + "', '" +
-            row.getCustom_billing_address() + "'" +
-            ") " +
-            " ON CONFLICT ON CONSTRAINT kassa_user_settings_pkey " +// "upsert"
-            " DO update set " +
-            " selected_kassa_id = " + row.getSelected_kassa_id() + ","+
-            " cashier_value_id = '" + row.getCashier_value_id() + "',"+
-            " customCashierFio = '" + (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio()) + "',"+
-            " customCashierVatin = '" + (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin()) + "'," +
-            " billing_address = '" + (row.getBilling_address() == null ? "":row.getBilling_address()) + "', "+
-            " custom_billing_address = '" + (row.getCustom_billing_address() == null ? "":row.getCustom_billing_address()) + "'";
+                    " insert into kassa_user_settings (" +
+                            " user_id, " +
+                            " master_id, " +
+                            " company_id, " +
+                            " selected_kassa_id, " + // id выбранной кассы
+                            " cashier_value_id, " + // кассир: 'current'-текущая учетная запись, 'another'-другая учетная запись, 'custom' произвольные ФИО. Настройка "Другая учетная запись" во фронтенде сохраняется только до конца сессии, затем ставится по умолчанию current
+                            " customCashierFio, " + // ФИО для кассира, выбранного по cashier_value_id = 'custom'
+                            " customCashierVatin, " + // ИНН для кассира, выбранного по cashier_value_id = 'custom'
+                            " billing_address, " + //выбор адреса места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
+                            " custom_billing_address " + //адрес места расчётов для billing_address = 'custom'
+                            ") values (" +
+                            myId + "," +
+                            myMasterId + ", " +
+                            myCompanyId + ", " +
+                            row.getSelected_kassa_id() + ", '" +
+                            row.getCashier_value_id() + "', '" +
+                            (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio())  + "', '" +
+                            (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin())  + "', '" +
+                            row.getBilling_address() + "', '" +
+                            row.getCustom_billing_address() + "'" +
+                            ") " +
+                            " ON CONFLICT ON CONSTRAINT kassa_user_settings_pkey " +// "upsert"
+                            " DO update set " +
+                            " selected_kassa_id = " + row.getSelected_kassa_id() + ","+
+                            " cashier_value_id = '" + row.getCashier_value_id() + "',"+
+                            " customCashierFio = '" + (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio()) + "',"+
+                            " customCashierVatin = '" + (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin()) + "'," +
+                            " billing_address = '" + (row.getBilling_address() == null ? "":row.getBilling_address()) + "', "+
+                            " custom_billing_address = '" + (row.getCustom_billing_address() == null ? "":row.getCustom_billing_address()) + "'";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -603,6 +616,391 @@ public class KassaRepository {
             return null;
         }
     }
+
+
+    public Boolean isKassaUnique (String zn_kkt, Long company_id, Long current_kassa_id){
+        String stringQuery;
+        stringQuery = "" +
+                " select 1 from kassa where " +
+                " company_id="+company_id+
+//                " and id!="+current_kassa_id +
+                " and zn_kkt ='"+zn_kkt + "'";
+        if(current_kassa_id>0) stringQuery=stringQuery+" and id!="+current_kassa_id;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return(query.getResultList().size()==0);
+        }catch (Exception e) {
+            logger.error("Exception in method isKassaUnique. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // запись в БД состояния смены (создание новой смены или изменение её статуса)
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean updateShiftStatus(String zn_kkt, String shiftStatusId, Long shiftNumber, String shiftExpiredAt, Long companyId, Long kassaId, String fnSerial) {
+        // Из фронтэнда может прийти номер смены (shiftNumber) = 0, если в кассе не установлен ФН. Это возможно в режиме разработки. В этом случае номер смены получаем из счетчика (если статус смены closed - текущее значение, если не closed - текущее значение +1)
+        if(shiftNumber==0){shiftNumber=(shiftStatusId.equals("closed")?getShiftNumber_DevMode("currval"):getShiftNumber_DevMode("nextval"));}
+        //если смена закрыта, то смысл изменять ее статус в БД отсутствует
+        if (!isShiftClosed(kassaId, shiftNumber, fnSerial)){
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepository.getUserId();
+            Long kassaDeptId = getKassaDeptIdByIdKkt(kassaId);// id  отделения кассы на момент изменения статуса смены
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+
+            stringQuery =
+                    " insert into shifts (" +
+                            " master_id, " +
+                            " creator_id, " +   // открыватель смены в БД (он же - открыватель смены в ККМ, кроме редких теоретических исключений, когда смена в ККМ открыта кем-то где-то, а потом ККМ подключили к компьютеру)
+                            " closer_id, " +    // пользователь, закрывающий смену (опять же кроме редких исключений. Если смена была закрыта где-то еще, при опросе ККМ на форнтэнде выдается
+                                                // номер текущей смены или номер последней закрытой смены, и эта закрытая смена так же запишется в БД,
+                                                // и открывателем-закрывателем смены в БД будет считаться залогиненный пользователь, хотя он фактически эту смену не открывал/закрывал)
+                            " date_time_created, " + // дата и время открытия смены (по-сути это время записи об открытии смены. В некоторых случаях может отличаться от фактического времени)
+                            " date_time_closed, " +// дата и время закрытия смены (аналогично предыдущему)
+                            " company_id, " + // id предприятия
+                            " department_id, " + // id  отделения кассы на момент изменения статуса смены
+                            " kassa_id, " + //id кассы в БД
+                            " shift_number, " + // номер смены (по фискальному накопителю)
+                            " zn_kkt, " + //заводской номер кассы
+                            " shift_status_id, " + // статус смены: opened closed expired
+                            " shift_expired_at, " + // время истечения (экспирации) смены в текстовом формате, генерируемом самой ККТ.
+                            " fn_serial" + //Серийный номер ФН. Вместе с kassa_id и shift_number используется для уникальности смены (constraint kassaid_shiftnumber_fnserial_uq),
+                            // т.к. shift_number при смене ФН сбрасывается.
+                            /*Онлайн-кассы не имеют фискальной памяти, все фискальные данные хранятся в фискальном накопителе (ФН), который является временным,
+                            сменным элементом, и отправляются в ФНС через оператора фискальных данных (ОФД). Поэтому при каждой замене ФН
+                            номер смены начинается с 1 и имеет сквозную нумерацию вплоть до очередной замены ФН.*/
+                            ") values (" +
+                            myMasterId + ", " +
+                            myId + ", " +
+                            ((shiftStatusId.equals("closed")) ? myId : null) + ", " +
+                            "to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания записи об открытии смены (если запись создается при фактическом открытии смены
+                            (shiftStatusId.equals("closed") ? ("to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')") : null) + ", " +
+                            companyId + ", " +
+                            kassaDeptId + ", " +
+                            kassaId + ", " +
+                            shiftNumber + ", '" +
+                            zn_kkt + "', '" +
+                            shiftStatusId + "', '" +
+                            shiftExpiredAt + "', '" +
+                            fnSerial + "'" +
+                            ") " +
+                            " ON CONFLICT ON CONSTRAINT kassaid_shiftnumber_fnserial_uq " +// "upsert"
+                            " DO update set " +
+                            " closer_id = " + ((shiftStatusId.equals("closed")) ? myId : null) + ", " +
+                            " date_time_closed = " + (!shiftStatusId.equals("closed") ? null : ("to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')")) + ", " + // время закрытия вставляем только если статус смены меняется на closed (может меняться с opened ещё и на expired, а это не зактыта)
+                            " department_id = " + kassaDeptId + ", " +//потому что отделение за время сессии может измениться (маловероятно, но всё же)
+                            "shift_status_id = '" + shiftStatusId + "'";
+            try {
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                closeOtherShifts(zn_kkt, shiftNumber, companyId, timestamp); //закрываем другие смены этой ККТ (подробнее - в методе)
+                return true;
+            } catch (Exception e) {
+                logger.error("Exception in method updateShiftStatus. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return true;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    //запись в БД информации об выбитом на ККМ чеке
+    public Boolean addReceipt(String zn_kkt,
+                              String shiftStatusId,
+                              Long shiftNumber,
+                              String shiftExpiredAt,
+                              Long companyId,
+                              Long kassaId,
+                              String fnSerial,
+                              String operationId,
+                              String sno,
+                              String billing_address,
+                              String payment_type,
+                              BigDecimal cash,
+                              BigDecimal electronically,
+                              Long id,
+                              int docId) {
+
+        // Из фронтэнда может прийти номер смены (shiftNumber) = 0, если в кассе не установлен ФН.
+        // Это возможно в режиме разработки. В этом случае номер смены получаем из счетчика (если смена closed - текущее значение, если не closed - текущее значение +1)
+        if(shiftNumber==0L){
+            // при этом смена в БД может быть как открыта, так и закрыта
+            if(isShiftOpened_DevMode(kassaId, fnSerial)){//если она откртыта - берём текущий номер из счетчика смен
+                shiftNumber=getShiftNumber_DevMode("currval");
+            } else { //если смена в БД закрыта - нужно сгенерировать новую смену, а затем по успешности опять же взять текущий номер из счетчика
+                if(updateShiftStatus(zn_kkt, shiftStatusId, shiftNumber, shiftExpiredAt, companyId, kassaId, fnSerial)){
+                    shiftNumber=getShiftNumber_DevMode("currval");
+                } else return false;// в случае ошибки создания смены в БД
+            }
+        }else{// "рабочий" режим кассы. Смена в БД при этом может быть как открыта, так и отсутствовать, если это первый чек смены. Тогда ее нужно сначала создать, и получить ее номер
+        //проверим, что смена с таким shiftNumber есть в БД
+            // и если она не открыта или её нет...
+            if (!isShiftOpened(kassaId, fnSerial, shiftNumber)){
+                //открываем смену в БД
+                updateShiftStatus(zn_kkt, shiftStatusId, shiftNumber, shiftExpiredAt, companyId, kassaId, fnSerial);
+            } // в противном случае ничего не делаем, т.к. присланный чек принадлежит к уже открытой в БД смене
+        }
+
+        //получаем id смены
+
+        Long shiftId=getShiftIdByUniqueKey(kassaId, shiftNumber, fnSerial);
+        // Сейчас есть все данные для записи чека в БД как в боевом режиме, так и в режиме разработчика
+
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId = userRepository.getUserId();
+        Long kassaDeptId = getKassaDeptIdByIdKkt(kassaId);// id  отделения кассы на момент изменения статуса смены
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        Integer sno_id = getSnoIdBySnoName("name_api_atol",sno);
+
+        stringQuery =
+                " insert into receipts (" +
+                        " master_id, " +
+                        " creator_id, " +           // отбиватель чека
+                        " date_time_created, " +    // дата и время отбития чека
+                        " company_id, " +           // id предприятия
+                        " department_id, " +        // id  отделения кассы, в котором был отбит чек
+                        " kassa_id, " +             // id кассы в БД
+                        " shift_id, "  +            // id смены
+                        " document_id, "  +         // id документа из таблицы documents, из которого был отбит чек. Например, Розничные продажи id = 25
+                        " retail_sales_id, " +      // id Розничной продажи, если чек отбивался в данном документе. Впоследствии, когда чек можно будет отбивать не только из Розничных продаж, нужно будет собирать эту часть строки в зависимости от docId
+                        " operation_id, "  +        // id торговой операции (sell buy и т.д.)
+                        " sno_id, "  +              // id системы налогообложения (sprav_sys_taxation_types)
+                        " billing_address, "  +     // адрес места расчета
+                        " payment_type, "  +        // способ расчёта (cash, electronically, mixed)
+                        " cash, "  +                // сколько заплатили наличными
+                        " electronically"  +        // сколько заплатили электронными
+                        ") values (" +
+                        myMasterId + ", " +
+                        myId + ", " +
+                        "to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')," +
+                        companyId + ", " +
+                        kassaDeptId + ", " +
+                        kassaId + ", " +
+                        shiftId + ", " +
+                        docId + ", " +
+                        id + ", " +
+                        "'"+ operationId + "', " +
+                        sno_id + ", " +
+                        "'" + billing_address + "', " +
+                        "'" + payment_type + "', " +
+                        cash + ", " +
+                        electronically +
+                        ") ";
+
+        try {
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            closeOtherShifts(zn_kkt, shiftNumber, companyId, timestamp); //закрываем другие смены этой ККТ (подробнее - в методе)
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method addReceipt. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
+
+    // Может случиться такое, что смена закроется в ККМ, но не закроется в БД по какой либо причине.
+    // Например, пропала связь с сервером во время закрытия смены, либо при смене ФН текущую смену забыли закрыть на рабочем месте кассира, и закрыли уже сервисном центре.
+    // Получается рассинхрон состояний смен.
+    // Впоследствии эта смена так и останется незакрытой в БД. Данный запрос закрывает все смены ККТ по ее ЗН, кроме текущей (если она открыта)
+    private int closeOtherShifts(String zn_kkt, Long shiftNumber, Long companyId, String timestamp){
+        String stringQuery;
+        stringQuery = "" +
+                " update shifts set " +
+                " shift_status_id='closed', " +
+                " closer_id=1, " + //1 - это всегда Система Докио
+                " date_time_closed = to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS') " +
+                " where "+
+                " company_id=" + companyId + //это берем чтобы БД быстрее искала смены
+                " and shift_number!=" + shiftNumber +
+                " and shift_status_id != 'closed'" +
+                " and zn_kkt ='" + zn_kkt + "'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return(query.executeUpdate());
+        }catch (Exception e) {
+            logger.error("Exception in method closeOtherShifts. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    // возвращает номер смены для работы с ККМ в режиме разработчика. Т.к. в кассе может не быть ФН, то номер смены будет всегда 0, что не приемлемо.
+    // принимает currval и nextval
+    private Long getShiftNumber_DevMode(String function){
+        String stringQuery;
+        if(function.equals("currval")){
+            stringQuery = "select last_value FROM developer_shiftnum";//потому что нельзя просто так взять и получить currval
+        } else
+            stringQuery = "select "+function+"('developer_shiftnum')";
+        try{
+            return Long.valueOf(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getKassaIdByZnKkt. SQL query:" + stringQuery, e);
+            return 0L;
+        }
+    }
+
+    // В режиме разработчика возвращает состояние сессии (если есть открытая сессия - true, если нет - false.
+    // Т.к. чек можно печатать и из закрытой сессии в ККМ, и она откроется в ККМ при печати 1го чека, то возможна ситуация, когда приходят данные по чеку для записи в БД,
+    // но в БД сессия еще не открыта
+    private Boolean isShiftOpened_DevMode(Long kassaId, String fnSerial){
+        String stringQuery;
+        stringQuery = "" +
+                " select 1 from shifts where " +
+                " kassa_id="+kassaId+
+                " and fn_serial ='"+fnSerial + "'" +
+                " and shift_status_id = 'opened'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return(query.getResultList().size()==1);//если находит такую строку в БД - значит есть открытая смена по данной кассе
+        }catch (Exception e) {
+            logger.error("Exception in method isShiftOpened_DevMode. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Возвращает состояние сессии (если есть открытая сессия - true, если нет - false.
+    private Boolean isShiftOpened(Long kassaId, String fnSerial, Long shiftNumber){
+        String stringQuery;
+        stringQuery = "" +
+                " select 1 from shifts where " +
+                " kassa_id="+kassaId+
+                " and fn_serial ='"+fnSerial + "'" +
+                " and shift_status_id = 'opened'" +
+                " and shift_number = " + shiftNumber;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return(query.getResultList().size()==1);//если находит такую строку в БД - значит есть открытая смена по данной кассе
+        }catch (Exception e) {
+            logger.error("Exception in method isShiftOpened. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+// Возвращает id предприятия кассы по ее id
+//    private Long getKassaCompanyIdByIdKkt(Long id){
+//        String stringQuery = "select k.company_id from kassa k where k.id = "+ id;
+//        try{
+//            return Long.valueOf(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getKassaCompanyIdByIdKkt. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
+
+    //возвращает id сессии по уникальному ключу в БД kassaid_shiftnumber_fnserial_uq
+    private Long getShiftIdByUniqueKey(Long kassaId, Long shift_number, String fnSerial){
+        String stringQuery;
+        stringQuery = "" +
+                " select id from shifts where " +
+                " kassa_id="+kassaId+
+                " and shift_number="+shift_number +
+                " and fn_serial ='"+fnSerial + "'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return  Long.valueOf(query.getSingleResult().toString());
+        }catch (Exception e) {
+            logger.error("Exception in method getShiftIdByUniqueKey. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Возвращает id отделения кассы по ее id
+    private Long getKassaDeptIdByIdKkt(Long id){
+        String stringQuery = "select k.department_id from kassa k where k.id = "+ id;
+        try{
+            return Long.valueOf(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getKassaDeptIdByIdKkt. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    //возвращает true если смена закрыта. Используется для апдейта состояния смены (если она закрыта, то никакие апдейты делать смысла нет)
+    public Boolean isShiftClosed (Long kassaId, Long shift_number, String fnSerial){
+        String stringQuery;
+        stringQuery = "" +
+                " select 1 from shifts where " +
+                " kassa_id="+kassaId+
+                " and shift_number="+shift_number +
+                " and fn_serial ='"+fnSerial + "'" +
+                " and shift_status_id = 'closed'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return(query.getResultList().size()==1);//если находит такую строку в БД - значит смена есть и она закрыта. В противном случае смены в БД либо нет, либо она открыта, и вызывающий метод будет делать "upsert"
+        }catch (Exception e) {
+            logger.error("Exception in method isShiftClosed. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+    //возвращает id системы налогообложения по её наименованию для разных API касс (например для API Атол отправляем "name_api_atol, osn")
+    private Integer getSnoIdBySnoName(String column_name, String name){
+        String stringQuery;
+        stringQuery = "" +
+                " select id from sprav_sys_taxation_types where " +
+                column_name + " = '" + name + "'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return  (Integer) query.getSingleResult();
+        }catch (Exception e) {
+            logger.error("Exception in method getSnoIdBySnoName. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    //возвращает true если смена есть в БД
+//    public Boolean isShiftExisted (Long kassaId, int shift_number, String shift_expired_at){
+//        String stringQuery;
+//        stringQuery = "" +
+//                " select 1 from shifts where " +
+//                " kassa_id="+kassaId+
+//                " and shift_number="+shift_number +
+//                " and shift_expired_at ='"+shift_expired_at + "'";
+//        try
+//        {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            return(query.getResultList().size()==0);
+//        }catch (Exception e) {
+//            logger.error("Exception in method isShiftExisted. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
+    // Возвращает id кассы по ее заводскому номеру в предприятии
+//    private Long getKassaIdByZnKkt(String zn_kkt, Long companyId){
+//        String stringQuery = "select coalesce(k.id,0) from kassa k where k.zn_kkt=" + zn_kkt + " and k.company_id = "+ companyId;
+//        try{
+//            return Long.valueOf(entityManager.createNativeQuery(stringQuery).getSingleResult().toString());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getKassaIdByZnKkt. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************

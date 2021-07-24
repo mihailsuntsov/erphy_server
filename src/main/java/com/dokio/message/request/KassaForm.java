@@ -27,6 +27,15 @@ public class KassaForm {
     private String billing_address;
     private Boolean allow_to_use;
     private Boolean is_deleted;
+    private String zn_kkt;
+
+    public String getZn_kkt() {
+        return zn_kkt;
+    }
+
+    public void setZn_kkt(String zn_kkt) {
+        this.zn_kkt = zn_kkt;
+    }
 
     public Long getId() {
         return id;

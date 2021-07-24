@@ -43,6 +43,15 @@ public class KassaJSON {
     private String company_email;
     private String company_vatin;
     private String billing_address;
+    private String zn_kkt;
+
+    public String getZn_kkt() {
+        return zn_kkt;
+    }
+
+    public void setZn_kkt(String zn_kkt) {
+        this.zn_kkt = zn_kkt;
+    }
 
 
     public String getCompany_vatin() {

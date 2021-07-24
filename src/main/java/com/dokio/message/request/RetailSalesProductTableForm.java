@@ -28,8 +28,16 @@ public class RetailSalesProductTableForm {
     private BigDecimal product_price_of_type_price; // цена по типу цены на момент составления документа
     private BigDecimal product_sumprice;            // сумма (цена*кол-во)
     private BigDecimal shipped;                     // отгружено (высчитывается, не сохраняется)
-//    private BigDecimal reserved_current;            // сколько зарезервировано в данном документе
+    private Boolean is_material;                    // материален ли данный товар/услуга (если не материален - не проводим проверку на его количество на складе)
 
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
+    }
 
     public BigDecimal getAvailable() {
         return available;
