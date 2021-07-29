@@ -65,7 +65,7 @@ public class RetailSalesRepository {
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
     public List<RetailSalesJSON> getRetailSalesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(25L, "315,316,317"))//(см. файл Permissions Id)
+        if(securityRepositoryJPA.userHasPermissions_OR(25L, "316,317,318,319"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -113,14 +113,17 @@ public class RetailSalesRepository {
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(24L, "315")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие ИЛИ свои подразделения
-                if (!securityRepositoryJPA.userHasPermissions_OR(24L, "316")) //Если нет прав на просм по своему предприятию
-                {//остается только на просмотр всех доков в своих отделениях (317)
-                    stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
-                }//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
+                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    {//остается только на свои документы
+                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
+
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
@@ -202,13 +205,15 @@ public class RetailSalesRepository {
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(24L, "315")) //Если нет прав на просм по всем предприятиям
-        {//остается на: своё предприятие ИЛИ свои подразделения
-            if (!securityRepositoryJPA.userHasPermissions_OR(24L, "316")) //Если нет прав на просм по своему предприятию
-            {//остается только на просмотр всех доков в своих отделениях (317)
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
-            }//т.е. по всем и своему предприятиям нет а на свои отделения есть
-            else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+        if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
+        {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
+            {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
+                {//остается только на свои документы
+                    stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+            } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
         }
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
@@ -241,7 +246,7 @@ public class RetailSalesRepository {
 
     @SuppressWarnings("Duplicates")
     public List<RetailSalesProductTableJSON> getRetailSalesProductTable(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(25L, "315,316,317"))//(см. файл Permissions Id)
+        if(securityRepositoryJPA.userHasPermissions_OR(25L, "316,317,318,319"))//(см. файл Permissions Id)
         {
             String stringQuery;
             Long parentCustomersOrdersId = getParentCustomersOrdersId(docId);
@@ -288,13 +293,15 @@ public class RetailSalesRepository {
                     " where a.master_id = " + myMasterId +
                     " and ap.retail_sales_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(24L, "315")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие ИЛИ свои подразделения
-                if (!securityRepositoryJPA.userHasPermissions_OR(24L, "316")) //Если нет прав на просм по своему предприятию
-                {//остается только на просмотр всех доков в своих отделениях (317)
-                    stringQuery = stringQuery + " and a.company_id=" + myCompanyId+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
-                }//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                else stringQuery = stringQuery + " and a.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
+                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    {//остается только на свои документы
+                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
             stringQuery = stringQuery + " order by p.name asc ";
@@ -359,12 +366,13 @@ public class RetailSalesRepository {
     @SuppressWarnings("Duplicates")
 //    @Transactional
     public RetailSalesJSON getRetailSalesValuesById (Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(25L, "315,316,317"))//см. _Permissions Id.txt
+        if (securityRepositoryJPA.userHasPermissions_OR(25L, "316,317,318,319"))//см. _Permissions Id.txt
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select " +
                 "           p.id as id, " +
                 "           u.name as master, " +
@@ -411,15 +419,15 @@ public class RetailSalesRepository {
                 "           where  p.master_id=" + myMasterId +
                 "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "315")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -524,10 +532,10 @@ public class RetailSalesRepository {
 
         if ((//если есть право на создание по всем предприятиям, или
                 (securityRepositoryJPA.userHasPermissions_OR(25L, "309")) ||
-                        //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                        (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
-                        //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                        (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
+                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
+                //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
+                (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {
@@ -684,11 +692,13 @@ public class RetailSalesRepository {
         @Transactional
         public Boolean updateRetailSales(RetailSalesForm request){
             //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-            if(     (securityRepositoryJPA.userHasPermissions_OR(25L,"318") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",request.getId().toString())) ||
+            if(     (securityRepositoryJPA.userHasPermissions_OR(25L,"320") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",request.getId().toString())) ||
                     //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                    (securityRepositoryJPA.userHasPermissions_OR(25L,"319") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",request.getId().toString()))||
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"321") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",request.getId().toString()))||
                     //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
-                    (securityRepositoryJPA.userHasPermissions_OR(25L,"320") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",request.getId().toString())))
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"322") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",request.getId().toString()))||
+                    //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
+                    (securityRepositoryJPA.userHasPermissions_OR(25L,"323") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("retail_sales",request.getId().toString())))
             {
                 Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
@@ -806,7 +816,6 @@ public class RetailSalesRepository {
                                 "customer_id, "+        //покупатель по умолчанию
                                 "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
                                 "name, "+               //наименование заказа
-//                                "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
                                 "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
                                 "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
                                 ") values (" +
@@ -824,7 +833,6 @@ public class RetailSalesRepository {
                                 row.getCustomerId() + ",'"+
                                 row.getPriorityTypePriceSide() + "',"+
                                 "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-//                                row.getAutocreateOnStart()+ ", " +
                                 row.getAutocreateOnCheque() +", " +
                                 row.getStatusIdOnAutocreateOnCheque() +
                                 ") " +
@@ -842,7 +850,6 @@ public class RetailSalesRepository {
                                 " customer_id = "+row.getCustomerId()  + ","+
                                 " name = '" +(row.getName() == null ? "": row.getName()) + "',"+
                                 " priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'," +
-//                                " autocreate_on_start = "+row.getAutocreateOnStart() + ","+
                                 " status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque() + ","+
                                 " autocreate_on_cheque = "+row.getAutocreateOnCheque();
 
