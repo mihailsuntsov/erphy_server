@@ -13,9 +13,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsRetailSalesForm;
-import com.dokio.message.response.RetailSalesJSON;
-import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
+import com.dokio.message.request.Settings.SettingsInventoryForm;
+import com.dokio.message.response.InventoryJSON;
+import com.dokio.message.response.InventoryProductTableJSON;
+import com.dokio.message.response.Settings.SettingsInventoryJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.repository.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
@@ -31,17 +32,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class RetailSalesController {
+public class InventoryController {
 
-    Logger logger = Logger.getLogger("RetailSalesController");
+
+    Logger logger = Logger.getLogger("InventoryController");
 
     @Autowired
-    RetailSalesRepository retailSalesRepository;
+    InventoryRepository inventoryRepository;
 
-    @PostMapping("/api/auth/getRetailSalesTable")
+
+    @PostMapping("/api/auth/getInventoryTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getRetailSalesTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getRetailSalesTable: " + searchRequest.toString());
+    public ResponseEntity<?> getInventoryTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getInventoryTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -50,7 +53,7 @@ public class RetailSalesController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<RetailSalesJSON> returnList;
+        List<InventoryJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -79,21 +82,21 @@ public class RetailSalesController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = retailSalesRepository.getRetailSalesTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = inventoryRepository.getInventoryTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getRetailSalesProductTable",
+            value = "/api/auth/getInventoryProductTable",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getRetailSalesProductTable with RetailSales id=" + docId.toString());
-        List<RetailSalesProductTableJSON> returnList;
+    public ResponseEntity<?> getInventoryProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getInventoryProductTable with Inventory id=" + docId.toString());
+        List<InventoryProductTableJSON> returnList;
         try {
-            returnList = retailSalesRepository.getRetailSalesProductTable(docId);
+            returnList = inventoryRepository.getInventoryProductTable(docId);
             return  new ResponseEntity<>(returnList, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -102,10 +105,10 @@ public class RetailSalesController {
         }
     }
 
-    @PostMapping("/api/auth/getRetailSalesPagesList")
+    @PostMapping("/api/auth/getInventoryPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getRetailSalesPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getRetailSalesPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getInventoryPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getInventoryPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -127,7 +130,7 @@ public class RetailSalesController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = retailSalesRepository.getRetailSalesSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = inventoryRepository.getInventorySize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -173,159 +176,109 @@ public class RetailSalesController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertRetailSales")
+    @PostMapping("/api/auth/insertInventory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertRetailSales(@RequestBody RetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/insertRetailSales: " + request.toString());
+    public ResponseEntity<?> insertInventory(@RequestBody InventoryForm request) {
+        logger.info("Processing post request for path /api/auth/insertInventory: " + request.toString());
 
-        Long newDocument = retailSalesRepository.insertRetailSales(request);
-        if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - возвращаем это
+        Long newDocument = inventoryRepository.insertInventory(request);
+        if(newDocument!=null){
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
-            return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка создания документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(
-            value = "/api/auth/getSetOfTypePrices",
-            params = {"company_id","department_id","cagent_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSetOfTypePrices(
-            @RequestParam("company_id") Long company_id,
-            @RequestParam("department_id") Long department_id,
-            @RequestParam("cagent_id") Long cagent_id)
-    {
-        logger.info("Processing get request for path /api/auth/getSetOfTypePrices with parameters: " +
-                "company_id: " + company_id +
-                " department_id: " + department_id +
-                " cagent_id: " + cagent_id );
-        SetOfTypePricesJSON response;
-        try {
-            response=retailSalesRepository.getSetOfTypePrices(company_id, department_id, cagent_id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method getSetOfTypePrices. company_id=" + company_id + ", department_id=" + department_id + ", cagent_id=" + cagent_id, e);
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки набора типов цен", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @RequestMapping(
-            value = "/api/auth/isReceiptPrinted",
-            params = {"company_id","document_id","id","operation_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> isReceiptPrinted(
-            @RequestParam("company_id") Long company_id,
-            @RequestParam("document_id") int document_id,
-            @RequestParam("id") Long id,
-            @RequestParam("operation_id") String operation_id)
-    {
-        logger.info("Processing get request for path /api/auth/isReceiptPrinted with parameters: " +
-                "company_id: " + company_id +
-                " document_id: " + document_id +
-                " id: " + id +
-                " operation_id: " + operation_id
-        );
-        Boolean response;
-        try {
-            response=retailSalesRepository.isReceiptPrinted(company_id, document_id, id, operation_id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method isReceiptPrinted. company_id=" + company_id + ", document_id=" + document_id, e);
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка запроса на наличие чека", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    @RequestMapping(
-            value = "/api/auth/getRetailSalesValuesById",
+            value = "/api/auth/getInventoryValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesValuesById(
+    public ResponseEntity<?> getInventoryValuesById(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/getRetailSalesValuesById with parameters: " + "id: " + id);
-        RetailSalesJSON response;
+        logger.info("Processing get request for path /api/auth/getInventoryValuesById with parameters: " + "id: " + id);
+        InventoryJSON response;
         try {
-            response=retailSalesRepository.getRetailSalesValuesById(id);
+            response=inventoryRepository.getInventoryValuesById(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
-            logger.error("Exception in method getRetailSalesValuesById. id = " + id, e);
+            logger.error("Exception in method getInventoryValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки значений документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/updateRetailSales")
-    public ResponseEntity<?> updateRetailSales(@RequestBody RetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/updateRetailSales: " + request.toString());
-        Boolean updateResults = retailSalesRepository.updateRetailSales(request);
+    @PostMapping("/api/auth/updateInventory")
+    public ResponseEntity<?> updateInventory(@RequestBody InventoryForm request){
+        logger.info("Processing post request for path /api/auth/updateInventory: " + request.toString());
+        Boolean updateResults = inventoryRepository.updateInventory(request);
         if(updateResults){
             return new ResponseEntity<>(updateResults, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка сохранения документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/saveSettingsRetailSales")
+    @PostMapping("/api/auth/saveSettingsInventory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsRetailSales(@RequestBody SettingsRetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsRetailSales: " + request.toString());
+    public ResponseEntity<?> saveSettingsInventory(@RequestBody SettingsInventoryForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsInventory: " + request.toString());
 
-        if(retailSalesRepository.saveSettingsRetailSales(request)){
+        if(inventoryRepository.saveSettingsInventory(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Инвентаризация", HttpStatus.BAD_REQUEST);
         }
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSettingsRetailSales",
+            value = "/api/auth/getSettingsInventory",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsRetailSales()
+    public ResponseEntity<?> getSettingsInventory()
     {
-        logger.info("Processing get request for path /api/auth/getSettingsRetailSales without request parameters");
-        SettingsRetailSalesJSON response;
+        logger.info("Processing get request for path /api/auth/getSettingsInventory without request parameters");
+        SettingsInventoryJSON response;
         try {
-            response=retailSalesRepository.getSettingsRetailSales();
+            response=inventoryRepository.getSettingsInventory();
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки настроек для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
-    // другие ситуации. Поэтому удаление пока оставляю закомментированным
-/*    @PostMapping("/api/auth/deleteRetailSales")
+
+    @PostMapping("/api/auth/deleteInventory")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteRetailSales(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteRetailSales: " + request.toString());
+    public  ResponseEntity<?> deleteInventory(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteInventory: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(retailSalesRepository.deleteRetailSales(checked)){
+        if(inventoryRepository.deleteInventory(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/undeleteRetailSales")
+    @PostMapping("/api/auth/undeleteInventory")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteRetailSales(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteRetailSales: " + request.toString());
+    public  ResponseEntity<?> undeleteInventory(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteInventory: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(retailSalesRepository.undeleteRetailSales(checked)){
+        if(inventoryRepository.undeleteInventory(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления документов", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
-    }*/
-
+    }
 }
+
+
+
+
