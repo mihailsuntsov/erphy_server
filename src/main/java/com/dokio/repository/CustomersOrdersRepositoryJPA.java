@@ -790,59 +790,59 @@ public class CustomersOrdersRepositoryJPA {
         try {
             stringQuery =
                     " insert into settings_customers_orders (" +
-                    "master_id, " +
-                    "company_id, " +
-                    "user_id, " +
-                    "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
 //                    "price_type_id, " +     //тип цены из справочника Типы цен
-                    "change_price, " +      //наценка/скидка в цифре (например, 50)
-                    "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
-                    "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
-                    "hide_tenths, " +       //убирать десятые (копейки) - boolean
-                    "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
-                    "department_id, " +     //отделение по умолчанию
-                    "customer_id, "+        //покупатель по умолчанию
-                    "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-                    "name, "+               //наименование заказа
-                    "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
-                    "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
-                    "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
-                    ") values (" +
-                    myMasterId + "," +
-                    row.getCompanyId() + "," +
-                    myId + ",'" +
-                    row.getPricingType() + "'," +
+                            "change_price, " +      //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                            "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                            "department_id, " +     //отделение по умолчанию
+                            "customer_id, "+        //покупатель по умолчанию
+                            "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
+                            "name, "+               //наименование заказа
+                            "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
+                            "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
+                            "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
 //                    row.getPriceTypeId() + "," +
-                    row.getChangePrice() + ",'" +
-                    row.getPlusMinus() + "','" +
-                    row.getChangePriceType() + "'," +
-                    row.getHideTenths() + "," +
-                    row.getSaveSettings() + "," +
-                    row.getDepartmentId() + "," +
-                    row.getCustomerId() + ",'"+
-                    row.getPriorityTypePriceSide() + "',"+
-                    "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                    row.getAutocreateOnStart()+ ", " +
-                    row.getAutocreateOnCheque() +", " +
-                    row.getStatusIdOnAutocreateOnCheque() +
-                    ") " +
-                    "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
-                    " DO update set " +
-                    " pricing_type = '" + row.getPricingType() + "',"+
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
+                            row.getSaveSettings() + "," +
+                            row.getDepartmentId() + "," +
+                            row.getCustomerId() + ",'"+
+                            row.getPriorityTypePriceSide() + "',"+
+                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
+                            row.getAutocreateOnStart()+ ", " +
+                            row.getAutocreateOnCheque() +", " +
+                            row.getStatusIdOnAutocreateOnCheque() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
+                            " DO update set " +
+                            " pricing_type = '" + row.getPricingType() + "',"+
 //                    " price_type_id = " + row.getPriceTypeId() + ","+
-                    " change_price = " + row.getChangePrice() + ","+
-                    " plus_minus = '" + row.getPlusMinus() + "',"+
-                    " change_price_type = '" + row.getChangePriceType() + "',"+
-                    " hide_tenths = " + row.getHideTenths() + ","+
-                    " save_settings = " + row.getSaveSettings() +
-                    (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
-                    ", company_id = " +row.getCompanyId() +
-                    (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
-                    (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
-                    (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
-                    (row.getAutocreateOnStart() == null ? "": (", autocreate_on_start = "+row.getAutocreateOnStart()))+
-                    (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
-                    (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()));
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " save_settings = " + row.getSaveSettings() +
+                            (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
+                            (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
+                            (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
+                            (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
+                            (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
+                            (row.getAutocreateOnStart() == null ? "": (", autocreate_on_start = "+row.getAutocreateOnStart()))+
+                            (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
+                            (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()));
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

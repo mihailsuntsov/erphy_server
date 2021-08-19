@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.request;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 public class AcceptanceForm {
@@ -22,11 +23,11 @@ public class AcceptanceForm {
     private String description;
     private Long department_id;
     private Long cagent_id;
-    private String doc_number;
+    private Integer doc_number;
     private String acceptance_date;
     private boolean nds;
     private boolean nds_included;
-    private String overhead;
+    private BigDecimal overhead;
     private boolean is_completed;
     private Integer overhead_netcost_method;//0 - нет, 1 - по весу цены в поставке
     private Set<AcceptanceProductForm> acceptanceProductTable;
@@ -93,11 +94,11 @@ public class AcceptanceForm {
         this.cagent_id = cagent_id;
     }
 
-    public String getDoc_number() {
+    public Integer getDoc_number() {
         return doc_number;
     }
 
-    public void setDoc_number(String doc_number) {
+    public void setDoc_number(Integer doc_number) {
         this.doc_number = doc_number;
     }
 
@@ -125,11 +126,11 @@ public class AcceptanceForm {
         this.nds_included = nds_included;
     }
 
-    public String getOverhead() {
+    public BigDecimal getOverhead() {
         return overhead;
     }
 
-    public void setOverhead(String overhead) {
+    public void setOverhead(BigDecimal overhead) {
         this.overhead = overhead;
     }
 

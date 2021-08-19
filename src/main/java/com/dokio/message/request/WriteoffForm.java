@@ -22,9 +22,10 @@ public class WriteoffForm {
     private String description;
     private Long department_id;
     private Long cagent_id;
-    private String doc_number;
+    private Integer doc_number;
     private String writeoff_date;
     private boolean is_completed;
+    private Long inventory_id;
     private Set<WriteoffProductForm> writeoffProductTable;
 
     public Long getId() {
@@ -67,11 +68,11 @@ public class WriteoffForm {
         this.cagent_id = cagent_id;
     }
 
-    public String getDoc_number() {
+    public Integer getDoc_number() {
         return doc_number;
     }
 
-    public void setDoc_number(String doc_number) {
+    public void setDoc_number(Integer doc_number) {
         this.doc_number = doc_number;
     }
 
@@ -97,6 +98,14 @@ public class WriteoffForm {
 
     public void setWriteoffProductTable(Set<WriteoffProductForm> writeoffProductTable) {
         this.writeoffProductTable = writeoffProductTable;
+    }
+
+    public Long getInventory_id() {
+        return inventory_id;
+    }
+
+    public void setInventory_id(Long inventory_id) {
+        this.inventory_id = inventory_id;
     }
 
     @Override

@@ -17,10 +17,13 @@ package com.dokio.message.response.additional;
 import java.math.BigDecimal;
 
 public class ProductsPriceAndRemainsJSON {
-    private BigDecimal total;
-    private BigDecimal price;
-    private BigDecimal reserved;
-    private BigDecimal netCost;
+    private BigDecimal total;               // всего товара в отделении
+    private BigDecimal price;               // цена по запрошенному id типа цены
+    private BigDecimal reserved;            // зарезервировано товара в отделении
+    private BigDecimal avgCostPrice;        // средняя себестоимость товара
+    private BigDecimal lastPurchasePrice;   // последняя закупочная цена
+    private BigDecimal avgPurchasePrice;    // средняя закупочная цена
+
 
     public BigDecimal getTotal() {
         return total;
@@ -46,11 +49,27 @@ public class ProductsPriceAndRemainsJSON {
         this.reserved = reserved;
     }
 
-    public BigDecimal getNetCost() {
-        return netCost;
+    public BigDecimal getAvgCostPrice() {
+        return avgCostPrice;
     }
 
-    public void setNetCost(BigDecimal netCost) {
-        this.netCost = netCost;
+    public void setAvgCostPrice(BigDecimal avgCostPrice) {
+        this.avgCostPrice = avgCostPrice;
+    }
+
+    public BigDecimal getLastPurchasePrice() {
+        return lastPurchasePrice;
+    }
+
+    public void setLastPurchasePrice(BigDecimal lastPurchasePrice) {
+        this.lastPurchasePrice = lastPurchasePrice;
+    }
+
+    public BigDecimal getAvgPurchasePrice() {
+        return avgPurchasePrice;
+    }
+
+    public void setAvgPurchasePrice(BigDecimal avgPurchasePrice) {
+        this.avgPurchasePrice = avgPurchasePrice;
     }
 }

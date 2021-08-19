@@ -17,11 +17,8 @@ import com.dokio.message.request.Settings.SettingsInventoryForm;
 import com.dokio.message.response.InventoryJSON;
 import com.dokio.message.response.InventoryProductTableJSON;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
-import com.dokio.message.response.additional.*;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +27,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class InventoryController {
@@ -182,7 +180,7 @@ public class InventoryController {
         logger.info("Processing post request for path /api/auth/insertInventory: " + request.toString());
 
         Long newDocument = inventoryRepository.insertInventory(request);
-        if(newDocument!=null){
+        if(newDocument!=null){//вернет id созданного документа либо 0, если недостаточно прав
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
             return new ResponseEntity<>("Ошибка создания документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -209,6 +207,36 @@ public class InventoryController {
         }
     }
 
+    @RequestMapping(
+            value = "/api/auth/getInventoryLinkedDocsList",
+            params = {"id","docName"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getInventoryLinkedDocsList(
+            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id инвентаризации и имя таблицы
+        logger.info("Processing get request for path api/auth/getInventoryLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+        List<LinkedDocsJSON> returnList;
+        returnList = inventoryRepository.getInventoryLinkedDocsList(id,docName);
+        if(!Objects.isNull(returnList)){
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+//    @RequestMapping(
+//            value = "/api/auth/getPostingDocsList",
+//            params = {"id"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getPostingDocsList(
+//            @RequestParam("id") Long id) {//передали сюда id инвентаризации
+//        logger.info("Processing get request for path api/auth/getPostingDocsList with parameters: " + "id: " + id);
+//        List<LinkedDocsJSON> returnList;
+//        returnList = inventoryRepository.getPostingDocsList(id);
+//        if(!Objects.isNull(returnList)){
+//            return new ResponseEntity<>(returnList, HttpStatus.OK);
+//        } else {
+//            return new ResponseEntity<>("Ошибка при загрузке списка связанных Оприходований", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
     @PostMapping("/api/auth/updateInventory")
     public ResponseEntity<?> updateInventory(@RequestBody InventoryForm request){
         logger.info("Processing post request for path /api/auth/updateInventory: " + request.toString());
@@ -277,6 +305,50 @@ public class InventoryController {
             return responseEntity;
         }
     }
+
+    @RequestMapping(
+            value = "/api/auth/getInventoryProductsList",
+            params = {"searchString", "companyId", "departmentId", "priceTypeId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getInventoryProductsList(
+            @RequestParam("searchString")   String searchString,
+            @RequestParam("companyId")      Long companyId,
+            @RequestParam("departmentId")   Long departmentId,
+            @RequestParam("priceTypeId")    Long priceTypeId)
+    {
+        logger.info("Processing post request for path /api/auth/getInventoryProductsList with parameters: " +
+                "  searchString: "  + searchString +
+                ", companyId: "     + companyId.toString() +
+                ", departmentId: "  + departmentId.toString() +
+                ", priceTypeId: "   + priceTypeId.toString());
+        List returnList;
+        returnList = inventoryRepository.getInventoryProductsList(searchString, companyId, departmentId, priceTypeId);
+        return new ResponseEntity<>(returnList, HttpStatus.OK);
+    }
+
+    //удаление 1 строки из таблицы товаров
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/deleteInventoryProductTableRow",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/deleteInventoryProductTableRow with parameters: " +
+                "id: " + id);
+        boolean result;
+        try {
+            result=inventoryRepository.deleteInventoryProductTableRow(id);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 }
 
 

@@ -21,7 +21,7 @@ public class SettingsRetailSalesForm {
     private Long        customerId; //id покупателя
     private String      pricingType; //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
     private Long        priceTypeId;//тип цены из справочника Типы цен
-    private BigDecimal changePrice; //наценка/скидка в цифре (например, 50)
+    private BigDecimal  changePrice; //наценка/скидка в цифре (например, 50)
     private String      plusMinus; //определяте что есть changePrice - наценка или скидка (plus или minus)
     private String      changePriceType;// тип наценки/скидки (валюта currency или проценты procents)
     private Boolean     hideTenths;//убирать десятые (копейки)

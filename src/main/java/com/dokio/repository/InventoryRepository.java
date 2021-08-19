@@ -16,6 +16,8 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInventoryForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
+import com.dokio.message.response.additional.InventoryProductsListJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -31,6 +33,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class InventoryRepository {
@@ -53,6 +57,15 @@ public class InventoryRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -97,7 +110,6 @@ public class InventoryRepository {
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           LEFT OUTER JOIN shifts sh ON p.shift_id=sh.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
@@ -117,12 +129,13 @@ public class InventoryRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                        " upper(dp.name) like upper('%" + searchString + "%') or "+
-                        " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                        " upper(us.name) like upper('%" + searchString + "%') or "+
-                        " upper(uc.name) like upper('%" + searchString + "%') or "+
-                        " upper(p.description) like upper('%" + searchString + "%')"+")";
+                        " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -130,7 +143,13 @@ public class InventoryRepository {
             if (departmentId > 0) {
                 stringQuery = stringQuery + " and p.department_id=" + departmentId;
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+            }
+
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
                         .setFirstResult(offsetreal)
@@ -138,6 +157,8 @@ public class InventoryRepository {
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
 
                 List<Object[]> queryList = query.getResultList();
                 List<InventoryJSON> returnList = new ArrayList<>();
@@ -206,12 +227,13 @@ public class InventoryRepository {
         }
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                    " upper(dp.name) like upper('%" + searchString + "%') or "+
-                    " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                    " upper(us.name) like upper('%" + searchString + "%') or "+
-                    " upper(uc.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.description) like upper('%" + searchString + "%')"+")";
+                    " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -219,9 +241,11 @@ public class InventoryRepository {
         if (departmentId > 0) {
             stringQuery = stringQuery + " and p.department_id=" + departmentId;
         }
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
-
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
@@ -242,18 +266,19 @@ public class InventoryRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery =   " select " +
-                    " ip.id  as row_id " +
+                    " ip.id  as row_id, " +
                     " p.name as name," +
                     " ip.product_id," +
                     " ip.estimated_balance as estimated_balance," +
                     " ip.actual_balance as actual_balance," +
                     " ip.product_price," +
-                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ip.edizm_id) as edizm," +
+                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm" +
 
                     " from " +
                     " inventory_product ip " +
                     " INNER JOIN products p ON ip.product_id=p.id " +
-                    " where a.master_id = " + myMasterId +
+                    " INNER JOIN inventory i ON ip.inventory_id=i.id " +
+                    " where ip.master_id = " + myMasterId +
                     " and ip.inventory_id = " + docId;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
@@ -262,9 +287,9 @@ public class InventoryRepository {
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
                     if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+                        stringQuery = stringQuery + " and i.company_id=" + myCompanyId+" and i.department_id in :myDepthsIds and i.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and i.company_id=" + myCompanyId+" and i.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and i.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
             stringQuery = stringQuery + " order by p.name asc ";
@@ -336,7 +361,6 @@ public class InventoryRepository {
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           LEFT OUTER JOIN shifts sh ON p.shift_id=sh.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
@@ -397,7 +421,7 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
     public Boolean updateInventory(InventoryForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",request.getId().toString())) ||
@@ -409,13 +433,14 @@ public class InventoryRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery =   " update inventory set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
                     " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
+                    " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -423,7 +448,15 @@ public class InventoryRepository {
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
+                if(insertInventoryProducts(request, request.getId(), myMasterId)){
                 return true;
+                } else return null;
+
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertInventory on inserting into inventory_products cause error.", e);
+                e.printStackTrace();
+                return null;
             }catch (Exception e) {
                 logger.error("Exception in method updateInventory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -435,25 +468,12 @@ public class InventoryRepository {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
     public Long insertInventory(InventoryForm request) {
-        EntityManager emgr = emf.createEntityManager();
-        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-        Long dockDepartment=request.getDepartment_id();
-        List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-        boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
-        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
-        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-        if ((   //если есть право на создание по всем предприятиям, или
-                (securityRepositoryJPA.userHasPermissions_OR(27L, "329")) ||
-                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                (securityRepositoryJPA.userHasPermissions_OR(27L, "330") && myCompanyId.equals(request.getCompany_id())) ||
-                //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                (securityRepositoryJPA.userHasPermissions_OR(27L, "331") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
-                //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-                DocumentMasterId.equals(myMasterId))
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 27L, "329", "330", "331");
+        if(iCan==Boolean.TRUE)
         {
+
             String stringQuery;
             Long myId = userRepository.getUserId();
             Long newDockId;
@@ -484,10 +504,11 @@ public class InventoryRepository {
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                     doc_number + ", "+//номер заказа
                     "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                    "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                    " :description, " +//описание
                     request.getStatus_id() + ")";//статус инвентаризации
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.executeUpdate();
                 stringQuery="select id from inventory where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -502,41 +523,57 @@ public class InventoryRepository {
                 e.printStackTrace();
                 return null;
             } catch (Exception e) {
-                logger.error("Exception in method " + e.getClass().getName() + " on inserting into inventory. SQL query:"+stringQuery, e);
+                logger.error("Exception in method insertInventory on inserting into inventory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
         } else {
-            return null;
+            //null - ошибка, т.е. либо предприятие или отдление не принадлежат мастер-аккаунту, либо друг другу
+            //0 - недостаточно прав
+            if(iCan==null) return null; else return 0L;
         }
-
     }
 
     @SuppressWarnings("Duplicates")
     private boolean insertInventoryProducts(InventoryForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
-
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
-
+        String productIds = "";
         //сохранение таблицы
         if (request.getInventoryProductTable()!=null && request.getInventoryProductTable().size() > 0) {
+
             for (InventoryProductTableForm row : request.getInventoryProductTable()) {
                 row.setInventory_id(newDockId);
                 insertProductRowResult = saveInventoryProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null) {
                     throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров inventory_product
                 }
+                //копим id сохранённых товаров
+                productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
             }
+        }
+        deleteInventoryProductTableExcessRows(productIds, request.getId(), myMasterId);
+        return true;
+    }
+
+    @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении инвентаризации (те позиции, которые ранее были в заказе, но потом их удалили)
+    private Boolean deleteInventoryProductTableExcessRows(String productIds, Long inventory_id, Long myMasterId) {
+        String stringQuery="";
+        try {
+            stringQuery =   " delete from inventory_product " +
+                    " where inventory_id=" + inventory_id +
+                    " and master_id=" + myMasterId +
+                    (productIds.length()>0?(" and product_id not in (" + productIds + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
             return true;
-        } else {
-            throw new CantInsertProductRowCauseErrorException();
+        }
+        catch (Exception e) {
+            logger.error("Exception in method deleteInventoryProductTableExcessRows. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
         }
     }
 
-
-
-    //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
-    //если не превышает - пишется строка с товаром в БД
-    //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
     @SuppressWarnings("Duplicates")
     private Boolean saveInventoryProductTable(InventoryProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
@@ -565,7 +602,7 @@ public class InventoryRepository {
                                 " inventory_id = " + row.getInventory_id() + "," +
                                 " estimated_balance = " + row.getEstimated_balance() + "," +
                                 " actual_balance = " + row.getActual_balance() + "," +
-                                " product_price = ";
+                                " product_price = " + row.getProduct_price();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
                 return true;
@@ -577,6 +614,23 @@ public class InventoryRepository {
         }
     }
 
+    //удаление 1 строки из таблицы товаров
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean deleteInventoryProductTableRow(Long id) {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery = " delete from inventory_product " +
+                " where id="+id+" and master_id="+myMasterId;
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                return query.executeUpdate() == 1;
+            }
+            catch (Exception e) {
+                logger.error("Exception in method deleteInventoryProductTableRow. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
+    }
 
     //сохраняет настройки документа "Розничные продажи"
     @SuppressWarnings("Duplicates")
@@ -592,15 +646,18 @@ public class InventoryRepository {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
-                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
-                            "price_type_id, " +     //тип цены из справочника Типы цен
-                            "change_price, " +      //наценка/скидка в цифре (например, 50)
-                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
-                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
-                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
-                            "department_id, " +     //отделение по умолчанию
-                            "name, "+               //наименование заказа
-                            "status_on_finish_id"+  //статус документа при завершении инвентаризации
+                            "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                            "price_type_id, " +         //тип цены из справочника Типы цен
+                            "change_price, " +          //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +            //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " +     //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +           //убирать десятые (копейки) - boolean
+                            "department_id, " +         //отделение по умолчанию
+                            "name, "+                   //наименование заказа
+                            "status_on_finish_id, "+    //статус документа при завершении инвентаризации
+                            "default_actual_balance, "+ // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
+                            "other_actual_balance,"+    // другой фактический баланс по умолчанию. Например, 1
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
@@ -613,7 +670,10 @@ public class InventoryRepository {
                             row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
                             "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                            row.getStatusIdOnFinish() +
+                            row.getStatusOnFinishId() + ",'" +
+                            row.getDefaultActualBalance() + "'," +
+                            row.getOtherActualBalance() + "," +
+                            row.getAutoAdd() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_inventory_user_uq " +// "upsert"
                             " DO update set " +
@@ -622,11 +682,14 @@ public class InventoryRepository {
                             " change_price = " + row.getChangePrice() + ","+
                             " plus_minus = '" + row.getPlusMinus() + "',"+
                             " change_price_type = '" + row.getChangePriceType() + "',"+
-                            " hide_tenths = " + row.getHideTenths() + ","+
-                            " department_id = " +row.getDepartmentId()  + ","+
-                            " company_id = " +row.getCompanyId()  + ","+
-                            " name = '" +(row.getName() == null ? "": row.getName()) + "',"+
-                            " status_on_finish_id = "+row.getStatusIdOnFinish();
+                            " hide_tenths = " + row.getHideTenths() +
+                            (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
+                            (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
+                            (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
+                            (row.getStatusOnFinishId() == null ? "": (", status_on_finish_id = "+row.getStatusOnFinishId()))+
+                            (row.getDefaultActualBalance() == null ? "": (", default_actual_balance = '"+row.getDefaultActualBalance()+"'"))+
+                            (row.getOtherActualBalance() == null ? "": (", other_actual_balance = "+row.getOtherActualBalance()))+
+                            (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -646,22 +709,24 @@ public class InventoryRepository {
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.pricing_type as pricing_type, " +                 // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
-                "           p.price_type_id as price_type_id, " +               // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                 // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                     // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +       // тип наценки/скидки (валюта currency или проценты procents)
-                "           coalesce(p.hide_tenths,false) as hide_tenths, " +   // убирать десятые (копейки)
-                "           p.department_id as department_id, " +               // id отделения
-                "           p.company_id as company_id, " +                     // id предприятия
-                "           p.name as name, " +                                 // наименование инвентаризации по-умолчанию
-                "           p.status_on_finish_id as status_on_finish_id " +    // статус документа при завершении инвентаризации
+                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
+                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
+                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.hide_tenths,false) as hide_tenths, " +           // убирать десятые (копейки)
+                "           p.department_id as department_id, " +                       // id отделения
+                "           p.company_id as company_id, " +                             // id предприятия
+                "           p.name as name, " +                                         // наименование инвентаризации по-умолчанию
+                "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
+                "           p.default_actual_balance as default_actual_balance, " +     // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
+                "           p.other_actual_balance as other_actual_balance, " +         // "другой" фактический баланс по умолчанию. Например, 1
+                "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                 "           from settings_inventory p " +
                 "           where p.user_id= " + myId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-
             SettingsInventoryJSON returnObj=new SettingsInventoryJSON();
 
             for(Object[] obj:queryList){
@@ -671,10 +736,13 @@ public class InventoryRepository {
                 returnObj.setPlusMinus((String)                         obj[3]);
                 returnObj.setChangePriceType((String)                   obj[4]);
                 returnObj.setHideTenths((Boolean)                       obj[5]);
-                returnObj.setDepartmentId(obj[7]!=null?Long.parseLong(  obj[7].toString()):null);
-                returnObj.setCompanyId(Long.parseLong(                  obj[11].toString()));
-                returnObj.setName((String)                              obj[14]);
-                returnObj.setStatusOnFinishId(obj[15]!=null?Long.parseLong(obj[15].toString()):null);
+                returnObj.setDepartmentId(obj[6]!=null?Long.parseLong(  obj[6].toString()):null);
+                returnObj.setCompanyId(Long.parseLong(                  obj[7].toString()));
+                returnObj.setName((String)                              obj[8]);
+                returnObj.setStatusOnFinishId(obj[9]!=null?Long.parseLong(obj[9].toString()):null);
+                returnObj.setDefaultActualBalance((String)              obj[10]);
+                returnObj.setOtherActualBalance((BigDecimal)            obj[11]);
+                returnObj.setAutoAdd((Boolean)                          obj[12]);
             }
             return returnObj;
         }
@@ -746,5 +814,116 @@ public class InventoryRepository {
             } else return false;
         }
 
+    @SuppressWarnings("Duplicates")
+    public List<InventoryProductsListJSON> getInventoryProductsList(String searchString, Long companyId, Long departmentId, Long priceTypeId) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery = "select  p.id as id, " +
+                // наименование товара
+                "           p.name as name, " +
+                // наименование ед. измерения
+                "           ei.short_name as edizm, " +
+                // картинка
+                "           f.name as filename, " +
+                // всего единиц товара в отделении (складе)
+                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
+                // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
+                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = 10),0) as price_by_typeprice, " +
+                // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
+//                (priceTypeId>0?" pp.price_value":null) + " as price_by_typeprice," +
+                // средняя себестоимость
+                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                // средняя закупочная цена
+                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
+                // последняя закупочная цена
+                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice " +
+
+        " from products p " +
+                " left outer join product_barcodes pb on pb.product_id=p.id" +
+                " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
+                " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
+                " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
+                " where  p.master_id=" + myMasterId +
+                " and coalesce(p.is_archive,false) !=true ";
+        if (searchString != null && !searchString.isEmpty()) {
+            stringQuery = stringQuery + " and (" +
+                    " to_char(p.product_code_free,'fm0000000000') like CONCAT('%',:sg) or "+
+                    " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.article) like upper (CONCAT('%',:sg,'%')) or " +
+                    " pb.value = :sg";
+
+            stringQuery = stringQuery + ")";
+        }
+        if (companyId > 0) {
+            stringQuery = stringQuery + " and p.company_id=" + companyId;
+        }
+        stringQuery = stringQuery + " group by p.id, f.name, ei.short_name" +
+//                (priceTypeId>0?(", pp.price_value"):"") + //если тип цены запрашивается - группируем таже и по нему
+                "  order by p.name asc";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty()){query.setParameter("sg", searchString);}
+
+            List<Object[]> queryList = query.getResultList();
+            List<InventoryProductsListJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                InventoryProductsListJSON product = new InventoryProductsListJSON();
+                product.setProduct_id(Long.parseLong(                       obj[0].toString()));
+                product.setName((String)                                    obj[1]);
+                product.setEdizm((String)                                   obj[2]);
+                product.setFilename((String)                                obj[3]);
+                product.setEstimated_balance(                               obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
+                product.setPriceOfTypePrice(                                obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
+                product.setAvgCostPrice(                                    obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
+                product.setAvgPurchasePrice(                                obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
+                product.setLastPurchasePrice(                               obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
+                returnList.add(product);
+            }
+            return returnList;
+        } catch (Exception e) {
+            logger.error("Exception in method getInventoryProductsList. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public List<LinkedDocsJSON> getInventoryLinkedDocsList(Long docId, String docName) {
+        String stringQuery;
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String tableName=(docName.equals("posting")?"posting":"writeoff");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
+        stringQuery =   " select " +
+                " ap.id," +
+                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+                " ap.description," +
+                " coalesce(ap.is_completed,false)," +
+                " ap.doc_number" +
+                " from "+tableName+" ap" +
+                " where ap.master_id = " + myMasterId +
+                " and coalesce(ap.is_archive,false)!=true "+
+                " and ap.inventory_id = " + docId;
+        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<LinkedDocsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                LinkedDocsJSON doc=new LinkedDocsJSON();
+                doc.setId(Long.parseLong(                       obj[0].toString()));
+                doc.setDate_time_created((String)               obj[1]);
+                doc.setDescription((String)                     obj[2]);
+                doc.setIs_completed((Boolean)                   obj[3]);
+                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getInventoryLinkedDocsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 }
 

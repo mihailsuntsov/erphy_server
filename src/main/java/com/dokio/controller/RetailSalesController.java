@@ -179,7 +179,7 @@ public class RetailSalesController {
         logger.info("Processing post request for path /api/auth/insertRetailSales: " + request.toString());
 
         Long newDocument = retailSalesRepository.insertRetailSales(request);
-        if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - возвращаем это
+        if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - (0 обрабатывается на фронте как недостаточно объема склада для операции)
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
             return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);

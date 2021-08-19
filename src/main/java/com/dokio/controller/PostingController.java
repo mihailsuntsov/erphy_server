@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class PostingController {
@@ -104,7 +105,11 @@ public class PostingController {
         Long docId = searchRequest.getId();//
         List<PostingProductForm> returnList;
         returnList = postingRepositoryJPA.getPostingProductTable(docId);
-        return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        if(!Objects.isNull(returnList)){
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка при загрузке таблицы товаров", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/getPostingPagesList")
@@ -184,10 +189,11 @@ public class PostingController {
         logger.info("Processing post request for path /api/auth/insertPosting: " + request.toString());
 
         Long newDocument = postingRepositoryJPA.insertPosting(request);
-        if(newDocument!=null && newDocument>0){
-            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+
+        if(!Objects.isNull(newDocument)){//вернет id созданного документа либо 0, если недостаточно прав
+            return new ResponseEntity<>(newDocument, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка при создании Оприходования", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -202,7 +208,7 @@ public class PostingController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -224,7 +230,7 @@ public class PostingController {
         if(postingRepositoryJPA.updatePosting(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка при сохранении Оприходования", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -234,10 +240,11 @@ public class PostingController {
         logger.info("Processing post request for path /api/auth/deletePosting: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(postingRepositoryJPA.deletePosting(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        Boolean result=postingRepositoryJPA.deletePosting(checked);
+        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка при удалении Оприходования", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -252,7 +259,7 @@ public class PostingController {
             returnList = postingRepositoryJPA.getListOfPostingFiles(productId);
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -263,7 +270,7 @@ public class PostingController {
         if(postingRepositoryJPA.deletePostingFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -276,7 +283,7 @@ public class PostingController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

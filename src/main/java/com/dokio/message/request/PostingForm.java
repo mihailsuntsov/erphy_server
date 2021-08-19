@@ -22,13 +22,22 @@ public class PostingForm {
     private String description;
     private Long department_id;
     private Long cagent_id;
-    private String doc_number;
+    private Integer doc_number;
     private String posting_date;
     private boolean is_completed;
+    private Long inventory_id;
     private Set<PostingProductForm> postingProductTable;
 
     public Long getId() {
         return id;
+    }
+
+    public Long getInventory_id() {
+        return inventory_id;
+    }
+
+    public void setInventory_id(Long inventory_id) {
+        this.inventory_id = inventory_id;
     }
 
     public void setId(Long id) {
@@ -67,11 +76,11 @@ public class PostingForm {
         this.cagent_id = cagent_id;
     }
 
-    public String getDoc_number() {
+    public Integer getDoc_number() {
         return doc_number;
     }
 
-    public void setDoc_number(String doc_number) {
+    public void setDoc_number(Integer doc_number) {
         this.doc_number = doc_number;
     }
 

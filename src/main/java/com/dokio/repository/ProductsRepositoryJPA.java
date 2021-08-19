@@ -1,31 +1,27 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
-import com.dokio.message.response.additional.IdAndCount;
-import com.dokio.message.response.additional.ProductPricesJSON;
-import com.dokio.message.response.additional.ProductsPriceAndRemainsJSON;
-import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
+import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.Sprav.SpravSysMarkableGroup;
 import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -53,6 +49,8 @@ public class ProductsRepositoryJPA {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userService;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     // Инициализация логера
     private static final Logger logger = Logger.getLogger(ProductsRepositoryJPA.class);
@@ -993,7 +991,7 @@ public class ProductsRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    //отдает информацию состоянии товара (кол-во, последняя поставка) в отделении, и средним ценам (закупочной и себестоимости) товара
+    //отдает информацию цене товара
     public BigDecimal getProductPrice(Long company_id, Long product_id, Long price_type_id) {
 
         Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -1545,7 +1543,6 @@ public class ProductsRepositoryJPA {
 //        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
         //себестоимость
         ProductHistoryJSON lastProductHistoryRecord = getLastProductHistoryRecord(product_id,department_id);
-        BigDecimal netCost= lastProductHistoryRecord.getAvg_netcost_price();
 
         String stringQuery = "select" +
                 " coalesce((select quantity from product_quantity where product_id = "+product_id+" and department_id = d.id),0) as total, "+ //всего на складе (т.е остаток)
@@ -1586,10 +1583,117 @@ public class ProductsRepositoryJPA {
                 } else {
                     returnObj.setPrice(                      BigDecimal.valueOf(0));
                 }
-                returnObj.setNetCost(netCost);
+                //Устанавливаем последние цены: Среднюю себестоимость, Среднюю закупочную, Последнюю закупочную
+                returnObj.setAvgCostPrice(      lastProductHistoryRecord.getAvg_netcost_price());
+                returnObj.setAvgPurchasePrice(  lastProductHistoryRecord.getAvg_purchase_price());
+                returnObj.setLastPurchasePrice( lastProductHistoryRecord.getLast_purchase_price());
             }
             return returnObj;
         } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductsPriceAndRemains. SQL query:"+stringQuery, e);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    //отдает 4 цены на товар (средняя себестоимость, последяя закупочная, средняя закупочная, цена по запрошенному типу цены)
+    public ProductPricingInfoJSON getProductPricesAll(Long departmentId, Long productId, Long priceTypeId) {
+        String stringQuery = "";
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        ProductHistoryJSON lastProductHistoryRecord = getLastProductHistoryRecord(productId,departmentId);
+        ProductPricingInfoJSON returnObj = new ProductPricingInfoJSON();
+        try {
+            returnObj.setAvgCostPrice(      lastProductHistoryRecord.getAvg_netcost_price());
+            returnObj.setAvgPurchasePrice(  lastProductHistoryRecord.getAvg_purchase_price());
+            returnObj.setLastPurchasePrice( lastProductHistoryRecord.getLast_purchase_price());
+
+            if(priceTypeId!=0) {//если тип цены был выбран
+                stringQuery="select price_value from product_prices where product_id = " + productId + " and price_type_id = " + priceTypeId + " and master_id = "+myMasterId+"";// цена по типу цены
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                for (Iterator i = queryList.iterator(); i.hasNext();) {
+                    BigDecimal value = (BigDecimal) i.next();
+                    returnObj.setPriceOfTypePrice(value);
+                }
+            } else returnObj.setPriceOfTypePrice(BigDecimal.ZERO);
+            return returnObj;
+        } catch (Exception e) {
+            logger.error("Exception in method getProductPricesAll. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public List<ProductsInfoListJSON> getProductsInfoListByIds( ProductsInfoListForm request) {
+        Long        companyId=request.getCompanyId();
+        Long        departmentId=request.getDepartmentId();
+        Long        priceTypeId=request.getPriceTypeId();
+        Long        myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String      reportOn=request.getReportOn();            // по категориям или по товарам/услугам (categories, products)
+        List<Long>  reportOnIds=request.getReportOnIds();     // id категорий или товаров/услуг (того, что выбрано в reportOn)
+        String ids =commonUtilites.ListOfLongToString(reportOnIds,",","","");
+
+        String  stringQuery = "select  p.id as id, " +
+                // наименование товара
+                "           p.name as name, " +
+                // наименование ед. измерения
+                "           ei.short_name as edizm, " +
+                // всего единиц товара в отделении (складе)
+                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
+                // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
+                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = 10),0) as price_by_typeprice, " +
+                // средняя себестоимость
+                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                // средняя закупочная цена
+                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
+                // последняя закупочная цена
+                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice " +
+                " from products p " +
+                " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
+//                (priceTypeId>0?" left outer join product_prices pp on pp.product_id=p.id":"")   +
+                " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
+                " where  p.master_id=" + myMasterId;
+
+                //        нужно запросить все айдишники подкатегорий у присланных id родительских категорий
+                Set<Long> childCategories = getProductCategoriesChildIds(request.getReportOnIds());
+                String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
+
+                if (request.getReportOn().equals("products"))
+                    stringQuery = stringQuery + " and p.id in (" + ids + ")";
+                if (request.getReportOn().equals("categories")) {
+                    stringQuery = stringQuery + " and p.id in (select ppc.product_id from product_productcategories ppc where ppc.category_id in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
+                }
+
+//        stringQuery = stringQuery + (priceTypeId>0?(" and pp.price_type_id = " + priceTypeId):"") + //если тип цены запрашивается
+
+        stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true ";
+        if (companyId > 0) {
+            stringQuery = stringQuery + " and p.company_id=" + companyId;
+        }
+        stringQuery = stringQuery + " group by p.id, ei.short_name" +
+//                (priceTypeId>0?(", pp.price_value"):"") + //если тип цены запрашивается - группируем таже и по нему
+                "  order by p.name asc";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<ProductsInfoListJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                ProductsInfoListJSON product = new ProductsInfoListJSON();
+                product.setProduct_id(Long.parseLong(                       obj[0].toString()));
+                product.setName((String)                                    obj[1]);
+                product.setEdizm((String)                                   obj[2]);
+                product.setEstimated_balance(                               obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
+                product.setPriceOfTypePrice(                                obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
+                product.setAvgCostPrice(                                    obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
+                product.setAvgPurchasePrice(                                obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
+                product.setLastPurchasePrice(                               obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
+                returnList.add(product);
+            }
+            return returnList;
+        } catch (Exception e) {
+            logger.error("Exception in method getProductsInfoListByIds. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }

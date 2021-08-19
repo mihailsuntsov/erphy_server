@@ -15,10 +15,7 @@ package com.dokio.controller;
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
-import com.dokio.message.response.additional.IdAndCount;
-import com.dokio.message.response.additional.ProductPricesJSON;
-import com.dokio.message.response.additional.ProductsPriceAndRemainsJSON;
-import com.dokio.message.response.additional.ShortInfoAboutProductJSON;
+import com.dokio.message.response.additional.*;
 import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -362,6 +359,26 @@ public class ProductsController {
     {
         try {
             ProductsPriceAndRemainsJSON response=productsRepositoryJPA.getProductsPriceAndRemains(department_id,product_id,price_type_id,document_id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //отдает 4 цены на товар (средняя себестоимость, последяя закупочная, средняя закупочная, цена по запрошенному типу цены)
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getProductPricesAll",
+            params = {"departmentId", "productId", "priceTypeId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductPricesAll(
+            @RequestParam("departmentId") Long departmentId,
+            @RequestParam("productId") Long productId,
+            @RequestParam("priceTypeId") Long priceTypeId)
+    {
+        try {
+            ProductPricingInfoJSON response=productsRepositoryJPA.getProductPricesAll(departmentId,productId,priceTypeId);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -870,5 +887,21 @@ public class ProductsController {
         }
     }
 
+    //загружает список товаров по их id или id их категорий
+    @PostMapping("/api/auth/getProductsInfoListByIds")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getProductsInfoListByIds(@RequestBody ProductsInfoListForm request){
+        logger.info("Processing post request for path /api/auth/getVolumesReportData: " + request.toString());
+        List<ProductsInfoListJSON> returnList;
+        try {
+            returnList = productsRepositoryJPA.getProductsInfoListByIds(request);
+            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
+            return responseEntity;
+        } catch (Exception e){
+            e.printStackTrace();
+            ResponseEntity responseEntity = new ResponseEntity<>("Ошибка при запросе информации о товарах", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
 
 }

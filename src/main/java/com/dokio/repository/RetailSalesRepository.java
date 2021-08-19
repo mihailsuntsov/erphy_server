@@ -35,6 +35,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class RetailSalesRepository {
@@ -59,6 +61,17 @@ public class RetailSalesRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("doc_number","name","cagent","status_name","sum_price","hasSellReceipt","company","department","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+
 
     //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -100,7 +113,8 @@ public class RetailSalesRepository {
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from retail_sales_product where retail_sales_id=p.id),0) as sum_price, " +
                     "           p.name as name, " +
                     "           coalesce(sh.shift_number,0) as shift_number, " +
-                    "           (select count(*) from receipts rec where coalesce(rec.retail_sales_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt" + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
+                    "           (select count(*) from receipts rec where coalesce(rec.retail_sales_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt," + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
+                    "           cg.name as cagent " +
 
                     "           from retail_sales p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -108,6 +122,7 @@ public class RetailSalesRepository {
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN shifts sh ON p.shift_id=sh.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
@@ -126,12 +141,14 @@ public class RetailSalesRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                        " upper(dp.name) like upper('%" + searchString + "%') or "+
-                        " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                        " upper(us.name) like upper('%" + searchString + "%') or "+
-                        " upper(uc.name) like upper('%" + searchString + "%') or "+
-                        " upper(p.description) like upper('%" + searchString + "%')"+")";
+                        " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -139,14 +156,26 @@ public class RetailSalesRepository {
             if (departmentId > 0) {
                 stringQuery = stringQuery + " and p.department_id=" + departmentId;
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+            }
+
+
             try{
-                Query query = entityManager.createNativeQuery(stringQuery)
-                        .setFirstResult(offsetreal)
-                        .setMaxResults(result);
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
+                query.setFirstResult(offsetreal).setMaxResults(result);
+
 
                 List<Object[]> queryList = query.getResultList();
                 List<RetailSalesJSON> returnList = new ArrayList<>();
@@ -177,6 +206,7 @@ public class RetailSalesRepository {
                     doc.setName((String)                          obj[24]);
                     doc.setShift_number((Integer)                 obj[25]);
                     doc.setHasSellReceipt(((BigInteger)           obj[26]).longValue() > 0L);//если есть чеки - вернется true
+                    doc.setCagent((String)                        obj[27]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -200,6 +230,7 @@ public class RetailSalesRepository {
                 "           from retail_sales p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
@@ -217,12 +248,14 @@ public class RetailSalesRepository {
         }
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                    " upper(dp.name) like upper('%" + searchString + "%') or "+
-                    " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                    " upper(us.name) like upper('%" + searchString + "%') or "+
-                    " upper(uc.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.description) like upper('%" + searchString + "%')"+")";
+                    " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -231,11 +264,13 @@ public class RetailSalesRepository {
             stringQuery = stringQuery + " and p.department_id=" + departmentId;
         }
         try{
+
             Query query = entityManager.createNativeQuery(stringQuery);
 
-            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+            if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -252,7 +287,7 @@ public class RetailSalesRepository {
             Long parentCustomersOrdersId = getParentCustomersOrdersId(docId);
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+//            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery =   " select " +
                     " ap.product_id," +
                     " ap.retail_sales_id," +
@@ -293,16 +328,16 @@ public class RetailSalesRepository {
                     " where a.master_id = " + myMasterId +
                     " and ap.retail_sales_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
-                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
-                    {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-            }
+//            if (!securityRepositoryJPA.userHasPermissions_OR(25L, "316")) //Если нет прав на просм по всем предприятиям
+//            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+//                if (!securityRepositoryJPA.userHasPermissions_OR(25L, "317")) //Если нет прав на просм по своему предприятию
+//                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+//                    if (!securityRepositoryJPA.userHasPermissions_OR(25L, "318")) //Если нет прав на просмотр всех доков в своих подразделениях
+//                    {//остается только на свои документы
+//                        stringQuery = stringQuery + " and a.company_id=" + myCompanyId+" and a.department_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+//                    }else{stringQuery = stringQuery + " and a.company_id=" + myCompanyId+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+//                } else stringQuery = stringQuery + " and a.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+//            }
 
             stringQuery = stringQuery + " order by p.name asc ";
             try{
@@ -411,7 +446,7 @@ public class RetailSalesRepository {
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN users u ON p.master_id=u.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
+                "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN shifts sh ON p.shift_id=sh.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
@@ -518,7 +553,7 @@ public class RetailSalesRepository {
     // Возвращаем 0 если невозможно по вышеизложенным причинам создать товарные позиции для Розничной продажи
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseOversellException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
     public Long insertRetailSales(RetailSalesForm request) {
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
@@ -632,6 +667,7 @@ public class RetailSalesRepository {
                 logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause error.", e);
                 e.printStackTrace();
                 return null;
+
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause oversell.", e);
@@ -664,18 +700,17 @@ public class RetailSalesRepository {
                 row.setRetail_sales_id(newDockId);
                 insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null || !insertProductRowResult) {
-                    if (insertProductRowResult==null){
+                    if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveRetailSalesProductTable
                         throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
-                    }
-                    if (!insertProductRowResult){
-                        throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+                    }else{ // insertProductRowResult==false - товар материален, и его наличия не хватает для продажи
+                        throw new CantInsertProductRowCauseOversellException();//кидаем исключение 'оверселл', чтобы произошла отмена транзакции
                     }
                 } else { // если сохранили удачно - значит нужно сделать запись в историю изменения данного товара
                     //создание записи в истории изменения товара
-                    if(!addRetailSalesProductHistory(newDockId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request , myMasterId, row.getIs_material())){
-                        throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-                    } else {//создание записи актуального количества товара на складе (таблица product_quantity)
-                        if(row.getIs_material()) { // но только если товар материален
+                    if(row.getIs_material()) { // но только если товар материален (т.е. это не услуга, работа и т.п.)
+                        if (!addRetailSalesProductHistory(newDockId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request, myMasterId, row.getIs_material())) {
+                            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+                        } else {//создание записи актуального количества товара на складе (таблица product_quantity)
                             if (!setProductQuantity(row.getProduct_id(), request.getDepartment_id(), myMasterId)) {
                                 throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
                             }
@@ -739,49 +774,49 @@ public class RetailSalesRepository {
                 else available= BigDecimal.valueOf(0L);
                 if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material()) //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.)
                 {
-                    stringQuery =
-                    " insert into retail_sales_product (" +
-                    "master_id, " +
-                    "company_id, " +
-                    "product_id, " +
-                    "retail_sales_id, " +
-                    "product_count, " +
-                    "product_price, " +
-                    "product_sumprice, " +
-                    "edizm_id, " +
-                    "price_type_id, " +
-                    "nds_id, " +
-                    "department_id, " +
-                    "product_price_of_type_price " +
-                    ") values (" +
-                    master_id + "," +
-                    company_id + "," +
-                    row.getProduct_id() + "," +
-                    row.getRetail_sales_id() + "," +
-                    row.getProduct_count() + "," +
-                    row.getProduct_price() + "," +
-                    row.getProduct_sumprice() + "," +
-                    row.getEdizm_id() + "," +
-                    row.getPrice_type_id() + "," +
-                    row.getNds_id() + ", " +
-                    row.getDepartment_id() + ", " +
-                    row.getProduct_price_of_type_price() +
-                    " ) " +
-                    "ON CONFLICT ON CONSTRAINT retail_sales_product_uq " +// "upsert"
-                    " DO update set " +
-                    " product_id = " + row.getProduct_id() + "," +
-                    " retail_sales_id = " + row.getRetail_sales_id() + "," +
-                    " product_count = " + row.getProduct_count() + "," +
-                    " product_price = " + row.getProduct_price() + "," +
-                    " product_sumprice = " + row.getProduct_sumprice() + "," +
-                    " edizm_id = " + row.getEdizm_id() + "," +
-                    " price_type_id = " + row.getPrice_type_id() + "," +
-                    " nds_id = " + row.getNds_id() + "," +
-                    " department_id = " + row.getDepartment_id() + "," +
-                    " product_price_of_type_price = " + row.getProduct_price_of_type_price();
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.executeUpdate();
-                    return true;
+                        stringQuery =
+                        " insert into retail_sales_product (" +
+                        "master_id, " +
+                        "company_id, " +
+                        "product_id, " +
+                        "retail_sales_id, " +
+                        "product_count, " +
+                        "product_price, " +
+                        "product_sumprice, " +
+                        "edizm_id, " +
+                        "price_type_id, " +
+                        "nds_id, " +
+                        "department_id, " +
+                        "product_price_of_type_price " +
+                        ") values (" +
+                        master_id + "," +
+                        company_id + "," +
+                        row.getProduct_id() + "," +
+                        row.getRetail_sales_id() + "," +
+                        row.getProduct_count() + "," +
+                        row.getProduct_price() + "," +
+                        row.getProduct_sumprice() + "," +
+                        row.getEdizm_id() + "," +
+                        row.getPrice_type_id() + "," +
+                        row.getNds_id() + ", " +
+                        row.getDepartment_id() + ", " +
+                        row.getProduct_price_of_type_price() +
+                        " ) " +
+                        "ON CONFLICT ON CONSTRAINT retail_sales_product_uq " +// "upsert"
+                        " DO update set " +
+                        " product_id = " + row.getProduct_id() + "," +
+                        " retail_sales_id = " + row.getRetail_sales_id() + "," +
+                        " product_count = " + row.getProduct_count() + "," +
+                        " product_price = " + row.getProduct_price() + "," +
+                        " product_sumprice = " + row.getProduct_sumprice() + "," +
+                        " edizm_id = " + row.getEdizm_id() + "," +
+                        " price_type_id = " + row.getPrice_type_id() + "," +
+                        " nds_id = " + row.getNds_id() + "," +
+                        " department_id = " + row.getDepartment_id() + "," +
+                        " product_price_of_type_price = " + row.getProduct_price_of_type_price();
+                        Query query = entityManager.createNativeQuery(stringQuery);
+                        query.executeUpdate();
+                        return true;
                 } else return false;
             }
             catch (Exception e) {
@@ -844,14 +879,14 @@ public class RetailSalesRepository {
                                 " plus_minus = '" + row.getPlusMinus() + "',"+
                                 " change_price_type = '" + row.getChangePriceType() + "',"+
                                 " hide_tenths = " + row.getHideTenths() + ","+
-                                " save_settings = " + row.getSaveSettings() + ","+
-                                " department_id = " +row.getDepartmentId()  + ","+
-                                " company_id = " +row.getCompanyId()  + ","+
-                                " customer_id = "+row.getCustomerId()  + ","+
-                                " name = '" +(row.getName() == null ? "": row.getName()) + "',"+
-                                " priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'," +
-                                " status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque() + ","+
-                                " autocreate_on_cheque = "+row.getAutocreateOnCheque();
+                                " save_settings = " + row.getSaveSettings() +
+                                (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
+                                (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
+                                (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
+                                (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
+                                (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
+                                (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
+                                (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -953,13 +988,21 @@ public class RetailSalesRepository {
 
         //записывает историю изменения кол-ва товара
         //на данный момент нематериальная номенклатура тоже записывается в products_history, для ее отображения в карточке номенклатуры в разделе Операции, чтобы там можно было видеть Розничные продажи и Возвраты покупателей
-        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId, boolean isMaterial) {
+        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId, boolean isMaterial) throws CantInsertProductRowCauseOversellException, CantSaveProductHistoryException {
             String stringQuery;
             ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,request.getDepartment_id());
             BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
             BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
             BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
             BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
+
+            //необходимо проверить, что списываем количество товара не более доступного количества.
+            //вообще, в БД установлено ограничение на кол-во товара >=0, и отмену транзакции мог бы сделать CantSaveProductHistoryException в блоке catch,
+            //но данным исключением мы уточним, от чего именно произошла отмена транзакции:
+            if((lastQuantity.subtract(product_count)).compareTo(new BigDecimal("0")) < 0) {
+                logger.error("Для Розничной продажи с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к списанию больше количества товара на складе");
+                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+            }
 
             stringQuery =
                     " insert into products_history (" +
@@ -998,7 +1041,7 @@ public class RetailSalesRepository {
             catch (Exception e) {
                 logger.error("Exception in method addRetailSalesProductHistory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
             }
         }
 

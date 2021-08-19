@@ -410,4 +410,12 @@ public class DepartmentRepositoryJPA {
         } else return false;
     }
 
+    //true если id отделения принадлежит предприятию.
+    public Boolean departmentBelongToCompany(Long compId,Long depId){
+        String stringQuery = "select p.id from departments p where p.id="+depId+" and p.company_id=" + compId ;
+        Query query = entityManager.createNativeQuery(stringQuery);
+        return (query.getResultList().size() > 0);
+    }
+
+
 }

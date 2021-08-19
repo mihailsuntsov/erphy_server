@@ -25,10 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class WriteoffController {
@@ -104,7 +105,11 @@ public class WriteoffController {
         Long docId = searchRequest.getId();//
         List<WriteoffProductForm> returnList;
         returnList = writeoffRepositoryJPA.getWriteoffProductTable(docId);
-        return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        if(!Objects.isNull(returnList)){
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка при загрузке таблицы товаров", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/getWriteoffPagesList")
@@ -184,10 +189,10 @@ public class WriteoffController {
         logger.info("Processing post request for path api/auth/insertWriteoff: " + request.toString());
 
         Long newDocument = writeoffRepositoryJPA.insertWriteoff(request);
-        if(newDocument!=null && newDocument>0){
-            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+        if(!Objects.isNull(newDocument)){//вернет id созданного документа либо 0, если недостаточно прав
+            return new ResponseEntity<>(newDocument, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка при создании Списания", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -202,7 +207,7 @@ public class WriteoffController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -220,24 +225,25 @@ public class WriteoffController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateWriteoff(@RequestBody WriteoffForm request){
         logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
-
-        if(writeoffRepositoryJPA.updateWriteoff(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        Integer result=writeoffRepositoryJPA.updateWriteoff(request);
+        if(result!=null){
+            return new ResponseEntity<>(result, HttpStatus.OK);//либо 1 либо 0. 1 = все ок, 0 = не достаточное кол-во товаров для списания
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка сохранения либо завершения списания", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/api/auth/deleteWriteoff")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteWriteoff(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
+        logger.info("Processing post request for path api/auth/deleteWriteoff: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(writeoffRepositoryJPA.deleteWriteoff(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        Boolean result=writeoffRepositoryJPA.deleteWriteoff(checked);
+        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка при удалении Списания", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -252,7 +258,7 @@ public class WriteoffController {
             returnList = writeoffRepositoryJPA.getListOfWriteoffFiles(productId);
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -263,7 +269,7 @@ public class WriteoffController {
         if(writeoffRepositoryJPA.deleteWriteoffFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -276,8 +282,30 @@ public class WriteoffController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
+
+//    createChildWriteoff
+
+//    @RequestMapping(
+//            value = "/api/auth/createWriteoffFromInventory",
+//            params = {"inventory_id"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> createWriteoffFromInventory(
+//            @RequestParam("inventory_id") Long inventory_id)
+//    {
+//        logger.info("Processing get request for path /api/auth/createWriteoffFromInventory with parameters: " + "inventory_id: " + inventory_id);
+//        Integer response;//при успешном создании вернём id документа, при недостатке прав - 0, при ошибке - null
+//        try {
+//            response=writeoffRepositoryJPA.createWriteoffFromInventory(inventory_id);
+//            return new ResponseEntity<>(response, HttpStatus.OK);
+//        }
+//        catch (Exception e) {
+//            logger.error("Exception in method createWriteoffFromInventory. inventory_id = " + inventory_id, e);
+//            e.printStackTrace();
+//            return new ResponseEntity<>("Ошибка создания документа Списание из документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 }

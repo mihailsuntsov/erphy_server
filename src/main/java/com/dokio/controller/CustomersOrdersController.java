@@ -310,7 +310,7 @@ public class CustomersOrdersController {
     public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/getReservesTable with parameters: " +
+        logger.info("Processing get request for path /api/auth/deleteCustomersOrdersProductTableRow with parameters: " +
                 "id: " + id);
         boolean result;
         try {

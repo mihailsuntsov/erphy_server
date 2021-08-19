@@ -12,8 +12,6 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.message.response;
 
-import java.math.BigDecimal;
-
 public class InventoryJSON {
 
     private Long        id;

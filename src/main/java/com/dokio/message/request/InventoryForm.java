@@ -15,13 +15,14 @@ package com.dokio.message.request;
 import java.util.Set;
 
 public class InventoryForm {
-    private Long id;
-    private Long company_id;
-    private Long department_id;
-    private String name;//наименование инвентаризации
-    private String description;
-    private Long status_id;
-    private String doc_number;
+    private Long    id;
+    private Long    company_id;
+    private Long    department_id;
+    private String  name;//наименование инвентаризации
+    private String  description;
+    private Long    status_id;
+    private String  doc_number;
+    private Boolean is_completed; // завершена
     //------------- таблица товаров -----------------
     private Set<InventoryProductTableForm> inventoryProductTable;
 
@@ -83,6 +84,14 @@ public class InventoryForm {
 
     public Set<InventoryProductTableForm> getInventoryProductTable() {
         return inventoryProductTable;
+    }
+
+    public Boolean getIs_completed() {
+        return is_completed;
+    }
+
+    public void setIs_completed(Boolean is_completed) {
+        this.is_completed = is_completed;
     }
 
     public void setInventoryProductTable(Set<InventoryProductTableForm> inventoryProductTable) {
