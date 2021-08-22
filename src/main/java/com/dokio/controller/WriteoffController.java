@@ -287,25 +287,4 @@ public class WriteoffController {
         }
     }
 
-//    createChildWriteoff
-
-//    @RequestMapping(
-//            value = "/api/auth/createWriteoffFromInventory",
-//            params = {"inventory_id"},
-//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-//    public ResponseEntity<?> createWriteoffFromInventory(
-//            @RequestParam("inventory_id") Long inventory_id)
-//    {
-//        logger.info("Processing get request for path /api/auth/createWriteoffFromInventory with parameters: " + "inventory_id: " + inventory_id);
-//        Integer response;//при успешном создании вернём id документа, при недостатке прав - 0, при ошибке - null
-//        try {
-//            response=writeoffRepositoryJPA.createWriteoffFromInventory(inventory_id);
-//            return new ResponseEntity<>(response, HttpStatus.OK);
-//        }
-//        catch (Exception e) {
-//            logger.error("Exception in method createWriteoffFromInventory. inventory_id = " + inventory_id, e);
-//            e.printStackTrace();
-//            return new ResponseEntity<>("Ошибка создания документа Списание из документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
 }

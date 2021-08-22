@@ -457,9 +457,9 @@ public class PostingRepository {
                 newDockId = Long.valueOf(query2.getSingleResult().toString());
 
                 //если есть таблица с товарами - нужно создать их
-                if (insertPostingProducts(request, newDockId)) {
-                    return newDockId;
-                } else return null;
+                insertPostingProducts(request, newDockId, myMasterId);
+                return newDockId;
+
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertPosting on inserting into posting_products cause error.", e);
@@ -479,20 +479,21 @@ public class PostingRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertPostingProducts(PostingForm request, Long parentDockId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertPostingProducts(PostingForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getPostingProductTable()!=null && request.getPostingProductTable().size() > 0) {
             for (PostingProductForm row : request.getPostingProductTable()) {
-                row.setPosting_id(parentDockId);
-                if (!savePostingProductTable(row, request.getId())) {
+                row.setPosting_id(parentDockId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                if (!savePostingProductTable(row, myMasterId)) {
                     throw new CantInsertProductRowCauseErrorException();
                 }
                 productIds.add(row.getProduct_id());
             }
         }
-        deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId);
-        return true;
+        if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId)) {
+            throw new CantInsertProductRowCauseErrorException();
+        } else return true;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
@@ -506,17 +507,12 @@ public class PostingRepository {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(16L,"214") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",request.getId().toString())))
         {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             if(updatePostingWithoutTable(request)){                                      //метод 1
                 try {//сохранение таблицы
-//                    String productIds = "";
-                    if (request.getPostingProductTable().size() > 0) {
-                        insertPostingProducts(request, request.getId());
-                    }//удаление лишних строк
-//                    deletePostingProductTableExcessRows(productIds.length()>0?productIds:"0", request.getId());
-
+                    insertPostingProducts(request, request.getId(),myMasterId);
                     //если завершается приемка - запись в историю товара
                     if(request.isIs_completed()){
-                        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
                         for (PostingProductForm row : request.getPostingProductTable()) {
                             if (!addPostingProductHistory(row, request, myMasterId)) {//         //метод 3
                                 break;
@@ -525,7 +521,6 @@ public class PostingRepository {
                                     break;
                                 }
                             }
-//                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
                     }
                     return true;
@@ -582,8 +577,7 @@ public class PostingRepository {
             return false;
         }
     }
-    private Boolean savePostingProductTable(PostingProductForm row, Long posting_id) throws CantInsertProductRowCauseErrorException {
-        if(clearPostingProductTable(row.getProduct_id(), posting_id)){
+    private Boolean savePostingProductTable(PostingProductForm row, Long myMasterId) {
             String stringQuery;
 
                 stringQuery =   " insert into posting_product (" +
@@ -594,11 +588,18 @@ public class PostingRepository {
                         "product_sumprice" +
 //                        "edizm_id" +
                         ") values ("
-                        + row.getProduct_id() +","
-                        + row.getPosting_id() +","
+                        + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
+                        + "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+"),"
                         + row.getProduct_count() + ","
                         + row.getProduct_price() +","
-                        + row.getProduct_sumprice()+")";
+                        + row.getProduct_sumprice()+")" +
+                        "ON CONFLICT ON CONSTRAINT posting_product_uq " +// "upsert"
+                        " DO update set " +
+                        " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
+                        " posting_id = "+ "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+")," +
+                        " product_count = " + row.getProduct_count() + "," +
+                        " product_price = " + row.getProduct_price() + "," +
+                        " product_sumprice = " + row.getProduct_sumprice();
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -609,9 +610,26 @@ public class PostingRepository {
                 logger.error("Exception in method PostingRepository/savePostingProductTable. SQL query:"+stringQuery, e);
                 return false;
             }
-        } else return false;
     }
 
+    private Boolean deletePostingProductTableExcessRows(String productIds, Long posting_id) {
+        String stringQuery;
+
+        stringQuery =   " delete from posting_product " +
+                " where posting_id=" + posting_id +
+                " and product_id not in (" + productIds + ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+
+        } catch (Exception e) {
+            logger.error("Exception in method PostingRepository/deletePostingProductTableExcessRows. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+
+    }
 
     @SuppressWarnings("Duplicates")
     private Boolean addPostingProductHistory(PostingProductForm row, PostingForm request , Long masterId) throws CantSaveProductHistoryException {
@@ -707,24 +725,7 @@ public class PostingRepository {
         }
     }
 
-    private Boolean deletePostingProductTableExcessRows(String productIds, Long posting_id) {
-        String stringQuery;
 
-        stringQuery =   " delete from posting_product " +
-                " where posting_id=" + posting_id +
-                " and product_id not in (" + productIds + ")";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-
-        } catch (Exception e) {
-            logger.error("Exception in method PostingRepository/deletePostingProductTableExcessRows. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-
-    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -851,25 +852,25 @@ private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long dep
         }
     }
 
-    @SuppressWarnings("Duplicates") //проверка на то, есть ли уже в таблице товаров данный товар
-    private Boolean clearPostingProductTable(Long product_id, Long posting_id) {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery = " delete from " +
-                " posting_product where " +
-                "product_id="+product_id+
-                " and posting_id="+posting_id +
-                " and (select master_id from posting where id="+posting_id+")="+myMasterId;
-        try
-        {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method clearPostingProductTable. SQL query:" + stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
+//    @SuppressWarnings("Duplicates") //проверка на то, есть ли уже в таблице товаров данный товар
+//    private Boolean clearPostingProductTable(Long product_id, Long posting_id) {
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String stringQuery = " delete from " +
+//                " posting_product where " +
+//                "product_id="+product_id+
+//                " and posting_id="+posting_id +
+//                " and (select master_id from posting where id="+posting_id+")="+myMasterId;
+//        try
+//        {
+//            entityManager.createNativeQuery(stringQuery).executeUpdate();
+//            return true;
+//        }
+//        catch (Exception e) {
+//            logger.error("Exception in method clearPostingProductTable. SQL query:" + stringQuery, e);
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
 
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************

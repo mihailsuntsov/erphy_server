@@ -14,6 +14,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInventoryForm;
+import com.dokio.message.response.FilesInventoryJSON;
 import com.dokio.message.response.InventoryJSON;
 import com.dokio.message.response.InventoryProductTableJSON;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
@@ -348,7 +349,45 @@ public class InventoryController {
         }
     }
 
+    @PostMapping("/api/auth/getListOfInventoryFiles")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getListOfInventoryFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path api/auth/getListOfInventoryFiles: " + request.toString());
 
+        Long productId=Long.valueOf(request.getId());
+        List<FilesInventoryJSON> returnList;
+        try {
+            returnList = inventoryRepository.getListOfInventoryFiles(productId);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteInventoryFile")
+    public ResponseEntity<?> deleteInventoryFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteInventoryFile: " + request.toString());
+
+        if(inventoryRepository.deleteInventoryFile(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/addFilesToInventory")
+    public ResponseEntity<?> addFilesToInventory(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToInventory: " + request.toString());
+
+        if(inventoryRepository.addFilesToInventory(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
 }
 
 

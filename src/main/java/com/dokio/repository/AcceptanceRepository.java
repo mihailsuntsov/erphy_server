@@ -26,6 +26,7 @@ import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.repository.Exceptions.InsertProductHistoryExceprions;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -49,8 +50,6 @@ public class AcceptanceRepository {
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
-    private EntityManagerFactory emf;
-    @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
@@ -60,6 +59,8 @@ public class AcceptanceRepository {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     Logger logger = Logger.getLogger("AcceptanceRepository");
 
@@ -442,69 +443,88 @@ public class AcceptanceRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public Long insertAcceptance(AcceptanceForm request) {
-        if(securityRepositoryJPA.userHasPermissions_OR(15L,"184,185,192"))//  "Создание"
+
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
+        if(iCan==Boolean.TRUE)
         {
-            try{
-                Acceptance newDocument = new Acceptance();
-                EntityManager emgr = emf.createEntityManager();
-                //владелец
-                User master = userRepository.getUserByUsername(
-                        userRepositoryJPA.getUsernameById(
-                                userRepositoryJPA.getUserMasterIdByUsername(
-                                        userRepository.getUserName() )));
+            String stringQuery;
+            Long myId = userRepository.getUserId();
+            Long newDockId;
+            Long doc_number;//номер документа
 
-                if(companyRepositoryJPA.getCompanyById((request.getCompany_id())).getMaster().getId()==master.getId())
-                {//проверка на то, что предприятие, для которого содается документ, наодится под главным аккаунтом
-                    newDocument.setMaster(master);
-                    //предприятие
-                    newDocument.setCompany(companyRepositoryJPA.getCompanyById((request.getCompany_id())));
-                    //дата и время создания
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    newDocument.setDate_time_created(timestamp);//
+            //генерируем номер документа, если его (номера) нет
+            if (request.getDoc_number() != null) {
+                doc_number=Long.valueOf(request.getDoc_number());
+            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"acceptance");
 
-                    //создатель
-                    User creator = userRepository.getUserByUsername(userRepository.getUserName());
-                    newDocument.setCreator(creator);
-                    //отделение
-                    newDocument.setDepartment(emgr.find(Departments.class, request.getDepartment_id()));
-                    //поставщик
-                    newDocument.setCagent(emgr.find(Cagents.class, request.getCagent_id()));
-                    //дата торговой смены
-                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                    dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
-                    String acceptanceDate = (request.getAcceptance_date() == null ? "" : request.getAcceptance_date());
-                    try {
-                        newDocument.setAcceptance_date(acceptanceDate.isEmpty() ? null : dateFormat.parse(acceptanceDate));
-                    } catch (ParseException e) {e.printStackTrace();}
-                    //номер документа
-                    if (request.getDoc_number() != null) {
-                        newDocument.setDoc_number(Long.valueOf(request.getDoc_number()));
-                    } else newDocument.setDoc_number(generateDocNumberCode(request.getCompany_id()));
-                    //НДС
-                    newDocument.setNds(request.isNds());
-                    //НДС включен
-                    newDocument.setNds_included(request.isNds_included());
-                    //расходы
-                    if (request.getOverhead() != null) {
-                        newDocument.setOverhead(request.getOverhead());
-                    }
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-                    //дополнительная информация
-                    newDocument.setDescription(request.getDescription());
-                    //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
-                    newDocument.setOverhead_netcost_method(request.getOverhead_netcost_method());
-                    entityManager.persist(newDocument);
-                    entityManager.flush();
-                    return newDocument.getId();
-                } else return null;
-            } catch (Exception e) {
+            stringQuery =   "insert into acceptance (" +
+                    " master_id," + //мастер-аккаунт
+                    " creator_id," + //создатель
+                    " company_id," + //предприятие, для которого создается документ
+                    " department_id," + //отделение, из(для) которого создается документ
+                    " date_time_created," + //дата и время создания
+                    " cagent_id," +//поставщик
+                    " nds," +
+                    " nds_included," +
+                    " overhead," +
+                    " overhead_netcost_method," +
+                    " doc_number," + //номер заказа
+                    " description," +//доп. информация по заказу
+                    " acceptance_date " +// дата списания
+                    ") values ("+
+                    myMasterId + ", "+//мастер-аккаунт
+                    myId + ", "+ //создатель
+                    request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                    request.getCagent_id() + ", "+
+                    request.isNds() + ", "+
+                    request.isNds_included() + ", "+
+                    request.getOverhead() + ", "+
+                    request.getOverhead_netcost_method() + ", "+
+                    doc_number + ", "+//номер заказа
+                    " :description, " +//описание
+                    " to_date(:acceptance_date,'DD.MM.YYYY')) ";// дата списания
+            try {
+
+                Date dateNow = new Date();
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
+                //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
+                query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
+                query.executeUpdate();
+                stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDockId = Long.valueOf(query2.getSingleResult().toString());
+
+                //если есть таблица с товарами - нужно создать их
+                insertAcceptanceProducts(request, newDockId, myMasterId);
+                return newDockId;
+
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertAcceptance on inserting into acceptance_products cause error.", e);
                 e.printStackTrace();
-                logger.error("Exception in method insertAcceptance. ", e);
+                return null;
+            } catch (Exception e) {
+                logger.error("Exception in method insertAcceptance. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 return null;
             }
-        } else return null;
+        } else {
+            //null - ошибка, т.е. либо предприятие или отдление не принадлежат мастер-аккаунту, либо друг другу
+            //0 - недостаточно прав
+            if(Objects.isNull(iCan)) return null; else return 0L;
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
@@ -518,20 +538,10 @@ public class AcceptanceRepository {
             //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
             (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",request.getId().toString())))
         {
-            if(updateAcceptanceWithoutTable(request)){                                      //апдейт основного документа, без таблицы товаров
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            if(updateAcceptanceWithoutTable(request,myMasterId)){                                      //апдейт основного документа, без таблицы товаров
                 try {//сохранение таблицы
-                    String productIds = "";
-                    Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                    if (request.getAcceptanceProductTable().size() > 0) {
-                        for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
-                            if (!saveAcceptanceProductTable(row, request.getId(),myMasterId)) {//         //сохранение таблицы товаров
-                                break;
-                            }
-                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
-                        }
-                    }//удаление лишних строк
-                    deleteAcceptanceProductTableExcessRows(productIds.length()>0?productIds:"0", request.getId());
-
+                    insertAcceptanceProducts(request, request.getId(), myMasterId);
                     //если завершается приемка - запись в историю товара
                     if(request.is_completed()){
 
@@ -543,7 +553,6 @@ public class AcceptanceRepository {
                                     break;
                                 }
                             }
-                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
                     }
                     return true;
@@ -572,10 +581,9 @@ public class AcceptanceRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateAcceptanceWithoutTable(AcceptanceForm request) {
+    private Boolean updateAcceptanceWithoutTable(AcceptanceForm request, Long myMasterId) {
 
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery =   " update acceptance set " +
                     " changer_id = " + myId + ", "+
@@ -606,8 +614,26 @@ public class AcceptanceRepository {
             }
     }
 
-    private Boolean saveAcceptanceProductTable(AcceptanceProductForm row, Long acceptance_id, Long myMasterId) throws CantInsertProductRowCauseErrorException {
-        if(clearAcceptanceProductTable(row.getProduct_id(), acceptance_id)){
+    //сохранение таблицы товаров
+    @SuppressWarnings("Duplicates")
+    private boolean insertAcceptanceProducts(AcceptanceForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+        Set<Long> productIds=new HashSet<>();
+
+        if (request.getAcceptanceProductTable()!=null && request.getAcceptanceProductTable().size() > 0) {
+            for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
+                row.setAcceptance_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                if (!saveAcceptanceProductTable(row, myMasterId)) {
+                    throw new CantInsertProductRowCauseErrorException();
+                }
+                productIds.add(row.getProduct_id());
+            }
+        }
+        if (!deleteAcceptanceProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
+            throw new CantInsertProductRowCauseErrorException();
+        } else return true;
+    }
+
+    private Boolean saveAcceptanceProductTable(AcceptanceProductForm row, Long myMasterId) throws CantInsertProductRowCauseErrorException {
             String stringQuery;
 
                 stringQuery =   " insert into acceptance_product (" +
@@ -627,7 +653,17 @@ public class AcceptanceRepository {
                         + row.getProduct_sumprice() +","
                         + row.getProduct_netcost() +","
                         + row.getNds_id() +","
-                        + row.getEdizm_id() +")";
+                        + row.getEdizm_id() +")" +
+                        "ON CONFLICT ON CONSTRAINT acceptance_product_uq " +// "upsert"
+                        " DO update set " +
+                        " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
+                        " acceptance_id = "+ "(select id from acceptance where id="+row.getAcceptance_id() +" and master_id="+myMasterId+")," +
+                        " product_count = " + row.getProduct_count() + "," +
+                        " product_price = " + row.getProduct_price() + "," +
+                        " product_sumprice = " + row.getProduct_sumprice() + "," +
+                        " product_netcost = " + row.getProduct_netcost() +"," +
+                        " nds_id = " + row.getNds_id() +"," +
+                        " edizm_id = "+ row.getEdizm_id();
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -638,7 +674,6 @@ public class AcceptanceRepository {
                 logger.error("Exception in method AcceptanceRepository/saveAcceptanceProductTable. SQL query:"+stringQuery, e);
                 throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
             }
-        } else return false;
     }
 
     private Boolean deleteAcceptanceProductTableExcessRows(String productIds, Long acceptance_id) {
@@ -882,25 +917,7 @@ public class AcceptanceRepository {
         }
     }
 
-    @SuppressWarnings("Duplicates") //проверка на то, есть ли уже в таблице товаров данный товар
-    private Boolean clearAcceptanceProductTable(Long product_id, Long acceptance_id) {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery = " delete from " +
-                " acceptance_product where " +
-                "product_id="+product_id+
-                " and acceptance_id="+acceptance_id +
-                " and (select master_id from acceptance where id="+acceptance_id+")="+myMasterId;
-        try
-        {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method clearAcceptanceProductTable. SQL query:" + stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
+
 
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************

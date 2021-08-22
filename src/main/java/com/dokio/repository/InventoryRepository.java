@@ -925,5 +925,161 @@ public class InventoryRepository {
             return null;
         }
     }
+    //*****************************************************************************************************************************************************
+//****************************************************   F   I   L   E   S   **************************************************************************
+//*****************************************************************************************************************************************************
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean addFilesToInventory(UniversalForm request){
+        Long inventoryId = request.getId1();
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",inventoryId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"341") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",inventoryId.toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"342") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",inventoryId.toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",inventoryId.toString())))
+        {
+            try
+            {
+                String stringQuery;
+                Set<Long> filesIds = request.getSetOfLongs1();
+                for (Long fileId : filesIds) {
+
+                    stringQuery = "select inventory_id from inventory_files where inventory_id=" + inventoryId + " and file_id=" + fileId;
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
+                        entityManager.close();
+                        manyToMany_InventoryId_FileId(inventoryId,fileId);
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.error("Exception in method InventoryRepository/addFilesToInventory.", ex);
+                ex.printStackTrace();
+                return false;
+            }
+        } else return null;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    boolean manyToMany_InventoryId_FileId(Long inventoryId, Long fileId){
+        try
+        {
+            entityManager.createNativeQuery(" " +
+                    "insert into inventory_files " +
+                    "(inventory_id,file_id) " +
+                    "values " +
+                    "(" + inventoryId + ", " + fileId +")")
+                    .executeUpdate();
+            entityManager.close();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.error("Exception in method InventoryRepository/manyToMany_InventoryId_FileId." , ex);
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
+    public List<FilesInventoryJSON> getListOfInventoryFiles(Long inventoryId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(27L, "336,337,338,339"))//Просмотр документов
+        {
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            boolean needToSetParameter_MyDepthsIds = false;
+            String stringQuery="select" +
+                    "           f.id as id," +
+                    "           f.date_time_created as date_time_created," +
+                    "           f.name as name," +
+                    "           f.original_name as original_name" +
+                    "           from" +
+                    "           inventory p" +
+                    "           inner join" +
+                    "           inventory_files pf" +
+                    "           on p.id=pf.inventory_id" +
+                    "           inner join" +
+                    "           files f" +
+                    "           on pf.file_id=f.id" +
+                    "           where" +
+                    "           p.id= " + inventoryId +
+                    "           and p.master_id=" + myMasterId +
+                    "           and f.trash is not true"+
+                    "           and p.master_id= " + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    {//остается только на свои документы
+                        stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
+            stringQuery = stringQuery+" order by f.original_name asc ";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                if(needToSetParameter_MyDepthsIds)
+                {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
+                List<Object[]> queryList = query.getResultList();
+
+                List<FilesInventoryJSON> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+                    FilesInventoryJSON doc=new FilesInventoryJSON();
+                    doc.setId(Long.parseLong(                               obj[0].toString()));
+                    doc.setDate_time_created((Timestamp)                    obj[1]);
+                    doc.setName((String)                                    obj[2]);
+                    doc.setOriginal_name((String)                           obj[3]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getListOfInventoryFiles. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean deleteInventoryFile(SearchForm request)
+    {
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory", String.valueOf(request.getAny_id()))) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"341") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",String.valueOf(request.getAny_id())))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"342") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",String.valueOf(request.getAny_id())))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",String.valueOf(request.getAny_id()))))
+        {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery;
+            stringQuery  =  " delete from inventory_files "+
+                    " where inventory_id=" + request.getAny_id()+
+                    " and file_id="+request.getId()+
+                    " and (select master_id from inventory where id="+request.getAny_id()+")="+myMasterId ;
+            try
+            {
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }
+            catch (Exception e) {
+                logger.error("Exception in method InventoryRepository/deleteInventoryFile. stringQuery=" + stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
+    }
 }
 

@@ -16,6 +16,7 @@ package com.dokio.repository;
 import com.dokio.message.response.IsItMy_JSON;
 import com.dokio.message.response.IsItMy_Sprav_JSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
@@ -37,11 +38,11 @@ public class SecurityRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private EntityManagerFactory emf;
-    @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     public boolean userHasPermissions_OR(Long dockId, String permissions){
 
@@ -435,6 +436,21 @@ public class SecurityRepositoryJPA {
         query.setParameter("myId", userRepository.getUserId());
         return (query.getResultList().size() == decArray.size());
     }
+    public boolean isItAllMyDocuments(String docTableName, List<Long> decArray) {
+        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        String ugIds = commonUtilites.ListOfLongToString(decArray,",","","");
+        String stringQuery = "select p.id from " +
+                docTableName + " p " +
+                " where " +
+                " p.id in(" + ugIds + ") and " +
+                " p.creator_id = :myId and "+
+                " p.company_id =" +userRepositoryJPA.getMyCompanyId() +" and "+
+                " p.master_id=" + myMasterId;
+        Query query = entityManager.createNativeQuery(stringQuery);
+        query.setParameter("myId", userRepository.getUserId());
+        return (query.getResultList().size() == decArray.size());
+    }
+
     //true если id предприятия принадлежит аккаунту, который является master-аккаунтом текущего пользователя.
     public Boolean companyBelongToMyMastersAccount(Long id){
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
@@ -449,9 +465,9 @@ public class SecurityRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
-
+    @SuppressWarnings("Duplicates")
     //определяет, обладает ли пользователь правами на создание документа для определенных предприятия и отделения
-    //dockId - id документа в таблице Documents
+    //dockId - id документа в таблице Documents (реестр документов Докио)
     //p1,p2,p3 - права в порядке: Создание документов по всем предприятиям, Создание документов своего предприятия, Создание документов своих отделений
     public Boolean userHasPermissionsToCreateDock(Long companyId, Long departmentId, Long dockId, String p1, String p2, String p3) {
 
@@ -459,7 +475,7 @@ public class SecurityRepositoryJPA {
         Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
         //отделение принадлежит мастер-аккаунту
         Boolean departmentBelongToMyMastersAccount=departmentBelongToMyMastersAccount(departmentId);
-        //подразделение принадлежит предприятию
+        //отделение принадлежит предприятию
         Boolean departmentBelongToCompany=departmentRepositoryJPA.departmentBelongToCompany(companyId,departmentId);
 
         //Базовые проверки: Предприятие и отделение принадлежит мастер-аккаунту, и отделение входит в предприятие
@@ -484,7 +500,47 @@ public class SecurityRepositoryJPA {
 
         }else return null;// не прошли базовые проверки - значит тут вообще что-то не чисто
     }
+    @SuppressWarnings("Duplicates")
+    //определяет, обладает ли пользователь правами на создание документа для определенных предприятия и отделения
+    //dockId - id документа в таблице Documents (реестр документов Докио)
+    //p1,p2,p3 - права в порядке: Создание документов по всем предприятиям, Создание документов своего предприятия, Создание документов своих отделений
+    public Boolean userHasPermissionsToUpdateDock(Long companyId, Long departmentId, String tableName, Long dockId, Long id, String p1, String p2, String p3, String p4) {
 
+        //предприятие принадлежит мастер-аккаунту
+        Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
+        //отделение принадлежит мастер-аккаунту
+        Boolean departmentBelongToMyMastersAccount=departmentBelongToMyMastersAccount(departmentId);
+        //отделение принадлежит предприятию
+        Boolean departmentBelongToCompany=departmentRepositoryJPA.departmentBelongToCompany(companyId,departmentId);
+
+        //Базовые проверки: Предприятие и отделение принадлежит мастер-аккаунту, и отделение входит в предприятие
+        if(departmentBelongToCompany && departmentBelongToMyMastersAccount && companyBelongToMyMastersAccount) {
+
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
+            List<Long> myDocksIds = new ArrayList<>();
+            myDocksIds.add(id);
+            //отделение входит в число моих отделений
+            boolean itIsMyDepartment = myDepartmentsIds.contains(departmentId);
+//            Boolean all = userHasPermissions_OR(dockId, p1);
+//            Boolean myCompany = (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId));
+//            Boolean myDeparts = (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
+//            Boolean finishResult=all||myCompany||myDeparts;
+
+
+            //если есть право на создание по всем предприятиям, или
+            return (userHasPermissions_OR(dockId, p1)) ||
+                    //если есть право на создание по всем отделениям своего предприятия, и предприятие документа своё, или
+                    (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId)) ||
+                    //если есть право на создание по своим отделениям своего предприятия, предприятие своё, и отделение документа входит в число своих
+                    (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment) ||
+                    //если есть право на создание по своим отделениям своего предприятия, предприятие своё, отделение документа входит в число своих, и документ свой
+                    (userHasPermissions_OR(dockId, p4) && myCompanyId.equals(companyId) && itIsMyDepartment && isItAllMyDocuments(tableName, myDocksIds))
+                    ;
+            //false - недостаточно прав
+
+        }else return null;// не прошли базовые проверки - значит тут вообще что-то не чисто
+    }
 
 
 }

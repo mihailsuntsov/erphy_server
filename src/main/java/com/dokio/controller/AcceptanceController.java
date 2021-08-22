@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class AcceptanceController {
@@ -186,10 +187,10 @@ public class AcceptanceController {
         logger.info("Processing post request for path /api/auth/insertAcceptance: " + request.toString());
 
         Long newDocument = acceptanceRepositoryJPA.insertAcceptance(request);
-        if(newDocument!=null && newDocument>0){
-            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
+        if(!Objects.isNull(newDocument)){//вернет id созданного документа либо 0, если недостаточно прав
+            return new ResponseEntity<>(newDocument, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка при создании Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -204,7 +205,7 @@ public class AcceptanceController {
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -226,26 +227,26 @@ public class AcceptanceController {
         if(acceptanceRepositoryJPA.updateAcceptance(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка сохранения Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/api/auth/deleteAcceptance")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteAcceptance(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteAcceptance(@RequestBody SignUpForm request){
         logger.info("Processing post request for path /api/auth/deleteAcceptance: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
         if(acceptanceRepositoryJPA.deleteAcceptance(checked)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка удаления Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/api/auth/getListOfAcceptanceFiles")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getListOfAcceptanceFiles(@RequestBody SearchForm request) throws ParseException {
+    public ResponseEntity<?> getListOfAcceptanceFiles(@RequestBody SearchForm request){
         logger.info("Processing post request for path /api/auth/getListOfAcceptanceFiles: " + request.toString());
 
         Long productId=Long.valueOf(request.getId());
@@ -254,31 +255,31 @@ public class AcceptanceController {
             returnList = acceptanceRepositoryJPA.getListOfAcceptanceFiles(productId);
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/api/auth/deleteAcceptanceFile")
-    public ResponseEntity<?> deleteAcceptanceFile(@RequestBody SearchForm request) throws ParseException{
+    public ResponseEntity<?> deleteAcceptanceFile(@RequestBody SearchForm request){
         logger.info("Processing post request for path /api/auth/deleteAcceptanceFile: " + request.toString());
 
         if(acceptanceRepositoryJPA.deleteAcceptanceFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Ошибка удаления файла", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addFilesToAcceptance")
-    public ResponseEntity<?> addFilesToAcceptance(@RequestBody UniversalForm request) throws ParseException{
+    public ResponseEntity<?> addFilesToAcceptance(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/addFilesToAcceptance: " + request.toString());
 
         if(acceptanceRepositoryJPA.addFilesToAcceptance(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка добавления файла", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

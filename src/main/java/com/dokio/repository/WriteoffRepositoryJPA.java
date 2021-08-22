@@ -465,9 +465,9 @@ public class WriteoffRepositoryJPA {
                 newDockId = Long.valueOf(query2.getSingleResult().toString());
 
                 //если есть таблица с товарами - нужно создать их
-                    if (insertWriteoffProducts(request, newDockId)) {
-                        return newDockId;
-                    } else return null;
+                insertWriteoffProducts(request, newDockId, myMasterId);
+                return newDockId;
+
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertWriteoff on inserting into writeoff cause error.", e);
@@ -487,20 +487,21 @@ public class WriteoffRepositoryJPA {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDockId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getWriteoffProductTable()!=null && request.getWriteoffProductTable().size() > 0) {
             for (WriteoffProductForm row : request.getWriteoffProductTable()) {
-                row.setWriteoff_id(parentDockId);
-                if (!saveWriteoffProductTable(row, request.getId())) {
+                row.setWriteoff_id(parentDockId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                if (!saveWriteoffProductTable(row, myMasterId)) {
                     throw new CantInsertProductRowCauseErrorException();
                 }
                 productIds.add(row.getProduct_id());
             }
         }
-        deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId);
-        return true;
+        if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId)){
+            throw new CantInsertProductRowCauseErrorException();
+        } else return true;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseOversellException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
@@ -514,17 +515,12 @@ public class WriteoffRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого редактируют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(17L,"230") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff",request.getId().toString())))
         {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             if(updateWriteoffWithoutTable(request)){                                      //метод 1
                 try {//сохранение таблицы товаров
-//                    String productIds = "";
-                    if (request.getWriteoffProductTable().size() > 0) {
-                        insertWriteoffProducts(request,request.getId());
-                    }//удаление лишних строк
-//                    deleteWriteoffProductTableExcessRows(productIds.length()>0?productIds:"0", request.getId());
-
+                    insertWriteoffProducts(request,request.getId(),myMasterId);
                     //если завершается списание - запись в историю товара
                     if(request.isIs_completed()){
-                        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
                         for (WriteoffProductForm row : request.getWriteoffProductTable()) {
                             if (!addWriteoffProductHistory(row, request, myMasterId)) {//         //метод 3
                                 break;
@@ -533,7 +529,6 @@ public class WriteoffRepositoryJPA {
                                     break;
                                 }
                             }
-//                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
                         }
                     }
                     return 1;
@@ -599,9 +594,8 @@ public class WriteoffRepositoryJPA {
         }
     }
 
-    private Boolean saveWriteoffProductTable(WriteoffProductForm row, Long writeoff_id) throws CantInsertProductRowCauseErrorException {
+    private Boolean saveWriteoffProductTable(WriteoffProductForm row, Long myMasterId){
         try {
-                if(clearWriteoffProductTable(row.getProduct_id(), writeoff_id)) {
                     String stringQuery;
 
                     stringQuery = " insert into writeoff_product (" +
@@ -610,22 +604,29 @@ public class WriteoffRepositoryJPA {
                             "product_count," +
                             "product_price," +
                             "product_sumprice," +
-//                            "edizm_id," +
                             "reason_id," +
                             "additional" +
                             ") values ("
-                            + row.getProduct_id() + ","
-                            + row.getWriteoff_id() + ","
+                            + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
+                            + "(select id from writeoff where id="+row.getWriteoff_id() +" and master_id="+myMasterId+"),"
                             + row.getProduct_count() + ","
                             + row.getProduct_price() + ","
                             + row.getProduct_sumprice() + ","
-//                            + row.getEdizm_id() + ","
-                            + row.getReason_id() + ", '"
-                            + (row.getAdditional() != null ? row.getAdditional() : "") + "')";
+                            + row.getReason_id() + ", "
+                            + ":additional)" +
+                            "ON CONFLICT ON CONSTRAINT writeoff_product_uq " +// "upsert"
+                            " DO update set " +
+                            " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
+                            " writeoff_id = " + "(select id from writeoff where id="+row.getWriteoff_id() +" and master_id="+myMasterId+")," +
+                            " product_count = " + row.getProduct_count() + "," +
+                            " product_price = " + row.getProduct_price() + "," +
+                            " product_sumprice = " + row.getProduct_sumprice() + "," +
+                            " reason_id = "  + row.getReason_id() + "," +
+                            " additional = :additional";
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("additional", (row.getAdditional() == null ? "" : row.getAdditional()));
                     query.executeUpdate();
                     return true;
-                } else return false;
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -825,24 +826,6 @@ public class WriteoffRepositoryJPA {
         }
     }
 
-    private Boolean clearWriteoffProductTable(Long product_id, Long writeoff_id) {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery = " delete from " +
-                " writeoff_product where " +
-                "product_id="+product_id+
-                " and writeoff_id="+writeoff_id +
-                " and (select master_id from writeoff where id="+writeoff_id+")="+myMasterId;
-        try
-        {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method WriteoffRepository/clearWriteoffProductTable. stringQuery=" + stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
 
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
