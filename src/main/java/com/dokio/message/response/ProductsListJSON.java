@@ -30,6 +30,15 @@ public class ProductsListJSON {
 //    private String nds_name_api_atol; //НДС в системе Атол
     private Boolean is_material; //определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
     private BigDecimal reserved_current;// зарезервировано единиц товара в отделении (складе) в ЭТОМ (текущем) Заказе покупателя:
+    private Boolean     indivisible;         // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getId() {
         return id;

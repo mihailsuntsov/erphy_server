@@ -12,6 +12,17 @@ public class ProductsInfoListJSON {
     private BigDecimal  avgCostPrice;        // средняя себестоимость
     private BigDecimal  lastPurchasePrice;   // последняя закупочная цена
     private BigDecimal  avgPurchasePrice ;   // средняя закупочная цена
+    private BigDecimal  remains;             // остаток на складе
+    private Integer     nds_id;              // id ставки НДС
+    private Boolean     indivisible;         // неделимый товар (все действия только с кол-вом, кратным 1)
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getProduct_id() {
         return product_id;
@@ -83,5 +94,21 @@ public class ProductsInfoListJSON {
 
     public void setAvgPurchasePrice(BigDecimal avgPurchasePrice) {
         this.avgPurchasePrice = avgPurchasePrice;
+    }
+
+    public BigDecimal getRemains() {
+        return remains;
+    }
+
+    public void setRemains(BigDecimal remains) {
+        this.remains = remains;
+    }
+
+    public Integer getNds_id() {
+        return nds_id;
+    }
+
+    public void setNds_id(Integer nds_id) {
+        this.nds_id = nds_id;
     }
 }

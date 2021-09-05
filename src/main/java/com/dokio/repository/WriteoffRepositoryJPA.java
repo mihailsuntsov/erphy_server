@@ -438,6 +438,7 @@ public class WriteoffRepositoryJPA {
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
                     " inventory_id, " + //если документ создаётся из Инвенторизации - тут будет ее id
+                    " return_id, " + //если документ создаётся из Возврата покупателя - тут будет его id
                     " writeoff_date " +// дата списания
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -448,6 +449,7 @@ public class WriteoffRepositoryJPA {
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
                     request.getInventory_id() + ", "+//
+                    request.getReturn_id() + ", "+//
                     " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
             try {
 

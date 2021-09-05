@@ -270,7 +270,9 @@ public class CustomersOrdersRepositoryJPA {
                     " ap.id  as row_id, " +
                     " ppr.name_api_atol as ppr_name_api_atol, " +
                     " ppr.is_material as is_material, " +
-                    " coalesce(ap.reserved_current,0) as reserved_current " +//зарезервировано в данном документе Заказ покупателя
+                    " coalesce(ap.reserved_current,0) as reserved_current, " +//зарезервировано в данном документе Заказ покупателя
+                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+
                     " from " +
                     " customers_orders_product ap " +
                     " INNER JOIN customers_orders a ON ap.customers_orders_id=a.id " +
@@ -322,6 +324,7 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setPpr_name_api_atol((String)                       obj[18]);
                 doc.setIs_material((Boolean)                            obj[19]);
                 doc.setReserved_current(                                obj[20]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
+                doc.setIndivisible((Boolean)                            obj[21]);
 
                 returnList.add(doc);
             }

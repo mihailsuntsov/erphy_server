@@ -33,6 +33,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -802,7 +804,7 @@ public class ProductsController {
         logger.info("Processing post request for path /api/auth/getProductHistoryTableReport: " + searchRequest.toString());
 
         Long companyId;//по какому предприятию показывать
-        String departmentId;//по какому/каким отделениям показывать / 0 - по всем отделениям пользователя
+        Long departmentId;//по какому/каким отделениям показывать / 0 - по всем отделениям пользователя
         Long productId;//по какому товару показывать
         String dateFrom;//с какой даты
         String dateTo;//по какую дату (включительно)
@@ -863,7 +865,7 @@ public class ProductsController {
         }
 
         //******** dockTypesIds
-        String dockTypesIds = searchRequest.getDockTypesIds();
+        List<Long> dockTypesIds = searchRequest.getDockTypesIds();
 
         int offsetreal = offset * result;//создана переменная с номером страницы
         returnList = productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, dockTypesIds, offsetreal);//запрос списка: взять кол-во rezult, начиная с offsetreal
@@ -904,4 +906,20 @@ public class ProductsController {
         }
     }
 
+    @PostMapping("/api/auth/setCategoriesToProducts")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setCategoriesToProducts(@RequestBody UniversalForm form) {
+        logger.info("Processing post request for path api/auth/setCategoriesToProducts: " + form.toString());
+
+        Set<Long> productsIds = form.getSetOfLongs1();
+        Set<Long> categoriesIds = form.getSetOfLongs2();
+        Boolean save = form.getYesNo();
+
+        Boolean result = productsRepositoryJPA.setCategoriesToProducts(productsIds, categoriesIds, save);
+        if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка при назначении товарам категорий", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

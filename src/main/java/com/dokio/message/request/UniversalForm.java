@@ -27,6 +27,9 @@ public class UniversalForm {
         private String      string2;
         private String      string3;
         private Set<Long>   setOfLongs1;
+        private Set<Long>   setOfLongs2;
+        private String      checked;
+        private Boolean     yesNo;
 
     public Long getId1() {
         return id1;
@@ -100,9 +103,45 @@ public class UniversalForm {
         this.id4 = id4;
     }
 
+    public Boolean getYesNo() {
+        return yesNo;
+    }
+
+    public void setYesNo(Boolean yesNo) {
+        this.yesNo = yesNo;
+    }
+
+    public String getChecked() {
+        return checked;
+    }
+
+    public Set<Long> getSetOfLongs2() {
+        return setOfLongs2;
+    }
+
+    public void setSetOfLongs2(Set<Long> setOfLongs2) {
+        this.setOfLongs2 = setOfLongs2;
+    }
+
+    public void setChecked(String checked) {
+        this.checked = checked;
+    }
+
     @Override
     public String toString() {
-        return "UniversalForm: id=" + this.id + ", id1=" + this.id1 + ", id2=" + this.id2  + ", id3=" + this.id3  +
-                ", id4=" + this.id4 + ", string1=" + this.string1  + ", string2=" + this.string2  + ", string3=" + this.string3;
+        return "UniversalForm{" +
+                "id=" + id +
+                ", id1=" + id1 +
+                ", id2=" + id2 +
+                ", id3=" + id3 +
+                ", id4=" + id4 +
+                ", string1='" + string1 + '\'' +
+                ", string2='" + string2 + '\'' +
+                ", string3='" + string3 + '\'' +
+                ", setOfLongs1=" + setOfLongs1 +
+                ", setOfLongs2=" + setOfLongs2 +
+                ", checked='" + checked + '\'' +
+                ", yesNo=" + yesNo +
+                '}';
     }
 }

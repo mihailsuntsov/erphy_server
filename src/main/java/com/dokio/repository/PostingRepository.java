@@ -58,6 +58,8 @@ public class PostingRepository {
     DepartmentRepositoryJPA         departmentRepositoryJPA;
     @Autowired
     private CommonUtilites          commonUtilites;
+    @Autowired
+    ProductsRepositoryJPA productsRepository;
 
     Logger logger = Logger.getLogger("PostingRepository");
 
@@ -70,7 +72,7 @@ public class PostingRepository {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -496,7 +498,7 @@ public class PostingRepository {
         } else return true;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, CantSaveProductHistoryException.class, InsertProductHistoryExceprions.class})
     public  Boolean updatePosting(PostingForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"211") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",request.getId().toString())) ||
@@ -508,18 +510,21 @@ public class PostingRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(16L,"214") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-            if(updatePostingWithoutTable(request)){                                      //метод 1
+            if(updatePostingWithoutTable(request)){
                 try {//сохранение таблицы
                     insertPostingProducts(request, request.getId(),myMasterId);
-                    //если завершается приемка - запись в историю товара
+                    //если документ завершается - запись в историю товара
                     if(request.isIs_completed()){
                         for (PostingProductForm row : request.getPostingProductTable()) {
-                            if (!addPostingProductHistory(row, request, myMasterId)) {//         //метод 3
+                            if (!addPostingProductHistory(row, request, myMasterId)) {//
                                 break;
                             } else {
+                                //Запись в таблицу кол-ва товара. Только для вещественной номенклатуры. Например, для услуг кол-во не записываем
+//                                row.
                                 if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
                                     break;
                                 }
+
                             }
                         }
                     }
@@ -554,15 +559,15 @@ public class PostingRepository {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String stringQuery;
         stringQuery =   " update posting set " +
-                        " changer_id = " + myId + ", "+
-                        " date_time_changed= now()," +
-                        " description = :description, "+
-                        " doc_number =" + request.getDoc_number() + "," +
-                        " is_completed = " + request.isIs_completed() + "," +
-                        " posting_date = to_date(:posting_date,'DD.MM.YYYY') " +
-                        " where " +
-                        " id= "+request.getId() +
-                        " and master_id="+myMasterId;
+                " changer_id = " + myId + ", "+
+                " date_time_changed= now()," +
+                " description = :description, "+
+                " doc_number =" + request.getDoc_number() + "," +
+                " is_completed = " + request.isIs_completed() + "," +
+                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " +
+                " where " +
+                " id= "+request.getId() +
+                " and master_id="+myMasterId;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -578,38 +583,38 @@ public class PostingRepository {
         }
     }
     private Boolean savePostingProductTable(PostingProductForm row, Long myMasterId) {
-            String stringQuery;
+        String stringQuery;
 
-                stringQuery =   " insert into posting_product (" +
-                        "product_id," +
-                        "posting_id," +
-                        "product_count," +
-                        "product_price," +
-                        "product_sumprice" +
+        stringQuery =   " insert into posting_product (" +
+                "product_id," +
+                "posting_id," +
+                "product_count," +
+                "product_price," +
+                "product_sumprice" +
 //                        "edizm_id" +
-                        ") values ("
-                        + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
-                        + "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+"),"
-                        + row.getProduct_count() + ","
-                        + row.getProduct_price() +","
-                        + row.getProduct_sumprice()+")" +
-                        "ON CONFLICT ON CONSTRAINT posting_product_uq " +// "upsert"
-                        " DO update set " +
-                        " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
-                        " posting_id = "+ "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+")," +
-                        " product_count = " + row.getProduct_count() + "," +
-                        " product_price = " + row.getProduct_price() + "," +
-                        " product_sumprice = " + row.getProduct_sumprice();
-            try {
-                Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                return true;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Exception in method PostingRepository/savePostingProductTable. SQL query:"+stringQuery, e);
-                return false;
-            }
+                ") values ("
+                + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
+                + "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+"),"
+                + row.getProduct_count() + ","
+                + row.getProduct_price() +","
+                + row.getProduct_sumprice()+")" +
+                "ON CONFLICT ON CONSTRAINT posting_product_uq " +// "upsert"
+                " DO update set " +
+                " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
+                " posting_id = "+ "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+")," +
+                " product_count = " + row.getProduct_count() + "," +
+                " product_price = " + row.getProduct_price() + "," +
+                " product_sumprice = " + row.getProduct_sumprice();
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method PostingRepository/savePostingProductTable. SQL query:"+stringQuery, e);
+            return false;
+        }
     }
 
     private Boolean deletePostingProductTableExcessRows(String productIds, Long posting_id) {
@@ -633,86 +638,86 @@ public class PostingRepository {
 
     @SuppressWarnings("Duplicates")
     private Boolean addPostingProductHistory(PostingProductForm row, PostingForm request , Long masterId) throws CantSaveProductHistoryException {
-    String stringQuery;
-    try {
-        //берем последнюю запись об истории товара в данном отделении
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        //последнее количество товара
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-        //средняя цена закупа
-        BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-        //средняя себестоимость
-        BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-        //средняя цена закупа = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_ЦЕНА_ЗАКУПА)+СУММА_ПО_НОВОМУ_ТОВАРУ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО+КОЛИЧЕСТВО_ПО_НОВОМУ_ТОВАРУ
-        //Именно поэтому нельзя допускать отрицательных остатков - если знаменатель будет = 0, то возникнет эксепшн деления на 0.
-        BigDecimal avgPurchasePrice = ((lastQuantity.multiply(lastAvgPurchasePrice)).add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-        // т.к. в Оприходовании нет расходов, то себестоимость товара равна цене. Поэтому в расчете средней себестоимости (avgNetcostPrice) вместо произведения
-        // количества товара на себестоимость единицы товара берём сумму (т.е. произведение количества на цену едииницы товара)
-        // т.е. идет замена row.getProduct_count().multiply(row.getProduct_netcost()))  на   row.getProduct_sumprice()
-        BigDecimal avgNetcostPrice =  ((lastQuantity.multiply(lastAvgNetcostPrice)). add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
+        String stringQuery;
+        try {
+            //берем последнюю запись об истории товара в данном отделении
+            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+            //последнее количество товара
+            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+            //средняя цена закупа
+            BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
+            //средняя себестоимость
+            BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
+            //средняя цена закупа = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_ЦЕНА_ЗАКУПА)+СУММА_ПО_НОВОМУ_ТОВАРУ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО+КОЛИЧЕСТВО_ПО_НОВОМУ_ТОВАРУ
+            //Именно поэтому нельзя допускать отрицательных остатков - если знаменатель будет = 0, то возникнет эксепшн деления на 0.
+            BigDecimal avgPurchasePrice = ((lastQuantity.multiply(lastAvgPurchasePrice)).add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
+            // т.к. в Оприходовании нет расходов, то себестоимость товара равна цене. Поэтому в расчете средней себестоимости (avgNetcostPrice) вместо произведения
+            // количества товара на себестоимость единицы товара берём сумму (т.е. произведение количества на цену едииницы товара)
+            // т.е. идет замена row.getProduct_count().multiply(row.getProduct_netcost()))  на   row.getProduct_sumprice()
+            BigDecimal avgNetcostPrice =  ((lastQuantity.multiply(lastAvgNetcostPrice)). add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
 
-        stringQuery =   " insert into products_history (" +
-                " master_id," +
-                " company_id," +
-                " department_id," +
-                " doc_type_id," +
-                " doc_id," +
-                " product_id," +
-                " quantity," +
-                " change," +
-                " avg_purchase_price," +
-                " avg_netcost_price," +
-                " last_purchase_price," +
-                " last_operation_price," +
-                " date_time_created"+
-                ") values ("+
-                masterId +","+
-                request.getCompany_id() +","+
-                request.getDepartment_id() + ","+
-                16 +","+
-                row.getPosting_id() + ","+
-                row.getProduct_id() + ","+
-                lastQuantity.add(row.getProduct_count())+","+
-                row.getProduct_count() +","+
-                avgPurchasePrice +","+
-                avgNetcostPrice +","+
-                row.getProduct_price()+","+
-                row.getProduct_price()+","+
-                " now())";
+            stringQuery =   " insert into products_history (" +
+                    " master_id," +
+                    " company_id," +
+                    " department_id," +
+                    " doc_type_id," +
+                    " doc_id," +
+                    " product_id," +
+                    " quantity," +
+                    " change," +
+                    " avg_purchase_price," +
+                    " avg_netcost_price," +
+                    " last_purchase_price," +
+                    " last_operation_price," +
+                    " date_time_created"+
+                    ") values ("+
+                    masterId +","+
+                    request.getCompany_id() +","+
+                    request.getDepartment_id() + ","+
+                    16 +","+
+                    row.getPosting_id() + ","+
+                    row.getProduct_id() + ","+
+                    lastQuantity.add(row.getProduct_count())+","+
+                    row.getProduct_count() +","+
+                    avgPurchasePrice +","+
+                    avgNetcostPrice +","+
+                    row.getProduct_price()+","+
+                    row.getProduct_price()+","+
+                    " now())";
 
-        Query query = entityManager.createNativeQuery(stringQuery);
-        query.executeUpdate();
-        return true;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method PostingRepository/addPostingProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+        }
     }
-    catch (Exception e) {
-        e.printStackTrace();
-        logger.error("Exception in method PostingRepository/addPostingProductHistory. ", e);
-        throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-    }
-}
 
     @SuppressWarnings("Duplicates")
     private Boolean setProductQuantity(PostingProductForm row, PostingForm request , Long masterId) throws CantSaveProductQuantityException {
         String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        ProductHistoryJSON lastProductHistoryRecord = productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
         BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
         stringQuery =
-            " insert into product_quantity (" +
-                    " master_id," +
-                    " department_id," +
-                    " product_id," +
-                    " quantity" +
-                    ") values ("+
-                    masterId + ","+
-                    request.getDepartment_id() + ","+
-                    row.getProduct_id() + ","+
-                    lastQuantity +
-                    ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                    " DO update set " +
-                    " department_id = " + request.getDepartment_id() + ","+
-                    " product_id = " + row.getProduct_id() + ","+
-                    " master_id = "+ masterId + "," +
-                    " quantity = "+ lastQuantity;
+                " insert into product_quantity (" +
+                        " master_id," +
+                        " department_id," +
+                        " product_id," +
+                        " quantity" +
+                        ") values ("+
+                        masterId + ","+
+                        request.getDepartment_id() + ","+
+                        row.getProduct_id() + ","+
+                        lastQuantity +
+                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                        " DO update set " +
+                        " department_id = " + request.getDepartment_id() + ","+
+                        " product_id = " + row.getProduct_id() + ","+
+                        " master_id = "+ masterId + "," +
+                        " quantity = "+ lastQuantity;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -756,55 +761,9 @@ public class PostingRepository {
     }
 
 
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
-@SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
-{
-    String stringQuery;
-    stringQuery =
-                    " select                                        "+
-                    " last_purchase_price   as last_purchase_price, "+
-                    " avg_purchase_price    as avg_purchase_price,  "+
-                    " avg_netcost_price     as avg_netcost_price,   "+
-                    " last_operation_price  as last_operation_price,"+
-                    " quantity              as quantity,            "+
-                    " change                as change               "+
-                    "          from products_history                "+
-                    "          where                                "+
-                    "          product_id="+product_id+" and        "+
-                    "          department_id="+department_id         +
-                    "          order by id desc limit 1             ";
-    try
-    {
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Object[]> queryList = query.getResultList();
-
-        ProductHistoryJSON returnObj=new ProductHistoryJSON();
-        if(queryList.size()==0){//если записей истории по данному товару ещё нет
-            returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-            returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
-            returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-            returnObj.setLast_operation_price(      (new BigDecimal(0)));
-            returnObj.setQuantity(                  (new BigDecimal(0)));
-        }else {
-            for (Object[] obj : queryList) {
-                returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                returnObj.setQuantity((BigDecimal)              obj[4]);
-            }
-        }
-        return returnObj;
-    }
-    catch (Exception e) {
-        logger.error("Exception in method getLastProductHistoryRecord. SQL query:" + stringQuery, e);
-        e.printStackTrace();
-        return null;
-    }
-}
 
     @SuppressWarnings("Duplicates")  //генератор номера документа
     private Long generateDocNumberCode(Long company_id)

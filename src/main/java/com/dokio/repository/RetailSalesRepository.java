@@ -318,8 +318,9 @@ public class RetailSalesRepository {
                     " (select name from departments where id= ap.department_id) as department, "+
                     " ap.id  as row_id, " +
                     " ppr.name_api_atol as ppr_name_api_atol, " +
-                    " ppr.is_material as is_material " +
+                    " ppr.is_material as is_material, " +
 //                    " ap.product_count as reserved_current " +//в розничных продажах нет резервов, так что приравниваем резерв к количеству товара в продаже (т.е. весь товар априори зарезервирован)
+                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " from " +
                     " retail_sales_product ap " +
                     " INNER JOIN retail_sales a ON ap.retail_sales_id=a.id " +
@@ -370,6 +371,7 @@ public class RetailSalesRepository {
                     doc.setPpr_name_api_atol((String)                       obj[17]);
                     doc.setIs_material((Boolean)                            obj[18]);
     //                doc.setReserved_current(                                obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
+                    doc.setIndivisible((Boolean)                            obj[19]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -852,7 +854,9 @@ public class RetailSalesRepository {
                                 "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
                                 "name, "+               //наименование заказа
                                 "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
-                                "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+                                "show_kkm, "+               //показывать блок ККМ
+                                "status_id_on_autocreate_on_cheque,"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+                                "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                                 ") values (" +
                                 myMasterId + "," +
                                 row.getCompanyId() + "," +
@@ -869,7 +873,9 @@ public class RetailSalesRepository {
                                 row.getPriorityTypePriceSide() + "',"+
                                 "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
                                 row.getAutocreateOnCheque() +", " +
-                                row.getStatusIdOnAutocreateOnCheque() +
+                                row.getShowKkm() + "," +
+                                row.getStatusIdOnAutocreateOnCheque()+ "," +
+                                row.getAutoAdd() +
                                 ") " +
                                 "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
                                 " DO update set " +
@@ -886,7 +892,9 @@ public class RetailSalesRepository {
                                 (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
                                 (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
                                 (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
-                                (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()));
+                                (row.getShowKkm() == null ? "": (", show_kkm = "+row.getShowKkm()))+
+                                (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()))+
+                                (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -922,7 +930,9 @@ public class RetailSalesRepository {
 //                    "           coalesce(p.autocreate_on_start,false) as autocreate_on_start," +
                     "           coalesce(p.autocreate_on_cheque,false) as autocreate_on_cheque," +
                     "           p.name as name, " +
-                    "           p.status_id_on_autocreate_on_cheque as status_id_on_autocreate_on_cheque " +
+                    "           p.status_id_on_autocreate_on_cheque as status_id_on_autocreate_on_cheque, " +
+                    "           coalesce(p.show_kkm,false) as show_kkm,  " +                 // показывать блок ККМ
+                    "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                     "           from settings_retail_sales p " +
                     "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
                     "           where p.user_id= " + myId;
@@ -946,10 +956,11 @@ public class RetailSalesRepository {
                     returnObj.setId(Long.parseLong(                         obj[10].toString()));
                     returnObj.setCompanyId(Long.parseLong(                  obj[11].toString()));
                     returnObj.setPriorityTypePriceSide((String)             obj[12]);
-//                    returnObj.setAutocreateOnStart((Boolean)                obj[13]);
                     returnObj.setAutocreateOnCheque((Boolean)               obj[13]);
                     returnObj.setName((String)                              obj[14]);
                     returnObj.setStatusIdOnAutocreateOnCheque(obj[15]!=null?Long.parseLong(obj[15].toString()):null);
+                    returnObj.setShowKkm((Boolean)                          obj[16]);
+                    returnObj.setAutoAdd((Boolean)                          obj[17]);
                 }
                 return returnObj;
             }
@@ -1077,6 +1088,44 @@ public class RetailSalesRepository {
         catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public List<LinkedDocsJSON> getRetailSalesLinkedDocsList(Long docId, String docName) {
+        String stringQuery;
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String tableName=(docName.equals("return")?"return":"");
+        stringQuery =   " select " +
+                " ap.id," +
+                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+                " ap.description," +
+                " coalesce(ap.is_completed,false)," +
+                " ap.doc_number" +
+                " from "+tableName+" ap" +
+                " where ap.master_id = " + myMasterId +
+                " and coalesce(ap.is_deleted,false)!=true "+
+                " and ap.retail_sales_id = " + docId;
+        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<LinkedDocsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                LinkedDocsJSON doc=new LinkedDocsJSON();
+                doc.setId(Long.parseLong(                       obj[0].toString()));
+                doc.setDate_time_created((String)               obj[1]);
+                doc.setDescription((String)                     obj[2]);
+                doc.setIs_completed((Boolean)                   obj[3]);
+                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getRetailSalesLinkedDocsList. SQL query:" + stringQuery, e);
+            return null;
         }
     }
 

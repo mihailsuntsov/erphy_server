@@ -132,6 +132,9 @@ public class Products {
     @JoinColumn(name = "volume_edizm_id") // Единица измерения объема
     private SpravSysEdizm volume_edizm;
 
+    @Column(name = "indivisible")// неделимый товар
+    private Boolean indivisible;
+
     @Column(name = "markable")// Маркированный товар
     private Boolean markable;
 
@@ -237,6 +240,14 @@ public class Products {
 
     public void setMaster(User master) {
         this.master = master;
+    }
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
     }
 
     public User getCreator() {

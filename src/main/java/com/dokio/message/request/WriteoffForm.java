@@ -26,6 +26,7 @@ public class WriteoffForm {
     private String writeoff_date;
     private boolean is_completed;
     private Long inventory_id;
+    private Long return_id;
     private Set<WriteoffProductForm> writeoffProductTable;
 
     public Long getId() {
@@ -98,6 +99,14 @@ public class WriteoffForm {
 
     public void setWriteoffProductTable(Set<WriteoffProductForm> writeoffProductTable) {
         this.writeoffProductTable = writeoffProductTable;
+    }
+
+    public Long getReturn_id() {
+        return return_id;
+    }
+
+    public void setReturn_id(Long return_id) {
+        this.return_id = return_id;
     }
 
     public Long getInventory_id() {

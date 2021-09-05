@@ -13,14 +13,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsRetailSalesForm;
-import com.dokio.message.response.RetailSalesJSON;
-import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
-import com.dokio.message.response.additional.*;
+import com.dokio.message.request.Settings.SettingsReturnForm;
+import com.dokio.message.response.FilesReturnJSON;
+import com.dokio.message.response.ReturnJSON;
+import com.dokio.message.response.ReturnProductTableJSON;
+import com.dokio.message.response.Settings.SettingsReturnJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,17 +31,19 @@ import java.util.List;
 import java.util.Objects;
 
 @Controller
-public class RetailSalesController {
+public class ReturnController {
 
-    Logger logger = Logger.getLogger("RetailSalesController");
+
+    Logger logger = Logger.getLogger("ReturnController");
 
     @Autowired
-    RetailSalesRepository retailSalesRepository;
+    ReturnRepository returnRepository;
 
-    @PostMapping("/api/auth/getRetailSalesTable")
+
+    @PostMapping("/api/auth/getReturnTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getRetailSalesTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getRetailSalesTable: " + searchRequest.toString());
+    public ResponseEntity<?> getReturnTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getReturnTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -51,7 +52,7 @@ public class RetailSalesController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<RetailSalesJSON> returnList;
+        List<ReturnJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -80,21 +81,21 @@ public class RetailSalesController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = retailSalesRepository.getRetailSalesTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = returnRepository.getReturnTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getRetailSalesProductTable",
+            value = "/api/auth/getReturnProductTable",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getRetailSalesProductTable with RetailSales id=" + docId.toString());
-        List<RetailSalesProductTableJSON> returnList;
+    public ResponseEntity<?> getReturnProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getReturnProductTable with Return id=" + docId.toString());
+        List<ReturnProductTableJSON> returnList;
         try {
-            returnList = retailSalesRepository.getRetailSalesProductTable(docId);
+            returnList = returnRepository.getReturnProductTable(docId);
             return  new ResponseEntity<>(returnList, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -103,10 +104,10 @@ public class RetailSalesController {
         }
     }
 
-    @PostMapping("/api/auth/getRetailSalesPagesList")
+    @PostMapping("/api/auth/getReturnPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getRetailSalesPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getRetailSalesPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getReturnPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getReturnPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -128,7 +129,7 @@ public class RetailSalesController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = retailSalesRepository.getRetailSalesSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = returnRepository.getReturnSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -174,175 +175,208 @@ public class RetailSalesController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertRetailSales")
+    @PostMapping("/api/auth/insertReturn")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertRetailSales(@RequestBody RetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/insertRetailSales: " + request.toString());
+    public ResponseEntity<?> insertReturn(@RequestBody ReturnForm request) {
+        logger.info("Processing post request for path /api/auth/insertReturn: " + request.toString());
 
-        Long newDocument = retailSalesRepository.insertRetailSales(request);
-        if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - (0 обрабатывается на фронте как недостаточно объема склада для операции)
+        Long newDocument = returnRepository.insertReturn(request);
+        if(newDocument!=null){//вернет id созданного документа либо 0, если недостаточно прав
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
-            return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка создания документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(
-            value = "/api/auth/getSetOfTypePrices",
-            params = {"company_id","department_id","cagent_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSetOfTypePrices(
-            @RequestParam("company_id") Long company_id,
-            @RequestParam("department_id") Long department_id,
-            @RequestParam("cagent_id") Long cagent_id)
-    {
-        logger.info("Processing get request for path /api/auth/getSetOfTypePrices with parameters: " +
-                "company_id: " + company_id +
-                " department_id: " + department_id +
-                " cagent_id: " + cagent_id );
-        SetOfTypePricesJSON response;
-        try {
-            response=retailSalesRepository.getSetOfTypePrices(company_id, department_id, cagent_id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method getSetOfTypePrices. company_id=" + company_id + ", department_id=" + department_id + ", cagent_id=" + cagent_id, e);
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки набора типов цен", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @RequestMapping(
-            value = "/api/auth/isReceiptPrinted",
-            params = {"company_id","document_id","id","operation_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> isReceiptPrinted(
-            @RequestParam("company_id") Long company_id,
-            @RequestParam("document_id") int document_id,
-            @RequestParam("id") Long id,
-            @RequestParam("operation_id") String operation_id)
-    {
-        logger.info("Processing get request for path /api/auth/isReceiptPrinted with parameters: " +
-                "company_id: " + company_id +
-                " document_id: " + document_id +
-                " id: " + id +
-                " operation_id: " + operation_id
-        );
-        Boolean response;
-        try {
-            response=retailSalesRepository.isReceiptPrinted(company_id, document_id, id, operation_id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method isReceiptPrinted. company_id=" + company_id + ", document_id=" + document_id, e);
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка запроса на наличие чека", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    @RequestMapping(
-            value = "/api/auth/getRetailSalesValuesById",
+            value = "/api/auth/getReturnValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesValuesById(
+    public ResponseEntity<?> getReturnValuesById(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/getRetailSalesValuesById with parameters: " + "id: " + id);
-        RetailSalesJSON response;
+        logger.info("Processing get request for path /api/auth/getReturnValuesById with parameters: " + "id: " + id);
+        ReturnJSON response;
         try {
-            response=retailSalesRepository.getRetailSalesValuesById(id);
+            response=returnRepository.getReturnValuesById(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
-            logger.error("Exception in method getRetailSalesValuesById. id = " + id, e);
+            logger.error("Exception in method getReturnValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/api/auth/updateRetailSales")
-    public ResponseEntity<?> updateRetailSales(@RequestBody RetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/updateRetailSales: " + request.toString());
-        Boolean updateResults = retailSalesRepository.updateRetailSales(request);
-        if(updateResults){
-            return new ResponseEntity<>(updateResults, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/api/auth/saveSettingsRetailSales")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsRetailSales(@RequestBody SettingsRetailSalesForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsRetailSales: " + request.toString());
-
-        if(retailSalesRepository.saveSettingsRetailSales(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/getSettingsRetailSales",
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsRetailSales()
-    {
-        logger.info("Processing get request for path /api/auth/getSettingsRetailSales without request parameters");
-        SettingsRetailSalesJSON response;
-        try {
-            response=retailSalesRepository.getSettingsRetailSales();
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки настроек для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки значений документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(
-            value = "/api/auth/getRetailSalesLinkedDocsList",
+            value = "/api/auth/getReturnLinkedDocsList",
             params = {"id","docName"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesLinkedDocsList(
-    @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
-        logger.info("Processing get request for path api/auth/getRetailSalesLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+    public ResponseEntity<?> getReturnLinkedDocsList(
+            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
+        logger.info("Processing get request for path api/auth/getReturnLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
         List<LinkedDocsJSON> returnList;
-        returnList = retailSalesRepository.getRetailSalesLinkedDocsList(id,docName);
+        returnList = returnRepository.getReturnLinkedDocsList(id,docName);
         if(!Objects.isNull(returnList)){
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
-    // другие ситуации. Поэтому удаление пока оставляю закомментированным
-/*    @PostMapping("/api/auth/deleteRetailSales")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteRetailSales(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteRetailSales: " + request.toString());
 
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(retailSalesRepository.deleteRetailSales(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+    @PostMapping("/api/auth/updateReturn")
+    public ResponseEntity<?> updateReturn(@RequestBody ReturnForm request){
+        logger.info("Processing post request for path /api/auth/updateReturn: " + request.toString());
+        Boolean updateResults = returnRepository.updateReturn(request);
+        if(updateResults){
+            return new ResponseEntity<>(updateResults, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка сохранения документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/undeleteRetailSales")
+    @PostMapping("/api/auth/saveSettingsReturn")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteRetailSales(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteRetailSales: " + request.toString());
+    public ResponseEntity<?> saveSettingsReturn(@RequestBody SettingsReturnForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsReturn: " + request.toString());
+
+        if(returnRepository.saveSettingsReturn(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSettingsReturn",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsReturn()
+    {
+        logger.info("Processing get request for path /api/auth/getSettingsReturn without request parameters");
+        SettingsReturnJSON response;
+        try {
+            response=returnRepository.getSettingsReturn();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteReturn")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> deleteReturn(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteReturn: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(retailSalesRepository.undeleteRetailSales(checked)){
+        Boolean result=returnRepository.deleteReturn(checked);
+        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
+    }
+
+    @PostMapping("/api/auth/undeleteReturn")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteReturn(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteReturn: " + request.toString());
+
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        if(returnRepository.undeleteReturn(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления документов", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
-    }*/
+    }
 
+    @RequestMapping(
+            value = "/api/auth/getReturnProductsList",
+            params = {"searchString", "companyId", "departmentId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getReturnProductsList(
+            @RequestParam("searchString")   String searchString,
+            @RequestParam("companyId")      Long companyId,
+            @RequestParam("departmentId")   Long departmentId)
+    {
+        logger.info("Processing post request for path /api/auth/getReturnProductsList with parameters: " +
+                "  searchString: "  + searchString +
+                ", companyId: "     + companyId.toString() +
+                ", departmentId: "  + departmentId.toString());
+        List returnList;
+        returnList = returnRepository.getReturnProductsList(searchString, companyId, departmentId);
+        return new ResponseEntity<>(returnList, HttpStatus.OK);
+    }
+
+    //удаление 1 строки из таблицы товаров
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/deleteReturnProductTableRow",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/deleteReturnProductTableRow with parameters: " +
+                "id: " + id);
+        boolean result;
+        try {
+            result=returnRepository.deleteReturnProductTableRow(id);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/getListOfReturnFiles")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getListOfReturnFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path api/auth/getListOfReturnFiles: " + request.toString());
+
+        Long productId=Long.valueOf(request.getId());
+        List<FilesReturnJSON> returnList;
+        try {
+            returnList = returnRepository.getListOfReturnFiles(productId);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteReturnFile")
+    public ResponseEntity<?> deleteReturnFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteReturnFile: " + request.toString());
+
+        if(returnRepository.deleteReturnFile(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/addFilesToReturn")
+    public ResponseEntity<?> addFilesToReturn(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToReturn: " + request.toString());
+
+        if(returnRepository.addFilesToReturn(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
+    }
 }
+
+
+
+

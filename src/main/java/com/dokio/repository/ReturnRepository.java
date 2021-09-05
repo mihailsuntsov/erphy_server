@@ -13,12 +13,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsInventoryForm;
+import com.dokio.message.request.Settings.SettingsReturnForm;
 import com.dokio.message.response.*;
-import com.dokio.message.response.Settings.SettingsInventoryJSON;
-import com.dokio.message.response.additional.InventoryProductsListJSON;
+import com.dokio.message.response.Settings.SettingsReturnJSON;
+import com.dokio.message.response.additional.ReturnProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
+import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -31,19 +32,19 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
-public class InventoryRepository {
+public class ReturnRepository {
 
-    Logger logger = Logger.getLogger("InventoryRepository");
+    Logger logger = Logger.getLogger("ReturnRepository");
 
     @PersistenceContext
     private EntityManager entityManager;
-    @Autowired
-    private EntityManagerFactory emf;
     @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
@@ -57,9 +58,10 @@ public class InventoryRepository {
     @Autowired
     ProductsRepositoryJPA productsRepository;
 
+
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .of("cagent","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -70,8 +72,8 @@ public class InventoryRepository {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<InventoryJSON> getInventoryTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(27L, "336,337,338,339"))//(см. файл Permissions Id)
+    public List<ReturnJSON> getReturnTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -101,13 +103,14 @@ public class InventoryRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           p.name as name, " +
-                    "           (select count(*) from inventory_product ip where coalesce(ip.inventory_id,0)=p.id) as product_count," + //подсчет кол-ва товаров в данной инвентаризации
-                    "           coalesce(p.is_completed,false) as is_completed " +  // инвентаризация завершена?
+                    "           cg.name as cagent, " +
+                    "           (select count(*) from return_product ip where coalesce(ip.return_id,0)=p.id) as product_count," + //подсчет кол-ва товаров в данной инвентаризации
+                    "           coalesce(p.is_completed,false) as is_completed " +  //  завершен?
 
-                    "           from inventory p " +
+                    "           from return p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
@@ -115,11 +118,11 @@ public class InventoryRepository {
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(28L, "352")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(28L, "353")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(28L, "354")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -129,6 +132,7 @@ public class InventoryRepository {
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
@@ -160,9 +164,9 @@ public class InventoryRepository {
                 {query.setParameter("sg", searchString);}
 
                 List<Object[]> queryList = query.getResultList();
-                List<InventoryJSON> returnList = new ArrayList<>();
+                List<ReturnJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    InventoryJSON doc=new InventoryJSON();
+                    ReturnJSON doc=new ReturnJSON();
                     doc.setId(Long.parseLong(                     obj[0].toString()));
                     doc.setMaster((String)                        obj[1]);
                     doc.setCreator((String)                       obj[2]);
@@ -182,7 +186,7 @@ public class InventoryRepository {
                     doc.setStatus_name((String)                   obj[18]);
                     doc.setStatus_color((String)                  obj[19]);
                     doc.setStatus_description((String)            obj[20]);
-                    doc.setName((String)                          obj[21]);
+                    doc.setCagent((String)                        obj[21]);
                     doc.setProduct_count(Long.parseLong(          obj[22].toString()));
                     doc.setIs_completed((Boolean)                 obj[23]);
 
@@ -191,14 +195,14 @@ public class InventoryRepository {
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getInventoryTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getReturnTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
     }
 
     @SuppressWarnings("Duplicates")
-    public int getInventorySize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+    public int getReturnSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
@@ -206,19 +210,20 @@ public class InventoryRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
-                "           from inventory p " +
+                "           from return p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+        if (!securityRepositoryJPA.userHasPermissions_OR(28L, "352")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+            if (!securityRepositoryJPA.userHasPermissions_OR(28L, "353")) //Если нет прав на просм по своему предприятию
             {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                if (!securityRepositoryJPA.userHasPermissions_OR(28L, "354")) //Если нет прав на просмотр всех доков в своих подразделениях
                 {//остается только на свои документы
                     stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                 }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -227,6 +232,7 @@ public class InventoryRepository {
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
@@ -251,41 +257,44 @@ public class InventoryRepository {
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getInventorySize. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getReturnSize. SQL query:" + stringQuery, e);
             return 0;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    public List<InventoryProductTableJSON> getInventoryProductTable(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(27L, "336,337,338,339"))//(см. файл Permissions Id)
+    public List<ReturnProductTableJSON> getReturnProductTable(Long docId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//(см. файл Permissions Id)
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery =   " select " +
-                    " ip.id  as row_id, " +
+                    " ip.id  as id, " +
                     " p.name as name," +
                     " ip.product_id," +
-                    " ip.estimated_balance as estimated_balance," +
-                    " ip.actual_balance as actual_balance," +
                     " ip.product_price," +
-                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm, " +
+                    " ip.product_netcost," +
+                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
+                    " ip.product_count," +
+                    " ip.product_sumprice," +
+                    " ip.product_sumnetcost," +
+                    " ip.nds_id, " +
                     " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
 
                     " from " +
-                    " inventory_product ip " +
+                    " return_product ip " +
                     " INNER JOIN products p ON ip.product_id=p.id " +
-                    " INNER JOIN inventory i ON ip.inventory_id=i.id " +
+                    " INNER JOIN return i ON ip.return_id=i.id " +
                     " where ip.master_id = " + myMasterId +
-                    " and ip.inventory_id = " + docId;
+                    " and ip.return_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(28L, "352")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(28L, "353")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(28L, "354")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and i.company_id=" + myCompanyId+" and i.department_id in :myDepthsIds and i.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and i.company_id=" + myCompanyId+" and i.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -300,36 +309,39 @@ public class InventoryRepository {
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
                 List<Object[]> queryList = query.getResultList();
-                List<InventoryProductTableJSON> returnList = new ArrayList<>();
+                List<ReturnProductTableJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    InventoryProductTableJSON doc=new InventoryProductTableJSON();
+                    ReturnProductTableJSON doc=new ReturnProductTableJSON();
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setName((String)                                    obj[1]);
                     doc.setProduct_id(Long.parseLong(                       obj[2].toString()));
-                    doc.setEstimated_balance(                               obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
-                    doc.setActual_balance(                                  obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
-                    doc.setProduct_price(                                   obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
-                    doc.setEdizm((String)                                   obj[6]);
-                    doc.setIndivisible((Boolean)                            obj[7]);
+                    doc.setProduct_price(                                   obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
+                    doc.setProduct_netcost(                                 obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
+                    doc.setEdizm((String)                                   obj[5]);
+                    doc.setProduct_count(                                   obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
+                    doc.setProduct_sumprice(                                obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
+                    doc.setProduct_sumnetcost(                              obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
+                    doc.setNds_id((Integer)                                 obj[9]);
+                    doc.setIndivisible((Boolean)                            obj[10]);
                     returnList.add(doc);
                 }
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getInventoryProductTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getReturnProductTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
     }
 
 
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //****************************************************      CRUD      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
 //    @Transactional
-    public InventoryJSON getInventoryValuesById (Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(27L, "336,337,338,339"))//см. _Permissions Id.txt
+    public ReturnJSON getReturnValuesById (Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//см. _Permissions Id.txt
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
@@ -355,12 +367,16 @@ public class InventoryRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           p.name as name, " +
-                    "           coalesce(p.is_completed,false) as is_completed " +  // инвентаризация завершена?
+                    "           to_char(p.date_return at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_return, " +
+                    "           coalesce(p.is_completed,false) as is_completed, " +  // инвентаризация завершена?
+                    "           cg.id as cagent_id, " +
+                    "           cg.name as cagent, " +
+                    "           p.nds as nds " +
 
-                    "           from inventory p " +
+                    "           from return p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
@@ -369,11 +385,11 @@ public class InventoryRepository {
                     "           and p.id= " + id;
 
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(28L, "352")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(28L, "353")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(28L, "354")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -387,7 +403,7 @@ public class InventoryRepository {
 
                 List<Object[]> queryList = query.getResultList();
 
-                InventoryJSON doc = new InventoryJSON();
+                ReturnJSON doc = new ReturnJSON();
 
                 for(Object[] obj:queryList){
                     doc.setId(Long.parseLong(                     obj[0].toString()));
@@ -409,13 +425,17 @@ public class InventoryRepository {
                     doc.setStatus_name((String)                   obj[16]);
                     doc.setStatus_color((String)                  obj[17]);
                     doc.setStatus_description((String)            obj[18]);
-                    doc.setName((String)                          obj[19]);
+                    doc.setDate_return((String)                   obj[19]);
                     doc.setIs_completed((Boolean)                 obj[20]);
+                    doc.setCagent_id(Long.parseLong(              obj[21].toString()));
+                    doc.setCagent((String)                        obj[22]);
+                    doc.setNds((Boolean)                          obj[23]);
+
                 }
                 return doc;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getInventoryValuesById. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getReturnValuesById. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -423,44 +443,77 @@ public class InventoryRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
-    public Boolean updateInventory(InventoryForm request){
+    public Boolean updateReturn(ReturnForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",request.getId().toString())) ||
+        if(     (securityRepositoryJPA.userHasPermissions_OR(28L,"356") && securityRepositoryJPA.isItAllMyMastersDocuments("return",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"341") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"357") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",request.getId().toString()))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"342") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"358") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",request.getId().toString()))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",request.getId().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"359") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
-            stringQuery =   " update inventory set " +
+            stringQuery =   " update return set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, "+
-                    " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
+                    " nds = " + request.getNds() + ", " +
+                    " date_return = to_date(:date_return,'DD.MM.YYYY'), " +
                     " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
             try
             {
+                Date dateNow = new Date();
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
+
                 query.executeUpdate();
-                if(insertInventoryProducts(request, request.getId(), myMasterId)){
-                return true;
+                if(insertReturnProducts(request, request.getId(), myMasterId)){
+                    //если завершается возврат - запись в историю товара
+                    if(request.getIs_completed()){
+
+                        for (ReturnProductTableForm row : request.getReturnProductTable()) {
+                            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
+                            if (!addReturnProductHistory(row, request, myMasterId)) {//      запись в историю товара
+                                break;
+                            } else {
+                                if (isMaterial) { //если товар материален, т.е. это не услуга, работа и т.п.
+                                    if (!setReturnQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return true;
                 } else return null;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertInventory on inserting into inventory_products cause error.", e);
+                logger.error("Exception in method ReturnRepository/insertReturn on updating return_products cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantSaveProductHistoryException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/addReturnProductHistory on updating return_products cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantSaveProductQuantityException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/setReturnQuantity on updating return_products cause error.", e);
                 e.printStackTrace();
                 return null;
             }catch (Exception e) {
-                logger.error("Exception in method updateInventory. SQL query:"+stringQuery, e);
+                logger.error("Exception in method ReturnRepository/updateReturn. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -468,11 +521,104 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
+    private Boolean addReturnProductHistory(ReturnProductTableForm row, ReturnForm request , Long masterId) throws CantSaveProductHistoryException {
+        String stringQuery;
+        try {
+            //материален ли товар
+            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
+            //берем последнюю запись об истории товара в данном отделении
+            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+            //последнее количество товара (прибавим его в запросе к тому количеству, которое возвращают, но только если товар материален)
+            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+            //средняя цена закупа - оставляем прежней
+            BigDecimal avgPurchasePrice =lastProductHistoryRecord.getAvg_purchase_price();
+            //последняя цена покупки
+            BigDecimal lastPurchasePrice =lastProductHistoryRecord.getLast_purchase_price();
+            //средняя себестоимость - оставляем прежней
+            BigDecimal avgNetcostPrice =  lastProductHistoryRecord.getAvg_netcost_price();
+            //Цена операции - пока единственный показатель, который меняется у товара в его истории в связи с данным возвратом товара
+            BigDecimal lastOperationPrice=lastProductHistoryRecord.getLast_operation_price();
+
+            stringQuery = " insert into products_history (" +
+                    " master_id," +
+                    " company_id," +
+                    " department_id," +
+                    " doc_type_id," +
+                    " doc_id," +
+                    " product_id," +
+                    " quantity," +
+                    " change," +
+                    " avg_purchase_price," +
+                    " avg_netcost_price," +
+                    " last_purchase_price," +
+                    " last_operation_price," +
+                    " date_time_created"+
+                    ") values ("+
+                    masterId +","+
+                    request.getCompany_id() +","+
+                    request.getDepartment_id() + ","+
+                    28 +","+
+                    row.getReturn_id() + ","+
+                    row.getProduct_id() + ","+
+                    (isMaterial?lastQuantity.add(row.getProduct_count()):(new BigDecimal(0)))+","+//если товар материален - записываем его кол-во, равное сумме прежнего и возвращаемого, иначе 0
+                    row.getProduct_count() +","+
+                    avgPurchasePrice +","+
+                    avgNetcostPrice +","+
+                    lastPurchasePrice+","+
+                    lastOperationPrice+","+
+                    " now())";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method ReturnRepository/addReturnProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private Boolean setReturnQuantity(ReturnProductTableForm row, ReturnForm request , Long masterId) throws CantSaveProductQuantityException {
+        String stringQuery;
+        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+        stringQuery =
+                " insert into product_quantity (" +
+                        " master_id," +
+                        " department_id," +
+                        " product_id," +
+                        " quantity" +
+                        ") values ("+
+                        masterId + ","+
+                        request.getDepartment_id() + ","+
+                        row.getProduct_id() + ","+
+                        lastQuantity +
+                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                        " DO update set " +
+                        " department_id = " + request.getDepartment_id() + ","+
+                        " product_id = " + row.getProduct_id() + ","+
+                        " master_id = "+ masterId + "," +
+                        " quantity = "+ lastQuantity;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method ReturnRepository/setProductQuantity. SQL query:"+stringQuery, e);
+            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
-    public Long insertInventory(InventoryForm request) {
+    public Long insertReturn(ReturnForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 27L, "329", "330", "331");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 28L, "345", "346", "347");
         if(iCan==Boolean.TRUE)
         {
 
@@ -484,49 +630,61 @@ public class InventoryRepository {
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
                 doc_number=Long.valueOf(request.getDoc_number());
-            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"inventory");
+            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"return");
 
+            if(request.getStatus_id()==null)
+                request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(), 28));
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery =   "insert into inventory (" +
+            stringQuery =   "insert into return (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
                     " department_id," + //отделение, из(для) которого создается документ
+                    " cagent_id," + //покупатель, возвращающий заказ
                     " date_time_created," + //дата и время создания
                     " doc_number," + //номер заказа
-                    " name," + //наименование заказа
+                    " date_return," + //дата возврата
                     " description," +//доп. информация по заказу
-                    " status_id"+//статус инвентаризации
+                    " status_id,"+//статус инвентаризации
+                    " retail_sales_id,"+// id родительского документа Розничная продажа, из которого может быть создан возврат
+                    " nds" +
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
                     request.getCompany_id() + ", "+//предприятие, для которого создается документ
                     request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                    request.getCagent_id() + ", "+//покупатель, возвращающий заказ
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                     doc_number + ", "+//номер заказа
-                    " :name_, " +//наименование
+                    " to_date(:date_return,'DD.MM.YYYY'), "+// дата списания
                     " :description, " +//описание
-                    request.getStatus_id() + ")";//статус инвентаризации
+                    request.getStatus_id() + ", " + //статус док-та
+                    request.getRetail_sales_id() + ", " + //id родительского документа Розничная продажа, из которого может быть создан возврат
+                    request.getNds()+")";
             try{
+                Date dateNow = new Date();
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-                query.setParameter("name_", (request.getName() == null ? "" : request.getName()));
+                query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
                 query.executeUpdate();
-                stringQuery="select id from inventory where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                stringQuery="select id from return where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDockId=Long.valueOf(query2.getSingleResult().toString());
 
-                if(insertInventoryProducts(request, newDockId, myMasterId)){
+                if(insertReturnProducts(request, newDockId, myMasterId)){
                     return newDockId;
                 } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertInventory on inserting into inventory_products cause error.", e);
+                logger.error("Exception in method insertReturn on inserting into return_products cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (Exception e) {
-                logger.error("Exception in method insertInventory on inserting into inventory. SQL query:"+stringQuery, e);
+                logger.error("Exception in method insertReturn on inserting into return. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -538,32 +696,32 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertInventoryProducts(InventoryForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertReturnProducts(ReturnForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         String productIds = "";
         //сохранение таблицы
-        if (request.getInventoryProductTable()!=null && request.getInventoryProductTable().size() > 0) {
+        if (request.getReturnProductTable()!=null && request.getReturnProductTable().size() > 0) {
 
-            for (InventoryProductTableForm row : request.getInventoryProductTable()) {
-                row.setInventory_id(newDockId);
-                insertProductRowResult = saveInventoryProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
+            for (ReturnProductTableForm row : request.getReturnProductTable()) {
+                row.setReturn_id(newDockId);
+                insertProductRowResult = saveReturnProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null) {
-                    throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров inventory_product
+                    throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров return_product
                 }
                 //копим id сохранённых товаров
                 productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
             }
         }
-        deleteInventoryProductTableExcessRows(productIds, request.getId(), myMasterId);
+        deleteReturnProductTableExcessRows(productIds, request.getId(), myMasterId);
         return true;
     }
 
     @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении инвентаризации (те позиции, которые ранее были в заказе, но потом их удалили)
-    private Boolean deleteInventoryProductTableExcessRows(String productIds, Long inventory_id, Long myMasterId) {
+    private Boolean deleteReturnProductTableExcessRows(String productIds, Long return_id, Long myMasterId) {
         String stringQuery="";
         try {
-            stringQuery =   " delete from inventory_product " +
-                    " where inventory_id=" + inventory_id +
+            stringQuery =   " delete from return_product " +
+                    " where return_id=" + return_id +
                     " and master_id=" + myMasterId +
                     (productIds.length()>0?(" and product_id not in (" + productIds + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -571,47 +729,56 @@ public class InventoryRepository {
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method deleteInventoryProductTableExcessRows. SQL query:"+stringQuery, e);
+            logger.error("Exception in method deleteReturnProductTableExcessRows. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean saveInventoryProductTable(InventoryProductTableForm row, Long company_id, Long master_id) {
+    private Boolean saveReturnProductTable(ReturnProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
         try {
-                stringQuery =
-                        " insert into inventory_product (" +
-                                "master_id, " +
-                                "company_id, " +
-                                "product_id, " +
-                                "inventory_id, " +
-                                "estimated_balance, " +
-                                "actual_balance, " +
-                                "product_price " +
-                                ") values (" +
-                                master_id + "," +
-                                company_id + "," +
-                                row.getProduct_id() + "," +
-                                row.getInventory_id() + "," +
-                                row.getEstimated_balance() + "," +
-                                row.getActual_balance() + "," +
-                                row.getProduct_price() +
-                                " ) " +
-                                "ON CONFLICT ON CONSTRAINT inventory_product_uq " +// "upsert"  - уникальность по product_id, inventory_id
-                                " DO update set " +
-                                " product_id = " + row.getProduct_id() + "," +
-                                " inventory_id = " + row.getInventory_id() + "," +
-                                " estimated_balance = " + row.getEstimated_balance() + "," +
-                                " actual_balance = " + row.getActual_balance() + "," +
-                                " product_price = " + row.getProduct_price();
-                Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                return true;
+            stringQuery =
+                    " insert into return_product (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "product_id, " +
+                            "return_id, " +
+                            "product_netcost, " +
+                            "product_count, " +
+                            "product_price, " +
+                            "product_sumprice, " +
+                            "product_sumnetcost, " +
+                            "nds_id" +
+                            ") values (" +
+                            master_id + "," +
+                            company_id + "," +
+                            row.getProduct_id() + "," +
+                            row.getReturn_id() + "," +
+                            row.getProduct_netcost() + "," +
+                            row.getProduct_count() + "," +
+                            row.getProduct_price() + "," +
+                            row.getProduct_sumprice() + "," +
+                            row.getProduct_sumnetcost() + "," +
+                            row.getNds_id() +
+                            " ) " +
+                            "ON CONFLICT ON CONSTRAINT return_product_uq " +// "upsert"  - уникальность по product_id, return_id
+                            " DO update set " +
+                            " product_id = " + row.getProduct_id() + "," +
+                            " return_id = " + row.getReturn_id() + "," +
+                            " product_netcost = " + row.getProduct_netcost() + "," +
+                            " product_count = " + row.getProduct_count() + "," +
+                            " product_price = " + row.getProduct_price() + "," +
+                            " product_sumprice = " + row.getProduct_sumprice() + "," +
+                            " product_sumnetcost = " + row.getProduct_sumnetcost() + "," +
+                            " nds_id = " + row.getNds_id();
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveInventoryProductTable. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveReturnProductTable. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -620,205 +787,169 @@ public class InventoryRepository {
     //удаление 1 строки из таблицы товаров
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean deleteInventoryProductTableRow(Long id) {
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-            String stringQuery = " delete from inventory_product " +
+    public Boolean deleteReturnProductTableRow(Long id) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery = " delete from return_product " +
                 " where id="+id+" and master_id="+myMasterId;
-            try {
-                Query query = entityManager.createNativeQuery(stringQuery);
-                return query.executeUpdate() == 1;
-            }
-            catch (Exception e) {
-                logger.error("Exception in method deleteInventoryProductTableRow. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return false;
-            }
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.executeUpdate() == 1;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method deleteReturnProductTableRow. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
     }
 
     //сохраняет настройки документа "Розничные продажи"
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean saveSettingsInventory(SettingsInventoryForm row) {
+    public Boolean saveSettingsReturn(SettingsReturnForm row) {
         String stringQuery="";
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
 
             stringQuery =
-                    " insert into settings_inventory (" +
+                    " insert into settings_return (" +
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
-                            "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
-                            "price_type_id, " +         //тип цены из справочника Типы цен
-                            "change_price, " +          //наценка/скидка в цифре (например, 50)
-                            "plus_minus, " +            //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
-                            "change_price_type, " +     //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
-                            "hide_tenths, " +           //убирать десятые (копейки) - boolean
                             "department_id, " +         //отделение по умолчанию
-                            "name, "+                   //наименование заказа
                             "status_on_finish_id, "+    //статус документа при завершении инвентаризации
-                            "default_actual_balance, "+ // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
-                            "other_actual_balance,"+    // другой фактический баланс по умолчанию. Например, 1
+                            "show_kkm, "+               //показывать блок ККМ
                             "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
-                            row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
-                            row.getHideTenths() + "," +
+                            myId + "," +
                             row.getDepartmentId() + "," +
-                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                            row.getStatusOnFinishId() + ",'" +
-                            row.getDefaultActualBalance() + "'," +
-                            row.getOtherActualBalance() + "," +
+                            row.getStatusOnFinishId() + "," +
+                            row.getShowKkm() + "," +
                             row.getAutoAdd() +
                             ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_inventory_user_uq " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT settings_return_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
-                            " price_type_id = " + row.getPriceTypeId() + ","+
-                            " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
-                            " hide_tenths = " + row.getHideTenths() +
-                            (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
-                            (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
-                            (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
-                            (row.getStatusOnFinishId() == null ? "": (", status_on_finish_id = "+row.getStatusOnFinishId()))+
-                            (row.getDefaultActualBalance() == null ? "": (", default_actual_balance = '"+row.getDefaultActualBalance()+"'"))+
-                            (row.getOtherActualBalance() == null ? "": (", other_actual_balance = "+row.getOtherActualBalance()))+
-                            (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
+                            "  department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", status_on_finish_id = "+row.getStatusOnFinishId()+
+                            ", show_kkm = "+row.getShowKkm()+
+                            ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveSettingsInventory. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveSettingsReturn. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
 
-    //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
+    //Загружает настройки документа "Возврат покупателя" для текущего пользователя (из-под которого пришел запрос)
     @SuppressWarnings("Duplicates")
-    public SettingsInventoryJSON getSettingsInventory() {
+    public SettingsReturnJSON getSettingsReturn() {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
-                "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
-                "           coalesce(p.hide_tenths,false) as hide_tenths, " +           // убирать десятые (копейки)
                 "           p.department_id as department_id, " +                       // id отделения
                 "           p.company_id as company_id, " +                             // id предприятия
-                "           p.name as name, " +                                         // наименование инвентаризации по-умолчанию
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
-                "           p.default_actual_balance as default_actual_balance, " +     // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
-                "           p.other_actual_balance as other_actual_balance, " +         // "другой" фактический баланс по умолчанию. Например, 1
-                "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
-                "           from settings_inventory p " +
+                "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
+                "           coalesce(p.show_kkm,false) as show_kkm  " +                 // показывать блок ККМ
+                "           from settings_return p " +
                 "           where p.user_id= " + myId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            SettingsInventoryJSON returnObj=new SettingsInventoryJSON();
+            SettingsReturnJSON returnObj=new SettingsReturnJSON();
 
             for(Object[] obj:queryList){
-                returnObj.setPricingType((String)                       obj[0]);
-                returnObj.setPriceTypeId(obj[1]!=null?Long.parseLong(   obj[1].toString()):null);
-                returnObj.setChangePrice((BigDecimal)                   obj[2]);
-                returnObj.setPlusMinus((String)                         obj[3]);
-                returnObj.setChangePriceType((String)                   obj[4]);
-                returnObj.setHideTenths((Boolean)                       obj[5]);
-                returnObj.setDepartmentId(obj[6]!=null?Long.parseLong(  obj[6].toString()):null);
-                returnObj.setCompanyId(Long.parseLong(                  obj[7].toString()));
-                returnObj.setName((String)                              obj[8]);
-                returnObj.setStatusOnFinishId(obj[9]!=null?Long.parseLong(obj[9].toString()):null);
-                returnObj.setDefaultActualBalance((String)              obj[10]);
-                returnObj.setOtherActualBalance((BigDecimal)            obj[11]);
-                returnObj.setAutoAdd((Boolean)                          obj[12]);
+                returnObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
+                returnObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                returnObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
+                returnObj.setAutoAdd((Boolean)                              obj[3]);
+                returnObj.setShowKkm((Boolean)                              obj[4]);
             }
             return returnObj;
         }
         catch (Exception e) {
-            logger.error("Exception in method getSettingsInventory. SQL query:"+stringQuery, e);
+            logger.error("Exception in method getSettingsReturn. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw e;
         }
     }
 
-        @Transactional
-        @SuppressWarnings("Duplicates")
-        public boolean deleteInventory (String delNumbers) {
-            //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-            if( (securityRepositoryJPA.userHasPermissions_OR(27L,"332") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",delNumbers)) ||
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean deleteReturn (String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(28L,"348") && securityRepositoryJPA.isItAllMyMastersDocuments("return",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"333") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"349") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",delNumbers))||
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"334") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",delNumbers)))
-            {
-                String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-                Long myId = userRepositoryJPA.getMyId();
-                stringQuery = "Update inventory p" +
-                        " set is_deleted=true, " + //удален
-                        " changer_id="+ myId + ", " + // кто изменил (удалил)
-                        " date_time_changed = now() " +//дату и время изменения
-                        " where p.id in ("+delNumbers+")" +
-                        " and coalesce(p.is_completed,false) !=true";
-                try{
-                    entityManager.createNativeQuery(stringQuery).executeUpdate();
-                    return true;
-                }catch (Exception e) {
-                    logger.error("Exception in method deleteInventory. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    return false;
-                }
-            } else return false;
-        }
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"350") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",delNumbers))||
+                //Если есть право на "Удаление документов созданных собой" и id принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"351") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",delNumbers)))
+        {
+            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update return p" +
+                    " set is_deleted=true, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")" +
+                    " and coalesce(p.is_completed,false) !=true";
+            try{
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }catch (Exception e) {
+                logger.error("Exception in method deleteReturn. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return false;
+    }
 
-        @Transactional
-        @SuppressWarnings("Duplicates")
-        public boolean undeleteInventory(String delNumbers) {
-            //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-            if( (securityRepositoryJPA.userHasPermissions_OR(27L,"332") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"333") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"334") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",delNumbers)))
-            {
-                // на MasterId не проверяю , т.к. выше уже проверено
-                Long myId = userRepositoryJPA.getMyId();
-                String stringQuery;
-                stringQuery = "Update inventory p" +
-                        " set changer_id="+ myId + ", " + // кто изменил (восстановил)
-                        " date_time_changed = now(), " +//дату и время изменения
-                        " is_deleted=false " + //не удалена
-                        " where p.id in (" + delNumbers+")";
-                try{
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                        query.executeUpdate();
-                        return true;
-                    } else return false;
-                }catch (Exception e) {
-                    logger.error("Exception in method undeleteInventory. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    return false;
-                }
-            } else return false;
-        }
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean undeleteReturn(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(28L,"348") && securityRepositoryJPA.isItAllMyMastersDocuments("return",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"349") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",delNumbers))||
+                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"350") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",delNumbers))||
+                //Если есть право на "Удаление документов созданных собой" и id принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"351") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update return p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return true;
+                } else return false;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteReturn. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
+    }
 
     @SuppressWarnings("Duplicates")
-    public List<InventoryProductsListJSON> getInventoryProductsList(String searchString, Long companyId, Long departmentId, Long priceTypeId) {
+    public List<ReturnProductsListJSON> getReturnProductsList(String searchString, Long companyId, Long departmentId) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         stringQuery = "select  p.id as id, " +
@@ -829,21 +960,15 @@ public class InventoryRepository {
                 // картинка
                 "           f.name as filename, " +
                 // всего единиц товара в отделении (складе)
-                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
-                // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
-                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = 10),0) as price_by_typeprice, " +
-                // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
-//                (priceTypeId>0?" pp.price_value":null) + " as price_by_typeprice," +
-                // средняя себестоимость
-                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
-                // средняя закупочная цена
-                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
-                // последняя закупочная цена
-                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice, " +
+                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as remains, " +
+                // НДС
+                "           coalesce(p.nds_id,null)  as nds_id, " +
+                // материален ли товар
+                " (select is_material from sprav_sys_ppr where id=p.ppr_id) as is_material, " +
                 // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                "           p.indivisible as indivisible" +
+                " p.indivisible as indivisible" +
 
-        " from products p " +
+                " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
@@ -863,7 +988,7 @@ public class InventoryRepository {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
         stringQuery = stringQuery + " group by p.id, f.name, ei.short_name" +
-//                (priceTypeId>0?(", pp.price_value"):"") + //если тип цены запрашивается - группируем таже и по нему
+
                 "  order by p.name asc";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -871,35 +996,33 @@ public class InventoryRepository {
             if (searchString != null && !searchString.isEmpty()){query.setParameter("sg", searchString);}
 
             List<Object[]> queryList = query.getResultList();
-            List<InventoryProductsListJSON> returnList = new ArrayList<>();
+            List<ReturnProductsListJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                InventoryProductsListJSON product = new InventoryProductsListJSON();
+                ReturnProductsListJSON product = new ReturnProductsListJSON();
                 product.setProduct_id(Long.parseLong(                       obj[0].toString()));
                 product.setName((String)                                    obj[1]);
                 product.setEdizm((String)                                   obj[2]);
                 product.setFilename((String)                                obj[3]);
-                product.setEstimated_balance(                               obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
-                product.setPriceOfTypePrice(                                obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
-                product.setAvgCostPrice(                                    obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
-                product.setAvgPurchasePrice(                                obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
-                product.setLastPurchasePrice(                               obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
-                product.setIndivisible((Boolean)                            obj[9]);
+                product.setRemains(                                         obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
+                product.setNds_id((Integer)                                 obj[5]);
+                product.setIs_material((Boolean)                            obj[6]);
+                product.setIndivisible((Boolean)                            obj[7]);
                 returnList.add(product);
             }
             return returnList;
         } catch (Exception e) {
-            logger.error("Exception in method getInventoryProductsList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getReturnProductsList. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    public List<LinkedDocsJSON> getInventoryLinkedDocsList(Long docId, String docName) {
+    public List<LinkedDocsJSON> getReturnLinkedDocsList(Long docId, String docName) {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String tableName=(docName.equals("posting")?"posting":"writeoff");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
+        String tableName=(docName.equals("writeoff")?"writeoff":"");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
         stringQuery =   " select " +
                 " ap.id," +
                 " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
@@ -909,7 +1032,7 @@ public class InventoryRepository {
                 " from "+tableName+" ap" +
                 " where ap.master_id = " + myMasterId +
                 " and coalesce(ap.is_archive,false)!=true "+
-                " and ap.inventory_id = " + docId;
+                " and ap.return_id = " + docId;
         stringQuery = stringQuery + " order by ap.date_time_created asc ";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -927,7 +1050,7 @@ public class InventoryRepository {
             return returnList;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getInventoryLinkedDocsList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getReturnLinkedDocsList. SQL query:" + stringQuery, e);
             return null;
         }
     }
@@ -937,16 +1060,16 @@ public class InventoryRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean addFilesToInventory(UniversalForm request){
-        Long inventoryId = request.getId1();
-        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",inventoryId.toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"341") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",inventoryId.toString()))||
-                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"342") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",inventoryId.toString()))||
-                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",inventoryId.toString())))
+    public Boolean addFilesToReturn(UniversalForm request){
+        Long returnId = request.getId1();
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого запрашивают), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(28L,"356") && securityRepositoryJPA.isItAllMyMastersDocuments("return",returnId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"357") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",returnId.toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"358") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",returnId.toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"359") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",returnId.toString())))
         {
             try
             {
@@ -954,18 +1077,18 @@ public class InventoryRepository {
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
-                    stringQuery = "select inventory_id from inventory_files where inventory_id=" + inventoryId + " and file_id=" + fileId;
+                    stringQuery = "select return_id from return_files where return_id=" + returnId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
                         entityManager.close();
-                        manyToMany_InventoryId_FileId(inventoryId,fileId);
+                        manyToMany_ReturnId_FileId(returnId,fileId);
                     }
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                logger.error("Exception in method InventoryRepository/addFilesToInventory.", ex);
+                logger.error("Exception in method ReturnRepository/addFilesToReturn.", ex);
                 ex.printStackTrace();
                 return false;
             }
@@ -974,29 +1097,29 @@ public class InventoryRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    boolean manyToMany_InventoryId_FileId(Long inventoryId, Long fileId){
+    boolean manyToMany_ReturnId_FileId(Long returnId, Long fileId){
         try
         {
             entityManager.createNativeQuery(" " +
-                    "insert into inventory_files " +
-                    "(inventory_id,file_id) " +
+                    "insert into return_files " +
+                    "(return_id,file_id) " +
                     "values " +
-                    "(" + inventoryId + ", " + fileId +")")
+                    "(" + returnId + ", " + fileId +")")
                     .executeUpdate();
             entityManager.close();
             return true;
         }
         catch (Exception ex)
         {
-            logger.error("Exception in method InventoryRepository/manyToMany_InventoryId_FileId." , ex);
+            logger.error("Exception in method ReturnRepository/manyToMany_ReturnId_FileId." , ex);
             ex.printStackTrace();
             return false;
         }
     }
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
-    public List<FilesInventoryJSON> getListOfInventoryFiles(Long inventoryId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(27L, "336,337,338,339"))//Просмотр документов
+    public List<FilesReturnJSON> getListOfReturnFiles(Long returnId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
@@ -1007,23 +1130,23 @@ public class InventoryRepository {
                     "           f.name as name," +
                     "           f.original_name as original_name" +
                     "           from" +
-                    "           inventory p" +
+                    "           return p" +
                     "           inner join" +
-                    "           inventory_files pf" +
-                    "           on p.id=pf.inventory_id" +
+                    "           return_files pf" +
+                    "           on p.id=pf.return_id" +
                     "           inner join" +
                     "           files f" +
                     "           on pf.file_id=f.id" +
                     "           where" +
-                    "           p.id= " + inventoryId +
+                    "           p.id= " + returnId +
                     "           and p.master_id=" + myMasterId +
                     "           and f.trash is not true"+
                     "           and p.master_id= " + myMasterId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(27L, "336")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(28L, "352")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(27L, "337")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(28L, "353")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(27L, "338")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(28L, "354")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -1038,9 +1161,9 @@ public class InventoryRepository {
 
                 List<Object[]> queryList = query.getResultList();
 
-                List<FilesInventoryJSON> returnList = new ArrayList<>();
+                List<FilesReturnJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    FilesInventoryJSON doc=new FilesInventoryJSON();
+                    FilesReturnJSON doc=new FilesReturnJSON();
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setDate_time_created((Timestamp)                    obj[1]);
                     doc.setName((String)                                    obj[2]);
@@ -1050,7 +1173,7 @@ public class InventoryRepository {
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getListOfInventoryFiles. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getListOfReturnFiles. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -1058,30 +1181,30 @@ public class InventoryRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteInventoryFile(SearchForm request)
+    public boolean deleteReturnFile(SearchForm request)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory", String.valueOf(request.getAny_id()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(28L,"356") && securityRepositoryJPA.isItAllMyMastersDocuments("return", String.valueOf(request.getAny_id()))) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"341") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("inventory",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"357") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"342") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"358") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",String.valueOf(request.getAny_id()))))
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"359") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
-            stringQuery  =  " delete from inventory_files "+
-                    " where inventory_id=" + request.getAny_id()+
+            stringQuery  =  " delete from return_files "+
+                    " where return_id=" + request.getAny_id()+
                     " and file_id="+request.getId()+
-                    " and (select master_id from inventory where id="+request.getAny_id()+")="+myMasterId ;
+                    " and (select master_id from return where id="+request.getAny_id()+")="+myMasterId ;
             try
             {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }
             catch (Exception e) {
-                logger.error("Exception in method InventoryRepository/deleteInventoryFile. stringQuery=" + stringQuery, e);
+                logger.error("Exception in method ReturnRepository/deleteReturnFile. stringQuery=" + stringQuery, e);
                 e.printStackTrace();
                 return false;
             }

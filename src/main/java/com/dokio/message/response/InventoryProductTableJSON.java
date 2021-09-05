@@ -25,6 +25,15 @@ public class InventoryProductTableJSON {
     private BigDecimal  actual_balance;              // кол-во товара фактическое (по ручному пересчёту товара в магазине)
     private String      edizm;                       // наименование единицы измерения товара
     private BigDecimal  product_price;               // цена товара (может быть разная - закупочная, себестоимость, одна из типов цен)
+    private Boolean     indivisible;                 // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getId() {
         return id;

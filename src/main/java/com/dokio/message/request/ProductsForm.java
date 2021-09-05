@@ -45,7 +45,16 @@ public class ProductsForm {
     private Long product_code_free;
     private boolean not_buy;
     private boolean not_sell;
+    private boolean indivisible;
 
+
+    public boolean isIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getId() {
         return id;

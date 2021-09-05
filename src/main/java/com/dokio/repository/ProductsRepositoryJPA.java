@@ -25,11 +25,14 @@ import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class ProductsRepositoryJPA {
@@ -55,6 +58,14 @@ public class ProductsRepositoryJPA {
     // Инициализация логера
     private static final Logger logger = Logger.getLogger(ProductsRepositoryJPA.class);
 
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("docName","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     @SuppressWarnings("Duplicates")
     public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId) {
@@ -218,6 +229,7 @@ public class ProductsRepositoryJPA {
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.description as description, " +
                     "           coalesce(p.not_buy, false) as not_buy, " +
+                    "           coalesce(p.indivisible, false) as indivisible, " +
                     "           coalesce(p.not_sell, false) as not_sell " +
 
                     "           from products p " +
@@ -437,10 +449,12 @@ public class ProductsRepositoryJPA {
                     SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
                     product.setMarkable_group(ed);
                 }
-                //не закупаемый товар (Boolean)
+                // не закупаемый товар (Boolean)
                 product.setNot_buy(request.isNot_buy());
-                //снятый с продажи товар (Boolean)
+                // снятый с продажи товар (Boolean)
                 product.setNot_sell(request.isNot_sell());
+                // неделимый товар (Boolean)
+                product.setIndivisible(request.isIndivisible());
 
                 User changer = userService.getUserByUsername(userService.getUserName());
                 product.setChanger(changer);//кто изменил
@@ -603,6 +617,8 @@ public class ProductsRepositoryJPA {
                     }
                     //не закупаемый товар (Boolean)
                     newDocument.setNot_buy(request.isNot_buy());
+                    //неделимый товар (Boolean)
+                    newDocument.setIndivisible(request.isIndivisible());
                     //товар снят с продажи (Boolean)
                     newDocument.setNot_sell(request.isNot_sell());
 
@@ -638,7 +654,7 @@ public class ProductsRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public List<ProductHistoryJSON> getProductHistoryTable(Long companyId, String departmentId, Long productId, String dateFrom, String dateTo, String sortColumn, String sortAsc, int result, String dockTypesIds, int offsetreal) {
+    public List<ProductHistoryJSON> getProductHistoryTable(Long companyId, Long departmentId, Long productId, String dateFrom, String dateTo, String sortColumn, String sortAsc, int result, List<Long> dockTypesIds, int offsetreal) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))// Просмотр по (всем,своим) предприятиям
         {
             String stringQuery;
@@ -664,39 +680,53 @@ public class ProductsRepositoryJPA {
                     "           INNER JOIN departments dep ON p.department_id=dep.id " +
                     "           INNER JOIN documents doc ON p.doc_type_id=doc.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and  p.doc_type_id in (" + dockTypesIds + ")" +
-                    "           and  p.department_id in (" + departmentId + ")" +
+                    "           and  p.doc_type_id in ("+commonUtilites.ListOfLongToString(dockTypesIds,",","","")+")" +
+                    (departmentId!=0?(" and  p.department_id = "+departmentId):"") +
                     "           and  p.product_id = " + productId +
-                    "           and p.date_time_created >=to_date('" + dateFrom + "','DD.MM.YYYY')" +
-                    "           and p.date_time_created <=to_date('" + dateTo + "','DD.MM.YYYY')";
+                    "           and p.date_time_created at time zone '" + myTimeZone + "' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')" +
+                    "           and p.date_time_created at time zone '" + myTimeZone + "' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
             { //остается только на своё предприятие (168)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            Query query = entityManager.createNativeQuery(stringQuery)
-                    .setFirstResult(offsetreal)
-                    .setMaxResults(result);
-            List<Object[]> queryList = query.getResultList();
-            List<ProductHistoryJSON> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                ProductHistoryJSON doc = new ProductHistoryJSON();
-
-                doc.setId(Long.parseLong(obj[0].toString()));
-                doc.setDepartment((String) obj[1]);
-                doc.setDate_time_created((String) obj[2]);
-                doc.setDocName((String) obj[3]);
-                doc.setDocId(Long.parseLong(obj[4].toString()));
-                doc.setDocTypeId((Integer) obj[5]);
-                doc.setQuantity((BigDecimal) obj[6]);
-                doc.setChange((BigDecimal) obj[7]);
-                doc.setLast_purchase_price((BigDecimal) obj[8]);
-                doc.setAvg_purchase_price((BigDecimal) obj[9]);
-                doc.setAvg_netcost_price((BigDecimal) obj[10]);
-                doc.setLast_operation_price((BigDecimal) obj[11]);
-                returnList.add(doc);
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
             }
-            return returnList;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery)
+                        .setFirstResult(offsetreal)
+                        .setMaxResults(result);
+
+                query.setParameter("dateFrom",dateFrom);
+                query.setParameter("dateTo",dateTo);
+
+                List<Object[]> queryList = query.getResultList();
+                List<ProductHistoryJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    ProductHistoryJSON doc = new ProductHistoryJSON();
+
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setDepartment((String) obj[1]);
+                    doc.setDate_time_created((String) obj[2]);
+                    doc.setDocName((String) obj[3]);
+                    doc.setDocId(Long.parseLong(obj[4].toString()));
+                    doc.setDocTypeId((Integer) obj[5]);
+                    doc.setQuantity((BigDecimal) obj[6]);
+                    doc.setChange((BigDecimal) obj[7]);
+                    doc.setLast_purchase_price((BigDecimal) obj[8]);
+                    doc.setAvg_purchase_price((BigDecimal) obj[9]);
+                    doc.setAvg_netcost_price((BigDecimal) obj[10]);
+                    doc.setLast_operation_price((BigDecimal) obj[11]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                logger.error("Exception in method ProductsRepositoryJPA/getProductHistoryTable . SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
         } else return null;
     }
 
@@ -839,6 +869,8 @@ public class ProductsRepositoryJPA {
             newDocument.setNot_buy(response.getNot_buy());
             //товар снят с продажи
             newDocument.setNot_sell(response.getNot_sell());
+            //неделимый товар
+            newDocument.setIndivisible(response.getIndivisible());
 
             newDocument.setProductCategories(response.getProductCategories());
 
@@ -942,7 +974,8 @@ public class ProductsRepositoryJPA {
                 "   where " +
                 "   product_id=p.id"+
                 "   and department_id=" + departmentId +
-                "   and customers_orders_id="+document_id+") as reserved_current "+
+                "   and customers_orders_id="+document_id+") as reserved_current, "+
+                " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -979,6 +1012,7 @@ public class ProductsRepositoryJPA {
                 product.setPpr_name_api_atol((String)                       obj[9]);
                 product.setIs_material((Boolean)                            obj[10]);
                 product.setReserved_current(                                obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+                product.setIndivisible((Boolean)                            obj[12]);
                 returnList.add(product);
             }
             return returnList;
@@ -1183,6 +1217,23 @@ public class ProductsRepositoryJPA {
     }
 
 
+    //возвращает сет всех id категорий от id товара
+    @SuppressWarnings("Duplicates")
+    private Set<Long> getProductCategoriesIds(Long productId) {
+        String stringQuery="    SELECT category_id FROM product_productcategories WHERE product_id = " + productId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            Set<Long> catIds = new HashSet<>();
+            for (Object i : query.getResultList()) {
+                catIds.add(new Long(i.toString()));
+            }
+            return catIds;
+        }catch (Exception e) {
+            logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     //возвращает сет всех id дочерних категорий от id категории
     @SuppressWarnings("Duplicates")
@@ -1443,52 +1494,6 @@ public class ProductsRepositoryJPA {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-    public ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
-    {
-        String stringQuery;
-        stringQuery =
-                " select                                        "+
-                        " last_purchase_price   as last_purchase_price, "+
-                        " avg_purchase_price    as avg_purchase_price,  "+
-                        " avg_netcost_price     as avg_netcost_price,   "+
-                        " last_operation_price  as last_operation_price,"+
-                        " quantity              as quantity,            "+
-                        " change                as change               "+
-                        "          from products_history                "+
-                        "          where                                "+
-                        "          product_id="+product_id+" and        "+
-                        "          department_id="+department_id         +
-                        "          order by id desc limit 1             ";
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-
-            ProductHistoryJSON returnObj=new ProductHistoryJSON();
-            if(queryList.size()==0){//если записей истории по данному товару ещё нет
-                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
-                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-                returnObj.setLast_operation_price(      (new BigDecimal(0)));
-                returnObj.setQuantity(                  (new BigDecimal(0)));
-            }else {
-                for (Object[] obj : queryList) {
-                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                    returnObj.setQuantity((BigDecimal)              obj[4]);
-                }
-            }
-            return returnObj;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method getLastProductHistoryRecord. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return null;
-        }
-    }
     @SuppressWarnings("Duplicates")
     //отдает список отделений в виде их Id с зарезервированным количеством и общим количеством товара в отделении
     public List<IdAndCount> getProductCount(Long product_id, Long company_id, Long document_id) {
@@ -1629,9 +1634,9 @@ public class ProductsRepositoryJPA {
     public List<ProductsInfoListJSON> getProductsInfoListByIds( ProductsInfoListForm request) {
         Long        companyId=request.getCompanyId();
         Long        departmentId=request.getDepartmentId();
-        Long        priceTypeId=request.getPriceTypeId();
+//        Long        priceTypeId=request.getPriceTypeId();
         Long        myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String      reportOn=request.getReportOn();            // по категориям или по товарам/услугам (categories, products)
+//        String      reportOn=request.getReportOn();            // по категориям или по товарам/услугам (categories, products)
         List<Long>  reportOnIds=request.getReportOnIds();     // id категорий или товаров/услуг (того, что выбрано в reportOn)
         String ids =commonUtilites.ListOfLongToString(reportOnIds,",","","");
 
@@ -1649,20 +1654,28 @@ public class ProductsRepositoryJPA {
                 // средняя закупочная цена
                 "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
                 // последняя закупочная цена
-                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice " +
+                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice, " +
+                //всего на складе (т.е остаток)
+                "           coalesce((select quantity from product_quantity where product_id = p.id and department_id = " + departmentId + "),0) as remains, " +
+                // id ставки НДС
+                "           p.nds_id as nds_id," +
+                // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                " p.indivisible as indivisible" +
+
                 " from products p " +
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
 //                (priceTypeId>0?" left outer join product_prices pp on pp.product_id=p.id":"")   +
                 " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
                 " where  p.master_id=" + myMasterId;
 
-                //        нужно запросить все айдишники подкатегорий у присланных id родительских категорий
-                Set<Long> childCategories = getProductCategoriesChildIds(request.getReportOnIds());
-                String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
+
 
                 if (request.getReportOn().equals("products"))
                     stringQuery = stringQuery + " and p.id in (" + ids + ")";
                 if (request.getReportOn().equals("categories")) {
+                    //  необходимо запросить все айдишники подкатегорий у присланных id родительских категорий
+                    Set<Long> childCategories = getProductCategoriesChildIds(request.getReportOnIds());
+                    String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
                     stringQuery = stringQuery + " and p.id in (select ppc.product_id from product_productcategories ppc where ppc.category_id in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
                 }
 
@@ -1689,6 +1702,9 @@ public class ProductsRepositoryJPA {
                 product.setAvgCostPrice(                                    obj[5]==null?BigDecimal.ZERO:(BigDecimal)obj[5]);
                 product.setAvgPurchasePrice(                                obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
                 product.setLastPurchasePrice(                               obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
+                product.setRemains(                                         obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
+                product.setNds_id((Integer)                                 obj[9]);
+                product.setIndivisible((Boolean)                            obj[10]);
                 returnList.add(product);
             }
             return returnList;
@@ -2478,7 +2494,58 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    //*****************************************************************************************************************************************************
+//***************************************************      UTILS      *********************************************************************************
+//*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
+    public ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
+    {
+        String stringQuery;
+        stringQuery =
+                " select                                        "+
+                        " last_purchase_price   as last_purchase_price, "+
+                        " avg_purchase_price    as avg_purchase_price,  "+
+                        " avg_netcost_price     as avg_netcost_price,   "+
+                        " last_operation_price  as last_operation_price,"+
+                        " quantity              as quantity,            "+
+                        " change                as change               "+
+                        "          from products_history                "+
+                        "          where                                "+
+                        "          product_id="+product_id+" and        "+
+                        "          department_id="+department_id         +
+                        "          order by id desc limit 1             ";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            ProductHistoryJSON returnObj=new ProductHistoryJSON();
+            if(queryList.size()==0){//если записей истории по данному товару ещё нет
+                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
+                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
+                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
+                returnObj.setLast_operation_price(      (new BigDecimal(0)));
+                returnObj.setQuantity(                  (new BigDecimal(0)));
+            }else {
+                for (Object[] obj : queryList) {
+                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
+                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
+                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
+                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
+                    returnObj.setQuantity((BigDecimal)              obj[4]);
+                }
+            }
+            return returnObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getLastProductHistoryRecord. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")  // возвращает кол-во из последней строки истории изменений товара
     private BigDecimal getLastProductHistoryQuantity(Long product_id, Long department_id)
     {
         String stringQuery;
@@ -2512,4 +2579,82 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds, Boolean save) {
+        try{
+            String products = commonUtilites.SetOfLongToString(productsIds, ",", "", "");
+            //поверка на то, что присланные id товаров действительно являются товарами мастер-аккаунта
+            if (securityRepositoryJPA.isItAllMyMastersDocuments("products", products)) {
+                if (!save) {//если не нужно сохранять те категории у товара, которые уже есть
+                    //удаляем все категории у всех запрашиваемых товаров
+                    if (deleteAllProductsCategories(products)) {
+                        //назначаем товарам категории
+                        if(setCategoriesToProducts(productsIds,categoriesIds))
+                            return true;
+                        else return null; // ошибка на прописывании категорий у товаров
+                    } else return null; // ошибка на стадии удаления категорий товаров в deleteAllProductsCategories
+                } else {//нужно сохранить предыдущие категории у товаров. Тут уже сложнее - нужно отдельно работать с каждым товаром
+                    //цикл по товарам
+                    for (Long p : productsIds) {
+                        //получим уже имеющиеся категории у текущего товара
+                        Set<Long> productCategoriesIds=getProductCategoriesIds(p);
+                        //дополним их новыми категориями
+                        if (productCategoriesIds != null) {
+                            productCategoriesIds.addAll(categoriesIds);
+                        }
+                        //удалим старые категории
+                        if (deleteAllProductsCategories(p.toString())) {
+                            Set<Long> prod = new HashSet<>();
+                            prod.add(p);
+                            //назначаем текущему товару категории
+                            if(!setCategoriesToProducts(prod,productCategoriesIds))
+                                return null; // ошибка на прописывании категорий у товара
+                        } else return null; // ошибка на стадии удаления категорий текущего товара в deleteAllProductsCategories
+                    }
+                    return true;
+                }
+            } else return null; // не прошли по безопасности - подсунуты "левые" id товаров
+        } catch (Exception e) {
+            logger.error("Exception in method setCategoriesToProducts", e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds) throws Exception {
+        if(categoriesIds.size()>0) {//если категории есть
+            //прописываем их у всех запрашиваемых товаров
+            StringBuilder stringQuery = new StringBuilder("insert into product_productcategories (product_id, category_id) values ");
+            int i = 0;
+            for (Long p : productsIds) {
+                for (Long c : categoriesIds) {
+                    stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
+                    i++;
+                }
+            }
+            try {
+                entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
+                return true;
+            } catch (Exception e) {
+                logger.error("Exception in method setCategoriesToProducts. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
+        } else return true;
+    }
+
+    private Boolean deleteAllProductsCategories(String products) throws Exception {
+        String stringQuery = "delete from product_productcategories where product_id in("+products+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAllProductsCategories. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 }
+

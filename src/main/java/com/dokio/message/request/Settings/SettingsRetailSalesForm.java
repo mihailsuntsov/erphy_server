@@ -16,20 +16,38 @@ import java.math.BigDecimal;
 
 public class SettingsRetailSalesForm {
 
-    private Long        companyId; //id предприятия
-    private Long        departmentId; //id отделения
-    private Long        customerId; //id покупателя
-    private String      pricingType; //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
-    private Long        priceTypeId;//тип цены из справочника Типы цен
-    private BigDecimal  changePrice; //наценка/скидка в цифре (например, 50)
-    private String      plusMinus; //определяте что есть changePrice - наценка или скидка (plus или minus)
-    private String      changePriceType;// тип наценки/скидки (валюта currency или проценты procents)
-    private Boolean     hideTenths;//убирать десятые (копейки)
-    private Boolean     saveSettings;//сохранять настройки (флажок "Сохранить настройки" будет установлен)
-    private String      priorityTypePriceSide; // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-    private String      name;// наименование заказа
-    private Boolean     autocreateOnCheque; //автосоздание нового документа, если в текущем успешно напечатан чек
-    private Long        statusIdOnAutocreateOnCheque;//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+    private Long        companyId;                      // id предприятия
+    private Long        departmentId;                   // id отделения
+    private Long        customerId;                     // id покупателя
+    private String      pricingType;                    // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+    private Long        priceTypeId;                    // тип цены из справочника Типы цен
+    private BigDecimal  changePrice;                    // наценка/скидка в цифре (например, 50)
+    private String      plusMinus;                      // определяте что есть changePrice - наценка или скидка (plus или minus)
+    private String      changePriceType;                // тип наценки/скидки (валюта currency или проценты procents)
+    private Boolean     hideTenths;                     // убирать десятые (копейки)
+    private Boolean     saveSettings;                   // сохранять настройки (флажок "Сохранить настройки" будет установлен)
+    private String      priorityTypePriceSide;          // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
+    private String      name;                           // наименование заказа
+    private Boolean     autocreateOnCheque;             // автосоздание нового документа, если в текущем успешно напечатан чек
+    private Long        statusIdOnAutocreateOnCheque;   // Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+    private Boolean     showKkm;                        // показывать модуль ККМ
+    private Boolean     autoAdd;                        // автодобавление
+
+    public Boolean getAutoAdd() {
+        return autoAdd;
+    }
+
+    public void setAutoAdd(Boolean autoAdd) {
+        this.autoAdd = autoAdd;
+    }
+
+    public Boolean getShowKkm() {
+        return showKkm;
+    }
+
+    public void setShowKkm(Boolean showKkm) {
+        this.showKkm = showKkm;
+    }
 
     public Long getCompanyId() {
         return companyId;

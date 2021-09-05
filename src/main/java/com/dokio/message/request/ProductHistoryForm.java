@@ -14,18 +14,20 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.request;
 
+import java.util.List;
+
 public class ProductHistoryForm {
 
-    private Long    companyId; //id предприятия
-    private String  departmentId;//стринг т.к. может быть как номер, так и строка номеров через запятую
-    private Long    productId;  // id товара
-    private String  dateFrom; //с даты
-    private String  dateTo; //по дату;
-    private String  sortColumn;//колонка сортировки
-    private String  offset;//с какой строки (по умолчанию 0)
-    private String  sortAsc; // asc/desc
-    private String  result;//количество строк
-    private String  dockTypesIds;//строка с id типов документов из таблицы documents
+    private Long        companyId; //id предприятия
+    private Long        departmentId;//стринг т.к. может быть как номер, так и строка номеров через запятую
+    private Long        productId;  // id товара
+    private String      dateFrom; //с даты
+    private String      dateTo; //по дату;
+    private String      sortColumn;//колонка сортировки
+    private String      offset;//с какой строки (по умолчанию 0)
+    private String      sortAsc; // asc/desc
+    private String      result;//количество строк
+    private List<Long>  dockTypesIds;//id типов документов из таблицы documents
 
     public Long getCompanyId() {
         return companyId;
@@ -35,11 +37,11 @@ public class ProductHistoryForm {
         this.companyId = companyId;
     }
 
-    public String getDepartmentId() {
+    public Long getDepartmentId() {
         return departmentId;
     }
 
-    public void setDepartmentId(String departmentId) {
+    public void setDepartmentId(Long departmentId) {
         this.departmentId = departmentId;
     }
 
@@ -99,11 +101,11 @@ public class ProductHistoryForm {
         this.result = result;
     }
 
-    public String getDockTypesIds() {
+    public List<Long> getDockTypesIds() {
         return dockTypesIds;
     }
 
-    public void setDockTypesIds(String dockTypesIds) {
+    public void setDockTypesIds(List<Long> dockTypesIds) {
         this.dockTypesIds = dockTypesIds;
     }
 

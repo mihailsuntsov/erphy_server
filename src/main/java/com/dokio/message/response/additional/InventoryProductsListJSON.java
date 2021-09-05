@@ -20,11 +20,21 @@ public class InventoryProductsListJSON {
     private String      name;                // наименование товара
     private String      edizm;               // наименование ед. измерения товара
     private String      filename;            // картинка товара
-    private BigDecimal  estimated_balance;   // фактическое кол-во товара в отделении
+    private BigDecimal  estimated_balance;   // расчётное кол-во товара в отделении
     private BigDecimal  priceOfTypePrice;    // цена по запрошенному id типа цены
     private BigDecimal  avgCostPrice;        // средняя себестоимость
     private BigDecimal  lastPurchasePrice;   // последняя закупочная цена
     private BigDecimal  avgPurchasePrice ;   // средняя закупочная цена
+    private BigDecimal  remains;             // остаток на складе (для инвенторизации не нужен, но нужен в других, например в возвратах)
+    private Boolean     indivisible;         // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getProduct_id() {
         return product_id;
@@ -32,6 +42,14 @@ public class InventoryProductsListJSON {
 
     public void setProduct_id(Long product_id) {
         this.product_id = product_id;
+    }
+
+    public BigDecimal getRemains() {
+        return remains;
+    }
+
+    public void setRemains(BigDecimal remains) {
+        this.remains = remains;
     }
 
     public String getName() {

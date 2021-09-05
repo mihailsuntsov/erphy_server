@@ -237,7 +237,6 @@ public class WriteoffController {
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteWriteoff(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path api/auth/deleteWriteoff: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
         Boolean result=writeoffRepositoryJPA.deleteWriteoff(checked);
         if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка

@@ -63,6 +63,7 @@ public class ProductsJSON {
     private String      product_code_free;
     private Boolean     not_buy;
     private Boolean     not_sell;
+    private Boolean     indivisible;
 
     public Long getId() {
         return id;
@@ -82,6 +83,14 @@ public class ProductsJSON {
 
     public void setProduct_categories_id(List<Integer> product_categories_id) {
         this.product_categories_id = product_categories_id;
+    }
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
     }
 
     public Boolean getNot_sell() {
