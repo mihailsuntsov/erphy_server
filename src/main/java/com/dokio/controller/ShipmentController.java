@@ -16,7 +16,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.ShipmentJSON;
-import com.dokio.message.response.FilesShipmentJSON;
+import com.dokio.message.response.additional.FilesShipmentJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;

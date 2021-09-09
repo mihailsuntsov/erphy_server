@@ -1,20 +1,11 @@
 package com.dokio.message.request.Settings;
 
-public class SettingsReturnForm {
+public class SettingsReturnsupForm {
 
     private Long        companyId;              // id предприятия
     private Long        departmentId;           // id отделения
     private Long        statusOnFinishId;       // статус документа при завершении
     private Boolean     autoAdd;                // автодобавление товара из формы поиска в таблицу
-    private Boolean     showKkm;                // показывать модуль ККМ
-
-    public Boolean getShowKkm() {
-        return showKkm;
-    }
-
-    public void setShowKkm(Boolean showKkm) {
-        this.showKkm = showKkm;
-    }
 
     public Long getCompanyId() {
         return companyId;

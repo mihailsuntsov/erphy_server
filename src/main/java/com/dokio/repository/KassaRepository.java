@@ -17,6 +17,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.KassaCashierSettingsForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.KassaCashierSettingsJSON;
+import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;

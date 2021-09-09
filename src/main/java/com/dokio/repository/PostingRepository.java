@@ -19,7 +19,7 @@ import com.dokio.message.request.PostingProductForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PostingJSON;
-import com.dokio.message.response.FilesPostingJSON;
+import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;

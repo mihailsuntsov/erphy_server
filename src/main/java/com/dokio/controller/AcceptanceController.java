@@ -16,7 +16,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.AcceptanceJSON;
-import com.dokio.message.response.FilesAcceptanceJSON;
+import com.dokio.message.response.additional.FilesAcceptanceJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
@@ -28,7 +28,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

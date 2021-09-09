@@ -13,11 +13,11 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsReturnForm;
-import com.dokio.message.response.additional.FilesReturnJSON;
-import com.dokio.message.response.ReturnJSON;
-import com.dokio.message.response.ReturnProductTableJSON;
-import com.dokio.message.response.Settings.SettingsReturnJSON;
+import com.dokio.message.request.Settings.SettingsReturnsupForm;
+import com.dokio.message.response.additional.FilesReturnsupJSON;
+import com.dokio.message.response.ReturnsupJSON;
+import com.dokio.message.response.ReturnsupProductTableJSON;
+import com.dokio.message.response.Settings.SettingsReturnsupJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
 import org.apache.log4j.Logger;
@@ -31,19 +31,19 @@ import java.util.List;
 import java.util.Objects;
 
 @Controller
-public class ReturnController {
+public class ReturnsupController {
 
 
-    Logger logger = Logger.getLogger("ReturnController");
+    Logger logger = Logger.getLogger("ReturnsupController");
 
     @Autowired
-    ReturnRepository returnRepository;
+    ReturnsupRepository returnsupRepository;
 
 
-    @PostMapping("/api/auth/getReturnTable")
+    @PostMapping("/api/auth/getReturnsupTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getReturnTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getReturnTable: " + searchRequest.toString());
+    public ResponseEntity<?> getReturnsupTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getReturnsupTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -52,7 +52,7 @@ public class ReturnController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<ReturnJSON> returnList;
+        List<ReturnsupJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -81,21 +81,21 @@ public class ReturnController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = returnRepository.getReturnTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = returnsupRepository.getReturnsupTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getReturnProductTable",
+            value = "/api/auth/getReturnsupProductTable",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getReturnProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getReturnProductTable with Return id=" + docId.toString());
-        List<ReturnProductTableJSON> returnList;
+    public ResponseEntity<?> getReturnsupProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getReturnsupProductTable with Returnsup id=" + docId.toString());
+        List<ReturnsupProductTableJSON> returnList;
         try {
-            returnList = returnRepository.getReturnProductTable(docId);
+            returnList = returnsupRepository.getReturnsupProductTable(docId);
             return  new ResponseEntity<>(returnList, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -104,10 +104,10 @@ public class ReturnController {
         }
     }
 
-    @PostMapping("/api/auth/getReturnPagesList")
+    @PostMapping("/api/auth/getReturnsupPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getReturnPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getReturnPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getReturnsupPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getReturnsupPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -129,7 +129,7 @@ public class ReturnController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = returnRepository.getReturnSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = returnsupRepository.getReturnsupSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -175,12 +175,12 @@ public class ReturnController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertReturn")
+    @PostMapping("/api/auth/insertReturnsup")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertReturn(@RequestBody ReturnForm request) {
-        logger.info("Processing post request for path /api/auth/insertReturn: " + request.toString());
+    public ResponseEntity<?> insertReturnsup(@RequestBody ReturnsupForm request) {
+        logger.info("Processing post request for path /api/auth/insertReturnsup: " + request.toString());
 
-        Long newDocument = returnRepository.insertReturn(request);
+        Long newDocument = returnsupRepository.insertReturnsup(request);
         if(newDocument!=null){//вернет id созданного документа либо 0, если недостаточно прав
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
@@ -189,34 +189,34 @@ public class ReturnController {
     }
 
     @RequestMapping(
-            value = "/api/auth/getReturnValuesById",
+            value = "/api/auth/getReturnsupValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getReturnValuesById(
+    public ResponseEntity<?> getReturnsupValuesById(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/getReturnValuesById with parameters: " + "id: " + id);
-        ReturnJSON response;
+        logger.info("Processing get request for path /api/auth/getReturnsupValuesById with parameters: " + "id: " + id);
+        ReturnsupJSON response;
         try {
-            response=returnRepository.getReturnValuesById(id);
+            response=returnsupRepository.getReturnsupValuesById(id);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
-            logger.error("Exception in method getReturnValuesById. id = " + id, e);
+            logger.error("Exception in method getReturnsupValuesById. id = " + id, e);
             e.printStackTrace();
             return new ResponseEntity<>("Ошибка загрузки значений документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(
-            value = "/api/auth/getReturnLinkedDocsList",
+            value = "/api/auth/getReturnsupLinkedDocsList",
             params = {"id","docName"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getReturnLinkedDocsList(
+    public ResponseEntity<?> getReturnsupLinkedDocsList(
             @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
-        logger.info("Processing get request for path api/auth/getReturnLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+        logger.info("Processing get request for path api/auth/getReturnsupLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
         List<LinkedDocsJSON> returnList;
-        returnList = returnRepository.getReturnLinkedDocsList(id,docName);
+        returnList = returnsupRepository.getReturnsupLinkedDocsList(id,docName);
         if(!Objects.isNull(returnList)){
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } else {
@@ -224,54 +224,56 @@ public class ReturnController {
         }
     }
 
-    @PostMapping("/api/auth/updateReturn")
-    public ResponseEntity<?> updateReturn(@RequestBody ReturnForm request){
-        logger.info("Processing post request for path /api/auth/updateReturn: " + request.toString());
-        Boolean updateResults = returnRepository.updateReturn(request);
-        if(updateResults){
-            return new ResponseEntity<>(updateResults, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping("/api/auth/updateReturnsup")
+    public ResponseEntity<?> updateReturnsup(@RequestBody ReturnsupForm request){
+        logger.info("Processing post request for path /api/auth/updateReturnsup: " + request.toString());
+//        Integer result=returnsupRepository.updateReturnsup(request);
+        return new ResponseEntity<>(returnsupRepository.updateReturnsup(request), HttpStatus.OK);//return 1 = все ок, 0 = не достаточное кол-во товаров для списания со склада, -1 = недостаточно прав
+
+//        if(!Objects.isNull(result)){
+//            return new ResponseEntity<>(result, HttpStatus.OK);//return 1 = все ок, 0 = не достаточное кол-во товаров для списания со склада, -1 = недостаточно прав
+//        } else {
+//            return new ResponseEntity<>("Ошибка сохранения либо завершения Возврата поставщику", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
     }
 
-    @PostMapping("/api/auth/saveSettingsReturn")
+    @PostMapping("/api/auth/saveSettingsReturnsup")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsReturn(@RequestBody SettingsReturnForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsReturn: " + request.toString());
+    public ResponseEntity<?> saveSettingsReturnsup(@RequestBody SettingsReturnsupForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsReturnsup: " + request.toString());
 
-        if(returnRepository.saveSettingsReturn(request)){
+        if(returnsupRepository.saveSettingsReturnsup(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Возврат поставщику", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSettingsReturn",
+            value = "/api/auth/getSettingsReturnsup",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsReturn()
+    public ResponseEntity<?> getSettingsReturnsup()
     {
-        logger.info("Processing get request for path /api/auth/getSettingsReturn without request parameters");
-        SettingsReturnJSON response;
+        logger.info("Processing get request for path /api/auth/getSettingsReturnsup without request parameters");
+        SettingsReturnsupJSON response;
         try {
-            response=returnRepository.getSettingsReturn();
+            response=returnsupRepository.getSettingsReturnsup();
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
         catch (Exception e) {
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки настроек для документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа Возврат поставщику", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/deleteReturn")
+    @PostMapping("/api/auth/deleteReturnsup")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteReturn(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteReturn: " + request.toString());
+    public  ResponseEntity<?> deleteReturnsup(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteReturnsup: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        Boolean result=returnRepository.deleteReturn(checked);
+        Boolean result=returnsupRepository.deleteReturnsup(checked);
         if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
             return new ResponseEntity<>(result, HttpStatus.OK);
         } else {
@@ -279,13 +281,13 @@ public class ReturnController {
         }
     }
 
-    @PostMapping("/api/auth/undeleteReturn")
+    @PostMapping("/api/auth/undeleteReturnsup")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteReturn(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteReturn: " + request.toString());
+    public  ResponseEntity<?> undeleteReturnsup(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteReturnsup: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(returnRepository.undeleteReturn(checked)){
+        if(returnsupRepository.undeleteReturnsup(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
@@ -295,37 +297,37 @@ public class ReturnController {
     }
 
     @RequestMapping(
-            value = "/api/auth/getReturnProductsList",
+            value = "/api/auth/getReturnsupProductsList",
             params = {"searchString", "companyId", "departmentId"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getReturnProductsList(
+    public ResponseEntity<?> getReturnsupProductsList(
             @RequestParam("searchString")   String searchString,
             @RequestParam("companyId")      Long companyId,
             @RequestParam("departmentId")   Long departmentId)
     {
-        logger.info("Processing post request for path /api/auth/getReturnProductsList with parameters: " +
+        logger.info("Processing post request for path /api/auth/getReturnsupProductsList with parameters: " +
                 "  searchString: "  + searchString +
                 ", companyId: "     + companyId.toString() +
                 ", departmentId: "  + departmentId.toString());
         List returnList;
-        returnList = returnRepository.getReturnProductsList(searchString, companyId, departmentId);
+        returnList = returnsupRepository.getReturnsupProductsList(searchString, companyId, departmentId);
         return new ResponseEntity<>(returnList, HttpStatus.OK);
     }
 
     //удаление 1 строки из таблицы товаров
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/deleteReturnProductTableRow",
+            value = "/api/auth/deleteReturnsupProductTableRow",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/deleteReturnProductTableRow with parameters: " +
+        logger.info("Processing get request for path /api/auth/deleteReturnsupProductTableRow with parameters: " +
                 "id: " + id);
         boolean result;
         try {
-            result=returnRepository.deleteReturnProductTableRow(id);
+            result=returnsupRepository.deleteReturnsupProductTableRow(id);
             return new ResponseEntity<>(result, HttpStatus.OK);
         }
         catch (Exception e) {
@@ -334,26 +336,26 @@ public class ReturnController {
         }
     }
 
-    @PostMapping("/api/auth/getListOfReturnFiles")
+    @PostMapping("/api/auth/getListOfReturnsupFiles")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getListOfReturnFiles(@RequestBody SearchForm request)  {
-        logger.info("Processing post request for path api/auth/getListOfReturnFiles: " + request.toString());
+    public ResponseEntity<?> getListOfReturnsupFiles(@RequestBody SearchForm request)  {
+        logger.info("Processing post request for path api/auth/getListOfReturnsupFiles: " + request.toString());
 
         Long productId=Long.valueOf(request.getId());
-        List<FilesReturnJSON> returnList;
+        List<FilesReturnsupJSON> returnList;
         try {
-            returnList = returnRepository.getListOfReturnFiles(productId);
+            returnList = returnsupRepository.getListOfReturnsupFiles(productId);
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/deleteReturnFile")
-    public ResponseEntity<?> deleteReturnFile(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/deleteReturnFile: " + request.toString());
+    @PostMapping("/api/auth/deleteReturnsupFile")
+    public ResponseEntity<?> deleteReturnsupFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteReturnsupFile: " + request.toString());
 
-        if(returnRepository.deleteReturnFile(request)){
+        if(returnsupRepository.deleteReturnsupFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -361,11 +363,11 @@ public class ReturnController {
     }
 
     @SuppressWarnings("Duplicates")
-    @PostMapping("/api/auth/addFilesToReturn")
-    public ResponseEntity<?> addFilesToReturn(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path api/auth/addFilesToReturn: " + request.toString());
+    @PostMapping("/api/auth/addFilesToReturnsup")
+    public ResponseEntity<?> addFilesToReturnsup(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToReturnsup: " + request.toString());
 
-        if(returnRepository.addFilesToReturn(request)){
+        if(returnsupRepository.addFilesToReturnsup(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
@@ -374,7 +376,5 @@ public class ReturnController {
         }
     }
 }
-
-
 
 

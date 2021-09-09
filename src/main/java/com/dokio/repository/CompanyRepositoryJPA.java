@@ -18,7 +18,7 @@ import com.dokio.message.request.CompaniesPaymentAccountsForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.FileInfoJSON;
-import com.dokio.message.response.FilesCompaniesJSON;
+import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;

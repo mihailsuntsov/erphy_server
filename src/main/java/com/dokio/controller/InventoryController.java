@@ -14,7 +14,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInventoryForm;
-import com.dokio.message.response.FilesInventoryJSON;
+import com.dokio.message.response.additional.FilesInventoryJSON;
 import com.dokio.message.response.InventoryJSON;
 import com.dokio.message.response.InventoryProductTableJSON;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;

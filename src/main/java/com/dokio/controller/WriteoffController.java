@@ -16,7 +16,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.WriteoffJSON;
-import com.dokio.message.response.FilesWriteoffJSON;
+import com.dokio.message.response.additional.FilesWriteoffJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
@@ -227,7 +227,7 @@ public class WriteoffController {
         logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
         Integer result=writeoffRepositoryJPA.updateWriteoff(request);
         if(result!=null){
-            return new ResponseEntity<>(result, HttpStatus.OK);//либо 1 либо 0. 1 = все ок, 0 = не достаточное кол-во товаров для списания
+            return new ResponseEntity<>(result, HttpStatus.OK);//  1, null либо 0. 1 = все ок, 0 = не достаточное кол-во товаров для списания, null - ошибка
         } else {
             return new ResponseEntity<>("Ошибка сохранения либо завершения списания", HttpStatus.INTERNAL_SERVER_ERROR);
         }

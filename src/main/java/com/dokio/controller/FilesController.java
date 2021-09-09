@@ -16,6 +16,8 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.additional.FilesJSON;
+import com.dokio.message.response.additional.FilesTableJSON;
 import com.dokio.model.FileCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;

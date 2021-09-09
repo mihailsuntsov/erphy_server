@@ -124,4 +124,25 @@ public class CommonUtilites {
                 .collect(Collectors.joining(delimitter, prefix, suffix));
         return result;
     }
+
+    //есть ли запись с идентичной UID в таблице? UID используется, чтобы исключить дубли при создании документов с использованием медленного интернета, когда браузер может дублировать POST-запросы
+    public Boolean isDocumentUidUnical(String uid, String dockTableName){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        stringQuery = "" +
+                "select id from "+dockTableName+" where " +
+                " master_id="+myMasterId+
+                " and uid=:uid";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("uid",uid);
+            return !(query.getResultList().size()>0); // >0 - false, номер не уникальный, ==0 - true, уникальный
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isDocumentUidUnical. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return true;
+        }
+    }
 }

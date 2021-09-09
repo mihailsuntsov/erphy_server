@@ -557,138 +557,149 @@ public class RetailSalesRepository {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseOversellException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
     public Long insertRetailSales(RetailSalesForm request) {
-        EntityManager emgr = emf.createEntityManager();
-        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-        Long dockDepartment=request.getDepartment_id();
-        List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-        boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
-        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
-        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        if(commonUtilites.isDocumentUidUnical(request.getUid(), "retail_sales")){
+            EntityManager emgr = emf.createEntityManager();
+            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            Long dockDepartment=request.getDepartment_id();
+            List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
+            boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
+            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
+            Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
 
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        if ((//если есть право на создание по всем предприятиям, или
-                (securityRepositoryJPA.userHasPermissions_OR(25L, "309")) ||
-                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
-                //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
-                //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-                DocumentMasterId.equals(myMasterId))
-        {
-            String stringQuery;
-            Long myId = userRepository.getUserId();
-            Long newDockId;
-            Long doc_number;//номер документа( = номер заказа)
+            if ((//если есть право на создание по всем предприятиям, или
+                    (securityRepositoryJPA.userHasPermissions_OR(25L, "309")) ||
+                    //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                    (securityRepositoryJPA.userHasPermissions_OR(25L, "310") && myCompanyId.equals(request.getCompany_id())) ||
+                    //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
+                    (securityRepositoryJPA.userHasPermissions_OR(25L, "311") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
+                    //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                    DocumentMasterId.equals(myMasterId))
+            {
+                String stringQuery;
+                Long myId = userRepository.getUserId();
+                Long newDockId;
+                Long doc_number;//номер документа( = номер заказа)
 
-            //генерируем номер документа, если его (номера) нет
-            if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
-                doc_number=Long.valueOf(request.getDoc_number());
-            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"retail_sales");
+                //генерируем номер документа, если его (номера) нет
+                if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
+                    doc_number=Long.valueOf(request.getDoc_number());
+                } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"retail_sales");
 
-            //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
-            //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-            if(request.getCagent_id()==null){
-                try{
-                    CagentsForm cagentForm = new CagentsForm();
-                    cagentForm.setName(request.getNew_cagent());
-                    cagentForm.setCompany_id(request.getCompany_id());
-                    cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                    cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                    cagentForm.setDescription("Автоматическое создание из Розничной продажи №"+doc_number.toString());
-                    cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                    cagentForm.setTelephone("");
-                    cagentForm.setEmail("");
-                    cagentForm.setZip_code("");
-                    cagentForm.setCountry_id(null);
-                    cagentForm.setRegion_id(null);
-                    cagentForm.setCity_id(null);
-                    cagentForm.setStreet("");
-                    cagentForm.setHome("");
-                    cagentForm.setFlat("");
-                    cagentForm.setAdditional_address("");
-                    request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
+                //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
+                if(request.getCagent_id()==null){
+                    try{
+                        CagentsForm cagentForm = new CagentsForm();
+                        cagentForm.setName(request.getNew_cagent());
+                        cagentForm.setCompany_id(request.getCompany_id());
+                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+                        cagentForm.setDescription("Автоматическое создание из Розничной продажи №"+doc_number.toString());
+                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+                        cagentForm.setTelephone("");
+                        cagentForm.setEmail("");
+                        cagentForm.setZip_code("");
+                        cagentForm.setCountry_id(null);
+                        cagentForm.setRegion_id(null);
+                        cagentForm.setCity_id(null);
+                        cagentForm.setStreet("");
+                        cagentForm.setHome("");
+                        cagentForm.setFlat("");
+                        cagentForm.setAdditional_address("");
+                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                    }
+                    catch (Exception e) {
+                        logger.error("Exception in method insertRetailSales on creating Cagent.", e);
+                        e.printStackTrace();
+                        return null;
+                    }
                 }
-                catch (Exception e) {
-                    logger.error("Exception in method insertRetailSales on creating Cagent.", e);
+
+                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+                stringQuery =   "insert into retail_sales (" +
+                        " master_id," + //мастер-аккаунт
+                        " creator_id," + //создатель
+                        " company_id," + //предприятие, для которого создается документ
+                        " department_id," + //отделение, из(для) которого создается документ
+                        " cagent_id," +//контрагент
+                        " date_time_created," + //дата и время создания
+                        " doc_number," + //номер заказа
+                        " name," + //наименование заказа
+                        " description," +//доп. информация по заказу
+                        " nds," +// НДС
+                        " nds_included," +// НДС включен в цену
+                        " customers_orders_id, " + //родительский Заказ покупателя (если есть)
+                        " shift_id, " + // id смены
+                        " status_id,"+//статус заказа
+                        " uid"+// уникальный идентификатор документа, для предотвращения двойных созданий
+                        ") values ("+
+                        myMasterId + ", "+//мастер-аккаунт
+                        myId + ", "+ //создатель
+                        request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                        request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                        request.getCagent_id() + ", "+//контрагент
+                        "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                        doc_number + ", "+//номер заказа
+//                        "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+//                        "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                        ":name, "+
+                        ":description," +
+                        request.isNds() + ", "+// НДС
+                        request.isNds_included() + ", "+// НДС включен в цену
+                        request.getCustomers_orders_id() + ", "+
+                        request.getShift_id() + ", "+
+                        request.getStatus_id()  + ", "+//статус продажи
+                        ":uid)";// уникальный идентификатор документа, для предотвращения двойных созданий
+                try{
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name",request.getName());
+                    query.setParameter("description",request.getDescription());
+                    query.setParameter("uid",request.getUid());
+                    query.executeUpdate();
+                    stringQuery="select id from retail_sales where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                    Query query2 = entityManager.createNativeQuery(stringQuery);
+                    newDockId=Long.valueOf(query2.getSingleResult().toString());
+
+                    if(insertRetailSalesProducts(request, newDockId, myMasterId)){
+                        return newDockId;
+                    } else return null;
+
+
+                } catch (CantSaveProductQuantityException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertRetailSales on inserting into product_quantity cause error.", e);
+                    e.printStackTrace();
+                    return null;
+                } catch (CantInsertProductRowCauseErrorException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause error.", e);
+                    e.printStackTrace();
+                    return null;
+
+                } catch (CantInsertProductRowCauseOversellException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause oversell.", e);
+                    e.printStackTrace();
+                    return 0L;
+                } catch (CantSaveProductHistoryException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertRetailSales on inserting into products_history.", e);
+                    e.printStackTrace();
+                    return null;
+                } catch (Exception e) {
+                    logger.error("Exception in method " + e.getClass().getName() + " on inserting into retail_sales. SQL query:"+stringQuery, e);
                     e.printStackTrace();
                     return null;
                 }
-            }
-
-            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery =   "insert into retail_sales (" +
-                    " master_id," + //мастер-аккаунт
-                    " creator_id," + //создатель
-                    " company_id," + //предприятие, для которого создается документ
-                    " department_id," + //отделение, из(для) которого создается документ
-                    " cagent_id," +//контрагент
-                    " date_time_created," + //дата и время создания
-                    " doc_number," + //номер заказа
-                    " name," + //наименование заказа
-                    " description," +//доп. информация по заказу
-                    " nds," +// НДС
-                    " nds_included," +// НДС включен в цену
-                    " customers_orders_id, " + //родительский Заказ покупателя (если есть)
-                    " shift_id, " + // id смены
-                    " status_id"+//статус заказа
-                    ") values ("+
-                    myMasterId + ", "+//мастер-аккаунт
-                    myId + ", "+ //создатель
-                    request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
-                    request.getCagent_id() + ", "+//контрагент
-                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                    doc_number + ", "+//номер заказа
-                    "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                    "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
-                    request.isNds() + ", "+// НДС
-                    request.isNds_included() + ", "+// НДС включен в цену
-                    request.getCustomers_orders_id() + ", "+
-                    request.getShift_id() + ", "+
-                    request.getStatus_id() + ")";//статус продажи
-            try{
-                Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                stringQuery="select id from retail_sales where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
-                Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId=Long.valueOf(query2.getSingleResult().toString());
-
-                if(insertRetailSalesProducts(request, newDockId, myMasterId)){
-                    return newDockId;
-                } else return null;
-
-
-            } catch (CantSaveProductQuantityException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertRetailSales on inserting into product_quantity cause error.", e);
-                e.printStackTrace();
-                return null;
-            } catch (CantInsertProductRowCauseErrorException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause error.", e);
-                e.printStackTrace();
-                return null;
-
-            } catch (CantInsertProductRowCauseOversellException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause oversell.", e);
-                e.printStackTrace();
-                return 0L;
-            } catch (CantSaveProductHistoryException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertRetailSales on inserting into products_history.", e);
-                e.printStackTrace();
-                return null;
-            } catch (Exception e) {
-                logger.error("Exception in method " + e.getClass().getName() + " on inserting into retail_sales. SQL query:"+stringQuery, e);
-                e.printStackTrace();
+            } else {
                 return null;
             }
         } else {
+            logger.info("Double UUID found on insertRetailSales. UUID: " + request.getUid());
             return null;
         }
-
     }
 
     @SuppressWarnings("Duplicates")
@@ -743,14 +754,16 @@ public class RetailSalesRepository {
                 stringQuery =   " update retail_sales set " +
                         " changer_id = " + myId + ", "+
                         " date_time_changed= now()," +
-                        " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
-                        " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
+                        " description = :description, " +
+                        " name = :name, " +
                         " status_id = " + request.getStatus_id() +
                         " where " +
                         " id= "+request.getId();
                 try
                 {
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name",request.getName());
+                    query.setParameter("description",request.getDescription());
                     query.executeUpdate();
                     return true;
                 }catch (Exception e) {

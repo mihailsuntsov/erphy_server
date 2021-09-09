@@ -28,6 +28,7 @@ public class RetailSalesForm {
     private boolean nds;
     private boolean nds_included;
     private String description;
+    private String uid;
     //------------- таблица товаров -----------------
     private Set<RetailSalesProductTableForm> retailSalesProductTable;
 
@@ -141,5 +142,13 @@ public class RetailSalesForm {
 
     public void setRetailSalesProductTable(Set<RetailSalesProductTableForm> retailSalesProductTable) {
         this.retailSalesProductTable = retailSalesProductTable;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 }

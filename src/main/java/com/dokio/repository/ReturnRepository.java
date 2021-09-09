@@ -16,6 +16,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsReturnForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsReturnJSON;
+import com.dokio.message.response.additional.FilesReturnJSON;
 import com.dokio.message.response.additional.ReturnProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
@@ -477,10 +478,8 @@ public class ReturnRepository {
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
 
                 query.executeUpdate();
-                if(insertReturnProducts(request, request.getId(), myMasterId)){
-                    //если завершается возврат - запись в историю товара
-                    if(request.getIs_completed()){
-
+                if(insertReturnProducts(request, request.getId(), myMasterId)){//если сохранение товаров прошло успешно
+                    if(request.getIs_completed()){//если завершается возврат - запись в историю товара
                         for (ReturnProductTableForm row : request.getReturnProductTable()) {
                             Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
                             if (!addReturnProductHistory(row, request, myMasterId)) {//      запись в историю товара

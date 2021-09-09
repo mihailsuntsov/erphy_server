@@ -12,20 +12,24 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.message.response;
+package com.dokio.message.response.additional;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
+import javax.persistence.*;
 import java.sql.Timestamp;
 
-public class FilesWriteoffJSON {
+@Entity
+public class FilesProductImagesJSON {
+
+    @Id
     private Long id;
     private String name;
     private String original_name;
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Timestamp date_time_created;
+    private String output_order;
 
     public Long getId() {
         return id;
@@ -57,5 +61,13 @@ public class FilesWriteoffJSON {
 
     public void setDate_time_created(Timestamp date_time_created) {
         this.date_time_created = date_time_created;
+    }
+
+    public String getOutput_order() {
+        return output_order;
+    }
+
+    public void setOutput_order(String output_order) {
+        this.output_order = output_order;
     }
 }

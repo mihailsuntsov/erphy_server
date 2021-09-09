@@ -20,7 +20,7 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.WriteoffJSON;
-import com.dokio.message.response.FilesWriteoffJSON;
+import com.dokio.message.response.additional.FilesWriteoffJSON;
 import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
@@ -552,7 +552,7 @@ public class WriteoffRepositoryJPA {
                     return null;
                 } catch (CantInsertProductRowCauseOversellException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateWriteoff on inserting into products_history cause error.", e);
+                    logger.error("Exception in method updateWriteoff on inserting into products_history cause oversell.", e);
                     e.printStackTrace();
                     return 0;
                 } catch (Exception e) {

@@ -12,11 +12,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.message.response;
+package com.dokio.message.response.additional;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.sql.Timestamp;
-public class FilesUniversalJSON {
+
+public class FilesInventoryJSON {
     private Long id;
     private String name;
     private String original_name;
