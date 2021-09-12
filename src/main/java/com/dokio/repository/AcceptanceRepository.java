@@ -1,26 +1,27 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.AcceptanceForm;
 import com.dokio.message.request.AcceptanceProductForm;
 import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Settings.SettingsAcceptanceForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.AcceptanceJSON;
+import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
 import com.dokio.message.response.additional.FilesAcceptanceJSON;
 import com.dokio.message.response.ProductHistoryJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.repository.Exceptions.InsertProductHistoryExceprions;
@@ -66,7 +67,7 @@ public class AcceptanceRepository {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","acceptance_date_sort","company","department","cagent","creator","date_time_created_sort","description","is_completed")
+            .of("doc_number","status_name","product_count","is_completed","acceptance_date_sort","company","department","cagent","creator","date_time_created_sort","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -76,7 +77,7 @@ public class AcceptanceRepository {
     //****************************************************      MENU      *********************************************************************************
     //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId) {
+    public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//(см. файл Permissions Id)
         {
             String stringQuery;
@@ -84,6 +85,7 @@ public class AcceptanceRepository {
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -97,7 +99,7 @@ public class AcceptanceRepository {
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           coalesce(p.overhead,0) as overhead, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name || ' ' || dp.address as department, " +
+                    "           dp.name as department, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
                     "           p.doc_number as doc_number, " +
@@ -110,7 +112,12 @@ public class AcceptanceRepository {
                     "           p.acceptance_date as acceptance_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
-                    "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method " +
+                    "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description, " +
+                    "           (select count(*) from acceptance_product ip where coalesce(ip.acceptance_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
                     "           from acceptance p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -118,8 +125,9 @@ public class AcceptanceRepository {
                     "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true ";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -194,6 +202,11 @@ public class AcceptanceRepository {
                     doc.setDescription((String)                   obj[20]);
                     doc.setIs_completed((Boolean)                 obj[21]);
                     doc.setOverhead_netcost_method((Integer)      obj[25]);
+                    doc.setStatus_id(obj[26]!=null?Long.parseLong(obj[26].toString()):null);
+                    doc.setStatus_name((String)                   obj[27]);
+                    doc.setStatus_color((String)                  obj[28]);
+                    doc.setStatus_description((String)            obj[29]);
+                    doc.setProduct_count(Long.parseLong(          obj[30].toString()));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -206,10 +219,11 @@ public class AcceptanceRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    public int getAcceptanceSize(String searchString, int companyId, int departmentId) {
+    public int getAcceptanceSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
@@ -220,7 +234,7 @@ public class AcceptanceRepository {
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_archive,false) !=true ";
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -284,10 +298,12 @@ public class AcceptanceRepository {
                     " ap.product_sumprice," +
                     " ap.product_netcost," +
                     " ap.nds_id," +
-                    " ap.edizm_id," +
+                    " p.edizm_id," +
                     " p.name as name," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
-                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm" +
+                    " (select nds.name from sprav_sys_nds nds where nds.id = p.nds_id) as nds," +
+                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
                     " from " +
                     " acceptance_product ap " +
                     " INNER JOIN acceptance a ON ap.acceptance_id=a.id " +
@@ -327,6 +343,8 @@ public class AcceptanceRepository {
                     doc.setName((String)                                    obj[8]);
                     doc.setNds((String)                                     obj[9]);
                     doc.setEdizm((String)                                   obj[10]);
+                    doc.setIndivisible((Boolean)                            obj[11]);
+                    doc.setTotal((BigDecimal)                               obj[12]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -364,7 +382,7 @@ public class AcceptanceRepository {
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           coalesce(p.overhead,0) as overhead, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
                     "           p.doc_number as doc_number, " +
@@ -377,7 +395,11 @@ public class AcceptanceRepository {
                     "           p.acceptance_date as acceptance_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
-                    "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method " +
+                    "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description " +
                     "           from acceptance p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -385,9 +407,9 @@ public class AcceptanceRepository {
                     "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and p.id= " + id+
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and p.id= " + id;
             if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
                 if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
@@ -432,6 +454,10 @@ public class AcceptanceRepository {
                     returnObj.setDescription((String)                   obj[20]);
                     returnObj.setIs_completed((Boolean)                 obj[21]);
                     returnObj.setOverhead_netcost_method((Integer)      obj[25]);
+                    returnObj.setStatus_id(obj[26]!=null?Long.parseLong(obj[26].toString()):null);
+                    returnObj.setStatus_name((String)                   obj[27]);
+                    returnObj.setStatus_color((String)                  obj[28]);
+                    returnObj.setStatus_description((String)            obj[29]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -476,6 +502,7 @@ public class AcceptanceRepository {
                     " overhead_netcost_method," +
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
+                    " status_id," + //статус
                     " acceptance_date " +// дата списания
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -490,6 +517,7 @@ public class AcceptanceRepository {
                     request.getOverhead_netcost_method() + ", "+
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
+                    request.getStatus_id() + ", "+//статус
                     " to_date(:acceptance_date,'DD.MM.YYYY')) ";// дата списания
             try {
 
@@ -506,9 +534,13 @@ public class AcceptanceRepository {
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDockId = Long.valueOf(query2.getSingleResult().toString());
 
+
+                if(insertAcceptanceProducts(request, newDockId, myMasterId)){
+                    return newDockId;
+                } else return null;
                 //если есть таблица с товарами - нужно создать их
-                insertAcceptanceProducts(request, newDockId, myMasterId);
-                return newDockId;
+//                insertAcceptanceProducts(request, newDockId, myMasterId);
+//                return newDockId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -528,7 +560,7 @@ public class AcceptanceRepository {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
-    public  Boolean updateAcceptance(AcceptanceForm request) {
+    public  Integer updateAcceptance(AcceptanceForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -555,29 +587,29 @@ public class AcceptanceRepository {
                             }
                         }
                     }
-                    return true;
+                    return 1;
                 } catch (CantSaveProductQuantityException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updateAcceptance on inserting into product_quantity cause error.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (CantInsertProductRowCauseErrorException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updateAcceptance on inserting into acceptance_products cause error.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updateAcceptance on inserting into products_history.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (Exception e){
                     logger.error("Exception in method updateAcceptance.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 }
-            } else return false;
-        } else return false;
+            } else return null;
+        } else return -1;//недостаточно прав
     }
 
     @SuppressWarnings("Duplicates")
@@ -595,7 +627,9 @@ public class AcceptanceRepository {
                 " overhead =" + request.getOverhead() + "," +                               //расходы
                 " overhead_netcost_method =" + request.getOverhead_netcost_method() + "," + //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
                 " is_completed = " + request.isIs_completed() + "," +
-                " acceptance_date = to_date(:acceptance_date,'DD.MM.YYYY') " +
+                " acceptance_date = to_date(:acceptance_date,'DD.MM.YYYY'), " +
+
+                " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
                 " and master_id="+myMasterId;
@@ -709,11 +743,10 @@ public class AcceptanceRepository {
             //Именно поэтому нельзя допускать отрицательных остатков - если знаменатель будет = 0, то возникнет эксепшн деления на 0.
             BigDecimal avgPurchasePrice = ((lastQuantity.multiply(lastAvgPurchasePrice)).add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
             //средняя себестоимость = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
+            logger.error("addAcceptanceProductHistory: lastQuantity=" + lastQuantity.toString() + ", lastAvgNetcostPrice="+lastAvgNetcostPrice.toString()+", getProduct_count="+row.getProduct_count().toString()+", getProduct_netcost="+row.getProduct_netcost().toString());
             BigDecimal avgNetcostPrice =  ((lastQuantity.multiply(lastAvgNetcostPrice)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
             //для последней закуп. цены нельзя брать row.getProduct_price(), т.к. она не учитывает НДС, если он не включен в цену. А row.getProduct_sumprice() учитывает.
             BigDecimal last_purchase_price=row.getProduct_sumprice().divide(row.getProduct_count(),2,BigDecimal.ROUND_HALF_UP);
-
-
 
             stringQuery =   " insert into products_history (" +
                     " master_id," +
@@ -788,11 +821,47 @@ public class AcceptanceRepository {
             throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
-
+    @SuppressWarnings("Duplicates")
+    public List<LinkedDocsJSON> getAcceptanceLinkedDocsList(Long docId, String docName) {
+        String stringQuery;
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String tableName=(docName.equals("return")?"return":"");
+        stringQuery =   " select " +
+                " ap.id," +
+                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+                " ap.description," +
+                " coalesce(ap.is_completed,false)," +
+                " ap.doc_number" +
+                " from "+docName+" ap" +
+                " where ap.master_id = " + myMasterId +
+                " and coalesce(ap.is_deleted,false)!=true "+
+                " and ap.acceptance_id = " + docId;
+        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<LinkedDocsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                LinkedDocsJSON doc=new LinkedDocsJSON();
+                doc.setId(Long.parseLong(                       obj[0].toString()));
+                doc.setDate_time_created((String)               obj[1]);
+                doc.setDescription((String)                     obj[2]);
+                doc.setIs_completed((Boolean)                   obj[3]);
+                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getAcceptanceLinkedDocsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteAcceptance (String delNumbers) {
+    public Boolean deleteAcceptance (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -803,22 +872,53 @@ public class AcceptanceRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update acceptance p" +
-                    " set is_archive=true " +
-                    " where p.id in ("+delNumbers+")"+
+                    " set is_deleted=true, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")" +
                     " and coalesce(p.is_completed,false) !=true";
-            try {
+            try{
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
-            }catch (Exception e){
+            }catch (Exception e) {
+                logger.error("Exception in method deleteAcceptance. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                logger.error("Exception in method AcceptanceRepository/setProductQuantity. SQL-"+stringQuery, e);
-                return false;
+                return null;
             }
         } else return false;
     }
 
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean undeleteAcceptance (String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(15L,"187") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",delNumbers))||
+                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(15L,"193") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",delNumbers))||
+                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
+        {
+            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update acceptance p" +
+                    " set is_deleted=false, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")";
+            try{
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteAcceptance. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return false;
+    }
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
@@ -1031,4 +1131,81 @@ public class AcceptanceRepository {
             }
         } else return false;
     }
+
+    //сохраняет настройки документа
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean saveSettingsAcceptance(SettingsAcceptanceForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+
+            stringQuery =
+                    " insert into settings_acceptance (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "department_id, " +         //отделение по умолчанию
+                            "status_on_finish_id, "+    //статус документа при завершении инвентаризации
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + "," +
+                            row.getDepartmentId() + "," +
+                            row.getStatusOnFinishId() + "," +
+                            row.getAutoAdd() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_acceptance_user_uq " +// "upsert"
+                            " DO update set " +
+                            "  department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", status_on_finish_id = "+row.getStatusOnFinishId()+
+                            ", auto_add = "+row.getAutoAdd();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method saveSettingsAcceptance. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    //Загружает настройки документа для текущего пользователя (из-под которого пришел запрос)
+    @SuppressWarnings("Duplicates")
+    public SettingsAcceptanceJSON getSettingsAcceptance() {
+
+        String stringQuery;
+        Long myId=userRepository.getUserId();
+        stringQuery = "select " +
+                "           p.department_id as department_id, " +                       // id отделения
+                "           p.company_id as company_id, " +                             // id предприятия
+                "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
+                "           coalesce(p.auto_add,false) as auto_add " +                  // автодобавление товара из формы поиска в таблицу
+                "           from settings_acceptance p " +
+                "           where p.user_id= " + myId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            SettingsAcceptanceJSON acceptanceObj=new SettingsAcceptanceJSON();
+
+            for(Object[] obj:queryList){
+                acceptanceObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
+                acceptanceObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                acceptanceObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
+                acceptanceObj.setAutoAdd((Boolean)                              obj[3]);
+            }
+            return acceptanceObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getSettingsAcceptance. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
 }

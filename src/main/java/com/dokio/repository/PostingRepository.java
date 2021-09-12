@@ -17,8 +17,10 @@ package com.dokio.repository;
 import com.dokio.message.request.PostingForm;
 import com.dokio.message.request.PostingProductForm;
 import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Settings.SettingsPostingForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PostingJSON;
+import com.dokio.message.response.Settings.SettingsPostingJSON;
 import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
@@ -65,7 +67,7 @@ public class PostingRepository {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","posting_date_sort","company","department","creator","date_time_created_sort","description","is_completed")
+            .of("doc_number","status_name","product_count","is_completed","posting_date_sort","company","department","creator","date_time_created_sort","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -76,13 +78,14 @@ public class PostingRepository {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<PostingJSON> getPostingTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId) {
+    public List<PostingJSON> getPostingTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(16L, "207,208,209,210"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -93,7 +96,7 @@ public class PostingRepository {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name || ' ' || dp.address as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.posting_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as posting_date, " +
                     "           cmp.name as company, " +
@@ -103,15 +106,20 @@ public class PostingRepository {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.posting_date as posting_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           p.date_time_changed as date_time_changed_sort, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           (select count(*) from posting_product ip where coalesce(ip.posting_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
                     "           from posting p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true ";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(16L, "207")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -178,6 +186,10 @@ public class PostingRepository {
                     doc.setDate_time_changed((String)             obj[14]);
                     doc.setDescription((String)                   obj[15]);
                     doc.setIs_completed((Boolean)                 obj[16]);
+                    doc.setStatus_name((String)                   obj[20]);
+                    doc.setStatus_color((String)                  obj[21]);
+                    doc.setStatus_description((String)            obj[22]);
+                    doc.setProduct_count(Long.parseLong(          obj[23].toString()));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -190,12 +202,13 @@ public class PostingRepository {
 
     }
     @SuppressWarnings("Duplicates")
-    public int getPostingSize(String searchString, int companyId, int departmentId) {
+    public int getPostingSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
 //        if(securityRepositoryJPA.userHasPermissions_OR(16L, "207,208,209,210"))//(см. файл Permissions Id)
 //        {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
         stringQuery = "select  p.id as id " +
                 "           from posting p " +
@@ -204,7 +217,7 @@ public class PostingRepository {
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_archive,false) !=true ";
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(16L, "207")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -262,7 +275,9 @@ public class PostingRepository {
                     " ap.product_price," +
                     " ap.product_sumprice," +
                     " p.name as name," +
-                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm" +
+                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
                     " from " +
                     " posting_product ap " +
                     " INNER JOIN posting a ON ap.posting_id=a.id " +
@@ -300,6 +315,8 @@ public class PostingRepository {
                     doc.setProduct_sumprice((BigDecimal)                    obj[4]);
                     doc.setName((String)                                    obj[5]);
                     doc.setEdizm((String)                                   obj[6]);
+                    doc.setIndivisible((Boolean)                            obj[7]);
+                    doc.setTotal((BigDecimal)                               obj[8]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -343,16 +360,20 @@ public class PostingRepository {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.posting_date as posting_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           p.date_time_changed as date_time_changed_sort, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description " +
                     "           from posting p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and p.id= " + id+
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and p.id= " + id;
             if (!securityRepositoryJPA.userHasPermissions_OR(16L, "207")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
                 if (!securityRepositoryJPA.userHasPermissions_OR(16L, "208")) //Если нет прав на просм по своему предприятию
@@ -392,6 +413,10 @@ public class PostingRepository {
                     returnObj.setDate_time_changed((String)             obj[14]);
                     returnObj.setDescription((String)                   obj[15]);
                     returnObj.setIs_completed((Boolean)                 obj[16]);
+                    returnObj.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
+                    returnObj.setStatus_name((String)                   obj[21]);
+                    returnObj.setStatus_color((String)                  obj[22]);
+                    returnObj.setStatus_description((String)            obj[23]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -745,16 +770,48 @@ public class PostingRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(16L,"206") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update posting p" +
-                    " set is_archive=true " +
-                    " where p.id in ("+delNumbers+")"+
+                    " set is_deleted=true, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")" +
                     " and coalesce(p.is_completed,false) !=true";
-            try {
+            try{
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
-            } catch (Exception e){
+            }catch (Exception e) {
+                logger.error("Exception in method deletePosting. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                logger.error("Exception in method PostingRepository/deletePosting. SQL-"+stringQuery, e);
+                return null;
+            }
+        } else return false;
+    }
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean undeletePosting (String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"203") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"204") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("posting",delNumbers))||
+                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"205") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("posting",delNumbers))||
+                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(16L,"206") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",delNumbers)))
+        {
+            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update posting p" +
+                    " set is_deleted=false, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")";
+            try{
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }catch (Exception e) {
+                logger.error("Exception in method undeletePosting. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 return null;
             }
         } else return false;
@@ -988,4 +1045,83 @@ public class PostingRepository {
             }
         } else return false;
     }
+
+
+    //сохраняет настройки документа
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean saveSettingsPosting(SettingsPostingForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+
+            stringQuery =
+                    " insert into settings_posting (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "department_id, " +         //отделение по умолчанию
+                            "status_on_finish_id, "+    //статус документа при завершении инвентаризации
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + "," +
+                            row.getDepartmentId() + "," +
+                            row.getStatusOnFinishId() + "," +
+                            row.getAutoAdd() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_posting_user_uq " +// "upsert"
+                            " DO update set " +
+                            "  department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", status_on_finish_id = "+row.getStatusOnFinishId()+
+                            ", auto_add = "+row.getAutoAdd();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method saveSettingsPosting. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    //Загружает настройки документа для текущего пользователя (из-под которого пришел запрос)
+    @SuppressWarnings("Duplicates")
+    public SettingsPostingJSON getSettingsPosting() {
+
+        String stringQuery;
+        Long myId=userRepository.getUserId();
+        stringQuery = "select " +
+                "           p.department_id as department_id, " +                       // id отделения
+                "           p.company_id as company_id, " +                             // id предприятия
+                "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
+                "           coalesce(p.auto_add,false) as auto_add " +                  // автодобавление товара из формы поиска в таблицу
+                "           from settings_posting p " +
+                "           where p.user_id= " + myId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            SettingsPostingJSON postingObj=new SettingsPostingJSON();
+
+            for(Object[] obj:queryList){
+                postingObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
+                postingObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                postingObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
+                postingObj.setAutoAdd((Boolean)                              obj[3]);
+            }
+            return postingObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getSettingsPosting. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+
 }

@@ -17,10 +17,12 @@ package com.dokio.message.response;
 import java.math.BigDecimal;
 
 public class ProductsListJSON {
-    private Long id;
+    private Long id;            // id товара
+    private Long product_id;    // и это тоже id товара (так надо)
     private String name;
     private Integer nds_id;
     private Long edizm_id;
+    private String edizm;
     private String filename;
     private BigDecimal total;//всего товаров
     private BigDecimal reserved;//зарезервировано в других документах Заказ покупателя
@@ -62,6 +64,22 @@ public class ProductsListJSON {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getEdizm() {
+        return edizm;
+    }
+
+    public Long getProduct_id() {
+        return product_id;
+    }
+
+    public void setProduct_id(Long product_id) {
+        this.product_id = product_id;
+    }
+
+    public void setEdizm(String edizm) {
+        this.edizm = edizm;
     }
 
     public Integer getNds_id() {

@@ -810,7 +810,7 @@ public class ReturnsupRepository {
         }
     }
 
-    //сохраняет настройки документа "Розничные продажи"
+    //сохраняет настройки документа
     @SuppressWarnings("Duplicates")
     @Transactional
     public Boolean saveSettingsReturnsup(SettingsReturnsupForm row) {
@@ -919,7 +919,7 @@ public class ReturnsupRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteReturnsup(String delNumbers) {
+    public Boolean undeleteReturnsup(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(29L,"364") && securityRepositoryJPA.isItAllMyMastersDocuments("returnsup",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
@@ -946,7 +946,7 @@ public class ReturnsupRepository {
             }catch (Exception e) {
                 logger.error("Exception in method undeleteReturnsup. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
         } else return false;
     }

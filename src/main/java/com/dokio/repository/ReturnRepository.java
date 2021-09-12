@@ -1030,7 +1030,7 @@ public class ReturnRepository {
                 " ap.doc_number" +
                 " from "+tableName+" ap" +
                 " where ap.master_id = " + myMasterId +
-                " and coalesce(ap.is_archive,false)!=true "+
+                " and coalesce(ap.is_deleted,false)!=true "+
                 " and ap.return_id = " + docId;
         stringQuery = stringQuery + " order by ap.date_time_created asc ";
         try{

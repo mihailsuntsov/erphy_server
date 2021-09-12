@@ -975,7 +975,8 @@ public class ProductsRepositoryJPA {
                 "   product_id=p.id"+
                 "   and department_id=" + departmentId +
                 "   and customers_orders_id="+document_id+") as reserved_current, "+
-                " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm" +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -1001,6 +1002,7 @@ public class ProductsRepositoryJPA {
             for (Object[] obj : queryList) {
                 ProductsListJSON product = new ProductsListJSON();
                 product.setId(Long.parseLong(                               obj[0].toString()));
+                product.setProduct_id(Long.parseLong(                       obj[0].toString()));
                 product.setName((String)                                    obj[1]);
                 product.setNds_id((Integer)                                 obj[2]);
                 product.setEdizm_id(Long.parseLong(                         obj[3].toString()));
@@ -1013,6 +1015,7 @@ public class ProductsRepositoryJPA {
                 product.setIs_material((Boolean)                            obj[10]);
                 product.setReserved_current(                                obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
                 product.setIndivisible((Boolean)                            obj[12]);
+                product.setEdizm((String)                                   obj[13]);
                 returnList.add(product);
             }
             return returnList;
@@ -1703,6 +1706,7 @@ public class ProductsRepositoryJPA {
                 product.setAvgPurchasePrice(                                obj[6]==null?BigDecimal.ZERO:(BigDecimal)obj[6]);
                 product.setLastPurchasePrice(                               obj[7]==null?BigDecimal.ZERO:(BigDecimal)obj[7]);
                 product.setRemains(                                         obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
+                product.setTotal(                                           obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
                 product.setNds_id((Integer)                                 obj[9]);
                 product.setIndivisible((Boolean)                            obj[10]);
                 returnList.add(product);
@@ -2503,12 +2507,12 @@ public class ProductsRepositoryJPA {
         String stringQuery;
         stringQuery =
                 " select                                        "+
-                        " last_purchase_price   as last_purchase_price, "+
-                        " avg_purchase_price    as avg_purchase_price,  "+
-                        " avg_netcost_price     as avg_netcost_price,   "+
-                        " last_operation_price  as last_operation_price,"+
-                        " quantity              as quantity,            "+
-                        " change                as change               "+
+                        " coalesce(last_purchase_price,0)   as last_purchase_price, "+
+                        " coalesce(avg_purchase_price,0)    as avg_purchase_price,  "+
+                        " coalesce(avg_netcost_price,0)     as avg_netcost_price,   "+
+                        " coalesce(last_operation_price,0)  as last_operation_price,"+
+                        " coalesce(quantity,0)              as quantity,            "+
+                        " coalesce(change,0)                as change               "+
                         "          from products_history                "+
                         "          where                                "+
                         "          product_id="+product_id+" and        "+

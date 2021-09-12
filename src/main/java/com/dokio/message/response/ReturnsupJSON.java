@@ -12,7 +12,6 @@ public class ReturnsupJSON {
     private Long        cagent_id;
     private String      cagent;
     private Long        doc_number;
-    private Boolean     is_completed; // завершена
     private Boolean     nds;
     private String      master;
     private String      creator;
@@ -24,8 +23,9 @@ public class ReturnsupJSON {
     private String      status_name;
     private String      status_color;
     private String      status_description;
-    private String      date_return;
     private Long        product_count;
+    private Boolean     is_completed; // завершена
+    private String      date_return;
     private Long        acceptance_id;
 
 

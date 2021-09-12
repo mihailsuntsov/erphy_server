@@ -271,29 +271,16 @@ public class ReturnsupController {
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteReturnsup(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteReturnsup: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        Boolean result=returnsupRepository.deleteReturnsup(checked);
-        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+            return new ResponseEntity<>(returnsupRepository.deleteReturnsup(checked), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/undeleteReturnsup")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> undeleteReturnsup(@RequestBody SignUpForm request){
         logger.info("Processing post request for path /api/auth/undeleteReturnsup: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(returnsupRepository.undeleteReturnsup(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления документов", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        return new ResponseEntity<>(returnsupRepository.undeleteReturnsup(checked), HttpStatus.OK);
     }
 
     @RequestMapping(

@@ -1,17 +1,15 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.message.response;
 
 public class WriteoffJSON {
@@ -31,7 +29,11 @@ public class WriteoffJSON {
     private String date_time_created;
     private String date_time_changed;
     private String description;
-    private boolean is_completed;
+    private String      status_name;
+    private String      status_color;
+    private String      status_description;
+    private Long        product_count;
+    private Boolean     is_completed; // завершена
 
     public Long getId() {
         return id;
@@ -161,11 +163,43 @@ public class WriteoffJSON {
         this.description = description;
     }
 
-    public boolean isIs_completed() {
+    public String getStatus_name() {
+        return status_name;
+    }
+
+    public void setStatus_name(String status_name) {
+        this.status_name = status_name;
+    }
+
+    public String getStatus_color() {
+        return status_color;
+    }
+
+    public void setStatus_color(String status_color) {
+        this.status_color = status_color;
+    }
+
+    public String getStatus_description() {
+        return status_description;
+    }
+
+    public void setStatus_description(String status_description) {
+        this.status_description = status_description;
+    }
+
+    public Long getProduct_count() {
+        return product_count;
+    }
+
+    public void setProduct_count(Long product_count) {
+        this.product_count = product_count;
+    }
+
+    public Boolean getIs_completed() {
         return is_completed;
     }
 
-    public void setIs_completed(boolean is_completed) {
+    public void setIs_completed(Boolean is_completed) {
         this.is_completed = is_completed;
     }
 }

@@ -15,8 +15,11 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Settings.SettingsAcceptanceForm;
 import com.dokio.message.response.AcceptanceJSON;
+import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
 import com.dokio.message.response.additional.FilesAcceptanceJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
@@ -25,8 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,20 +95,27 @@ public class AcceptanceController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = acceptanceRepositoryJPA.getAcceptanceTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = acceptanceRepositoryJPA.getAcceptanceTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getAcceptanceProductTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getAcceptanceProductTable(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getAcceptanceProductTable: " + searchRequest.toString());
-
-        Long docId = searchRequest.getId();//
+    @RequestMapping(
+            value = "/api/auth/getAcceptanceProductTable",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getAcceptanceProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getAcceptanceProductTable with Acceptance id=" + docId.toString());
         List<AcceptanceProductForm> returnList;
-        returnList = acceptanceRepositoryJPA.getAcceptanceProductTable(docId);
-        return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        try {
+            returnList = acceptanceRepositoryJPA.getAcceptanceProductTable(docId);
+            return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/getAcceptancePagesList")
@@ -134,7 +143,7 @@ public class AcceptanceController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = acceptanceRepositoryJPA.getAcceptanceSize(searchString,companyId,departmentId);//  - общее количество записей выборки
+        int size = acceptanceRepositoryJPA.getAcceptanceSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -181,16 +190,10 @@ public class AcceptanceController {
     }
 
     @PostMapping("/api/auth/insertAcceptance")
-    @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertAcceptance(@RequestBody AcceptanceForm request){
         logger.info("Processing post request for path /api/auth/insertAcceptance: " + request.toString());
-
         Long newDocument = acceptanceRepositoryJPA.insertAcceptance(request);
-        if(!Objects.isNull(newDocument)){//вернет id созданного документа либо 0, если недостаточно прав
-            return new ResponseEntity<>(newDocument, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при создании Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(newDocument, HttpStatus.OK);//вернет id созданного документа, 0 - если недостаточно прав, null - ошибка
     }
 
     @PostMapping("/api/auth/isAcceptanceNumberUnical")
@@ -208,39 +211,47 @@ public class AcceptanceController {
         }
     }
 
-    @PostMapping("/api/auth/getAcceptanceValuesById")
-    public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path /api/auth/getAcceptanceValuesById: " + request.toString());
-
+    @RequestMapping(
+            value = "/api/auth/getAcceptanceValuesById",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getAcceptanceValuesById(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/getAcceptanceValuesById with parameters: " + "id: " + id);
         AcceptanceJSON response;
-        Long id = request.getId();
-        response=acceptanceRepositoryJPA.getAcceptanceValuesById(id);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        try {
+            response=acceptanceRepositoryJPA.getAcceptanceValuesById(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getAcceptanceValuesById. id = " + id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки значений документа Приёмка", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/updateAcceptance")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateAcceptance(@RequestBody AcceptanceForm request){
         logger.info("Processing post request for path /api/auth/updateAcceptance: " + request.toString());
-
-        if(acceptanceRepositoryJPA.updateAcceptance(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(acceptanceRepositoryJPA.updateAcceptance(request), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/deleteAcceptance")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteAcceptance(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> deleteAcceptance(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteAcceptance: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(acceptanceRepositoryJPA.deleteAcceptance(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка удаления Приёмки", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(acceptanceRepositoryJPA.deleteAcceptance(checked), HttpStatus.OK);
+    }
+
+    @PostMapping("/api/auth/undeleteAcceptance")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteAcceptance(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteAcceptance: " + request.toString());
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        return new ResponseEntity<>(acceptanceRepositoryJPA.undeleteAcceptance(checked), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getListOfAcceptanceFiles")
@@ -280,6 +291,52 @@ public class AcceptanceController {
         } else {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка добавления файла", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
+        }
+    }
+
+
+    @PostMapping("/api/auth/saveSettingsAcceptance")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> saveSettingsAcceptance(@RequestBody SettingsAcceptanceForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsAcceptance: " + request.toString());
+
+        if(acceptanceRepositoryJPA.saveSettingsAcceptance(request)){
+            return new ResponseEntity<>(true, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Приёмка", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSettingsAcceptance",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsAcceptance()
+    {
+        logger.info("Processing get request for path /api/auth/getSettingsAcceptance without request parameters");
+        SettingsAcceptanceJSON response;
+        try {
+            response=acceptanceRepositoryJPA.getSettingsAcceptance();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа Приёмка", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @RequestMapping(
+            value = "/api/auth/getAcceptanceLinkedDocsList",
+            params = {"id","docName"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getAcceptanceLinkedDocsList(
+            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
+        logger.info("Processing get request for path api/auth/getAcceptanceLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+        List<LinkedDocsJSON> returnList;
+        returnList = acceptanceRepositoryJPA.getAcceptanceLinkedDocsList(id,docName);
+        if(!Objects.isNull(returnList)){
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

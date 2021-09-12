@@ -14,11 +14,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.repository;
 
+import com.dokio.message.request.Settings.SettingsWriteoffForm;
 import com.dokio.message.request.WriteoffForm;
 import com.dokio.message.request.WriteoffProductForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.ProductHistoryJSON;
+import com.dokio.message.response.Settings.SettingsWriteoffJSON;
 import com.dokio.message.response.WriteoffJSON;
 import com.dokio.message.response.additional.FilesWriteoffJSON;
 import com.dokio.repository.Exceptions.*;
@@ -58,7 +60,7 @@ public class WriteoffRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","writeoff_date_sort","company","department","creator","date_time_created_sort","description","is_completed")
+            .of("doc_number","writeoff_date_sort","company","department","creator","date_time_created_sort","description","status_name","product_count","is_completed")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -69,7 +71,7 @@ public class WriteoffRepositoryJPA {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<WriteoffJSON> getWriteoffTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId) {
+    public List<WriteoffJSON> getWriteoffTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(17L, "223,224,225,226"))//(см. файл Permissions Id)
         {
             String stringQuery;
@@ -77,6 +79,7 @@ public class WriteoffRepositoryJPA {
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -86,7 +89,7 @@ public class WriteoffRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name || ' ' || dp.address as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.writeoff_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as writeoff_date, " +
                     "           cmp.name as company, " +
@@ -96,15 +99,20 @@ public class WriteoffRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.writeoff_date as writeoff_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           p.date_time_changed as date_time_changed_sort, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           (select count(*) from writeoff_product ip where coalesce(ip.writeoff_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
                     "           from writeoff p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true ";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(17L, "223")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -171,6 +179,10 @@ public class WriteoffRepositoryJPA {
                     doc.setDate_time_changed((String)             obj[14]);
                     doc.setDescription((String)                   obj[15]);
                     doc.setIs_completed((Boolean)                 obj[16]);
+                    doc.setStatus_name((String)                   obj[20]);
+                    doc.setStatus_color((String)                  obj[21]);
+                    doc.setStatus_description((String)            obj[22]);
+                    doc.setProduct_count(Long.parseLong(          obj[23].toString()));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -182,11 +194,12 @@ public class WriteoffRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    public int getWriteoffSize(String searchString, int companyId, int departmentId) {
+    public int getWriteoffSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
         stringQuery = "select  p.id as id " +
                 "           from writeoff p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -194,7 +207,7 @@ public class WriteoffRepositoryJPA {
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_archive,false) !=true ";
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(17L, "223")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -255,10 +268,12 @@ public class WriteoffRepositoryJPA {
                     " ap.product_price," +
                     " ap.product_sumprice," +
                     " p.name as name," +
-                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
+                    " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm,"+
                     " ap.reason_id," +
                     " coalesce(ap.additional,'')," +
-                    " (select rasons.name from sprav_sys_writeoff rasons where rasons.id = ap.reason_id) as reason" +
+                    " (select rasons.name from sprav_sys_writeoff rasons where rasons.id = ap.reason_id) as reason," +
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
                     " from " +
                     " writeoff_product ap " +
                     " INNER JOIN writeoff a ON ap.writeoff_id=a.id " +
@@ -299,6 +314,8 @@ public class WriteoffRepositoryJPA {
                     doc.setReason_id((Integer)                              obj[7]);
                     doc.setAdditional((String)                              obj[8]);
                     doc.setReason((String)                                  obj[9]);
+                    doc.setIndivisible((Boolean)                            obj[10]);
+                    doc.setTotal((BigDecimal)                               obj[11]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -344,13 +361,18 @@ public class WriteoffRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.writeoff_date as writeoff_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           p.date_time_changed as date_time_changed_sort, " +
+                    "           p.status_id as status_id, " +
+                    "           stat.name as status_name, " +
+                    "           stat.color as status_color, " +
+                    "           stat.description as status_description " +
                     "           from writeoff p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id+
                     "           and coalesce(p.is_archive,false) !=true";
@@ -762,21 +784,52 @@ public class WriteoffRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(17L, "222") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff", delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update writeoff p" +
-                    " set is_archive=true " +
-                    " where p.id in (" + delNumbers + ")" +
+                    " set is_deleted=true, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")" +
                     " and coalesce(p.is_completed,false) !=true";
-            try {
+            try{
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
-            } catch (Exception e) {
+            }catch (Exception e) {
+                logger.error("Exception in method deleteWriteoff. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                logger.error("Exception in method WriteoffRepository/deleteWriteoff. stringQuery-" + stringQuery, e);
                 return null;
             }
         } else return false;
     }
-
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean undeleteWriteoff (String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if     ((securityRepositoryJPA.userHasPermissions_OR(17L, "219") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(17L, "220") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("writeoff", delNumbers)) ||
+                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(17L, "221") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("writeoff", delNumbers)) ||
+                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(17L, "222") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff", delNumbers)))
+        {
+            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            stringQuery = "Update writeoff p" +
+                    " set is_deleted=false, " + //удален
+                    " changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now() " +//дату и время изменения
+                    " where p.id in ("+delNumbers+")";
+            try{
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteWriteoff. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return false;
+    }
 
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
@@ -986,4 +1039,81 @@ public class WriteoffRepositoryJPA {
             }
         } else return false;
     }
+
+    //сохраняет настройки документа
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean saveSettingsWriteoff(SettingsWriteoffForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+
+            stringQuery =
+                    " insert into settings_writeoff (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "department_id, " +         //отделение по умолчанию
+                            "status_on_finish_id, "+    //статус документа при завершении инвентаризации
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + "," +
+                            row.getDepartmentId() + "," +
+                            row.getStatusOnFinishId() + "," +
+                            row.getAutoAdd() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_writeoff_user_uq " +// "upsert"
+                            " DO update set " +
+                            "  department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", status_on_finish_id = "+row.getStatusOnFinishId()+
+                            ", auto_add = "+row.getAutoAdd();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method saveSettingsWriteoff. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    //Загружает настройки документа для текущего пользователя (из-под которого пришел запрос)
+    @SuppressWarnings("Duplicates")
+    public SettingsWriteoffJSON getSettingsWriteoff() {
+
+        String stringQuery;
+        Long myId=userRepository.getUserId();
+        stringQuery = "select " +
+                "           p.department_id as department_id, " +                       // id отделения
+                "           p.company_id as company_id, " +                             // id предприятия
+                "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
+                "           coalesce(p.auto_add,false) as auto_add " +                  // автодобавление товара из формы поиска в таблицу
+                "           from settings_writeoff p " +
+                "           where p.user_id= " + myId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            SettingsWriteoffJSON writeoffObj=new SettingsWriteoffJSON();
+
+            for(Object[] obj:queryList){
+                writeoffObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
+                writeoffObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                writeoffObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
+                writeoffObj.setAutoAdd((Boolean)                              obj[3]);
+            }
+            return writeoffObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getSettingsWriteoff. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
 }

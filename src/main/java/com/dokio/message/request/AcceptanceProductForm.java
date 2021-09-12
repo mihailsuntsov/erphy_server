@@ -17,17 +17,35 @@ package com.dokio.message.request;
 import java.math.BigDecimal;
 
 public class AcceptanceProductForm {
-    private Long product_id;
-    private Long acceptance_id;
-    private BigDecimal product_count;
-    private Long edizm_id;
-    private BigDecimal product_price;
-    private BigDecimal product_sumprice;
-    private BigDecimal product_netcost;
-    private Integer nds_id;
-    private String name;
-    private String nds;
-    private String edizm;
+    private Long        product_id;
+    private Long        acceptance_id;
+    private BigDecimal  product_count;
+    private Long        edizm_id;
+    private BigDecimal  product_price;
+    private BigDecimal  product_sumprice;
+    private BigDecimal  product_netcost;
+    private Integer     nds_id;
+    private String      name;
+    private String      nds;
+    private String      edizm;
+    private Boolean     indivisible;                    // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+    private BigDecimal  total;                          // остаток на складе
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public void setTotal(BigDecimal total) {
+        this.total = total;
+    }
+
+    public Boolean getIndivisible() {
+        return indivisible;
+    }
+
+    public void setIndivisible(Boolean indivisible) {
+        this.indivisible = indivisible;
+    }
 
     public Long getProduct_id() {
         return product_id;

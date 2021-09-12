@@ -13,6 +13,7 @@ public class ProductsInfoListJSON {
     private BigDecimal  lastPurchasePrice;   // последняя закупочная цена
     private BigDecimal  avgPurchasePrice ;   // средняя закупочная цена
     private BigDecimal  remains;             // остаток на складе
+    private BigDecimal  total;               // остаток на складе (в некоторых документах на фронте используется total)
     private Integer     nds_id;              // id ставки НДС
     private Boolean     indivisible;         // неделимый товар (все действия только с кол-вом, кратным 1)
 
@@ -22,6 +23,14 @@ public class ProductsInfoListJSON {
 
     public void setIndivisible(Boolean indivisible) {
         this.indivisible = indivisible;
+    }
+
+    public BigDecimal getTotal() {
+        return total;
+    }
+
+    public void setTotal(BigDecimal total) {
+        this.total = total;
     }
 
     public Long getProduct_id() {

@@ -15,7 +15,9 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Settings.SettingsPostingForm;
 import com.dokio.message.response.PostingJSON;
+import com.dokio.message.response.Settings.SettingsPostingJSON;
 import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -25,8 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -92,23 +94,26 @@ public class PostingController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = postingRepositoryJPA.getPostingTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = postingRepositoryJPA.getPostingTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getPostingProductTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getPostingProductTable(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getPostingProductTable: " + searchRequest.toString());
-
-        Long docId = searchRequest.getId();//
+    @RequestMapping(
+            value = "/api/auth/getPostingProductTable",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPostingProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getPostingProductTable with Posting id=" + docId.toString());
         List<PostingProductForm> returnList;
-        returnList = postingRepositoryJPA.getPostingProductTable(docId);
-        if(!Objects.isNull(returnList)){
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при загрузке таблицы товаров", HttpStatus.INTERNAL_SERVER_ERROR);
+        try {
+            returnList = postingRepositoryJPA.getPostingProductTable(docId);
+            return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -137,7 +142,7 @@ public class PostingController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = postingRepositoryJPA.getPostingSize(searchString,companyId,departmentId);//  - общее количество записей выборки
+        int size = postingRepositoryJPA.getPostingSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -212,14 +217,24 @@ public class PostingController {
         }
     }
 
-    @PostMapping("/api/auth/getPostingValuesById")
-    public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path /api/auth/getPostingValuesById: " + request.toString());
-
+    @RequestMapping(
+            value = "/api/auth/getPostingValuesById",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPostingValuesById(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/getPostingValuesById with parameters: " + "id: " + id);
         PostingJSON response;
-        Long id = request.getId();
-        response=postingRepositoryJPA.getPostingValuesById(id);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        try {
+            response=postingRepositoryJPA.getPostingValuesById(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getPostingValuesById. id = " + id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки значений документа Оприходование", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/updatePosting")
@@ -238,14 +253,16 @@ public class PostingController {
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deletePosting(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deletePosting: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        Boolean result=postingRepositoryJPA.deletePosting(checked);
-        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при удалении Оприходования", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(postingRepositoryJPA.deletePosting(checked), HttpStatus.OK);
+    }
+
+    @PostMapping("/api/auth/undeletePosting")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeletePosting(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeletePosting: " + request.toString());
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        return new ResponseEntity<>(postingRepositoryJPA.undeletePosting(checked), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getListOfPostingFiles")
@@ -285,6 +302,36 @@ public class PostingController {
         } else {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
+        }
+    }
+
+    @PostMapping("/api/auth/saveSettingsPosting")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> saveSettingsPosting(@RequestBody SettingsPostingForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsPosting: " + request.toString());
+
+        if(postingRepositoryJPA.saveSettingsPosting(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Возврат поставщику", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSettingsPosting",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsPosting()
+    {
+        logger.info("Processing get request for path /api/auth/getSettingsPosting without request parameters");
+        SettingsPostingJSON response;
+        try {
+            response=postingRepositoryJPA.getSettingsPosting();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа Оприходование", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

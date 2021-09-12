@@ -15,6 +15,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Settings.SettingsWriteoffForm;
+import com.dokio.message.response.Settings.SettingsWriteoffJSON;
 import com.dokio.message.response.WriteoffJSON;
 import com.dokio.message.response.additional.FilesWriteoffJSON;
 import com.dokio.repository.*;
@@ -92,23 +94,26 @@ public class WriteoffController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = writeoffRepositoryJPA.getWriteoffTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = writeoffRepositoryJPA.getWriteoffTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getWriteoffProductTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getWriteoffProductTable(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path api/auth/getWriteoffProductTable: " + searchRequest.toString());
-
-        Long docId = searchRequest.getId();//
+    @RequestMapping(
+            value = "/api/auth/getWriteoffProductTable",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getWriteoffProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getWriteoffProductTable with Writeoff id=" + docId.toString());
         List<WriteoffProductForm> returnList;
-        returnList = writeoffRepositoryJPA.getWriteoffProductTable(docId);
-        if(!Objects.isNull(returnList)){
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при загрузке таблицы товаров", HttpStatus.INTERNAL_SERVER_ERROR);
+        try {
+            returnList = writeoffRepositoryJPA.getWriteoffProductTable(docId);
+            return  new ResponseEntity<>(returnList, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -137,7 +142,7 @@ public class WriteoffController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = writeoffRepositoryJPA.getWriteoffSize(searchString,companyId,departmentId);//  - общее количество записей выборки
+        int size = writeoffRepositoryJPA.getWriteoffSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -211,14 +216,24 @@ public class WriteoffController {
         }
     }
 
-    @PostMapping("/api/auth/getWriteoffValuesById")
-    public ResponseEntity<?> getProductGroupValuesById(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path api/auth/getWriteoffValuesById: " + request.toString());
-
+    @RequestMapping(
+            value = "/api/auth/getWriteoffValuesById",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getWriteoffValuesById(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/getWriteoffValuesById with parameters: " + "id: " + id);
         WriteoffJSON response;
-        Long id = request.getId();
-        response=writeoffRepositoryJPA.getWriteoffValuesById(id);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        try {
+            response=writeoffRepositoryJPA.getWriteoffValuesById(id);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getWriteoffValuesById. id = " + id, e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки значений документа Списание", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/api/auth/updateWriteoff")
@@ -236,14 +251,17 @@ public class WriteoffController {
     @PostMapping("/api/auth/deleteWriteoff")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteWriteoff(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path api/auth/deleteWriteoff: " + request.toString());
+        logger.info("Processing post request for path /api/auth/deleteWriteoff: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        Boolean result=writeoffRepositoryJPA.deleteWriteoff(checked);
-        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при удалении Списания", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(writeoffRepositoryJPA.deleteWriteoff(checked), HttpStatus.OK);
+    }
+
+    @PostMapping("/api/auth/undeleteWriteoff")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeleteWriteoff(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteWriteoff: " + request.toString());
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        return new ResponseEntity<>(writeoffRepositoryJPA.undeleteWriteoff(checked), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getListOfWriteoffFiles")
@@ -286,4 +304,33 @@ public class WriteoffController {
         }
     }
 
+    @PostMapping("/api/auth/saveSettingsWriteoff")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> saveSettingsWriteoff(@RequestBody SettingsWriteoffForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsWriteoff: " + request.toString());
+
+        if(writeoffRepositoryJPA.saveSettingsWriteoff(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/getSettingsWriteoff",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsWriteoff()
+    {
+        logger.info("Processing get request for path /api/auth/getSettingsWriteoff without request parameters");
+        SettingsWriteoffJSON response;
+        try {
+            response=writeoffRepositoryJPA.getSettingsWriteoff();
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка загрузки настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
