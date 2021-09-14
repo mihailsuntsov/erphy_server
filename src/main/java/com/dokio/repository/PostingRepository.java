@@ -186,9 +186,9 @@ public class PostingRepository {
                     doc.setDate_time_changed((String)             obj[14]);
                     doc.setDescription((String)                   obj[15]);
                     doc.setIs_completed((Boolean)                 obj[16]);
-                    doc.setStatus_name((String)                   obj[20]);
-                    doc.setStatus_color((String)                  obj[21]);
-                    doc.setStatus_description((String)            obj[22]);
+                    doc.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
+                    doc.setStatus_name((String)                   obj[21]);
+                    doc.setStatus_color((String)                  obj[22]);
                     doc.setProduct_count(Long.parseLong(          obj[23].toString()));
                     returnList.add(doc);
                 }
@@ -457,6 +457,7 @@ public class PostingRepository {
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
                     " inventory_id, " + //если документ создаётся из Инвенторизации - тут будет ее id
+                    " status_id," + //статус
                     " posting_date " +// дата списания
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -467,7 +468,8 @@ public class PostingRepository {
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
                     request.getInventory_id() + ", "+//
-                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата списания
+                    request.getStatus_id() + ", "+//статус
+                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
             try {
 
                 Date dateNow = new Date();
@@ -524,7 +526,7 @@ public class PostingRepository {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, CantSaveProductHistoryException.class, InsertProductHistoryExceprions.class})
-    public  Boolean updatePosting(PostingForm request) {
+    public  Integer updatePosting(PostingForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"211") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -535,8 +537,8 @@ public class PostingRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(16L,"214") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-            if(updatePostingWithoutTable(request)){
                 try {//сохранение таблицы
+                    updatePostingWithoutTable(request);
                     insertPostingProducts(request, request.getId(),myMasterId);
                     //если документ завершается - запись в историю товара
                     if(request.isIs_completed()){
@@ -553,33 +555,33 @@ public class PostingRepository {
                             }
                         }
                     }
-                    return true;
+                    return 1;
                 } catch (CantSaveProductQuantityException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updatePosting on inserting into product_quantity cause error.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (CantInsertProductRowCauseErrorException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updatePosting on inserting into posting_products cause error.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method updatePosting on inserting into products_history.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 } catch (Exception e){
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method PostingRepository/updatePosting.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 }
-            } else return false;
-        } else return false;
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updatePostingWithoutTable(PostingForm request) {
+    private Boolean updatePostingWithoutTable(PostingForm request) throws Exception {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String stringQuery;
@@ -589,7 +591,8 @@ public class PostingRepository {
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
                 " is_completed = " + request.isIs_completed() + "," +
-                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " +
+                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " + "," +
+                " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
                 " and master_id="+myMasterId;
@@ -604,7 +607,7 @@ public class PostingRepository {
         }catch (Exception e) {
             logger.error("Exception in method PostingRepository/updatePostingWithoutTable. stringQuery=" + stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
     private Boolean savePostingProductTable(PostingProductForm row, Long myMasterId) {
@@ -616,7 +619,6 @@ public class PostingRepository {
                 "product_count," +
                 "product_price," +
                 "product_sumprice" +
-//                        "edizm_id" +
                 ") values ("
                 + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
                 + "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+"),"

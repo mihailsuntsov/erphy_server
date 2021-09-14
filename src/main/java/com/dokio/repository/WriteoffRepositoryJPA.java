@@ -179,9 +179,9 @@ public class WriteoffRepositoryJPA {
                     doc.setDate_time_changed((String)             obj[14]);
                     doc.setDescription((String)                   obj[15]);
                     doc.setIs_completed((Boolean)                 obj[16]);
-                    doc.setStatus_name((String)                   obj[20]);
-                    doc.setStatus_color((String)                  obj[21]);
-                    doc.setStatus_description((String)            obj[22]);
+                    doc.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
+                    doc.setStatus_name((String)                   obj[21]);
+                    doc.setStatus_color((String)                  obj[22]);
                     doc.setProduct_count(Long.parseLong(          obj[23].toString()));
                     returnList.add(doc);
                 }
@@ -374,8 +374,7 @@ public class WriteoffRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
-                    "           and p.id= " + id+
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and p.id= " + id;
             if (!securityRepositoryJPA.userHasPermissions_OR(17L, "223")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
                 if (!securityRepositoryJPA.userHasPermissions_OR(17L, "224")) //Если нет прав на просм по своему предприятию
@@ -417,6 +416,10 @@ public class WriteoffRepositoryJPA {
                     returnObj.setDate_time_changed((String) obj[14]);
                     returnObj.setDescription((String) obj[15]);
                     returnObj.setIs_completed((Boolean) obj[16]);
+                    returnObj.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
+                    returnObj.setStatus_name((String)                   obj[21]);
+                    returnObj.setStatus_color((String)                  obj[22]);
+                    returnObj.setStatus_description((String)            obj[23]);
                 }
                 return returnObj;
             }
@@ -451,7 +454,7 @@ public class WriteoffRepositoryJPA {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery =   "insert into writeoff (" +
+            stringQuery = "insert into writeoff (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -461,6 +464,7 @@ public class WriteoffRepositoryJPA {
                     " description," +//доп. информация по заказу
                     " inventory_id, " + //если документ создаётся из Инвенторизации - тут будет ее id
                     " return_id, " + //если документ создаётся из Возврата покупателя - тут будет его id
+                    " status_id," + //статус
                     " writeoff_date " +// дата списания
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -472,6 +476,7 @@ public class WriteoffRepositoryJPA {
                     " :description, " +//описание
                     request.getInventory_id() + ", "+//
                     request.getReturn_id() + ", "+//
+                    request.getStatus_id() + ", "+//статус
                     " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
             try {
 
@@ -540,8 +545,8 @@ public class WriteoffRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(17L,"230") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-            if(updateWriteoffWithoutTable(request)){                                      //метод 1
                 try {//сохранение таблицы товаров
+                    updateWriteoffWithoutTable(request);
                     insertWriteoffProducts(request,request.getId(),myMasterId);
                     //если завершается списание - запись в историю товара
                     if(request.isIs_completed()){
@@ -578,17 +583,16 @@ public class WriteoffRepositoryJPA {
                     e.printStackTrace();
                     return 0;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method WriteoffRepository/updateWriteoff. ", e);
+                    e.printStackTrace();
                     return null;
                 }
-
-            } else return null;
-        } else return null;
+        } else return -1;//недостаточно прав
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateWriteoffWithoutTable(WriteoffForm request) {
+    private Boolean updateWriteoffWithoutTable(WriteoffForm request) throws Exception {
 
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -599,6 +603,7 @@ public class WriteoffRepositoryJPA {
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
                 " is_completed = " + request.isIs_completed() + "," +
+                " status_id = " + request.getStatus_id() + "," +
                 " writeoff_date = to_date(:writeoff_date,'DD.MM.YYYY') " +
                 " where " +
                 " id= "+request.getId() +
@@ -614,7 +619,7 @@ public class WriteoffRepositoryJPA {
         }catch (Exception e) {
             logger.error("Exception in method WriteoffRepository/updateWriteoffWithoutTable. stringQuery=" + stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 

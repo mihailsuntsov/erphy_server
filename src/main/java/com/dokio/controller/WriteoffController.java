@@ -240,12 +240,7 @@ public class WriteoffController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateWriteoff(@RequestBody WriteoffForm request){
         logger.info("Processing post request for path api/auth/updateWriteoff: " + request.toString());
-        Integer result=writeoffRepositoryJPA.updateWriteoff(request);
-        if(result!=null){
-            return new ResponseEntity<>(result, HttpStatus.OK);//  1, null либо 0. 1 = все ок, 0 = не достаточное кол-во товаров для списания, null - ошибка
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения либо завершения списания", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(writeoffRepositoryJPA.updateWriteoff(request), HttpStatus.OK);//   1 = все ок,  0 = недостаточно товара на складе, null = ошибка, -1 = недостаточно прав
     }
 
     @PostMapping("/api/auth/deleteWriteoff")

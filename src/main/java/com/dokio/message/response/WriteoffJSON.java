@@ -33,10 +33,19 @@ public class WriteoffJSON {
     private String      status_color;
     private String      status_description;
     private Long        product_count;
+    private Long        status_id;
     private Boolean     is_completed; // завершена
 
     public Long getId() {
         return id;
+    }
+
+    public Long getStatus_id() {
+        return status_id;
+    }
+
+    public void setStatus_id(Long status_id) {
+        this.status_id = status_id;
     }
 
     public void setId(Long id) {

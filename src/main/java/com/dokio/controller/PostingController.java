@@ -241,13 +241,8 @@ public class PostingController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updatePosting(@RequestBody PostingForm request){
         logger.info("Processing post request for path /api/auth/updatePosting: " + request.toString());
-
-        if(postingRepositoryJPA.updatePosting(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при сохранении Оприходования", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+        return new ResponseEntity<>(postingRepositoryJPA.updatePosting(request), HttpStatus.OK);//   1 = все ок, null = ошибка, -1 = недостаточно прав
+     }
 
     @PostMapping("/api/auth/deletePosting")
     @SuppressWarnings("Duplicates")
