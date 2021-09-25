@@ -280,21 +280,23 @@ public class ProductsController {
 
     @RequestMapping(
             value = "/api/auth/getProductsList",
-            params = {"searchString", "companyId", "departmentId", "document_id"},
+            params = {"searchString", "companyId", "departmentId", "document_id", "priceTypeId"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getProductsList(
             @RequestParam("searchString") String searchString,
             @RequestParam("companyId") Long companyId,
             @RequestParam("departmentId") Long departmentId,
+            @RequestParam("priceTypeId")  Long priceTypeId,
             @RequestParam("document_id") Long document_id)
     {
         logger.info("Processing post request for path /api/auth/getProductsLists with parameters: " +
                 "searchString: " + searchString +
                 ", companyId: " + companyId.toString() +
                 ", departmentId: " + departmentId.toString() +
+                ", priceTypeId: "   + priceTypeId.toString() +
                 ", document_id: "+ document_id.toString());
         List returnList;
-        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId, document_id);
+        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId, document_id, priceTypeId);
         return new ResponseEntity<>(returnList, HttpStatus.OK);
     }
 

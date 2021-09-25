@@ -1059,20 +1059,38 @@ public class WriteoffRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                            "price_type_id, " +         //тип цены из справочника Типы цен
+                            "change_price, " +          //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +            //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " +     //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +           //убирать десятые (копейки) - boolean
                             "department_id, " +         //отделение по умолчанию
                             "status_on_finish_id, "+    //статус документа при завершении инвентаризации
                             "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
                             row.getStatusOnFinishId() + "," +
                             row.getAutoAdd() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_writeoff_user_uq " +// "upsert"
                             " DO update set " +
-                            "  department_id = "+row.getDepartmentId()+
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() +
+                            ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", auto_add = "+row.getAutoAdd();
@@ -1098,7 +1116,14 @@ public class WriteoffRepositoryJPA {
                 "           p.department_id as department_id, " +                       // id отделения
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
-                "           coalesce(p.auto_add,false) as auto_add " +                  // автодобавление товара из формы поиска в таблицу
+                "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
+                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
+                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
+                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
+
                 "           from settings_writeoff p " +
                 "           where p.user_id= " + myId;
         try{
@@ -1111,6 +1136,12 @@ public class WriteoffRepositoryJPA {
                 writeoffObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
                 writeoffObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
                 writeoffObj.setAutoAdd((Boolean)                              obj[3]);
+                writeoffObj.setPricingType((String)                           obj[4]);
+                writeoffObj.setPriceTypeId(obj[5]!=null?Long.parseLong(       obj[5].toString()):null);
+                writeoffObj.setChangePrice((BigDecimal)                       obj[6]);
+                writeoffObj.setPlusMinus((String)                             obj[7]);
+                writeoffObj.setChangePriceType((String)                       obj[8]);
+                writeoffObj.setHideTenths((Boolean)                           obj[9]);
             }
             return writeoffObj;
         }

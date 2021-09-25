@@ -1024,7 +1024,7 @@ public class RetailSalesRepository {
             //вообще, в БД установлено ограничение на кол-во товара >=0, и отмену транзакции мог бы сделать CantSaveProductHistoryException в блоке catch,
             //но данным исключением мы уточним, от чего именно произошла отмена транзакции:
             if((lastQuantity.subtract(product_count)).compareTo(new BigDecimal("0")) < 0) {
-                logger.error("Для Розничной продажи с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к списанию больше количества товара на складе");
+                logger.error("Для Розничной продажи с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара для продажи больше доступного количества товара на складе");
                 throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
             }
 

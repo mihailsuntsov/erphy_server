@@ -17,22 +17,58 @@ package com.dokio.message.response;
 import java.math.BigDecimal;
 
 public class ProductsListJSON {
-    private Long id;            // id товара
-    private Long product_id;    // и это тоже id товара (так надо)
-    private String name;
-    private Integer nds_id;
-    private Long edizm_id;
-    private String edizm;
-    private String filename;
-    private BigDecimal total;//всего товаров
-    private BigDecimal reserved;//зарезервировано в других документах Заказ покупателя
-    private BigDecimal total_in_all_my_depths;//всего товаров во всех моих отделениях (складах)
-    private BigDecimal reserved_in_all_my_depths;//зарезервировано товаров во всех моих отделениях (складах)
-    private String ppr_name_api_atol; //Признак предмета расчета в системе Атол
-//    private String nds_name_api_atol; //НДС в системе Атол
-    private Boolean is_material; //определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
-    private BigDecimal reserved_current;// зарезервировано единиц товара в отделении (складе) в ЭТОМ (текущем) Заказе покупателя:
-    private Boolean     indivisible;         // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+    private Long id;                                // id товара
+    private Long product_id;                        // и это тоже id товара (так надо)
+    private String name;                            // наименование товара
+    private Integer nds_id;                         // id ндс
+    private Long edizm_id;                          // id ед. измерения
+    private String edizm;                           // наименование ед. измерения
+    private String filename;                        // имя файла
+    private BigDecimal total;                       // всего товаров
+    private BigDecimal reserved;                    // зарезервировано в других документах Заказ покупателя
+    private BigDecimal total_in_all_my_depths;      // всего товаров во всех моих отделениях (складах)
+    private BigDecimal reserved_in_all_my_depths;   // зарезервировано товаров во всех моих отделениях (складах)
+    private String ppr_name_api_atol;               // Признак предмета расчета в системе Атол
+//    private String nds_name_api_atol;             // НДС в системе Атол
+    private Boolean is_material;                    // определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
+    private BigDecimal reserved_current;            // зарезервировано единиц товара в отделении (складе) в ЭТОМ (текущем) Заказе покупателя:
+    private Boolean     indivisible;                // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+    private BigDecimal  priceOfTypePrice;           // цена по запрошенному id типа цены
+    private BigDecimal  avgCostPrice;               // средняя себестоимость
+    private BigDecimal  lastPurchasePrice;          // последняя закупочная цена
+    private BigDecimal  avgPurchasePrice ;          // средняя закупочная цена
+
+    public BigDecimal getPriceOfTypePrice() {
+        return priceOfTypePrice;
+    }
+
+    public void setPriceOfTypePrice(BigDecimal priceOfTypePrice) {
+        this.priceOfTypePrice = priceOfTypePrice;
+    }
+
+    public BigDecimal getAvgCostPrice() {
+        return avgCostPrice;
+    }
+
+    public void setAvgCostPrice(BigDecimal avgCostPrice) {
+        this.avgCostPrice = avgCostPrice;
+    }
+
+    public BigDecimal getLastPurchasePrice() {
+        return lastPurchasePrice;
+    }
+
+    public void setLastPurchasePrice(BigDecimal lastPurchasePrice) {
+        this.lastPurchasePrice = lastPurchasePrice;
+    }
+
+    public BigDecimal getAvgPurchasePrice() {
+        return avgPurchasePrice;
+    }
+
+    public void setAvgPurchasePrice(BigDecimal avgPurchasePrice) {
+        this.avgPurchasePrice = avgPurchasePrice;
+    }
 
     public Boolean getIndivisible() {
         return indivisible;

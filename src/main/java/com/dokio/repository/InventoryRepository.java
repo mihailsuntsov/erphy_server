@@ -832,7 +832,7 @@ public class InventoryRepository {
                 // всего единиц товара в отделении (складе)
                 "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
                 // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
-                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = 10),0) as price_by_typeprice, " +
+                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
 //                (priceTypeId>0?" pp.price_value":null) + " as price_by_typeprice," +
                 // средняя себестоимость
@@ -909,7 +909,7 @@ public class InventoryRepository {
                 " ap.doc_number" +
                 " from "+tableName+" ap" +
                 " where ap.master_id = " + myMasterId +
-                " and coalesce(ap.is_archive,false)!=true "+
+                " and coalesce(ap.is_deleted,false)!=true "+
                 " and ap.inventory_id = " + docId;
         stringQuery = stringQuery + " order by ap.date_time_created asc ";
         try{

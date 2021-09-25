@@ -10,14 +10,16 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.message.response.Settings;
+package com.dokio.message.request.Settings;
 
 import java.math.BigDecimal;
 
-public class SettingsWriteoffJSON {
+public class SettingsMovingForm {
+
     private Long        companyId;              // id предприятия
-    private Long        departmentId;           // id отделения
-    private Long        statusOnFinishId;       // статус документа при завершении инвентаризации
+    private Long        departmentFromId;       // id отделения из
+    private Long        departmentToId;         // id отделения в
+    private Long        statusOnFinishId;       // статус документа при завершении
     private Boolean     autoAdd;                // автодобавление товара из формы поиска в таблицу
     private String      pricingType;            // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
     private Long        priceTypeId;            // тип цены из справочника Типы цен
@@ -82,14 +84,6 @@ public class SettingsWriteoffJSON {
         this.companyId = companyId;
     }
 
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
-    }
-
     public Long getStatusOnFinishId() {
         return statusOnFinishId;
     }
@@ -106,4 +100,19 @@ public class SettingsWriteoffJSON {
         this.autoAdd = autoAdd;
     }
 
+    public Long getDepartmentFromId() {
+        return departmentFromId;
+    }
+
+    public void setDepartmentFromId(Long departmentFromId) {
+        this.departmentFromId = departmentFromId;
+    }
+
+    public Long getDepartmentToId() {
+        return departmentToId;
+    }
+
+    public void setDepartmentToId(Long departmentToId) {
+        this.departmentToId = departmentToId;
+    }
 }

@@ -12,17 +12,19 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.repository;
 
-import com.dokio.message.request.AcceptanceForm;
-import com.dokio.message.request.AcceptanceProductForm;
+import com.dokio.message.request.MovingForm;
+import com.dokio.message.request.MovingProductForm;
 import com.dokio.message.request.SearchForm;
-import com.dokio.message.request.Settings.SettingsAcceptanceForm;
+import com.dokio.message.request.Settings.SettingsMovingForm;
 import com.dokio.message.request.UniversalForm;
-import com.dokio.message.response.AcceptanceJSON;
-import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
-import com.dokio.message.response.additional.FilesAcceptanceJSON;
+import com.dokio.message.response.MovingJSON;
+import com.dokio.message.response.Settings.SettingsMovingJSON;
+import com.dokio.message.response.additional.FilesMovingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
+import com.dokio.message.response.additional.MovingProductTableJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.repository.Exceptions.InsertProductHistoryExceprions;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -45,7 +47,7 @@ import java.util.stream.Stream;
 
 
 @Repository
-public class AcceptanceRepository {
+public class MovingRepository {
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -63,11 +65,11 @@ public class AcceptanceRepository {
     @Autowired
     ProductsRepositoryJPA productsRepository;
 
-    Logger logger = Logger.getLogger("AcceptanceRepository");
+    Logger logger = Logger.getLogger("MovingRepository");
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","status_name","product_count","is_completed","acceptance_date_sort","company","department","cagent","creator","date_time_created_sort","description")
+            .of("doc_number","status_name","product_count","is_completed","company","department_from","department_to","creator","date_time_created_sort","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -77,8 +79,8 @@ public class AcceptanceRepository {
     //****************************************************      MENU      *********************************************************************************
     //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<AcceptanceJSON> getAcceptanceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//(см. файл Permissions Id)
+    public List<MovingJSON> getMovingTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long departmentFromId, Long departmentToId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(30L, "384,385,386,387"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -95,21 +97,17 @@ public class AcceptanceRepository {
                     "           p.creator_id as creator_id, " +
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
-                    "           coalesce(p.nds,false) as nds, " +
-                    "           coalesce(p.nds_included,false) as nds_included, " +
                     "           coalesce(p.overhead,0) as overhead, " +
-                    "           p.department_id as department_id, " +
-                    "           dp.name as department, " +
-                    "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           p.department_from_id as department_from_id, " +
+                    "           p.department_to_id as department_to_id, " +
+                    "           dp_from.name as department_from, " +
+                    "           dp_to.name as department_to, " +
                     "           p.doc_number as doc_number, " +
-                    "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
-                    "           p.acceptance_date as acceptance_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method, " +
@@ -117,47 +115,48 @@ public class AcceptanceRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           (select count(*) from acceptance_product ip where coalesce(ip.acceptance_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
-                    "           from acceptance p " +
+                    "           (select count(*) from moving_product ip where coalesce(ip.moving_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
+                    "           from moving p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
+                    "           INNER JOIN departments dp_from ON p.department_from_id=dp_from.id " +
+                    "           INNER JOIN departments dp_to ON p.department_to_id=dp_to.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(30L, "384")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(30L, "385")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(15L, "195")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
                 } else stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
             }
-
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
 
-                        " to_char(p.acceptance_date, 'DD.MM.YYYY') = :sg or "+
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(dp_from.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(dp_to.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name) like  upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
 
             }
-            if (companyId > 0) {
+            if (companyId > 0L) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-            if (departmentId > 0) {
-                stringQuery = stringQuery + " and p.department_id=" + departmentId;
+            if (departmentFromId > 0L) {
+                stringQuery = stringQuery + " and p.department_from_id=" + departmentFromId;
+            }
+            if (departmentToId > 0L) {
+                stringQuery = stringQuery + " and p.department_to_id=" + departmentToId;
             }
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
@@ -168,17 +167,14 @@ public class AcceptanceRepository {
                 Query query = entityManager.createNativeQuery(stringQuery)
                         .setFirstResult(offsetreal)
                         .setMaxResults(result);
-
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
-
                 List<Object[]> queryList = query.getResultList();
-                List<AcceptanceJSON> returnList = new ArrayList<>();
+                List<MovingJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    AcceptanceJSON doc=new AcceptanceJSON();
+                    MovingJSON doc=new MovingJSON();
                     doc.setId(Long.parseLong(                     obj[0].toString()));
                     doc.setMaster((String)                        obj[1]);
                     doc.setCreator((String)                       obj[2]);
@@ -187,39 +183,36 @@ public class AcceptanceRepository {
                     doc.setCreator_id(Long.parseLong(             obj[5].toString()));
                     doc.setChanger_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
                     doc.setCompany_id(Long.parseLong(             obj[7].toString()));
-                    doc.setNds((Boolean)                          obj[8]);
-                    doc.setNds_included((Boolean)                 obj[9]);
-                    doc.setOverhead((BigDecimal)                  obj[10]);
-                    doc.setDepartment_id(Long.parseLong(          obj[11].toString()));
-                    doc.setDepartment((String)                    obj[12]);
-                    doc.setCagent_id(Long.parseLong(              obj[13].toString()));
-                    doc.setCagent((String)                        obj[14]);
-                    doc.setDoc_number(Long.parseLong(             obj[15].toString()));
-                    doc.setAcceptance_date((String)(              obj[16]));
-                    doc.setCompany((String)                       obj[17]);
-                    doc.setDate_time_created((String)             obj[18]);
-                    doc.setDate_time_changed((String)             obj[19]);
-                    doc.setDescription((String)                   obj[20]);
-                    doc.setIs_completed((Boolean)                 obj[21]);
-                    doc.setOverhead_netcost_method((Integer)      obj[25]);
-                    doc.setStatus_id(obj[26]!=null?Long.parseLong(obj[26].toString()):null);
-                    doc.setStatus_name((String)                   obj[27]);
-                    doc.setStatus_color((String)                  obj[28]);
-                    doc.setStatus_description((String)            obj[29]);
-                    doc.setProduct_count(Long.parseLong(          obj[30].toString()));
+                    doc.setOverhead((BigDecimal)                  obj[8]);
+                    doc.setDepartment_from_id(Long.parseLong(     obj[9].toString()));
+                    doc.setDepartment_to_id(Long.parseLong(       obj[10].toString()));
+                    doc.setDepartment_from((String)               obj[11]);
+                    doc.setDepartment_to((String)                 obj[12]);
+                    doc.setDoc_number(Long.parseLong(             obj[13].toString()));
+                    doc.setCompany((String)                       obj[14]);
+                    doc.setDate_time_created((String)             obj[15]);
+                    doc.setDate_time_changed((String)             obj[16]);
+                    doc.setDescription((String)                   obj[17]);
+                    doc.setIs_completed((Boolean)                 obj[18]);
+                    doc.setOverhead_netcost_method((Integer)      obj[21]);
+                    doc.setStatus_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
+                    doc.setStatus_name((String)                   obj[23]);
+                    doc.setStatus_color((String)                  obj[24]);
+                    doc.setStatus_description((String)            obj[25]);
+                    doc.setProduct_count(Long.parseLong(          obj[26].toString()));
                     returnList.add(doc);
                 }
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getAcceptanceTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getMovingTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
     }
 
     @SuppressWarnings("Duplicates")
-    public int getAcceptanceSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+    public int getMovingSize(String searchString, Long companyId, Long departmentFromId, Long departmentToId, Set<Integer> filterOptionsIds) {
         Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
@@ -227,43 +220,45 @@ public class AcceptanceRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
-                "           from acceptance p " +
+                "           from moving p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
+                "           INNER JOIN departments dp_from ON p.department_from_id=dp_from.id " +
+                "           INNER JOIN departments dp_to ON p.department_to_id=dp_to.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
+        if (!securityRepositoryJPA.userHasPermissions_OR(30L, "384")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-            if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
+            if (!securityRepositoryJPA.userHasPermissions_OR(30L, "385")) //Если нет прав на просм по своему предприятию
             {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(15L, "195")) //Если нет прав на просмотр всех доков в своих подразделениях
+                if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                 {//остается только на свои документы
-                    stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                    stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
             } else stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
         }
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
 
-                    " to_char(p.acceptance_date, 'DD.MM.YYYY') = :sg or "+
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                    " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(dp_from.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(dp_to.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name) like  upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
-        if (companyId > 0) {
+        if (companyId > 0L) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
-        if (departmentId > 0) {
-            stringQuery = stringQuery + " and p.department_id=" + departmentId;
+        if (departmentFromId > 0L) {
+            stringQuery = stringQuery + " and p.department_from_id=" + departmentFromId;
+        }
+        if (departmentToId > 0L) {
+            stringQuery = stringQuery + " and p.department_to_id=" + departmentToId;
         }
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -277,14 +272,14 @@ public class AcceptanceRepository {
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getAcceptanceSize. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getMovingSize. SQL query:" + stringQuery, e);
             return 0;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    public List<AcceptanceProductForm> getAcceptanceProductTable(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//(см. файл Permissions Id)
+    public List<MovingProductTableJSON> getMovingProductTable(Long docId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(30L, "384,385,386,387"))//(см. файл Permissions Id)
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
@@ -292,33 +287,41 @@ public class AcceptanceRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             stringQuery =   " select " +
                     " ap.product_id," +
-                    " ap.acceptance_id," +
+                    " ap.moving_id," +
                     " ap.product_count," +
                     " ap.product_price," +
                     " ap.product_sumprice," +
                     " ap.product_netcost," +
-                    " ap.nds_id," +
-                    " p.edizm_id," +
                     " p.name as name," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = p.nds_id) as nds," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_from_id),0) as total, "+ //всего на складе (т.е остаток)
+                    " (select " +
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                    //по логике: сумма( резерв > (всего - отгружено) ? (всего - отгружено) : резерв)    (при условии не позволять в заказах покупателей делать резерв больше "всего" (reserved_current!>product_count))
+                    "   from " +
+                    "   customers_orders_product " +
+                    "   where " +
+                    "   product_id=ap.product_id "+
+                    "   and department_id = a.department_from_id) as reserved, "+//зарезервировано во всех документах Заказ покупателя в отделении "ИЗ"
+                    " ppr.is_material as is_material " +
                     " from " +
-                    " acceptance_product ap " +
-                    " INNER JOIN acceptance a ON ap.acceptance_id=a.id " +
+                    " moving_product ap " +
+                    " INNER JOIN moving a ON ap.moving_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
+                    " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                     " where a.master_id = " + myMasterId +
-                    " and ap.acceptance_id = " + docId;
+                    " and ap.moving_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(30L, "384")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(30L, "385")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(15L, "195")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID+" and a.department_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
                 } else stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
             }
 
@@ -329,28 +332,27 @@ public class AcceptanceRepository {
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
                 List<Object[]> queryList = query.getResultList();
-                List<AcceptanceProductForm> returnList = new ArrayList<>();
+                List<MovingProductTableJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    AcceptanceProductForm doc=new AcceptanceProductForm();
+                    MovingProductTableJSON doc=new MovingProductTableJSON();
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
-                    doc.setAcceptance_id(Long.parseLong(                    obj[1].toString()));
+                    doc.setMoving_id(Long.parseLong(                        obj[1].toString()));
                     doc.setProduct_count((BigDecimal)                       obj[2]);
                     doc.setProduct_price((BigDecimal)                       obj[3]);
                     doc.setProduct_sumprice((BigDecimal)                    obj[4]);
                     doc.setProduct_netcost((BigDecimal)                     obj[5]);
-                    doc.setNds_id((Integer)                                 obj[6]);
-                    doc.setEdizm_id(obj[7]!=null?Long.parseLong(            obj[7].toString()):null);
-                    doc.setName((String)                                    obj[8]);
-                    doc.setNds((String)                                     obj[9]);
-                    doc.setEdizm((String)                                   obj[10]);
-                    doc.setIndivisible((Boolean)                            obj[11]);
-                    doc.setTotal((BigDecimal)                               obj[12]);
+                    doc.setName((String)                                    obj[6]);
+                    doc.setEdizm((String)                                   obj[7]);
+                    doc.setIndivisible((Boolean)                            obj[8]);
+                    doc.setTotal((BigDecimal)                               obj[9]);
+                    doc.setReserved(                                        obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
+                    doc.setIs_material((Boolean)                            obj[11]);
                     returnList.add(doc);
                 }
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getAcceptanceProductTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getMovingProductTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -361,8 +363,8 @@ public class AcceptanceRepository {
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
     @Transactional
-    public AcceptanceJSON getAcceptanceValuesById (Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//см. _Permissions Id.txt
+    public MovingJSON getMovingValuesById (Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(30L, "384,385,386,387"))//см. _Permissions Id.txt
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
@@ -378,21 +380,17 @@ public class AcceptanceRepository {
                     "           p.creator_id as creator_id, " +
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
-                    "           coalesce(p.nds,false) as nds, " +
-                    "           coalesce(p.nds_included,false) as nds_included, " +
                     "           coalesce(p.overhead,0) as overhead, " +
-                    "           p.department_id as department_id, " +
-                    "           dp.name as department, " +
-                    "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           p.department_from_id as department_from_id, " +
+                    "           p.department_to_id as department_to_id, " +
+                    "           dp_from.name as department_from, " +
+                    "           dp_to.name as department_to, " +
                     "           p.doc_number as doc_number, " +
-                    "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
-                    "           p.acceptance_date as acceptance_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           coalesce(p.overhead_netcost_method,0) as overhead_netcost_method, " +
@@ -400,24 +398,24 @@ public class AcceptanceRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description " +
-                    "           from acceptance p " +
+                    "           from moving p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
+                    "           INNER JOIN departments dp_from ON p.department_from_id=dp_from.id " +
+                    "           INNER JOIN departments dp_to ON p.department_to_id=dp_to.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
-            if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(30L, "384")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(30L, "385")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(15L, "195")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
                 } else stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
             }
             try{
@@ -428,7 +426,7 @@ public class AcceptanceRepository {
 
                 List<Object[]> queryList = query.getResultList();
 
-                AcceptanceJSON returnObj=new AcceptanceJSON();
+                MovingJSON returnObj=new MovingJSON();
 
                 for(Object[] obj:queryList){
                     returnObj.setId(Long.parseLong(                     obj[0].toString()));
@@ -439,30 +437,27 @@ public class AcceptanceRepository {
                     returnObj.setCreator_id(Long.parseLong(             obj[5].toString()));
                     returnObj.setChanger_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
                     returnObj.setCompany_id(Long.parseLong(             obj[7].toString()));
-                    returnObj.setNds((Boolean)                          obj[8]);
-                    returnObj.setNds_included((Boolean)                 obj[9]);
-                    returnObj.setOverhead((BigDecimal)                  obj[10]);
-                    returnObj.setDepartment_id(Long.parseLong(          obj[11].toString()));
-                    returnObj.setDepartment((String)                    obj[12]);
-                    returnObj.setCagent_id(Long.parseLong(              obj[13].toString()));
-                    returnObj.setCagent((String)                        obj[14]);
-                    returnObj.setDoc_number(Long.parseLong(             obj[15].toString()));
-                    returnObj.setAcceptance_date((String)(              obj[16]));
-                    returnObj.setCompany((String)                       obj[17]);
-                    returnObj.setDate_time_created((String)             obj[18]);
-                    returnObj.setDate_time_changed((String)             obj[19]);
-                    returnObj.setDescription((String)                   obj[20]);
-                    returnObj.setIs_completed((Boolean)                 obj[21]);
-                    returnObj.setOverhead_netcost_method((Integer)      obj[25]);
-                    returnObj.setStatus_id(obj[26]!=null?Long.parseLong(obj[26].toString()):null);
-                    returnObj.setStatus_name((String)                   obj[27]);
-                    returnObj.setStatus_color((String)                  obj[28]);
-                    returnObj.setStatus_description((String)            obj[29]);
+                    returnObj.setOverhead((BigDecimal)                  obj[8]);
+                    returnObj.setDepartment_from_id(Long.parseLong(     obj[9].toString()));
+                    returnObj.setDepartment_to_id(Long.parseLong(       obj[10].toString()));
+                    returnObj.setDepartment_from((String)               obj[11]);
+                    returnObj.setDepartment_to((String)                 obj[12]);
+                    returnObj.setDoc_number(Long.parseLong(             obj[13].toString()));
+                    returnObj.setCompany((String)                       obj[14]);
+                    returnObj.setDate_time_created((String)             obj[15]);
+                    returnObj.setDate_time_changed((String)             obj[16]);
+                    returnObj.setDescription((String)                   obj[17]);
+                    returnObj.setIs_completed((Boolean)                 obj[18]);
+                    returnObj.setOverhead_netcost_method((Integer)      obj[21]);
+                    returnObj.setStatus_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
+                    returnObj.setStatus_name((String)                   obj[23]);
+                    returnObj.setStatus_color((String)                  obj[24]);
+                    returnObj.setStatus_description((String)            obj[25]);
                 }
                 return returnObj;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getAcceptanceValuesById. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getMovingValuesById. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -470,11 +465,12 @@ public class AcceptanceRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
-    public Long insertAcceptance(AcceptanceForm request) {
+    public Long insertMoving(MovingForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
+        // для случая, если у пользователя есть только право на "Создание для своих отделений",  необходимо проверить возможность для создания для всех отделений (отделение "ИЗ" и отделение "В")
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_from_id(), 30L, "377", "378", "379") &&
+                       securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_to_id(), 30L, "377", "378", "379");
         if(iCan==Boolean.TRUE)
         {
             String stringQuery;
@@ -485,70 +481,52 @@ public class AcceptanceRepository {
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null) {
                 doc_number=Long.valueOf(request.getDoc_number());
-            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"acceptance");
+            } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"moving");
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery =   "insert into acceptance (" +
+            stringQuery =   "insert into moving (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
-                    " department_id," + //отделение, из(для) которого создается документ
+                    " department_from_id," + //отделение, из которого перемещают
+                    " department_to_id," + //отделение в которое перемещают
                     " date_time_created," + //дата и время создания
-                    " cagent_id," +//поставщик
-                    " nds," +
-                    " nds_included," +
                     " overhead," +
                     " overhead_netcost_method," +
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
-                    " status_id," + //статус
-                    " acceptance_date " +// дата списания
+                    " status_id" + //статус
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
                     request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                    request.getDepartment_from_id() + ", "+//отделение, из(для) которого создается документ
+                    request.getDepartment_to_id() + ", "+//отделение, из(для) которого создается документ
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                    request.getCagent_id() + ", "+
-                    request.isNds() + ", "+
-                    request.isNds_included() + ", "+
                     request.getOverhead() + ", "+
                     request.getOverhead_netcost_method() + ", "+
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
-                    request.getStatus_id() + ", "+//статус
-                    " to_date(:acceptance_date,'DD.MM.YYYY')) ";// дата списания
+                    request.getStatus_id() + ")";// статус
             try {
-
-                Date dateNow = new Date();
-                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
-
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-                //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
-                query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
                 query.executeUpdate();
-                stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
+                stringQuery = "select id from moving where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDockId = Long.valueOf(query2.getSingleResult().toString());
 
-
-                if(insertAcceptanceProducts(request, newDockId, myMasterId)){
+                if(insertMovingProducts(request, newDockId, myMasterId)){
                     return newDockId;
                 } else return null;
-                //если есть таблица с товарами - нужно создать их
-//                insertAcceptanceProducts(request, newDockId, myMasterId);
-//                return newDockId;
-
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertAcceptance on inserting into acceptance_products cause error.", e);
+                logger.error("Exception in method insertMoving on inserting into moving_products cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (Exception e) {
-                logger.error("Exception in method insertAcceptance. SQL query:"+stringQuery, e);
+                logger.error("Exception in method insertMoving. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -560,76 +538,78 @@ public class AcceptanceRepository {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
-    public  Integer updateAcceptance(AcceptanceForm request) {
+    public  Integer updateMoving(MovingForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",request.getId().toString())) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(30L,"388") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"191") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"389") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("moving",request.getId().toString()))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"197") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"390") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("moving",request.getId().toString()))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",request.getId().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"391") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("moving",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-            if(updateAcceptanceWithoutTable(request,myMasterId)){                                      //апдейт основного документа, без таблицы товаров
-                try {//сохранение таблицы
-                    insertAcceptanceProducts(request, request.getId(), myMasterId);
-                    //если завершается приемка - запись в историю товара
-                    if(request.is_completed()){
+            try {
+                //апдейт основного документа, без таблицы товаров
+                updateMovingWithoutTable(request,myMasterId);
+                //сохранение таблицы
+                insertMovingProducts(request, request.getId(), myMasterId);
+                //если завершается приемка - запись в историю товара
+                if(request.isIs_completed()){
 
-                        for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
-                            if (!addAcceptanceProductHistory(row, request, myMasterId)) {//       //сохранение истории операций с записью актуальной инфо о количестве товара в отделении
+                    for (MovingProductForm row : request.getMovingProductTable()) {
+                        if (!addMovingProductHistory(row, request, myMasterId)) {//       //сохранение истории операций с записью актуальной инфо о количестве товара в отделении
+                            break;
+                        } else {
+                            if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
                                 break;
-                            } else {
-                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-                                    break;
-                                }
                             }
                         }
                     }
-                    return 1;
-                } catch (CantSaveProductQuantityException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateAcceptance on inserting into product_quantity cause error.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantInsertProductRowCauseErrorException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateAcceptance on inserting into acceptance_products cause error.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantSaveProductHistoryException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateAcceptance on inserting into products_history.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (Exception e){
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateAcceptance.", e);
-                    e.printStackTrace();
-                    return null;
                 }
-            } else return null;
+                return 1;
+            } catch (CantSaveProductQuantityException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateMoving on inserting into product_quantity cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateMoving on updating cause oversell.", e);
+                e.printStackTrace();
+                return 0;// недостаточно товара на складе
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateMoving on inserting into moving_products cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantSaveProductHistoryException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateMoving on inserting into products_history.", e);
+                e.printStackTrace();
+                return null;
+            } catch (Exception e){
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateMoving.", e);
+                e.printStackTrace();
+                return null;
+            }
         } else return -1;//недостаточно прав
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateAcceptanceWithoutTable(AcceptanceForm request, Long myMasterId) {
+    private Boolean updateMovingWithoutTable(MovingForm request, Long myMasterId) {
 
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery =   " update acceptance set " +
+        stringQuery =   " update moving set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
-                " nds =" + request.isNds() + "," +
-                " nds_included =" + request.isNds_included() + "," +
                 " overhead =" + request.getOverhead() + "," +                               //расходы
                 " overhead_netcost_method =" + request.getOverhead_netcost_method() + "," + //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
                 " is_completed = " + request.isIs_completed() + "," +
-                " acceptance_date = to_date(:acceptance_date,'DD.MM.YYYY'), " +
-
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
@@ -638,12 +618,10 @@ public class AcceptanceRepository {
         {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-            query.setParameter("acceptance_date", (request.getAcceptance_date() == "" ? null :request.getAcceptance_date()));
-
             query.executeUpdate();
             return true;
         }catch (Exception e) {
-            logger.error("Exception in method AcceptanceRepository/updateAcceptanceWithoutTable. stringQuery=" + stringQuery, e);
+            logger.error("Exception in method MovingRepository/updateMovingWithoutTable. stringQuery=" + stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -651,54 +629,52 @@ public class AcceptanceRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertAcceptanceProducts(AcceptanceForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertMovingProducts(MovingForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
-        if (request.getAcceptanceProductTable()!=null && request.getAcceptanceProductTable().size() > 0) {
-            for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
-                row.setAcceptance_id(parentDockId);// т.к. он может быть неизвестен при создании документа
-                if (!saveAcceptanceProductTable(row, myMasterId)) {
+        if (request.getMovingProductTable()!=null && request.getMovingProductTable().size() > 0) {
+            for (MovingProductForm row : request.getMovingProductTable()) {
+                row.setMoving_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                if (!saveMovingProductTable(row, myMasterId, request.getCompany_id())) {
                     throw new CantInsertProductRowCauseErrorException();
                 }
                 productIds.add(row.getProduct_id());
             }
         }
-        if (!deleteAcceptanceProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
+        if (!deleteMovingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
 
-    private Boolean saveAcceptanceProductTable(AcceptanceProductForm row, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private Boolean saveMovingProductTable(MovingProductForm row, Long myMasterId, Long companyId) throws CantInsertProductRowCauseErrorException {
         String stringQuery;
 
-        stringQuery =   " insert into acceptance_product (" +
+        stringQuery =   " insert into moving_product (" +
+                "master_id," +
+                "company_id," +
                 "product_id," +
-                "acceptance_id," +
+                "moving_id," +
                 "product_count," +
                 "product_price," +
                 "product_sumprice," +
-                "product_netcost," +
-                "nds_id," +
-                "edizm_id" +
+                "product_netcost" +
                 ") values ("
+                + myMasterId + ","
+                + companyId + ","
                 + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
-                + "(select id from acceptance where id="+row.getAcceptance_id() +" and master_id="+myMasterId+"),"
+                + "(select id from moving where id="+row.getMoving_id() +" and master_id="+myMasterId+"),"
                 + row.getProduct_count() + ","
                 + row.getProduct_price() +","
                 + row.getProduct_sumprice() +","
-                + row.getProduct_netcost() +","
-                + row.getNds_id() +","
-                + row.getEdizm_id() +")" +
-                "ON CONFLICT ON CONSTRAINT acceptance_product_uq " +// "upsert"
+                + row.getProduct_netcost() +") " +
+                "ON CONFLICT ON CONSTRAINT moving_product_uq " +// "upsert"
                 " DO update set " +
                 " product_id = " + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+")," +
-                " acceptance_id = "+ "(select id from acceptance where id="+row.getAcceptance_id() +" and master_id="+myMasterId+")," +
+                " moving_id = "+ "(select id from moving where id="+row.getMoving_id() +" and master_id="+myMasterId+")," +
                 " product_count = " + row.getProduct_count() + "," +
                 " product_price = " + row.getProduct_price() + "," +
                 " product_sumprice = " + row.getProduct_sumprice() + "," +
-                " product_netcost = " + row.getProduct_netcost() +"," +
-                " nds_id = " + row.getNds_id() +"," +
-                " edizm_id = "+ row.getEdizm_id();
+                " product_netcost = " + row.getProduct_netcost();
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -706,16 +682,16 @@ public class AcceptanceRepository {
         }
         catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method AcceptanceRepository/saveAcceptanceProductTable. SQL query:"+stringQuery, e);
+            logger.error("Exception in method MovingRepository/saveMovingProductTable. SQL query:"+stringQuery, e);
             throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 
-    private Boolean deleteAcceptanceProductTableExcessRows(String productIds, Long acceptance_id) {
+    private Boolean deleteMovingProductTableExcessRows(String productIds, Long moving_id) {
         String stringQuery;
 
-        stringQuery =   " delete from acceptance_product " +
-                " where acceptance_id=" + acceptance_id +
+        stringQuery =   " delete from moving_product " +
+                " where moving_id=" + moving_id +
                 " and product_id not in (" + productIds + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -723,31 +699,48 @@ public class AcceptanceRepository {
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method AcceptanceRepository/deleteAcceptanceProductTableExcessRows. SQL query:"+stringQuery, e);
+            logger.error("Exception in method MovingRepository/deleteMovingProductTableExcessRows. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return false;
         }
     }
     @SuppressWarnings("Duplicates")
-    private Boolean addAcceptanceProductHistory(AcceptanceProductForm row, AcceptanceForm request , Long masterId) throws CantSaveProductHistoryException {
+    private Boolean addMovingProductHistory(MovingProductForm row, MovingForm request , Long masterId) throws CantSaveProductHistoryException, CantInsertProductRowCauseOversellException {
         String stringQuery;
         try {
             //берем последнюю запись об истории товара в данном отделении
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+            ProductHistoryJSON lastProductHistoryRecordFrom =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_from_id());
+            ProductHistoryJSON lastProductHistoryRecordTo =    productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_to_id());
             //последнее количество товара
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            //средняя цена закупа
-            BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-            //средняя себестоимость
-            BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
+            BigDecimal lastQuantityFrom= lastProductHistoryRecordFrom.getQuantity();
+            BigDecimal lastQuantityTo= lastProductHistoryRecordTo.getQuantity();
+            //последняя средняя цена закупа
+            BigDecimal lastAvgPurchasePriceFrom= lastProductHistoryRecordFrom.getAvg_purchase_price();
+            BigDecimal lastAvgPurchasePriceTo= lastProductHistoryRecordTo.getAvg_purchase_price();
+            //последняя средняя себестоимость
+            BigDecimal lastAvgNetcostPriceFrom= lastProductHistoryRecordFrom.getAvg_netcost_price();
+//            BigDecimal lastAvgNetcostPriceTo= lastProductHistoryRecordTo.getAvg_netcost_price();
             //средняя цена закупа = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_ЦЕНА_ЗАКУПА)+СУММА_ПО_НОВОМУ_ТОВАРУ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО+КОЛИЧЕСТВО_ПО_НОВОМУ_ТОВАРУ
             //Именно поэтому нельзя допускать отрицательных остатков - если знаменатель будет = 0, то возникнет эксепшн деления на 0.
-            BigDecimal avgPurchasePrice = ((lastQuantity.multiply(lastAvgPurchasePrice)).add(row.getProduct_sumprice())).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
+//            BigDecimal avgPurchasePriceFrom =lastProductHistoryRecordFrom.getLast_purchase_price();
+            BigDecimal avgPurchasePriceTo = ((lastQuantityTo.multiply(lastAvgPurchasePriceTo)).add(row.getProduct_sumprice())).divide(lastQuantityTo.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
             //средняя себестоимость = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
-//            logger.error("addAcceptanceProductHistory: lastQuantity=" + lastQuantity.toString() + ", lastAvgNetcostPrice="+lastAvgNetcostPrice.toString()+", getProduct_count="+row.getProduct_count().toString()+", getProduct_netcost="+row.getProduct_netcost().toString());
-            BigDecimal avgNetcostPrice =  ((lastQuantity.multiply(lastAvgNetcostPrice)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(lastQuantity.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-            //для последней закуп. цены нельзя брать row.getProduct_price(), т.к. она не учитывает НДС, если он не включен в цену. А row.getProduct_sumprice() учитывает.
-            BigDecimal last_purchase_price=row.getProduct_sumprice().divide(row.getProduct_count(),2,BigDecimal.ROUND_HALF_UP);
+//            BigDecimal avgNetcostPriceFrom =  lastProductHistoryRecordFrom.getAvg_netcost_price();
+            BigDecimal avgNetcostPriceTo = ((lastQuantityTo.multiply(lastAvgPurchasePriceTo)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(lastQuantityTo.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
+            //последняя закуп. цена
+            BigDecimal lastPurchasePriceFrom= lastProductHistoryRecordFrom.getLast_purchase_price();
+//            BigDecimal lastPurchasePriceTo= lastProductHistoryRecordTo.getLast_purchase_price();
+            //все резервы товара со "склада ИЗ"
+            BigDecimal allReserves = productsRepository.getProductReserves(request.getDepartment_from_id(), row.getProduct_id());
+
+            //необходимо проверить, что списываем количество товара не более доступного количества, которое равно разнице всего количества товара на складе и резервов этого товара на данном складе.
+
+            //  всё кол-во товара  минус ( кол-во к перемещению   +  все резервы) должно быть >= 0
+            if((lastQuantityFrom.subtract(row.getProduct_count().add(allReserves))).compareTo(new BigDecimal("0")) < 0) {
+                logger.error("Для перемещения с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к перемещению больше доступного количества товара на складе");
+                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+            }
+
 
             stringQuery =   " insert into products_history (" +
                     " master_id," +
@@ -756,44 +749,81 @@ public class AcceptanceRepository {
                     " doc_type_id," +
                     " doc_id," +
                     " product_id," +
-                    " quantity," +
-                    " change," +
-                    " avg_purchase_price," +
-                    " avg_netcost_price," +
-                    " last_purchase_price," +
-                    " last_operation_price," +
+                    " quantity," +//                кол-во товара на складе в результате операции
+                    " change," +//1                 кол-во товара в операции
+                    " avg_purchase_price," +//2     средняя цена приобретения
+                    " avg_netcost_price," +//3      средняя себестоимость
+                    " last_purchase_price," +//4    последняя цена приобретения
+                    " last_operation_price," +//5   цена последней операции
                     " date_time_created"+
                     ") values ("+
                     masterId +","+
                     request.getCompany_id() +","+
-                    request.getDepartment_id() + ","+
-                    15 +","+
-                    row.getAcceptance_id() + ","+
+                    request.getDepartment_from_id() + ","+
+                    30 +","+
+                    row.getMoving_id() + ","+
                     row.getProduct_id() + ","+
-                    lastQuantity.add(row.getProduct_count())+","+
-                    row.getProduct_count() +","+
-                    avgPurchasePrice +","+
-                    avgNetcostPrice +","+
-                    last_purchase_price+","+//в операциях поступления (оприходование и приёмка) цена закупки (или оприходования) last_purchase_price равна цене операции last_operation_price,
-                    last_purchase_price+","+//..в отличии от операций убытия (списания, продажа), где цена закупки остается старой
+                    lastQuantityFrom.subtract(row.getProduct_count())+","+// в отделении ИЗ от этого товара вычитаем перемещаемое количество товара
+                    row.getProduct_count().negate() +","+//1  negate т.к. в историю операций для "отделения ИЗ" должно записаться отрицательное кол-во товара
+                    lastAvgPurchasePriceFrom +","+//2
+                    lastAvgNetcostPriceFrom +","+//3
+                    lastPurchasePriceFrom+","+//4     в операциях убытия (списания, продажа, перемещение из), последняя цена приобретения остается старой
+                    row.getProduct_price()+","+//5//  в операциях убытия (списания, продажа, перемещение из), цена последней операции равна цене товара в данной операции
                     " now())";
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
+
+            stringQuery =   " insert into products_history (" +
+                    " master_id," +
+                    " company_id," +
+                    " department_id," +
+                    " doc_type_id," +
+                    " doc_id," +
+                    " product_id," +
+                    " quantity," +//                кол-во товара на складе в результате операции
+                    " change," +//1                 кол-во товара в операции
+                    " avg_purchase_price," +//2     средняя цена приобретения
+                    " avg_netcost_price," +//3      средняя себестоимость
+                    " last_purchase_price," +//4    последняя цена приобретения
+                    " last_operation_price," +//5   цена последней операции
+                    " date_time_created"+
+                    ") values ("+
+                    masterId +","+
+                    request.getCompany_id() +","+
+                    request.getDepartment_to_id() + ","+
+                    30 +","+
+                    row.getMoving_id() + ","+
+                    row.getProduct_id() + ","+
+                    lastQuantityTo.add(row.getProduct_count())+","+// в отделении В к этому товару прибавляем перемещаемое количество товара
+                    row.getProduct_count() +","+//1
+                    avgPurchasePriceTo +","+//2     средняя цена приобретения
+                    avgNetcostPriceTo +","+//3      средняя себестоимость. В данном случае (при перемещении) расходы на перемещение распределяются по себестоимости товара принимающей стороны
+                    row.getProduct_price()+","+//   в операциях поступления (оприходование, приёмка, перемещение в) последняя цена приобретения last_purchase_price равна цене товара, в отличии от операций убытия (списания, продажа), где цена последнего приобретения остается старой
+                    row.getProduct_price()+","+//   цена последней операции last_operation_price равна цене товара в данной операции
+                    " now())";
+            query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
             return true;
+
+        } catch (CantInsertProductRowCauseOversellException e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method updateMoving on updating cause oversell.", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseOversellException();// переброска эксепшена о "недостаточно товара на складе"
         }
         catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method AcceptanceRepository/addAcceptanceProductHistory. ", e);
+            logger.error("Exception in method MovingRepository/addMovingProductHistory. ", e);
             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 
 
     @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(AcceptanceProductForm row, AcceptanceForm request , Long masterId) throws CantSaveProductQuantityException {
+    private Boolean setProductQuantity(MovingProductForm row, MovingForm request , Long masterId) throws CantSaveProductQuantityException {
         String stringQuery;
         try {
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_from_id());
             BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
             stringQuery =
                     " insert into product_quantity (" +
@@ -803,27 +833,49 @@ public class AcceptanceRepository {
                             " quantity" +
                             ") values ("+
                             masterId + ","+
-                            request.getDepartment_id() + ","+
+                            request.getDepartment_from_id() + ","+
                             row.getProduct_id() + ","+
                             lastQuantity +
                             ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
                             " DO update set " +
-                            " department_id = " + request.getDepartment_id() + ","+
+                            " department_id = " + request.getDepartment_from_id() + ","+
                             " product_id = " + row.getProduct_id() + ","+
                             " master_id = "+ masterId + "," +
                             " quantity = "+ lastQuantity;
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
+
+            lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_to_id());
+            lastQuantity= lastProductHistoryRecord.getQuantity();
+            stringQuery =
+                    " insert into product_quantity (" +
+                            " master_id," +
+                            " department_id," +
+                            " product_id," +
+                            " quantity" +
+                            ") values ("+
+                            masterId + ","+
+                            request.getDepartment_to_id() + ","+
+                            row.getProduct_id() + ","+
+                            lastQuantity +
+                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                            " DO update set " +
+                            " department_id = " + request.getDepartment_to_id() + ","+
+                            " product_id = " + row.getProduct_id() + ","+
+                            " master_id = "+ masterId + "," +
+                            " quantity = "+ lastQuantity;
+            query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
             return true;
         }
         catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method AcceptanceRepository/setProductQuantity. ", e);
+            logger.error("Exception in method MovingRepository/setProductQuantity. ", e);
             throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
     @SuppressWarnings("Duplicates")
-    public List<LinkedDocsJSON> getAcceptanceLinkedDocsList(Long docId, String docName) {
+    public List<LinkedDocsJSON> getMovingLinkedDocsList(Long docId, String docName) {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -837,7 +889,7 @@ public class AcceptanceRepository {
                 " from "+docName+" ap" +
                 " where ap.master_id = " + myMasterId +
                 " and coalesce(ap.is_deleted,false)!=true "+
-                " and ap.acceptance_id = " + docId;
+                " and ap.moving_id = " + docId;
         stringQuery = stringQuery + " order by ap.date_time_created asc ";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -855,26 +907,26 @@ public class AcceptanceRepository {
             return returnList;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getAcceptanceLinkedDocsList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getMovingLinkedDocsList. SQL query:" + stringQuery, e);
             return null;
         }
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean deleteAcceptance (String delNumbers) {
+    public Boolean deleteMoving (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(30L,"380") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"187") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"381") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("moving",delNumbers))||
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"193") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"382") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("moving",delNumbers))||
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"383") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("moving",delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update acceptance p" +
+            stringQuery = "Update moving p" +
                     " set is_deleted=true, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
@@ -884,7 +936,7 @@ public class AcceptanceRepository {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }catch (Exception e) {
-                logger.error("Exception in method deleteAcceptance. SQL query:"+stringQuery, e);
+                logger.error("Exception in method deleteMoving. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -893,19 +945,19 @@ public class AcceptanceRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteAcceptance (String delNumbers) {
+    public Boolean undeleteMoving (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(30L,"380") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"187") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"381") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("moving",delNumbers))||
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"193") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"382") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("moving",delNumbers))||
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"383") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("moving",delNumbers)))
         {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update acceptance p" +
+            stringQuery = "Update moving p" +
                     " set is_deleted=false, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
@@ -914,7 +966,7 @@ public class AcceptanceRepository {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }catch (Exception e) {
-                logger.error("Exception in method undeleteAcceptance. SQL query:"+stringQuery, e);
+                logger.error("Exception in method undeleteMoving. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -929,7 +981,7 @@ public class AcceptanceRepository {
     {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery = "select coalesce(max(doc_number)+1,1) from acceptance where company_id="+company_id+" and master_id="+myMasterId;
+        stringQuery = "select coalesce(max(doc_number)+1,1) from moving where company_id="+company_id+" and master_id="+myMasterId;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -943,7 +995,7 @@ public class AcceptanceRepository {
     }
 
     @SuppressWarnings("Duplicates") // проверка на уникальность номера документа
-    public Boolean isAcceptanceNumberUnical(UniversalForm request)
+    public Boolean isMovingNumberUnical(UniversalForm request)
     {
         Long company_id=request.getId1();
         Long code=request.getId2();
@@ -951,7 +1003,7 @@ public class AcceptanceRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
         stringQuery = "" +
-                "select id from acceptance where " +
+                "select id from moving where " +
                 "company_id="+company_id+
                 " and master_id="+myMasterId+
                 " and doc_number="+code;
@@ -964,7 +1016,7 @@ public class AcceptanceRepository {
             else return true; // код уникальный
         }
         catch (Exception e) {
-            logger.error("Exception in method isAcceptanceNumberUnical. SQL query:" + stringQuery, e);
+            logger.error("Exception in method isMovingNumberUnical. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return true;
         }
@@ -978,17 +1030,17 @@ public class AcceptanceRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public boolean addFilesToAcceptance(UniversalForm request){
-        Long acceptanceId = request.getId1();
+    public boolean addFilesToMoving(UniversalForm request){
+        Long movingId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id докмента принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта, ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",acceptanceId.toString())) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(30L,"388") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",movingId.toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"191") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",acceptanceId.toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"389") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("moving",movingId.toString()))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"197") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",acceptanceId.toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"390") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("moving",movingId.toString()))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",acceptanceId.toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"391") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("moving",movingId.toString())))
         {
             try
             {
@@ -996,18 +1048,18 @@ public class AcceptanceRepository {
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
-                    stringQuery = "select acceptance_id from acceptance_files where acceptance_id=" + acceptanceId + " and file_id=" + fileId;
+                    stringQuery = "select moving_id from moving_files where moving_id=" + movingId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
                         entityManager.close();
-                        manyToMany_AcceptanceId_FileId(acceptanceId,fileId);
+                        manyToMany_MovingId_FileId(movingId,fileId);
                     }
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                logger.error("Exception in method addFilesToAcceptance.", ex);
+                logger.error("Exception in method addFilesToMoving.", ex);
                 ex.printStackTrace();
                 return false;
             }
@@ -1016,29 +1068,29 @@ public class AcceptanceRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    boolean manyToMany_AcceptanceId_FileId(Long acceptanceId, Long fileId){
+    boolean manyToMany_MovingId_FileId(Long movingId, Long fileId){
         try
         {
             entityManager.createNativeQuery(" " +
-                    "insert into acceptance_files " +
-                    "(acceptance_id,file_id) " +
+                    "insert into moving_files " +
+                    "(moving_id,file_id) " +
                     "values " +
-                    "(" + acceptanceId + ", " + fileId +")")
+                    "(" + movingId + ", " + fileId +")")
                     .executeUpdate();
             entityManager.close();
             return true;
         }
         catch (Exception ex)
         {
-            logger.error("Exception in method manyToMany_AcceptanceId_FileId. ", ex);
+            logger.error("Exception in method manyToMany_MovingId_FileId. ", ex);
             ex.printStackTrace();
             return false;
         }
     }
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
-    public List<FilesAcceptanceJSON> getListOfAcceptanceFiles(Long acceptanceId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//Просмотр документов
+    public List<FilesMovingJSON> getListOfMovingFiles(Long movingId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(30L, "384,385,386,387"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
@@ -1049,22 +1101,22 @@ public class AcceptanceRepository {
                     "           f.name as name," +
                     "           f.original_name as original_name" +
                     "           from" +
-                    "           acceptance p" +
+                    "           moving p" +
                     "           inner join" +
-                    "           acceptance_files pf" +
-                    "           on p.id=pf.acceptance_id" +
+                    "           moving_files pf" +
+                    "           on p.id=pf.moving_id" +
                     "           inner join" +
                     "           files f" +
                     "           on pf.file_id=f.id" +
                     "           where" +
-                    "           p.id= " + acceptanceId +
+                    "           p.id= " + movingId +
                     "           and f.trash is not true"+
                     "           and p.master_id= " + myMasterId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(30L, "384")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(15L, "189")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(30L, "385")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(15L, "195")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -1081,9 +1133,9 @@ public class AcceptanceRepository {
 
                 List<Object[]> queryList = query.getResultList();
 
-                List<FilesAcceptanceJSON> returnList = new ArrayList<>();
+                List<FilesMovingJSON> returnList = new ArrayList<>();
                 for (Object[] obj : queryList) {
-                    FilesAcceptanceJSON doc = new FilesAcceptanceJSON();
+                    FilesMovingJSON doc = new FilesMovingJSON();
                     doc.setId(Long.parseLong(obj[0].toString()));
                     doc.setDate_time_created((Timestamp) obj[1]);
                     doc.setName((String) obj[2]);
@@ -1093,7 +1145,7 @@ public class AcceptanceRepository {
                 return returnList;
             }
             catch (Exception e) {
-                logger.error("Exception in method getListOfAcceptanceFiles. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getListOfMovingFiles. SQL query:" + stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -1102,24 +1154,24 @@ public class AcceptanceRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteAcceptanceFile(SearchForm request)
+    public boolean deleteMovingFile(SearchForm request)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance", String.valueOf(request.getAny_id()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(30L,"388") && securityRepositoryJPA.isItAllMyMastersDocuments("moving", String.valueOf(request.getAny_id()))) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"191") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"389") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("moving",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"197") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"390") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("moving",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",String.valueOf(request.getAny_id()))))
+                (securityRepositoryJPA.userHasPermissions_OR(30L,"391") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("moving",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
 //            int myCompanyId = userRepositoryJPA.getMyCompanyId();
-            stringQuery  =  " delete from acceptance_files "+
-                    " where acceptance_id=" + request.getAny_id()+
+            stringQuery  =  " delete from moving_files "+
+                    " where moving_id=" + request.getAny_id()+
                     " and file_id="+request.getId()+
-                    " and (select master_id from acceptance where id="+request.getAny_id()+")="+myMasterId ;
+                    " and (select master_id from moving where id="+request.getAny_id()+")="+myMasterId ;
             try
             {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1136,44 +1188,62 @@ public class AcceptanceRepository {
     //сохраняет настройки документа
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean saveSettingsAcceptance(SettingsAcceptanceForm row) {
+    public Boolean saveSettingsMoving(SettingsMovingForm row) {
         String stringQuery="";
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
 
             stringQuery =
-                    " insert into settings_acceptance (" +
+                    " insert into settings_moving (" +
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
-                            "department_id, " +         // отделение по умолчанию
-                            "status_on_finish_id, "+    // статус документа при завершении инвентаризации
-                            "auto_add,"+                // автодобавление товара из формы поиска в таблицу
-                            "auto_price"+               // автодоматическое подставление последней закупочной цены
+                            "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                            "price_type_id, " +         //тип цены из справочника Типы цен
+                            "change_price, " +          //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +            //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " +     //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +           //убирать десятые (копейки) - boolean
+                            "department_from_id, " +    //отделения по умолчанию
+                            "department_to_id, " +
+                            "status_on_finish_id, "+    //статус документа при завершении инвентаризации
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + "," +
-                            row.getDepartmentId() + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
+                            row.getDepartmentFromId() + "," +
+                            row.getDepartmentToId() + "," +
                             row.getStatusOnFinishId() + "," +
-                            row.getAutoAdd() + "," +
-                            row.getAutoPrice() +
+                            row.getAutoAdd() +
                             ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_acceptance_user_uq " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT settings_moving_user_uq " +// "upsert"
                             " DO update set " +
-                            "  department_id = "+row.getDepartmentId()+
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() +
+                            ", department_from_id = "+row.getDepartmentFromId()+
+                            ", department_to_id = "+row.getDepartmentToId()+
                             ", company_id = "+row.getCompanyId()+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
-                            ", auto_add = "+row.getAutoAdd()+
-                            ", auto_price = "+row.getAutoPrice();
+                            ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveSettingsAcceptance. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveSettingsMoving. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -1181,34 +1251,46 @@ public class AcceptanceRepository {
 
     //Загружает настройки документа для текущего пользователя (из-под которого пришел запрос)
     @SuppressWarnings("Duplicates")
-    public SettingsAcceptanceJSON getSettingsAcceptance() {
+    public SettingsMovingJSON getSettingsMoving() {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.department_id as department_id, " +                       // id отделения
+                "           p.department_from_id as department_from_id, " +             // id отделения
+                "           p.department_to_id as department_to_id, " +                 // id отделения
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
                 "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
-                "           coalesce(p.auto_price,false) as auto_price " +              // автодоматическое подставление последней закупочной цены
-                "           from settings_acceptance p " +
+                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
+                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
+                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.hide_tenths,false) as hide_tenths " +           // убирать десятые (копейки)
+                "           from settings_moving p " +
                 "           where p.user_id= " + myId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            SettingsAcceptanceJSON acceptanceObj=new SettingsAcceptanceJSON();
+            SettingsMovingJSON movingObj=new SettingsMovingJSON();
 
             for(Object[] obj:queryList){
-                acceptanceObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
-                acceptanceObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
-                acceptanceObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
-                acceptanceObj.setAutoAdd((Boolean)                              obj[3]);
-                acceptanceObj.setAutoPrice((Boolean)                            obj[4]);
+                movingObj.setDepartmentFromId(obj[0]!=null?Long.parseLong(  obj[0].toString()):null);
+                movingObj.setDepartmentToId(obj[1]!=null?Long.parseLong(    obj[1].toString()):null);
+                movingObj.setCompanyId(Long.parseLong(                      obj[2].toString()));
+                movingObj.setStatusOnFinishId(obj[3]!=null?Long.parseLong(  obj[3].toString()):null);
+                movingObj.setAutoAdd((Boolean)                              obj[4]);
+                movingObj.setPricingType((String)                           obj[5]);
+                movingObj.setPriceTypeId(obj[6]!=null?Long.parseLong(       obj[6].toString()):null);
+                movingObj.setChangePrice((BigDecimal)                       obj[7]);
+                movingObj.setPlusMinus((String)                             obj[8]);
+                movingObj.setChangePriceType((String)                       obj[9]);
+                movingObj.setHideTenths((Boolean)                           obj[10]);
             }
-            return acceptanceObj;
+            return movingObj;
         }
         catch (Exception e) {
-            logger.error("Exception in method getSettingsAcceptance. SQL query:"+stringQuery, e);
+            logger.error("Exception in method getSettingsMoving. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw e;
         }

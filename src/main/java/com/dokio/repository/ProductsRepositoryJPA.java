@@ -925,7 +925,7 @@ public class ProductsRepositoryJPA {
 
     // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
-    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id) {
+    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id, Long priceTypeId) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
@@ -976,7 +976,15 @@ public class ProductsRepositoryJPA {
                 "   and department_id=" + departmentId +
                 "   and customers_orders_id="+document_id+") as reserved_current, "+
                 " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm" +
+                " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
+                // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
+                "   coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
+                // средняя себестоимость
+                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                // средняя закупочная цена
+                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
+                // последняя закупочная цена
+                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice " +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -1016,6 +1024,10 @@ public class ProductsRepositoryJPA {
                 product.setReserved_current(                                obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
                 product.setIndivisible((Boolean)                            obj[12]);
                 product.setEdizm((String)                                   obj[13]);
+                product.setPriceOfTypePrice(                                obj[14]==null?BigDecimal.ZERO:(BigDecimal)obj[14]);
+                product.setAvgCostPrice(                                    obj[15]==null?BigDecimal.ZERO:(BigDecimal)obj[15]);
+                product.setAvgPurchasePrice(                                obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
+                product.setLastPurchasePrice(                               obj[17]==null?BigDecimal.ZERO:(BigDecimal)obj[17]);
                 returnList.add(product);
             }
             return returnList;
@@ -1047,6 +1059,34 @@ public class ProductsRepositoryJPA {
             return (BigDecimal) query.getSingleResult();
         } catch (Exception e) {
             logger.error("Exception in method getProductPrice. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    //отдает информацию количестве резервов товара на складе
+    public BigDecimal getProductReserves(Long departmentId, Long productId) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery =
+                "select " +
+                        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                        "   from " +
+                        "   customers_orders_product " +
+                        "   where " +
+                        "   product_id = " + productId +
+                        "   and department_id=" + departmentId +
+                        "   and master_id=" + myMasterId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            BigDecimal result = (BigDecimal) query.getSingleResult();
+            if(Objects.isNull(result)) {
+                return new BigDecimal(0);// т.к. запрос может возвращать null в случаях, если товара еще не было в заказах покупателей, вместо null вернем 0
+            } else {
+                return result;
+            }
+        } catch (Exception e) {
+            logger.error("Exception in method getProductReserves. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -1563,7 +1603,7 @@ public class ProductsRepositoryJPA {
                 "   product_id="+product_id+
                 "   and department_id = d.id ";
         // Eсли запрос отправляется из Заказа покупателя или из док-та, связанного с ним, нужно вернуть информацию, исключающую данный заказ.
-        // Если же отправляется из другого док-та (например Рознчная продажа) НЕ связанного с Заказом покупателя - возвращается полная информация
+        // Если же отправляется из другого док-та (например Рознчная продажа) НЕ связанного с Заказом покупателя - возвращается полное количество
         if(document_id>0L) {
             stringQuery=stringQuery+"   and customers_orders_id!=" + document_id;//зарезервировано в других документах Заказ покупателя
         }
@@ -1637,7 +1677,7 @@ public class ProductsRepositoryJPA {
     public List<ProductsInfoListJSON> getProductsInfoListByIds( ProductsInfoListForm request) {
         Long        companyId=request.getCompanyId();
         Long        departmentId=request.getDepartmentId();
-//        Long        priceTypeId=request.getPriceTypeId();
+        Long        priceTypeId=request.getPriceTypeId();
         Long        myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 //        String      reportOn=request.getReportOn();            // по категориям или по товарам/услугам (categories, products)
         List<Long>  reportOnIds=request.getReportOnIds();     // id категорий или товаров/услуг (того, что выбрано в reportOn)
@@ -1663,11 +1703,23 @@ public class ProductsRepositoryJPA {
                 // id ставки НДС
                 "           p.nds_id as nds_id," +
                 // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                " p.indivisible as indivisible" +
+                " p.indivisible as indivisible," +
+                // материален ли товар
+                " ppr.is_material as is_material, " +
+                " (select " +
+                // Резервы товара !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                //по логике: сумма( резерв > (всего - отгружено) ? (всего - отгружено) : резерв)    (при условии не позволять в заказах покупателей делать резерв больше "всего" (reserved_current!>product_count))
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   product_id=p.id "+
+                "   and department_id = " + departmentId +" ) as reserved "+//зарезервировано во всех документах Заказ покупателя
 
                 " from products p " +
+                " inner join sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
-//                (priceTypeId>0?" left outer join product_prices pp on pp.product_id=p.id":"")   +
+                (priceTypeId>0?" left outer join product_prices pp on pp.product_id=p.id":"")   +
                 " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
                 " where  p.master_id=" + myMasterId;
 
@@ -1682,13 +1734,13 @@ public class ProductsRepositoryJPA {
                     stringQuery = stringQuery + " and p.id in (select ppc.product_id from product_productcategories ppc where ppc.category_id in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
                 }
 
-//        stringQuery = stringQuery + (priceTypeId>0?(" and pp.price_type_id = " + priceTypeId):"") + //если тип цены запрашивается
+        stringQuery = stringQuery + (priceTypeId>0?(" and pp.price_type_id = " + priceTypeId):"");//если тип цены запрашивается
 
         stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true ";
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
-        stringQuery = stringQuery + " group by p.id, ei.short_name" +
+        stringQuery = stringQuery + " group by p.id, ei.short_name, ppr.is_material" +
 //                (priceTypeId>0?(", pp.price_value"):"") + //если тип цены запрашивается - группируем таже и по нему
                 "  order by p.name asc";
         try {
@@ -1709,6 +1761,8 @@ public class ProductsRepositoryJPA {
                 product.setTotal(                                           obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
                 product.setNds_id((Integer)                                 obj[9]);
                 product.setIndivisible((Boolean)                            obj[10]);
+                product.setIs_material((Boolean)                            obj[11]);
+                product.setReserved(                                        obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
                 returnList.add(product);
             }
             return returnList;

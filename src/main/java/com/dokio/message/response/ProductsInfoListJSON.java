@@ -16,6 +16,8 @@ public class ProductsInfoListJSON {
     private BigDecimal  total;               // остаток на складе (в некоторых документах на фронте используется total)
     private Integer     nds_id;              // id ставки НДС
     private Boolean     indivisible;         // неделимый товар (все действия только с кол-вом, кратным 1)
+    private BigDecimal  reserved;            // в резервах по всем Заказам покупателя
+    private Boolean     is_material;         // материален ли товар
 
     public Boolean getIndivisible() {
         return indivisible;
@@ -31,6 +33,22 @@ public class ProductsInfoListJSON {
 
     public void setTotal(BigDecimal total) {
         this.total = total;
+    }
+
+    public BigDecimal getReserved() {
+        return reserved;
+    }
+
+    public void setReserved(BigDecimal reserved) {
+        this.reserved = reserved;
+    }
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
     }
 
     public Long getProduct_id() {

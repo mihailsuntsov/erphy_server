@@ -350,7 +350,7 @@ public class PostingRepository {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.posting_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as posting_date, " +
                     "           cmp.name as company, " +
@@ -1063,20 +1063,38 @@ public class PostingRepository {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                            "price_type_id, " +         //тип цены из справочника Типы цен
+                            "change_price, " +          //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +            //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " +     //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +           //убирать десятые (копейки) - boolean
                             "department_id, " +         //отделение по умолчанию
                             "status_on_finish_id, "+    //статус документа при завершении инвентаризации
                             "auto_add"+                 // автодобавление товара из формы поиска в таблицу
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
                             row.getStatusOnFinishId() + "," +
                             row.getAutoAdd() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_posting_user_uq " +// "upsert"
                             " DO update set " +
-                            "  department_id = "+row.getDepartmentId()+
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() +
+                            ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", auto_add = "+row.getAutoAdd();
@@ -1102,7 +1120,13 @@ public class PostingRepository {
                 "           p.department_id as department_id, " +                       // id отделения
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
-                "           coalesce(p.auto_add,false) as auto_add " +                  // автодобавление товара из формы поиска в таблицу
+                "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
+                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
+                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
+                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
                 "           from settings_posting p " +
                 "           where p.user_id= " + myId;
         try{
@@ -1115,6 +1139,12 @@ public class PostingRepository {
                 postingObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
                 postingObj.setStatusOnFinishId(obj[2]!=null?Long.parseLong(  obj[2].toString()):null);
                 postingObj.setAutoAdd((Boolean)                              obj[3]);
+                postingObj.setPricingType((String)                           obj[4]);
+                postingObj.setPriceTypeId(obj[5]!=null?Long.parseLong(       obj[5].toString()):null);
+                postingObj.setChangePrice((BigDecimal)                       obj[6]);
+                postingObj.setPlusMinus((String)                             obj[7]);
+                postingObj.setChangePriceType((String)                       obj[8]);
+                postingObj.setHideTenths((Boolean)                           obj[9]);
             }
             return postingObj;
         }

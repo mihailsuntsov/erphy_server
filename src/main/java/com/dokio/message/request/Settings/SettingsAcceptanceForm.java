@@ -18,6 +18,15 @@ public class SettingsAcceptanceForm {
     private Long        departmentId;           // id отделения
     private Long        statusOnFinishId;       // статус документа при завершении
     private Boolean     autoAdd;                // автодобавление товара из формы поиска в таблицу
+    private Boolean     autoPrice;              // автоподставление последней закупочной цены
+
+    public Boolean getAutoPrice() {
+        return autoPrice;
+    }
+
+    public void setAutoPrice(Boolean autoPrice) {
+        this.autoPrice = autoPrice;
+    }
 
     public Long getCompanyId() {
         return companyId;
