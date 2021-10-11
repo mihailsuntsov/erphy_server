@@ -23,6 +23,7 @@ import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -58,6 +59,8 @@ public class ReturnRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -372,7 +375,8 @@ public class ReturnRepository {
                     "           coalesce(p.is_completed,false) as is_completed, " +  // инвентаризация завершена?
                     "           cg.id as cagent_id, " +
                     "           cg.name as cagent, " +
-                    "           p.nds as nds " +
+                    "           p.nds as nds, " +
+                    "           p.uid as uid" +
 
                     "           from return p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -431,6 +435,7 @@ public class ReturnRepository {
                     doc.setCagent_id(Long.parseLong(              obj[21].toString()));
                     doc.setCagent((String)                        obj[22]);
                     doc.setNds((Boolean)                          obj[23]);
+                    doc.setUid((String)                           obj[24]);
 
                 }
                 return doc;
@@ -625,6 +630,7 @@ public class ReturnRepository {
             Long myId = userRepository.getUserId();
             Long newDockId;
             Long doc_number;//номер документа
+            Long linkedDocsGroupId=0L;
 
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
@@ -633,6 +639,13 @@ public class ReturnRepository {
 
             if(request.getStatus_id()==null)
                 request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(), 28));
+
+            //если документ создается из другого документа
+            if (request.getLinked_doc_id() != null) {
+                //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
+                linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
+                if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+            }
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             stringQuery =   "insert into return (" +
@@ -647,6 +660,8 @@ public class ReturnRepository {
                     " description," +//доп. информация по заказу
                     " status_id,"+//статус инвентаризации
                     " retail_sales_id,"+// id родительского документа Розничная продажа, из которого может быть создан возврат
+                    " uid," +//
+                    " linked_docs_group_id," +// id группы связанных документов
                     " nds" +
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -660,6 +675,8 @@ public class ReturnRepository {
                     " :description, " +//описание
                     request.getStatus_id() + ", " + //статус док-та
                     request.getRetail_sales_id() + ", " + //id родительского документа Розничная продажа, из которого может быть создан возврат
+                    " :uid, " + //uid
+                    linkedDocsGroupId+"," + // id группы связанных документов
                     request.getNds()+")";
             try{
                 Date dateNow = new Date();
@@ -669,12 +686,19 @@ public class ReturnRepository {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
+                query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 query.executeUpdate();
                 stringQuery="select id from return where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDockId=Long.valueOf(query2.getSingleResult().toString());
 
                 if(insertReturnProducts(request, newDockId, myMasterId)){
+
+                    //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                    if (request.getLinked_doc_id() != null) {
+                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "return", request.getCompany_id(), myMasterId);
+                    }
+
                     return newDockId;
                 } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {

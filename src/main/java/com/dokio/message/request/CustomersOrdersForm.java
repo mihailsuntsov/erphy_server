@@ -41,9 +41,45 @@ public class CustomersOrdersForm {
     private String flat;
     private String additional_address;
     private String track_number;
-//------------- таблица товаров -----------------
-    private Set<CustomersOrdersProductTableForm> customersOrdersProductTable;
+    private String uid;
 
+    //------------- таблица товаров -----------------
+    private Set<CustomersOrdersProductTableForm> customersOrdersProductTable;
+    private Long linked_doc_id;//id связанного документа
+    private String linked_doc_type;//тип связанного документа - parent или child. Например, для Инвентаризации при создании из нее связанного Списания отправляем parent, т.к. Инвентаризация для него - родительский документ
+    private String linked_doc_name;//имя (таблицы) связанного документа
+
+    public Long getLinked_doc_id() {
+        return linked_doc_id;
+    }
+
+    public void setLinked_doc_id(Long linked_doc_id) {
+        this.linked_doc_id = linked_doc_id;
+    }
+
+    public String getLinked_doc_type() {
+        return linked_doc_type;
+    }
+
+    public void setLinked_doc_type(String linked_doc_type) {
+        this.linked_doc_type = linked_doc_type;
+    }
+
+    public String getLinked_doc_name() {
+        return linked_doc_name;
+    }
+
+    public void setLinked_doc_name(String linked_doc_name) {
+        this.linked_doc_name = linked_doc_name;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
     public Long getId() {
         return id;
     }

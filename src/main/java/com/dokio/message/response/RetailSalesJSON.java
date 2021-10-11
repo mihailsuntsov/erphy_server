@@ -52,6 +52,15 @@ public class RetailSalesJSON
     private int shift_number;
     private Long receipt_id;
     private boolean hasSellReceipt;
+    private String      uid;
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public boolean isHasSellReceipt() {
         return hasSellReceipt;

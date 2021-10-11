@@ -27,6 +27,7 @@ import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -804,7 +805,7 @@ public class CagentRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation= Propagation.REQUIRED)// класс может вызываться из другой транзакции, и в этом случае он должен выполняться внутри родительской транзакции (вообще это дефолтная установка, просто в данном случае это важно)
     public Long insertCagent(CagentsForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L,"129,130"))//  Контрагенты : "Создание"
         {

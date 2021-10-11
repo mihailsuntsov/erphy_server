@@ -20,13 +20,16 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
+import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -481,8 +484,8 @@ public class CustomersOrdersRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    @Transactional
-    public Long insertCustomersOrders(CustomersOrdersForm request) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    public CustomersOrdersUpdateReportJSON insertCustomersOrders(CustomersOrdersForm request) {
 
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
@@ -491,9 +494,7 @@ public class CustomersOrdersRepositoryJPA {
         boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
         Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
         Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-
-
-
+        CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о создании
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         try{
@@ -546,7 +547,6 @@ public class CustomersOrdersRepositoryJPA {
                         return null;
                     }
                 }
-
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
@@ -607,23 +607,44 @@ public class CustomersOrdersRepositoryJPA {
                     stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
                     newDockId=Long.valueOf(query2.getSingleResult().toString());
-                    return newDockId;
-                } catch (Exception e) {
-                    logger.error("Exception in method insertCustomersOrders on inserting into customers_orders. SQL query:"+stringQuery, e);
+
+                    //сохранение таблицы товаров
+                    updateResults=insertCustomersOrdersProducts(request, newDockId, myMasterId);
+                    updateResults.setId(newDockId);
+                    updateResults.setSuccess(true);
+                    return updateResults;
+
+                } catch (CantInsertProductRowCauseErrorException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertCustomersOrders on inserting into customers_orders_products. ", e);
+                    updateResults.setSuccess(false);
+                    updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
                     e.printStackTrace();
-                    return null;
+                    return updateResults; // ошибка сохранения таблицы товаров
+                } catch (Exception e) {
+                    logger.error("Exception in method insertCustomersOrders on querying of created document id. SQL query:"+stringQuery, e);
+                    e.printStackTrace();
+                    updateResults.setSuccess(false);
+                    updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                    return updateResults;
                 }
             } else {
-                return null;
+                updateResults.setSuccess(false);
+                updateResults.setErrorCode(0);          // Недостаточно прав
+                return updateResults;
             }
         } catch (Exception e) {
+            logger.error("Exception in method insertCustomersOrders on inserting into customers_orders.", e);
             e.printStackTrace();
-            return null;
+            updateResults.setSuccess(false);
+            updateResults.setErrorCode(1);      // Ошибка сохранения документа
+            return updateResults;
         }
     }
 
-    @Transactional
-    public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request)  throws Exception{
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request) {
+        CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет об апдейте
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -633,39 +654,69 @@ public class CustomersOrdersRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",request.getId().toString())))
         {
-            CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет об апдейте
-            Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
-            updateResults.setFail_to_reserve(0);// иначе NullPointerException, т.к. там сейчас null
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-            if(updateCustomersOrdersWithoutTable(request)){               //метод 1 - сохранение всех полей документа
-                try {//сохранение таблицы
-                    String productIds = "";
-                    if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {
-                        for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
-                            updateProductRowResult = saveCustomersOrdersProductTable(row, request.getCompany_id(), myMasterId);  //метод 2 - сохранение таблицы товаров
-                            if (updateProductRowResult==null) {//
-                                throw new Exception("Can't update Customers orders table row!");
-                            }
-                            //если при сохранении позиции товара не удалось сохранить включенным резерв - добавляем этот случай к сумме таких случаев по всем позициям (для отчета о сохранении)
-                            updateResults.setFail_to_reserve((updateResults.getFail_to_reserve()+updateProductRowResult));
-                            //копим id сохранённых товаров
-                            productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
-                        }
-                    }//удаление лишних
-//                    if (productIds.length()>0) {
-                        deleteCustomersOrdersProductTableExcessRows(productIds, request.getId(), myMasterId);
-//                    }
+            try
+            {
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
 
+                // сохранение всего кроме таблицы товаров
+                updateCustomersOrdersWithoutTable(request);
 
-                    updateResults.setSuccess(true);
-                    return updateResults;
-                } catch (Exception e){
-                    e.printStackTrace();
-                    return null;
-                }
-            } else return null;
-        } else return null;
+                // сохранение таблицы товаров
+                updateResults=insertCustomersOrdersProducts(request, request.getId(), myMasterId);
+
+                // возвращаем весть об успешности операции
+                updateResults.setSuccess(true);
+                return updateResults;
+
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateCustomersOrders on updating of customers_orders_products cause error.", e);
+                updateResults.setSuccess(false);
+                updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
+                e.printStackTrace();
+                return updateResults;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateCustomersOrders on updating of customers_orders cause error.", e);
+                updateResults.setSuccess(false);
+                updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                return updateResults;
+            }
+
+        } else {
+            updateResults.setSuccess(false);
+            updateResults.setErrorCode(0);          // Недостаточно прав
+            return updateResults;
+        }
     }
+
+    //сохранение таблицы товаров
+    @SuppressWarnings("Duplicates")
+    private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+        Set<Long> productIds=new HashSet<>();
+        CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о сохранении таблицы товаров
+        Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
+        updateResults.setFail_to_reserve(0);// иначе NullPointerException, т.к. там сейчас null
+
+        if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {
+            for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
+                row.setCustomers_orders_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                updateProductRowResult = saveCustomersOrdersProductTable(row, request.getCompany_id(), myMasterId);//1 - резерв был и не сохранился, 0 - резерв сохранился, null - ошибка
+                if (Objects.isNull(updateProductRowResult)) {
+                    throw new CantInsertProductRowCauseErrorException();
+                }
+                //если при сохранении позиции товара не удалось сохранить включенным резерв - добавляем этот случай к сумме таких случаев по всем позициям (для отчета о сохранении)
+                updateResults.setFail_to_reserve((updateResults.getFail_to_reserve()+updateProductRowResult));
+                //копим id сохранённых товаров
+                productIds.add(row.getProduct_id());
+            }
+        }
+        if (!deleteCustomersOrdersProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId(), myMasterId)){
+            throw new CantInsertProductRowCauseErrorException();
+        } else return updateResults;
+    }
+
+
     @SuppressWarnings("Duplicates")
     private Integer saveCustomersOrdersProductTable(CustomersOrdersProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
@@ -742,7 +793,7 @@ public class CustomersOrdersRepositoryJPA {
         }
     }
     @SuppressWarnings("Duplicates")
-    private Boolean updateCustomersOrdersWithoutTable(CustomersOrdersForm request) {
+    private Boolean updateCustomersOrdersWithoutTable(CustomersOrdersForm request) throws Exception {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
             String stringQuery;
@@ -778,7 +829,7 @@ public class CustomersOrdersRepositoryJPA {
         }catch (Exception e) {
             logger.error("Exception in method updateCustomersOrdersWithoutTable. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 

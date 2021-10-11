@@ -571,7 +571,7 @@ public class ReturnsupRepository {
                     row.getReturnsup_id() + ","+
                     row.getProduct_id() + ","+
                     (isMaterial?lastQuantity.subtract(row.getProduct_count()):(new BigDecimal(0)))+","+//если товар материален - записываем его кол-во, равное разности прежнего и возвращаемого, иначе 0
-                    row.getProduct_count() +","+
+                    row.getProduct_count().negate() +","+// т.к. товар выбывает, пишем его орицательное кол-во
                     avgPurchasePrice +","+
                     avgNetcostPrice +","+
                     lastPurchasePrice+","+

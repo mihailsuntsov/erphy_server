@@ -1,17 +1,15 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.PostingForm;
@@ -21,13 +19,16 @@ import com.dokio.message.request.Settings.SettingsPostingForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PostingJSON;
 import com.dokio.message.response.Settings.SettingsPostingJSON;
+import com.dokio.message.response.additional.DeleteDocksReport;
 import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.repository.Exceptions.InsertProductHistoryExceprions;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -53,15 +54,13 @@ public class PostingRepository {
     @Autowired
     private UserRepositoryJPA       userRepositoryJPA;
     @Autowired
-    SecurityRepositoryJPA           securityRepositoryJPA;
-    @Autowired
-    CompanyRepositoryJPA            companyRepositoryJPA;
-    @Autowired
-    DepartmentRepositoryJPA         departmentRepositoryJPA;
+    private SecurityRepositoryJPA   securityRepositoryJPA;
     @Autowired
     private CommonUtilites          commonUtilites;
     @Autowired
-    ProductsRepositoryJPA productsRepository;
+    private LinkedDocsUtilites      linkedDocsUtilites;
+    @Autowired
+    private ProductsRepositoryJPA   productsRepository;
 
     Logger logger = Logger.getLogger("PostingRepository");
 
@@ -364,7 +363,8 @@ public class PostingRepository {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
+                    "           stat.description as status_description, " +
+                    "           p.uid as uid" +
                     "           from posting p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -417,6 +417,7 @@ public class PostingRepository {
                     returnObj.setStatus_name((String)                   obj[21]);
                     returnObj.setStatus_color((String)                  obj[22]);
                     returnObj.setStatus_description((String)            obj[23]);
+                    returnObj.setUid((String)                           obj[24]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -440,11 +441,23 @@ public class PostingRepository {
             Long myId = userRepository.getUserId();
             Long newDockId;
             Long doc_number;//номер документа
+            Long linkedDocsGroupId=0L;
 
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null) {
                 doc_number=Long.valueOf(request.getDoc_number());
             } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"posting");
+
+            if (request.getStatus_id() ==null){
+                request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),16));
+            }
+
+            //если документ создается из другого документа
+            if (request.getLinked_doc_id() != null) {
+                //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
+                linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
+                if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+            }
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
@@ -458,6 +471,8 @@ public class PostingRepository {
                     " description," +//доп. информация по заказу
                     " inventory_id, " + //если документ создаётся из Инвенторизации - тут будет ее id
                     " status_id," + //статус
+                    " uid," +//
+                    " linked_docs_group_id," +// id группы связанных документов
                     " posting_date " +// дата списания
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -469,6 +484,8 @@ public class PostingRepository {
                     " :description, " +//описание
                     request.getInventory_id() + ", "+//
                     request.getStatus_id() + ", "+//статус
+                    " :uid, " + //uid
+                    linkedDocsGroupId+"," + // id группы связанных документов
                     " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
             try {
 
@@ -478,6 +495,7 @@ public class PostingRepository {
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
+                query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("posting_date", ((request.getPosting_date()==null || request.getPosting_date().equals("")) ? dateFormat.format(dateNow) : request.getPosting_date()));
                 query.executeUpdate();
@@ -487,6 +505,12 @@ public class PostingRepository {
 
                 //если есть таблица с товарами - нужно создать их
                 insertPostingProducts(request, newDockId, myMasterId);
+
+                //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                if (request.getLinked_doc_id() != null) {
+                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "posting", request.getCompany_id(), myMasterId);
+                }
+
                 return newDockId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
@@ -759,9 +783,10 @@ public class PostingRepository {
 
 
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
-    public Boolean deletePosting (String delNumbers) {
+    public DeleteDocksReport deletePosting (String delNumbers) {
+        DeleteDocksReport delResult = new DeleteDocksReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"203") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -771,23 +796,46 @@ public class PostingRepository {
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(16L,"206") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("posting",delNumbers)))
         {
-            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-            Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update posting p" +
-                    " set is_deleted=true, " + //удален
-                    " changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")" +
-                    " and coalesce(p.is_completed,false) !=true";
-            try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e) {
-                logger.error("Exception in method deletePosting. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return null;
+            // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
+            List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "posting");
+
+            if(!Objects.isNull(checkChilds)) { //если нет ошибки
+
+                if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
+                    String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
+                    Long myId = userRepositoryJPA.getMyId();
+                    stringQuery = "Update posting p" +
+                            " set is_deleted=true, " + //удален
+                            " changer_id="+ myId + ", " + // кто изменил (удалил)
+                            " date_time_changed = now() " +//дату и время изменения
+                            " where p.id in ("+delNumbers+")" +
+                            " and coalesce(p.is_completed,false) !=true";
+                    try {
+                        entityManager.createNativeQuery(stringQuery).executeUpdate();
+                        //удалим документы из группы связанных документов
+                        if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "posting")) throw new Exception ();
+                        delResult.setResult(0);// 0 - Всё ок
+                        return delResult;
+                    } catch (Exception e) {
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        logger.error("Exception in method deletePosting. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        delResult.setResult(1);// 1 - ошибка выполнения операции
+                        return delResult;
+                    }
+                } else { //один или несколько документов имеют связь с дочерними документами
+                    delResult.setResult(3);// 3 -  связи с дочерними документами
+                    delResult.setDocs(checkChilds);
+                    return delResult;
+                }
+            } else { //ошибка проверки на связь с дочерними документами
+                delResult.setResult(1);// 1 - ошибка выполнения операции
+                return delResult;
             }
-        } else return false;
+        } else {
+            delResult.setResult(2);// 2 - нет прав
+            return delResult;
+        }
     }
     @Transactional
     @SuppressWarnings("Duplicates")

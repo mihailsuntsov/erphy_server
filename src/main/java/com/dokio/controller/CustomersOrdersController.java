@@ -176,13 +176,7 @@ public class CustomersOrdersController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCustomersOrders(@RequestBody CustomersOrdersForm request){
         logger.info("Processing post request for path /api/auth/insertCustomersOrders: " + request.toString());
-
-        Long newDocument = customersOrdersRepositoryJPA.insertCustomersOrders(request);
-        if(newDocument!=null && newDocument>0){
-            return new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка создания документа Заказ покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(customersOrdersRepositoryJPA.insertCustomersOrders(request), HttpStatus.OK);
     }
 
     @RequestMapping(
@@ -207,14 +201,9 @@ public class CustomersOrdersController {
 
     @PostMapping("/api/auth/updateCustomersOrders")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
+    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request){
         logger.info("Processing post request for path /api/auth/updateCustomersOrders: " + request.toString());
-        CustomersOrdersUpdateReportJSON updateResults = customersOrdersRepositoryJPA.updateCustomersOrders(request);
-        if(updateResults.getSuccess()){
-            return new ResponseEntity<>(updateResults, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(customersOrdersRepositoryJPA.updateCustomersOrders(request), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/saveSettingsCustomersOrders")

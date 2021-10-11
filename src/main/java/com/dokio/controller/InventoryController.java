@@ -208,21 +208,21 @@ public class InventoryController {
         }
     }
 
-    @RequestMapping(
-            value = "/api/auth/getInventoryLinkedDocsList",
-            params = {"id","docName"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getInventoryLinkedDocsList(
-            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id инвентаризации и имя таблицы
-        logger.info("Processing get request for path api/auth/getInventoryLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
-        List<LinkedDocsJSON> returnList;
-        returnList = inventoryRepository.getInventoryLinkedDocsList(id,docName);
-        if(!Objects.isNull(returnList)){
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @RequestMapping(
+//            value = "/api/auth/getInventoryLinkedDocsList",
+//            params = {"id","docName"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getInventoryLinkedDocsList(
+//            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id инвентаризации и имя таблицы
+//        logger.info("Processing get request for path api/auth/getInventoryLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+//        List<LinkedDocsJSON> returnList;
+//        returnList = inventoryRepository.getInventoryLinkedDocsList(id,docName);
+//        if(!Objects.isNull(returnList)){
+//            return new ResponseEntity<>(returnList, HttpStatus.OK);
+//        } else {
+//            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 //    @RequestMapping(
 //            value = "/api/auth/getPostingDocsList",
 //            params = {"id"},
@@ -283,13 +283,8 @@ public class InventoryController {
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteInventory(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteInventory: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(inventoryRepository.deleteInventory(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(inventoryRepository.deleteInventory(checked), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/undeleteInventory")

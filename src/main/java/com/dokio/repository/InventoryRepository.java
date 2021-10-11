@@ -16,12 +16,14 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInventoryForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
+import com.dokio.message.response.additional.DeleteDocksReport;
 import com.dokio.message.response.additional.FilesInventoryJSON;
 import com.dokio.message.response.additional.InventoryProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -57,6 +59,8 @@ public class InventoryRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -357,7 +361,8 @@ public class InventoryRepository {
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           p.name as name, " +
-                    "           coalesce(p.is_completed,false) as is_completed " +  // инвентаризация завершена?
+                    "           coalesce(p.is_completed,false) as is_completed, " +  // инвентаризация завершена?
+                    "           p.uid as uid" +
 
                     "           from inventory p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -412,6 +417,7 @@ public class InventoryRepository {
                     doc.setStatus_description((String)            obj[18]);
                     doc.setName((String)                          obj[19]);
                     doc.setIs_completed((Boolean)                 obj[20]);
+                    doc.setUid((String)                           obj[21]);
                 }
                 return doc;
             } catch (Exception e) {
@@ -498,7 +504,8 @@ public class InventoryRepository {
                     " doc_number," + //номер заказа
                     " name," + //наименование заказа
                     " description," +//доп. информация по заказу
-                    " status_id"+//статус инвентаризации
+                    " status_id,"+//статус инвентаризации
+                    " uid" + // uid
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
@@ -508,11 +515,15 @@ public class InventoryRepository {
                     doc_number + ", "+//номер заказа
                     " :name_, " +//наименование
                     " :description, " +//описание
-                    request.getStatus_id() + ")";//статус инвентаризации
+                    request.getStatus_id() +//статус инвентаризации
+                    ", :uid)";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("name_", (request.getName() == null ? "" : request.getName()));
+                query.setParameter("uid", request.getUid());
+
                 query.executeUpdate();
                 stringQuery="select id from inventory where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -757,9 +768,9 @@ public class InventoryRepository {
         }
     }
 
-        @Transactional
-        @SuppressWarnings("Duplicates")
-        public boolean deleteInventory (String delNumbers) {
+        @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+        public DeleteDocksReport deleteInventory (String delNumbers) {
+        DeleteDocksReport delResult = new DeleteDocksReport();
             //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
             if( (securityRepositoryJPA.userHasPermissions_OR(27L,"332") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -767,23 +778,46 @@ public class InventoryRepository {
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
                 (securityRepositoryJPA.userHasPermissions_OR(27L,"334") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("inventory",delNumbers)))
             {
-                String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-                Long myId = userRepositoryJPA.getMyId();
-                stringQuery = "Update inventory p" +
+                // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
+                List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "inventory");
+
+                if(!Objects.isNull(checkChilds)) { //если нет ошибки
+
+                    if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
+                        String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
+                        Long myId = userRepositoryJPA.getMyId();
+                        stringQuery = "Update inventory p" +
                         " set is_deleted=true, " + //удален
                         " changer_id="+ myId + ", " + // кто изменил (удалил)
                         " date_time_changed = now() " +//дату и время изменения
                         " where p.id in ("+delNumbers+")" +
                         " and coalesce(p.is_completed,false) !=true";
-                try{
-                    entityManager.createNativeQuery(stringQuery).executeUpdate();
-                    return true;
-                }catch (Exception e) {
-                    logger.error("Exception in method deleteInventory. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    return false;
+                        try {
+                            entityManager.createNativeQuery(stringQuery).executeUpdate();
+                            //удалим документы из группы связанных документов
+                            if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "inventory")) throw new Exception ();
+                            delResult.setResult(0);// 0 - Всё ок
+                            return delResult;
+                        } catch (Exception e) {
+                            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                            logger.error("Exception in method deleteInventory. SQL query:" + stringQuery, e);
+                            e.printStackTrace();
+                            delResult.setResult(1);// 1 - ошибка выполнения операции
+                            return delResult;
+                        }
+                    } else { //один или несколько документов имеют связь с дочерними документами
+                        delResult.setResult(3);// 3 -  связи с дочерними документами
+                        delResult.setDocs(checkChilds);
+                        return delResult;
+                    }
+                } else { //ошибка проверки на связь с дочерними документами
+                    delResult.setResult(1);// 1 - ошибка выполнения операции
+                    return delResult;
                 }
-            } else return false;
+            } else {
+                delResult.setResult(2);// 2 - нет прав
+                return delResult;
+            }
         }
 
         @Transactional
@@ -895,43 +929,43 @@ public class InventoryRepository {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    public List<LinkedDocsJSON> getInventoryLinkedDocsList(Long docId, String docName) {
-        String stringQuery;
-        String myTimeZone = userRepository.getUserTimeZone();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String tableName=(docName.equals("posting")?"posting":"writeoff");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
-        stringQuery =   " select " +
-                " ap.id," +
-                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
-                " ap.description," +
-                " coalesce(ap.is_completed,false)," +
-                " ap.doc_number" +
-                " from "+tableName+" ap" +
-                " where ap.master_id = " + myMasterId +
-                " and coalesce(ap.is_deleted,false)!=true "+
-                " and ap.inventory_id = " + docId;
-        stringQuery = stringQuery + " order by ap.date_time_created asc ";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<LinkedDocsJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                LinkedDocsJSON doc=new LinkedDocsJSON();
-                doc.setId(Long.parseLong(                       obj[0].toString()));
-                doc.setDate_time_created((String)               obj[1]);
-                doc.setDescription((String)                     obj[2]);
-                doc.setIs_completed((Boolean)                   obj[3]);
-                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getInventoryLinkedDocsList. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    public List<LinkedDocsJSON> getInventoryLinkedDocsList(Long docId, String docName) {
+//        String stringQuery;
+//        String myTimeZone = userRepository.getUserTimeZone();
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String tableName=(docName.equals("posting")?"posting":"writeoff");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
+//        stringQuery =   " select " +
+//                " ap.id," +
+//                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+//                " ap.description," +
+//                " coalesce(ap.is_completed,false)," +
+//                " ap.doc_number" +
+//                " from "+tableName+" ap" +
+//                " where ap.master_id = " + myMasterId +
+//                " and coalesce(ap.is_deleted,false)!=true "+
+//                " and ap.inventory_id = " + docId;
+//        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Object[]> queryList = query.getResultList();
+//            List<LinkedDocsJSON> returnList = new ArrayList<>();
+//            for(Object[] obj:queryList){
+//                LinkedDocsJSON doc=new LinkedDocsJSON();
+//                doc.setId(Long.parseLong(                       obj[0].toString()));
+//                doc.setDate_time_created((String)               obj[1]);
+//                doc.setDescription((String)                     obj[2]);
+//                doc.setIs_completed((Boolean)                   obj[3]);
+//                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+//                returnList.add(doc);
+//            }
+//            return returnList;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getInventoryLinkedDocsList. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
     //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************

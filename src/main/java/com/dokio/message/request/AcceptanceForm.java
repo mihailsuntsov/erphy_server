@@ -30,6 +30,42 @@ public class AcceptanceForm {
     private Integer overhead_netcost_method;//0 - нет, 1 - по весу цены в поставке
     private Set<AcceptanceProductForm> acceptanceProductTable;
     private Long    status_id;
+    private String uid;
+    private Long linked_doc_id;//id связанного документа
+    private String linked_doc_type;//тип связанного документа - parent или child. Например, для Инвентаризации при создании из нее связанного Списания отправляем parent, т.к. Инвентаризация для него - родительский документ
+    private String linked_doc_name;//имя (таблицы) связанного документа
+
+    public Long getLinked_doc_id() {
+        return linked_doc_id;
+    }
+
+    public void setLinked_doc_id(Long linked_doc_id) {
+        this.linked_doc_id = linked_doc_id;
+    }
+
+    public String getLinked_doc_type() {
+        return linked_doc_type;
+    }
+
+    public void setLinked_doc_type(String linked_doc_type) {
+        this.linked_doc_type = linked_doc_type;
+    }
+
+    public String getLinked_doc_name() {
+        return linked_doc_name;
+    }
+
+    public void setLinked_doc_name(String linked_doc_name) {
+        this.linked_doc_name = linked_doc_name;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getStatus_id() {
         return status_id;

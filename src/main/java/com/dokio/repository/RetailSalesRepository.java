@@ -443,7 +443,8 @@ public class RetailSalesRepository {
                 "           stat.description as status_description, " +
                 "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
                 "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
-                "           coalesce(p.receipt_id,0) as receipt_id " +
+                "           coalesce(p.receipt_id,0) as receipt_id, " +
+                "           p.uid as uid" +
                 "           from retail_sales p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN users u ON p.master_id=u.id " +
@@ -508,6 +509,7 @@ public class RetailSalesRepository {
                     returnObj.setCagent_type_price_id(Long.parseLong(       obj[30].toString()));
                     returnObj.setDefault_type_price_id(Long.parseLong(      obj[31].toString()));
                     returnObj.setReceipt_id(Long.parseLong(                 obj[32].toString()));
+                    returnObj.setUid((String)                               obj[33]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -633,6 +635,7 @@ public class RetailSalesRepository {
                         " customers_orders_id, " + //родительский Заказ покупателя (если есть)
                         " shift_id, " + // id смены
                         " status_id,"+//статус заказа
+                        " is_completed,"+
                         " uid"+// уникальный идентификатор документа, для предотвращения двойных созданий
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -651,6 +654,7 @@ public class RetailSalesRepository {
                         request.getCustomers_orders_id() + ", "+
                         request.getShift_id() + ", "+
                         request.getStatus_id()  + ", "+//статус продажи
+                        true + ", "+// розничная продажа априори проведена, т.к. создается уже по факту продажи (убытия товара со склада)
                         ":uid)";// уникальный идентификатор документа, для предотвращения двойных созданий
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);

@@ -42,6 +42,16 @@ public class AcceptanceJSON {
     private Long        product_count;
     private Integer overhead_netcost_method;//0 - нет, 1 - по весу цены в поставке
     private Long        status_id;
+    private String uid;
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
     public Long getStatus_id() {
         return status_id;
     }

@@ -11,7 +11,6 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
 package com.dokio.util;
-import com.dokio.message.request.UniversalForm;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;

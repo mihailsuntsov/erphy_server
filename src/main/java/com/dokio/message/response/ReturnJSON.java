@@ -27,6 +27,15 @@ public class ReturnJSON {
     private String      status_description;
     private String      date_return;
     private Long        product_count;
+    private String      uid;
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getId() {
         return id;

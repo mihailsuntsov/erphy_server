@@ -36,6 +36,16 @@ public class PostingJSON {
     private String      status_description;
     private Long        product_count;
     private Long        status_id;
+    private String uid;
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
     public Long getStatus_id() {
         return status_id;
     }

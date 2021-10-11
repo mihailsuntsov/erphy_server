@@ -35,6 +35,15 @@ public class WriteoffJSON {
     private Long        product_count;
     private Long        status_id;
     private Boolean     is_completed; // завершена
+    private String uid;
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getId() {
         return id;

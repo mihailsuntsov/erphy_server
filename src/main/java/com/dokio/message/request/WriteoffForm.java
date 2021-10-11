@@ -23,10 +23,53 @@ public class WriteoffForm {
     private Integer doc_number;
     private String writeoff_date;
     private boolean is_completed;
-    private Long inventory_id;
-    private Long return_id;
     private Set<WriteoffProductForm> writeoffProductTable;                          // остаток на складе
     private Long    status_id;
+    private String uid;
+    private Long linked_doc_id;//id связанного документа (того, из которого инициируется создание данного документа)
+    private String linked_doc_name;//имя (таблицы) связанного документа
+    private String  parent_uid;// uid исходящего (родительского) документа
+    private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+
+    public String getParent_uid() {
+        return parent_uid;
+    }
+
+    public void setParent_uid(String parent_uid) {
+        this.parent_uid = parent_uid;
+    }
+
+    public String getChild_uid() {
+        return child_uid;
+    }
+
+    public void setChild_uid(String child_uid) {
+        this.child_uid = child_uid;
+    }
+
+    public Long getLinked_doc_id() {
+        return linked_doc_id;
+    }
+
+    public void setLinked_doc_id(Long linked_doc_id) {
+        this.linked_doc_id = linked_doc_id;
+    }
+
+    public String getLinked_doc_name() {
+        return linked_doc_name;
+    }
+
+    public void setLinked_doc_name(String linked_doc_name) {
+        this.linked_doc_name = linked_doc_name;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getStatus_id() {
         return status_id;
@@ -108,21 +151,21 @@ public class WriteoffForm {
         this.writeoffProductTable = writeoffProductTable;
     }
 
-    public Long getReturn_id() {
-        return return_id;
-    }
-
-    public void setReturn_id(Long return_id) {
-        this.return_id = return_id;
-    }
-
-    public Long getInventory_id() {
-        return inventory_id;
-    }
-
-    public void setInventory_id(Long inventory_id) {
-        this.inventory_id = inventory_id;
-    }
+//    public Long getReturn_id() {
+//        return return_id;
+//    }
+//
+//    public void setReturn_id(Long return_id) {
+//        this.return_id = return_id;
+//    }
+//
+//    public Long getInventory_id() {
+//        return inventory_id;
+//    }
+//
+//    public void setInventory_id(Long inventory_id) {
+//        this.inventory_id = inventory_id;
+//    }
 
     @Override
     public String toString() {

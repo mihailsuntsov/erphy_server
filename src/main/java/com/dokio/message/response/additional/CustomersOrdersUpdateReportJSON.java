@@ -16,9 +16,11 @@ package com.dokio.message.response.additional;
 
 public class CustomersOrdersUpdateReportJSON {
 
-    private Boolean success; // успешно или нет прошло сохранение
-    private Integer fail_to_reserve; // количество позиций, не поставленных в резерв (например кто-то успел поставить в резерв раньше нас, и доступное кол-во стало меньше нашего резерва, а сумма резервов не может быть больше общего кол-ва товара)
-    private Integer fail_to_delete;  // количество позиций, не принятых к удалению (например по ним уже началась отгрузка)
+    private Long    id;                 // id новосозданного документа
+    private Boolean success;            // успешно или нет прошло сохранение
+    private Integer fail_to_reserve;    // количество позиций, не поставленных в резерв (например кто-то успел поставить в резерв раньше нас, и доступное кол-во стало меньше нашего резерва, а сумма резервов не может быть больше общего кол-ва товара)
+    private Integer fail_to_delete;     // количество позиций, не принятых к удалению (например по ним уже началась отгрузка)
+    private Integer errorCode;          // код ошибки. 0 - недостаточно прав, 1 - ошибка сохранения документа, 2 - ошибка обработки таблицы товаров
 
     public Integer getFail_to_reserve() {
         return fail_to_reserve;
@@ -42,5 +44,21 @@ public class CustomersOrdersUpdateReportJSON {
 
     public void setSuccess(Boolean success) {
         this.success = success;
+    }
+
+    public Integer getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(Integer errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

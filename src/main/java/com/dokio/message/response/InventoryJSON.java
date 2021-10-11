@@ -36,7 +36,15 @@ public class InventoryJSON {
     private String      status_description;
     private Boolean     is_completed;
     private Long        product_count;
+    private String      uid;
 
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getProduct_count() {
         return product_count;
