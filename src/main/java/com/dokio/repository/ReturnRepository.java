@@ -630,7 +630,7 @@ public class ReturnRepository {
             Long myId = userRepository.getUserId();
             Long newDockId;
             Long doc_number;//номер документа
-            Long linkedDocsGroupId=0L;
+            Long linkedDocsGroupId=null;
 
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {

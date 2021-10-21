@@ -16,7 +16,7 @@ package com.dokio.message.request;
 
 import java.math.BigDecimal;
 
-public class ShipmentProductForm {
+public class ShipmentProductTableForm {
 
     private Long product_id;
     private Long shipment_id;
@@ -31,6 +31,17 @@ public class ShipmentProductForm {
     private String nds;
     private String edizm;
     private String additional;
+    private BigDecimal product_price_of_type_price; // цена по типу цены на момент составления документа
+    private Long department_id;                     // id отделения (склада) отгрузки
+    private Boolean is_material;                    // материален ли данный товар/услуга (если не материален - не проводим проверку на его количество на складе)
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
+    }
 
     public Long getProduct_id() {
         return product_id;
@@ -88,13 +99,21 @@ public class ShipmentProductForm {
         this.product_sumprice = product_sumprice;
     }
 
-//    public BigDecimal getProduct_netcost() {
-//        return product_netcost;
-//    }
-//
-//    public void setProduct_netcost(BigDecimal product_netcost) {
-//        this.product_netcost = product_netcost;
-//    }
+    public BigDecimal getProduct_price_of_type_price() {
+        return product_price_of_type_price;
+    }
+
+    public void setProduct_price_of_type_price(BigDecimal product_price_of_type_price) {
+        this.product_price_of_type_price = product_price_of_type_price;
+    }
+
+    public Long getDepartment_id() {
+        return department_id;
+    }
+
+    public void setDepartment_id(Long department_id) {
+        this.department_id = department_id;
+    }
 
     public Long getNds_id() {
         return nds_id;

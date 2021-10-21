@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public class RetailSalesProductTableForm {
 
     private BigDecimal available;                   // кол-во доступно (на момент формирования документа) (высчитывается не сохраняется)
-    private Long retail_sales_id;                   // id родиельского документа
+    private Long retail_sales_id;                   // id родительского документа
     private Long department_id;                     // id отделения (склада) отгрузки
     private Long edizm_id;                          // id единицы измерения
     private Long nds_id;                            // id ндс

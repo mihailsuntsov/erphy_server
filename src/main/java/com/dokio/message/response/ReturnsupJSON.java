@@ -27,7 +27,15 @@ public class ReturnsupJSON {
     private Boolean     is_completed; // завершена
     private String      date_return;
     private Long        acceptance_id;
+    private String      uid;
 
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getAcceptance_id() {
         return acceptance_id;

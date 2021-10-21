@@ -890,7 +890,7 @@ public class ProductsRepositoryJPA {
     }
 
     // возвращает доступное количество товара в отделении (складе), исключая позиции, добавленные в документ "Заказ клиента" с id document_id
-    public BigDecimal getAvailableExceptMyDock(Long product_id, Long department_id, Long document_id){
+    public BigDecimal getAvailableExceptMyDoc(Long product_id, Long department_id, Long document_id){
         // всего единиц товара в отделении (складе):
         String stringQuery = " select (select coalesce(quantity,0) from product_quantity where department_id = "+ department_id +" and product_id = "+product_id+") as total, " +
                 " (select " +
@@ -914,14 +914,58 @@ public class ProductsRepositoryJPA {
             }
             return res.getTotal().subtract(res.getReserved());
         } catch (Exception e) {
-            logger.error("Exception in method getAvailableExceptMyDock. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getAvailableExceptMyDoc. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
-
-
     }
 
+    @SuppressWarnings("Duplicates")
+    // возвращает отгруженное через Отгрузки и проданное через Розн. продажи кол-во товара в отделении у Заказа покупателя
+    public BigDecimal getShippedAndSold(Long product_id, Long department_id, Long document_id){
+        String stringQuery = " select " +
+                "coalesce(" +//отгружено через Отгрузки у Заказа покупателя
+                "   (select sum(product_count) " +
+                "   from shipment_product " +
+                "   where " +
+                "   shipment_id in " +
+                "   (" +
+                "       select id " +
+                "       from shipment " +
+                "       where " +
+                "       customers_orders_id="+document_id+" and " +
+                "       coalesce(is_deleted,false)=false and " +
+                "       coalesce(is_completed,false)=true" +
+                "   ) and " +
+                "   department_id = "+ department_id +" and " +
+                "   product_id = "+product_id+")" +
+                ",0) + " +
+
+                "coalesce(" +// продано через Розничные продажи у Заказа покупателя
+                "   (select sum(product_count) " +
+                "   from retail_sales_product " +
+                "   where " +
+                "   retail_sales_id in " +
+                "   (" +
+                "       select id " +
+                "       from retail_sales " +
+                "       where " +
+                "       customers_orders_id="+document_id+" and " +
+                "       coalesce(is_deleted,false)=false and " +
+                "       coalesce(is_completed,false)=true" +
+                "   ) and " +
+                "   department_id = "+ department_id +" and " +
+                "   product_id = "+product_id+")" +
+                ",0)";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (BigDecimal) query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method getShippedAndSold. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
@@ -1086,11 +1130,67 @@ public class ProductsRepositoryJPA {
                 return result;
             }
         } catch (Exception e) {
-            logger.error("Exception in method getProductReserves. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getProductReserves (ver.1). SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
+
+    @SuppressWarnings("Duplicates")  // возвращает кол-во резервов товара в отделении (и если нужно - по определенному заказу покупателя)
+    public BigDecimal getProductReserves(Long departmentId, Long productId,  Long customersOrdersId)
+    {
+        String stringQuery = " select " +
+                "sum(" +
+                "   coalesce(reserved_current,0))  " +
+                "   from " +
+                "   customers_orders_product " +
+                "   where " +
+                "   product_id="+productId+
+                "   and department_id =" + departmentId +
+                (customersOrdersId>0L?("   and customers_orders_id = " + customersOrdersId):"");
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<BigDecimal> queryList = query.getResultList();
+            ProductHistoryJSON returnObj=new ProductHistoryJSON();
+            if(queryList.size()==0){//если записей истории по данному товару ещё нет
+                returnObj.setQuantity(                  (new BigDecimal(0)));
+            }else {
+                for (BigDecimal obj : queryList) {
+                    returnObj.setQuantity(obj);
+                }
+            }
+            return returnObj.getQuantity();
+        }
+        catch(NoResultException nre){return new BigDecimal(0);}
+        catch (Exception e) {
+            logger.error("Exception in method getProductReserves (ver.2). SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Boolean updateProductReserves(Long departmentId, Long productId, Long customersOrdersId, BigDecimal reserves){
+        String stringQuery = "update customers_orders_product " +
+                "   set reserved_current = " + reserves +
+                "   where " +
+                "   product_id="+productId+
+                "   and department_id =" + departmentId +
+                "   and customers_orders_id = " + customersOrdersId;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method updateProductReserves. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
 
 
     // возвращает все типы цен (названия, id) с их значениеми для товара с id = productId
@@ -2601,6 +2701,8 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
+
+
 
 
     @SuppressWarnings("Duplicates")  // возвращает кол-во из последней строки истории изменений товара

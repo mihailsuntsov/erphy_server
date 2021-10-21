@@ -14,6 +14,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.response;
 
+import java.math.BigDecimal;
+
 public class ShipmentJSON {
     private Long id;
     private String master;
@@ -33,10 +35,144 @@ public class ShipmentJSON {
     private String date_time_created;
     private String date_time_changed;
     private String description;
-    private Long department_type_price_id;//тип цены для отделения в этой Отгрузке
-    private boolean is_completed;
     private boolean nds;
     private boolean nds_included;
+    private String      status_name;
+    private String      status_color;
+    private String      status_description;
+    private Long        product_count;
+    private Long        status_id;
+    private Boolean     is_completed; // завершена
+    private String uid;
+    private BigDecimal sum_price;
+    private Long customers_orders_id;
+    private Long shift_id;
+    private int shift_number;
+    private Long receipt_id;
+    private boolean hasSellReceipt;
+    private Long department_type_price_id;//тип цены для отделения в этой Отгрузке
+    private Long cagent_type_price_id;//тип цены для покупателя в этой Отгрузке
+    private Long default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
+
+    public String getStatus_name() {
+        return status_name;
+    }
+
+    public void setStatus_name(String status_name) {
+        this.status_name = status_name;
+    }
+
+    public String getStatus_color() {
+        return status_color;
+    }
+
+    public void setStatus_color(String status_color) {
+        this.status_color = status_color;
+    }
+
+    public String getStatus_description() {
+        return status_description;
+    }
+
+    public void setStatus_description(String status_description) {
+        this.status_description = status_description;
+    }
+
+    public Long getProduct_count() {
+        return product_count;
+    }
+
+    public void setProduct_count(Long product_count) {
+        this.product_count = product_count;
+    }
+
+    public Long getStatus_id() {
+        return status_id;
+    }
+
+    public void setStatus_id(Long status_id) {
+        this.status_id = status_id;
+    }
+
+    public Boolean getIs_completed() {
+        return is_completed;
+    }
+
+    public void setIs_completed(Boolean is_completed) {
+        this.is_completed = is_completed;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
+    }
+
+    public Long getCustomers_orders_id() {
+        return customers_orders_id;
+    }
+
+    public void setCustomers_orders_id(Long customers_orders_id) {
+        this.customers_orders_id = customers_orders_id;
+    }
+
+    public Long getShift_id() {
+        return shift_id;
+    }
+
+    public void setShift_id(Long shift_id) {
+        this.shift_id = shift_id;
+    }
+
+    public int getShift_number() {
+        return shift_number;
+    }
+
+    public void setShift_number(int shift_number) {
+        this.shift_number = shift_number;
+    }
+
+    public Long getReceipt_id() {
+        return receipt_id;
+    }
+
+    public void setReceipt_id(Long receipt_id) {
+        this.receipt_id = receipt_id;
+    }
+
+    public boolean isHasSellReceipt() {
+        return hasSellReceipt;
+    }
+
+    public void setHasSellReceipt(boolean hasSellReceipt) {
+        this.hasSellReceipt = hasSellReceipt;
+    }
+
+    public Long getCagent_type_price_id() {
+        return cagent_type_price_id;
+    }
+
+    public void setCagent_type_price_id(Long cagent_type_price_id) {
+        this.cagent_type_price_id = cagent_type_price_id;
+    }
+
+    public Long getDefault_type_price_id() {
+        return default_type_price_id;
+    }
+
+    public void setDefault_type_price_id(Long default_type_price_id) {
+        this.default_type_price_id = default_type_price_id;
+    }
 
     public boolean isNds() {
         return nds;

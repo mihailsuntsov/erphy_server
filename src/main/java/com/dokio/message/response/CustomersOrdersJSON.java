@@ -37,15 +37,17 @@ public class CustomersOrdersJSON
     private Long department_type_price_id;//тип цены для отделения в этом Заказе покупателя
     private Long cagent_type_price_id;//тип цены для покупателя в этом Заказе покупателя
     private Long default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
-    private boolean is_completed;
+    private boolean is_completed;//проведена
     private boolean nds;
     private boolean nds_included;
-
+    private String uid;
     private String name;//наименование сделки
+    private Long        product_count;
     private String status_name;
     private String status_color;
     private Long status_id;
     private String status_description;
+
     //--------- address --------------
     private String fio;
     private String email;
@@ -64,6 +66,22 @@ public class CustomersOrdersJSON
     private String home;
     private String flat;
     private BigDecimal sum_price;
+
+    public Long getProduct_count() {
+        return product_count;
+    }
+
+    public void setProduct_count(Long product_count) {
+        this.product_count = product_count;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getId() {
         return id;

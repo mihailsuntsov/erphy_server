@@ -399,7 +399,8 @@ public class AcceptanceRepository {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
+                    "           stat.description as status_description, " +
+                    "           p.uid as uid " +
                     "           from acceptance p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -458,6 +459,7 @@ public class AcceptanceRepository {
                     returnObj.setStatus_name((String)                   obj[27]);
                     returnObj.setStatus_color((String)                  obj[28]);
                     returnObj.setStatus_description((String)            obj[29]);
+                    returnObj.setUid((String)                           obj[30]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -503,7 +505,8 @@ public class AcceptanceRepository {
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
                     " status_id," + //статус
-                    " acceptance_date " +// дата списания
+                    " acceptance_date, " +// дата поставки
+                    " uid"+
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
@@ -518,7 +521,8 @@ public class AcceptanceRepository {
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
                     request.getStatus_id() + ", "+//статус
-                    " to_date(:acceptance_date,'DD.MM.YYYY')) ";// дата списания
+                    " to_date(:acceptance_date,'DD.MM.YYYY'), " +
+                    ":uid)";
             try {
 
                 Date dateNow = new Date();
@@ -529,6 +533,7 @@ public class AcceptanceRepository {
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
+                query.setParameter("uid",request.getUid());
                 query.executeUpdate();
                 stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -575,7 +580,7 @@ public class AcceptanceRepository {
                 try {//сохранение таблицы
                     insertAcceptanceProducts(request, request.getId(), myMasterId);
                     //если завершается приемка - запись в историю товара
-                    if(request.is_completed()){
+                    if(request.getIs_completed()){
 
                         for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
                             if (!addAcceptanceProductHistory(row, request, myMasterId)) {//       //сохранение истории операций с записью актуальной инфо о количестве товара в отделении
@@ -627,7 +632,7 @@ public class AcceptanceRepository {
                 " nds_included =" + request.isNds_included() + "," +
                 " overhead =" + request.getOverhead() + "," +                               //расходы
                 " overhead_netcost_method =" + request.getOverhead_netcost_method() + "," + //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
-                " is_completed = " + request.isIs_completed() + "," +
+                " is_completed = " + request.getIs_completed() + "," +
                 " acceptance_date = to_date(:acceptance_date,'DD.MM.YYYY'), " +
 
                 " status_id = " + request.getStatus_id() +

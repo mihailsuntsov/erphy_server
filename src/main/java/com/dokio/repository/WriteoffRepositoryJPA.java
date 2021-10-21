@@ -106,7 +106,7 @@ public class WriteoffRepositoryJPA {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           (select count(*) from writeoff_product ip where coalesce(ip.writeoff_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
+                    "           (select count(*) from writeoff_product ip where coalesce(ip.writeoff_id,0)=p.id) as product_count" + //подсчет кол-ва позиций товара
                     "           from writeoff p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -451,7 +451,7 @@ public class WriteoffRepositoryJPA {
             Long myId = userRepository.getUserId();
             Long newDockId;
             Long doc_number;//номер документа
-            Long linkedDocsGroupId=0L;
+            Long linkedDocsGroupId=null;
 
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null) {

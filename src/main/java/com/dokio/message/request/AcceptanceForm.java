@@ -26,14 +26,39 @@ public class AcceptanceForm {
     private boolean nds;
     private boolean nds_included;
     private BigDecimal overhead;
-    private boolean is_completed;
     private Integer overhead_netcost_method;//0 - нет, 1 - по весу цены в поставке
     private Set<AcceptanceProductForm> acceptanceProductTable;
     private Long    status_id;
     private String uid;
     private Long linked_doc_id;//id связанного документа
-    private String linked_doc_type;//тип связанного документа - parent или child. Например, для Инвентаризации при создании из нее связанного Списания отправляем parent, т.к. Инвентаризация для него - родительский документ
     private String linked_doc_name;//имя (таблицы) связанного документа
+    private String  parent_uid;// uid исходящего (родительского) документа
+    private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+    private Boolean is_completed;// проведён
+
+    public String getParent_uid() {
+        return parent_uid;
+    }
+
+    public void setParent_uid(String parent_uid) {
+        this.parent_uid = parent_uid;
+    }
+
+    public String getChild_uid() {
+        return child_uid;
+    }
+
+    public void setChild_uid(String child_uid) {
+        this.child_uid = child_uid;
+    }
+
+    public Boolean getIs_completed() {
+        return is_completed;
+    }
+
+    public void setIs_completed(Boolean is_completed) {
+        this.is_completed = is_completed;
+    }
 
     public Long getLinked_doc_id() {
         return linked_doc_id;
@@ -41,14 +66,6 @@ public class AcceptanceForm {
 
     public void setLinked_doc_id(Long linked_doc_id) {
         this.linked_doc_id = linked_doc_id;
-    }
-
-    public String getLinked_doc_type() {
-        return linked_doc_type;
-    }
-
-    public void setLinked_doc_type(String linked_doc_type) {
-        this.linked_doc_type = linked_doc_type;
     }
 
     public String getLinked_doc_name() {
@@ -87,24 +104,12 @@ public class AcceptanceForm {
         return company_id;
     }
 
-    public boolean is_completed() {
-        return is_completed;
-    }
-
-    public boolean isIs_completed() {
-        return is_completed;
-    }
-
     public Integer getOverhead_netcost_method() {
         return overhead_netcost_method;
     }
 
     public void setOverhead_netcost_method(Integer overhead_netcost_method) {
         this.overhead_netcost_method = overhead_netcost_method;
-    }
-
-    public void setIs_completed(boolean is_completed) {
-        this.is_completed = is_completed;
     }
 
     public void setCompany_id(Long company_id) {

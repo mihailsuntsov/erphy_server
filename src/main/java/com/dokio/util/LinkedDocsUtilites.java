@@ -46,7 +46,7 @@ public class LinkedDocsUtilites {
 
     private static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их table_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("acceptance", "return", "returnsup", "shipment", "retail_sales", "writeoff", "posting", "moving")
+            .of("acceptance", "return", "returnsup", "shipment", "retail_sales", "writeoff", "posting", "moving", "customers_orders", "inventory")
             .collect(Collectors.toCollection(HashSet::new)));
 
     // Если у документа linked_doc_name с id = linked_doc_id есть группа связанных документов (т.е. linked_docs_group_id в его таблице != null)
@@ -175,7 +175,7 @@ public class LinkedDocsUtilites {
 
 
     // добавляем в группу связанных документов документ, из которого создавали (если он еще не добавлен), и созданный документ
-    private Boolean addDocsToGroup(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_doc_name, Long companyId, Long masterId) {
+    private Boolean addDocsToGroup(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_table_name, Long companyId, Long masterId) {
 
         try {
 
@@ -212,14 +212,14 @@ public class LinkedDocsUtilites {
                     " doc_id, " +
                     " doc_uid, " +
                     " tablename, " +
-                    created_doc_name + "_id" +
+                    created_table_name + "_id" +
                     ") values (" +
                     masterId + ", " +
                     companyId + ", " +
                     linkedDocsGroupId + ", " +
                     created_doc_id + ", " +
                     ":child_uid " + ", " +
-                    "'" + created_doc_name + "', " +
+                    "'" + created_table_name + "', " +
                     created_doc_id + ")" +
                     "ON CONFLICT ON CONSTRAINT linked_docs_uq DO NOTHING";
 
@@ -498,7 +498,6 @@ public class LinkedDocsUtilites {
             return Long.valueOf(query.getSingleResult().toString());
         } catch (NoResultException nre) {
             logger.error("NoResultException in method getGroupIdByUid. Sql: " + stringQuery, nre);
-            nre.printStackTrace();
             return 0L;
         } catch (Exception e) {
             logger.error("Exception in method getGroupIdByUid. Sql: " + stringQuery, e);

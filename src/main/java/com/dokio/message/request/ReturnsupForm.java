@@ -11,31 +11,31 @@ public class ReturnsupForm {
     private String  date_return;
     private Long    status_id;
     private String  doc_number;
-    private Boolean is_completed; // завершена
     private Boolean nds;
     private Long    acceptance_id;
     //------------- таблица товаров -----------------
     private Set<ReturnsupProductTableForm> returnsupProductTable;
-    private String  uid;
-    private Long    linked_doc_id;//id связанного документа
-    private String  linked_doc_name;//имя (таблицы) связанного документа
-    private String  uid_from;// uid исходящего (родительского) документа
-    private String  uid_to; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+    private String uid;
+    private Long linked_doc_id;//id связанного документа
+    private String linked_doc_name;//имя (таблицы) связанного документа
+    private String  parent_uid;// uid исходящего (родительского) документа
+    private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+    private Boolean is_completed;// проведён
 
-    public String getUid_from() {
-        return uid_from;
+    public String getParent_uid() {
+        return parent_uid;
     }
 
-    public void setUid_from(String uid_from) {
-        this.uid_from = uid_from;
+    public void setParent_uid(String parent_uid) {
+        this.parent_uid = parent_uid;
     }
 
-    public String getUid_to() {
-        return uid_to;
+    public String getChild_uid() {
+        return child_uid;
     }
 
-    public void setUid_to(String uid_to) {
-        this.uid_to = uid_to;
+    public void setChild_uid(String child_uid) {
+        this.child_uid = child_uid;
     }
 
     public Long getLinked_doc_id() {

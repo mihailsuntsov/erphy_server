@@ -23,6 +23,7 @@ import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellExceptio
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -61,6 +62,10 @@ public class RetailSalesRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private CustomersOrdersRepositoryJPA customersOrdersRepository;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -294,9 +299,8 @@ public class RetailSalesRepository {
                     " ap.product_count," +
                     " ap.product_price," +
                     " ap.product_sumprice," +
-                    " ap.edizm_id," +
                     " p.name as name," +
-                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm," +
+                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " ap.nds_id," +
                     " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
                     " ap.price_type_id," +
@@ -356,22 +360,20 @@ public class RetailSalesRepository {
                     doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
                     doc.setProduct_price(                                   obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
                     doc.setProduct_sumprice(                                obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
-                    doc.setEdizm_id(obj[7]!=null?Long.parseLong(            obj[5].toString()):null);
-                    doc.setName((String)                                    obj[6]);
-                    doc.setEdizm((String)                                   obj[7]);
-                    doc.setNds_id(Long.parseLong(                           obj[8].toString()));
-                    doc.setNds((String)                                     obj[9]);
-                    doc.setPrice_type_id(obj[10]!=null?Long.parseLong(      obj[10].toString()):null);
-                    doc.setPrice_type((String)                              obj[11]);
-                    doc.setTotal(                                           obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
-                    doc.setReserved(                                        obj[13]==null?BigDecimal.ZERO:(BigDecimal)obj[13]);
-                    doc.setDepartment_id(Long.parseLong(                    obj[14].toString()));
-                    doc.setDepartment((String)                              obj[15]);
-                    doc.setId(Long.parseLong(                               obj[16].toString()));
-                    doc.setPpr_name_api_atol((String)                       obj[17]);
-                    doc.setIs_material((Boolean)                            obj[18]);
-    //                doc.setReserved_current(                                obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
-                    doc.setIndivisible((Boolean)                            obj[19]);
+                    doc.setName((String)                                    obj[5]);
+                    doc.setEdizm((String)                                   obj[6]);
+                    doc.setNds_id(Long.parseLong(                           obj[7].toString()));
+                    doc.setNds((String)                                     obj[8]);
+                    doc.setPrice_type_id(obj[9]!=null?Long.parseLong(       obj[9].toString()):null);
+                    doc.setPrice_type((String)                              obj[10]);
+                    doc.setTotal(                                           obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+                    doc.setReserved(                                        obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
+                    doc.setDepartment_id(Long.parseLong(                    obj[13].toString()));
+                    doc.setDepartment((String)                              obj[14]);
+                    doc.setId(Long.parseLong(                               obj[15].toString()));
+                    doc.setPpr_name_api_atol((String)                       obj[16]);
+                    doc.setIs_material((Boolean)                            obj[17]);
+                    doc.setIndivisible((Boolean)                            obj[18]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -567,6 +569,7 @@ public class RetailSalesRepository {
             boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+            Long linkedDocsGroupId=null;
 
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -588,6 +591,18 @@ public class RetailSalesRepository {
                 if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
                     doc_number=Long.valueOf(request.getDoc_number());
                 } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"retail_sales");
+
+                // статус по умолчанию (если не выбран)
+                if (request.getStatus_id() ==null){
+                    request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),25));
+                }
+
+                //если документ создается из другого документа
+                if (request.getLinked_doc_id() != null) {
+                    //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
+                    linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
+                    if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+                }
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
@@ -636,6 +651,7 @@ public class RetailSalesRepository {
                         " shift_id, " + // id смены
                         " status_id,"+//статус заказа
                         " is_completed,"+
+                        " linked_docs_group_id," +// id группы связанных документов
                         " uid"+// уникальный идентификатор документа, для предотвращения двойных созданий
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -645,8 +661,6 @@ public class RetailSalesRepository {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер заказа
-//                        "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-//                        "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
                         ":name, "+
                         ":description," +
                         request.isNds() + ", "+// НДС
@@ -655,6 +669,7 @@ public class RetailSalesRepository {
                         request.getShift_id() + ", "+
                         request.getStatus_id()  + ", "+//статус продажи
                         true + ", "+// розничная продажа априори проведена, т.к. создается уже по факту продажи (убытия товара со склада)
+                        linkedDocsGroupId+"," + // id группы связанных документов
                         ":uid)";// уникальный идентификатор документа, для предотвращения двойных созданий
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -667,6 +682,61 @@ public class RetailSalesRepository {
                     newDockId=Long.valueOf(query2.getSingleResult().toString());
 
                     if(insertRetailSalesProducts(request, newDockId, myMasterId)){
+
+
+
+                        // корректируем резервы в родительском "Заказе покупателя" (если он есть и если резервы проставлены)
+                        // берем id Заказа покупателя (или 0 если его нет)
+                        Long customersOrdersId = request.getCustomers_orders_id()==null?0L:request.getCustomers_orders_id();
+
+                        //получаем таблицу из родительского Заказа покупателя (если его нет - у листа просто будет size = 0)
+                        List<CustomersOrdersProductTableJSON> customersOrdersProductTable = new ArrayList<>();
+                        if(customersOrdersId>0L) {
+                            customersOrdersProductTable = customersOrdersRepository.getCustomersOrdersProductTable(customersOrdersId);
+                        }
+
+
+
+                        // бежим по товарам в Розничной продаже
+                        for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
+
+                            //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
+                            if(row.getIs_material() && customersOrdersProductTable.size()>0){
+                                //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
+                                for (CustomersOrdersProductTableJSON cuRow : customersOrdersProductTable) {
+                                    if(cuRow.getProduct_id().equals(row.getProduct_id()) && cuRow.getDepartment_id().equals(row.getDepartment_id())){
+                                        //Товар найден. Сейчас нужно списать его резервы. Для этого нам нужны:
+
+                                        // [Всего заказ] Всего кол-во товара в заказе
+                                        BigDecimal product_count = cuRow.getProduct_count();
+                                        // [Всего отгружено] - это сумма отгруженных в дочерних документах Заказа покупателя (по проведенным Отгрузкам, проданных по Розничным продажам и в данной отгрузке. )
+                                        BigDecimal shipped = productsRepository.getShippedAndSold(row.getProduct_id(),row.getDepartment_id(),request.getCustomers_orders_id())/*.add(product_count)*/;
+                                        // [Резервы] - Резервы на данный момент по данному товару в данном складе в данном Заказе покупателя
+                                        BigDecimal reserves = productsRepository.getProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id());
+
+                                        // формула расчета нового количества резервов (т.е. до какого значения резервы должны уменьшиться):
+
+                                        // ЕСЛИ [Всего заказ] - [Всего отгружено] < [Резервы] ТО [Резервы] = [Всего заказ] - [Всего отгружено] ИНАЧЕ [Резервы] не трогаем
+
+                                        if(((product_count.subtract(shipped)).compareTo(reserves)) < 0){
+                                            reserves = product_count.subtract(shipped);
+                                        if(reserves.compareTo(new BigDecimal(0)) < 0) // на тот случай, если отгрузили больше чем в заказе, и резерв насчитался отрицательный - делаем его = 0
+                                            reserves = new BigDecimal(0);
+
+                                            productsRepository.updateProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id(), reserves);
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+
+
+                        //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                        if (request.getLinked_doc_id() != null) {
+                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "retail_sales", request.getCompany_id(), myMasterId);
+                        }
                         return newDockId;
                     } else return null;
 
@@ -693,6 +763,7 @@ public class RetailSalesRepository {
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method " + e.getClass().getName() + " on inserting into retail_sales. SQL query:"+stringQuery, e);
                     e.printStackTrace();
                     return null;
@@ -715,7 +786,7 @@ public class RetailSalesRepository {
         if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
             for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
                 row.setRetail_sales_id(newDockId);
-                insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
+                insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), request.getCustomers_orders_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null || !insertProductRowResult) {
                     if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveRetailSalesProductTable
                         throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
@@ -782,14 +853,14 @@ public class RetailSalesRepository {
         //если не превышает - пишется строка с товаром в БД
         //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
         @SuppressWarnings("Duplicates")
-        private Boolean saveRetailSalesProductTable(RetailSalesProductTableForm row, Long company_id, Long master_id) {
+        private Boolean saveRetailSalesProductTable(RetailSalesProductTableForm row, Long company_id, Long customersOrdersId, Long master_id) {
             String stringQuery="";
 //            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
             BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
             try {
                 if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
-                    //вычисляем доступное количество товара на складе
-                    available = productsRepository.getAvailableExceptMyDock(row.getProduct_id(), row.getDepartment_id(), 0L); //****** пока 0 но потом розничная продажа будет создаваться так же и из Заказов покупателей
+                    //вычисляем доступное количество товара на складе. customersOrdersId нужен, чтобы не учитывать резервы родительского Закза покупателя
+                    available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), (Objects.isNull(customersOrdersId)?0L:customersOrdersId));
                 else available= BigDecimal.valueOf(0L);
                 if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material()) //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.)
                 {
@@ -802,7 +873,6 @@ public class RetailSalesRepository {
                         "product_count, " +
                         "product_price, " +
                         "product_sumprice, " +
-                        "edizm_id, " +
                         "price_type_id, " +
                         "nds_id, " +
                         "department_id, " +
@@ -815,7 +885,6 @@ public class RetailSalesRepository {
                         row.getProduct_count() + "," +
                         row.getProduct_price() + "," +
                         row.getProduct_sumprice() + "," +
-                        row.getEdizm_id() + "," +
                         row.getPrice_type_id() + "," +
                         row.getNds_id() + ", " +
                         row.getDepartment_id() + ", " +
@@ -828,7 +897,6 @@ public class RetailSalesRepository {
                         " product_count = " + row.getProduct_count() + "," +
                         " product_price = " + row.getProduct_price() + "," +
                         " product_sumprice = " + row.getProduct_sumprice() + "," +
-                        " edizm_id = " + row.getEdizm_id() + "," +
                         " price_type_id = " + row.getPrice_type_id() + "," +
                         " nds_id = " + row.getNds_id() + "," +
                         " department_id = " + row.getDepartment_id() + "," +

@@ -22,7 +22,6 @@ import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.security.services.UserDetailsServiceImpl;
-import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +34,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class CustomersOrdersRepositoryJPA {
@@ -53,16 +54,23 @@ public class CustomersOrdersRepositoryJPA {
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
-//    @Autowired
-//    DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     private CagentRepositoryJPA cagentRepository;
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
-    @Autowired
-    private ProductsRepositoryJPA productsRepositoryJPA;
+
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("doc_number","name","cagent","status_name","sum_price","hasSellReceipt","company","department","creator","date_time_created_sort","shipment_date_sort","description","is_completed","product_count")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+
 
 //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -102,13 +110,16 @@ public class CustomersOrdersRepositoryJPA {
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from customers_orders_product where customers_orders_id=p.id),0) as sum_price, " +
-                    "           p.name as name " +
+                    "           p.name as name, " +
+                    "           (select count(*) from customers_orders_product ip where coalesce(ip.customers_orders_id,0)=p.id) as product_count," + //подсчет кол-ва товаров
+                    "           cg.name as cagent " +
 //                    "           cnt.name_ru, ' ', reg.name_ru, ' ', cty.name_ru, ' ',
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
@@ -127,13 +138,14 @@ public class CustomersOrdersRepositoryJPA {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.shipment_date, 'DD.MM.YYYY') ='"+searchString+"' or "+
-                        " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                        " upper(dp.name) like upper('%" + searchString + "%') or "+
-                        " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                        " upper(us.name) like upper('%" + searchString + "%') or "+
-                        " upper(uc.name) like upper('%" + searchString + "%') or "+
-                        " upper(p.description) like upper('%" + searchString + "%')"+")";
+                        " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
+                        " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -141,10 +153,19 @@ public class CustomersOrdersRepositoryJPA {
             if (departmentId > 0) {
                 stringQuery = stringQuery + " and p.department_id=" + departmentId;
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+            }
+
             Query query = entityManager.createNativeQuery(stringQuery)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -176,6 +197,9 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setStatus_description((String)            obj[23]);
                 doc.setSum_price((BigDecimal)                 obj[24]);
                 doc.setName((String)                          obj[25]);
+                doc.setProduct_count(Long.parseLong(          obj[26].toString()));
+                doc.setCagent((String)                        obj[27]);
+
 
                 returnList.add(doc);
             }
@@ -195,6 +219,7 @@ public class CustomersOrdersRepositoryJPA {
                 "           from customers_orders p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           where  p.master_id=" + myMasterId +
@@ -213,13 +238,14 @@ public class CustomersOrdersRepositoryJPA {
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.shipment_date, 'DD.MM.YYYY') ='"+searchString+"' or "+
-                    " to_char(p.doc_number,'0000000000') like '%"+searchString+"' or "+
-                    " upper(dp.name) like upper('%" + searchString + "%') or "+
-                    " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                    " upper(us.name) like upper('%" + searchString + "%') or "+
-                    " upper(uc.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.description) like upper('%" + searchString + "%')"+")";
+                    " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
+                    " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -227,7 +253,11 @@ public class CustomersOrdersRepositoryJPA {
         if (departmentId > 0) {
             stringQuery = stringQuery + " and p.department_id=" + departmentId;
         }
+
         Query query = entityManager.createNativeQuery(stringQuery);
+
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("sg", searchString);}
 
         if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
         {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -267,8 +297,52 @@ public class CustomersOrdersRepositoryJPA {
                     "   product_id=ap.product_id "+
                     "   and department_id = ap.department_id "+
                     "   and customers_orders_id!=ap.customers_orders_id) as reserved, "+//зарезервировано в других документах Заказ покупателя
-                    "   0 as shipped, "+//!!!!!!!!!!!!!!!!!!!!!!!!пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+
+
+
+
+//                    "   0 as shipped, "+//!!!!!!!!!!!!!!!!!!!!!!!!пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
                     " ap.department_id as department_id, " +
+                    "(" +
+                    "coalesce(" +
+                    "   (select sum(product_count) " +
+                    "   from shipment_product " +
+                    "   where " +
+                    "   shipment_id in " +
+                    "   (" +
+                    "       select id " +
+                    "       from shipment " +
+                    "       where " +
+                    "       customers_orders_id=a.id and " +
+                    "       coalesce(is_deleted,false)=false and " +
+                    "       coalesce(is_completed,false)=true" +
+                    "   ) and " +
+                    "   department_id = ap.department_id and " +
+                    "   product_id = p.id)" +
+                    ",0) + " +
+                    "coalesce(" +
+                    "   (select sum(product_count) " +
+                    "   from retail_sales_product " +
+                    "   where " +
+                    "   retail_sales_id in " +
+                    "   (" +
+                    "       select id " +
+                    "       from retail_sales " +
+                    "       where " +
+                    "       customers_orders_id=a.id and " +
+                    "       coalesce(is_deleted,false)=false and " +
+                    "       coalesce(is_completed,false)=true" +
+                    "   ) and " +
+                    "   department_id = ap.department_id and " +
+                    "   product_id = p.id)" +
+                    ",0)" +
+                    ") as shipped, " +//отгружено через Отгрузки у Заказа покупателя
+
+
+
+
+
+
                     " (select name from departments where id= ap.department_id) as department, "+
                     " ap.id  as row_id, " +
                     " ppr.name_api_atol as ppr_name_api_atol, " +
@@ -320,8 +394,8 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setPrice_type((String)                              obj[11]);
                 doc.setTotal(                                           obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
                 doc.setReserved(                                        obj[13]==null?BigDecimal.ZERO:(BigDecimal)obj[13]);
-                doc.setShipped(BigDecimal.valueOf((Integer)             obj[14]));//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
-                doc.setDepartment_id(Long.parseLong(                    obj[15].toString()));
+                doc.setDepartment_id(Long.parseLong(                    obj[14].toString()));
+                doc.setShipped((BigDecimal)                             obj[15]);//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
                 doc.setDepartment((String)                              obj[16]);
                 doc.setId(Long.parseLong(                               obj[17].toString()));
                 doc.setPpr_name_api_atol((String)                       obj[18]);
@@ -394,7 +468,9 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce(cty.name_ru,'') as city, " +
                     "           coalesce(cty.area_ru,'') as area, " +
                     "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
-                    "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id " +
+                    "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
+                    "           p.uid as uid " +
+
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -475,6 +551,7 @@ public class CustomersOrdersRepositoryJPA {
                 returnObj.setArea((String)                              obj[45]);
                 returnObj.setCagent_type_price_id(Long.parseLong(       obj[46].toString()));
                 returnObj.setDefault_type_price_id(Long.parseLong(      obj[47].toString()));
+                returnObj.setUid((String)                               obj[48]);
             }
             return returnObj;
         } else return null;
@@ -486,159 +563,168 @@ public class CustomersOrdersRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public CustomersOrdersUpdateReportJSON insertCustomersOrders(CustomersOrdersForm request) {
+        if(commonUtilites.isDocumentUidUnical(request.getUid(), "customers_orders")){
+            EntityManager emgr = emf.createEntityManager();
+            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            Long dockDepartment=request.getDepartment_id();
+            List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
+            boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
+            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
+            Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+            CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о создании
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        EntityManager emgr = emf.createEntityManager();
-        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-        Long dockDepartment=request.getDepartment_id();
-        List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-        boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
-        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
-        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-        CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о создании
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            try{
 
-        try{
+                if ((//если есть право на создание по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(23L, "280")) ||
+                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                (securityRepositoryJPA.userHasPermissions_OR(23L, "281") && myCompanyId.equals(request.getCompany_id())) ||
+                //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
+                (securityRepositoryJPA.userHasPermissions_OR(23L, "282") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
+                //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                DocumentMasterId.equals(myMasterId))
+                {
+                    String stringQuery;
+                    Long myId = userRepository.getUserId();
+                    Long newDockId;
+                    Long doc_number;//номер документа( = номер заказа)
 
-            if ((//если есть право на создание по всем предприятиям, или
-            (securityRepositoryJPA.userHasPermissions_OR(23L, "280")) ||
-            //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-            (securityRepositoryJPA.userHasPermissions_OR(23L, "281") && myCompanyId.equals(request.getCompany_id())) ||
-            //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-            (securityRepositoryJPA.userHasPermissions_OR(23L, "282") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
-            //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-            DocumentMasterId.equals(myMasterId))
-            {
-                String stringQuery;
-                Long myId = userRepository.getUserId();
-                Long newDockId;
-                Long doc_number;//номер документа( = номер заказа)
+                    //генерируем номер документа, если его (номера) нет
+                    if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
+                        doc_number=Long.valueOf(request.getDoc_number());
+                    } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"customers_orders");
 
-                //генерируем номер документа, если его (номера) нет
-                if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
-                    doc_number=Long.valueOf(request.getDoc_number());
-                } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"customers_orders");
+                    //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
+                    //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
+                    if(request.getCagent_id()==null){
+                        try{
+                            CagentsForm cagentForm = new CagentsForm();
+                            cagentForm.setName(request.getNew_cagent());
+                            cagentForm.setCompany_id(request.getCompany_id());
+                            cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+                            cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+                            cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
+                            cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+                            cagentForm.setTelephone(request.getTelephone());
+                            cagentForm.setEmail((request.getEmail()));
+                            cagentForm.setZip_code(request.getZip_code());
+                            cagentForm.setCountry_id(request.getCountry_id());
+                            cagentForm.setRegion_id(request.getRegion_id());
+                            cagentForm.setCity_id(request.getCity_id());
+                            cagentForm.setStreet(request.getStreet());
+                            cagentForm.setHome(request.getHome());
+                            cagentForm.setFlat(request.getFlat());
+                            cagentForm.setAdditional_address(request.getAdditional_address());
+                            request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+                        }
+                        catch (Exception e) {
+                            logger.error("Exception in method insertCustomersOrders on creating Cagent.", e);
+                            e.printStackTrace();
+                            return null;
+                        }
+                    }
 
-                //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
-                //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-                if(request.getCagent_id()==null){
+                    String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+
+                    stringQuery =   "insert into customers_orders (" +
+                    " master_id," + //мастер-аккаунт
+                    " creator_id," + //создатель
+                    " company_id," + //предприятие, для которого создается документ
+                    " department_id," + //отделение, из(для) которого создается документ
+                    " cagent_id," +//контрагент
+                    " date_time_created," + //дата и время создания
+                    " doc_number," + //номер заказа
+                    " name," + //наименование заказа
+                    " description," +//доп. информация по заказу
+                    " shipment_date," +//план. дата отгрузки
+                    " nds," +// НДС
+                    " nds_included," +// НДС включен в цену
+                    " telephone,"+//телефон
+                    " email,"+//емейл
+                    " zip_code,"+// почтовый индекс
+                    " country_id,"+//страна
+                    " region_id,"+//область
+                    " city_id,"+//город/нас.пункт
+                    " street,"+//улица
+                    " home,"+//дом
+                    " flat,"+//квартира
+                    " additional_address,"+//дополнение к адресу
+                    " track_number," + //трек-номер отправленного заказа
+                    " status_id,"+//статус заказа
+                    " uid"+// уникальный идентификатор документа
+                    ") values ("+
+                    myMasterId + ", "+//мастер-аккаунт
+                    myId + ", "+ //создатель
+                    request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
+                    request.getCagent_id() + ", "+//контрагент
+                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                    doc_number + ", "+//номер заказа
+                    "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+                    ":description, " +//описание
+                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date()+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
+                    request.isNds() + ", "+// НДС
+                    request.isNds_included() + ", "+// НДС включен в цену
+                    "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
+                    "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
+                    "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
+                    request.getCountry_id() + ", " +//страна
+                    request.getRegion_id() + ", " +//область
+                    request.getCity_id() + ", " +//город/нас.пункт
+                    "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
+                    "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
+                    "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
+                    "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
+                    "'" + (request.getTrack_number() == null ? "": request.getTrack_number()) + "', " +//трек-номер отправленного заказа
+                    request.getStatus_id() + "," +//статус заказа
+                    ":uid"+// уникальный идентификатор документа
+                    ")";
+
                     try{
-                        CagentsForm cagentForm = new CagentsForm();
-                        cagentForm.setName(request.getNew_cagent());
-                        cagentForm.setCompany_id(request.getCompany_id());
-                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
-                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                        cagentForm.setTelephone(request.getTelephone());
-                        cagentForm.setEmail((request.getEmail()));
-                        cagentForm.setZip_code(request.getZip_code());
-                        cagentForm.setCountry_id(request.getCountry_id());
-                        cagentForm.setRegion_id(request.getRegion_id());
-                        cagentForm.setCity_id(request.getCity_id());
-                        cagentForm.setStreet(request.getStreet());
-                        cagentForm.setHome(request.getHome());
-                        cagentForm.setFlat(request.getFlat());
-                        cagentForm.setAdditional_address(request.getAdditional_address());
-                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
-                    }
-                    catch (Exception e) {
-                        logger.error("Exception in method insertCustomersOrders on creating Cagent.", e);
+                        Query query = entityManager.createNativeQuery(stringQuery);
+                        query.setParameter("description",request.getDescription());
+                        query.setParameter("uid",request.getUid());
+                        query.executeUpdate();
+                        stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                        Query query2 = entityManager.createNativeQuery(stringQuery);
+                        newDockId=Long.valueOf(query2.getSingleResult().toString());
+
+                        //сохранение таблицы товаров
+                        updateResults=insertCustomersOrdersProducts(request, newDockId, myMasterId);
+                        updateResults.setId(newDockId);
+                        updateResults.setSuccess(true);
+                        return updateResults;
+
+                    } catch (CantInsertProductRowCauseErrorException e) {
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        logger.error("Exception in method insertCustomersOrders on inserting into customers_orders_products. ", e);
+                        updateResults.setSuccess(false);
+                        updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
                         e.printStackTrace();
-                        return null;
+                        return updateResults; // ошибка сохранения таблицы товаров
+                    } catch (Exception e) {
+                        logger.error("Exception in method insertCustomersOrders on querying of created document id. SQL query:"+stringQuery, e);
+                        e.printStackTrace();
+                        updateResults.setSuccess(false);
+                        updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                        return updateResults;
                     }
-                }
-
-                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-
-                stringQuery =   "insert into customers_orders (" +
-                " master_id," + //мастер-аккаунт
-                " creator_id," + //создатель
-                " company_id," + //предприятие, для которого создается документ
-                " department_id," + //отделение, из(для) которого создается документ
-                " cagent_id," +//контрагент
-                " date_time_created," + //дата и время создания
-                " doc_number," + //номер заказа
-                " name," + //наименование заказа
-                " description," +//доп. информация по заказу
-                " shipment_date," +//план. дата отгрузки
-                " nds," +// НДС
-                " nds_included," +// НДС включен в цену
-                " telephone,"+//телефон
-                " email,"+//емейл
-                " zip_code,"+// почтовый индекс
-                " country_id,"+//страна
-                " region_id,"+//область
-                " city_id,"+//город/нас.пункт
-                " street,"+//улица
-                " home,"+//дом
-                " flat,"+//квартира
-                " additional_address,"+//дополнение к адресу
-                " track_number," + //трек-номер отправленного заказа
-                " status_id"+//статус заказа
-                ") values ("+
-                myMasterId + ", "+//мастер-аккаунт
-                myId + ", "+ //создатель
-                request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
-                request.getCagent_id() + ", "+//контрагент
-                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                doc_number + ", "+//номер заказа
-                "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
-                ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date()+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
-                request.isNds() + ", "+// НДС
-                request.isNds_included() + ", "+// НДС включен в цену
-                "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
-                "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
-                request.getCountry_id() + ", " +//страна
-                request.getRegion_id() + ", " +//область
-                request.getCity_id() + ", " +//город/нас.пункт
-                "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
-                "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
-                "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
-                "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
-                "'" + (request.getTrack_number() == null ? "": request.getTrack_number()) + "', " +//трек-номер отправленного заказа
-                request.getStatus_id() + ")";//статус заказа
-
-                try{
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.executeUpdate();
-                    stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
-                    Query query2 = entityManager.createNativeQuery(stringQuery);
-                    newDockId=Long.valueOf(query2.getSingleResult().toString());
-
-                    //сохранение таблицы товаров
-                    updateResults=insertCustomersOrdersProducts(request, newDockId, myMasterId);
-                    updateResults.setId(newDockId);
-                    updateResults.setSuccess(true);
-                    return updateResults;
-
-                } catch (CantInsertProductRowCauseErrorException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertCustomersOrders on inserting into customers_orders_products. ", e);
+                } else {
                     updateResults.setSuccess(false);
-                    updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
-                    e.printStackTrace();
-                    return updateResults; // ошибка сохранения таблицы товаров
-                } catch (Exception e) {
-                    logger.error("Exception in method insertCustomersOrders on querying of created document id. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    updateResults.setSuccess(false);
-                    updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                    updateResults.setErrorCode(0);          // Недостаточно прав
                     return updateResults;
                 }
-            } else {
+            } catch (Exception e) {
+                logger.error("Exception in method insertCustomersOrders on inserting into customers_orders.", e);
+                e.printStackTrace();
                 updateResults.setSuccess(false);
-                updateResults.setErrorCode(0);          // Недостаточно прав
+                updateResults.setErrorCode(1);      // Ошибка сохранения документа
                 return updateResults;
             }
-        } catch (Exception e) {
-            logger.error("Exception in method insertCustomersOrders on inserting into customers_orders.", e);
-            e.printStackTrace();
-            updateResults.setSuccess(false);
-            updateResults.setErrorCode(1);      // Ошибка сохранения документа
-            return updateResults;
+        } else {
+            logger.info("Double UUID found on insertCustomersOrders. UUID: " + request.getUid());
+            return null;
         }
     }
 
@@ -698,7 +784,7 @@ public class CustomersOrdersRepositoryJPA {
         Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
         updateResults.setFail_to_reserve(0);// иначе NullPointerException, т.к. там сейчас null
 
-        if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {
+        if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {//если есть что сохранять
             for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
                 row.setCustomers_orders_id(parentDockId);// т.к. он может быть неизвестен при создании документа
                 updateProductRowResult = saveCustomersOrdersProductTable(row, request.getCompany_id(), myMasterId);//1 - резерв был и не сохранился, 0 - резерв сохранился, null - ошибка
@@ -723,18 +809,19 @@ public class CustomersOrdersRepositoryJPA {
         Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
         BigDecimal reserved_current = row.getReserved_current()==null?new BigDecimal(0):row.getReserved_current(); // зарезервированное количество товара
+        BigDecimal shipped = productsRepository.getShippedAndSold(row.getProduct_id(),row.getDepartment_id(),row.getCustomers_orders_id()); //отгруженное кол-во товара. Можно конечно его было брать из row, но на всякий случай берем свежие данные
         try {
-            //Проверка на то, чтобы зарезервированное количество товара не превышало заказанное количество товара (графа Кол-во)
-            if(reserved_current.compareTo(row.getProduct_count()) > 0) { //1, т.е. резерв превышает заказываемое количество товара
-                row.setReserved_current(new BigDecimal(0));// отменяем резерв, т.к. он превышает заказываемое количество товара
+            //Проверка на то, чтобы зарезервированное количество товара не превышало заказанное количество товара (графа Кол-во) минус отгруженное количество товара (графа Отгружено)
+            if(reserved_current.compareTo(row.getProduct_count().subtract(shipped)) > 0) { //1, т.е. резерв превышает разницу заказанного и отгруженного количества товара.
+                row.setReserved_current(row.getProduct_count().subtract(shipped));//уменьшаем резерв до величины, равной разнице заказанного и отгруженного
                 saveResult = 1;
             } else { // резерв НЕ превышает заказываемое количество товара. Тогда проверим еще на то, что резерв не превышает доступное количество товара.
                 // Данная проверка нужна, чтобы сумма резервов по складу из всех "Заказов покупателя" не превышала общее количество товара на складе.
                 // Проверки в 2 захода делается чтобы не делать лишний запрос - если в первом случае уже выявлено нарушение - лишнего запроса к базе для вычисления доступного количество товара на складе не будет
-                //вычисляем доступное количество товара на складе
-                available = productsRepository.getAvailableExceptMyDock(row.getProduct_id(), row.getDepartment_id(), row.getCustomers_orders_id());
+                // вычисляем доступное количество товара на складе
+                available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), row.getCustomers_orders_id());
                 if (row.getReserved_current().compareTo(available) > 0) {
-                    row.setReserved_current(new BigDecimal(0));// и если превышает - резерв отменяется
+                    row.setReserved_current(available);// уменьшаем резерв до величины, равной доступному количеству товара на складе
                     saveResult = 1;
                 }
             }
@@ -818,6 +905,7 @@ public class CustomersOrdersRepositoryJPA {
                     " flat = '" + (request.getFlat() == null ? "" : request.getFlat()) + "', " +
                     " additional_address = '" + (request.getAdditional_address() == null ? "" : request.getAdditional_address()) + "', " +
                     " track_number = '" + (request.getTrack_number() == null ? "" : request.getTrack_number()) + "', " +
+                    " is_completed  = " + request.getIs_completed() + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -859,7 +947,6 @@ public class CustomersOrdersRepositoryJPA {
                             "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
                             "name, "+               //наименование заказа
                             "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
-                            "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
                             "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
                             ") values (" +
                             myMasterId + "," +
@@ -877,7 +964,6 @@ public class CustomersOrdersRepositoryJPA {
                             row.getPriorityTypePriceSide() + "',"+
                             "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
                             row.getAutocreateOnStart()+ ", " +
-                            row.getAutocreateOnCheque() +", " +
                             row.getStatusIdOnAutocreateOnCheque() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
@@ -891,11 +977,10 @@ public class CustomersOrdersRepositoryJPA {
                             " save_settings = " + row.getSaveSettings() +
                             (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
                             (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
-                            (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
+                            ", customer_id = "+row.getCustomerId()+
                             (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
                             (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
                             (row.getAutocreateOnStart() == null ? "": (", autocreate_on_start = "+row.getAutocreateOnStart()))+
-                            (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
                             (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()));
 
             Query query = entityManager.createNativeQuery(stringQuery);
