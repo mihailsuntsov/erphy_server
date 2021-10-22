@@ -1026,8 +1026,8 @@ public class CagentRepositoryJPA {
                 "           and coalesce(p.is_deleted,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " upper(p.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.description) like upper ('%" + searchString + "%') ";
+                    " upper(p.name) like upper(CONCAT('%',:searchString,'%')) or "+
+                    " upper(p.description) like upper(CONCAT('%',:searchString,'%')) ";
             stringQuery = stringQuery + ")";
         }
         if (companyId > 0) {
@@ -1035,6 +1035,8 @@ public class CagentRepositoryJPA {
         }
         stringQuery = stringQuery + " group by p.id order by p.name asc";
         Query query = entityManager.createNativeQuery(stringQuery);
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("searchString", searchString);}
         List<Object[]> queryList = query.getResultList();
         List<CagentsListJSON> returnList = new ArrayList<>();
         for(Object[] obj:queryList){
