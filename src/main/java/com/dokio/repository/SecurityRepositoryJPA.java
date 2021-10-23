@@ -44,7 +44,7 @@ public class SecurityRepositoryJPA {
     @Autowired
     private CommonUtilites commonUtilites;
 
-    public boolean userHasPermissions_OR(Long dockId, String permissions){
+    public boolean userHasPermissions_OR(Long docId, String permissions){
 
         Long userId=userRepository.getUserId();
         if(userId!=null) {
@@ -56,7 +56,7 @@ public class SecurityRepositoryJPA {
                     " users u " +
                     " where " +
                     " u.id="+userId+" and " +
-                    " p.document_id=" + dockId + " and " +
+                    " p.document_id=" + docId + " and " +
                     " uugr.user_id = u.id and " +
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
@@ -67,7 +67,7 @@ public class SecurityRepositoryJPA {
             return (query.getResultList().size() > 0);
         }else return false;
     }
-    public List<Integer> giveMeMyPermissions(Long dockId){
+    public List<Integer> giveMeMyPermissions(Long docId){
         Long userId=userRepository.getUserId();
         if(userId!=null) {
             String stringQuery = "select p.id from " +
@@ -78,7 +78,7 @@ public class SecurityRepositoryJPA {
                     " users u " +
                     " where " +
                     " u.id="+userId+" and " +
-                    " p.document_id=" + dockId + " and " +
+                    " p.document_id=" + docId + " and " +
                     " uugr.user_id = u.id and " +
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
@@ -121,22 +121,22 @@ public class SecurityRepositoryJPA {
 //*****************************************************************   Company    ***************************************
 
     @SuppressWarnings("Duplicates") //это предприятие моего родителя?
-    public boolean isItMyMastersCompany(Long dockId) {
+    public boolean isItMyMastersCompany(Long docId) {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-            String stringQuery = "select p.id from companies p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+            String stringQuery = "select p.id from companies p where p.id="+docId+" and p.master_id=" + myMasterId ;
             Query query = entityManager.createNativeQuery(stringQuery);
             return (query.getResultList().size() > 0);}
     //все ли предприятия принадлежат текущему хозяину?
-    public boolean isItAllMyMastersCompanies(ArrayList<Long> dockIds) {
+    public boolean isItAllMyMastersCompanies(ArrayList<Long> docIds) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from companies p where p.id in(:dockIds) and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from companies p where p.id in(:docIds) and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
-        query.setParameter("dockIds", dockIds);
-        return (query.getResultList().size() == dockIds.size());}
+        query.setParameter("docIds", docIds);
+        return (query.getResultList().size() == docIds.size());}
     //моё ли это предприятие?
-    public boolean isItMyCompany(Long dockId) {
+    public boolean isItMyCompany(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from users p where p.id="+myId+"and company_id=" +dockId;
+        String stringQuery = "select p.id from users p where p.id="+myId+"and company_id=" +docId;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
@@ -144,27 +144,27 @@ public class SecurityRepositoryJPA {
 //**********************************************************************   Department    *******************************
 
     @SuppressWarnings("Duplicates") //это отделение моего родителя?
-    public boolean isItMyMastersDepartment(Long dockId) {
+    public boolean isItMyMastersDepartment(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
         String stringQuery = "select name from " +
                 " departments p " +
                 " where " +
-                " p.id="+dockId+" and " +
+                " p.id="+docId+" and " +
                 " p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
     @SuppressWarnings("Duplicates") //это моё отделение?
-    public boolean isItMyDepartment(Long dockId) {
+    public boolean isItMyDepartment(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select ud.department_id from user_department ud where ud.department_id="+dockId+" and ud.user_id=" + myId ;
+        String stringQuery = "select ud.department_id from user_department ud where ud.department_id="+docId+" and ud.user_id=" + myId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
     @SuppressWarnings("Duplicates") //это все мои отделения?
     public boolean isItAllMyDepartments(Set<Long> depIds) {
         Long myId=userRepository.getUserId();
-        String dockIds=StringUtils.join(depIds, ',');
-        String stringQuery = "select ud.department_id from user_department ud where ud.department_id in ("+dockIds+") and ud.user_id=" + myId ;
+        String docIds=StringUtils.join(depIds, ',');
+        String stringQuery = "select ud.department_id from user_department ud where ud.department_id in ("+docIds+") and ud.user_id=" + myId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size()==depIds.size());}
     @SuppressWarnings("Duplicates") //все ли отделения принадлежат текущему хозяину?
@@ -207,9 +207,9 @@ public class SecurityRepositoryJPA {
 
 //***********************************************************************   UserGroup    *******************************
 
-    public boolean isItMyMastersUserGroup(Long dockId) {
+    public boolean isItMyMastersUserGroup(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from usergroup p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from usergroup p where p.id="+docId+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
     public boolean isItAllMyMastersUserGroups(String ugIds) {//строка типа "1,2,3,4,5..."
@@ -224,34 +224,34 @@ public class SecurityRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() == decArray.size());
     }
-    public boolean isItMyUserGroup(Long dockId) {
+    public boolean isItMyUserGroup(Long docId) {
         Long myId=userRepository.getUserId();
         int myCompanyId=userRepositoryJPA.getMyCompanyId();
-        String stringQuery = "select p.id from usergroup p where p.id="+dockId+" and p.company_id=" + myCompanyId ;
+        String stringQuery = "select p.id from usergroup p where p.id="+docId+" and p.company_id=" + myCompanyId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
 
 //***********************************************************************   TradeResults    ****************************
 
-    public boolean isItMyTradeResults(Long dockId) {
+    public boolean isItMyTradeResults(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from traderesults p where p.id="+dockId+" and p.creator_id=" + myId ;
+        String stringQuery = "select p.id from traderesults p where p.id="+docId+" and p.creator_id=" + myId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public IsItMy_JSON getIsItMy_TradeResults_JSON(Long dockId){  //возвращает набор прав (документ моего предприятия, документ моего отделения, мой документ)
+    public IsItMy_JSON getIsItMy_TradeResults_JSON(Long docId){  //возвращает набор прав (документ моего предприятия, документ моего отделения, мой документ)
         IsItMy_JSON isItMy_json = new IsItMy_JSON();
-        isItMy_json.setItIsMyDocument(isItMyTradeResults(dockId));
-        isItMy_json.setItIsDocumentOfMyDepartments(isItMyDepartmentsTradeResults(dockId));
-        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyTradeResults(dockId));
+        isItMy_json.setItIsMyDocument(isItMyTradeResults(docId));
+        isItMy_json.setItIsDocumentOfMyDepartments(isItMyDepartmentsTradeResults(docId));
+        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyTradeResults(docId));
         return isItMy_json;}
-    public boolean isItMyDepartmentsTradeResults(Long dockId) {
+    public boolean isItMyDepartmentsTradeResults(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from traderesults p where p.id="+dockId+" and p.department_id in (select department_id from user_department where user_id=" + myId+")";
+        String stringQuery = "select p.id from traderesults p where p.id="+docId+" and p.department_id in (select department_id from user_department where user_id=" + myId+")";
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public boolean isItMyCompanyTradeResults(Long dockId) {
+    public boolean isItMyCompanyTradeResults(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from traderesults p where p.id="+dockId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
+        String stringQuery = "select p.id from traderesults p where p.id="+docId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
     public boolean isItAllMyMastersTradeResults(String ugIds) {//строка типа "1,2,3,4,5..."
@@ -266,28 +266,28 @@ public class SecurityRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() == decArray.size());
     }//все ли  документы принадлежат текущему родительскому аккаунту
-    public boolean isItMyMastersTradeResults(Long dockId) {
+    public boolean isItMyMastersTradeResults(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from traderesults p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from traderesults p where p.id="+docId+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}//этот документ моего родителя?
 
 //**********************************************************************    SpravSysEdizm     **************************
 
-    public boolean isItMyMastersSpravSysEdizm(Long dockId) {
+    public boolean isItMyMastersSpravSysEdizm(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from sprav_sys_edizm p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from sprav_sys_edizm p where p.id="+docId+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public boolean isItMyCompanySpravSysEdizm(Long dockId) {
+    public boolean isItMyCompanySpravSysEdizm(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from sprav_sys_edizm p where p.id="+dockId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
+        String stringQuery = "select p.id from sprav_sys_edizm p where p.id="+docId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public IsItMy_Sprav_JSON getIsItMy_SpravSysEdizm_JSON(Long dockId){
+    public IsItMy_Sprav_JSON getIsItMy_SpravSysEdizm_JSON(Long docId){
         IsItMy_Sprav_JSON isItMy_json = new IsItMy_Sprav_JSON();
-        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanySpravSysEdizm(dockId));
-        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersSpravSysEdizm(dockId));
+        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanySpravSysEdizm(docId));
+        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersSpravSysEdizm(docId));
         return isItMy_json;}
     public boolean isItAllMyMastersSpravSysEdizm(String ugIds) {//строка типа "1,2,3,4,5..."
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
@@ -304,20 +304,20 @@ public class SecurityRepositoryJPA {
 
 //*************************************************************************   TypePrices   *****************************
 
-    public boolean isItMyCompanyTypePrices(Long dockId) {
+    public boolean isItMyCompanyTypePrices(Long docId) {
         Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from sprav_type_prices p where p.id="+dockId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
+        String stringQuery = "select p.id from sprav_type_prices p where p.id="+docId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public boolean isItMyMastersTypePrices(Long dockId) {
+    public boolean isItMyMastersTypePrices(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from sprav_type_prices p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from sprav_type_prices p where p.id="+docId+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public IsItMy_Sprav_JSON getIsItMy_TypePrices_JSON(Long dockId)    {
+    public IsItMy_Sprav_JSON getIsItMy_TypePrices_JSON(Long docId)    {
         IsItMy_Sprav_JSON isItMy_json = new IsItMy_Sprav_JSON();
-        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyTypePrices(dockId));
-        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersTypePrices(dockId));
+        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyTypePrices(docId));
+        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersTypePrices(docId));
         return isItMy_json;}
     public boolean isItAllMyMastersTypePrices(String ugIds) {//строка типа "1,2,3,4,5..."
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
@@ -347,20 +347,20 @@ public class SecurityRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() == decArray.size());
     }
-    public boolean isItMyCompanyProductGroups(Long dockId) {
+    public boolean isItMyCompanyProductGroups(Long docId) {
 //        Long myId=userRepository.getUserId();
-        String stringQuery = "select p.id from product_groups p where p.id="+dockId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
+        String stringQuery = "select p.id from product_groups p where p.id="+docId+" and p.company_id =" +userRepositoryJPA.getMyCompanyId();
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
-    public IsItMy_Sprav_JSON getIsItMy_ProductGroups_JSON(Long dockId){
+    public IsItMy_Sprav_JSON getIsItMy_ProductGroups_JSON(Long docId){
 
         IsItMy_Sprav_JSON isItMy_json = new IsItMy_Sprav_JSON();
-        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyProductGroups(dockId));
-        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersProductGroups(dockId));
+        isItMy_json.setItIsDocumentOfMyCompany(isItMyCompanyProductGroups(docId));
+        isItMy_json.setItIsDocumentOfMyMastersCompanies(isItMyMastersProductGroups(docId));
         return isItMy_json;}
-    public boolean isItMyMastersProductGroups(Long dockId) {
+    public boolean isItMyMastersProductGroups(Long docId) {
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "select p.id from product_groups p where p.id="+dockId+" and p.master_id=" + myMasterId ;
+        String stringQuery = "select p.id from product_groups p where p.id="+docId+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);}
 
@@ -467,9 +467,9 @@ public class SecurityRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     //определяет, обладает ли пользователь правами на создание документа для определенных предприятия и отделения
-    //dockId - id документа в таблице Documents (реестр документов Докио)
+    //docId - id документа в таблице Documents (реестр документов Докио)
     //p1,p2,p3 - права в порядке: Создание документов по всем предприятиям, Создание документов своего предприятия, Создание документов своих отделений
-    public Boolean userHasPermissionsToCreateDock(Long companyId, Long departmentId, Long dockId, String p1, String p2, String p3) {
+    public Boolean userHasPermissionsToCreateDoc(Long companyId, Long departmentId, Long docId, String p1, String p2, String p3) {
 
         //предприятие принадлежит мастер-аккаунту
         Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
@@ -485,26 +485,26 @@ public class SecurityRepositoryJPA {
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
             //отделение входит в число моих отделений
             boolean itIsMyDepartment = myDepartmentsIds.contains(departmentId);
-//            Boolean all = userHasPermissions_OR(dockId, p1);
-//            Boolean myCompany = (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId));
-//            Boolean myDeparts = (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
+//            Boolean all = userHasPermissions_OR(docId, p1);
+//            Boolean myCompany = (userHasPermissions_OR(docId, p2) && myCompanyId.equals(companyId));
+//            Boolean myDeparts = (userHasPermissions_OR(docId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
 //            Boolean finishResult=all||myCompany||myDeparts;
 
                     //если есть право на создание по всем предприятиям, или
-            return (userHasPermissions_OR(dockId, p1)) ||
+            return (userHasPermissions_OR(docId, p1)) ||
                     //если есть право на создание по всем отделениям своего предприятия, и предприятие документа своё, или
-                    (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId)) ||
+                    (userHasPermissions_OR(docId, p2) && myCompanyId.equals(companyId)) ||
                     //если есть право на создание по своим отделениям своего предприятия, предприятие своё, и отделение документа входит в число своих
-                    (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
+                    (userHasPermissions_OR(docId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
                     //false - недостаточно прав
 
         }else return null;// не прошли базовые проверки - значит тут вообще что-то не чисто
     }
     @SuppressWarnings("Duplicates")
     //определяет, обладает ли пользователь правами на создание документа для определенных предприятия и отделения
-    //dockId - id документа в таблице Documents (реестр документов Докио)
+    //docId - id документа в таблице Documents (реестр документов Докио)
     //p1,p2,p3 - права в порядке: Создание документов по всем предприятиям, Создание документов своего предприятия, Создание документов своих отделений
-    public Boolean userHasPermissionsToUpdateDock(Long companyId, Long departmentId, String tableName, Long dockId, Long id, String p1, String p2, String p3, String p4) {
+    public Boolean userHasPermissionsToUpdateDoc(Long companyId, Long departmentId, String tableName, Long docId, Long id, String p1, String p2, String p3, String p4) {
 
         //предприятие принадлежит мастер-аккаунту
         Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
@@ -518,24 +518,24 @@ public class SecurityRepositoryJPA {
 
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-            List<Long> myDocksIds = new ArrayList<>();
-            myDocksIds.add(id);
+            List<Long> myDocsIds = new ArrayList<>();
+            myDocsIds.add(id);
             //отделение входит в число моих отделений
             boolean itIsMyDepartment = myDepartmentsIds.contains(departmentId);
-//            Boolean all = userHasPermissions_OR(dockId, p1);
-//            Boolean myCompany = (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId));
-//            Boolean myDeparts = (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
+//            Boolean all = userHasPermissions_OR(docId, p1);
+//            Boolean myCompany = (userHasPermissions_OR(docId, p2) && myCompanyId.equals(companyId));
+//            Boolean myDeparts = (userHasPermissions_OR(docId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment);
 //            Boolean finishResult=all||myCompany||myDeparts;
 
 
             //если есть право на создание по всем предприятиям, или
-            return (userHasPermissions_OR(dockId, p1)) ||
+            return (userHasPermissions_OR(docId, p1)) ||
                     //если есть право на создание по всем отделениям своего предприятия, и предприятие документа своё, или
-                    (userHasPermissions_OR(dockId, p2) && myCompanyId.equals(companyId)) ||
+                    (userHasPermissions_OR(docId, p2) && myCompanyId.equals(companyId)) ||
                     //если есть право на создание по своим отделениям своего предприятия, предприятие своё, и отделение документа входит в число своих
-                    (userHasPermissions_OR(dockId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment) ||
+                    (userHasPermissions_OR(docId, p3) && myCompanyId.equals(companyId) && itIsMyDepartment) ||
                     //если есть право на создание по своим отделениям своего предприятия, предприятие своё, отделение документа входит в число своих, и документ свой
-                    (userHasPermissions_OR(dockId, p4) && myCompanyId.equals(companyId) && itIsMyDepartment && isItAllMyDocuments(tableName, myDocksIds))
+                    (userHasPermissions_OR(docId, p4) && myCompanyId.equals(companyId) && itIsMyDepartment && isItAllMyDocuments(tableName, myDocsIds))
                     ;
             //false - недостаточно прав
 

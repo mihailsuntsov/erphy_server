@@ -469,13 +469,13 @@ public class MovingRepository {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         // для случая, если у пользователя есть только право на "Создание для своих отделений",  необходимо проверить возможность для создания для всех отделений (отделение "ИЗ" и отделение "В")
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_from_id(), 30L, "377", "378", "379") &&
-                       securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_to_id(), 30L, "377", "378", "379");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_from_id(), 30L, "377", "378", "379") &&
+                       securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_to_id(), 30L, "377", "378", "379");
         if(iCan==Boolean.TRUE)
         {
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
 
             //генерируем номер документа, если его (номера) нет
@@ -515,10 +515,10 @@ public class MovingRepository {
                 query.executeUpdate();
                 stringQuery = "select id from moving where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId = Long.valueOf(query2.getSingleResult().toString());
+                newDocId = Long.valueOf(query2.getSingleResult().toString());
 
-                if(insertMovingProducts(request, newDockId, myMasterId)){
-                    return newDockId;
+                if(insertMovingProducts(request, newDocId, myMasterId)){
+                    return newDocId;
                 } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -629,12 +629,12 @@ public class MovingRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertMovingProducts(MovingForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertMovingProducts(MovingForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getMovingProductTable()!=null && request.getMovingProductTable().size() > 0) {
             for (MovingProductForm row : request.getMovingProductTable()) {
-                row.setMoving_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                row.setMoving_id(parentDocId);// т.к. он может быть неизвестен при создании документа
                 if (!saveMovingProductTable(row, myMasterId, request.getCompany_id())) {
                     throw new CantInsertProductRowCauseErrorException();
                 }

@@ -10,25 +10,27 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.message.request.Settings;
+package com.dokio.message.response.Settings;
 
 import java.math.BigDecimal;
 
-public class SettingsShipmentForm {
+public class SettingsInvoiceoutJSON {
+
+    private Long id;
     private Long        companyId;                      // id предприятия
     private Long        departmentId;                   // id отделения
     private Long        customerId;                     // id покупателя
     private String      pricingType;                    // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
     private Long        priceTypeId;                    // тип цены из справочника Типы цен
     private BigDecimal  changePrice;                    // наценка/скидка в цифре (например, 50)
-    private String      plusMinus;                      // определяте что есть changePrice - наценка или скидка (plus или minus)
-    private String      changePriceType;                // тип наценки/скидки (валюта currency или проценты procents)
+    private String      plusMinus;                      // определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+    private String      changePriceType;                // тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
     private Boolean     hideTenths;                     // убирать десятые (копейки)
     private Boolean     saveSettings;                   // сохранять настройки (флажок "Сохранить настройки" будет установлен)
+    private String      customer;                       // наименование покупателя
     private String      priorityTypePriceSide;          // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
     private Boolean     autocreate;                     // автосоздание нового документа
     private Long        statusIdOnComplete;             // статус при успешном проведении
-    private Boolean     showKkm;                        // показывать модуль ККМ
     private Boolean     autoAdd;                        // автодобавление
 
     public Boolean getAutoAdd() {
@@ -39,12 +41,12 @@ public class SettingsShipmentForm {
         this.autoAdd = autoAdd;
     }
 
-    public Boolean getShowKkm() {
-        return showKkm;
+    public Long getId() {
+        return id;
     }
 
-    public void setShowKkm(Boolean showKkm) {
-        this.showKkm = showKkm;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getCompanyId() {
@@ -125,6 +127,14 @@ public class SettingsShipmentForm {
 
     public void setSaveSettings(Boolean saveSettings) {
         this.saveSettings = saveSettings;
+    }
+
+    public String getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(String customer) {
+        this.customer = customer;
     }
 
     public String getPriorityTypePriceSide() {

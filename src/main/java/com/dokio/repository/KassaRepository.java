@@ -319,9 +319,9 @@ public class KassaRepository {
 
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё преприятие
-        Long dockDepartment=request.getDepartment_id();
+        Long docDepartment=request.getDepartment_id();
         List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-        boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
+        boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
         Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
         Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого докумен
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -338,7 +338,7 @@ public class KassaRepository {
             {
                 String stringQuery;
                 Long myId = userRepository.getUserId();
-                Long newDockId;
+                Long newDocId;
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
@@ -379,8 +379,8 @@ public class KassaRepository {
                     query.executeUpdate();
                     stringQuery="select id from kassa where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
-                    newDockId=Long.valueOf(query2.getSingleResult().toString());
-                    return newDockId;
+                    newDocId=Long.valueOf(query2.getSingleResult().toString());
+                    return newDocId;
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("Exception in method insertKassa ", e);

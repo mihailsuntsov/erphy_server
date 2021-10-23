@@ -16,7 +16,7 @@ package com.dokio.model;
 import com.dokio.model.Geo.Cities;
 import com.dokio.model.Geo.Countries;
 import com.dokio.model.Geo.Regions;
-import com.dokio.model.Sprav.SpravStatusDocks;
+import com.dokio.model.Sprav.SpravStatusDocs;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.persistence.*;
@@ -142,7 +142,7 @@ public class CustomersOrders {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private SpravStatusDocks status;
+    private SpravStatusDocs status;
 
     public Long getId() {
         return id;
@@ -360,11 +360,11 @@ public class CustomersOrders {
         this.track_number = track_number;
     }
 
-    public SpravStatusDocks getStatus() {
+    public SpravStatusDocs getStatus() {
         return status;
     }
 
-    public void setStatus(SpravStatusDocks status) {
+    public void setStatus(SpravStatusDocs status) {
         this.status = status;
     }
 }

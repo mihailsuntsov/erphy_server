@@ -27,7 +27,7 @@ public class ProductHistoryForm {
     private String      offset;//с какой строки (по умолчанию 0)
     private String      sortAsc; // asc/desc
     private String      result;//количество строк
-    private List<Long>  dockTypesIds;//id типов документов из таблицы documents
+    private List<Long>  docTypesIds;//id типов документов из таблицы documents
 
     public Long getCompanyId() {
         return companyId;
@@ -101,12 +101,12 @@ public class ProductHistoryForm {
         this.result = result;
     }
 
-    public List<Long> getDockTypesIds() {
-        return dockTypesIds;
+    public List<Long> getDocTypesIds() {
+        return docTypesIds;
     }
 
-    public void setDockTypesIds(List<Long> dockTypesIds) {
-        this.dockTypesIds = dockTypesIds;
+    public void setDocTypesIds(List<Long> docTypesIds) {
+        this.docTypesIds = docTypesIds;
     }
 
     @Override

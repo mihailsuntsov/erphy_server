@@ -476,12 +476,12 @@ public class AcceptanceRepository {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
         if(iCan==Boolean.TRUE)
         {
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
 
             //генерируем номер документа, если его (номера) нет
@@ -537,15 +537,15 @@ public class AcceptanceRepository {
                 query.executeUpdate();
                 stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId = Long.valueOf(query2.getSingleResult().toString());
+                newDocId = Long.valueOf(query2.getSingleResult().toString());
 
 
-                if(insertAcceptanceProducts(request, newDockId, myMasterId)){
-                    return newDockId;
+                if(insertAcceptanceProducts(request, newDocId, myMasterId)){
+                    return newDocId;
                 } else return null;
                 //если есть таблица с товарами - нужно создать их
-//                insertAcceptanceProducts(request, newDockId, myMasterId);
-//                return newDockId;
+//                insertAcceptanceProducts(request, newDocId, myMasterId);
+//                return newDocId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -656,12 +656,12 @@ public class AcceptanceRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertAcceptanceProducts(AcceptanceForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertAcceptanceProducts(AcceptanceForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getAcceptanceProductTable()!=null && request.getAcceptanceProductTable().size() > 0) {
             for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
-                row.setAcceptance_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                row.setAcceptance_id(parentDocId);// т.к. он может быть неизвестен при создании документа
                 if (!saveAcceptanceProductTable(row, myMasterId)) {
                     throw new CantInsertProductRowCauseErrorException();
                 }

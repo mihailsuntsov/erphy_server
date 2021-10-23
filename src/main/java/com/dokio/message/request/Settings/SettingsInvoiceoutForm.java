@@ -14,7 +14,9 @@ package com.dokio.message.request.Settings;
 
 import java.math.BigDecimal;
 
-public class SettingsShipmentForm {
+public class SettingsInvoiceoutForm {
+
+
     private Long        companyId;                      // id предприятия
     private Long        departmentId;                   // id отделения
     private Long        customerId;                     // id покупателя
@@ -28,7 +30,6 @@ public class SettingsShipmentForm {
     private String      priorityTypePriceSide;          // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
     private Boolean     autocreate;                     // автосоздание нового документа
     private Long        statusIdOnComplete;             // статус при успешном проведении
-    private Boolean     showKkm;                        // показывать модуль ККМ
     private Boolean     autoAdd;                        // автодобавление
 
     public Boolean getAutoAdd() {
@@ -37,14 +38,6 @@ public class SettingsShipmentForm {
 
     public void setAutoAdd(Boolean autoAdd) {
         this.autoAdd = autoAdd;
-    }
-
-    public Boolean getShowKkm() {
-        return showKkm;
-    }
-
-    public void setShowKkm(Boolean showKkm) {
-        this.showKkm = showKkm;
     }
 
     public Long getCompanyId() {

@@ -19,7 +19,7 @@ import com.dokio.message.request.Settings.SettingsPostingForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PostingJSON;
 import com.dokio.message.response.Settings.SettingsPostingJSON;
-import com.dokio.message.response.additional.DeleteDocksReport;
+import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
@@ -434,12 +434,12 @@ public class PostingRepository {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 16L, "200", "201", "202");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 16L, "200", "201", "202");
         if(iCan==Boolean.TRUE)
         {
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
             Long linkedDocsGroupId=null;
 
@@ -501,17 +501,17 @@ public class PostingRepository {
                 query.executeUpdate();
                 stringQuery = "select id from posting where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId = Long.valueOf(query2.getSingleResult().toString());
+                newDocId = Long.valueOf(query2.getSingleResult().toString());
 
                 //если есть таблица с товарами - нужно создать их
-                insertPostingProducts(request, newDockId, myMasterId);
+                insertPostingProducts(request, newDocId, myMasterId);
 
                 //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                 if (request.getLinked_doc_id() != null) {
-                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "posting", request.getCompany_id(), myMasterId);
+                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "posting", request.getCompany_id(), myMasterId);
                 }
 
-                return newDockId;
+                return newDocId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -532,19 +532,19 @@ public class PostingRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertPostingProducts(PostingForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertPostingProducts(PostingForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getPostingProductTable()!=null && request.getPostingProductTable().size() > 0) {
             for (PostingProductForm row : request.getPostingProductTable()) {
-                row.setPosting_id(parentDockId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                row.setPosting_id(parentDocId);// чтобы через API сюда нельзя было подсунуть рандомный id
                 if (!savePostingProductTable(row, myMasterId)) {
                     throw new CantInsertProductRowCauseErrorException();
                 }
                 productIds.add(row.getProduct_id());
             }
         }
-        if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId)) {
+        if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)) {
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
@@ -785,8 +785,8 @@ public class PostingRepository {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
-    public DeleteDocksReport deletePosting (String delNumbers) {
-        DeleteDocksReport delResult = new DeleteDocksReport();
+    public DeleteDocsReport deletePosting (String delNumbers) {
+        DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"203") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта

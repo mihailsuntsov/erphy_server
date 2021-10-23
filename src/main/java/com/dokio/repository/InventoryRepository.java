@@ -16,7 +16,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInventoryForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
-import com.dokio.message.response.additional.DeleteDocksReport;
+import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesInventoryJSON;
 import com.dokio.message.response.additional.InventoryProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
@@ -479,13 +479,13 @@ public class InventoryRepository {
     public Long insertInventory(InventoryForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 27L, "329", "330", "331");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 27L, "329", "330", "331");
         if(iCan==Boolean.TRUE)
         {
 
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
 
             //генерируем номер документа, если его (номера) нет
@@ -527,10 +527,10 @@ public class InventoryRepository {
                 query.executeUpdate();
                 stringQuery="select id from inventory where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId=Long.valueOf(query2.getSingleResult().toString());
+                newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                if(insertInventoryProducts(request, newDockId, myMasterId)){
-                    return newDockId;
+                if(insertInventoryProducts(request, newDocId, myMasterId)){
+                    return newDocId;
                 } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -550,14 +550,14 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertInventoryProducts(InventoryForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertInventoryProducts(InventoryForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         String productIds = "";
         //сохранение таблицы
         if (request.getInventoryProductTable()!=null && request.getInventoryProductTable().size() > 0) {
 
             for (InventoryProductTableForm row : request.getInventoryProductTable()) {
-                row.setInventory_id(newDockId);
+                row.setInventory_id(newDocId);
                 insertProductRowResult = saveInventoryProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null) {
                     throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров inventory_product
@@ -769,8 +769,8 @@ public class InventoryRepository {
     }
 
         @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-        public DeleteDocksReport deleteInventory (String delNumbers) {
-        DeleteDocksReport delResult = new DeleteDocksReport();
+        public DeleteDocsReport deleteInventory (String delNumbers) {
+        DeleteDocsReport delResult = new DeleteDocsReport();
             //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
             if( (securityRepositoryJPA.userHasPermissions_OR(27L,"332") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта

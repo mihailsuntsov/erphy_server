@@ -13,13 +13,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 <http://www.gnu.org/licenses/>
  */
 package com.dokio.message.response.Sprav;
-public class SpravStatusDockJSON {
+public class SpravStatusDocJSON {
     private Long id;
     private Long master_id;
     private Long creator_id;
     private Long changer_id;
     private Long company_id;
-    private int dock_id;
+    private int doc_id;
     private int status_type;//тип статуса 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
     private int output_order;
     private String name;
@@ -27,7 +27,7 @@ public class SpravStatusDockJSON {
     private String company;
     private String creator;
     private String changer;
-    private String dock;
+    private String doc;
     private String color;
     private boolean is_default;
     private String date_time_created;
@@ -83,12 +83,12 @@ public class SpravStatusDockJSON {
         this.company_id = company_id;
     }
 
-    public int getDock_id() {
-        return dock_id;
+    public int getDoc_id() {
+        return doc_id;
     }
 
-    public void setDock_id(int dock_id) {
-        this.dock_id = dock_id;
+    public void setDoc_id(int doc_id) {
+        this.doc_id = doc_id;
     }
 
     public int getStatus_type() {
@@ -147,12 +147,12 @@ public class SpravStatusDockJSON {
         this.changer = changer;
     }
 
-    public String getDock() {
-        return dock;
+    public String getDoc() {
+        return doc;
     }
 
-    public void setDock(String dock) {
-        this.dock = dock;
+    public void setDoc(String doc) {
+        this.doc = doc;
     }
 
     public String getColor() {

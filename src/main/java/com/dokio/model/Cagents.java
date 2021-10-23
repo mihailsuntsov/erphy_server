@@ -16,7 +16,7 @@ package com.dokio.model;
 import com.dokio.model.Geo.Cities;
 import com.dokio.model.Geo.Countries;
 import com.dokio.model.Geo.Regions;
-import com.dokio.model.Sprav.SpravStatusDocks;
+import com.dokio.model.Sprav.SpravStatusDocs;
 import com.dokio.model.Sprav.SpravTypePrices;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -144,7 +144,7 @@ public class Cagents {
 
     @ManyToOne
     @JoinColumn(name = "status_id")
-    private SpravStatusDocks status;
+    private SpravStatusDocs status;
 
     @ManyToOne
     @JoinColumn(name = "price_type_id")
@@ -427,11 +427,11 @@ public class Cagents {
         this.additional_address = additional_address;
     }
 
-    public SpravStatusDocks getStatus() {
+    public SpravStatusDocs getStatus() {
         return status;
     }
 
-    public void setStatus(SpravStatusDocks status) {
+    public void setStatus(SpravStatusDocs status) {
         this.status = status;
     }
 

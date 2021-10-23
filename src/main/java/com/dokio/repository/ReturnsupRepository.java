@@ -637,13 +637,13 @@ public class ReturnsupRepository {
     public Long insertReturnsup(ReturnsupForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 29L, "361", "362", "363");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 29L, "361", "362", "363");
         if(iCan==Boolean.TRUE)
         {
 
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
             Long linkedDocsGroupId=null;
 
@@ -706,14 +706,14 @@ public class ReturnsupRepository {
                 query.executeUpdate();
                 stringQuery="select id from returnsup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId=Long.valueOf(query2.getSingleResult().toString());
+                newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                if(insertReturnsupProducts(request, newDockId, myMasterId)){
+                if(insertReturnsupProducts(request, newDocId, myMasterId)){
                     //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                     if (request.getLinked_doc_id() != null) {
-                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "returnsup", request.getCompany_id(), myMasterId);
+                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "returnsup", request.getCompany_id(), myMasterId);
                     }
-                    return newDockId;
+                    return newDocId;
                 } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -733,14 +733,14 @@ public class ReturnsupRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertReturnsupProducts(ReturnsupForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertReturnsupProducts(ReturnsupForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         String productIds = "";
         //сохранение таблицы
         if (request.getReturnsupProductTable()!=null && request.getReturnsupProductTable().size() > 0) {
 
             for (ReturnsupProductTableForm row : request.getReturnsupProductTable()) {
-                row.setReturnsup_id(newDockId);
+                row.setReturnsup_id(newDocId);
                 insertProductRowResult = saveReturnsupProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null) {
                     throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров returnsup_product

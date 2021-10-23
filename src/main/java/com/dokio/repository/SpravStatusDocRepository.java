@@ -14,13 +14,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.repository;
 
-import com.dokio.message.request.Sprav.SpravStatusDockForm;
+import com.dokio.message.request.Sprav.SpravStatusDocForm;
 import com.dokio.message.request.UniversalForm;
-import com.dokio.message.response.Sprav.SpravStatusDockJSON;
+import com.dokio.message.response.Sprav.SpravStatusDocJSON;
 import com.dokio.message.response.Sprav.SpravStatusListJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.Documents;
-import com.dokio.model.Sprav.SpravStatusDocks;
+import com.dokio.model.Sprav.SpravStatusDocs;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Set;
 
 @Repository
-public class SpravStatusDockRepository {
+public class SpravStatusDocRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -58,7 +58,7 @@ public class SpravStatusDockRepository {
     @SuppressWarnings("Duplicates")
 
 
-    public List<SpravStatusDockJSON> getStatusDocksTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int documentId, Set<Integer> filterOptionsIds) {
+    public List<SpravStatusDocJSON> getStatusDocsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int documentId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "275,276"))//"Статусы документов" (см. файл Permissions Id)
         {
             String stringQuery;
@@ -116,9 +116,9 @@ public class SpravStatusDockRepository {
                     .setMaxResults(result);
 
             List<Object[]> queryList = query.getResultList();
-            List<SpravStatusDockJSON> returnList = new ArrayList<>();
+            List<SpravStatusDocJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                SpravStatusDockJSON doc = new SpravStatusDockJSON();
+                SpravStatusDocJSON doc = new SpravStatusDocJSON();
 
                 doc.setId(Long.parseLong(obj[0].toString()));
                 doc.setMaster((String) obj[1]);
@@ -132,10 +132,10 @@ public class SpravStatusDockRepository {
                 doc.setDate_time_created((String) obj[9]);
                 doc.setDate_time_changed((String) obj[10]);
                 doc.setName((String) obj[11]);
-                doc.setDock_id((Integer) obj[12]);
+                doc.setDoc_id((Integer) obj[12]);
                 doc.setStatus_type((Integer) obj[13]);
                 doc.setOutput_order((Integer) obj[14]);
-                doc.setDock((String) obj[15]);
+                doc.setDoc((String) obj[15]);
                 doc.setColor((String) obj[16]);
                 doc.setDescription((String) obj[17]);
                 doc.setIs_default((Boolean) obj[20]);
@@ -148,7 +148,7 @@ public class SpravStatusDockRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getStatusDocksSize(String searchString, int companyId, int documentId, Set<Integer> filterOptionsIds) {
+    public int getStatusDocsSize(String searchString, int companyId, int documentId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "275,276"))//"Статусы документов" (см. файл Permissions Id)
         {
             String stringQuery;
@@ -185,7 +185,7 @@ public class SpravStatusDockRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public SpravStatusDockJSON getStatusDocksValues(int id) {
+    public SpravStatusDocJSON getStatusDocsValues(int id) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "275,276"))//"Статусы документов" (см. файл Permissions Id)
         {
             String stringQuery;
@@ -203,7 +203,7 @@ public class SpravStatusDockRepository {
                     "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.name as name, " +
-                    "           p.dock_id as dock_id, " +
+                    "           p.dock_id as doc_id, " +
                     "           p.status_type as status_type, " +//тип статуса: 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                     "           p.output_order as output_order, " +
                     "           dc.name as dock, " +
@@ -228,7 +228,7 @@ public class SpravStatusDockRepository {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
-            SpravStatusDockJSON doc = new SpravStatusDockJSON();
+            SpravStatusDocJSON doc = new SpravStatusDocJSON();
 
             for (Object[] obj : queryList) {
 
@@ -244,10 +244,10 @@ public class SpravStatusDockRepository {
                 doc.setDate_time_created((String) obj[9]);
                 doc.setDate_time_changed((String) obj[10]);
                 doc.setName((String) obj[11]);
-                doc.setDock_id((Integer) obj[12]);
+                doc.setDoc_id((Integer) obj[12]);
                 doc.setStatus_type((Integer) obj[13]);
                 doc.setOutput_order((Integer) obj[14]);
-                doc.setDock((String) obj[15]);
+                doc.setDoc((String) obj[15]);
                 doc.setColor((String) obj[16]);
                 doc.setDescription((String) obj[17]);
                 doc.setIs_default((Boolean) obj[18]);
@@ -260,20 +260,20 @@ public class SpravStatusDockRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public boolean updateStatusDocks(SpravStatusDockForm request) {
+    public boolean updateStatusDocs(SpravStatusDocForm request) {
         EntityManager emgr = emf.createEntityManager();
-        SpravStatusDocks document = emgr.find(SpravStatusDocks.class, request.getId());//сохраняемый документ
+        SpravStatusDocs document = emgr.find(SpravStatusDocs.class, request.getId());//сохраняемый документ
         boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "278"); // "Редактирование док-тов своего предприятия"
         boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "277"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
         boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getCompany_id()));//сохраняется документ моего предприятия
         Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());//владелец моего аккаунта
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));
+        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));
 
         if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try
             {
@@ -294,14 +294,14 @@ public class SpravStatusDockRepository {
                 }//сохранение полей документа
                 String stringQuery;
                 stringQuery =   " update sprav_status_dock set " +
-                                " color = '" + request.getColor() +"', " +
-                                " changer_id = " + myId + ", "+
-                                " date_time_changed= now()," +
-                                " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
-                                " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
-                                " status_type = " + request.getStatus_type() +
-                                " where " +
-                                " id= "+request.getId();
+                        " color = '" + request.getColor() +"', " +
+                        " changer_id = " + myId + ", "+
+                        " date_time_changed= now()," +
+                        " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
+                        " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
+                        " status_type = " + request.getStatus_type() +
+                        " where " +
+                        " id= "+request.getId();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
                 return true;
@@ -314,7 +314,7 @@ public class SpravStatusDockRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Long insertStatusDocks(SpravStatusDockForm request) {
+    public Long insertStatusDocs(SpravStatusDocForm request) {
         if (securityRepositoryJPA.userHasPermissions_OR(22L, "271,272"))//  Статусы документов : "Создание"
         {
             EntityManager emgr = emf.createEntityManager();
@@ -328,7 +328,7 @@ public class SpravStatusDockRepository {
                 return null;
             } else {
                 try {
-                    SpravStatusDocks newDocument = new SpravStatusDocks();
+                    SpravStatusDocs newDocument = new SpravStatusDocs();
                     //создатель
                     User creator = userRepository.getUserByUsername(userRepository.getUserName());
                     newDocument.setCreator(creator);//создателя
@@ -352,9 +352,9 @@ public class SpravStatusDockRepository {
                     //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                     newDocument.setStatus_type(request.getStatus_type());
                     //Документ, для которого создается статус
-                    newDocument.setDocument(emgr.find(Documents.class, Long.valueOf(request.getDock_id())));
+                    newDocument.setDocument(emgr.find(Documents.class, Long.valueOf(request.getDoc_id())));
                     //Порядковый номер вывода. Генерируется как максимальный для этого документа (например, Заказ) в этом предприятии, затем пользователь может пометять порядок сам
-                    newDocument.setOutput_order(getNextOutputOrder(request.getDock_id(), request.getCompany_id()));
+                    newDocument.setOutput_order(getNextOutputOrder(request.getDoc_id(), request.getCompany_id()));
 
                     entityManager.persist(newDocument);
                     entityManager.flush();
@@ -369,7 +369,7 @@ public class SpravStatusDockRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteStatusDocks(String delNumbers) {
+    public boolean deleteStatusDocs(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -392,19 +392,19 @@ public class SpravStatusDockRepository {
     }
     @SuppressWarnings("Duplicates")
     @Transactional
-    public boolean setDefaultStatusDock(UniversalForm request) {// id : предприятие, id2 : документ в реестре всех док-тов системы, id3 : статус
+    public boolean setDefaultStatusDoc(UniversalForm request) {// id : предприятие, id2 : документ в реестре всех док-тов системы, id3 : статус
         EntityManager emgr = emf.createEntityManager();
-        SpravStatusDocks document = emgr.find(SpravStatusDocks.class, request.getId3());//сохраняемый документ
+        SpravStatusDocs document = emgr.find(SpravStatusDocs.class, request.getId3());//сохраняемый документ
         boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "278"); // "Редактирование док-тов своего предприятия"
         boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "277"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
         boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getId()));//сохраняется документ моего предприятия
         Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
-        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));
+        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));
 
         if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try
             {
@@ -425,7 +425,7 @@ public class SpravStatusDockRepository {
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteStatusDocks(String delNumbers) {
+    public boolean undeleteStatusDocs(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
@@ -446,12 +446,12 @@ public class SpravStatusDockRepository {
             } else return false;
         } else return false;
     }
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //*******************************************************************  U T I L S **********************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public int getNextOutputOrder(int dockId, Long companyId) {
-        String stringQuery = "select coalesce(max(output_order)+1,1) from sprav_status_dock where dock_id=" + dockId + " and company_id =  " + companyId;
+    public int getNextOutputOrder(int docId, Long companyId) {
+        String stringQuery = "select coalesce(max(output_order)+1,1) from sprav_status_dock where dock_id=" + docId + " and company_id =  " + companyId;
         Query query = entityManager.createNativeQuery(stringQuery);
         int output_order = 0;
         output_order= (int) query.getSingleResult();
@@ -480,40 +480,40 @@ public class SpravStatusDockRepository {
     @SuppressWarnings("Duplicates")
     public List<SpravStatusListJSON> getStatusList(int companyId, int documentId) {
 
-            String stringQuery;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-            stringQuery = "select  p.id as id, " +
-                    "           p.name as name, " +
-                    "           p.status_type as status_type, " +//тип статуса: 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
-                    "           p.output_order as output_order, " +
-                    "           p.color as color, " +
-                    "           p.description as description,  " +
-                    "           coalesce(p.is_default,false) as is_default  " +
-                    "           from sprav_status_dock p " +
-                    "           where  p.master_id=" + myMasterId +
-                    "           and p.dock_id = " + documentId +
-                    "           and p.company_id=" + companyId +
-                    "           and coalesce(p.is_deleted,false)=false" +
-                    "           order by p.output_order asc";
+        stringQuery = "select  p.id as id, " +
+                "           p.name as name, " +
+                "           p.status_type as status_type, " +//тип статуса: 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+                "           p.output_order as output_order, " +
+                "           p.color as color, " +
+                "           p.description as description,  " +
+                "           coalesce(p.is_default,false) as is_default  " +
+                "           from sprav_status_dock p " +
+                "           where  p.master_id=" + myMasterId +
+                "           and p.dock_id = " + documentId +
+                "           and p.company_id=" + companyId +
+                "           and coalesce(p.is_deleted,false)=false" +
+                "           order by p.output_order asc";
 
-            Query query = entityManager.createNativeQuery(stringQuery);
+        Query query = entityManager.createNativeQuery(stringQuery);
 
-            List<Object[]> queryList = query.getResultList();
-            List<SpravStatusListJSON> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                SpravStatusListJSON doc = new SpravStatusListJSON();
+        List<Object[]> queryList = query.getResultList();
+        List<SpravStatusListJSON> returnList = new ArrayList<>();
+        for (Object[] obj : queryList) {
+            SpravStatusListJSON doc = new SpravStatusListJSON();
 
-                doc.setId(Long.parseLong(obj[0].toString()));
-                doc.setName((String) obj[1]);
-                doc.setStatus_type((Integer) obj[2]);
-                doc.setOutput_order((Integer) obj[3]);
-                doc.setColor((String) obj[4]);
-                doc.setDescription((String) obj[5]);
-                doc.setIs_default((Boolean) obj[6]);
-                returnList.add(doc);
-            }
-            return returnList;
+            doc.setId(Long.parseLong(obj[0].toString()));
+            doc.setName((String) obj[1]);
+            doc.setStatus_type((Integer) obj[2]);
+            doc.setOutput_order((Integer) obj[3]);
+            doc.setColor((String) obj[4]);
+            doc.setDescription((String) obj[5]);
+            doc.setIs_default((Boolean) obj[6]);
+            returnList.add(doc);
+        }
+        return returnList;
     }
 
 }

@@ -510,10 +510,10 @@ public class CagentRepositoryJPA {
         boolean updatingDocumentOfMyCompany=(Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getCompany_id()));//сохраняется документ моего предприятия
         Long DocumentMasterId=document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());//владелец моего аккаунта
-        boolean isItMyMastersDock =(DocumentMasterId.equals(myMasterId));
+        boolean isItMyMastersDoc =(DocumentMasterId.equals(myMasterId));
         if(((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 ||(!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             if(updateCagentBaseFields(request)){//Сначала сохраняем документ без контактных лиц и банковских счетов
                 try {//если сохранился...
@@ -862,7 +862,7 @@ public class CagentRepositoryJPA {
         String stringQuery;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         Long myId = userRepository.getUserId();
-        Long newDockId;
+        Long newDocId;
         stringQuery =   "insert into cagents (" +
                 " master_id," + //мастер-аккаунт
                 " creator_id," + //создатель
@@ -959,8 +959,8 @@ public class CagentRepositoryJPA {
             query.executeUpdate();
             stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
-            newDockId=Long.valueOf(query2.getSingleResult().toString());
-            return newDockId;
+            newDocId=Long.valueOf(query2.getSingleResult().toString());
+            return newDocId;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

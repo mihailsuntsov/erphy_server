@@ -16,11 +16,11 @@ package com.dokio.message.request.Sprav;
 
 import java.util.List;
 
-public class SpravStatusDockForm {
+public class SpravStatusDocForm {
 
     private Long id;
     private Long company_id;
-    private int dock_id;
+    private int doc_id;
     private String name;
     private int status_type;
     private String color;
@@ -54,12 +54,12 @@ public class SpravStatusDockForm {
         this.company_id = company_id;
     }
 
-    public int getDock_id() {
-        return dock_id;
+    public int getDoc_id() {
+        return doc_id;
     }
 
-    public void setDock_id(int dock_id) {
-        this.dock_id = dock_id;
+    public void setDoc_id(int doc_id) {
+        this.doc_id = doc_id;
     }
 
     public String getName() {
@@ -112,7 +112,7 @@ public class SpravStatusDockForm {
 
     @Override
     public String toString() {
-        return "SpravStatusDockForm: id=" + this.id + ", company_id" + this.company_id + ", dock_id" + this.dock_id +
+        return "SpravStatusDocForm: id=" + this.id + ", company_id" + this.company_id + ", dock_id" + this.doc_id +
                 ", name" + this.name;
     }
 }

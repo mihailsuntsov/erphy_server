@@ -2,9 +2,9 @@ package com.dokio.controller.Sprav;
 
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
-import com.dokio.message.request.Sprav.SpravStatusDockForm;
+import com.dokio.message.request.Sprav.SpravStatusDocForm;
 import com.dokio.message.request.UniversalForm;
-import com.dokio.message.response.Sprav.SpravStatusDockJSON;
+import com.dokio.message.response.Sprav.SpravStatusDocJSON;
 import com.dokio.message.response.Sprav.SpravStatusListJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -15,13 +15,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import java.text.ParseException;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class SpravStatusDockController {
-    Logger logger = Logger.getLogger("SpravStatusDockController");
+public class SpravStatusDocController {
+    Logger logger = Logger.getLogger("SpravStatusDocController");
 
     @Autowired
     UserRepository userRepository;
@@ -32,12 +32,12 @@ public class SpravStatusDockController {
     @Autowired
     UserDetailsServiceImpl userRepository2;
     @Autowired
-    SpravStatusDockRepository repository;
+    SpravStatusDocRepository repository;
 
-    @PostMapping("/api/auth/getStatusDocksTable")
+    @PostMapping("/api/auth/getStatusDocsTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getStatusDocksTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getStatusDocksTable: " + searchRequest.toString());
+    public ResponseEntity<?> getStatusDocsTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getStatusDocsTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -47,7 +47,7 @@ public class SpravStatusDockController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<SpravStatusDockJSON> returnList;
+        List<SpravStatusDocJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -76,15 +76,15 @@ public class SpravStatusDockController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = repository.getStatusDocksTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, documentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = repository.getStatusDocsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, documentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getSpravStatusDocksPagesList")
+    @PostMapping("/api/auth/getSpravStatusDocsPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getSpravStatusDocksPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getSpravStatusDocksPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getSpravStatusDocsPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getSpravStatusDocsPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -104,7 +104,7 @@ public class SpravStatusDockController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = repository.getStatusDocksSize(searchString,companyId,documentId,searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = repository.getStatusDocsSize(searchString,companyId,documentId,searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -150,24 +150,24 @@ public class SpravStatusDockController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getSpravStatusDocksValuesById")
+    @PostMapping("/api/auth/getSpravStatusDocsValuesById")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getSpravStatusDocksValuesById(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path /api/auth/getSpravStatusDocksValuesById: " + request.toString());
+    public ResponseEntity<?> getSpravStatusDocsValuesById(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path /api/auth/getSpravStatusDocsValuesById: " + request.toString());
 
-        SpravStatusDockJSON response;
+        SpravStatusDocJSON response;
         int id = request.getId();
-        response=repository.getStatusDocksValues(id);//результат запроса помещается в экземпляр класса
-        ResponseEntity<SpravStatusDockJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
+        response=repository.getStatusDocsValues(id);//результат запроса помещается в экземпляр класса
+        ResponseEntity<SpravStatusDocJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertSpravStatusDocks")
+    @PostMapping("/api/auth/insertSpravStatusDocs")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertSpravStatusDocks(@RequestBody SpravStatusDockForm request){
-        logger.info("Processing post request for path /api/auth/insertSpravStatusDocks: " + request.toString());
+    public ResponseEntity<?> insertSpravStatusDocs(@RequestBody SpravStatusDocForm request){
+        logger.info("Processing post request for path /api/auth/insertSpravStatusDocs: " + request.toString());
 
-        Long newDocument = repository.insertStatusDocks(request);
+        Long newDocument = repository.insertStatusDocs(request);
         if(newDocument!=null && newDocument>0){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -177,10 +177,10 @@ public class SpravStatusDockController {
         }
     }
 
-    @PostMapping("/api/auth/setDefaultStatusDock")
+    @PostMapping("/api/auth/setDefaultStatusDoc")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> setDefaultStatusDock(@RequestBody UniversalForm request){
-        if(repository.setDefaultStatusDock(request)){
+    public ResponseEntity<?> setDefaultStatusDoc(@RequestBody UniversalForm request){
+        if(repository.setDefaultStatusDoc(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
@@ -189,12 +189,12 @@ public class SpravStatusDockController {
         }
     }
 
-    @PostMapping("/api/auth/updateSpravStatusDocks")
+    @PostMapping("/api/auth/updateSpravStatusDocs")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateSpravStatusDocks(@RequestBody SpravStatusDockForm request){
-        logger.info("Processing post request for path /api/auth/updateSpravStatusDocks: " + request.toString());
+    public ResponseEntity<?> updateSpravStatusDocs(@RequestBody SpravStatusDocForm request){
+        logger.info("Processing post request for path /api/auth/updateSpravStatusDocs: " + request.toString());
 
-        if(repository.updateStatusDocks(request)){
+        if(repository.updateStatusDocs(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
@@ -203,16 +203,16 @@ public class SpravStatusDockController {
         }
     }
 
-    @PostMapping("/api/auth/deleteSpravStatusDocks")
+    @PostMapping("/api/auth/deleteSpravStatusDocs")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteSpravStatusDocks(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/deleteSpravStatusDocks: " + request.toString());
+    public  ResponseEntity<?> deleteSpravStatusDocs(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/deleteSpravStatusDocs: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
 //        checked=checked.replace("[","");
 //        checked=checked.replace("]","");
 
-        if(repository.deleteStatusDocks(checked)){
+        if(repository.deleteStatusDocs(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
@@ -220,16 +220,16 @@ public class SpravStatusDockController {
             return responseEntity;
         }
     }
-    @PostMapping("/api/auth/undeleteSpravStatusDocks")
+    @PostMapping("/api/auth/undeleteSpravStatusDocs")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteSpravStatusDocks(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteSpravStatusDocks: " + request.toString());
+    public  ResponseEntity<?> undeleteSpravStatusDocs(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/undeleteSpravStatusDocs: " + request.toString());
 
         String checked = request.getChecked() == null ? "": request.getChecked();
 //        checked=checked.replace("[","");
 //        checked=checked.replace("]","");
 
-        if(repository.undeleteStatusDocks(checked)){
+        if(repository.undeleteStatusDocs(checked)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {

@@ -564,9 +564,9 @@ public class RetailSalesRepository {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "retail_sales")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-            Long dockDepartment=request.getDepartment_id();
+            Long docDepartment=request.getDepartment_id();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-            boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
+            boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long linkedDocsGroupId=null;
@@ -584,7 +584,7 @@ public class RetailSalesRepository {
             {
                 String stringQuery;
                 Long myId = userRepository.getUserId();
-                Long newDockId;
+                Long newDocId;
                 Long doc_number;//номер документа( = номер заказа)
 
                 //генерируем номер документа, если его (номера) нет
@@ -679,9 +679,9 @@ public class RetailSalesRepository {
                     query.executeUpdate();
                     stringQuery="select id from retail_sales where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
-                    newDockId=Long.valueOf(query2.getSingleResult().toString());
+                    newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                    if(insertRetailSalesProducts(request, newDockId, myMasterId)){
+                    if(insertRetailSalesProducts(request, newDocId, myMasterId)){
 
 
 
@@ -735,9 +735,9 @@ public class RetailSalesRepository {
 
                         //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                         if (request.getLinked_doc_id() != null) {
-                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "retail_sales", request.getCompany_id(), myMasterId);
+                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "retail_sales", request.getCompany_id(), myMasterId);
                         }
-                        return newDockId;
+                        return newDocId;
                     } else return null;
 
 
@@ -778,14 +778,14 @@ public class RetailSalesRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertRetailSalesProducts(RetailSalesForm request, Long newDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
+    private boolean insertRetailSalesProducts(RetailSalesForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
 
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
 
         //сохранение таблицы
         if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
             for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
-                row.setRetail_sales_id(newDockId);
+                row.setRetail_sales_id(newDocId);
                 insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), request.getCustomers_orders_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null || !insertProductRowResult) {
                     if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveRetailSalesProductTable
@@ -796,7 +796,7 @@ public class RetailSalesRepository {
                 } else { // если сохранили удачно - значит нужно сделать запись в историю изменения данного товара
                     //создание записи в истории изменения товара
                     if(row.getIs_material()) { // но только если товар материален (т.е. это не услуга, работа и т.п.)
-                        if (!addRetailSalesProductHistory(newDockId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request, myMasterId, row.getIs_material())) {
+                        if (!addRetailSalesProductHistory(newDocId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request, myMasterId, row.getIs_material())) {
                             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
                         } else {//создание записи актуального количества товара на складе (таблица product_quantity)
                             if (!setProductQuantity(row.getProduct_id(), request.getDepartment_id(), myMasterId)) {

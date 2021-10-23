@@ -14,7 +14,7 @@ package com.dokio.message.response.additional;
 
 import java.util.List;
 
-public class DeleteDocksReport {
+public class DeleteDocsReport {
 
     private Integer                 result;     // Код результата. 0 - Ok, 1 - ошибка, 2 - нет прав, 3 - есть связанные документы
     private List<LinkedDocsJSON>    docs;       // Информация о документах (например, документы, у которых есть дочерние связи)

@@ -20,7 +20,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.Settings.SettingsWriteoffJSON;
 import com.dokio.message.response.WriteoffJSON;
-import com.dokio.message.response.additional.DeleteDocksReport;
+import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesWriteoffJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.*;
@@ -443,13 +443,13 @@ public class WriteoffRepositoryJPA {
     public Long insertWriteoff(WriteoffForm request) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDock( request.getCompany_id(), request.getDepartment_id(), 17L, "216", "217", "218");
+        Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 17L, "216", "217", "218");
         if(iCan==Boolean.TRUE)
         {
 
             String stringQuery;
             Long myId = userRepository.getUserId();
-            Long newDockId;
+            Long newDocId;
             Long doc_number;//номер документа
             Long linkedDocsGroupId=null;
 
@@ -509,19 +509,19 @@ public class WriteoffRepositoryJPA {
                 query.executeUpdate();
                 stringQuery = "select id from writeoff where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                newDockId = Long.valueOf(query2.getSingleResult().toString());
+                newDocId = Long.valueOf(query2.getSingleResult().toString());
 
                 //если есть таблица с товарами - нужно создать их
-                insertWriteoffProducts(request, newDockId, myMasterId);
+                insertWriteoffProducts(request, newDocId, myMasterId);
 
 
 
                 //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                 if (request.getLinked_doc_id() != null) {
-                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDockId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "writeoff", request.getCompany_id(), myMasterId);
+                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "writeoff", request.getCompany_id(), myMasterId);
                 }
 
-                return newDockId;
+                return newDocId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -542,19 +542,19 @@ public class WriteoffRepositoryJPA {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getWriteoffProductTable()!=null && request.getWriteoffProductTable().size() > 0) {
             for (WriteoffProductForm row : request.getWriteoffProductTable()) {
-                row.setWriteoff_id(parentDockId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                row.setWriteoff_id(parentDocId);// чтобы через API сюда нельзя было подсунуть рандомный id
                 if (!saveWriteoffProductTable(row, myMasterId)) {
                     throw new CantInsertProductRowCauseErrorException();
                 }
                 productIds.add(row.getProduct_id());
             }
         }
-        if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDockId)){
+        if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)){
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
@@ -804,8 +804,8 @@ public class WriteoffRepositoryJPA {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
-    public DeleteDocksReport deleteWriteoff (String delNumbers) {
-        DeleteDocksReport delResult = new DeleteDocksReport();
+    public DeleteDocsReport deleteWriteoff (String delNumbers) {
+        DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if     ((securityRepositoryJPA.userHasPermissions_OR(17L, "219") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта

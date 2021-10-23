@@ -334,11 +334,11 @@ public class TypePricesRepositoryJPA {
         boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getId()));//сохраняется документ моего предприятия
         Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
-        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));
+        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));
 
         if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try
             {

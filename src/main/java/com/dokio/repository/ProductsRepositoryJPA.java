@@ -366,11 +366,11 @@ public class ProductsRepositoryJPA {
         boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getCompany_id()));//сохраняется документ моего предприятия
         Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());//владелец моего аккаунта
-        boolean isItMyMastersDock = (DocumentMasterId.equals(myMasterId));// документ под юрисдикцией главного аккаунта
+        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));// документ под юрисдикцией главного аккаунта
 
         if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
                 || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDock) //и сохраняемый документ под юрисдикцией главного аккаунта
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try {
                 Long id = Long.valueOf(request.getId());
@@ -654,7 +654,7 @@ public class ProductsRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public List<ProductHistoryJSON> getProductHistoryTable(Long companyId, Long departmentId, Long productId, String dateFrom, String dateTo, String sortColumn, String sortAsc, int result, List<Long> dockTypesIds, int offsetreal) {
+    public List<ProductHistoryJSON> getProductHistoryTable(Long companyId, Long departmentId, Long productId, String dateFrom, String dateTo, String sortColumn, String sortAsc, int result, List<Long> docTypesIds, int offsetreal) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))// Просмотр по (всем,своим) предприятиям
         {
             String stringQuery;
@@ -680,7 +680,7 @@ public class ProductsRepositoryJPA {
                     "           INNER JOIN departments dep ON p.department_id=dep.id " +
                     "           INNER JOIN documents doc ON p.doc_type_id=doc.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and  p.doc_type_id in ("+commonUtilites.ListOfLongToString(dockTypesIds,",","","")+")" +
+                    "           and  p.doc_type_id in ("+commonUtilites.ListOfLongToString(docTypesIds,",","","")+")" +
                     (departmentId!=0?(" and  p.department_id = "+departmentId):"") +
                     "           and  p.product_id = " + productId +
                     "           and p.date_time_created at time zone '" + myTimeZone + "' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')" +

@@ -113,7 +113,7 @@ public class LinkedDocsUtilites {
 
     // создаёт новую группу для связанных документов, возвращает её id
     private Long createLinkedGruoup(Long companyId, Long masterId) {
-        Long newDockId;
+        Long newDocId;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         String stringQuery = " insert into linked_docs_groups (" +
                 " master_id," + //мастер-аккаунт
@@ -129,8 +129,8 @@ public class LinkedDocsUtilites {
             query.executeUpdate();
             stringQuery = "select id from linked_docs_groups where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and master_id=" + masterId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
-            newDockId = Long.valueOf(query2.getSingleResult().toString());
-            return newDockId;
+            newDocId = Long.valueOf(query2.getSingleResult().toString());
+            return newDocId;
         } catch (Exception e) {
             logger.error("Exception in method createLinkedGruoup on inserting into linked_docs_groups. SQL query:" + stringQuery, e);
             e.printStackTrace();
@@ -305,20 +305,13 @@ public class LinkedDocsUtilites {
                             "              fillcolor=\"#ededed\";" +
                             "              color=\"#2b2a2a\";" +
                             "              ]; ";
-                    // сборка массива информации по документам. В данном цикле необходимо получить массив из элементов вида
-                    //                    <UUID документа> [
-                    //                              color="black"
-                    //                              fillcolor="#acee00";
-                    //                              URL="ui/writeoffdock/113";
-                    //                              label = "Оприходование\n №135\n000231\n23.05.2021\nПроведено: Да\nЗавершено";
-                    //                              tooltip="Перейти в документ";
-                    //                    ];
+
                     for (LinkedDocsJSON linkedDoc : returnList) {
 
                         //перед UID добавляю букву, т.к. на фронте Graphviz некорректно работает с наименованиями node-ов, которые начинаются на цифры
 
                         shemeText = shemeText + "a" + linkedDoc.getUid().replace("-", "") + " [";
-                        shemeText = shemeText + "URL=\"ui/" + linkedDoc.getPagename() + "dock/" + linkedDoc.getId() + "\";";
+                        shemeText = shemeText + "URL=\"ui/" + linkedDoc.getPagename() + "doc/" + linkedDoc.getId() + "\";";
                         if (uid.equals(linkedDoc.getUid()))
                             shemeText = shemeText + " fillcolor=\"#acee00\";"; // если это node документа, из которого запрашивали схему - окрасим ноду в другой цвет
                         shemeText = shemeText + "label=\"{" + linkedDoc.getName() + "|№" + linkedDoc.getDoc_number() + "\\n" + linkedDoc.getDate_time_created() + "\\n";

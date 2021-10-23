@@ -62,11 +62,11 @@ public class CommonUtilites {
     }
 
     @SuppressWarnings("Duplicates")  //генератор номера документа
-    public Long generateDocNumberCode(Long company_id, String dockTableName)
+    public Long generateDocNumberCode(Long company_id, String docTableName)
     {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery = "select coalesce(max(doc_number)+1,1) from "+dockTableName+" where company_id="+company_id+" and master_id="+myMasterId;
+        stringQuery = "select coalesce(max(doc_number)+1,1) from "+docTableName+" where company_id="+company_id+" and master_id="+myMasterId;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -80,12 +80,12 @@ public class CommonUtilites {
     }
 
     @SuppressWarnings("Duplicates") // проверка на уникальность номера документа
-    public Boolean isDocumentNumberUnical(Long company_id, Integer code, Long doc_id, String dockTableName)
+    public Boolean isDocumentNumberUnical(Long company_id, Integer code, Long doc_id, String docTableName)
     {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
         stringQuery = "" +
-                "select id from "+dockTableName+" where " +
+                "select id from "+docTableName+" where " +
                 "company_id="+company_id+
                 " and master_id="+myMasterId+
                 " and doc_number="+code;
@@ -125,11 +125,11 @@ public class CommonUtilites {
     }
 
     //есть ли запись с идентичной UID в таблице? UID используется, чтобы исключить дубли при создании документов с использованием медленного интернета, когда браузер может дублировать POST-запросы
-    public Boolean isDocumentUidUnical(String uid, String dockTableName){
+    public Boolean isDocumentUidUnical(String uid, String docTableName){
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
         stringQuery = "" +
-                "select id from "+dockTableName+" where " +
+                "select id from "+docTableName+" where " +
                 " master_id="+myMasterId+
                 " and uid=:uid";
         try

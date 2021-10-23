@@ -866,11 +866,11 @@ public class ProductsController {
             result = 10;
         }
 
-        //******** dockTypesIds
-        List<Long> dockTypesIds = searchRequest.getDockTypesIds();
+        //******** docTypesIds
+        List<Long> docTypesIds = searchRequest.getDocTypesIds();
 
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, dockTypesIds, offsetreal);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, docTypesIds, offsetreal);//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
 

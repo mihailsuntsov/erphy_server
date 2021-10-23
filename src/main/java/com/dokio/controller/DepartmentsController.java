@@ -228,21 +228,21 @@ public class DepartmentsController {
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
-        Departments newDock = new Departments();
-        newDock.setName(name);
-        newDock.setCreator(creator);
-        newDock.setMaster(master);
-        newDock.setDate_time_created(timestamp);
-        newDock.setAdditional(request.getAdditional());
-        newDock.setAddress(request.getAddress());
-        newDock.setCompany(company);
-        newDock.setParent(parentDepartment);
-        newDock.setPriceType(priceType);
+        Departments newDoc = new Departments();
+        newDoc.setName(name);
+        newDoc.setCreator(creator);
+        newDoc.setMaster(master);
+        newDoc.setDate_time_created(timestamp);
+        newDoc.setAdditional(request.getAdditional());
+        newDoc.setAddress(request.getAddress());
+        newDoc.setCompany(company);
+        newDoc.setParent(parentDepartment);
+        newDoc.setPriceType(priceType);
 
-        Long idNewDock=departmentService.insertDepartment(newDock);
+        Long idNewDoc=departmentService.insertDepartment(newDoc);
 
-        if(idNewDock !=null){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + idNewDock+"\n" +  "]", HttpStatus.OK);
+        if(idNewDoc !=null){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + idNewDoc+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);

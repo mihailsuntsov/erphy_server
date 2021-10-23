@@ -566,9 +566,9 @@ public class CustomersOrdersRepositoryJPA {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "customers_orders")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-            Long dockDepartment=request.getDepartment_id();
+            Long docDepartment=request.getDepartment_id();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-            boolean itIsMyDepartment = myDepartmentsIds.contains(dockDepartment);
+            boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о создании
@@ -587,7 +587,7 @@ public class CustomersOrdersRepositoryJPA {
                 {
                     String stringQuery;
                     Long myId = userRepository.getUserId();
-                    Long newDockId;
+                    Long newDocId;
                     Long doc_number;//номер документа( = номер заказа)
 
                     //генерируем номер документа, если его (номера) нет
@@ -688,11 +688,11 @@ public class CustomersOrdersRepositoryJPA {
                         query.executeUpdate();
                         stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
-                        newDockId=Long.valueOf(query2.getSingleResult().toString());
+                        newDocId=Long.valueOf(query2.getSingleResult().toString());
 
                         //сохранение таблицы товаров
-                        updateResults=insertCustomersOrdersProducts(request, newDockId, myMasterId);
-                        updateResults.setId(newDockId);
+                        updateResults=insertCustomersOrdersProducts(request, newDocId, myMasterId);
+                        updateResults.setId(newDocId);
                         updateResults.setSuccess(true);
                         return updateResults;
 
@@ -778,7 +778,7 @@ public class CustomersOrdersRepositoryJPA {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDockId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
         CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о сохранении таблицы товаров
         Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
@@ -786,7 +786,7 @@ public class CustomersOrdersRepositoryJPA {
 
         if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {//если есть что сохранять
             for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
-                row.setCustomers_orders_id(parentDockId);// т.к. он может быть неизвестен при создании документа
+                row.setCustomers_orders_id(parentDocId);// т.к. он может быть неизвестен при создании документа
                 updateProductRowResult = saveCustomersOrdersProductTable(row, request.getCompany_id(), myMasterId);//1 - резерв был и не сохранился, 0 - резерв сохранился, null - ошибка
                 if (Objects.isNull(updateProductRowResult)) {
                     throw new CantInsertProductRowCauseErrorException();

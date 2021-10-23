@@ -12,44 +12,52 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу:
 <http://www.gnu.org/licenses/>
  */
-package com.dokio.model;
+package com.dokio.model.Sprav;
+import com.dokio.model.Documents;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.dokio.model.Companies;
+import com.dokio.model.User;
+
 import javax.persistence.*;
 import javax.validation.constraints.Size;
 import java.sql.Timestamp;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
-@Table(name="shipment")
-public class Shipment {
+@Table(name="sprav_status_dock")
+public class SpravStatusDocs {
 
     @Id
     @Column(name="id")
-    @SequenceGenerator(name="shipment_id_seq", sequenceName="shipment_id_seq", allocationSize=1)
-    @GeneratedValue(generator="shipment_id_seq")
+    @SequenceGenerator(name="sprav_status_dock_id_seq", sequenceName="sprav_status_dock_id_seq", allocationSize=1)
+    @GeneratedValue(generator="sprav_status_dock_id_seq")
     private Long id;
 
-    @Size(max = 2048)
+    @Column(name = "name")
+    @Size(max = 64)
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "dock_id", nullable = false)
+    private Documents document;
+
+    @Column(name = "status_type")//тип статуса 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+    private int status_type;
+
+    @Column(name = "color")
+    @Size(max = 7)
+    private String color;
+
+    @Column(name = "output_order")
+    private int output_order;
+
     @Column(name = "description")
+    @Size(max = 2048)
     private String description;
 
     @ManyToOne
     @JoinColumn(name = "company_id", nullable = false)
     private Companies company;
-
-    @ManyToOne
-    @JoinColumn(name = "cagent_id", nullable = false)//заказчик
-    private Cagents cagent;
-
-    @ManyToOne
-    @JoinColumn(name = "department_id", nullable = false)
-    private Departments department;
-
-    @Column(name = "doc_number")//номер документа
-    private Long doc_number;
 
     @ManyToOne
     @JoinColumn(name = "master_id", nullable = false)
@@ -63,17 +71,6 @@ public class Shipment {
     @JoinColumn(name = "changer_id")
     private User changer;
 
-    @Column(name = "nds")
-    private Boolean nds;
-
-    @Column(name = "nds_included")
-    private Boolean nds_included;
-
-    @Column(name="shipment_date")
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)// Дата отгрузки
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Date shipment_date;
-
     @Column(name="date_time_created", nullable = false)
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
@@ -84,48 +81,11 @@ public class Shipment {
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Timestamp date_time_changed;
 
-    @Column(name = "is_completed")//Отгрузка завершено
-    private Boolean is_completed;
-
-    @Column(name = "is_archive")//Удалён (возаможно только для незавершенных документов, т.е. где is_completed = false)
+    @Column(name = "is_archive")//Удалён
     private Boolean is_archive;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "shipment_product",
-            joinColumns = @JoinColumn(name = "shipment_id"),
-            inverseJoinColumns = @JoinColumn(name = "product_id"))
-    private Set<Products> products = new HashSet<>();
 
     public Long getId() {
         return id;
-    }
-
-    public Boolean getNds() {
-        return nds;
-    }
-
-    public Cagents getCagent() {
-        return cagent;
-    }
-
-    public void setCagent(Cagents cagent) {
-        this.cagent = cagent;
-    }
-
-    public void setNds(Boolean nds) {
-        this.nds = nds;
-    }
-
-    public Boolean getNds_included() {
-        return nds_included;
-    }
-
-    public void setNds_included(Boolean nds_included) {
-        this.nds_included = nds_included;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getDescription() {
@@ -136,28 +96,56 @@ public class Shipment {
         this.description = description;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Documents getDocument() {
+        return document;
+    }
+
+    public void setDocument(Documents document) {
+        this.document = document;
+    }
+
+    public int getStatus_type() {
+        return status_type;
+    }
+
+    public void setStatus_type(int status_type) {
+        this.status_type = status_type;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public int getOutput_order() {
+        return output_order;
+    }
+
+    public void setOutput_order(int output_order) {
+        this.output_order = output_order;
+    }
+
     public Companies getCompany() {
         return company;
     }
 
     public void setCompany(Companies company) {
         this.company = company;
-    }
-
-    public Departments getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(Departments department) {
-        this.department = department;
-    }
-
-    public Long getDoc_number() {
-        return doc_number;
-    }
-
-    public void setDoc_number(Long doc_number) {
-        this.doc_number = doc_number;
     }
 
     public User getMaster() {
@@ -184,14 +172,6 @@ public class Shipment {
         this.changer = changer;
     }
 
-    public Date getShipment_date() {
-        return shipment_date;
-    }
-
-    public void setShipment_date(Date shipment_date) {
-        this.shipment_date = shipment_date;
-    }
-
     public Timestamp getDate_time_created() {
         return date_time_created;
     }
@@ -208,27 +188,11 @@ public class Shipment {
         this.date_time_changed = date_time_changed;
     }
 
-    public Boolean getIs_completed() {
-        return is_completed;
-    }
-
-    public void setIs_completed(Boolean is_completed) {
-        this.is_completed = is_completed;
-    }
-
     public Boolean getIs_archive() {
         return is_archive;
     }
 
     public void setIs_archive(Boolean is_archive) {
         this.is_archive = is_archive;
-    }
-
-    public Set<Products> getProducts() {
-        return products;
-    }
-
-    public void setProducts(Set<Products> products) {
-        this.products = products;
     }
 }
