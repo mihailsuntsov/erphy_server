@@ -1358,7 +1358,7 @@ create table invoiceout(
  nds boolean,
  nds_included boolean,
  is_deleted boolean,
- payment_date date,
+ invoiceout_date date,
  is_completed boolean,
  uid varchar (36),
  linked_docs_group_id bigint,
@@ -1450,5 +1450,5 @@ insert into permissions (id,name,description,document_name,document_id) values
 (423,'Проведение документов созданных собой','Проведение документов "Счет покупателя" созданных собой','Счет покупателя',31);
 
 
-
+ALTER TABLE inventory_product ADD column product_sumprice numeric(15,2);
 

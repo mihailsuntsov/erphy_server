@@ -868,7 +868,7 @@ public class InvoiceoutRepositoryJPA {
                             row.getStatusIdOnComplete()+ "," +
                             row.getAutoAdd() +
                             ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_uq " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_id_key " +// "upsert"
                             " DO update set " +
                             " pricing_type = '" + row.getPricingType() + "',"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
