@@ -971,16 +971,15 @@ public class RetailSalesRepository {
                                 " change_price_type = '" + row.getChangePriceType() + "',"+
                                 " hide_tenths = " + row.getHideTenths() + ","+
                                 " save_settings = " + row.getSaveSettings() +
-                                (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
-                                (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
-                                (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
-                                (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
-                                (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
-                                (row.getStatusIdOnAutocreateOnCheque() == null ? "": (", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()))+
-                                (row.getShowKkm() == null ? "": (", show_kkm = "+row.getShowKkm()))+
-                                (row.getAutocreateOnCheque() == null ? "": (", autocreate_on_cheque = "+row.getAutocreateOnCheque()))+
-                                (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
-
+                                ", department_id = "+row.getDepartmentId()+
+                                ", company_id = "+row.getCompanyId()+
+                                ", customer_id = "+row.getCustomerId()+
+                                ", name = '"+row.getName()+"'"+
+                                ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
+                                ", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()+
+                                ", show_kkm = "+row.getShowKkm()+
+                                ", autocreate_on_cheque = "+row.getAutocreateOnCheque()+
+                                ", auto_add = "+row.getAutoAdd();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
                 return true;
@@ -992,6 +991,58 @@ public class RetailSalesRepository {
             }
         }
 
+    //сохраняет настройки РАСЦЕНКИ документа "Розничные продажи"
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean savePricingSettingsRetailSales(SettingsRetailSalesForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+            stringQuery =
+                    " insert into settings_retail_sales (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                            "price_type_id, " +     //тип цены из справочника Типы цен
+                            "change_price, " +      //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                            "save_settings " +      //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
+                            row.getSaveSettings() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
+                            " DO update set " +
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " save_settings = " + row.getSaveSettings();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method savePricingSettingsRetailSales. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
         //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
         @SuppressWarnings("Duplicates")
         public SettingsRetailSalesJSON getSettingsRetailSales() {

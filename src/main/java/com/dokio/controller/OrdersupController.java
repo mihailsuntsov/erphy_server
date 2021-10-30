@@ -12,33 +12,31 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
-import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsShipmentForm;
-import com.dokio.message.response.ShipmentJSON;
-import com.dokio.message.response.Settings.SettingsShipmentJSON;
-import com.dokio.message.response.additional.*;
-import com.dokio.repository.*;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
-import java.util.List;
+        import com.dokio.message.request.*;
+        import com.dokio.message.request.Settings.SettingsOrdersupForm;
+        import com.dokio.message.response.OrdersupJSON;
+        import com.dokio.repository.*;
+        import org.apache.log4j.Logger;
+        import org.springframework.beans.factory.annotation.Autowired;
+        import org.springframework.http.HttpStatus;
+        import org.springframework.http.ResponseEntity;
+        import org.springframework.stereotype.Controller;
+        import org.springframework.web.bind.annotation.*;
+        import java.util.ArrayList;
+        import java.util.List;
 
 @Controller
-public class ShipmentController {
+public class OrdersupController {
 
-    Logger logger = Logger.getLogger("ShipmentController");
+    Logger logger = Logger.getLogger("OrdersupController");
 
     @Autowired
-    ShipmentRepositoryJPA shipmentRepository;
+    OrdersupRepositoryJPA ordersupRepository;
 
-    @PostMapping("/api/auth/getShipmentTable")
+    @PostMapping("/api/auth/getOrdersupTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getShipmentTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getShipmentTable: " + searchRequest.toString());
+    public ResponseEntity<?> getOrdersupTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getOrdersupTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -47,7 +45,7 @@ public class ShipmentController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<ShipmentJSON> returnList;
+        List<OrdersupJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -76,33 +74,15 @@ public class ShipmentController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = shipmentRepository.getShipmentTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = ordersupRepository.getOrdersupTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
+    @PostMapping("/api/auth/getOrdersupPagesList")
     @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/getShipmentProductTable",
-            params = {"id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getShipmentProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getShipmentProductTable with Shipment id=" + docId.toString());
-        List<ShipmentProductTableJSON> returnList;
-        try {
-            returnList = shipmentRepository.getShipmentProductTable(docId);
-            return  new ResponseEntity<>(returnList, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка при загрузке таблицы с товарами", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/api/auth/getShipmentPagesList")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getShipmentPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getShipmentPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getOrdersupPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getOrdersupPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -124,7 +104,7 @@ public class ShipmentController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = shipmentRepository.getShipmentSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = ordersupRepository.getOrdersupSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -170,97 +150,110 @@ public class ShipmentController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertShipment")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertShipment(@RequestBody ShipmentForm request){
-        logger.info("Processing post request for path /api/auth/insertShipment: " + request.toString());
-        return new ResponseEntity<>(shipmentRepository.insertShipment(request), HttpStatus.OK);
-    }
-
     @RequestMapping(
-            value = "/api/auth/getShipmentValuesById",
+            value = "/api/auth/getOrdersupProductTable",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getShipmentValuesById(
+    public ResponseEntity<?> getOrdersupProductTable( @RequestParam("id") Long docId) {
+        logger.info("Processing get request for path /api/auth/getOrdersupProductTable with Ordersup id=" + docId.toString());
+        return  new ResponseEntity<>(ordersupRepository.getOrdersupProductTable(docId), HttpStatus.OK);
+    }
+
+    @PostMapping("/api/auth/insertOrdersup")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> insertOrdersup(@RequestBody OrdersupForm request){
+        logger.info("Processing post request for path /api/auth/insertOrdersup: " + request.toString());
+        return new ResponseEntity<>(ordersupRepository.insertOrdersup(request), HttpStatus.OK);
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getOrdersupValuesById",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getOrdersupValuesById(
             @RequestParam("id") Long id)
     {
-        logger.info("Processing get request for path /api/auth/getShipmentValuesById with parameters: " + "id: " + id);
-        ShipmentJSON response;
-        try {
-            response=shipmentRepository.getShipmentValuesById(id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method getShipmentValuesById. id = " + id, e);
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        logger.info("Processing get request for path /api/auth/getOrdersupValuesById with parameters: " + "id: " + id);
+        return new ResponseEntity<>(ordersupRepository.getOrdersupValuesById(id), HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/updateShipment")
-    public ResponseEntity<?> updateShipment(@RequestBody ShipmentForm request){
-        logger.info("Processing post request for path /api/auth/updateShipment: " + request.toString());
-            return new ResponseEntity<>(shipmentRepository.updateShipment(request), HttpStatus.OK);
+    @PostMapping("/api/auth/updateOrdersup")
+    public ResponseEntity<?> updateOrdersup(@RequestBody OrdersupForm request){
+        logger.info("Processing post request for path /api/auth/updateOrdersup: " + request.toString());
+        return new ResponseEntity<>(ordersupRepository.updateOrdersup(request), HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/saveSettingsShipment")
+    @PostMapping("/api/auth/saveSettingsOrdersup")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsShipment(@RequestBody SettingsShipmentForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsShipment: " + request.toString());
-        try {
-            return new ResponseEntity<>(shipmentRepository.saveSettingsShipment(request), HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа Отгрузка", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/api/auth/savePricingSettingsShipment")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> savePricingSettingsShipment(@RequestBody SettingsShipmentForm request){
-        logger.info("Processing post request for path /api/auth/savePricingSettingsShipment: " + request.toString());
-        try {
-            return new ResponseEntity<>(shipmentRepository.savePricingSettingsShipment(request), HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка сохранения настроек расценки для документа Отгрузка", HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<?> saveSettingsOrdersup(@RequestBody SettingsOrdersupForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsOrdersup: " + request.toString());
+        if(ordersupRepository.saveSettingsOrdersup(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.BAD_REQUEST);
         }
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSettingsShipment",
+            value = "/api/auth/getSettingsOrdersup",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsShipment()
-    {
-        logger.info("Processing get request for path /api/auth/getSettingsShipment without request parameters");
-        SettingsShipmentJSON response;
-        try {
-            response=shipmentRepository.getSettingsShipment();
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки настроек для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<?> getSettingsOrdersup(){
+        logger.info("Processing get request for path /api/auth/getSettingsOrdersup without request parameters");
+        return new ResponseEntity<>(ordersupRepository.getSettingsOrdersup(), HttpStatus.OK);
     }
 
 
-    @PostMapping("/api/auth/deleteShipment")
+    @PostMapping("/api/auth/deleteOrdersup")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteShipment(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteShipment: " + request.toString());
+    public  ResponseEntity<?> deleteOrdersup(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteOrdersup: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        return new ResponseEntity<>(shipmentRepository.deleteShipment(checked), HttpStatus.OK);
+        return new ResponseEntity<>(ordersupRepository.deleteOrdersup(checked), HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/undeleteShipment")
+    @PostMapping("/api/auth/undeleteOrdersup")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteShipment(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/undeleteShipment: " + request.toString());
+    public  ResponseEntity<?> undeleteOrdersup(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteOrdersup: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
-        return new ResponseEntity<>(shipmentRepository.undeleteShipment(checked), HttpStatus.OK);
+        return new ResponseEntity<>(ordersupRepository.undeleteOrdersup(checked), HttpStatus.OK);
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getListOfOrdersupFiles",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getListOfOrdersupFiles(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing post request for path api/auth/getListOfOrdersupFiles: " + id);
+        try {
+            return new ResponseEntity<>(ordersupRepository.getListOfOrdersupFiles(id), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteOrdersupFile")
+    public ResponseEntity<?> deleteOrdersupFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteOrdersupFile: " + request.toString());
+        try {
+            return new ResponseEntity<>(ordersupRepository.deleteOrdersupFile(request), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/addFilesToOrdersup")
+    public ResponseEntity<?> addFilesToOrdersup(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToOrdersup: " + request.toString());
+        try{
+            return new ResponseEntity<>(ordersupRepository.addFilesToOrdersup(request), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

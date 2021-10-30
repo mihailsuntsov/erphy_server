@@ -41,7 +41,15 @@ public class MovingJSON {
     private String          status_color;               // цвет статуса
     private String          status_description;         // описание статуса
     private Long            product_count;              // кол-во товарных позиций в перемещении
+    private String          uid;
 
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public Long getId() {
         return id;

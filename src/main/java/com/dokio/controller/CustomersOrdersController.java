@@ -208,13 +208,25 @@ public class CustomersOrdersController {
 
     @PostMapping("/api/auth/saveSettingsCustomersOrders")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsCustomersOrders(@RequestBody SettingsCustomersOrdersForm request){
+    public ResponseEntity<?> saveSettingsCustomersOrders(@RequestBody SettingsCustomersOrdersForm request) {
         logger.info("Processing post request for path /api/auth/saveSettingsCustomersOrders: " + request.toString());
+        try {
+            return new ResponseEntity<>(customersOrdersRepositoryJPA.saveSettingsCustomersOrders(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка сохранения настроек для Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-        if(customersOrdersRepositoryJPA.saveSettingsCustomersOrders(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек", HttpStatus.INTERNAL_SERVER_ERROR);
+    @PostMapping("/api/auth/savePricingSettingsCustomersOrders")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> savePricingSettingsCustomersOrders(@RequestBody SettingsCustomersOrdersForm request) {
+        logger.info("Processing post request for path /api/auth/savePricingSettingsCustomersOrders: " + request.toString());
+        try {
+            return new ResponseEntity<>(customersOrdersRepositoryJPA.savePricingSettingsCustomersOrders(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка сохранения настроек расценки для Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

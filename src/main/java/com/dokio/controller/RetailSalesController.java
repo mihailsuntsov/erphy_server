@@ -271,14 +271,26 @@ public class RetailSalesController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> saveSettingsRetailSales(@RequestBody SettingsRetailSalesForm request){
         logger.info("Processing post request for path /api/auth/saveSettingsRetailSales: " + request.toString());
-
-        if(retailSalesRepository.saveSettingsRetailSales(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(retailSalesRepository.saveSettingsRetailSales(request), HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка сохранения настроек для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+    @PostMapping("/api/auth/savePricingSettingsRetailSales")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> savePricingSettingsRetailSales(@RequestBody SettingsRetailSalesForm request){
+        logger.info("Processing post request for path /api/auth/savePricingSettingsRetailSales: " + request.toString());
+        try {
+            return new ResponseEntity<>(retailSalesRepository.savePricingSettingsRetailSales(request), HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка сохранения настроек расценки для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/getSettingsRetailSales",

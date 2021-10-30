@@ -1452,3 +1452,109 @@ insert into permissions (id,name,description,document_name,document_id) values
 
 ALTER TABLE inventory_product ADD column product_sumprice numeric(15,2);
 
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (39,'Заказ поставщику','ordersup',1,'ordersup','Заказ поставщику');
+
+
+create table ordersup(
+                       id bigserial primary key not null,
+                       master_id  bigint not null,
+                       creator_id bigint not null,
+                       changer_id bigint,
+                       date_time_created timestamp with time zone not null,
+                       date_time_changed timestamp with time zone,
+                       company_id bigint not null,
+                       department_id bigint not null,
+                       cagent_id bigint not null,
+                       status_id bigint,
+                       doc_number int not null,
+                       description varchar(2048),
+                       nds boolean,
+                       nds_included boolean,
+                       is_deleted boolean,
+                       ordersup_date date,
+                       is_completed boolean,
+                       uid varchar (36),
+                       linked_docs_group_id bigint,
+
+                       foreign key (master_id) references users(id),
+                       foreign key (creator_id) references users(id),
+                       foreign key (changer_id) references users(id),
+                       foreign key (company_id) references companies(id),
+                       foreign key (department_id) references departments(id),
+                       foreign key (cagent_id) references cagents(id),
+                       foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                       foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column ordersup_id bigint;
+
+alter table linked_docs add constraint ordersup_id_fkey foreign key (ordersup_id) references ordersup (id);
+
+create table settings_ordersup (
+                                 id                          bigserial primary key not null,
+                                 master_id                   bigint not null,
+                                 company_id                  bigint not null,
+                                 user_id                     bigint  UNIQUE not null,
+                                 cagent_id                   bigint,
+                                 department_id               bigint,
+                                 autocreate                  boolean,
+                                 status_id_on_complete       bigint,
+                                 auto_add                    boolean,
+                                 auto_price                  boolean,
+                                 name                        varchar(512),
+                                 foreign key (master_id) references users(id),
+                                 foreign key (department_id) references departments(id),
+                                 foreign key (cagent_id) references cagents(id),
+                                 foreign key (user_id) references users(id),
+                                 foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                 foreign key (company_id) references companies(id)
+);
+
+create table ordersup_product (
+                                id bigserial primary key not null,
+                                master_id bigint not null,
+                                company_id bigint not null,
+                                product_id bigint not null,
+                                ordersup_id bigint not null,
+                                product_count numeric(15,3) not null,
+                                product_price numeric(12,2),
+                                product_sumprice numeric(15,2),
+                                nds_id bigint not null,
+
+                                foreign key (ordersup_id) references ordersup (id),
+                                foreign key (nds_id) references sprav_sys_nds (id),
+                                foreign key (product_id ) references products (id)
+);
+
+ALTER TABLE ordersup_product ADD CONSTRAINT ordersup_product_uq UNIQUE (product_id, ordersup_id);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(424,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Заказ поставщику',39),
+(425,'Создание документов по всем предприятиям','Возможность создавать новые документы "Заказ поставщику" по всем предприятиям','Заказ поставщику',39),
+(426,'Создание документов своего предприятия','Возможность создавать новые документы "Заказ поставщику" своего предприятия','Заказ поставщику',39),
+(427,'Создание документов своих отделений','Возможность создавать новые документы "Заказ поставщику" по своим отделениям','Заказ поставщику',39),
+(428,'Удаление документов по всем предприятиям','Возможность удалить документ "Заказ поставщику" в архив по всем предприятиям','Заказ поставщику',39),
+(429,'Удаление документов своего предприятия','Возможность удалить документ "Заказ поставщику" своего предприятия в архив','Заказ поставщику',39),
+(430,'Удаление документов своих отделений','Возможность удалить документ "Заказ поставщику" одного из своих отделений','Заказ поставщику',39),
+(431,'Удаление документов созданных собой','Возможность удаления документов "Заказ поставщику", созданных собой','Заказ поставщику',39),
+(432,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Заказ поставщику" по всем предприятиям','Заказ поставщику',39),
+(433,'Просмотр документов своего предприятия','Прсмотр информации в документах "Заказ поставщику" своего предприятия','Заказ поставщику',39),
+(434,'Просмотр документов своих отделений','Прсмотр информации в документах "Заказ поставщику" по своим отделениям','Заказ поставщику',39),
+(435,'Просмотр документов созданных собой','Прсмотр информации в документах "Заказ поставщику", созданных собой','Заказ поставщику',39),
+(436,'Редактирование документов по всем предприятиям','Редактирование документов "Заказ поставщику" по всем предприятиям','Заказ поставщику',39),
+(437,'Редактирование документов своего предприятия','Редактирование документов "Заказ поставщику" своего предприятия','Заказ поставщику',39),
+(438,'Редактирование документов своих отделений','Редактирование документов "Заказ поставщику" по своим отделениям','Заказ поставщику',39),
+(439,'Редактирование документов созданных собой','Редактирование документов "Заказ поставщику", созданных собой','Заказ поставщику',39),
+(440,'Проведение документов по всем предприятиям','Проведение документов "Заказ поставщику" по всем предприятиям','Заказ поставщику',39),
+(441,'Проведение документов своего предприятия','Проведение документов "Заказ поставщику" своего предприятия','Заказ поставщику',39),
+(442,'Проведение документов своих отделений','Проведение документов "Заказ поставщику" по своим отделениям','Заказ поставщику',39),
+(443,'Проведение документов созданных собой','Проведение документов "Заказ поставщику" созданных собой','Заказ поставщику',39);
+
+alter table ordersup add column name varchar(512);
+
+create table ordersup_files (
+                               ordersup_id bigint not null,
+                               file_id bigint not null,
+                               foreign key (file_id) references files (id) ON DELETE CASCADE,
+                               foreign key (ordersup_id ) references ordersup (id) ON DELETE CASCADE
+);

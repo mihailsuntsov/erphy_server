@@ -990,15 +990,16 @@ public class ShipmentRepositoryJPA {
                             " change_price_type = '" + row.getChangePriceType() + "',"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings() +
-                            (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
-                            (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
-                            (row.getCustomerId() == null ? "": (", customer_id = "+row.getCustomerId()))+
+                            ", department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", customer_id = "+row.getCustomerId()+
+                            ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
+                            ", status_id_on_complete = "+row.getStatusIdOnComplete()+
+                            ", show_kkm = "+row.getShowKkm()+
+                            ", autocreate = "+row.getAutocreate()+
+                            ", auto_add = "+row.getAutoAdd();
 //                            (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
-                            (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
-                            (row.getStatusIdOnComplete() == null ? "": (", status_id_on_complete = "+row.getStatusIdOnComplete()))+
-                            (row.getShowKkm() == null ? "": (", show_kkm = "+row.getShowKkm()))+
-                            (row.getAutocreate() == null ? "": (", autocreate = "+row.getAutocreate()))+
-                            (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
+
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1010,7 +1011,58 @@ public class ShipmentRepositoryJPA {
             return null;
         }
     }
+    //сохраняет настройки РАСЦЕНКИ документа "Отгрузка"
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean savePricingSettingsShipment(SettingsShipmentForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+            stringQuery =
+                    " insert into settings_shipment (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                            "price_type_id, " +     //тип цены из справочника Типы цен
+                            "change_price, " +      //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                            "save_settings " +      //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
+                            row.getSaveSettings() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_shipment_user_uq " +// "upsert"
+                            " DO update set " +
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " save_settings = " + row.getSaveSettings();
 
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method savePricingSettingsShipment. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
     @SuppressWarnings("Duplicates")
     public SettingsShipmentJSON getSettingsShipment() {

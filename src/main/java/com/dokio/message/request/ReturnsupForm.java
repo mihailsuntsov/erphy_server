@@ -15,9 +15,9 @@ public class ReturnsupForm {
     private Long    acceptance_id;
     //------------- таблица товаров -----------------
     private Set<ReturnsupProductTableForm> returnsupProductTable;
-    private String uid;
-    private Long linked_doc_id;//id связанного документа
-    private String linked_doc_name;//имя (таблицы) связанного документа
+    private String  uid;
+    private Long    linked_doc_id;//id связанного документа
+    private String  linked_doc_name;//имя (таблицы) связанного документа
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён

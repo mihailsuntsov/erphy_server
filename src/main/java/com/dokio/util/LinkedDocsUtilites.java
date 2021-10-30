@@ -41,12 +41,12 @@ public class LinkedDocsUtilites {
 
     private static final Set VALID_TABLENAMES
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("customers_orders", "acceptance", "return", "returnsup", "shipment", "retail_sales", "products", "inventory", "writeoff", "posting", "moving")
+            .of("customers_orders","acceptance","return","returnsup","shipment","retail_sales","products","inventory","writeoff","posting","moving","ordersup")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    private static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их table_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
+    private static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("acceptance", "return", "returnsup", "shipment", "retail_sales", "writeoff", "posting", "moving", "customers_orders", "inventory")
+            .of("acceptance", "return", "returnsup", "shipment", "retail_sales", "writeoff", "posting", "moving", "customers_orders", "inventory","ordersup")
             .collect(Collectors.toCollection(HashSet::new)));
 
     // Если у документа linked_doc_name с id = linked_doc_id есть группа связанных документов (т.е. linked_docs_group_id в его таблице != null)

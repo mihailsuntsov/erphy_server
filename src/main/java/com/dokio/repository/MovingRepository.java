@@ -397,7 +397,8 @@ public class MovingRepository {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
+                    "           stat.description as status_description, " +
+                    "           p.uid as uid" +
                     "           from moving p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -453,6 +454,7 @@ public class MovingRepository {
                     returnObj.setStatus_name((String)                   obj[23]);
                     returnObj.setStatus_color((String)                  obj[24]);
                     returnObj.setStatus_description((String)            obj[25]);
+                    returnObj.setUid((String)                           obj[26]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -496,6 +498,7 @@ public class MovingRepository {
                     " overhead_netcost_method," +
                     " doc_number," + //номер заказа
                     " description," +//доп. информация по заказу
+                    " uid," +
                     " status_id" + //статус
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -508,10 +511,12 @@ public class MovingRepository {
                     request.getOverhead_netcost_method() + ", "+
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
+                    ":uid," +
                     request.getStatus_id() + ")";// статус
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
+                query.setParameter("uid", request.getUid());
                 query.executeUpdate();
                 stringQuery = "select id from moving where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);

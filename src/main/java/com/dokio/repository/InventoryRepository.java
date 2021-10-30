@@ -698,13 +698,13 @@ public class InventoryRepository {
                             " plus_minus = '" + row.getPlusMinus() + "',"+
                             " change_price_type = '" + row.getChangePriceType() + "',"+
                             " hide_tenths = " + row.getHideTenths() +
-                            (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
-                            (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
-                            (row.getName() == null ? "": (", name = '"+row.getName()+"'"))+
-                            (row.getStatusOnFinishId() == null ? "": (", status_on_finish_id = "+row.getStatusOnFinishId()))+
-                            (row.getDefaultActualBalance() == null ? "": (", default_actual_balance = '"+row.getDefaultActualBalance()+"'"))+
-                            (row.getOtherActualBalance() == null ? "": (", other_actual_balance = "+row.getOtherActualBalance()))+
-                            (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
+                            ", department_id = "+row.getDepartmentId()+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
+                            ", company_id = "+row.getCompanyId()+
+                            ", name = '"+row.getName()+"'"+
+                            ", status_on_finish_id = "+row.getStatusOnFinishId()+
+                            ", default_actual_balance = '"+row.getDefaultActualBalance()+"'"+
+                            ", other_actual_balance = "+row.getOtherActualBalance()+
+                            ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

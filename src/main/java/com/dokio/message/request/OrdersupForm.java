@@ -14,7 +14,7 @@ package com.dokio.message.request;
 
 import java.util.Set;
 
-public class InvoiceoutForm {
+public class OrdersupForm {
 
     private Long id;
     private Long company_id;
@@ -24,8 +24,8 @@ public class InvoiceoutForm {
     private String new_cagent;
     private Long status_id;
     private String doc_number;
-    private String invoiceout_date;
-    private Set<InvoiceoutProductTableForm> invoiceoutProductTable;
+    private String ordersup_date;
+    private Set<OrdersupProductTableForm> ordersupProductTable;
     private boolean nds;
     private boolean nds_included;
     private String uid;
@@ -34,6 +34,15 @@ public class InvoiceoutForm {
     private String parent_uid;// uid исходящего (родительского) документа
     private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public Long getId() {
         return id;
@@ -99,20 +108,20 @@ public class InvoiceoutForm {
         this.doc_number = doc_number;
     }
 
-    public String getInvoiceout_date() {
-        return invoiceout_date;
+    public String getOrdersup_date() {
+        return ordersup_date;
     }
 
-    public void setInvoiceout_date(String invoiceout_date) {
-        this.invoiceout_date = invoiceout_date;
+    public void setOrdersup_date(String ordersup_date) {
+        this.ordersup_date = ordersup_date;
     }
 
-    public Set<InvoiceoutProductTableForm> getInvoiceoutProductTable() {
-        return invoiceoutProductTable;
+    public Set<OrdersupProductTableForm> getOrdersupProductTable() {
+        return ordersupProductTable;
     }
 
-    public void setInvoiceoutProductTable(Set<InvoiceoutProductTableForm> invoiceoutProductTable) {
-        this.invoiceoutProductTable = invoiceoutProductTable;
+    public void setOrdersupProductTable(Set<OrdersupProductTableForm> ordersupProductTable) {
+        this.ordersupProductTable = ordersupProductTable;
     }
 
     public boolean isNds() {

@@ -27,6 +27,7 @@ import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.repository.Exceptions.InsertProductHistoryExceprions;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -58,6 +59,8 @@ public class AcceptanceRepository {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
@@ -483,11 +486,23 @@ public class AcceptanceRepository {
             Long myId = userRepository.getUserId();
             Long newDocId;
             Long doc_number;//номер документа
+            Long linkedDocsGroupId=null;
 
             //генерируем номер документа, если его (номера) нет
             if (request.getDoc_number() != null) {
                 doc_number=Long.valueOf(request.getDoc_number());
             } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"acceptance");
+
+            // статус по умолчанию (если не выбран)
+            if(request.getStatus_id()==null)
+                request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(), 15));
+
+            //если документ создается из другого документа
+            if (request.getLinked_doc_id() != null) {
+                //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
+                linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
+                if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+            }
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
@@ -506,6 +521,7 @@ public class AcceptanceRepository {
                     " description," +//доп. информация по заказу
                     " status_id," + //статус
                     " acceptance_date, " +// дата поставки
+                    " linked_docs_group_id, "+ // id группы связанных документов
                     " uid"+
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
@@ -522,6 +538,7 @@ public class AcceptanceRepository {
                     " :description, " +//описание
                     request.getStatus_id() + ", "+//статус
                     " to_date(:acceptance_date,'DD.MM.YYYY'), " +
+                    linkedDocsGroupId+","+
                     ":uid)";
             try {
 
@@ -541,6 +558,10 @@ public class AcceptanceRepository {
 
 
                 if(insertAcceptanceProducts(request, newDocId, myMasterId)){
+                    //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                    if (request.getLinked_doc_id() != null) {
+                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "acceptance", request.getCompany_id(), myMasterId);
+                    }
                     return newDocId;
                 } else return null;
                 //если есть таблица с товарами - нужно создать их
