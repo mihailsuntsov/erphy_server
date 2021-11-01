@@ -41,12 +41,49 @@ public class LinkedDocsUtilites {
 
     private static final Set VALID_TABLENAMES
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("customers_orders","acceptance","return","returnsup","shipment","retail_sales","products","inventory","writeoff","posting","moving","ordersup")
+            .of(    "customers_orders",
+                    "acceptance",
+                    "return",
+                    "returnsup",
+                    "shipment",
+                    "retail_sales",
+                    "products",
+                    "inventory",
+                    "writeoff",
+                    "posting",
+                    "moving",
+                    "ordersup",
+                    "invoiceout",
+                    "invoicein",
+                    "paymentin",
+                    "paymentout",
+                    "orderin",
+                    "orderout",
+                    "vatinvoiceout",
+                    "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
     private static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("acceptance", "return", "returnsup", "shipment", "retail_sales", "writeoff", "posting", "moving", "customers_orders", "inventory","ordersup")
+            .of(    "acceptance",
+                    "return",
+                    "returnsup",
+                    "shipment",
+                    "retail_sales",
+                    "writeoff",
+                    "posting",
+                    "moving",
+                    "customers_orders",
+                    "inventory",
+                    "ordersup",
+                    "invoiceout",
+                    "invoicein",
+                    "paymentin",
+                    "paymentout",
+                    "orderin",
+                    "orderout",
+                    "vatinvoiceout",
+                    "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
     // Если у документа linked_doc_name с id = linked_doc_id есть группа связанных документов (т.е. linked_docs_group_id в его таблице != null)
@@ -160,14 +197,15 @@ public class LinkedDocsUtilites {
     // linked_doc_id - id документа, из которого создавали другой документ (например, Инвентаризация)
     // created_doc_id - id созданного документа (например, Списание)
     // linkedDocsGroupId - id группы связанных документов, в которую помещаем эти 2 документа
+    // uid - UUID создаваемого документа. Сравнивая uid и parent_uid, можно понять, связь уже имеющегося и создаваемого документов будет прямая (сверху вниз по иерархии) или реверсная
     // parent_uid - UUID родительского документа (это не обязательно документ, из которого создавали, т.к. можно создать из дочернего родительский
     // child_uid - UUID дочернего документа (это не обязательно будет созданный документ. Например при создании из Отгрузки Счета покупателю - последний будет родительским (parent_uid и createdDocId)
     // linked_doc_name - имя таблицы документа, из которого создавали другой документ (например, inventory)
     // created_doc_name - имя таблицы созданного документа (например, writeoff)
-    public Boolean addDocsToGroupAndLinkDocs(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_doc_name, Long companyId, Long masterId) {
+    public Boolean addDocsToGroupAndLinkDocs(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_doc_name, String uid, Long companyId, Long masterId) {
 
         // Добавляем оба документа в группу связанных документов. Если прошло успешно
-        if (addDocsToGroup(linked_doc_id, created_doc_id, linkedDocsGroupId, parent_uid, child_uid, linked_doc_name, created_doc_name, companyId, masterId)) {
+        if (addDocsToGroup(linked_doc_id, created_doc_id, linkedDocsGroupId, parent_uid, child_uid, linked_doc_name, created_doc_name, uid, companyId, masterId)) {
             // ... то залинкуем их
             return addLinksBetweenLinkedDocs(linkedDocsGroupId, parent_uid, child_uid, companyId, masterId);
         } else return false;
@@ -175,7 +213,11 @@ public class LinkedDocsUtilites {
 
 
     // добавляем в группу связанных документов документ, из которого создавали (если он еще не добавлен), и созданный документ
-    private Boolean addDocsToGroup(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_table_name, Long companyId, Long masterId) {
+    @SuppressWarnings("Duplicates")
+    private Boolean addDocsToGroup(Long linked_doc_id, Long created_doc_id, Long linkedDocsGroupId, String parent_uid, String child_uid, String linked_doc_name, String created_table_name, String uid, Long companyId, Long masterId) {
+
+        //если UID от документа, который создаем, является родительским - значит связь реверсная (снизу вверх по иерархии)
+        boolean reverse = uid.equals(parent_uid);
 
         try {
 
@@ -190,16 +232,16 @@ public class LinkedDocsUtilites {
                     " doc_id, " +
                     " doc_uid, " +
                     " tablename, " +
-                    linked_doc_name + "_id" +
+                    (reverse?created_table_name:linked_doc_name) + "_id" +
                     ") values (" +
                     masterId + ", " +
                     companyId + ", " +
                     linkedDocsGroupId + ", " +
-                    linked_doc_id + ", " +
+                    (reverse?created_doc_id:linked_doc_id) + ", " +
                     ":parent_uid " + ", " +
-                    "'" + linked_doc_name + "', " +
-                    linked_doc_id + ")" +
-                    "ON CONFLICT ON CONSTRAINT linked_docs_uq DO NOTHING";//значит он уже есть в данной группе
+                    "'" + (reverse?created_table_name:linked_doc_name) + "', " +
+                    (reverse?created_doc_id:linked_doc_id) + ")" +
+                    "ON CONFLICT DO NOTHING";//значит он уже есть в данной группе
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("parent_uid", (parent_uid == null ? "" : parent_uid));
@@ -212,16 +254,16 @@ public class LinkedDocsUtilites {
                     " doc_id, " +
                     " doc_uid, " +
                     " tablename, " +
-                    created_table_name + "_id" +
+                    (reverse?linked_doc_name:created_table_name) + "_id" +
                     ") values (" +
                     masterId + ", " +
                     companyId + ", " +
                     linkedDocsGroupId + ", " +
-                    created_doc_id + ", " +
+                    (reverse?linked_doc_id:created_doc_id) + ", " +
                     ":child_uid " + ", " +
-                    "'" + created_table_name + "', " +
-                    created_doc_id + ")" +
-                    "ON CONFLICT ON CONSTRAINT linked_docs_uq DO NOTHING";
+                    "'" + (reverse?linked_doc_name:created_table_name) + "', " +
+                    (reverse?linked_doc_id:created_doc_id) + ")" +
+                    "ON CONFLICT DO NOTHING";
 
             Query query2 = entityManager.createNativeQuery(stringQuery);
             query2.setParameter("child_uid", (child_uid == null ? "" : child_uid));

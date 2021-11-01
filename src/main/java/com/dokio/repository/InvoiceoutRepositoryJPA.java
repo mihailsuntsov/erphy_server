@@ -589,7 +589,7 @@ public class InvoiceoutRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        ((request.getInvoiceout_date()!=null&& !request.getInvoiceout_date().equals(""))?" to_date('"+request.getInvoiceout_date()+"','DD.MM.YYYY'),":"'',")+//план. дата
+                        ((request.getInvoiceout_date()!=null&& !request.getInvoiceout_date().equals(""))?" to_date('"+request.getInvoiceout_date()+"','DD.MM.YYYY'),":"null,")+//план. дата
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -608,7 +608,7 @@ public class InvoiceoutRepositoryJPA {
                     if(insertInvoiceoutProducts(request, newDocId, myMasterId)){
                         //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                         if (request.getLinked_doc_id() != null) {
-                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "invoiceout", request.getCompany_id(), myMasterId);
+                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "invoiceout", request.getUid(), request.getCompany_id(), myMasterId);
                         }
                         return newDocId;
                     } else return null;
@@ -750,10 +750,10 @@ public class InvoiceoutRepositoryJPA {
         customersOrdersId = customersOrdersId==null?0L:customersOrdersId;//  на случай если у отгрузки нет родительского Заказа покупателя
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
         try {
-            if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
+//            if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
                 //вычисляем доступное количество товара на складе
-                available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), customersOrdersId);
-            else available= BigDecimal.valueOf(0L);
+//                available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), customersOrdersId);
+//            else available= BigDecimal.valueOf(0L);
             //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.) или если документ не проводится
 
             // НА ДАННЫЙ МОМЕНТ ТАКУЮ ПРОВЕРКУ НЕ ДЕЛАЕМ, Т.К. ДЛЯ СЧЁТА ПОКУПАТЕЛЯ ЭТО НЕ ТАК ВАЖНО - КОЛИЧЕСТВО ТОВАРА МОЖЕТ ПРЕВЫШАТЬ ДОСТУПНОЕ, НО ЧАСТЬ ТОВАРА МОЖЕТ БЫТЬ В ПУТИ, И ПОКУПАТЕЛЬ ПРОСТО ДЕЛАЕТ ПРЕДОПЛАТУ ПОД БУДУЩУЮ ПОСТАВКУ

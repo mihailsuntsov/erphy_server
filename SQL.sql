@@ -1558,3 +1558,188 @@ create table ordersup_files (
                                foreign key (file_id) references files (id) ON DELETE CASCADE,
                                foreign key (ordersup_id ) references ordersup (id) ON DELETE CASCADE
 );
+
+
+create table invoicein(
+                        id bigserial primary key not null,
+                        master_id  bigint not null,
+                        creator_id bigint not null,
+                        changer_id bigint,
+                        date_time_created timestamp with time zone not null,
+                        date_time_changed timestamp with time zone,
+                        company_id bigint not null,
+                        department_id bigint not null,
+                        cagent_id bigint not null,
+                        status_id bigint,
+                        doc_number int not null,
+                        description varchar(2048),
+                        nds boolean,
+                        nds_included boolean,
+                        is_deleted boolean,
+                        invoicein_date date,
+                        is_completed boolean,
+                        uid varchar (36),
+                        linked_docs_group_id bigint,
+                        name varchar(512),
+                        income_number varchar(64),
+                        income_number_date date,
+
+                        foreign key (master_id) references users(id),
+                        foreign key (creator_id) references users(id),
+                        foreign key (changer_id) references users(id),
+                        foreign key (company_id) references companies(id),
+                        foreign key (department_id) references departments(id),
+                        foreign key (cagent_id) references cagents(id),
+                        foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                        foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column invoicein_id bigint;
+
+alter table linked_docs add constraint invoicein_id_fkey foreign key (invoicein_id) references invoicein (id);
+
+create table settings_invoicein (
+                                  id                          bigserial primary key not null,
+                                  master_id                   bigint not null,
+                                  company_id                  bigint not null,
+                                  user_id                     bigint  UNIQUE not null,
+                                  cagent_id                   bigint,
+                                  department_id               bigint,
+                                  autocreate                  boolean,
+                                  status_id_on_complete       bigint,
+                                  auto_add                    boolean,
+                                  auto_price                  boolean,
+                                  name                        varchar(512),
+                                  foreign key (master_id) references users(id),
+                                  foreign key (department_id) references departments(id),
+                                  foreign key (cagent_id) references cagents(id),
+                                  foreign key (user_id) references users(id),
+                                  foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                  foreign key (company_id) references companies(id)
+);
+
+create table invoicein_product (
+                                 id bigserial primary key not null,
+                                 master_id bigint not null,
+                                 company_id bigint not null,
+                                 product_id bigint not null,
+                                 invoicein_id bigint not null,
+                                 product_count numeric(15,3) not null,
+                                 product_price numeric(12,2),
+                                 product_sumprice numeric(15,2),
+                                 nds_id bigint not null,
+
+                                 foreign key (invoicein_id) references invoicein (id),
+                                 foreign key (nds_id) references sprav_sys_nds (id),
+                                 foreign key (product_id ) references products (id)
+);
+
+ALTER TABLE invoicein_product ADD CONSTRAINT invoicein_product_uq UNIQUE (product_id, invoicein_id);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(444,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Счёт поставщика',32),
+(445,'Создание документов по всем предприятиям','Возможность создавать новые документы "Счёт поставщика" по всем предприятиям','Счёт поставщика',32),
+(446,'Создание документов своего предприятия','Возможность создавать новые документы "Счёт поставщика" своего предприятия','Счёт поставщика',32),
+(447,'Создание документов своих отделений','Возможность создавать новые документы "Счёт поставщика" по своим отделениям','Счёт поставщика',32),
+(448,'Удаление документов по всем предприятиям','Возможность удалить документ "Счёт поставщика" в архив по всем предприятиям','Счёт поставщика',32),
+(449,'Удаление документов своего предприятия','Возможность удалить документ "Счёт поставщика" своего предприятия в архив','Счёт поставщика',32),
+(450,'Удаление документов своих отделений','Возможность удалить документ "Счёт поставщика" одного из своих отделений','Счёт поставщика',32),
+(451,'Удаление документов созданных собой','Возможность удаления документов "Счёт поставщика", созданных собой','Счёт поставщика',32),
+(452,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Счёт поставщика" по всем предприятиям','Счёт поставщика',32),
+(453,'Просмотр документов своего предприятия','Прсмотр информации в документах "Счёт поставщика" своего предприятия','Счёт поставщика',32),
+(454,'Просмотр документов своих отделений','Прсмотр информации в документах "Счёт поставщика" по своим отделениям','Счёт поставщика',32),
+(455,'Просмотр документов созданных собой','Прсмотр информации в документах "Счёт поставщика", созданных собой','Счёт поставщика',32),
+(456,'Редактирование документов по всем предприятиям','Редактирование документов "Счёт поставщика" по всем предприятиям','Счёт поставщика',32),
+(457,'Редактирование документов своего предприятия','Редактирование документов "Счёт поставщика" своего предприятия','Счёт поставщика',32),
+(458,'Редактирование документов своих отделений','Редактирование документов "Счёт поставщика" по своим отделениям','Счёт поставщика',32),
+(459,'Редактирование документов созданных собой','Редактирование документов "Счёт поставщика", созданных собой','Счёт поставщика',32),
+(460,'Проведение документов по всем предприятиям','Проведение документов "Счёт поставщика" по всем предприятиям','Счёт поставщика',32),
+(461,'Проведение документов своего предприятия','Проведение документов "Счёт поставщика" своего предприятия','Счёт поставщика',32),
+(462,'Проведение документов своих отделений','Проведение документов "Счёт поставщика" по своим отделениям','Счёт поставщика',32),
+(463,'Проведение документов созданных собой','Проведение документов "Счёт поставщика" созданных собой','Счёт поставщика',32);
+
+create table invoicein_files (
+                               invoicein_id bigint not null,
+                               file_id bigint not null,
+                               foreign key (file_id) references files (id) ON DELETE CASCADE,
+                               foreign key (invoicein_id ) references invoicein (id) ON DELETE CASCADE
+);
+
+
+create table paymentin(
+                        id bigserial primary key not null,
+                        master_id  bigint not null,
+                        creator_id bigint not null,
+                        changer_id bigint,
+                        date_time_created timestamp with time zone not null,
+                        date_time_changed timestamp with time zone,
+                        company_id bigint not null,
+                        cagent_id bigint not null,
+                        status_id bigint,
+                        doc_number int not null,
+                        description varchar(2048),
+                        summ  numeric(15,3) not null,
+                        nds  numeric(15,3) not null,
+                        is_deleted boolean,
+                        is_completed boolean,
+                        uid varchar (36),
+                        linked_docs_group_id bigint,
+                        income_number varchar(64),
+                        income_number_date date,
+
+                        foreign key (master_id) references users(id),
+                        foreign key (creator_id) references users(id),
+                        foreign key (changer_id) references users(id),
+                        foreign key (company_id) references companies(id),
+                        foreign key (cagent_id) references cagents(id),
+                        foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                        foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column paymentin_id bigint;
+
+alter table linked_docs add constraint paymentin_id_fkey foreign key (paymentin_id) references paymentin (id);
+
+create table settings_paymentin (
+                                  id                          bigserial primary key not null,
+                                  master_id                   bigint not null,
+                                  company_id                  bigint not null,
+                                  user_id                     bigint  UNIQUE not null,
+                                  cagent_id                   bigint,
+                                  autocreate                  boolean,
+                                  status_id_on_complete       bigint,
+                                  foreign key (master_id) references users(id),
+                                  foreign key (cagent_id) references cagents(id),
+                                  foreign key (user_id) references users(id),
+                                  foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                  foreign key (company_id) references companies(id)
+);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(464,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Счёт поставщика',33),
+(465,'Создание документов по всем предприятиям','Возможность создавать новые документы "Счёт поставщика" по всем предприятиям','Счёт поставщика',33),
+(466,'Создание документов своего предприятия','Возможность создавать новые документы "Счёт поставщика" своего предприятия','Счёт поставщика',33),
+(467,'Создание документов своих отделений','Возможность создавать новые документы "Счёт поставщика" по своим отделениям','Счёт поставщика',33),
+(468,'Удаление документов по всем предприятиям','Возможность удалить документ "Счёт поставщика" в архив по всем предприятиям','Счёт поставщика',33),
+(469,'Удаление документов своего предприятия','Возможность удалить документ "Счёт поставщика" своего предприятия в архив','Счёт поставщика',33),
+(470,'Удаление документов своих отделений','Возможность удалить документ "Счёт поставщика" одного из своих отделений','Счёт поставщика',33),
+(471,'Удаление документов созданных собой','Возможность удаления документов "Счёт поставщика", созданных собой','Счёт поставщика',33),
+(472,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Счёт поставщика" по всем предприятиям','Счёт поставщика',33),
+(473,'Просмотр документов своего предприятия','Прсмотр информации в документах "Счёт поставщика" своего предприятия','Счёт поставщика',33),
+(474,'Просмотр документов своих отделений','Прсмотр информации в документах "Счёт поставщика" по своим отделениям','Счёт поставщика',33),
+(475,'Просмотр документов созданных собой','Прсмотр информации в документах "Счёт поставщика", созданных собой','Счёт поставщика',33),
+(476,'Редактирование документов по всем предприятиям','Редактирование документов "Счёт поставщика" по всем предприятиям','Счёт поставщика',33),
+(477,'Редактирование документов своего предприятия','Редактирование документов "Счёт поставщика" своего предприятия','Счёт поставщика',33),
+(478,'Редактирование документов своих отделений','Редактирование документов "Счёт поставщика" по своим отделениям','Счёт поставщика',33),
+(479,'Редактирование документов созданных собой','Редактирование документов "Счёт поставщика", созданных собой','Счёт поставщика',33),
+(480,'Проведение документов по всем предприятиям','Проведение документов "Счёт поставщика" по всем предприятиям','Счёт поставщика',33),
+(481,'Проведение документов своего предприятия','Проведение документов "Счёт поставщика" своего предприятия','Счёт поставщика',33),
+(482,'Проведение документов своих отделений','Проведение документов "Счёт поставщика" по своим отделениям','Счёт поставщика',33),
+(483,'Проведение документов созданных собой','Проведение документов "Счёт поставщика" созданных собой','Счёт поставщика',33);
+
+create table paymentin_files (
+                               paymentin_id bigint not null,
+                               file_id bigint not null,
+                               foreign key (file_id) references files (id) ON DELETE CASCADE,
+                               foreign key (paymentin_id ) references paymentin (id) ON DELETE CASCADE
+);

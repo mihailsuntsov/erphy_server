@@ -13,9 +13,9 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsOrdersupForm;
+import com.dokio.message.request.Settings.SettingsInvoiceinForm;
 import com.dokio.message.response.*;
-import com.dokio.message.response.Settings.SettingsOrdersupJSON;
+import com.dokio.message.response.Settings.SettingsInvoiceinJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
-public class OrdersupRepositoryJPA {
+public class InvoiceinRepositoryJPA {
 
-    Logger logger = Logger.getLogger("OrdersupRepositoryJPA");
+    Logger logger = Logger.getLogger("InvoiceinRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -70,7 +70,7 @@ public class OrdersupRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","name","cagent","status_name","sum_price","company","department","creator","date_time_created_sort","ordersup_date_sort","description","is_completed","product_count")
+            .of("doc_number","name","cagent","status_name","sum_price","company","department","creator","date_time_created_sort","invoicein_date_sort","description","is_completed","product_count")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -81,8 +81,8 @@ public class OrdersupRepositoryJPA {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<OrdersupJSON> getOrdersupTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(39L, "432,433,434,435"))//(см. файл Permissions Id)
+    public List<InvoiceinJSON> getInvoiceinTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -110,18 +110,21 @@ public class OrdersupRepositoryJPA {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           coalesce((select sum(coalesce(product_sumprice,0)) from ordersup_product where ordersup_id=p.id),0) as sum_price, " +
-                    "           to_char(p.ordersup_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as ordersup_date, " +
+                    "           coalesce((select sum(coalesce(product_sumprice,0)) from invoicein_product where invoicein_id=p.id),0) as sum_price, " +
+                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoicein_date, " +
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
-                    "           (select count(*) from ordersup_product ip where coalesce(ip.ordersup_id,0)=p.id) as product_count," + //подсчет кол-ва товаров\
+                    "           (select count(*) from invoicein_product ip where coalesce(ip.invoicein_id,0)=p.id) as product_count," + //подсчет кол-ва товаров\
                     "           p.name as name," +
-                    "           p.ordersup_date as ordersup_date_sort, " +
+                    "           p.income_number as income_number," +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
+
+                    "           p.invoicein_date as invoicein_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
 
 
-                    "           from ordersup p " +
+                    "           from invoicein p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
@@ -132,11 +135,11 @@ public class OrdersupRepositoryJPA {
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(39L, "433")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(32L, "453")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(39L, "434")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(32L, "454")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -152,6 +155,7 @@ public class OrdersupRepositoryJPA {
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
@@ -179,9 +183,9 @@ public class OrdersupRepositoryJPA {
 
 
                 List<Object[]> queryList = query.getResultList();
-                List<OrdersupJSON> returnList = new ArrayList<>();
+                List<InvoiceinJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    OrdersupJSON doc=new OrdersupJSON();
+                    InvoiceinJSON doc=new InvoiceinJSON();
                     doc.setId(Long.parseLong(                     obj[0].toString()));
                     doc.setMaster((String)                        obj[1]);
                     doc.setCreator((String)                       obj[2]);
@@ -202,24 +206,26 @@ public class OrdersupRepositoryJPA {
                     doc.setStatus_color((String)                  obj[17]);
                     doc.setStatus_description((String)            obj[18]);
                     doc.setSum_price((BigDecimal)                 obj[19]);
-                    doc.setOrdersup_date((String)                 obj[20]);
+                    doc.setInvoicein_date((String)                obj[20]);
                     doc.setCagent((String)                        obj[21]);
                     doc.setIs_completed((Boolean)                 obj[22]);
                     doc.setProduct_count(Long.parseLong(          obj[23].toString()));
                     doc.setName((String)                          obj[24]);
+                    doc.setIncome_number((String)                 obj[25]);
+                    doc.setIncome_number_date((String)            obj[26]);
                     returnList.add(doc);
                 }
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getOrdersupTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getInvoiceinTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
     }
 
     @SuppressWarnings("Duplicates")
-    public int getOrdersupSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+    public int getInvoiceinSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
@@ -227,7 +233,7 @@ public class OrdersupRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
-                "           from ordersup p " +
+                "           from invoicein p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
@@ -236,11 +242,11 @@ public class OrdersupRepositoryJPA {
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
+        if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-            if (!securityRepositoryJPA.userHasPermissions_OR(39L, "433")) //Если нет прав на просм по своему предприятию
+            if (!securityRepositoryJPA.userHasPermissions_OR(32L, "453")) //Если нет прав на просм по своему предприятию
             {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(39L, "434")) //Если нет прав на просмотр всех доков в своих подразделениях
+                if (!securityRepositoryJPA.userHasPermissions_OR(32L, "454")) //Если нет прав на просмотр всех доков в своих подразделениях
                 {//остается только на свои документы
                     stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                 }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -255,6 +261,7 @@ public class OrdersupRepositoryJPA {
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
@@ -274,14 +281,14 @@ public class OrdersupRepositoryJPA {
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getOrdersupSize. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getInvoiceinSize. SQL query:" + stringQuery, e);
             return 0;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    public List<OrdersupProductTableJSON> getOrdersupProductTable(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(39L, "432,433,434,435"))//(см. файл Permissions Id)
+    public List<InvoiceinProductTableJSON> getInvoiceinProductTable(Long docId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//(см. файл Permissions Id)
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
@@ -306,18 +313,18 @@ public class OrdersupRepositoryJPA {
                     " ppr.is_material as is_material, " +
                     " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " from " +
-                    " ordersup_product ap " +
-                    " INNER JOIN ordersup a ON ap.ordersup_id=a.id " +
+                    " invoicein_product ap " +
+                    " INNER JOIN invoicein a ON ap.invoicein_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                     " where a.master_id = " + myMasterId +
-                    " and ap.ordersup_id = " + docId;
+                    " and ap.invoicein_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(39L, "433")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(32L, "453")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(39L, "434")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(32L, "454")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -332,9 +339,9 @@ public class OrdersupRepositoryJPA {
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
                 List<Object[]> queryList = query.getResultList();
-                List<OrdersupProductTableJSON> returnList = new ArrayList<>();
+                List<InvoiceinProductTableJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
-                    OrdersupProductTableJSON doc=new OrdersupProductTableJSON();
+                    InvoiceinProductTableJSON doc=new InvoiceinProductTableJSON();
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                     doc.setProduct_count(                                   obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
                     doc.setProduct_price(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
@@ -362,8 +369,8 @@ public class OrdersupRepositoryJPA {
 //*****************************************************************************************************************************************************
 
     @SuppressWarnings("Duplicates")
-    public OrdersupJSON getOrdersupValuesById (Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(39L, "432,433,434,435"))//см. _Permissions Id.txt
+    public InvoiceinJSON getInvoiceinValuesById (Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//см. _Permissions Id.txt
         {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
@@ -391,7 +398,7 @@ public class OrdersupRepositoryJPA {
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
-                    "           to_char(p.ordersup_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as ordersup_date, " +
+                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoicein_date, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -400,9 +407,11 @@ public class OrdersupRepositoryJPA {
                     "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
                     "           p.uid as uid, " +
                     "           p.is_completed as is_completed, " +
-                    "           coalesce(p.name,'') as name" +
+                    "           coalesce(p.name,'') as name," +
+                    "           coalesce(p.income_number,'') as income_number," +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date " +
 
-                    "           from ordersup p " +
+                    "           from invoicein p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
@@ -413,11 +422,11 @@ public class OrdersupRepositoryJPA {
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(39L, "433")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(32L, "453")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(39L, "434")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(32L, "454")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -431,7 +440,7 @@ public class OrdersupRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
 
-                OrdersupJSON returnObj=new OrdersupJSON();
+                InvoiceinJSON returnObj=new InvoiceinJSON();
 
                 for(Object[] obj:queryList){
                     returnObj.setId(Long.parseLong(                         obj[0].toString()));
@@ -454,7 +463,7 @@ public class OrdersupRepositoryJPA {
                     returnObj.setNds_included((Boolean)                     obj[17]);
                     returnObj.setCagent_id(Long.parseLong(                  obj[18].toString()));
                     returnObj.setCagent((String)                            obj[19]);
-                    returnObj.setOrdersup_date((String)                     obj[20]);
+                    returnObj.setInvoicein_date((String)                     obj[20]);
                     returnObj.setStatus_id(obj[21]!=null?Long.parseLong(    obj[21].toString()):null);
                     returnObj.setStatus_name((String)                       obj[22]);
                     returnObj.setStatus_color((String)                      obj[23]);
@@ -464,11 +473,13 @@ public class OrdersupRepositoryJPA {
                     returnObj.setUid((String)                               obj[27]);
                     returnObj.setIs_completed((Boolean)                     obj[28]);
                     returnObj.setName((String)                              obj[29]);
+                    returnObj.setIncome_number((String)                     obj[30]);
+                    returnObj.setIncome_number_date((String)                obj[31]);
                 }
                 return returnObj;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getOrdersupValuesById. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getInvoiceinValuesById. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -479,8 +490,8 @@ public class OrdersupRepositoryJPA {
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
-    public Long insertOrdersup(OrdersupForm request) {
-        if(commonUtilites.isDocumentUidUnical(request.getUid(), "ordersup")){
+    public Long insertInvoicein(InvoiceinForm request) {
+        if(commonUtilites.isDocumentUidUnical(request.getUid(), "invoicein")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
             Long docDepartment=request.getDepartment_id();
@@ -493,11 +504,11 @@ public class OrdersupRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             if ((//если есть право на создание по всем предприятиям, или
-                    (securityRepositoryJPA.userHasPermissions_OR(39L, "425")) ||
+                    (securityRepositoryJPA.userHasPermissions_OR(32L, "445")) ||
                             //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                            (securityRepositoryJPA.userHasPermissions_OR(39L, "426") && myCompanyId.equals(request.getCompany_id())) ||
+                            (securityRepositoryJPA.userHasPermissions_OR(32L, "446") && myCompanyId.equals(request.getCompany_id())) ||
                             //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                            (securityRepositoryJPA.userHasPermissions_OR(39L, "427") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
+                            (securityRepositoryJPA.userHasPermissions_OR(32L, "447") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
                     //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                     DocumentMasterId.equals(myMasterId))
             {
@@ -509,11 +520,11 @@ public class OrdersupRepositoryJPA {
                 //генерируем номер документа, если его (номера) нет
                 if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
                     doc_number=Long.valueOf(request.getDoc_number());
-                } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"ordersup");
+                } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"invoicein");
 
                 // статус по умолчанию (если не выбран)
                 if (request.getStatus_id() ==null){
-                    request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),39));
+                    request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),21));
                 }
 
                 //если документ создается из другого документа
@@ -547,14 +558,14 @@ public class OrdersupRepositoryJPA {
                         request.setCagent_id(cagentRepository.insertCagent(cagentForm));
                     }
                     catch (Exception e) {
-                        logger.error("Exception in method insertOrdersup on creating Cagent.", e);
+                        logger.error("Exception in method insertInvoicein on creating Cagent.", e);
                         e.printStackTrace();
                         return null;
                     }
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "insert into ordersup (" +
+                stringQuery =   "insert into invoicein (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
                         " company_id," + //предприятие, для которого создается документ
@@ -562,7 +573,9 @@ public class OrdersupRepositoryJPA {
                         " cagent_id," +//контрагент
                         " date_time_created," + //дата и время создания
                         " doc_number," + //номер документа
-                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" ordersup_date,":"") +//план. дата
+                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date,":"") +//план. дата
+                        " income_number," +//входящий внутренний номер поставщика
+                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date,":"") +// входящая дата счета поставщика
                         " description," +//доп. информация по заказу
                         " nds," +// НДС
                         " nds_included," +// НДС включен в цену
@@ -578,7 +591,9 @@ public class OrdersupRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" to_date(:ordersup_date,'DD.MM.YYYY'),":"")+//план. дата
+                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" to_date(:invoicein_date,'DD.MM.YYYY'),":"")+//план. дата
+                        ":income_number,"+
+                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" to_date(:income_number_date,'DD.MM.YYYY'),":"")+// входящая дата счета поставщика
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -591,17 +606,20 @@ public class OrdersupRepositoryJPA {
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
                     query.setParameter("name",request.getName());
-                    if(request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))
-                        query.setParameter("ordersup_date",request.getOrdersup_date());
+                    query.setParameter("income_number",request.getIncome_number());
+                    if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
+                        query.setParameter("income_number_date",request.getIncome_number_date());
+                    if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
+                        query.setParameter("invoicein_date",request.getInvoicein_date());
                     query.executeUpdate();
-                    stringQuery="select id from ordersup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                    stringQuery="select id from invoicein where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
                     newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                    if(insertOrdersupProducts(request, newDocId, myMasterId)){
+                    if(insertInvoiceinProducts(request, newDocId, myMasterId)){
                         //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                         if (request.getLinked_doc_id() != null) {
-                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "ordersup", request.getUid(), request.getCompany_id(), myMasterId);
+                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "invoicein", request.getUid(), request.getCompany_id(), myMasterId);
                         }
                         return newDocId;
                     } else return null;
@@ -609,27 +627,27 @@ public class OrdersupRepositoryJPA {
 
                 } catch (CantSaveProductQuantityException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertOrdersup on inserting into product_quantity cause error.", e);
+                    logger.error("Exception in method insertInvoicein on inserting into product_quantity cause error.", e);
                     e.printStackTrace();
                     return null;
                 } catch (CantInsertProductRowCauseErrorException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertOrdersup on inserting into ordersup_products cause error.", e);
+                    logger.error("Exception in method insertInvoicein on inserting into invoicein_products cause error.", e);
                     e.printStackTrace();
                     return null;
                 } catch (CantInsertProductRowCauseOversellException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertOrdersup on inserting into ordersup_products cause oversell.", e);
+                    logger.error("Exception in method insertInvoicein on inserting into invoicein_products cause oversell.", e);
                     e.printStackTrace();
                     return 0L;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertOrdersup on inserting into products_history.", e);
+                    logger.error("Exception in method insertInvoicein on inserting into products_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method " + e.getClass().getName() + " on inserting into ordersup. SQL query:"+stringQuery, e);
+                    logger.error("Exception in method insertInvoicein on inserting into invoicein. SQL query:"+stringQuery, e);
                     e.printStackTrace();
                     return null;
                 }
@@ -637,23 +655,23 @@ public class OrdersupRepositoryJPA {
                 return -1L;
             }
         } else {
-            logger.info("Double UUID found on insertOrdersup. UUID: " + request.getUid());
+            logger.info("Double UUID found on insertInvoicein. UUID: " + request.getUid());
             return null;
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertOrdersupProducts(OrdersupForm request, Long docId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
+    private boolean insertInvoiceinProducts(InvoiceinForm request, Long docId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
         Set<Long> productIds=new HashSet<>();
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
-        int size = request.getOrdersupProductTable().size();
+        int size = request.getInvoiceinProductTable().size();
         //сохранение таблицы
-        if (!Objects.isNull(request.getOrdersupProductTable()) && request.getOrdersupProductTable().size() != 0) {
-            for (OrdersupProductTableForm row : request.getOrdersupProductTable()) {
-                row.setOrdersup_id(docId);// чтобы через API сюда нельзя было подсунуть рандомный id
-                insertProductRowResult = saveOrdersupProductTable(row, request.getCompany_id(), request.getIs_completed(), 0L,request.getDepartment_id(),  myMasterId);  //сохранение строки таблицы товаров
+        if (!Objects.isNull(request.getInvoiceinProductTable()) && request.getInvoiceinProductTable().size() != 0) {
+            for (InvoiceinProductTableForm row : request.getInvoiceinProductTable()) {
+                row.setInvoicein_id(docId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                insertProductRowResult = saveInvoiceinProductTable(row, request.getCompany_id(), request.getIs_completed(), 0L,request.getDepartment_id(),  myMasterId);  //сохранение строки таблицы товаров
                 if (insertProductRowResult==null || !insertProductRowResult) {
-                    if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveOrdersupProductTable
+                    if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveInvoiceinProductTable
                         throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
                     }else{ // insertProductRowResult==false - товар материален, и его наличия не хватает для продажи
                         throw new CantInsertProductRowCauseOversellException();//кидаем исключение 'оверселл', чтобы произошла отмена транзакции
@@ -661,35 +679,37 @@ public class OrdersupRepositoryJPA {
                 }
                 productIds.add(row.getProduct_id());
             }
-        }if (!deleteOrdersupProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", docId)){
+        }if (!deleteInvoiceinProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", docId)){
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
-    public Integer updateOrdersup(OrdersupForm request){
+    public Integer updateInvoicein(InvoiceinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(39L,"436") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",request.getId().toString())) ||
+        if(     (securityRepositoryJPA.userHasPermissions_OR(32L,"456") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"437") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"457") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",request.getId().toString()))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"438") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",request.getId().toString()))||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"458") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",request.getId().toString()))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"439") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup",request.getId().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"459") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             String stringQuery;
-            stringQuery =   " update ordersup set " +
+            stringQuery =   " update invoicein set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " nds = "+request.isNds()+"," +// НДС
                     " name=:name," +
                     " nds_included = "+request.isNds_included()+"," +// НДС включен в цену
-                    " ordersup_date = to_date(:ordersup_date,'DD.MM.YYYY'), " +
+                    ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date = to_date(:invoicein_date,'DD.MM.YYYY'),":"invoicein_date = null,") +
+                    " income_number = :income_number," +// входящий номер
+                    ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -700,38 +720,43 @@ public class OrdersupRepositoryJPA {
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("ordersup_date", ((request.getOrdersup_date()==null || request.getOrdersup_date().equals("")) ? dateFormat.format(dateNow) : request.getOrdersup_date()));
+//                query.setParameter("invoicein_date", ((request.getInvoicein_date()==null || request.getInvoicein_date().equals("")) ? dateFormat.format(dateNow) : request.getInvoicein_date()));
                 query.setParameter("description",request.getDescription());
                 query.setParameter("name",request.getName());
+                query.setParameter("income_number",request.getIncome_number());
+                if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
+                    query.setParameter("income_number_date",request.getIncome_number_date());
+                if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
+                    query.setParameter("invoicein_date",request.getInvoicein_date());
                 query.executeUpdate();
                 if(request.getIs_completed()==null)request.setIs_completed(false);
-                if(insertOrdersupProducts(request, request.getId(), myMasterId)){//если сохранение товаров из таблицы товаров прошло успешно
+                if(insertInvoiceinProducts(request, request.getId(), myMasterId)){//если сохранение товаров из таблицы товаров прошло успешно
                     return 1;
                 } else return null;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrdersupRepository/updateOrdersup on updating ordersup_product cause error.", e);
+                logger.error("Exception in method InvoiceinRepository/updateInvoicein on updating invoicein_product cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (CantSaveProductHistoryException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrdersupRepository/addOrdersupProductHistory on updating ordersup_product cause error.", e);
+                logger.error("Exception in method InvoiceinRepository/addInvoiceinProductHistory on updating invoicein_product cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (CantSaveProductQuantityException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrdersupRepository/setOrdersupQuantity on updating ordersup_product cause error.", e);
+                logger.error("Exception in method InvoiceinRepository/setInvoiceinQuantity on updating invoicein_product cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrdersupRepository/addOrdersupProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method InvoiceinRepository/addInvoiceinProductHistory on inserting into products_history cause oversell.", e);
                 e.printStackTrace();
                 return 0;// недостаточно товара на складе
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrdersupRepository/updateOrdersup. SQL query:"+stringQuery, e);
+                logger.error("Exception in method InvoiceinRepository/updateInvoicein. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -742,7 +767,7 @@ public class OrdersupRepositoryJPA {
     //если не превышает - пишется строка с товаром в БД
     //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
     @SuppressWarnings("Duplicates")
-    private Boolean saveOrdersupProductTable(OrdersupProductTableForm row, Long company_id, Boolean is_completed, Long customersOrdersId, Long department_id, Long master_id) {
+    private Boolean saveInvoiceinProductTable(InvoiceinProductTableForm row, Long company_id, Boolean is_completed, Long customersOrdersId, Long department_id, Long master_id) {
         String stringQuery="";
         customersOrdersId = customersOrdersId==null?0L:customersOrdersId;//  на случай если у отгрузки нет родительского Заказа покупателя
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
@@ -759,11 +784,11 @@ public class OrdersupRepositoryJPA {
 //          if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material() || !is_completed)
 //          {
             stringQuery =
-                    " insert into ordersup_product (" +
+                    " insert into invoicein_product (" +
                             "master_id, " +
                             "company_id, " +
                             "product_id, " +
-                            "ordersup_id, " +
+                            "invoicein_id, " +
                             "product_count, " +
                             "product_price, " +
                             "product_sumprice, " +
@@ -772,16 +797,16 @@ public class OrdersupRepositoryJPA {
                             master_id + "," +
                             company_id + "," +
                             row.getProduct_id() + "," +
-                            row.getOrdersup_id() + "," +
+                            row.getInvoicein_id() + "," +
                             row.getProduct_count() + "," +
                             row.getProduct_price() + "," +
                             row.getProduct_sumprice() + "," +
                             row.getNds_id() +
                             " ) " +
-                            "ON CONFLICT ON CONSTRAINT ordersup_product_uq " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT invoicein_product_uq " +// "upsert"
                             " DO update set " +
                             " product_id = " + row.getProduct_id() + "," +
-                            " ordersup_id = " + row.getOrdersup_id() + "," +
+                            " invoicein_id = " + row.getInvoicein_id() + "," +
                             " product_count = " + row.getProduct_count() + "," +
                             " product_price = " + row.getProduct_price() + "," +
                             " product_sumprice = " + row.getProduct_sumprice() + "," +
@@ -792,16 +817,16 @@ public class OrdersupRepositoryJPA {
 //            } else return false;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveOrdersupProductTable. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveInvoiceinProductTable. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
 
-    private Boolean deleteOrdersupProductTableExcessRows(String productIds, Long ordersup_id) {
+    private Boolean deleteInvoiceinProductTableExcessRows(String productIds, Long invoicein_id) {
         String stringQuery;
-        stringQuery =   " delete from ordersup_product " +
-                " where ordersup_id=" + ordersup_id +
+        stringQuery =   " delete from invoicein_product " +
+                " where invoicein_id=" + invoicein_id +
                 " and product_id not in (" + productIds + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -809,7 +834,7 @@ public class OrdersupRepositoryJPA {
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method OrdersupRepository/deleteOrdersupProductTableExcessRows. SQL - "+stringQuery, e);
+            logger.error("Exception in method InvoiceinRepository/deleteInvoiceinProductTableExcessRows. SQL - "+stringQuery, e);
             e.printStackTrace();
             return false;
         }
@@ -818,13 +843,13 @@ public class OrdersupRepositoryJPA {
     //сохраняет настройки документа "Розничные продажи"
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean saveSettingsOrdersup(SettingsOrdersupForm row) {
+    public Boolean saveSettingsInvoicein(SettingsInvoiceinForm row) {
         String stringQuery="";
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
             stringQuery =
-                    " insert into settings_ordersup (" +
+                    " insert into settings_invoicein (" +
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
@@ -847,7 +872,7 @@ public class OrdersupRepositoryJPA {
                             row.getAutoPrice()+"," +
                             row.getAutoAdd() +
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_ordersup_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_invoicein_user_id_key " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
                             " name=:name"+
@@ -864,7 +889,7 @@ public class OrdersupRepositoryJPA {
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveSettingsOrdersup. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveSettingsInvoicein. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -872,7 +897,7 @@ public class OrdersupRepositoryJPA {
 
     //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
     @SuppressWarnings("Duplicates")
-    public SettingsOrdersupJSON getSettingsOrdersup() {
+    public SettingsInvoiceinJSON getSettingsInvoicein() {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
@@ -887,14 +912,14 @@ public class OrdersupRepositoryJPA {
                 "           coalesce(p.auto_add,false) as auto_add,  " +                    // автодобавление товара из формы поиска в таблицу
                 "           coalesce(p.auto_price,false) as auto_price,  " +                // автоцена из предыдущих закупок
                 "           coalesce(p.name,'') as name " +                                 // наименование заказа по умолчанию
-                "           from settings_ordersup p " +
+                "           from settings_invoicein p " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           where p.user_id= " + myId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
-            SettingsOrdersupJSON returnObj=new SettingsOrdersupJSON();
+            SettingsInvoiceinJSON returnObj=new SettingsInvoiceinJSON();
 
             for(Object[] obj:queryList){
                 returnObj.setDepartmentId(obj[0]!=null?Long.parseLong(      obj[0].toString()):null);
@@ -911,7 +936,7 @@ public class OrdersupRepositoryJPA {
             return returnObj;
         }
         catch (Exception e) {
-            logger.error("Exception in method getSettingsOrdersup. SQL query:"+stringQuery, e);
+            logger.error("Exception in method getSettingsInvoicein. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw e;
         }
@@ -920,26 +945,26 @@ public class OrdersupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public DeleteDocsReport deleteOrdersup (String delNumbers) {
+    public DeleteDocsReport deleteInvoicein (String delNumbers) {
         DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(39L,"428") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",delNumbers)) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(32L,"448") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"429") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"449") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",delNumbers))||
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"430") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",delNumbers)) ||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"450") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",delNumbers)) ||
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(39L, "431") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup", delNumbers)))
+                (securityRepositoryJPA.userHasPermissions_OR(32L, "451") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein", delNumbers)))
         {
             // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
-            List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "ordersup");
+            List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "invoicein");
 
             if(!Objects.isNull(checkChilds)) { //если нет ошибки
 
                 if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
                     String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
                     Long myId = userRepositoryJPA.getMyId();
-                    stringQuery = "Update ordersup p" +
+                    stringQuery = "Update invoicein p" +
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
@@ -948,12 +973,12 @@ public class OrdersupRepositoryJPA {
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
                         //удалим документы из группы связанных документов
-                        if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "ordersup")) throw new Exception ();
+                        if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "invoicein")) throw new Exception ();
                         delResult.setResult(0);// 0 - Всё ок
                         return delResult;
                     } catch (Exception e) {
                         TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                        logger.error("Exception in method deleteOrdersup. SQL query:" + stringQuery, e);
+                        logger.error("Exception in method deleteInvoicein. SQL query:" + stringQuery, e);
                         e.printStackTrace();
                         delResult.setResult(1);// 1 - ошибка выполнения операции
                         return delResult;
@@ -975,20 +1000,20 @@ public class OrdersupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteOrdersup(String delNumbers) {
+    public boolean undeleteInvoicein(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(39L,"428") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",delNumbers)) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(32L,"448") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"429") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",delNumbers))||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"449") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",delNumbers))||
                 //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"430") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",delNumbers)) ||
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"450") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",delNumbers)) ||
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"431") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup", delNumbers)))
+                (securityRepositoryJPA.userHasPermissions_OR(32L,"451") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein", delNumbers)))
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update ordersup p" +
+            stringQuery = "Update invoicein p" +
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
@@ -1000,7 +1025,7 @@ public class OrdersupRepositoryJPA {
                     return true;
                 } else return false;
             }catch (Exception e) {
-                logger.error("Exception in method undeleteOrdersup. SQL query:"+stringQuery, e);
+                logger.error("Exception in method undeleteInvoicein. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1013,16 +1038,16 @@ public class OrdersupRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Boolean addFilesToOrdersup(UniversalForm request){
-        Long ordersupId = request.getId1();
+    public Boolean addFilesToInvoicein(UniversalForm request){
+        Long invoiceinId = request.getId1();
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого запрашивают), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(39L,"436") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",ordersupId.toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"437") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",ordersupId.toString()))||
-                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"438") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",ordersupId.toString()))||
-                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"439") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup",ordersupId.toString())))
+        if( (securityRepositoryJPA.userHasPermissions_OR(32L,"456") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",invoiceinId.toString())) ||
+            //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"457") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",invoiceinId.toString()))||
+            //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"458") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",invoiceinId.toString()))||
+            //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого запрашивают) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"459") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",invoiceinId.toString())))
         {
             try
             {
@@ -1030,18 +1055,18 @@ public class OrdersupRepositoryJPA {
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
-                    stringQuery = "select ordersup_id from ordersup_files where ordersup_id=" + ordersupId + " and file_id=" + fileId;
+                    stringQuery = "select invoicein_id from invoicein_files where invoicein_id=" + invoiceinId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
                         entityManager.close();
-                        manyToMany_OrdersupId_FileId(ordersupId,fileId);
+                        manyToMany_InvoiceinId_FileId(invoiceinId,fileId);
                     }
                 }
                 return true;
             }
             catch (Exception ex)
             {
-                logger.error("Exception in method OrdersupRepository/addFilesToOrdersup.", ex);
+                logger.error("Exception in method InvoiceinRepository/addFilesToInvoicein.", ex);
                 ex.printStackTrace();
                 return false;
             }
@@ -1050,29 +1075,29 @@ public class OrdersupRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    boolean manyToMany_OrdersupId_FileId(Long ordersupId, Long fileId){
+    boolean manyToMany_InvoiceinId_FileId(Long invoiceinId, Long fileId){
         try
         {
             entityManager.createNativeQuery(" " +
-                    "insert into ordersup_files " +
-                    "(ordersup_id,file_id) " +
+                    "insert into invoicein_files " +
+                    "(invoicein_id,file_id) " +
                     "values " +
-                    "(" + ordersupId + ", " + fileId +")")
+                    "(" + invoiceinId + ", " + fileId +")")
                     .executeUpdate();
             entityManager.close();
             return true;
         }
         catch (Exception ex)
         {
-            logger.error("Exception in method OrdersupRepository/manyToMany_OrdersupId_FileId." , ex);
+            logger.error("Exception in method InvoiceinRepository/manyToMany_InvoiceinId_FileId." , ex);
             ex.printStackTrace();
             return false;
         }
     }
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
-    public List<FilesUniversalJSON> getListOfOrdersupFiles(Long ordersupId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(39L, "432,433,434,435"))//Просмотр документов
+    public List<FilesUniversalJSON> getListOfInvoiceinFiles(Long invoiceinId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
@@ -1083,23 +1108,23 @@ public class OrdersupRepositoryJPA {
                     "           f.name as name," +
                     "           f.original_name as original_name" +
                     "           from" +
-                    "           ordersup p" +
+                    "           invoicein p" +
                     "           inner join" +
-                    "           ordersup_files pf" +
-                    "           on p.id=pf.ordersup_id" +
+                    "           invoicein_files pf" +
+                    "           on p.id=pf.invoicein_id" +
                     "           inner join" +
                     "           files f" +
                     "           on pf.file_id=f.id" +
                     "           where" +
-                    "           p.id= " + ordersupId +
+                    "           p.id= " + invoiceinId +
                     "           and p.master_id=" + myMasterId +
                     "           and f.trash is not true"+
                     "           and p.master_id= " + myMasterId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(39L, "433")) //Если нет прав на просм по своему предприятию
+                if (!securityRepositoryJPA.userHasPermissions_OR(32L, "453")) //Если нет прав на просм по своему предприятию
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(39L, "434")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    if (!securityRepositoryJPA.userHasPermissions_OR(32L, "454")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
                         stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
                     }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
@@ -1114,19 +1139,19 @@ public class OrdersupRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
 
-                List<FilesUniversalJSON> ordersupList = new ArrayList<>();
+                List<FilesUniversalJSON> invoiceinList = new ArrayList<>();
                 for(Object[] obj:queryList){
                     FilesUniversalJSON doc=new FilesUniversalJSON();
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setDate_time_created((Timestamp)                    obj[1]);
                     doc.setName((String)                                    obj[2]);
                     doc.setOriginal_name((String)                           obj[3]);
-                    ordersupList.add(doc);
+                    invoiceinList.add(doc);
                 }
-                return ordersupList;
+                return invoiceinList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getListOfOrdersupFiles. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getListOfInvoiceinFiles. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -1134,30 +1159,30 @@ public class OrdersupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteOrdersupFile(SearchForm request)
+    public boolean deleteInvoiceinFile(SearchForm request)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(39L,"436") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup", String.valueOf(request.getAny_id()))) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"437") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",String.valueOf(request.getAny_id())))||
-                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"438") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",String.valueOf(request.getAny_id())))||
-                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"439") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup",String.valueOf(request.getAny_id()))))
+        if( (securityRepositoryJPA.userHasPermissions_OR(32L,"456") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein", String.valueOf(request.getAny_id()))) ||
+            //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"457") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",String.valueOf(request.getAny_id())))||
+            //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"458") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",String.valueOf(request.getAny_id())))||
+            //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"459") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
-            stringQuery  =  " delete from ordersup_files "+
-                    " where ordersup_id=" + request.getAny_id()+
+            stringQuery  =  " delete from invoicein_files "+
+                    " where invoicein_id=" + request.getAny_id()+
                     " and file_id="+request.getId()+
-                    " and (select master_id from ordersup where id="+request.getAny_id()+")="+myMasterId ;
+                    " and (select master_id from invoicein where id="+request.getAny_id()+")="+myMasterId ;
             try
             {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }
             catch (Exception e) {
-                logger.error("Exception in method OrdersupRepository/deleteOrdersupFile. stringQuery=" + stringQuery, e);
+                logger.error("Exception in method InvoiceinRepository/deleteInvoiceinFile. stringQuery=" + stringQuery, e);
                 e.printStackTrace();
                 return false;
             }

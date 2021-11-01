@@ -14,7 +14,7 @@ package com.dokio.message.request;
 
 import java.util.Set;
 
-public class OrdersupForm {
+public class InvoiceinForm {
 
     private Long id;
     private Long company_id;
@@ -24,24 +24,34 @@ public class OrdersupForm {
     private String new_cagent;
     private Long status_id;
     private String doc_number;
-    private String ordersup_date;
-    private Set<OrdersupProductTableForm> ordersupProductTable;
+    private String invoicein_date;
+    private Set<InvoiceinProductTableForm> invoiceinProductTable;
     private boolean nds;
     private boolean nds_included;
-    private String uid; //uid для создаваемого документа
+    private String uid;
     private Long linked_doc_id;//id связанного документа
     private String linked_doc_name;//имя (таблицы) связанного документа
     private String parent_uid;// uid исходящего (родительского) документа
     private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
     private String name;
+    private String income_number;
+    private String income_number_date;
 
-    public String getName() {
-        return name;
+    public String getIncome_number() {
+        return income_number;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setIncome_number(String income_number) {
+        this.income_number = income_number;
+    }
+
+    public String getIncome_number_date() {
+        return income_number_date;
+    }
+
+    public void setIncome_number_date(String income_number_date) {
+        this.income_number_date = income_number_date;
     }
 
     public Long getId() {
@@ -108,20 +118,20 @@ public class OrdersupForm {
         this.doc_number = doc_number;
     }
 
-    public String getOrdersup_date() {
-        return ordersup_date;
+    public String getInvoicein_date() {
+        return invoicein_date;
     }
 
-    public void setOrdersup_date(String ordersup_date) {
-        this.ordersup_date = ordersup_date;
+    public void setInvoicein_date(String invoicein_date) {
+        this.invoicein_date = invoicein_date;
     }
 
-    public Set<OrdersupProductTableForm> getOrdersupProductTable() {
-        return ordersupProductTable;
+    public Set<InvoiceinProductTableForm> getInvoiceinProductTable() {
+        return invoiceinProductTable;
     }
 
-    public void setOrdersupProductTable(Set<OrdersupProductTableForm> ordersupProductTable) {
-        this.ordersupProductTable = ordersupProductTable;
+    public void setInvoiceinProductTable(Set<InvoiceinProductTableForm> invoiceinProductTable) {
+        this.invoiceinProductTable = invoiceinProductTable;
     }
 
     public boolean isNds() {
@@ -186,5 +196,13 @@ public class OrdersupForm {
 
     public void setIs_completed(Boolean is_completed) {
         this.is_completed = is_completed;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
