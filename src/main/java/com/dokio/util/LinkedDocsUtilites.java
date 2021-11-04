@@ -80,15 +80,15 @@ public class LinkedDocsUtilites {
                     "invoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    private static final Set DOCS_WITH_PRODUCT_SUMM // таблицы документов, у которых (в их таблице <tablename>) есть колонка summ
+    private static final Set DOCS_WITH_PAY_SUMM // таблицы документов, у которых (в их таблице <tablename>) есть колонка summ
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-    .of(    "paymentin",
-            "paymentout",
-            "orderin",
-            "orderout",
-            "vatinvoiceout",
-            "vatinvoicein")
-            .collect(Collectors.toCollection(HashSet::new)));
+            .of(    "paymentin",
+                    "paymentout",
+                    "orderin",
+                    "orderout",
+                    "vatinvoiceout",
+                    "vatinvoicein")
+                    .collect(Collectors.toCollection(HashSet::new)));
 
     // Если у документа linked_doc_name с id = linked_doc_id есть группа связанных документов (т.е. linked_docs_group_id в его таблице != null)
     // то возвращаем id этой группы, иначе:
@@ -462,7 +462,7 @@ public class LinkedDocsUtilites {
                 "   coalesce(ssd.name,'-')," +
                 (DOCS_WITH_PRODUCT_SUMPRICE.contains(tablename) ?
                         ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tablename + "_product where " + tablename + "_id=" + id + "),0)") :
-                        (DOCS_WITH_PRODUCT_SUMM.contains(tablename) ?
+                        (DOCS_WITH_PAY_SUMM.contains(tablename) ?
                                 ("  coalesce((select sum(coalesce(summ,0)) from " + tablename + " where id=" + id + "),0)") : null)) + " as sum_price," +
                 "   coalesce(d.is_completed,false) as is_completed," +
                 "   (select ds.page_name from documents ds where ds.table_name = '" + tablename + "') as page_name" +

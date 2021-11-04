@@ -12,31 +12,35 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
-import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsInvoiceinForm;
-import com.dokio.message.response.InvoiceinJSON;
-import com.dokio.repository.*;
+import com.dokio.message.request.OrderinForm;
+import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Settings.SettingsOrderinForm;
+import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.OrderinJSON;
+import com.dokio.repository.OrderinRepositoryJPA;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class InvoiceinController {
+public class OrderinController {
 
-    Logger logger = Logger.getLogger("InvoiceinController");
+    Logger logger = Logger.getLogger("OrderinController");
 
     @Autowired
-    InvoiceinRepositoryJPA invoiceinRepository;
+    OrderinRepositoryJPA orderinRepository;
 
-    @PostMapping("/api/auth/getInvoiceinTable")
+    @PostMapping("/api/auth/getOrderinTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getInvoiceinTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getInvoiceinTable: " + searchRequest.toString());
+    public ResponseEntity<?> getOrderinTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getOrderinTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -45,7 +49,7 @@ public class InvoiceinController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<InvoiceinJSON> returnList;
+        List<OrderinJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -74,15 +78,15 @@ public class InvoiceinController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = invoiceinRepository.getInvoiceinTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = orderinRepository.getOrderinTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getInvoiceinPagesList")
+    @PostMapping("/api/auth/getOrderinPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getInvoiceinPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getInvoiceinPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getOrderinPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getOrderinPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -104,7 +108,7 @@ public class InvoiceinController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = invoiceinRepository.getInvoiceinSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = orderinRepository.getOrderinSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -150,110 +154,90 @@ public class InvoiceinController {
         return responseEntity;
     }
 
+    @PostMapping("/api/auth/insertOrderin")
     @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> insertOrderin(@RequestBody OrderinForm request){
+        logger.info("Processing post request for path /api/auth/insertOrderin: " + request.toString());
+        return new ResponseEntity<>(orderinRepository.insertOrderin(request), HttpStatus.OK);
+    }
+
     @RequestMapping(
-            value = "/api/auth/getInvoiceinProductTable",
+            value = "/api/auth/getOrderinValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getInvoiceinProductTable( @RequestParam("id") Long docId) {
-        logger.info("Processing get request for path /api/auth/getInvoiceinProductTable with Invoicein id=" + docId.toString());
-        return  new ResponseEntity<>(invoiceinRepository.getInvoiceinProductTable(docId), HttpStatus.OK);
+    public ResponseEntity<?> getOrderinValuesById(
+            @RequestParam("id") Long id){
+        logger.info("Processing get request for path /api/auth/getOrderinValuesById with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(orderinRepository.getOrderinValuesById(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @PostMapping("/api/auth/insertInvoicein")
+    @PostMapping("/api/auth/updateOrderin")
+    public ResponseEntity<?> updateOrderin(@RequestBody OrderinForm request){
+        logger.info("Processing post request for path /api/auth/updateOrderin: " + request.toString());
+        try {return new ResponseEntity<>(orderinRepository.updateOrderin(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/saveSettingsOrderin")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertInvoicein(@RequestBody InvoiceinForm request){
-        logger.info("Processing post request for path /api/auth/insertInvoicein: " + request.toString());
-        return new ResponseEntity<>(invoiceinRepository.insertInvoicein(request), HttpStatus.OK);
-    }
-
-    @RequestMapping(
-            value = "/api/auth/getInvoiceinValuesById",
-            params = {"id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getInvoiceinValuesById(
-            @RequestParam("id") Long id)
-    {
-        logger.info("Processing get request for path /api/auth/getInvoiceinValuesById with parameters: " + "id: " + id);
-        return new ResponseEntity<>(invoiceinRepository.getInvoiceinValuesById(id), HttpStatus.OK);
-    }
-
-    @PostMapping("/api/auth/updateInvoicein")
-    public ResponseEntity<?> updateInvoicein(@RequestBody InvoiceinForm request){
-        logger.info("Processing post request for path /api/auth/updateInvoicein: " + request.toString());
-        return new ResponseEntity<>(invoiceinRepository.updateInvoicein(request), HttpStatus.OK);
-    }
-
-    @PostMapping("/api/auth/saveSettingsInvoicein")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsInvoicein(@RequestBody SettingsInvoiceinForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsInvoicein: " + request.toString());
-        if(invoiceinRepository.saveSettingsInvoicein(request)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<?> saveSettingsOrderin(@RequestBody SettingsOrderinForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsOrderin: " + request.toString());
+        try {return new ResponseEntity<>(orderinRepository.saveSettingsOrderin(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
-            value = "/api/auth/getSettingsInvoicein",
+            value = "/api/auth/getSettingsOrderin",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsInvoicein(){
-        logger.info("Processing get request for path /api/auth/getSettingsInvoicein without request parameters");
-        return new ResponseEntity<>(invoiceinRepository.getSettingsInvoicein(), HttpStatus.OK);
+    public ResponseEntity<?> getSettingsOrderin(){
+        logger.info("Processing get request for path /api/auth/getSettingsOrderin without request parameters");
+        try {return new ResponseEntity<>(orderinRepository.getSettingsOrderin(), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-
-    @PostMapping("/api/auth/deleteInvoicein")
+    @PostMapping("/api/auth/deleteOrderin")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteInvoicein(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteInvoicein: " + request.toString());
+    public  ResponseEntity<?> deleteOrderin(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteOrderin: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        return new ResponseEntity<>(invoiceinRepository.deleteInvoicein(checked), HttpStatus.OK);
+        try {return new ResponseEntity<>(orderinRepository.deleteOrderin(checked), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @PostMapping("/api/auth/undeleteInvoicein")
+    @PostMapping("/api/auth/undeleteOrderin")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteInvoicein(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/undeleteInvoicein: " + request.toString());
+    public  ResponseEntity<?> undeleteOrderin(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteOrderin: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
-        return new ResponseEntity<>(invoiceinRepository.undeleteInvoicein(checked), HttpStatus.OK);
+        try {return new ResponseEntity<>(orderinRepository.undeleteOrderin(checked), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
-            value = "/api/auth/getListOfInvoiceinFiles",
+            value = "/api/auth/getListOfOrderinFiles",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getListOfInvoiceinFiles(
-            @RequestParam("id") Long id)
-    {
-        logger.info("Processing post request for path api/auth/getListOfInvoiceinFiles: " + id);
-        try {
-            return new ResponseEntity<>(invoiceinRepository.getListOfInvoiceinFiles(id), HttpStatus.OK);
-        } catch (Exception e){
-            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<?> getListOfOrderinFiles(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path api/auth/getListOfOrderinFiles: " + id);
+        try {return new ResponseEntity<>(orderinRepository.getListOfOrderinFiles(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @PostMapping("/api/auth/deleteInvoiceinFile")
-    public ResponseEntity<?> deleteInvoiceinFile(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/deleteInvoiceinFile: " + request.toString());
-        try {
-            return new ResponseEntity<>(invoiceinRepository.deleteInvoiceinFile(request), HttpStatus.OK);
-        } catch (Exception e){
-            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping("/api/auth/deleteOrderinFile")
+    public ResponseEntity<?> deleteOrderinFile(@RequestBody SearchForm request) {
+        logger.info("Processing post request for path api/auth/deleteOrderinFile: " + request.toString());
+        try {return new ResponseEntity<>(orderinRepository.deleteOrderinFile(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")
-    @PostMapping("/api/auth/addFilesToInvoicein")
-    public ResponseEntity<?> addFilesToInvoicein(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path api/auth/addFilesToInvoicein: " + request.toString());
-        try{
-            return new ResponseEntity<>(invoiceinRepository.addFilesToInvoicein(request), HttpStatus.OK);
-        } catch (Exception e){
-            return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping("/api/auth/addFilesToOrderin")
+    public ResponseEntity<?> addFilesToOrderin(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/addFilesToOrderin: " + request.toString());
+        try{return new ResponseEntity<>(orderinRepository.addFilesToOrderin(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }
