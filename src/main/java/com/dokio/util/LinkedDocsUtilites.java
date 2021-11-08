@@ -85,10 +85,14 @@ public class LinkedDocsUtilites {
             .of(    "paymentin",
                     "paymentout",
                     "orderin",
-                    "orderout",
-                    "vatinvoiceout",
-                    "vatinvoicein")
+                    "orderout")
                     .collect(Collectors.toCollection(HashSet::new)));
+
+    private static final Set DOCS_WITHOUT_PAY_SUMM // таблицы документов, у которых (в их таблице <tablename>) нет колонки summ (эти документы берут summ у родительского документа)
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of(    "vatinvoiceout",
+                    "vatinvoicein")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     // Если у документа linked_doc_name с id = linked_doc_id есть группа связанных документов (т.е. linked_docs_group_id в его таблице != null)
     // то возвращаем id этой группы, иначе:
@@ -454,16 +458,36 @@ public class LinkedDocsUtilites {
     private LinkedDocsJSON getFullInfoOfLinkedDoc(String tablename, Long id) {
 
         String myTimeZone = userRepository.getUserTimeZone();
+        String tableWithSumm="";
+        Long   idInTableWithSumm=0L;
+        // если у документа в его таблице <tablename> нет колонки summ, то берём summ у родительского документа)
+        // для этого нужно знать его таблицу и id этого документа в ней
+        if(DOCS_WITHOUT_PAY_SUMM.contains(tablename)) {
+            tableWithSumm = getTablenameOfDocWithoutSumm(tablename, id);            //таблица родительского документа
+            idInTableWithSumm=getIdOfDocWithoutSumm(tablename, tableWithSumm, id);  //id родительского документа
+            //переназначим вводные параметры для данного метода
+//            tablename=tableWithSumm;
+//            id=idInTableWithSumm;
+        }
 
         String stringQuery = "select " +
                 "   d.doc_number as doc_number, " +
                 "   to_char(d.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                 "   (select ds.doc_name_ru from documents ds where ds.table_name = '" + tablename + "') as doc_name," +
-                "   coalesce(ssd.name,'-')," +
+                "   coalesce(ssd.name,'-') as status_name," +
                 (DOCS_WITH_PRODUCT_SUMPRICE.contains(tablename) ?
                         ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tablename + "_product where " + tablename + "_id=" + id + "),0)") :
                         (DOCS_WITH_PAY_SUMM.contains(tablename) ?
-                                ("  coalesce((select sum(coalesce(summ,0)) from " + tablename + " where id=" + id + "),0)") : null)) + " as sum_price," +
+                                ("  coalesce((select sum(coalesce(summ,0)) from " + tablename + " where id=" + id + "),0)") :
+                                (DOCS_WITH_PRODUCT_SUMPRICE.contains(tableWithSumm) ?
+                                        ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tableWithSumm + "_product where " + tableWithSumm + "_id=" + idInTableWithSumm + "),0)") :
+                                        (DOCS_WITH_PAY_SUMM.contains(tableWithSumm) ?
+                                                ("  coalesce((select sum(coalesce(summ,0)) from " + tableWithSumm + " where id=" + idInTableWithSumm + "),0)") :
+                                                0
+                                        )
+                                )
+                        )
+                ) + " as sum_price," +
                 "   coalesce(d.is_completed,false) as is_completed," +
                 "   (select ds.page_name from documents ds where ds.table_name = '" + tablename + "') as page_name" +
                 "   from " + tablename + " d" +
@@ -681,6 +705,39 @@ public class LinkedDocsUtilites {
             logger.error("Exception in method deleteFromLinkedDocsByDocUid. Sql: " + stringQuery, e);
             e.printStackTrace();
             return false;
+        }
+    }
+
+    // для документов, которые не содержат summ, а берут ее из родительского документа (таких как Счёт-факутра выданный) вернёт название таблицы родительского документа, где можно взять эту summ
+    private String getTablenameOfDocWithoutSumm(String tablename, Long id){
+        String stringQuery = "select parent_tablename from "+tablename+" where id = "+id;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getSingleResult().toString();
+        } catch (NoResultException nre) {
+            logger.error("NoResultException in method getTablenameOfDocWithoutSumm. Sql: " + stringQuery, nre);
+            return null;
+        } catch (Exception e) {
+            logger.error("Exception in method getTablenameOfDocWithoutSumm. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // для документов, которые не содержат summ, а берут ее из родительского документа (таких как Счёт-факутра выданный) вернёт id родительского документа в таблице родительского документа, где можно взять эту summ
+    private Long getIdOfDocWithoutSumm(String tablename, String columnName, Long id) {
+
+        String stringQuery = "select "+columnName+"_id from "+tablename+" where id = "+id;
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (NoResultException nre) {
+            logger.error("NoResultException in method getIdOfDocWithoutSumm. Sql: " + stringQuery, nre);
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method getIdOfDocWithoutSumm. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
         }
     }
 

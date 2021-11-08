@@ -1802,3 +1802,81 @@ create table orderin_files (
                              foreign key (file_id) references files (id) ON DELETE CASCADE,
                              foreign key (orderin_id ) references orderin (id) ON DELETE CASCADE
 );
+
+create table vatinvoiceout(
+                            id bigserial primary key not null,
+                            master_id  bigint not null,
+                            creator_id bigint not null,
+                            changer_id bigint,
+                            date_time_created timestamp with time zone not null,
+                            date_time_changed timestamp with time zone,
+                            company_id bigint not null,
+                            cagent_id bigint not null,
+                            cagent2_id bigint,
+                            status_id bigint,
+                            doc_number int not null,
+                            description varchar(2048),
+                            parent_tablename  varchar (16) not null, --orderin, paymentin, shipment
+                            orderin_id bigint,
+                            paymentin_id bigint,
+                            shipment_id bigint,
+                            gov_id varchar(20), -- идент. номер госконтракта
+                            is_deleted boolean,
+                            is_completed boolean,
+                            uid varchar (36),
+                            linked_docs_group_id bigint,
+                            paydoc_number varchar(64),
+                            paydoc_date date,
+                            foreign key (master_id) references users(id),
+                            foreign key (creator_id) references users(id),
+                            foreign key (changer_id) references users(id),
+                            foreign key (company_id) references companies(id),
+                            foreign key (cagent_id) references cagents(id),
+                            foreign key (cagent2_id) references cagents(id),
+                            foreign key (orderin_id) references orderin(id),
+                            foreign key (paymentin_id) references paymentin(id),
+                            foreign key (shipment_id) references shipment(id),
+                            foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                            foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column vatinvoiceout_id bigint;
+
+alter table linked_docs add constraint vatinvoiceout_id_fkey foreign key (vatinvoiceout_id) references vatinvoiceout (id);
+
+
+create table settings_vatinvoiceout (
+                                      id                          bigserial primary key not null,
+                                      master_id                   bigint not null,
+                                      company_id                  bigint not null,
+                                      user_id                     bigint  UNIQUE not null,
+                                      cagent_id                   bigint,
+                                      cagent2_id                  bigint,
+                                      autocreate                  boolean,
+                                      status_id_on_complete       bigint,
+                                      foreign key (master_id) references users(id),
+                                      foreign key (cagent_id) references cagents(id),
+                                      foreign key (user_id) references users(id),
+                                      foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                      foreign key (company_id) references companies(id)
+);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(486,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Счёт-фактура выданный',37),
+(487,'Создание документов по всем предприятиям','Возможность создавать новые документы "Счёт-фактура выданный" по всем предприятиям','Счёт-фактура выданный',37),
+(488,'Создание документов своего предприятия','Возможность создавать новые документы "Счёт-фактура выданный" своего предприятия','Счёт-фактура выданный',37),
+(489,'Удаление документов по всем предприятиям','Возможность удалить документ "Счёт-фактура выданный" в архив по всем предприятиям','Счёт-фактура выданный',37),
+(490,'Удаление документов своего предприятия','Возможность удалить документ "Счёт-фактура выданный" своего предприятия в архив','Счёт-фактура выданный',37),
+(491,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Счёт-фактура выданный" по всем предприятиям','Счёт-фактура выданный',37),
+(492,'Просмотр документов своего предприятия','Прсмотр информации в документах "Счёт-фактура выданный" своего предприятия','Счёт-фактура выданный',37),
+(493,'Редактирование документов по всем предприятиям','Редактирование документов "Счёт-фактура выданный" по всем предприятиям','Счёт-фактура выданный',37),
+(494,'Редактирование документов своего предприятия','Редактирование документов "Счёт-фактура выданный" своего предприятия','Счёт-фактура выданный',37),
+(495,'Проведение документов по всем предприятиям','Проведение документов "Счёт-фактура выданный" по всем предприятиям','Счёт-фактура выданный',37),
+(496,'Проведение документов своего предприятия','Проведение документов "Счёт-фактура выданный" своего предприятия','Счёт-фактура выданный',37);
+
+create table vatinvoiceout_files (
+                                   vatinvoiceout_id bigint not null,
+                                   file_id bigint not null,
+                                   foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                   foreign key (vatinvoiceout_id ) references vatinvoiceout (id) ON DELETE CASCADE
+);
