@@ -15,7 +15,7 @@ package com.dokio.message.response;
 
 import java.math.BigDecimal;
 
-public class PaymentinJSON {
+public class PaymentoutJSON {
 
     private Long id;
     private String master;
@@ -44,6 +44,24 @@ public class PaymentinJSON {
     private String income_number_date;         // входящая дата счета поставщика
     private Long payment_account_id;//id расчтёного счёта
     private String payment_account;// расчтёный счёт
+    private Long expenditure_id;// id вида расходов
+    private String expenditure;//  вид расходов
+
+    public Long getExpenditure_id() {
+        return expenditure_id;
+    }
+
+    public void setExpenditure_id(Long expenditure_id) {
+        this.expenditure_id = expenditure_id;
+    }
+
+    public String getExpenditure() {
+        return expenditure;
+    }
+
+    public void setExpenditure(String expenditure) {
+        this.expenditure = expenditure;
+    }
 
     public String getPayment_account() {
         return payment_account;

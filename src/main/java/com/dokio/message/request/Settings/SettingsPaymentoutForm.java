@@ -10,23 +10,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.message.response.Settings;
+package com.dokio.message.request.Settings;
 
-public class SettingsPaymentinJSON {
+public class SettingsPaymentoutForm {
 
-    private Long        id;
-    private Long        companyId;                      // id предприятия
-    private Long        cagentId;                       // id поставщика
-    private String      cagent;                         // наименование поставщика
-    private Long        statusIdOnComplete;             // статус при успешном проведении
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    private Long companyId;                      // id предприятия
+    private Long cagentId;                       // id контрагента
+    private Long statusIdOnComplete;             // статус при успешном проведении
 
     public Long getCompanyId() {
         return companyId;
@@ -42,14 +32,6 @@ public class SettingsPaymentinJSON {
 
     public void setCagentId(Long cagentId) {
         this.cagentId = cagentId;
-    }
-
-    public String getCagent() {
-        return cagent;
-    }
-
-    public void setCagent(String cagent) {
-        this.cagent = cagent;
     }
 
     public Long getStatusIdOnComplete() {

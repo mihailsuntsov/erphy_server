@@ -1,7 +1,5 @@
 package com.dokio.message.response.Settings;
 
-import java.math.BigDecimal;
-
 public class SettingsReturnJSON {
 
     private Long        companyId;              // id предприятия

@@ -12,8 +12,6 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.message.response.Settings;
 
-import java.math.BigDecimal;
-
 public class SettingsOrdersupJSON {
 
     private Long        id;

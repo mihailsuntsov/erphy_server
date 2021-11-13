@@ -548,7 +548,7 @@ public class KassaRepository {
                 "           p.cashier_value_id as cashier_value_id, " + // кассир: 'current'-текущая учетная запись, 'another'-другая учетная запись, 'custom' произвольные ФИО. Настройка "Другая учетная запись" во фронтенде сохраняется только до конца сессии, затем ставится по умолчанию current
                 "           p.customCashierFio as customCashierFio, " + // ФИО для кассира, выбранного по cashier_value_id = 'custom'
                 "           p.customCashierVatin as customCashierVatin, " + // ИНН для кассира, выбранного по cashier_value_id = 'custom'
-                "           p.billing_address as billing_address, " + //выбор адреса места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
+                "           p.billing_address as billing_address, " + //выбор адреса места расчётов. 'Settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
                 "           p.custom_billing_address as custom_billing_address " + //адрес места расчётов для billing_address = 'custom'
                 "           from kassa_user_settings p " +
                 "           where  p.user_id = " + myId;
@@ -586,7 +586,7 @@ public class KassaRepository {
                             " cashier_value_id, " + // кассир: 'current'-текущая учетная запись, 'another'-другая учетная запись, 'custom' произвольные ФИО. Настройка "Другая учетная запись" во фронтенде сохраняется только до конца сессии, затем ставится по умолчанию current
                             " customCashierFio, " + // ФИО для кассира, выбранного по cashier_value_id = 'custom'
                             " customCashierVatin, " + // ИНН для кассира, выбранного по cashier_value_id = 'custom'
-                            " billing_address, " + //выбор адреса места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
+                            " billing_address, " + //выбор адреса места расчётов. 'Settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
                             " custom_billing_address " + //адрес места расчётов для billing_address = 'custom'
                             ") values (" +
                             myId + "," +

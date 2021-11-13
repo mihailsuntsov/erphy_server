@@ -494,7 +494,8 @@ public class OrderinRepositoryJPA {
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId();
+                    " id= "+request.getId()+
+                    " and master_id="+myMasterId;
             try
             {
                 Date dateNow = new Date();

@@ -240,8 +240,8 @@ public class CompanyRepositoryJPA {
 
     @SuppressWarnings("Duplicates")// отдаёт список банковских счетов предприятия
     public List<CompaniesPaymentAccountsForm> getCompanyPaymentAccounts(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//(см. файл Permissions Id)
-        {
+//        if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//(см. файл Permissions Id)
+//        {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             stringQuery =   " select " +
@@ -259,11 +259,11 @@ public class CompanyRepositoryJPA {
                     " where ap.master_id = " + myMasterId +
                     " and ap.company_id = " + docId;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
-            {
+//            if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
+//            {
                 //остается только на своё предприятие (5)
                 stringQuery = stringQuery + " and ap.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-            }
+//            }
             stringQuery = stringQuery + " order by ap.output_order asc ";
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
@@ -283,7 +283,7 @@ public class CompanyRepositoryJPA {
                 returnList.add(doc);
             }
             return returnList;
-        } else return null;
+//        } else return null;
     }
 
 //*****************************************************************************************************************************************************

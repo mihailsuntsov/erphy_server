@@ -232,14 +232,17 @@ public class CompaniesController {
         }
     }
 
-    @PostMapping("/api/auth/getCompaniesPaymentAccounts")// отдаёт список банковских счетов контрагента
-    public ResponseEntity<?> getCompaniesPaymentAccounts(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getCompaniesPaymentAccounts: " + searchRequest.toString());
-
+    @RequestMapping(
+            value = "/api/auth/getCompaniesPaymentAccounts",// отдаёт список банковских счетов контрагента или своего предприятия
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCompaniesPaymentAccounts(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path /api/auth/getCompaniesPaymentAccounts, id = " + id);
         try {
-            return  new ResponseEntity<>(companyRepositoryJPA.getCompanyPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
+            return  new ResponseEntity<>(companyRepositoryJPA.getCompanyPaymentAccounts(id), HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Error when requesting getCompanyPaymentAccounts", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Ошибка запроса списка счетов предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

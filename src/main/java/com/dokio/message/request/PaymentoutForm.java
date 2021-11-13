@@ -13,9 +13,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.message.request;
 
 import java.math.BigDecimal;
-import java.util.Set;
 
-public class PaymentinForm {
+public class PaymentoutForm {
 
     private Long id;
     private Long company_id;
@@ -35,6 +34,15 @@ public class PaymentinForm {
     private String income_number;
     private String income_number_date;
     private Long payment_account_id;//id расчтёного счёта
+    private Long expenditure_id; // id вида расходов
+
+    public Long getExpenditure_id() {
+        return expenditure_id;
+    }
+
+    public void setExpenditure_id(Long expenditure_id) {
+        this.expenditure_id = expenditure_id;
+    }
 
     public Long getPayment_account_id() {
         return payment_account_id;

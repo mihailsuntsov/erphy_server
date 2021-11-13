@@ -18,7 +18,6 @@ import com.dokio.message.response.additional.FilesInventoryJSON;
 import com.dokio.message.response.InventoryJSON;
 import com.dokio.message.response.InventoryProductTableJSON;
 import com.dokio.message.response.Settings.SettingsInventoryJSON;
-import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Controller
 public class InventoryController {

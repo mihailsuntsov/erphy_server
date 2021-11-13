@@ -12,12 +12,6 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
-import com.dokio.message.request.*;
-import com.dokio.message.request.Settings.SettingsCustomersOrdersForm;
-import com.dokio.message.response.CustomersOrdersJSON;
-import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
-import com.dokio.message.response.additional.*;
-import com.dokio.repository.*;
 import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Controller
 public class LinkedDocsController {

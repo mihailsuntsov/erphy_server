@@ -19,7 +19,7 @@ public class KassaCashierSettingsForm {
     private String cashier_value_id;        // кассир: 'current'-текущая учетная запись, 'another'-другая учетная запись, 'custom' произвольные ФИО. Настройка "Другая учетная запись" во фронтенде сохраняется только до конца сессии, затем ставится по умолчанию current
     private String customCashierFio;        // ФИО для кассира, выбранного по cashier_value_id = 'custom'
     private String customCashierVatin;      // ИНН для кассира, выбранного по cashier_value_id = 'custom'
-    private String billing_address;         //выбор адреса места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
+    private String billing_address;         //выбор адреса места расчётов. 'Settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
     private String custom_billing_address;  //адрес места расчётов для billing_address = 'custom'
 
 

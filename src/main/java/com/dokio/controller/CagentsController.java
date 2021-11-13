@@ -245,23 +245,30 @@ public class CagentsController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getCagentsPaymentAccounts")// отдаёт список банковских счетов контрагента
-    public ResponseEntity<?> getCagentsPaymentAccounts(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getCagentsPaymentAccounts: " + searchRequest.toString());
-
+    @RequestMapping(
+            value = "/api/auth/getCagentsPaymentAccounts",// отдаёт список банковских счетов контрагента
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCagentsPaymentAccounts(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path /api/auth/getCagentsPaymentAccounts, id = " + id);
         try {
-            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsPaymentAccounts(searchRequest.getId()), HttpStatus.OK);
+            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsPaymentAccounts(id), HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>("Ошибка загрузки банковских счетов контрагента", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("/api/auth/getCagentsContacts")// отдаёт список контактных лиц контрагента
-    public ResponseEntity<?> getCagentsContacts(@RequestBody UniversalForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getCagentsContacts: " + searchRequest.toString());
+    @RequestMapping(
+            value = "/api/auth/getCagentsContacts",// отдаёт список контактов контрагента
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCagentsContacts(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path /api/auth/getCagentsContacts, id = " + id);
 
         try {
-            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsContacts(searchRequest.getId()), HttpStatus.OK);
+            return  new ResponseEntity<>(cagentsRepositoryJPA.getCagentsContacts(id), HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>("Ошибка загрузки контактных лиц контрагента", HttpStatus.INTERNAL_SERVER_ERROR);
         }

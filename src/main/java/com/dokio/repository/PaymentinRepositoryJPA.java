@@ -112,6 +112,7 @@ public class PaymentinRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.income_number as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
+                    "           p.payment_account_id as payment_account_id,"+
 
                     "           p.income_number_date as income_number_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -188,6 +189,7 @@ public class PaymentinRepositoryJPA {
                     doc.setIs_completed((Boolean)                 obj[19]);
                     doc.setIncome_number((String)                 obj[20]);
                     doc.setIncome_number_date((String)            obj[21]);
+                    doc.setPayment_account_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -286,12 +288,15 @@ public class PaymentinRepositoryJPA {
                     "           p.uid as uid, " +
                     "           p.is_completed as is_completed, " +
                     "           coalesce(p.income_number,'') as income_number," +
-                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date " +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
+                    "           p.payment_account_id as payment_account_id,"+
+                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account" +
 
                     "           from paymentin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_id=cpa.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
@@ -335,6 +340,8 @@ public class PaymentinRepositoryJPA {
                     returnObj.setIs_completed((Boolean)                     obj[22]);
                     returnObj.setIncome_number((String)                     obj[23]);
                     returnObj.setIncome_number_date((String)                obj[24]);
+                    returnObj.setPayment_account_id(obj[25]!=null?Long.parseLong(obj[25].toString()):null);
+                    returnObj.setPayment_account((String)                   obj[26]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -434,6 +441,7 @@ public class PaymentinRepositoryJPA {
                         " status_id,"+//статус
                         " linked_docs_group_id," +// id группы связанных документов
                         " summ,"+
+                        " payment_account_id,"+
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -449,6 +457,7 @@ public class PaymentinRepositoryJPA {
                         request.getStatus_id()  + ", "+//статус
                         linkedDocsGroupId+"," + // id группы связанных документов
                         request.getSumm()+"," + //наименование заказа поставщику
+                        request.getPayment_account_id()+"," + //банковский счет
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -502,6 +511,7 @@ public class PaymentinRepositoryJPA {
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
                     " income_number = :income_number," +// входящий номер
+                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
                     ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +

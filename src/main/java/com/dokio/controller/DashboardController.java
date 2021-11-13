@@ -1,7 +1,6 @@
 package com.dokio.controller;
 
 import com.dokio.message.request.Settings.SettingsDashboardForm;
-import com.dokio.message.request.Settings.SettingsRetailSalesForm;
 import com.dokio.message.response.Settings.SettingsDashboardJSON;
 import com.dokio.repository.DashboardRepository;
 import org.apache.log4j.Logger;

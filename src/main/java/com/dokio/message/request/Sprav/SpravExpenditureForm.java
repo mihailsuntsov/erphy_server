@@ -12,32 +12,15 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.message.request.Sprav;
 
-import java.util.List;
-
-public class SpravStatusDocForm {
+public class SpravExpenditureForm {
 
     private Long id;
     private Long company_id;
-    private int doc_id;
     private String name;
-    private int status_type;
-    private String color;
-    private int output_order;
-    private String description;
-    private boolean is_default;
-    private List<Long> statusesIdsInOrderOfList;//List id статусов для упорядочивания по порядку вывода
-    /*getters-setters*/
+    private String type;
 
     public Long getId() {
         return id;
-    }
-
-    public boolean isIs_default() {
-        return is_default;
-    }
-
-    public void setIs_default(boolean is_default) {
-        this.is_default = is_default;
     }
 
     public void setId(Long id) {
@@ -52,14 +35,6 @@ public class SpravStatusDocForm {
         this.company_id = company_id;
     }
 
-    public int getDoc_id() {
-        return doc_id;
-    }
-
-    public void setDoc_id(int doc_id) {
-        this.doc_id = doc_id;
-    }
-
     public String getName() {
         return name;
     }
@@ -68,49 +43,11 @@ public class SpravStatusDocForm {
         this.name = name;
     }
 
-    public int getStatus_type() {
-        return status_type;
+    public String getType() {
+        return type;
     }
 
-    public void setStatus_type(int status_type) {
-        this.status_type = status_type;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    public int getOutput_order() {
-        return output_order;
-    }
-
-    public void setOutput_order(int output_order) {
-        this.output_order = output_order;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public List<Long> getStatusesIdsInOrderOfList() {
-        return statusesIdsInOrderOfList;
-    }
-
-    public void setStatusesIdsInOrderOfList(List<Long> statusesIdsInOrderOfList) {
-        this.statusesIdsInOrderOfList = statusesIdsInOrderOfList;
-    }
-
-    @Override
-    public String toString() {
-        return "SpravStatusDocForm: id=" + this.id + ", company_id" + this.company_id + ", dock_id" + this.doc_id +
-                ", name" + this.name;
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -230,7 +230,7 @@ create table kassa_user_settings(
     cashier_value_id       varchar(8),
     customCashierFio       varchar(30),
     customCashierVatin     varchar(12),
-    --адрес места расчётов. 'settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
+    --адрес места расчётов. 'Settings' - как в настройках кассы, 'customer' - брать из адреса заказчика, 'custom' произвольный адрес
     billing_address        varchar(8),
     custom_billing_address varchar(500),
     foreign key (selected_kassa_id) references kassa(id),
@@ -1879,4 +1879,185 @@ create table vatinvoiceout_files (
                                    file_id bigint not null,
                                    foreign key (file_id) references files (id) ON DELETE CASCADE,
                                    foreign key (vatinvoiceout_id ) references vatinvoiceout (id) ON DELETE CASCADE
+);
+
+-- Справочник "Статьи расходов"
+create table sprav_expenditure_items(
+                                      id bigserial primary key not null,
+                                      master_id  bigint not null,
+                                      company_id bigint not null,
+                                      creator_id bigint,
+                                      changer_id bigint,
+                                      date_time_created timestamp with time zone not null,
+                                      date_time_changed timestamp with time zone,
+                                      type varchar(30) not null, --return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. кассами), other_opex (другие операционные)
+                                      is_deleted boolean,
+                                      is_completed boolean,
+                                      foreign key (master_id) references users(id),
+                                      foreign key (creator_id) references users(id),
+                                      foreign key (changer_id) references users(id),
+                                      foreign key (company_id) references companies(id)
+                                    );
+
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (40,'Статьи расходов','expenditure',1,'sprav_expenditure_items','Статьи расходов');
+
+insert into permissions (id,name,description,document_name,document_id) values
+(497,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Статьи расходов',40),
+(498,'Создание документов по всем предприятиям','Возможность создавать новые документы "Статьи расходов" по всем предприятиям','Статьи расходов',40),
+(499,'Создание документов своего предприятия','Возможность создавать новые документы "Статьи расходов" своего предприятия','Статьи расходов',40),
+(500,'Удаление документов по всем предприятиям','Возможность удалить документ "Статьи расходов" в архив по всем предприятиям','Статьи расходов',40),
+(501,'Удаление документов своего предприятия','Возможность удалить документ "Статьи расходов" своего предприятия в архив','Статьи расходов',40),
+(502,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Статьи расходов" по всем предприятиям','Статьи расходов',40),
+(503,'Просмотр документов своего предприятия','Прсмотр информации в документах "Статьи расходов" своего предприятия','Статьи расходов',40),
+(504,'Редактирование документов по всем предприятиям','Редактирование документов "Статьи расходов" по всем предприятиям','Статьи расходов',40),
+(505,'Редактирование документов своего предприятия','Редактирование документов "Статьи расходов" своего предприятия','Статьи расходов',40);
+
+alter table sprav_expenditure_items add column name varchar(60) not null;
+
+alter table paymentin add column payment_account_id bigint;
+alter table paymentin add constraint payment_account_id_fkey foreign key (payment_account_id) references companies_payment_accounts (id);
+
+
+create table paymentout(
+                         id bigserial primary key not null,
+                         master_id  bigint not null,
+                         creator_id bigint not null,
+                         changer_id bigint,
+                         date_time_created timestamp with time zone not null,
+                         date_time_changed timestamp with time zone,
+                         company_id bigint not null,
+                         cagent_id bigint not null,
+                         status_id bigint,
+                         doc_number int not null,
+                         description varchar(2048),
+                         summ  numeric(15,3) not null,
+                         nds  numeric(15,3) not null,
+                         payment_account_id bigint not null,
+                         expenditure_id bigint not null,
+                         is_deleted boolean,
+                         is_completed boolean,
+                         uid varchar (36),
+                         linked_docs_group_id bigint,
+                         income_number varchar(64),
+                         income_number_date date,
+
+                         foreign key (master_id) references users(id),
+                         foreign key (creator_id) references users(id),
+                         foreign key (changer_id) references users(id),
+                         foreign key (company_id) references companies(id),
+                         foreign key (payment_account_id) references companies_payment_accounts(id),
+                         foreign key (expenditure_id) references sprav_expenditure_items(id),
+                         foreign key (cagent_id) references cagents(id),
+                         foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                         foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column paymentout_id bigint;
+
+alter table linked_docs add constraint paymentout_id_fkey foreign key (paymentout_id) references paymentout (id);
+
+create table settings_paymentout (
+                                   id                          bigserial primary key not null,
+                                   master_id                   bigint not null,
+                                   company_id                  bigint not null,
+                                   user_id                     bigint  UNIQUE not null,
+                                   cagent_id                   bigint,
+                                   autocreate                  boolean,
+                                   status_id_on_complete       bigint,
+                                   foreign key (master_id) references users(id),
+                                   foreign key (cagent_id) references cagents(id),
+                                   foreign key (user_id) references users(id),
+                                   foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                   foreign key (company_id) references companies(id)
+);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(506,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Исходящий платеж',34),
+(507,'Создание документов по всем предприятиям','Возможность создавать новые документы "Исходящий платеж" по всем предприятиям','Исходящий платеж',34),
+(508,'Создание документов своего предприятия','Возможность создавать новые документы "Исходящий платеж" своего предприятия','Исходящий платеж',34),
+(509,'Удаление документов по всем предприятиям','Возможность удалить документ "Исходящий платеж" в архив по всем предприятиям','Исходящий платеж',34),
+(510,'Удаление документов своего предприятия','Возможность удалить документ "Исходящий платеж" своего предприятия в архив','Исходящий платеж',34),
+(511,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Исходящий платеж" по всем предприятиям','Исходящий платеж',34),
+(512,'Просмотр документов своего предприятия','Прсмотр информации в документах "Исходящий платеж" своего предприятия','Исходящий платеж',34),
+(513,'Редактирование документов по всем предприятиям','Редактирование документов "Исходящий платеж" по всем предприятиям','Исходящий платеж',34),
+(514,'Редактирование документов своего предприятия','Редактирование документов "Исходящий платеж" своего предприятия','Исходящий платеж',34),
+(515,'Проведение документов по всем предприятиям','Проведение документов "Исходящий платеж" по всем предприятиям','Исходящий платеж',34),
+(516,'Проведение документов своего предприятия','Проведение документов "Исходящий платеж" своего предприятия','Исходящий платеж',34);
+
+create table paymentout_files (
+                                paymentout_id bigint not null,
+                                file_id bigint not null,
+                                foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                foreign key (paymentout_id ) references paymentout (id) ON DELETE CASCADE
+);
+
+
+create table orderout(
+                       id bigserial primary key not null,
+                       master_id  bigint not null,
+                       creator_id bigint not null,
+                       changer_id bigint,
+                       date_time_created timestamp with time zone not null,
+                       date_time_changed timestamp with time zone,
+                       company_id bigint not null,
+                       cagent_id bigint not null,
+                       status_id bigint,
+                       doc_number int not null,
+                       description varchar(2048),
+                       summ  numeric(15,3) not null,
+                       nds  numeric(15,3) not null,
+                       expenditure_id bigint not null,
+                       is_deleted boolean,
+                       is_completed boolean,
+                       uid varchar (36),
+                       linked_docs_group_id bigint,
+
+                       foreign key (master_id) references users(id),
+                       foreign key (creator_id) references users(id),
+                       foreign key (changer_id) references users(id),
+                       foreign key (expenditure_id) references sprav_expenditure_items(id),
+                       foreign key (company_id) references companies(id),
+                       foreign key (cagent_id) references cagents(id),
+                       foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                       foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column orderout_id bigint;
+
+alter table linked_docs add constraint orderout_id_fkey foreign key (orderout_id) references orderout (id);
+
+create table settings_orderout (
+                                 id                          bigserial primary key not null,
+                                 master_id                   bigint not null,
+                                 company_id                  bigint not null,
+                                 user_id                     bigint  UNIQUE not null,
+                                 cagent_id                   bigint,
+                                 autocreate                  boolean,
+                                 status_id_on_complete       bigint,
+                                 foreign key (master_id) references users(id),
+                                 foreign key (cagent_id) references cagents(id),
+                                 foreign key (user_id) references users(id),
+                                 foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                 foreign key (company_id) references companies(id)
+);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(517,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Расходный ордер',36),
+(518,'Создание документов по всем предприятиям','Возможность создавать новые документы "Расходный ордер" по всем предприятиям','Расходный ордер',36),
+(519,'Создание документов своего предприятия','Возможность создавать новые документы "Расходный ордер" своего предприятия','Расходный ордер',36),
+(520,'Удаление документов по всем предприятиям','Возможность удалить документ "Расходный ордер" в архив по всем предприятиям','Расходный ордер',36),
+(521,'Удаление документов своего предприятия','Возможность удалить документ "Расходный ордер" своего предприятия в архив','Расходный ордер',36),
+(522,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Расходный ордер" по всем предприятиям','Расходный ордер',36),
+(523,'Просмотр документов своего предприятия','Прсмотр информации в документах "Расходный ордер" своего предприятия','Расходный ордер',36),
+(524,'Редактирование документов по всем предприятиям','Редактирование документов "Расходный ордер" по всем предприятиям','Расходный ордер',36),
+(525,'Редактирование документов своего предприятия','Редактирование документов "Расходный ордер" своего предприятия','Расходный ордер',36),
+(526,'Проведение документов по всем предприятиям','Проведение документов "Расходный ордер" по всем предприятиям','Расходный ордер',36),
+(527,'Проведение документов своего предприятия','Проведение документов "Расходный ордер" своего предприятия','Расходный ордер',36);
+
+create table orderout_files (
+                              orderout_id bigint not null,
+                              file_id bigint not null,
+                              foreign key (file_id) references files (id) ON DELETE CASCADE,
+                              foreign key (orderout_id ) references orderout (id) ON DELETE CASCADE
 );
