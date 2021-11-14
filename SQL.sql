@@ -2061,3 +2061,75 @@ create table orderout_files (
                               foreign key (file_id) references files (id) ON DELETE CASCADE,
                               foreign key (orderout_id ) references orderout (id) ON DELETE CASCADE
 );
+
+
+create table vatinvoicein(
+                           id bigserial primary key not null,
+                           master_id  bigint not null,
+                           creator_id bigint not null,
+                           changer_id bigint,
+                           date_time_created timestamp with time zone not null,
+                           date_time_changed timestamp with time zone,
+                           company_id bigint not null,
+                           cagent_id bigint not null,
+                           status_id bigint,
+                           doc_number int not null,
+                           description varchar(2048),
+                           parent_tablename  varchar (16) not null, --orderout, paymentout, acceptance
+                           orderout_id bigint,
+                           paymentout_id bigint,
+                           acceptance_id bigint,
+                           is_deleted boolean,
+                           is_completed boolean,
+                           uid varchar (36),
+                           linked_docs_group_id bigint,
+                           paydoc_number varchar(64),
+                           paydoc_date date,
+                           foreign key (master_id) references users(id),
+                           foreign key (creator_id) references users(id),
+                           foreign key (changer_id) references users(id),
+                           foreign key (company_id) references companies(id),
+                           foreign key (cagent_id) references cagents(id),
+                           foreign key (orderout_id) references orderout(id),
+                           foreign key (paymentout_id) references paymentout(id),
+                           foreign key (acceptance_id) references acceptance(id),
+                           foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                           foreign key (status_id) references sprav_status_dock (id) ON DELETE SET NULL
+);
+
+alter table linked_docs add column vatinvoicein_id bigint;
+
+alter table linked_docs add constraint vatinvoicein_id_fkey foreign key (vatinvoicein_id) references vatinvoicein (id);
+
+
+create table settings_vatinvoicein (
+                                     id                          bigserial primary key not null,
+                                     master_id                   bigint not null,
+                                     company_id                  bigint not null,
+                                     user_id                     bigint  UNIQUE not null,
+                                     status_id_on_complete       bigint,
+                                     foreign key (master_id) references users(id),
+                                     foreign key (user_id) references users(id),
+                                     foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                     foreign key (company_id) references companies(id)
+);
+
+insert into permissions (id,name,description,document_name,document_id) values
+(528,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Счёт-фактура полученный',38),
+(529,'Создание документов по всем предприятиям','Возможность создавать новые документы "Счёт-фактура полученный" по всем предприятиям','Счёт-фактура полученный',38),
+(530,'Создание документов своего предприятия','Возможность создавать новые документы "Счёт-фактура полученный" своего предприятия','Счёт-фактура полученный',38),
+(531,'Удаление документов по всем предприятиям','Возможность удалить документ "Счёт-фактура полученный" в архив по всем предприятиям','Счёт-фактура полученный',38),
+(532,'Удаление документов своего предприятия','Возможность удалить документ "Счёт-фактура полученный" своего предприятия в архив','Счёт-фактура полученный',38),
+(533,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Счёт-фактура полученный" по всем предприятиям','Счёт-фактура полученный',38),
+(534,'Просмотр документов своего предприятия','Прсмотр информации в документах "Счёт-фактура полученный" своего предприятия','Счёт-фактура полученный',38),
+(535,'Редактирование документов по всем предприятиям','Редактирование документов "Счёт-фактура полученный" по всем предприятиям','Счёт-фактура полученный',38),
+(536,'Редактирование документов своего предприятия','Редактирование документов "Счёт-фактура полученный" своего предприятия','Счёт-фактура полученный',38),
+(537,'Проведение документов по всем предприятиям','Проведение документов "Счёт-фактура полученный" по всем предприятиям','Счёт-фактура полученный',38),
+(538,'Проведение документов своего предприятия','Проведение документов "Счёт-фактура полученный" своего предприятия','Счёт-фактура полученный',38);
+
+create table vatinvoicein_files (
+                                  vatinvoicein_id bigint not null,
+                                  file_id bigint not null,
+                                  foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                  foreign key (vatinvoicein_id ) references vatinvoicein (id) ON DELETE CASCADE
+);
