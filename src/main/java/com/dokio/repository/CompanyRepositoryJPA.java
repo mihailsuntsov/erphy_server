@@ -18,12 +18,14 @@ import com.dokio.message.request.CompaniesPaymentAccountsForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -39,6 +41,8 @@ import java.util.*;
 
 @Repository("CompanyRepositoryJPA")
 public class CompanyRepositoryJPA {
+
+    Logger logger = Logger.getLogger("PaymentoutRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -795,6 +799,45 @@ public class CompanyRepositoryJPA {
             newDocId=Long.valueOf(query2.getSingleResult().toString());
             return newDocId;
         } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")// отдаёт список касс предприятия
+    public List<BoxofficeListJSON> getBoxofficesList(Long companyId) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery =   " select " +
+                " ap.id," +
+                " ap.name," +
+                " ap.description," +
+                " coalesce(ap.is_main,false)" +
+                " from " +
+                " sprav_boxoffice ap " +
+                " where ap.master_id = " + myMasterId +
+                " and ap.company_id = " + companyId +
+                " and coalesce(ap.is_deleted,false) != true";
+
+        stringQuery = stringQuery + " order by ap.id asc, ap.name asc ";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<BoxofficeListJSON> returnList = new ArrayList<>();
+
+            for(Object[] obj:queryList){
+                BoxofficeListJSON doc=new BoxofficeListJSON();
+                doc.setId(Long.parseLong(                               obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                doc.setDescription((String)                             obj[2]);
+                doc.setIs_main((Boolean)                                obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getBoxofficesList. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

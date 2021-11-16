@@ -82,7 +82,7 @@ public class SpravExpenditureRepositoryJPA {
                     "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.name as name, " +
-                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. кассами), other_opex (другие операционные)
+                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
                     "           p.is_completed as is_completed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort  " +
@@ -209,7 +209,7 @@ public class SpravExpenditureRepositoryJPA {
                     "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.name as name, " +
-                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. кассами), other_opex (другие операционные)
+                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
                     "           p.is_completed as is_completed " +
                     "           from sprav_expenditure_items p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +

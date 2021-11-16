@@ -1890,7 +1890,7 @@ create table sprav_expenditure_items(
                                       changer_id bigint,
                                       date_time_created timestamp with time zone not null,
                                       date_time_changed timestamp with time zone,
-                                      type varchar(30) not null, --return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. кассами), other_opex (другие операционные)
+                                      type varchar(30) not null, --return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
                                       is_deleted boolean,
                                       is_completed boolean,
                                       foreign key (master_id) references users(id),
@@ -2133,3 +2133,43 @@ create table vatinvoicein_files (
                                   foreign key (file_id) references files (id) ON DELETE CASCADE,
                                   foreign key (vatinvoicein_id ) references vatinvoicein (id) ON DELETE CASCADE
 );
+
+
+create table sprav_boxoffice (
+                               id                          bigserial primary key not null,
+                               master_id                   bigint not null,
+                               company_id                  bigint not null,
+                               creator_id                  bigint,
+                               changer_id                  bigint,
+                               date_time_created timestamp with time zone not null,
+                               date_time_changed timestamp with time zone,
+                               name                        varchar (64) not null,
+                               description                 varchar(2048),
+                               is_main                     boolean,
+                               is_deleted                  boolean,
+                               foreign key (master_id) references users(id),
+                               foreign key (creator_id) references users(id),
+                               foreign key (changer_id) references users(id),
+                               foreign key (company_id) references companies(id)
+);
+
+insert into sprav_boxoffice(master_id,company_id,date_time_created,name,description,is_main)
+values (4,1,now(),'Главная','Главная касса предприятия',true);
+
+alter table paymentout alter column cagent_id drop not null;
+
+alter table paymentout add column moving_type varchar (10);
+alter table paymentout add column boxoffice_id bigint;
+alter table paymentout add constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
+alter table paymentout add column payment_account_to_id bigint;
+alter table paymentout add constraint payment_account_to_id_fkey foreign key (payment_account_to_id) references companies_payment_accounts (id);
+
+
+alter table orderout alter column cagent_id drop not null;
+alter table orderout add column moving_type varchar (10);
+alter table orderout add column boxoffice_id bigint;
+alter table orderout add constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
+alter table orderout add column boxoffice_to_id bigint;
+alter table orderout add constraint boxoffice_to_id_fkey foreign key (boxoffice_to_id) references sprav_boxoffice (id);
+alter table orderout add column payment_account_to_id bigint;
+alter table orderout add constraint payment_account_to_id_fkey foreign key (payment_account_to_id) references companies_payment_accounts (id);

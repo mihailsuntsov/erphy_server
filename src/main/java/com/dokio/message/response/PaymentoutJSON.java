@@ -47,6 +47,34 @@ public class PaymentoutJSON {
     private Long expenditure_id;// id вида расходов
     private String expenditure;//  вид расходов
 
+    private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
+    private Long boxoffice_id; // касса предприятия (не путать с ККМ!)
+    private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
+
+    public String getMoving_type() {
+        return moving_type;
+    }
+
+    public void setMoving_type(String moving_type) {
+        this.moving_type = moving_type;
+    }
+
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
+
+    public Long getPayment_account_to_id() {
+        return payment_account_to_id;
+    }
+
+    public void setPayment_account_to_id(Long payment_account_to_id) {
+        this.payment_account_to_id = payment_account_to_id;
+    }
+
     public Long getExpenditure_id() {
         return expenditure_id;
     }

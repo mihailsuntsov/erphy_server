@@ -304,10 +304,13 @@ public class PaymentoutRepositoryJPA {
                     "           p.is_completed as is_completed, " +
                     "           coalesce(p.income_number,'') as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
-                    "           p.payment_account_id as payment_account_id,"+
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +
-                    "           p.expenditure_id as expenditure_id,"+
-                    "           sei.name as expenditure" +
+                    "           p.payment_account_id as payment_account_id,"+ // id банковский счёт препдриятия, откуда перемещаем денежные средства"
+                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
+                    "           p.expenditure_id as expenditure_id,"+ // статья расходов
+                    "           sei.name as expenditure," +
+                    "           p.moving_type as moving_type," +   // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
+                    "           p.boxoffice_id as boxoffice_id," +  // касса предприятия (не путать с ККМ!)
+                    "           p.payment_account_to_id as payment_account_to_id" + //  банковский счёт препдриятия, куда перемещаем денежные средства"
 
                     "           from paymentout p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -348,7 +351,7 @@ public class PaymentoutRepositoryJPA {
                     returnObj.setDescription((String)                       obj[12]);
                     returnObj.setSumm((BigDecimal)                          obj[13]);
                     returnObj.setNds((BigDecimal)                           obj[14]);
-                    returnObj.setCagent_id(Long.parseLong(                  obj[15].toString()));
+                    returnObj.setCagent_id(    obj[15]!=null?Long.parseLong(obj[15].toString()):null);
                     returnObj.setCagent((String)                            obj[16]);
                     returnObj.setStatus_id(obj[17]!=null?Long.parseLong(    obj[17].toString()):null);
                     returnObj.setStatus_name((String)                       obj[18]);
@@ -362,6 +365,9 @@ public class PaymentoutRepositoryJPA {
                     returnObj.setPayment_account((String)                   obj[26]);
                     returnObj.setExpenditure_id(Long.parseLong(             obj[27].toString()));
                     returnObj.setExpenditure((String)                       obj[28]);
+                    returnObj.setMoving_type((String)                       obj[29]);
+                    returnObj.setBoxoffice_id( obj[30]!=null?Long.parseLong(obj[30].toString()):null);
+                    returnObj.setPayment_account_to_id(obj[31]!=null?Long.parseLong(obj[31].toString()):null);
 
                 }
                 return returnObj;
@@ -462,8 +468,11 @@ public class PaymentoutRepositoryJPA {
                         " status_id,"+//статус
                         " linked_docs_group_id," +// id группы связанных документов
                         " summ,"+
-                        " payment_account_id,"+
-                        " expenditure_id,"+
+                        " payment_account_id,"+// расчетный счет, с которого перемещаем деньги
+                        " expenditure_id,"+// вид расходов
+                        " moving_type," + // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
+                        " boxoffice_id," + // касса предприятия (не путать с ККМ!)
+                        " payment_account_to_id," +  //  банковский счёт препдриятия, куда перемещаем денежные средства
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -481,12 +490,16 @@ public class PaymentoutRepositoryJPA {
                         request.getSumm()+"," + //наименование заказа поставщику
                         request.getPayment_account_id()+"," + //банковский счет
                         request.getExpenditure_id()+"," + // расхода вид
+                        ":moving_type," +
+                        request.getBoxoffice_id()+"," +
+                        request.getPayment_account_to_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
                     query.setParameter("income_number",request.getIncome_number());
+                    query.setParameter("moving_type",request.getMoving_type());
                     if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                         query.setParameter("income_number_date",request.getIncome_number_date());
                     query.executeUpdate();
@@ -524,33 +537,34 @@ public class PaymentoutRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(34L,"514") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentout",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             String stringQuery;
             stringQuery =   " update paymentout set " +
                     " changer_id = " + myId + ", "+
+                    " cagent_id = " + request.getCagent_id() + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
-                    " income_number = :income_number," +// входящий номер
-                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
+//                    " income_number = :income_number," +// входящий номер
+                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет с которого переводят
+                    " moving_type = :moving_type" + "," +// тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
+                    " boxoffice_id = " + request.getBoxoffice_id()+ "," + // касса предприятия (не путать с ККМ!)
+                    " payment_account_to_id = " + request.getPayment_account_to_id() + "," +//  банковский счёт препдриятия, куда перемещаем денежные средства
                     " expenditure_id = " + request.getExpenditure_id()+"," + // вид расхода
-                    ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
+//                    ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
             try
             {
-                Date dateNow = new Date();
-                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
-                query.setParameter("income_number",request.getIncome_number());
-                if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
-                    query.setParameter("income_number_date",request.getIncome_number_date());
+                query.setParameter("moving_type",request.getMoving_type());
+//                query.setParameter("income_number",request.getIncome_number());
+//                if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
+//                    query.setParameter("income_number_date",request.getIncome_number_date());
                 query.executeUpdate();
 
                 return 1;
