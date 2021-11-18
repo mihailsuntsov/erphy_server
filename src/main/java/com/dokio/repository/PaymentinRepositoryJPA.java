@@ -290,7 +290,9 @@ public class PaymentinRepositoryJPA {
                     "           coalesce(p.income_number,'') as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account" +
+                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +
+                    "           p.internal as internal" +
+
 
                     "           from paymentin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -330,7 +332,7 @@ public class PaymentinRepositoryJPA {
                     returnObj.setDescription((String)                       obj[12]);
                     returnObj.setSumm((BigDecimal)                          obj[13]);
                     returnObj.setNds((BigDecimal)                           obj[14]);
-                    returnObj.setCagent_id(Long.parseLong(                  obj[15].toString()));
+                    returnObj.setCagent_id(obj[15]!=null?Long.parseLong(    obj[15].toString()):null);
                     returnObj.setCagent((String)                            obj[16]);
                     returnObj.setStatus_id(obj[17]!=null?Long.parseLong(    obj[17].toString()):null);
                     returnObj.setStatus_name((String)                       obj[18]);
@@ -342,6 +344,8 @@ public class PaymentinRepositoryJPA {
                     returnObj.setIncome_number_date((String)                obj[24]);
                     returnObj.setPayment_account_id(obj[25]!=null?Long.parseLong(obj[25].toString()):null);
                     returnObj.setPayment_account((String)                   obj[26]);
+                    returnObj.setInternal((Boolean)                         obj[27]);
+
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -398,33 +402,33 @@ public class PaymentinRepositoryJPA {
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-                if(request.getCagent_id()==null){
-                    try{
-                        CagentsForm cagentForm = new CagentsForm();
-                        cagentForm.setName(request.getNew_cagent());
-                        cagentForm.setCompany_id(request.getCompany_id());
-                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Счёта поставщика №"+doc_number.toString());
-                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                        cagentForm.setTelephone("");
-                        cagentForm.setEmail("");
-                        cagentForm.setZip_code("");
-                        cagentForm.setCountry_id(null);
-                        cagentForm.setRegion_id(null);
-                        cagentForm.setCity_id(null);
-                        cagentForm.setStreet("");
-                        cagentForm.setHome("");
-                        cagentForm.setFlat("");
-                        cagentForm.setAdditional_address("");
-                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
-                    }
-                    catch (Exception e) {
-                        logger.error("Exception in method insertPaymentin on creating Cagent.", e);
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
+//                if(request.getCagent_id()==null){
+//                    try{
+//                        CagentsForm cagentForm = new CagentsForm();
+//                        cagentForm.setName(request.getNew_cagent());
+//                        cagentForm.setCompany_id(request.getCompany_id());
+//                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+//                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+//                        cagentForm.setDescription("Автоматическое создание из Счёта поставщика №"+doc_number.toString());
+//                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+//                        cagentForm.setTelephone("");
+//                        cagentForm.setEmail("");
+//                        cagentForm.setZip_code("");
+//                        cagentForm.setCountry_id(null);
+//                        cagentForm.setRegion_id(null);
+//                        cagentForm.setCity_id(null);
+//                        cagentForm.setStreet("");
+//                        cagentForm.setHome("");
+//                        cagentForm.setFlat("");
+//                        cagentForm.setAdditional_address("");
+//                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+//                    }
+//                    catch (Exception e) {
+//                        logger.error("Exception in method insertPaymentin on creating Cagent.", e);
+//                        e.printStackTrace();
+//                        return null;
+//                    }
+//                }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 stringQuery = "insert into paymentin (" +
@@ -442,6 +446,7 @@ public class PaymentinRepositoryJPA {
                         " linked_docs_group_id," +// id группы связанных документов
                         " summ,"+
                         " payment_account_id,"+
+                        " internal,"+ //внутренний платеж (перемещение денег внутри предприятия)
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -458,6 +463,7 @@ public class PaymentinRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         request.getSumm()+"," + //наименование заказа поставщику
                         request.getPayment_account_id()+"," + //банковский счет
+                        request.getInternal()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -511,6 +517,7 @@ public class PaymentinRepositoryJPA {
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
                     " income_number = :income_number," +// входящий номер
+                    " internal = " + request.getInternal() + "," +//внутренний платеж (перемещение денег внутри предприятия)
                     " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
                     ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +

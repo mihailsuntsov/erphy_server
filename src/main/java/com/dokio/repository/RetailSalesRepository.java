@@ -144,6 +144,12 @@ public class RetailSalesRepository {
                 } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and p.company_id=" + companyId;
+            }
+            if (departmentId > 0) {
+                stringQuery = stringQuery + " and p.department_id=" + departmentId;
+            }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
@@ -155,13 +161,6 @@ public class RetailSalesRepository {
                         " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
-            if (companyId > 0) {
-                stringQuery = stringQuery + " and p.company_id=" + companyId;
-            }
-            if (departmentId > 0) {
-                stringQuery = stringQuery + " and p.department_id=" + departmentId;
-            }
-
 
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;

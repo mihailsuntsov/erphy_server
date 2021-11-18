@@ -35,6 +35,15 @@ public class PaymentinForm {
     private String income_number;
     private String income_number_date;
     private Long payment_account_id;//id расчтёного счёта
+    private Boolean internal; // внутренний платеж
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
 
     public Long getPayment_account_id() {
         return payment_account_id;

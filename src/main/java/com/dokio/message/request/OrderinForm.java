@@ -31,6 +31,24 @@ public class OrderinForm {
     private String parent_uid;// uid исходящего (родительского) документа
     private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
+    private Boolean internal;
+    private Long boxoffice_id;// касса предприятия (не ККМ!)
+
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
 
     public Long getId() {
         return id;

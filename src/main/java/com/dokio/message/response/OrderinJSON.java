@@ -40,6 +40,24 @@ public class OrderinJSON {
     private Boolean is_completed;               // проведено
     private String uid;
     private BigDecimal summ;
+    private Boolean internal; // внутренний платеж
+    private Long boxoffice_id;
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
+
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
 
     public Long getId() {
         return id;

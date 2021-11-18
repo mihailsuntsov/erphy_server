@@ -285,7 +285,9 @@ public class OrderinRepositoryJPA {
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           p.uid as uid, " +
-                    "           p.is_completed as is_completed " +
+                    "           p.is_completed as is_completed, " +
+                    "           p.internal as internal," +
+                    "           p.boxoffice_id as boxoffice_id" +
 
                     "           from orderin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -324,7 +326,7 @@ public class OrderinRepositoryJPA {
                     returnObj.setDescription((String)                       obj[12]);
                     returnObj.setSumm((BigDecimal)                          obj[13]);
                     returnObj.setNds((BigDecimal)                           obj[14]);
-                    returnObj.setCagent_id(Long.parseLong(                  obj[15].toString()));
+                    returnObj.setCagent_id(obj[15]!=null?Long.parseLong(    obj[15].toString()):null);
                     returnObj.setCagent((String)                            obj[16]);
                     returnObj.setStatus_id(obj[17]!=null?Long.parseLong(    obj[17].toString()):null);
                     returnObj.setStatus_name((String)                       obj[18]);
@@ -332,6 +334,8 @@ public class OrderinRepositoryJPA {
                     returnObj.setStatus_description((String)                obj[20]);
                     returnObj.setUid((String)                               obj[21]);
                     returnObj.setIs_completed((Boolean)                     obj[22]);
+                    returnObj.setInternal((Boolean)                         obj[23]);
+                    returnObj.setBoxoffice_id(Long.parseLong(               obj[24].toString()));
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -388,33 +392,33 @@ public class OrderinRepositoryJPA {
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-                if(request.getCagent_id()==null){
-                    try{
-                        CagentsForm cagentForm = new CagentsForm();
-                        cagentForm.setName(request.getNew_cagent());
-                        cagentForm.setCompany_id(request.getCompany_id());
-                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Счёта поставщика №"+doc_number.toString());
-                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-                        cagentForm.setTelephone("");
-                        cagentForm.setEmail("");
-                        cagentForm.setZip_code("");
-                        cagentForm.setCountry_id(null);
-                        cagentForm.setRegion_id(null);
-                        cagentForm.setCity_id(null);
-                        cagentForm.setStreet("");
-                        cagentForm.setHome("");
-                        cagentForm.setFlat("");
-                        cagentForm.setAdditional_address("");
-                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
-                    }
-                    catch (Exception e) {
-                        logger.error("Exception in method insertOrderin on creating Cagent.", e);
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
+//                if(request.getCagent_id()==null){
+//                    try{
+//                        CagentsForm cagentForm = new CagentsForm();
+//                        cagentForm.setName(request.getNew_cagent());
+//                        cagentForm.setCompany_id(request.getCompany_id());
+//                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
+//                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
+//                        cagentForm.setDescription("Автоматическое создание из Счёта поставщика №"+doc_number.toString());
+//                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
+//                        cagentForm.setTelephone("");
+//                        cagentForm.setEmail("");
+//                        cagentForm.setZip_code("");
+//                        cagentForm.setCountry_id(null);
+//                        cagentForm.setRegion_id(null);
+//                        cagentForm.setCity_id(null);
+//                        cagentForm.setStreet("");
+//                        cagentForm.setHome("");
+//                        cagentForm.setFlat("");
+//                        cagentForm.setAdditional_address("");
+//                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
+//                    }
+//                    catch (Exception e) {
+//                        logger.error("Exception in method insertOrderin on creating Cagent.", e);
+//                        e.printStackTrace();
+//                        return null;
+//                    }
+//                }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 stringQuery = "insert into orderin (" +
@@ -429,6 +433,8 @@ public class OrderinRepositoryJPA {
                         " status_id,"+//статус
                         " linked_docs_group_id," +// id группы связанных документов
                         " summ,"+
+                        " internal,"+ //внутренний платеж (перемещение денег внутри предприятия)
+                        " boxoffice_id," + // касса предприятия (это не ККМ, это именно касса предприятия, обычно в 99% случаев, она одна. Исключение - обособленные подразделения)
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -442,6 +448,8 @@ public class OrderinRepositoryJPA {
                         request.getStatus_id()  + ", "+//статус
                         linkedDocsGroupId+"," + // id группы связанных документов
                         request.getSumm()+"," + //наименование заказа поставщику
+                        request.getInternal()+"," +
+                        request.getBoxoffice_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -492,6 +500,8 @@ public class OrderinRepositoryJPA {
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
                     " is_completed = " + request.getIs_completed() + "," +
+                    " internal = " + request.getInternal() + "," +//внутренний платеж (перемещение денег внутри предприятия)
+                    " boxoffice_id = " + request.getBoxoffice_id() + "," +// касса предприятия (это не ККМ, это именно касса предприятия, обычно в 99% случаев, она одна. Исключение - обособленные подразделения)
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId()+

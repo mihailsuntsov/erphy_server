@@ -725,6 +725,7 @@ create table inventory_files (
 );
 
 CREATE INDEX CONCURRENTLY sales_quantity_index ON sales_table (quantity);
+CREATE INDEX retail_sales_id_index ON public.retail_sales_product USING btree (retail_sales_id);
 ***********************************************************************************************************************************************
 ***********************************************************************************************************************************************
 ***********************************************************************************************************************************************
@@ -1678,8 +1679,8 @@ create table paymentin(
                         status_id bigint,
                         doc_number int not null,
                         description varchar(2048),
-                        summ  numeric(15,3) not null,
-                        nds  numeric(15,3) not null,
+                        summ  numeric(15,2) not null,
+                        nds  numeric(15,2) not null,
                         is_deleted boolean,
                         is_completed boolean,
                         uid varchar (36),
@@ -1748,8 +1749,8 @@ create table orderin(
                       status_id bigint,
                       doc_number int not null,
                       description varchar(2048),
-                      summ  numeric(15,3) not null,
-                      nds  numeric(15,3) not null,
+                      summ  numeric(15,2) not null,
+                      nds  numeric(15,2) not null,
                       is_deleted boolean,
                       is_completed boolean,
                       uid varchar (36),
@@ -1931,8 +1932,8 @@ create table paymentout(
                          status_id bigint,
                          doc_number int not null,
                          description varchar(2048),
-                         summ  numeric(15,3) not null,
-                         nds  numeric(15,3) not null,
+                         summ  numeric(15,2) not null,
+                         nds  numeric(15,2) not null,
                          payment_account_id bigint not null,
                          expenditure_id bigint not null,
                          is_deleted boolean,
@@ -2005,8 +2006,8 @@ create table orderout(
                        status_id bigint,
                        doc_number int not null,
                        description varchar(2048),
-                       summ  numeric(15,3) not null,
-                       nds  numeric(15,3) not null,
+                       summ  numeric(15,2) not null,
+                       nds  numeric(15,2) not null,
                        expenditure_id bigint not null,
                        is_deleted boolean,
                        is_completed boolean,
@@ -2134,7 +2135,6 @@ create table vatinvoicein_files (
                                   foreign key (vatinvoicein_id ) references vatinvoicein (id) ON DELETE CASCADE
 );
 
-
 create table sprav_boxoffice (
                                id                          bigserial primary key not null,
                                master_id                   bigint not null,
@@ -2154,7 +2154,7 @@ create table sprav_boxoffice (
 );
 
 insert into sprav_boxoffice(master_id,company_id,date_time_created,name,description,is_main)
-values (4,1,now(),'Главная','Главная касса предприятия',true);
+--values (4,1,now(),'Главная','Главная касса предприятия',true);
 
 alter table paymentout alter column cagent_id drop not null;
 
@@ -2164,12 +2164,72 @@ alter table paymentout add constraint boxoffice_id_fkey foreign key (boxoffice_i
 alter table paymentout add column payment_account_to_id bigint;
 alter table paymentout add constraint payment_account_to_id_fkey foreign key (payment_account_to_id) references companies_payment_accounts (id);
 
+alter table orderout alter  column cagent_id drop not null;
+alter table orderout add    column moving_type varchar (10);
+alter table orderout add    column boxoffice_id bigint;
+alter table orderout add    constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
+alter table orderout add    column boxoffice_to_id bigint;
+alter table orderout add    constraint boxoffice_to_id_fkey foreign key (boxoffice_to_id) references sprav_boxoffice (id);
+alter table orderout add    column payment_account_to_id bigint;
+alter table orderout add    constraint payment_account_to_id_fkey foreign key (payment_account_to_id) references companies_payment_accounts (id);
 
-alter table orderout alter column cagent_id drop not null;
-alter table orderout add column moving_type varchar (10);
-alter table orderout add column boxoffice_id bigint;
-alter table orderout add constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
-alter table orderout add column boxoffice_to_id bigint;
-alter table orderout add constraint boxoffice_to_id_fkey foreign key (boxoffice_to_id) references sprav_boxoffice (id);
-alter table orderout add column payment_account_to_id bigint;
-alter table orderout add constraint payment_account_to_id_fkey foreign key (payment_account_to_id) references companies_payment_accounts (id);
+alter table orderin alter column cagent_id drop not null;
+alter table orderin add   column internal boolean;
+alter table orderin add   column boxoffice_id bigint;
+alter table orderin add   constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
+alter table orderin alter column boxoffice_id set not null;
+
+alter table paymentin alter column cagent_id drop not null;
+alter table paymentin add   column internal boolean;
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (41,'Корректировка','correction',1,'correction','Корректировка');
+
+create table correction (
+                               id                           bigserial primary key not null,
+                               master_id                    bigint not null,
+                               company_id                   bigint not null,
+                               creator_id                   bigint,
+                               changer_id                   bigint,
+                               date_time_created            timestamp with time zone not null,
+                               date_time_changed            timestamp with time zone,
+                               type                         varchar(10) not null, --boxoffice - коррекция кассы, cagent - коррекция долгов, account - коррекция расчётного счёта
+                               summ                         numeric(15,2) not null,
+                               boxoffice_id                 bigint,
+                               payment_account_id           bigint,
+                               cagent_id                    bigint,
+                               description                  varchar(2048),
+                               is_completed                 boolean,
+                               is_deleted                   boolean,
+                               uid                          varchar (36) not null,
+                               linked_docs_group_id         bigint,
+                               foreign key (master_id)  references users(id),
+                               foreign key (creator_id) references users(id),
+                               foreign key (changer_id) references users(id),
+                               foreign key (company_id) references companies(id),
+                               foreign key (boxoffice_id) references sprav_boxoffice(id),
+                               foreign key (payment_account_id) references companies_payment_accounts(id),
+                               foreign key (cagent_id) references cagents(id)
+);
+
+
+insert into permissions (id,name,description,document_name,document_id) values
+(539,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Корректировка',41),
+(540,'Создание документов по всем предприятиям','Возможность создавать новые документы "Корректировка" по всем предприятиям','Корректировка',41),
+(541,'Создание документов своего предприятия','Возможность создавать новые документы "Корректировка" своего предприятия','Корректировка',41),
+(542,'Удаление документов по всем предприятиям','Возможность удалить документ "Корректировка" в архив по всем предприятиям','Корректировка',41),
+(543,'Удаление документов своего предприятия','Возможность удалить документ "Корректировка" своего предприятия в архив','Корректировка',41),
+(544,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Корректировка" по всем предприятиям','Корректировка',41),
+(545,'Просмотр документов своего предприятия','Прсмотр информации в документах "Корректировка" своего предприятия','Корректировка',41),
+(546,'Редактирование документов по всем предприятиям','Редактирование документов "Корректировка" по всем предприятиям','Корректировка',41),
+(547,'Редактирование документов своего предприятия','Редактирование документов "Корректировка" своего предприятия','Корректировка',41),
+(548,'Проведение документов по всем предприятиям','Проведение документов "Корректировка" по всем предприятиям','Корректировка',41),
+(549,'Проведение документов своего предприятия','Проведение документов "Корректировка" своего предприятия','Корректировка',41);
+
+
+
+create table correction_files (
+                                  correction_id bigint not null,
+                                  file_id bigint not null,
+                                  foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                  foreign key (correction_id ) references correction (id) ON DELETE CASCADE
+);

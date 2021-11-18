@@ -44,6 +44,15 @@ public class PaymentinJSON {
     private String income_number_date;         // входящая дата счета поставщика
     private Long payment_account_id;//id расчтёного счёта
     private String payment_account;// расчтёный счёт
+    private Boolean internal; // внутренний платеж
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
 
     public String getPayment_account() {
         return payment_account;
