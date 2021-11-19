@@ -189,7 +189,7 @@ public class UserRepositoryJPA {
     public List<String> getUserDepartmentsNames(int id) {
         String stringQuery="select dep.name||' '||dep.address as name " +
                 "from departments dep where dep.id in (select p.department_id from user_department p where p.user_id= "+id+")"+
-                " and coalesce(dep.is_archive,false)!=true";
+                " and coalesce(dep.is_deleted,false)!=true";
         Query query = entityManager.createNativeQuery(stringQuery);
         List<String> depNames = query.getResultList();
         return depNames;
@@ -247,7 +247,6 @@ public class UserRepositoryJPA {
                 " where " +
                 " p.user_id= "+id+
                 " and p.department_id=dpts.id " +
-                " and coalesce(dpts.is_archive,false)!=true" +
                 " and coalesce(dpts.is_deleted,false)!=true";
         Query query = entityManager.createNativeQuery(stringQuery);
         List<Integer> depIds = query.getResultList();
@@ -264,7 +263,6 @@ public class UserRepositoryJPA {
                 " where " +
                 " p.user_id= "+myId+
                 " and p.department_id=dpts.id " +
-                " and coalesce(dpts.is_archive,false)!=true " +
                 " and coalesce(dpts.is_deleted,false)!=true";
         Query query = entityManager.createNativeQuery(stringQuery);
         List<Integer> depIds = query.getResultList();
@@ -280,7 +278,6 @@ public class UserRepositoryJPA {
                 " where " +
                 " p.user_id= "+myId+
                 " and p.department_id=dpts.id " +
-                " and coalesce(dpts.is_archive,false)!=true" +
                 " and coalesce(dpts.is_deleted,false)!=true";
         Query query = entityManager.createNativeQuery(stringQuery);
         List<Long> depIds = new ArrayList<>();

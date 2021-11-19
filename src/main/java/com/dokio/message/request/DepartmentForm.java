@@ -16,40 +16,34 @@ package com.dokio.message.request;
 
 public class DepartmentForm {
 
-    private int id;
-    private String company_id;
+    private Long id;
+    private Long company_id;
     private String name;
     private String address;
-    private String master_id;
-    private String creator_id;
-    private String changer_id;
-    private String price_id;
-    private String parent_id;
+    private Long master_id;
+    private Long creator_id;
+    private Long changer_id;
+    private Long price_id;
+    private Long parent_id;
     private String date_time_created;
     private String date_time_changed;
     private String additional;
+    private Long boxoffice_id;
+    private Long payment_account_id;
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public String getPrice_id() {
-        return price_id;
-    }
-
-    public void setPrice_id(String price_id) {
-        this.price_id = price_id;
-    }
-
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getCompany_id() {
+    public Long getCompany_id() {
         return company_id;
     }
 
-    public void setCompany_id(String company_id) {
+    public void setCompany_id(Long company_id) {
         this.company_id = company_id;
     }
 
@@ -69,35 +63,43 @@ public class DepartmentForm {
         this.address = address;
     }
 
-    public String getMaster_id() {
+    public Long getMaster_id() {
         return master_id;
     }
 
-    public void setMaster_id(String master_id) {
+    public void setMaster_id(Long master_id) {
         this.master_id = master_id;
     }
 
-    public String getCreator_id() {
+    public Long getCreator_id() {
         return creator_id;
     }
 
-    public void setCreator_id(String creator_id) {
+    public void setCreator_id(Long creator_id) {
         this.creator_id = creator_id;
     }
 
-    public String getChanger_id() {
+    public Long getChanger_id() {
         return changer_id;
     }
 
-    public void setChanger_id(String changer_id) {
+    public void setChanger_id(Long changer_id) {
         this.changer_id = changer_id;
     }
 
-    public String getParent_id() {
+    public Long getPrice_id() {
+        return price_id;
+    }
+
+    public void setPrice_id(Long price_id) {
+        this.price_id = price_id;
+    }
+
+    public Long getParent_id() {
         return parent_id;
     }
 
-    public void setParent_id(String parent_id) {
+    public void setParent_id(Long parent_id) {
         this.parent_id = parent_id;
     }
 
@@ -123,6 +125,22 @@ public class DepartmentForm {
 
     public void setAdditional(String additional) {
         this.additional = additional;
+    }
+
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
+
+    public Long getPayment_account_id() {
+        return payment_account_id;
+    }
+
+    public void setPayment_account_id(Long payment_account_id) {
+        this.payment_account_id = payment_account_id;
     }
 
     @Override

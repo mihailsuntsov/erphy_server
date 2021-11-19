@@ -1,17 +1,15 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -41,6 +39,12 @@ public class Departments {
 
     @Column(name = "address")
     private String address;
+
+    @Column(name = "boxoffice_id")
+    private Long boxoffice_id;
+
+    @Column(name = "payment_account_id")
+    private Long payment_account_id;
 
     @Column(name="date_time_created", nullable = false)
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
@@ -72,18 +76,12 @@ public class Departments {
     @JoinColumn(name = "parent_id")
     private Departments parent;
 
-    @Column(name = "is_archive")
-    private Boolean is_archive;
+    @Column(name = "is_deleted")
+    private Boolean is_deleted;
 
     @ManyToOne
     @JoinColumn(name = "price_id")
     private SpravTypePrices priceType;//основной тип цены, используемый в данном отделении
-
-//    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-//    private Set<TradingEquipment> tradingEquipment = new HashSet<TradingEquipment>();
-//
-//    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-//    private Set<Sessions> sessions = new HashSet<Sessions>();
 
     @ManyToMany(mappedBy="departments")
     private Set<User> users = new HashSet<User>();
@@ -120,12 +118,12 @@ public class Departments {
         this.additional = additional;
     }
 
-    public Boolean getIs_archive() {
-        return is_archive;
+    public Boolean getIs_deleted() {
+        return is_deleted;
     }
 
-    public void setIs_archive(Boolean is_archive) {
-        this.is_archive = is_archive;
+    public void setIs_deleted(Boolean is_deleted) {
+        this.is_deleted = is_deleted;
     }
 
     public String getAddress() {
@@ -154,6 +152,22 @@ public class Departments {
 
     public Companies getCompany() {
         return company;
+    }
+
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
+
+    public Long getPayment_account_id() {
+        return payment_account_id;
+    }
+
+    public void setPayment_account_id(Long payment_account_id) {
+        this.payment_account_id = payment_account_id;
     }
 
     public void setCompany(Companies company) {

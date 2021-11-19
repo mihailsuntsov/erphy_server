@@ -377,7 +377,7 @@ public class VatinvoiceoutRepositoryJPA {
     }
 
     // Возвращаем id в случае успешного создания
-    // Возвращаем 0 если невозможно создать товарные позиции
+    // Возвращаем -1 при недостатке прав
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})

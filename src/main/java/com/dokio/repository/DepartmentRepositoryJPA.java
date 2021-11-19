@@ -1,38 +1,43 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.response.DepartmentsListJSON;
+import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.model.Sprav.SpravSysDepartmentsList;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository("DepartmentRepositoryJPA")
 public class DepartmentRepositoryJPA {
+
+    Logger logger = Logger.getLogger("DepartmentRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -49,80 +54,100 @@ public class DepartmentRepositoryJPA {
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
 
-
-
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("address","company","creator","date_time_created_sort","additional","name")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<Departments> getDepartmentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(4L, "9,68,10"))// Отделения: "Меню - отделения всех предприятий","Меню - отделения только своего предприятия","Меню - только свои отделения"
+    public List<DepartmentsJSON> getDepartmentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
+        if (securityRepositoryJPA.userHasPermissions_OR(4L, "14,13"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            boolean needToSetParameter_MyDepthsIds= false;
-            Long departmentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            String myTimeZone = userRepository.getUserTimeZone();
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
-                    "           u.username as owner, " +
                     "           us.username as creator, " +
                     "           uc.username as changer, " +
-                    "           p.master_id as owner_id, " +
-                    "           p.creator_id as creator_id, " +
-                    "           p.changer_id as changer_id, " +
-                    "           p.company_id as company_id, " +
-                    "           p.parent_id as parent_id, " +
-                    "           p.price_id as price_id, " +
                     "           p.address as address, " +
                     "           p.additional as additional, " +
                     "           (select name from companies where id=p.company_id) as company, " +
                     "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
                     "           (select name from departments where id=p.parent_id) as parent, " +
-                    "           p.date_time_created as date_time_created, " +
-                    "           p.date_time_changed as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from departments p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           where  p.master_id=" + departmentOwnerId +
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           where  p.master_id=" + myMasterId;
+//                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "9")) {//если нет прав на Отделения: "Меню - отделения всех предприятий"
-                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();
-            }
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "68")) {//если нет прав на Отделения: "Меню - отделения только своего предприятия"
-                stringQuery = stringQuery + " and p.id in :myDepthsIds";//покажем только "Меню - только свои отделения", но с их родителями (чтобы можно было добраться до своего)
-                needToSetParameter_MyDepthsIds= true;
+            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and (" +
+                        " upper(p.name)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-            stringQuery = stringQuery + " and p.parent_id is null";
-            stringQuery = stringQuery + " order by p." + sortColumn + " " + sortAsc;
-            Query query = entityManager.createNativeQuery(stringQuery, DepartmentsJSON.class)
-                    .setFirstResult(offsetreal)
-                    .setMaxResults(result);
 
-            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsIdWithTheirParents());}
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+            }
 
-            return query.getResultList();
+            try{
+
+                Query query = entityManager.createNativeQuery(stringQuery)
+                        .setFirstResult(offsetreal)
+                        .setMaxResults(result);
+
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
+                List<Object[]> queryList = query.getResultList();
+                List<DepartmentsJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    DepartmentsJSON doc = new DepartmentsJSON();
+
+                    doc.setId(Long.parseLong(                           obj[0].toString()));
+                    doc.setName((String)                                obj[1]);
+                    doc.setCreator((String)                             obj[2]);
+                    doc.setChanger((String)                             obj[3]);
+                    doc.setAddress((String)                             obj[4]);
+                    doc.setAdditional((String)                          obj[5]);
+                    doc.setCompany((String)                             obj[6]);
+                    doc.setNum_childrens(Long.parseLong(                obj[7].toString()));
+                    doc.setParent((String)                              obj[8]);
+                    doc.setDate_time_created((String)                   obj[9]);
+                    doc.setDate_time_changed((String)                   obj[10]);
+                    returnList.add(doc);
+                }
+                return returnList;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getDepartmentsTable. SQL query:" + stringQuery, e);
+                return null;
+            }
         } else return null;
     }
 
-    @Transactional
-    public Long insertDepartment(Departments department) {
-        if(securityRepositoryJPA.userHasPermissions_OR(4L,"11"))//  Отделения : "Создание"
-        {
-            entityManager.persist(department);
-            entityManager.flush();
-            return department.getId();
-        } else return null;
-    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -134,15 +159,14 @@ public class DepartmentRepositoryJPA {
                 "           p.id as id " +
                 "           from departments p " +
                 "           where  p.master_id=" + departmentOwnerId +
-                "           and coalesce(p.is_archive,false) !=true";
+                "           and coalesce(p.is_deleted,false) !=true";
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(4L, "9")) {//если нет прав на Отделения: "Меню - отделения всех предприятий"
-            stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();
+        if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на "Просмотр по всем предприятиям"
+        {
+            //остается только на своё предприятие
+            stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
         }
-        if (!securityRepositoryJPA.userHasPermissions_OR(4L, "68")) {//если нет прав на Отделения: "Меню - отделения только своего предприятия"
-            stringQuery = stringQuery + " and p.id in :myDepthsIds";//покажем только "Меню - только свои отделения", но с их родителями (чтобы можно было добраться до своего)
-            needToSetParameter_MyDepthsIds= true;
-        }
+
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
         }
@@ -157,6 +181,115 @@ public class DepartmentRepositoryJPA {
         {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsIdWithTheirParents());}
 
         return query.getResultList().size();
+    }
+
+    // Возвращаем id в случае успешного создания
+    // Возвращаем -1 при недостатке прав
+    // Возвращаем null в случае ошибки
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertDepartment(DepartmentForm request) {
+            EntityManager emgr = emf.createEntityManager();
+            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
+            Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+            if (    //если есть право на создание
+                    (securityRepositoryJPA.userHasPermissions_OR(4L, "11")) &&
+                    //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                    DocumentMasterId.equals(myMasterId))
+            {
+                String stringQuery;
+                Long myId = userRepository.getUserId();
+                Long newDocId;
+
+
+                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+                stringQuery = "insert into departments (" +
+                        " master_id," + //мастер-аккаунт
+                        " creator_id," + //создатель
+                        " company_id," + //предприятие, для которого создается документ
+                        " date_time_created," + //дата и время создания
+                        " boxoffice_id," + //id кассы отделения
+                        " payment_account_id, " + // id банковского счета
+                        " name," +
+                        " address," +
+                        " price_id," +
+                        " additional" +//доп. информация по отделению
+                        ") values ("+
+                        myMasterId + ", "+//мастер-аккаунт
+                        myId + ", "+ //создатель
+                        request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                        "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                        request.getBoxoffice_id() + ", " +
+                        request.getPayment_account_id() + ", " +
+                        ":name," +
+                        ":address," +
+                        request.getPrice_id() + ", " +
+                        ":additional)";
+                try{
+                    Query query = entityManager.createNativeQuery(stringQuery);
+
+                    query.setParameter("name",request.getName());
+                    query.setParameter("address",request.getAddress());
+                    query.setParameter("additional",request.getAdditional());
+                    query.executeUpdate();
+                    stringQuery="select id from departments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                    Query query2 = entityManager.createNativeQuery(stringQuery);
+                    newDocId=Long.valueOf(query2.getSingleResult().toString());
+
+                    return newDocId;
+
+                } catch (Exception e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method insertDepartment on inserting into departments. SQL query:"+stringQuery, e);
+                    e.printStackTrace();
+                    return null;
+                }
+            } else {
+                return -1L;
+            }
+
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Integer  updateDepartment(DepartmentForm request){
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(4L,"16") && securityRepositoryJPA.isItAllMyMastersDocuments("departments",request.getId().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+
+            String stringQuery;
+            stringQuery =   " update departments set " +
+                            " address = :address," +//
+                            " name = :name," +//
+                            " additional = :additional, " +
+                            " price_id = " + request.getPrice_id()+"," +
+                            " boxoffice_id="+request.getBoxoffice_id()+"," +
+                            " payment_account_id="+request.getPayment_account_id()+"," +
+                            " changer_id = " + myId + ","+
+                            " date_time_changed= now()" +
+                            " where " +
+                            " id= "+request.getId();
+            try
+            {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
+                query.setParameter("address",request.getAddress());
+                query.setParameter("additional",request.getAdditional());
+                query.executeUpdate();
+                return 1;
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateDepartment. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; //недостаточно прав
     }
 
     public Departments getDepartmentById(Long id){
@@ -217,7 +350,7 @@ public class DepartmentRepositoryJPA {
 
         if(company_id>0)stringQuery = stringQuery+" and p.company_id="+company_id;
 
-        stringQuery = stringQuery+"and coalesce(p.is_archive,false) !=true";
+        stringQuery = stringQuery+"and coalesce(p.is_deleted,false) !=true";
 
         if(has_parent){
             stringQuery = stringQuery+" and p.parent_id is not null";
@@ -257,7 +390,7 @@ public class DepartmentRepositoryJPA {
                 "           and p.id in ("+ids+")";
 
         if(company_id>0)stringQuery = stringQuery+" and p.company_id="+company_id;
-        stringQuery = stringQuery+"and coalesce(p.is_archive,false) !=true";
+        stringQuery = stringQuery+"and coalesce(p.is_deleted,false) !=true";
         if(has_parent){
             stringQuery = stringQuery+" and p.parent_id is not null";
         }else{
@@ -295,95 +428,88 @@ public class DepartmentRepositoryJPA {
 
         stringQuery = stringQuery+" order by p.name asc";
         Query query =  entityManager.createNativeQuery(stringQuery, SpravSysDepartmentsList.class);
-        //query.setParameter("param", userRepositoryJPA.getMyDepartmentsId());
         return query.getResultList();
     }
-//    for (Long i : userGroups) {
-//        dep = em.find(UserGroup.class, i);
-//        userGroupSet.add(dep);
-//    }
-//
+
     @Transactional
     @SuppressWarnings("Duplicates")
-    public DepartmentsJSON getDepartmentValuesById(int id) {
-        if(securityRepositoryJPA.userHasPermissions_OR(4L, "13,14,15,16") &&// Отделения: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
-           securityRepositoryJPA.isItMyMastersDepartment(Long.valueOf(id)))//принадлежит к отделениям моего родителя
+    public DepartmentsJSON getDepartmentValuesById(Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(4L, "13,14") &&// Отделения: "Просмотр своего" "Просмотр всех"
+                securityRepositoryJPA.isItMyMastersDepartment(id))//принадлежит к отделениям моего родителя
         {
             String stringQuery;
+            String myTimeZone = userRepository.getUserTimeZone();
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select p.id as id, " +
-                    "           p.name as name, " +
-                    "           p.master_id as owner_id, " +
+                    "           us.name as creator, " +
+                    "           uc.name as changer, " +
                     "           p.creator_id as creator_id, " +
                     "           p.changer_id as changer_id, " +
+                    "           p.company_id as company_id, " +
+                    "           cmp.name as company, " +
+                    "           p.name as name, " +
                     "           p.price_id as price_id, " +
-                    "           (select name from users where id=p.master_id) as owner, " +
-                    "           (select name from users where id=p.creator_id) as creator, " +
-                    "           (select name from users where id=p.changer_id) as changer, " +
-                    "           p.date_time_created as date_time_created, " +
-                    "           p.date_time_changed as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.address as address, " +
                     "           p.additional as additional, " +
                     "           coalesce(p.parent_id,'0') as parent_id, " +
-                    "           (select name from departments where id=p.parent_id) as parent, " +
-                    "           coalesce(p.company_id,'0') as company_id, " +
-                    "           (select name from companies where id=p.company_id) as company, " +
-                    "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens" +
+                    "           coalesce((select name from departments where id=coalesce(p.parent_id,'0')),'') as parent, " +
+                    "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
+                    "           p.boxoffice_id as boxoffice_id, " +
+                    "           p.payment_account_id as payment_account_id " +
+
                     "           from departments p" +
-                    " where p.id= " + id;
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           where p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14,16")) {//если нет прав на Отделения: "Просмотр всех" или "Редактирование всех"
-                //значит остаются на "Просмотр своего" или "Редактирование своего":
-                stringQuery = stringQuery + " and p.id in (select ud.department_id from user_department ud where ud.user_id="+userRepository.getUserId()+")";
-                }
+            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "13,15")) {//если нет прав на Отделения: "Просмотр своего" или "Редактирование своего"
-                //значит остаются на "Просмотр всех", "Редактирование всех"
-                stringQuery = stringQuery + " and p.id not in (select ud.department_id from user_department ud where ud.user_id="+userRepository.getUserId()+")";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                List<Object[]> queryList = query.getResultList();
+
+                DepartmentsJSON returnObj = new DepartmentsJSON();
+
+                for (Object[] obj : queryList) {
+                    returnObj.setId(Long.parseLong(                             obj[0].toString()));
+                    returnObj.setCreator((String)                               obj[1]);
+                    returnObj.setChanger((String)                               obj[2]);
+                    returnObj.setCreator_id(Long.parseLong(                     obj[3].toString()));
+                    returnObj.setChanger_id(obj[4] != null ? Long.parseLong(    obj[4].toString()) : null);
+                    returnObj.setCompany_id(Long.parseLong(                     obj[5].toString()));
+                    returnObj.setCompany((String)                               obj[6]);
+                    returnObj.setName((String)                                  obj[7]);
+                    returnObj.setPrice_id(obj[8] != null ? Long.parseLong(      obj[8].toString()) : null);
+                    returnObj.setDate_time_created((String)                     obj[9]);
+                    returnObj.setDate_time_changed((String)                     obj[10]);
+                    returnObj.setAddress((String)                               obj[11]);
+                    returnObj.setAdditional((String)                            obj[12]);
+                    returnObj.setParent_id(obj[13] != null ? Long.parseLong(    obj[13].toString()) : null);
+                    returnObj.setParent((String)                                obj[14]);
+                    returnObj.setNum_childrens(Long.parseLong(                  obj[15].toString()));
+                    returnObj.setBoxoffice_id(obj[16] != null ? Long.parseLong( obj[16].toString()) : null);
+                    returnObj.setPayment_account_id(obj[17]!=null?Long.parseLong(obj[17].toString()) : null);
                 }
-            Query query = entityManager.createNativeQuery(stringQuery, DepartmentsJSON.class);
-            try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
-                    return (DepartmentsJSON) query.getSingleResult();
-                }
-            catch(NoResultException nre)
-                {
-                    return null;
-                }
-            }else return null;
+                return returnObj;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getDepartmentValuesById. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
     }
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public boolean updateDepartment(DepartmentForm form){
-        if(securityRepositoryJPA.userHasPermissions_OR(4L, "15,16") &&// Отделения: "Редактирование своего" "Редактирование всех"
-           securityRepositoryJPA.isItMyMastersDepartment(Long.valueOf(form.getId())))//принадлежит к отделениям моего родительского аккаунта
-        {
-            String stringQuery;
-            stringQuery="update departments set " +
-                    "name='"+form.getName()+"'," +
-                    "address='"+form.getAddress()+"'," +
-                    "additional='"+form.getAdditional()+"'," +
-                    "company_id="+(form.getCompany_id().equals("0") ? null:form.getCompany_id())+"," +
-                    "price_id="+(form.getPrice_id().equals("0") ? null:form.getPrice_id())+"," +
-                    "parent_id="+(form.getParent_id().equals("0") ? null:form.getParent_id()) +
-                    " where id="+form.getId();
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "16")&&//если нет прав на Отделения: "Редактирование всех"
-                !securityRepositoryJPA.isItMyDepartment(Long.valueOf(form.getId()))){//значит остаются на "Редактирование своего", НО если запрашиваем id НЕ своего отделения:
-                    return false;
-                }
-            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "15")&&//если нет прав на Отделения: "Редактирование своего"
-                 securityRepositoryJPA.isItMyDepartment(Long.valueOf(form.getId()))){//значит остаются на "Редактирование всех", НО если запрашиваем id своего отделения:
-                    return false;
-                }
-            Query query = entityManager.createNativeQuery(stringQuery);
-            int i=query.executeUpdate();
-            return (i==1);
-        }else return false;
-    }
 
     public Set<Departments> getDepartmentsSetBySetOfDepartmentsId(Set<Long> departments) {
         EntityManager em = emf.createEntityManager();
-        Departments dep = new Departments();
+        Departments dep;
         Set<Departments> departmentsSet = new HashSet<>();
         for (Long i : departments) {
             dep = em.find(Departments.class, i);
@@ -400,11 +526,11 @@ public class DepartmentRepositoryJPA {
         {
             String stringQuery;
             stringQuery = "Update departments p" +
-                    " set is_archive=true " +
+                    " set is_deleted=true " +
                     " where p.id in (" + delNumbers+")";
             Query query = entityManager.createNativeQuery(stringQuery);
             if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                int count = query.executeUpdate();
+                query.executeUpdate();
                 return true;
             } else return false;
         } else return false;

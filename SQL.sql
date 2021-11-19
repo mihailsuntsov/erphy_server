@@ -2233,3 +2233,10 @@ create table correction_files (
                                   foreign key (file_id) references files (id) ON DELETE CASCADE,
                                   foreign key (correction_id ) references correction (id) ON DELETE CASCADE
 );
+
+alter table departments add column boxoffice_id bigint;
+alter table departments add constraint boxoffice_id_fkey foreign key (boxoffice_id) references sprav_boxoffice (id);
+alter table departments add column payment_account_id bigint;
+alter table departments add constraint payment_account_id_fkey foreign key (payment_account_id) references companies_payment_accounts (id);
+
+alter table departments drop column is_archive;

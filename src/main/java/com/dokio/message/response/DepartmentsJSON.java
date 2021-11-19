@@ -16,45 +16,37 @@ package com.dokio.message.response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import java.sql.Timestamp;
 
-@Entity
 public class DepartmentsJSON {
 
-    @Id
     private Long id;
     private String name;
     private String owner;
     private String creator;
     private String changer;
-    private String owner_id;
-    private String creator_id;
-    private String changer_id;
-    private String company_id;
-    private String price_id;
-    private String parent_id;
+    private Long owner_id;
+    private Long creator_id;
+    private Long changer_id;
+    private Long company_id;
+    private Long price_id;
+    private Long parent_id;
     private String parent;
     private String address;
     private String additional;
     private String company;
-    private String num_childrens;
+    private Long num_childrens;
+    private Long boxoffice_id;
+    private Long payment_account_id;
+    private String date_time_created;
+    private String date_time_changed;
 
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Timestamp date_time_created;
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Timestamp date_time_changed;
-
-
-    public String getPrice_id() {
-        return price_id;
+    public Long getNum_childrens() {
+        return num_childrens;
     }
 
-    public void setPrice_id(String price_id) {
-        this.price_id = price_id;
+    public void setNum_childrens(Long num_childrens) {
+        this.num_childrens = num_childrens;
     }
 
     public Long getId() {
@@ -63,38 +55,6 @@ public class DepartmentsJSON {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getNum_childrens() {
-        return num_childrens;
-    }
-
-    public String getParent_id() {
-        return parent_id;
-    }
-
-    public void setParent_id(String parent_id) {
-        this.parent_id = parent_id;
-    }
-
-    public String getParent() {
-        return parent;
-    }
-
-    public void setParent(String parent) {
-        this.parent = parent;
-    }
-
-    public String getAdditional() {
-        return additional;
-    }
-
-    public void setAdditional(String additional) {
-        this.additional = additional;
-    }
-
-    public void setNum_childrens(String num_childrens) {
-        this.num_childrens = num_childrens;
     }
 
     public String getName() {
@@ -129,36 +89,60 @@ public class DepartmentsJSON {
         this.changer = changer;
     }
 
-    public String getOwner_id() {
+    public Long getOwner_id() {
         return owner_id;
     }
 
-    public void setOwner_id(String owner_id) {
+    public void setOwner_id(Long owner_id) {
         this.owner_id = owner_id;
     }
 
-    public String getCreator_id() {
+    public Long getCreator_id() {
         return creator_id;
     }
 
-    public void setCreator_id(String creator_id) {
+    public void setCreator_id(Long creator_id) {
         this.creator_id = creator_id;
     }
 
-    public String getChanger_id() {
+    public Long getChanger_id() {
         return changer_id;
     }
 
-    public void setChanger_id(String changer_id) {
+    public void setChanger_id(Long changer_id) {
         this.changer_id = changer_id;
     }
 
-    public String getCompany_id() {
+    public Long getCompany_id() {
         return company_id;
     }
 
-    public void setCompany_id(String company_id) {
+    public void setCompany_id(Long company_id) {
         this.company_id = company_id;
+    }
+
+    public Long getPrice_id() {
+        return price_id;
+    }
+
+    public void setPrice_id(Long price_id) {
+        this.price_id = price_id;
+    }
+
+    public Long getParent_id() {
+        return parent_id;
+    }
+
+    public void setParent_id(Long parent_id) {
+        this.parent_id = parent_id;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 
     public String getAddress() {
@@ -169,6 +153,14 @@ public class DepartmentsJSON {
         this.address = address;
     }
 
+    public String getAdditional() {
+        return additional;
+    }
+
+    public void setAdditional(String additional) {
+        this.additional = additional;
+    }
+
     public String getCompany() {
         return company;
     }
@@ -177,19 +169,35 @@ public class DepartmentsJSON {
         this.company = company;
     }
 
-    public Timestamp getDate_time_created() {
+    public Long getBoxoffice_id() {
+        return boxoffice_id;
+    }
+
+    public void setBoxoffice_id(Long boxoffice_id) {
+        this.boxoffice_id = boxoffice_id;
+    }
+
+    public Long getPayment_account_id() {
+        return payment_account_id;
+    }
+
+    public void setPayment_account_id(Long payment_account_id) {
+        this.payment_account_id = payment_account_id;
+    }
+
+    public String getDate_time_created() {
         return date_time_created;
     }
 
-    public void setDate_time_created(Timestamp date_time_created) {
+    public void setDate_time_created(String date_time_created) {
         this.date_time_created = date_time_created;
     }
 
-    public Timestamp getDate_time_changed() {
+    public String getDate_time_changed() {
         return date_time_changed;
     }
 
-    public void setDate_time_changed(Timestamp date_time_changed) {
+    public void setDate_time_changed(String date_time_changed) {
         this.date_time_changed = date_time_changed;
     }
 }
