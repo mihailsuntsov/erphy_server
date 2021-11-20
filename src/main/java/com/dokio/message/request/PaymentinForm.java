@@ -36,6 +36,15 @@ public class PaymentinForm {
     private String income_number_date;
     private Long payment_account_id;//id расчтёного счёта
     private Boolean internal; // внутренний платеж
+    private Long department_id; //отделение, из которого создают входящий платеж. Нужно для определения расчетного счета, привязанного к отделению
+
+    public Long getDepartment_id() {
+        return department_id;
+    }
+
+    public void setDepartment_id(Long department_id) {
+        this.department_id = department_id;
+    }
 
     public Boolean getInternal() {
         return internal;

@@ -1072,7 +1072,79 @@ public class CompanyRepositoryJPA {
             return null;
         }
     }
-
+// возвращает id кассы, к которой привязано отделение
+    public Long getBoxofficeIdByDepartment(Long depId){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        stringQuery  =  " select boxoffice_id from departments where master_id = " + myMasterId + "and id = " + depId+
+                        " and coalesce(is_deleted,false) != true";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (NoResultException nre) {
+            logger.info("NoResultException in method getBoxofficeIdByDepartment. Sql: " + stringQuery, nre);
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method getBoxofficeIdByDepartment. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // возвращает id кассы предприятия (берет самую раннюю кассу которая не удалена)
+    public Long getMainBoxofficeIdOfCompany(Long companyId){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        stringQuery  =  " select id from sprav_boxoffice where " +
+                        " master_id="+myMasterId+
+                        " and company_id="+companyId+
+                        " and coalesce(is_deleted,false) != true" +
+                        " order by id asc";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (NoResultException nre) {
+            logger.info("NoResultException in method getMainBoxofficeIdOfCompany. Sql: " + stringQuery, nre);
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method getMainBoxofficeIdOfCompany. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // возвращает id расчетного счета отделения
+    public Long getPaymentAccountIdByDepartment(Long depId){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        stringQuery  =  " select payment_account_id from departments where master_id = " + myMasterId + "and id = " + depId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (NoResultException nre) {
+            logger.info("NoResultException in method getPaymentAccountIdByDepartment. Sql: " + stringQuery, nre);
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method getPaymentAccountIdByDepartment. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // возвращает id расчетного счета отделения
+    public Long getMainPaymentAccountIdOfCompany(Long companyId){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery;
+        stringQuery=" select id from companies_payment_accounts where master_id ="+myMasterId+" and company_id="+companyId+" order by output_order asc";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (NoResultException nre) {
+            logger.info("NoResultException in method getMainPaymentAccountIdOfCompany. Sql: " + stringQuery, nre);
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method getMainPaymentAccountIdOfCompany. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     @SuppressWarnings("Duplicates")
     public Resource getCompanyCard(FileInfoJSON fileInfo) {
 

@@ -398,7 +398,25 @@ public class PaymentinRepositoryJPA {
                     //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
                     linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
                     if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+                    //если расч счет неизвестен
+                    if(Objects.isNull(request.getPayment_account_id())) {
+                        // но известно отделение -
+                        if (!Objects.isNull(request.getDepartment_id())) {
+                            //пытаемся получть расч. счёт из привязки к отделению
+                            request.setPayment_account_id(companyRepositoryJPA.getPaymentAccountIdByDepartment(request.getDepartment_id()));
+                        }
+                    }
+                    //если расч счет неизвестен или если не получилось получить его из привязки к отделению(например в карточке отделения нет привязки к расч счету
+                    if(Objects.isNull(request.getPayment_account_id()) || request.getPayment_account_id()==0L){
+                        // пытаемся получить главный расч. счёт (верхний) из списка счетов предприятия
+                        request.setPayment_account_id(companyRepositoryJPA.getMainPaymentAccountIdOfCompany(request.getCompany_id()));
+                        //Если опять не получилось (в карточке предприятия не заведены расчётные счета)
+                        if(Objects.isNull(request.getPayment_account_id()) || request.getPayment_account_id()==0L)
+                            return -20L;//расчётный счёт не определен (см. файл _ErrorCodes)
+                    }
                 }
+
+
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:

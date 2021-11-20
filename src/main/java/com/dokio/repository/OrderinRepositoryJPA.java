@@ -388,6 +388,22 @@ public class OrderinRepositoryJPA {
                     //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
                     linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
                     if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+                    //если касса неизвестна
+                    if(Objects.isNull(request.getBoxoffice_id())) {
+                        // но известно отделение -
+                        if (!Objects.isNull(request.getDepartment_id())) {
+                            //пытаемся получть расч. счёт из привязки к отделению
+                            request.setBoxoffice_id(companyRepositoryJPA.getBoxofficeIdByDepartment(request.getDepartment_id()));
+                        }
+                    }
+                    //касса неизвестна или если не получилось получить её из привязки к отделению(например в карточке отделения нет привязки к расч счёту
+                    if(Objects.isNull(request.getBoxoffice_id()) || request.getBoxoffice_id()==0L){
+                        // пытаемся получить первую созданную неудаленную кассу предприятия в качетстве главной кассы
+                        request.setBoxoffice_id(companyRepositoryJPA.getMainBoxofficeIdOfCompany(request.getCompany_id()));
+                        //Если опять не получилось (в справочнике касс предприятия ничего нет)
+                        if(Objects.isNull(request.getBoxoffice_id()) || request.getBoxoffice_id()==0L)
+                            return -21L;//касса не определена (см. файл _ErrorCodes)
+                    }
                 }
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента

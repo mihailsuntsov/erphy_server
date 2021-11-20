@@ -33,6 +33,16 @@ public class OrderinForm {
     private Boolean is_completed;// проведён
     private Boolean internal;
     private Long boxoffice_id;// касса предприятия (не ККМ!)
+    private Long department_id; //отделение, из которого создают приходный ордер. Нужно для определения кассы, привязанной к отделению
+
+    public Long getDepartment_id() {
+        return department_id;
+    }
+
+    public void setDepartment_id(Long department_id) {
+        this.department_id = department_id;
+    }
+
 
     public Long getBoxoffice_id() {
         return boxoffice_id;
