@@ -694,7 +694,7 @@ public class ShipmentRepositoryJPA {
                     return null;
                 }
             } else {
-                return null;
+                return -1L;
             }
         } else {
             logger.info("Double UUID found on insertShipment. UUID: " + request.getUid());

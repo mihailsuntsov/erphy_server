@@ -60,6 +60,7 @@ public class LinkedDocsUtilites {
                     "orderin",
                     "orderout",
                     "vatinvoiceout",
+                    "correction",
                     "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
@@ -85,6 +86,7 @@ public class LinkedDocsUtilites {
             .of(    "paymentin",
                     "paymentout",
                     "orderin",
+                    "correction",
                     "orderout")
                     .collect(Collectors.toCollection(HashSet::new)));
 
@@ -562,7 +564,7 @@ public class LinkedDocsUtilites {
             query.setParameter("uid", uid);
             return Long.valueOf(query.getSingleResult().toString());
         } catch (NoResultException nre) {
-            logger.error("NoResultException in method getGroupIdByUid. Sql: " + stringQuery, nre);
+//            logger.error("NoResultException in method getGroupIdByUid. Sql: " + stringQuery, nre);
             return 0L;
         } catch (Exception e) {
             logger.error("Exception in method getGroupIdByUid. Sql: " + stringQuery, e);
@@ -732,7 +734,7 @@ public class LinkedDocsUtilites {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
         } catch (NoResultException nre) {
-            logger.error("NoResultException in method getIdOfDocWithoutSumm. Sql: " + stringQuery, nre);
+//            logger.error("NoResultException in method getIdOfDocWithoutSumm. Sql: " + stringQuery, nre);
             return 0L;
         } catch (Exception e) {
             logger.error("Exception in method getIdOfDocWithoutSumm. Sql: " + stringQuery, e);

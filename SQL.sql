@@ -2192,7 +2192,7 @@ create table correction (
                                changer_id                   bigint,
                                date_time_created            timestamp with time zone not null,
                                date_time_changed            timestamp with time zone,
-                               type                         varchar(10) not null, --boxoffice - коррекция кассы, cagent - коррекция долгов, account - коррекция расчётного счёта
+                               type                         varchar(10) not null, --boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
                                summ                         numeric(15,2) not null,
                                boxoffice_id                 bigint,
                                payment_account_id           bigint,
@@ -2254,3 +2254,140 @@ insert into permissions (id,name,description,document_name,document_id) values
 (557,'Редактирование документов по всем предприятиям','Редактирование документов "Кассы предприятия" по всем предприятиям','Кассы предприятия',42),
 (558,'Редактирование документов своего предприятия','Редактирование документов "Кассы предприятия" своего предприятия','Кассы предприятия',42);
 
+
+CREATE INDEX acceptance_id_index ON acceptance_product USING btree (acceptance_id);
+CREATE INDEX acceptance_master_id_index ON acceptance USING btree (master_id);
+CREATE INDEX acceptance_company_id_index ON acceptance USING btree (company_id);
+CREATE INDEX acceptance_cagent_id_index ON acceptance USING btree (cagent_id);
+
+CREATE INDEX shipment_id_index ON shipment_product USING btree (shipment_id);
+CREATE INDEX shipment_master_id_index ON shipment USING btree (master_id);
+CREATE INDEX shipment_company_id_index ON shipment USING btree (company_id);
+CREATE INDEX shipment_cagent_id_index ON shipment USING btree (cagent_id);
+
+CREATE INDEX return_id_index ON return_product USING btree (return_id);
+CREATE INDEX return_master_id_index ON return USING btree (master_id);
+CREATE INDEX return_company_id_index ON return USING btree (company_id);
+CREATE INDEX return_cagent_id_index ON return USING btree (cagent_id);
+
+CREATE INDEX returnsup_id_index ON returnsup_product USING btree (returnsup_id);
+CREATE INDEX returnsup_master_id_index ON returnsup USING btree (master_id);
+CREATE INDEX returnsup_company_id_index ON returnsup USING btree (company_id);
+CREATE INDEX returnsup_cagent_id_index ON returnsup USING btree (cagent_id);
+
+CREATE INDEX paymentin_master_id_index ON paymentin USING btree (master_id);
+CREATE INDEX paymentin_company_id_index ON paymentin USING btree (company_id);
+CREATE INDEX paymentin_agent_id_index ON paymentin USING btree (cagent_id);
+
+CREATE INDEX paymentout_master_id_index ON paymentout USING btree (master_id);
+CREATE INDEX paymentout_company_id_index ON paymentout USING btree (company_id);
+CREATE INDEX paymentout_cagent_id_index ON paymentout USING btree (cagent_id);
+
+CREATE INDEX orderin_master_id_index ON orderin USING btree (master_id);
+CREATE INDEX orderin_company_id_index ON orderin USING btree (company_id);
+CREATE INDEX orderin_cagent_id_index ON orderin USING btree (cagent_id);
+
+CREATE INDEX orderout_master_id_index ON orderout USING btree (master_id);
+CREATE INDEX orderout_company_id_index ON orderout USING btree (company_id);
+CREATE INDEX orderout_cagent_id_index ON orderout USING btree (cagent_id);
+
+CREATE INDEX orderout_boxoffice_id_index ON orderout USING btree (boxoffice_id);
+CREATE INDEX orderin_boxoffice_id_index ON orderin USING btree (boxoffice_id);
+CREATE INDEX paymentout_payment_account_id_index ON paymentout USING btree (payment_account_id);
+CREATE INDEX paymentin_payment_account_id_index ON paymentin USING btree (payment_account_id);
+
+alter table correction add column doc_number int not null;
+
+alter table correction add column status_id bigint;
+alter table correction add constraint status_id_fkey foreign key (status_id) references sprav_status_dock (id);
+
+create table settings_correction (
+                                   id                          bigserial primary key not null,
+                                   master_id                   bigint not null,
+                                   company_id                  bigint not null,
+                                   user_id                     bigint  UNIQUE not null,
+                                   status_id_on_complete       bigint,
+                                   foreign key (master_id) references users(id),
+                                   foreign key (user_id) references users(id),
+                                   foreign key (status_id_on_complete) references sprav_status_dock(id),
+                                   foreign key (company_id) references companies(id)
+);
+
+
+WITH
+  credit as (
+    select
+        (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in
+          (select ac.id from acceptance ac where ac.master_id=4 and ac.company_id=1 and coalesce(ac.is_completed,false)=true and ac.cagent_id=1))
+        +
+        (select coalesce(sum(rcp.product_sumprice),0) from return_product rcp where rcp.return_id in
+          (select rc.id from return rc where rc.master_id=4 and rc.company_id=1 and coalesce(rc.is_completed,false)=true and rc.cagent_id=1))
+        +
+        (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and pi.cagent_id=1 and coalesce(pi.is_completed,false)=true)
+        +
+        (select coalesce(sum(oi.summ),0) from orderin oi where oi.master_id=4 and oi.company_id=1 and oi.cagent_id=1 and coalesce(oi.is_completed,false)=true)
+  ),
+  debet as (
+    select
+        (select coalesce(sum(shp.product_sumprice),0) from shipment_product shp where shp.shipment_id in
+          (select sh.id from shipment sh where sh.master_id=4 and sh.company_id=1 and coalesce(sh.is_completed,false)=true and sh.cagent_id=1))
+        +
+        (select coalesce(sum(rsp.product_sumprice),0) from returnsup_product rsp where rsp.returnsup_id in
+          (select rs.id from returnsup rs where rs.master_id=4 and rs.company_id=1 and coalesce(rs.is_completed,false)=true and rs.cagent_id=1))
+        +
+        (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and po.cagent_id=1 and coalesce(po.is_completed,false)=true)
+        +
+        (select coalesce(sum(oo.summ),0) from orderout oo where oo.master_id=4 and oo.company_id=1 and oo.cagent_id=1 and coalesce(oo.is_completed,false)=true)
+  )
+select
+  (select * from credit) as credit,
+  (select * from debet) as debet,
+  ((select * from credit)-(select * from debet)) as balance;
+
+
+WITH
+  income as (
+    select
+      (select coalesce(sum(oi.summ),0) from orderin oi where oi.master_id=4 and oi.company_id=1 and boxoffice_id=1 and coalesce(oi.is_completed,false)=true)
+  ),
+  outcome as (
+    select
+      (select coalesce(sum(oo.summ),0) from orderout oo where oo.master_id=4 and oo.company_id=1 and boxoffice_id=1 and coalesce(oo.is_completed,false)=true)
+  )
+select
+  (select * from income) as income,
+  (select * from outcome) as outcome,
+  ((select * from income)-(select * from outcome)) as balance;
+
+WITH
+  income as (
+    select
+      (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and payment_account_id=4 and coalesce(pi.is_completed,false)=true)
+  ),
+  outcome as(
+    select
+      (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and payment_account_id=4 and coalesce(po.is_completed,false)=true)
+  )
+select
+  (select * from income) as income,
+  (select * from outcome) as outcome,
+  ((select * from income)-(select * from outcome)) as balance;
+
+
+WITH
+  income as (
+    select
+      (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and payment_account_id=4 and coalesce(pi.is_completed,false)=true)
+  ),
+  outcome as(
+    select
+      (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and payment_account_id=4 and coalesce(po.is_completed,false)=true)
+  ),
+  correction as(
+    select
+      (select coalesce(sum(co.summ),0) from correction co where co.master_id=4 and co.company_id=1 and payment_account_id=4 and coalesce(co.is_completed,false)=true)
+  )
+select
+  (select * from income) as income,
+  (select * from outcome) as outcome,
+  ((select * from income)-(select * from outcome)+(select * from correction)) as balance;
