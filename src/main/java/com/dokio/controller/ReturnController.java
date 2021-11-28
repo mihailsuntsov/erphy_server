@@ -227,12 +227,7 @@ public class ReturnController {
     @PostMapping("/api/auth/updateReturn")
     public ResponseEntity<?> updateReturn(@RequestBody ReturnForm request){
         logger.info("Processing post request for path /api/auth/updateReturn: " + request.toString());
-        Boolean updateResults = returnRepository.updateReturn(request);
-        if(updateResults){
-            return new ResponseEntity<>(updateResults, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(returnRepository.updateReturn(request), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/saveSettingsReturn")

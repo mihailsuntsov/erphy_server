@@ -449,7 +449,7 @@ public class ReturnRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
-    public Boolean updateReturn(ReturnForm request){
+    public Integer updateReturn(ReturnForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(28L,"356") && securityRepositoryJPA.isItAllMyMastersDocuments("return",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -498,7 +498,7 @@ public class ReturnRepository {
                             }
                         }
                     }
-                    return true;
+                    return 1;
                 } else return null;
 
             } catch (CantInsertProductRowCauseErrorException e) {
@@ -519,9 +519,9 @@ public class ReturnRepository {
             }catch (Exception e) {
                 logger.error("Exception in method ReturnRepository/updateReturn. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return null;
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
