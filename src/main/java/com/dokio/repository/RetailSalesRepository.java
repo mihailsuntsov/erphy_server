@@ -78,7 +78,7 @@ public class RetailSalesRepository {
             .collect(Collectors.toCollection(HashSet::new)));
 
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -1226,43 +1226,86 @@ public class RetailSalesRepository {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    public List<LinkedDocsJSON> getRetailSalesLinkedDocsList(Long docId, String docName) {
-        String stringQuery;
-        String myTimeZone = userRepository.getUserTimeZone();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String tableName=(docName.equals("return")?"return":"");
-        stringQuery =   " select " +
-                " ap.id," +
-                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
-                " ap.description," +
-                " coalesce(ap.is_completed,false)," +
-                " ap.doc_number" +
-                " from "+tableName+" ap" +
-                " where ap.master_id = " + myMasterId +
-                " and coalesce(ap.is_deleted,false)!=true "+
-                " and ap.retail_sales_id = " + docId;
-        stringQuery = stringQuery + " order by ap.date_time_created asc ";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<LinkedDocsJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                LinkedDocsJSON doc=new LinkedDocsJSON();
-                doc.setId(Long.parseLong(                       obj[0].toString()));
-                doc.setDate_time_created((String)               obj[1]);
-                doc.setDescription((String)                     obj[2]);
-                doc.setIs_completed((Boolean)                   obj[3]);
-                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getRetailSalesLinkedDocsList. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
+// **************************************************** СМЕНЫ ********************************************************//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// **************************************************** ЧЕКИ *********************************************************//
+
+
+
+
+
+
+
+
+
+
+    // устарело
+//    public List<LinkedDocsJSON> getRetailSalesLinkedDocsList(Long docId, String docName) {
+//        String stringQuery;
+//        String myTimeZone = userRepository.getUserTimeZone();
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String tableName=(docName.equals("return")?"return":"");
+//        stringQuery =   " select " +
+//                " ap.id," +
+//                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+//                " ap.description," +
+//                " coalesce(ap.is_completed,false)," +
+//                " ap.doc_number" +
+//                " from "+tableName+" ap" +
+//                " where ap.master_id = " + myMasterId +
+//                " and coalesce(ap.is_deleted,false)!=true "+
+//                " and ap.retail_sales_id = " + docId;
+//        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Object[]> queryList = query.getResultList();
+//            List<LinkedDocsJSON> returnList = new ArrayList<>();
+//            for(Object[] obj:queryList){
+//                LinkedDocsJSON doc=new LinkedDocsJSON();
+//                doc.setId(Long.parseLong(                       obj[0].toString()));
+//                doc.setDate_time_created((String)               obj[1]);
+//                doc.setDescription((String)                     obj[2]);
+//                doc.setIs_completed((Boolean)                   obj[3]);
+//                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+//                returnList.add(doc);
+//            }
+//            return returnList;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getRetailSalesLinkedDocsList. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 
     // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
     // другие ситуации. Поэтому удаление пока оставляю закомментированным

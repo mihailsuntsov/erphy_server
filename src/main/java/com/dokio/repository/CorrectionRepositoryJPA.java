@@ -380,8 +380,8 @@ public class CorrectionRepositoryJPA {
 
             if ((   //если есть право на создание по всем предприятиям, или
                     (securityRepositoryJPA.userHasPermissions_OR(41L, "540")) ||
-                    //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                    (securityRepositoryJPA.userHasPermissions_OR(41L, "541") && myCompanyId.equals(request.getCompany_id()))) &&
+                            //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                            (securityRepositoryJPA.userHasPermissions_OR(41L, "541") && myCompanyId.equals(request.getCompany_id()))) &&
                     //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                     DocumentMasterId.equals(myMasterId))
             {

@@ -2313,6 +2313,96 @@ create table settings_correction (
                                    foreign key (company_id) references companies(id)
 );
 
+alter table shifts add column uid varchar (36);
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (43,'Кассовая смена','shifts',1,'shifts','Кассовые смены');
+
+insert into permissions (id,name,description,document_name,document_id) values
+(559,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Кассовые смены',43),
+(560,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Кассовые смены" по всем предприятиям','Кассовые смены',43),
+(561,'Просмотр документов своего предприятия','Прсмотр информации в документах "Кассовые смены" своего предприятия','Кассовые смены',43);
+
+
+
+
+alter table receipts add column uid varchar (36);
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (44,'Кассовый чек','receipts',1,'receipts','Кассовые чеки');
+
+insert into permissions (id,name,description,document_name,document_id) values
+(562,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Кассовые чеки',44),
+(563,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Кассовые чеки" по всем предприятиям','Кассовые чеки',44),
+(564,'Просмотр документов своего предприятия','Прсмотр информации в документах "Кассовые чеки" своего предприятия','Кассовые чеки',44);
+
+alter table shifts    add column linked_docs_group_id bigint;
+alter table receipts  add column linked_docs_group_id bigint;
+alter table shifts    add column acquiring_bank_id bigint; -- id банка-эквайера по электронным платежам
+alter table receipts  add column acquiring_bank_id bigint; -- id банка-эквайера по электронным платежам
+alter table receipts  add column parent_tablename varchar (16);--retail_sales, return, shipment - из данных документов могут создаваться чеки
+alter table receipts  add column parent_doc_id int; -- id в таблице documents
+alter table receipts  add column return_id bigint; -- заполняется если чек создан из возврата покупателя
+
+alter table shifts    add constraint linked_docs_group_id_fkey foreign key (linked_docs_group_id) references linked_docs_groups (id);
+alter table receipts  add constraint linked_docs_group_id_fkey foreign key (linked_docs_group_id) references linked_docs_groups (id);
+alter table shifts    add constraint acquiring_bank_id_fkey foreign key (acquiring_bank_id) references cagents (id);
+alter table receipts  add constraint acquiring_bank_id_fkey foreign key (acquiring_bank_id) references cagents (id);
+alter table receipts  add constraint parent_doc_id_fkey foreign key (parent_doc_id) references documents (id);
+alter table receipts  add constraint return_id_fkey foreign key (return_id) references return (id);
+
+CREATE INDEX shifts_master_id_index ON shifts USING btree (master_id);
+CREATE INDEX shifts_company_id_index ON shifts USING btree (company_id);
+CREATE INDEX receipts_master_id_index ON receipts USING btree (master_id);
+CREATE INDEX receipts_company_id_index ON receipts USING btree (company_id);
+
+CREATE INDEX users_master_id_index ON users USING btree (master_id);
+CREATE INDEX users_company_id_index ON users USING btree (company_id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 WITH
   credit as (

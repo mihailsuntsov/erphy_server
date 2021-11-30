@@ -308,22 +308,22 @@ public class RetailSalesController {
             return new ResponseEntity<>("Ошибка загрузки настроек для документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    @RequestMapping(
-            value = "/api/auth/getRetailSalesLinkedDocsList",
-            params = {"id","docName"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getRetailSalesLinkedDocsList(
-    @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
-        logger.info("Processing get request for path api/auth/getRetailSalesLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
-        List<LinkedDocsJSON> returnList;
-        returnList = retailSalesRepository.getRetailSalesLinkedDocsList(id,docName);
-        if(!Objects.isNull(returnList)){
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//
+//    @RequestMapping(
+//            value = "/api/auth/getRetailSalesLinkedDocsList",
+//            params = {"id","docName"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getRetailSalesLinkedDocsList(
+//    @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
+//        logger.info("Processing get request for path api/auth/getRetailSalesLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+//        List<LinkedDocsJSON> returnList;
+//        returnList = retailSalesRepository.getRetailSalesLinkedDocsList(id,docName);
+//        if(!Objects.isNull(returnList)){
+//            return new ResponseEntity<>(returnList, HttpStatus.OK);
+//        } else {
+//            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
     // С удалением пока все непонятно - Розничная продажа создается тогда, когда уже пробит чек, т.е. продажа уже совершена, и товар выбыл. Удалять такое однозначно нельзя. Но возможно будут какие-то
     // другие ситуации. Поэтому удаление пока оставляю закомментированным
 /*    @PostMapping("/api/auth/deleteRetailSales")
