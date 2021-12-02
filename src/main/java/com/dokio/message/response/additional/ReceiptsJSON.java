@@ -45,7 +45,16 @@ public class ReceiptsJSON {
     private String document; // Наименование документа из таблицы documents
     private String parent_tablename;
     private Integer shift_number;
+    private BigDecimal summ; //всего сумма в чеке (нал + электронные)
     private String uid;
+
+    public BigDecimal getSumm() {
+        return summ;
+    }
+
+    public void setSumm(BigDecimal summ) {
+        this.summ = summ;
+    }
 
     public Long getId() {
         return id;

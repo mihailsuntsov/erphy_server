@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,7 +45,7 @@ public class ShiftsRepository {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("shift_number","name","kassa","acquiring_bank","zn_kkt","company","department","creator","date_time_created_sort","date_time_closed_sort","shift_status_id","fn_serial","closer")
+            .of("shift_number","name","kassa","acquiring_bank","zn_kkt","revenue_all","num_receipts","revenue_cash","revenue_electronically","company","department","creator","date_time_created_sort","date_time_closed_sort","shift_status_id","fn_serial","closer")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -56,8 +57,8 @@ public class ShiftsRepository {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<ShiftsJSON> getShiftsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(43L, "560,561"))//(см. файл Permissions Id)
+    public List<ShiftsJSON> getShiftsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long departmentId, Long cashierId, Long kassaId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(43L, "560,561,566"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -90,6 +91,19 @@ public class ShiftsRepository {
                     "           p.shift_expired_at as shift_expired_at, " +
                     "           p.fn_serial as fn_serial, " +
                     "           p.uid as uid, " +
+                    "           (" +
+                    "               coalesce((select sum(coalesce(cash,0)) from receipts where shift_id=p.id and operation_id='sell'),0)-" +
+                    "               coalesce((select sum(coalesce(cash,0)) from receipts where shift_id=p.id and operation_id='return'),0)" +
+                    "           ) as revenue_cash, " +
+                    "           (" +
+                    "               coalesce((select sum(coalesce(electronically,0)) from receipts where shift_id=p.id and operation_id='sell'),0)-" +
+                    "               coalesce((select sum(coalesce(electronically,0)) from receipts where shift_id=p.id and operation_id='return'),0)" +
+                    "           ) as revenue_electronically, " +
+                    "           (" +
+                    "               coalesce((select sum(coalesce(cash,0))+sum(coalesce(electronically,0)) from receipts where shift_id=p.id and operation_id='sell'),0)-" +
+                    "               coalesce((select sum(coalesce(cash,0))+sum(coalesce(electronically,0)) from receipts where shift_id=p.id and operation_id='return'),0)" +
+                    "           ) as revenue_all, " +
+                    "           coalesce((select count(*) from receipts where shift_id=p.id),0) as num_receipts," +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_closed as date_time_closed_sort " +
 
@@ -101,11 +115,18 @@ public class ShiftsRepository {
                     "           INNER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank_id=aqu.id " +
                     "           LEFT OUTER JOIN users uc ON p.closer_id=uc.id " +
-                    "           where  p.master_id=" + myMasterId;
+                    "           where  p.master_id=" + myMasterId+
+                    ((cashierId>0)?" and (p.creator_id = "+cashierId+" or p.closer_id="+cashierId+")":"") +
+                    ((kassaId>0)?" and p.kassa_id = "+kassaId:"");
+
 
             if (!securityRepositoryJPA.userHasPermissions_OR(43L, "560")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            {//остается на: своё предприятие ИЛИ свои подразделения
+                if (!securityRepositoryJPA.userHasPermissions_OR(43L, "561")) //Если нет прав на просм по своему предприятию
+                {//остается только на просмотр всех доков в своих отделениях (566)
+                    stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
+                }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
             if (searchString != null && !searchString.isEmpty()) {
@@ -172,6 +193,10 @@ public class ShiftsRepository {
                     doc.setShift_expired_at((String)              obj[20]);
                     doc.setFn_serial((String)                     obj[21]);
                     doc.setUid((String)                           obj[22]);
+                    doc.setRevenue_cash((BigDecimal)              obj[23]);
+                    doc.setRevenue_electronically((BigDecimal)    obj[24]);
+                    doc.setRevenue_all((BigDecimal)               obj[25]);
+                    doc.setNum_receipts(Long.parseLong(           obj[26].toString()));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -184,7 +209,7 @@ public class ShiftsRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    public int getShiftsSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+    public int getShiftsSize(int result, String searchString, Long companyId, Long departmentId, Long cashierId, Long kassaId, Set<Integer> filterOptionsIds) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
@@ -200,12 +225,19 @@ public class ShiftsRepository {
                 "           INNER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank_id=aqu.id " +
                 "           LEFT OUTER JOIN users uc ON p.closer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId;
+                "           where  p.master_id=" + myMasterId+
+                ((cashierId>0)?" and (p.creator_id = "+cashierId+" or p.closer_id="+cashierId+")":"") +
+                ((kassaId>0)?" and p.kassa_id = "+kassaId:"");
 
         if (!securityRepositoryJPA.userHasPermissions_OR(43L, "560")) //Если нет прав на просм по всем предприятиям
-        {//остается на: своё предприятие
-            stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+        {//остается на: своё предприятие ИЛИ свои подразделения
+            if (!securityRepositoryJPA.userHasPermissions_OR(43L, "561")) //Если нет прав на просм по своему предприятию
+            {//остается только на просмотр всех доков в своих отделениях (566)
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
+            }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+            else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
         }
+
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.shift_number,'0000000000') like CONCAT('%',:sg) or "+
@@ -237,4 +269,103 @@ public class ShiftsRepository {
             return 0;
         }
     }
+
+    // Возвращает список всех когда либо использовавшихся касс (если department_id > 0 то в отделении)
+    @SuppressWarnings("Duplicates")
+    public List<IdAndNameJSON>getShiftsKassa(Long companyId, Long department_id, String docName){
+        String stringQuery;
+        boolean needToSetParameter_MyDepthsIds = false;
+
+        boolean onlyMyDepths;
+        if(docName.equals("shifts")) onlyMyDepths=!securityRepositoryJPA.userHasPermissions_OR(43L, "560,561"); // Если нет прав на просм по всем предприятиям или по всем отделениям своего предприятия - будет фильтр только по своим отделениям
+        else onlyMyDepths=!securityRepositoryJPA.userHasPermissions_OR(44L, "563,564"); // "receipts"
+
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery=
+                "select id, name from kassa where master_id="+myMasterId+" and company_id="+companyId+" and id in " +
+                        "(select kassa_id from shifts where master_id="+myMasterId+" and company_id = "+ companyId +
+                        ((department_id>0)?" and department_id = "+department_id:"");
+
+        if (onlyMyDepths){//Если нет прав на просм по всем предприятиям или по всем отделениям своего предприятия
+            stringQuery=stringQuery + " and department_id in :myDepthsIds "; needToSetParameter_MyDepthsIds=true;
+        }
+        stringQuery=stringQuery + " group by kassa_id) order by name asc";
+        try
+        {
+            Query query =  entityManager.createNativeQuery(stringQuery);
+
+            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndNameJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                IdAndNameJSON doc=new IdAndNameJSON();
+                doc.setId(Long.parseLong(                             obj[0].toString()));
+                doc.setName((String)                                  obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getShiftsKassa. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Возвращает список всех когда либо работавших с кассами пользователей касс (если department_id > 0 то в отделении)
+    @SuppressWarnings("Duplicates")
+    public List<IdAndNameJSON>getShiftsCashiers(Long companyId, Long department_id, String docName){
+        String stringQuery;
+        boolean needToSetParameter_MyDepthsIds = false;
+
+        boolean onlyMyDepths;
+        if(docName.equals("shifts")) onlyMyDepths=!securityRepositoryJPA.userHasPermissions_OR(43L, "560,561"); // Если нет прав на просм по всем предприятиям или по всем отделениям своего предприятия - будет фильтр только по своим отделениям
+        else onlyMyDepths=!securityRepositoryJPA.userHasPermissions_OR(44L, "563,564"); // "receipts"
+
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery=
+                "select id, name from users where master_id="+myMasterId+" and company_id="+companyId+" and id in " +
+                        "(" +
+                                        "select creator_id from shifts where master_id="+myMasterId+" and company_id = "+ companyId +
+                                        ((department_id>0)?" and department_id = "+department_id:"");
+
+        if (onlyMyDepths){//Если нет прав на просм по всем предприятиям или по всем отделениям своего предприятия
+            stringQuery=stringQuery +   " and department_id in :myDepthsIds "; needToSetParameter_MyDepthsIds=true;
+        }
+
+        stringQuery=stringQuery + " UNION ";
+
+        stringQuery=stringQuery +       " select closer_id from shifts where master_id="+myMasterId+" and company_id = "+ companyId +
+                ((department_id>0)?" and department_id = "+department_id:"");
+
+        if (onlyMyDepths){//Если нет прав на просм по всем предприятиям или по всем отделениям своего предприятия
+            stringQuery=stringQuery +   " and department_id in :myDepthsIds "; needToSetParameter_MyDepthsIds=true;
+        }
+
+        stringQuery=stringQuery +       ") order by name asc";
+        try
+        {
+            Query query =  entityManager.createNativeQuery(stringQuery);
+
+            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndNameJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                IdAndNameJSON doc=new IdAndNameJSON();
+                doc.setId(Long.parseLong(                             obj[0].toString()));
+                doc.setName((String)                                  obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getShiftsCashiers. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 }

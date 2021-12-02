@@ -1,6 +1,6 @@
 package com.dokio.controller.Reports;
 
-import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Reports.ShiftSearchForm;
 import com.dokio.message.response.additional.ShiftsJSON;
 import com.dokio.repository.ShiftsRepository;
 import org.apache.log4j.Logger;
@@ -25,13 +25,11 @@ public class ShiftsController {
 
     @PostMapping("/api/auth/getShiftsTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getShiftsTable(@RequestBody SearchForm searchRequest) {
+    public ResponseEntity<?> getShiftsTable(@RequestBody ShiftSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getShiftsTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
-        int departmentId;//по какому отделению показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
@@ -48,43 +46,27 @@ public class ShiftsController {
         } else {
             result = 10;
         }
-        if (searchRequest.getCompanyId() != null && !searchRequest.getCompanyId().isEmpty() && searchRequest.getCompanyId().trim().length() > 0) {
-            companyId = Integer.parseInt(searchRequest.getCompanyId());
-        } else {
-            companyId = 0;
-        }
-        if (searchRequest.getDepartmentId() != null && !searchRequest.getDepartmentId().isEmpty() && searchRequest.getDepartmentId().trim().length() > 0) {
-            departmentId = Integer.parseInt(searchRequest.getDepartmentId());
-        } else {
-            departmentId = 0;
-        }
         if (searchRequest.getOffset() != null && !searchRequest.getOffset().isEmpty() && searchRequest.getOffset().trim().length() > 0) {
             offset = Integer.parseInt(searchRequest.getOffset());
         } else {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = shiftsRepository.getShiftsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = shiftsRepository.getShiftsTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getCashierId(),searchRequest.getKassaId(),searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @PostMapping("/api/auth/getShiftsPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getShiftsPagesList(@RequestBody SearchForm searchRequest) {
+    public ResponseEntity<?> getShiftsPagesList(@RequestBody ShiftSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getShiftsPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        int companyId;//по какому предприятию показывать документы/ 0 - по всем
-        int departmentId;//по какой категории товаров показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
-        companyId = Integer.parseInt(searchRequest.getCompanyId());
-        if (searchRequest.getDepartmentId() != null && !searchRequest.getDepartmentId().isEmpty() && searchRequest.getDepartmentId().trim().length() > 0) {
-            departmentId = Integer.parseInt(searchRequest.getDepartmentId());
-        } else {
-            departmentId = 0;}
+
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
         } else {
@@ -94,7 +76,7 @@ public class ShiftsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = shiftsRepository.getShiftsSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = shiftsRepository.getShiftsSize(result, searchString, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getCashierId(),searchRequest.getKassaId(),searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -141,5 +123,32 @@ public class ShiftsController {
     }
 
 
-
+    // Возвращает список всех пользователей, работавших с кассой под своей учеткой
+    @RequestMapping(
+            value = "/api/auth/getShiftsKassa",
+            params = {"company_id","department_id","docName"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getShiftsKassaList(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("docName") String docName,
+            @RequestParam("department_id") Long department_id){
+        logger.info("Processing get request for path /api/auth/getShiftsKassa with parameters: " + "company_id: " + company_id + ", department_id = "+ department_id + ", docName = "+ docName);
+        try {return new ResponseEntity<>(shiftsRepository.getShiftsKassa(company_id, department_id, docName), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller getShiftsKassa error", e);
+            return new ResponseEntity<>("Ошибка загрузки списка касс ККМ", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    // Возвращает список всех пользователей, работавших с кассой под своей учеткой
+    @RequestMapping(
+            value = "/api/auth/getShiftsCashiers",
+            params = {"company_id","department_id","docName"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getShiftsCashiersList(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("docName") String docName,
+            @RequestParam("department_id") Long department_id){
+        logger.info("Processing get request for path /api/auth/getShiftsCashiers with parameters: " + "company_id: " + company_id + ", department_id = "+ department_id+ ", docName = "+ docName);
+        try {return new ResponseEntity<>(shiftsRepository.getShiftsCashiers(company_id, department_id, docName), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller getShiftsCashiersList error", e);
+            return new ResponseEntity<>("Ошибка загрузки списка кассиров", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

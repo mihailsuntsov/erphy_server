@@ -12,11 +12,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.message.response.additional;
 
+import java.math.BigDecimal;
+import java.util.Set;
+
 public class ShiftsJSON {
 
     private Long id;
     private Long master_id;
-
     private Long creator_id;
     private Long closer_id;
     private Long company_id;
@@ -26,7 +28,6 @@ public class ShiftsJSON {
     private String date_time_created;
     private String date_time_closed;
     private String shift_status_id;
-
     private String master;
     private String creator;
     private String closer;
@@ -39,6 +40,42 @@ public class ShiftsJSON {
     private String shift_expired_at;
     private String fn_serial;
     private String uid;
+    private BigDecimal revenue_all; // выручка всего
+    private BigDecimal revenue_cash; // выручка нал
+    private BigDecimal revenue_electronically; // выручка безнал
+    private Long num_receipts; // кол-во чеков
+
+    public Long getNum_receipts() {
+        return num_receipts;
+    }
+
+    public void setNum_receipts(Long num_receipts) {
+        this.num_receipts = num_receipts;
+    }
+
+    public BigDecimal getRevenue_all() {
+        return revenue_all;
+    }
+
+    public void setRevenue_all(BigDecimal revenue_all) {
+        this.revenue_all = revenue_all;
+    }
+
+    public BigDecimal getRevenue_cash() {
+        return revenue_cash;
+    }
+
+    public void setRevenue_cash(BigDecimal revenue_cash) {
+        this.revenue_cash = revenue_cash;
+    }
+
+    public BigDecimal getRevenue_electronically() {
+        return revenue_electronically;
+    }
+
+    public void setRevenue_electronically(BigDecimal revenue_electronically) {
+        this.revenue_electronically = revenue_electronically;
+    }
 
     public Long getId() {
         return id;

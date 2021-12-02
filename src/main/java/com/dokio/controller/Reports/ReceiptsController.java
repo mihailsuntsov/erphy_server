@@ -1,6 +1,6 @@
 package com.dokio.controller.Reports;
 
-import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Reports.ReceiptSearchForm;
 import com.dokio.message.response.additional.ReceiptsJSON;
 import com.dokio.repository.ReceiptsRepository;
 import org.apache.log4j.Logger;
@@ -25,13 +25,11 @@ public class ReceiptsController {
 
     @PostMapping("/api/auth/getReceiptsTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getReceiptsTable(@RequestBody SearchForm searchRequest) {
+    public ResponseEntity<?> getReceiptsTable(@RequestBody ReceiptSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getReceiptsTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
-        int departmentId;//по какому отделению показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
@@ -48,43 +46,27 @@ public class ReceiptsController {
         } else {
             result = 10;
         }
-        if (searchRequest.getCompanyId() != null && !searchRequest.getCompanyId().isEmpty() && searchRequest.getCompanyId().trim().length() > 0) {
-            companyId = Integer.parseInt(searchRequest.getCompanyId());
-        } else {
-            companyId = 0;
-        }
-        if (searchRequest.getDepartmentId() != null && !searchRequest.getDepartmentId().isEmpty() && searchRequest.getDepartmentId().trim().length() > 0) {
-            departmentId = Integer.parseInt(searchRequest.getDepartmentId());
-        } else {
-            departmentId = 0;
-        }
         if (searchRequest.getOffset() != null && !searchRequest.getOffset().isEmpty() && searchRequest.getOffset().trim().length() > 0) {
             offset = Integer.parseInt(searchRequest.getOffset());
         } else {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = receiptsRepository.getReceiptsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = receiptsRepository.getReceiptsTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getCashierId(),searchRequest.getKassaId(),searchRequest.getShift_id());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
     @PostMapping("/api/auth/getReceiptsPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getReceiptsPagesList(@RequestBody SearchForm searchRequest) {
+    public ResponseEntity<?> getReceiptsPagesList(@RequestBody ReceiptSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getReceiptsPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        int companyId;//по какому предприятию показывать документы/ 0 - по всем
-        int departmentId;//по какой категории товаров показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
-        companyId = Integer.parseInt(searchRequest.getCompanyId());
-        if (searchRequest.getDepartmentId() != null && !searchRequest.getDepartmentId().isEmpty() && searchRequest.getDepartmentId().trim().length() > 0) {
-            departmentId = Integer.parseInt(searchRequest.getDepartmentId());
-        } else {
-            departmentId = 0;}
+
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
         } else {
@@ -94,7 +76,7 @@ public class ReceiptsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = receiptsRepository.getReceiptsSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = receiptsRepository.getReceiptsSize(result, searchString, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getCashierId(),searchRequest.getKassaId(),searchRequest.getShift_id());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -140,17 +122,4 @@ public class ReceiptsController {
         return responseEntity;
     }
 
-
-    // Возвращает список всех пользователей, работавших с кассой под своей учеткой
-    @RequestMapping(
-            value = "/api/auth/getListOfWorkedCashiers",
-            params = {"company_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getListOfWorkedCashiers(
-            @RequestParam("company_id") Long company_id){
-        logger.info("Processing get request for path /api/auth/getListOfWorkedCashiers with parameters: " + "company_id: " + company_id);
-        try {return new ResponseEntity<>(receiptsRepository.getListOfWorkedCashiers(company_id), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getListOfWorkedCashiers error", e);
-            return new ResponseEntity<>("Ошибка загрузки списка кассиров", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
 }

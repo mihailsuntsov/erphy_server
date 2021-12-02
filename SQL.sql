@@ -2357,9 +2357,13 @@ CREATE INDEX receipts_company_id_index ON receipts USING btree (company_id);
 CREATE INDEX users_master_id_index ON users USING btree (master_id);
 CREATE INDEX users_company_id_index ON users USING btree (company_id);
 
+CREATE INDEX receipts_shift_id_index ON receipts USING btree (shift_id);
 
+insert into permissions (id,name,description,document_name,document_id) values
+(565,'Просмотр документов своих отделений','Прсмотр информации в документах "Кассовые чеки" по своим отделениям','Кассовые чеки',44);
 
-
+insert into permissions (id,name,description,document_name,document_id) values
+(566,'Просмотр документов своих отделений','Прсмотр информации в документах "Кассовые смены" по своим отделениям','Кассовые смены',43);
 
 
 

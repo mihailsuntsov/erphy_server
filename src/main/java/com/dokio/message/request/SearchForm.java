@@ -21,7 +21,7 @@ public class SearchForm {
     private String searchString; //строка поиска
     private String companyId; //id предприятия
     private String employeeId; //id сотрудника
-    private String departmentId; //id предприятия
+    private String departmentId; //id отделения
     private String documentId; //id документа
     private String parentId; //id родителя
     private String dateFrom; //с даты

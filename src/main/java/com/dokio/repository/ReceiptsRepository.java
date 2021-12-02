@@ -57,8 +57,8 @@ public class ReceiptsRepository {
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<ReceiptsJSON> getReceiptsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(44L, "563,564"))//(см. файл Permissions Id)
+    public List<ReceiptsJSON> getReceiptsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long departmentId, Long cashierId, Long kassaId, Integer shift_id) {
+        if(securityRepositoryJPA.userHasPermissions_OR(44L, "563,564,565"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
@@ -77,7 +77,7 @@ public class ReceiptsRepository {
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
-                    "           p.shift_number as shift_number, " +
+                    "           sh.shift_number as shift_number, " +
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           p.shift_id as shift_id," +
@@ -96,28 +96,36 @@ public class ReceiptsRepository {
                     "           p.cash as cash, " +
                     "           p.electronically as electronically, " +
                     "           p.uid as uid, " +
+                    "           p.cash+p.electronically as summ," +
 
-                    "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_closed as date_time_closed_sort " +
+                    "           p.date_time_created as date_time_created_sort " +
 
                     "           from receipts p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN shifts sh ON p.shift_id=sh.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           INNER JOIN sprav_sys_taxation_types tax on p.sno_id=tax.id, "+
+                    "           INNER JOIN sprav_sys_taxation_types tax on p.sno_id=tax.id "+
                     "           INNER JOIN kassa ka ON p.kassa_id=ka.id " +
                     "           INNER JOIN users us ON p.creator_id=us.id " +
-                    "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank=aqu.id " +
-                    "           where  p.master_id=" + myMasterId;
+                    "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank_id=aqu.id " +
+                    "           where  p.master_id=" + myMasterId+
+                    ((cashierId>0)?" and p.creator_id = "+cashierId:"") +
+                    ((!Objects.isNull(shift_id) && shift_id>0)?" and p.shift_id = "+shift_id:"") +
+                    ((kassaId>0)?" and p.kassa_id = "+kassaId:"");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(44L, "563")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            {//остается на: своё предприятие ИЛИ свои подразделения
+                if (!securityRepositoryJPA.userHasPermissions_OR(44L, "564")) //Если нет прав на просм по своему предприятию
+                {//остается только на просмотр всех доков в своих отделениях (565)
+                    stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
+                }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.shift_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " to_char(sh.shift_number,'0000000000') like CONCAT('%',:sg) or "+
                         " upper(tax.short_name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
@@ -185,6 +193,7 @@ public class ReceiptsRepository {
                     doc.setCash((BigDecimal)                                obj[26]);
                     doc.setElectronically((BigDecimal)                      obj[27]);
                     doc.setUid((String)                                     obj[28]);
+                    doc.setSumm((BigDecimal)                                obj[29]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -197,32 +206,40 @@ public class ReceiptsRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    public int getReceiptsSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+    public int getReceiptsSize(int result, String searchString, Long companyId, Long departmentId, Long cashierId, Long kassaId,  Integer shift_id) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+//        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
                 "           from receipts p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           INNER JOIN shifts sh ON p.shift_id=sh.id " +
                 "           INNER JOIN users u ON p.master_id=u.id " +
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                "           INNER JOIN sprav_sys_taxation_types tax on p.sno_id=tax.id "+
                 "           INNER JOIN kassa ka ON p.kassa_id=ka.id " +
                 "           INNER JOIN users us ON p.creator_id=us.id " +
-                "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank=aqu.id " +
-                "           LEFT OUTER JOIN users uc ON p.closer_id=uc.id " +
-                "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                "           where  p.master_id=" + myMasterId;
+                "           LEFT OUTER JOIN cagents aqu ON p.acquiring_bank_id=aqu.id " +
+                "           where  p.master_id=" + myMasterId+
+                ((cashierId>0)?" and p.creator_id = "+cashierId:"") +
+                ((!Objects.isNull(shift_id) && shift_id>0)?" and p.shift_id = "+shift_id:"") +
+                ((kassaId>0)?" and p.kassa_id = "+kassaId:"");
 
         if (!securityRepositoryJPA.userHasPermissions_OR(44L, "563")) //Если нет прав на просм по всем предприятиям
-        {//остается на: своё предприятие
-            stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+        {//остается на: своё предприятие ИЛИ свои подразделения
+            if (!securityRepositoryJPA.userHasPermissions_OR(44L, "564")) //Если нет прав на просм по своему предприятию
+            {//остается только на просмотр всех доков в своих отделениях (565)
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;
+            }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+            else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
         }
+
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.shift_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " to_char(sh.shift_number,'0000000000') like CONCAT('%',:sg) or "+
                     " upper(tax.short_name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
@@ -248,33 +265,6 @@ public class ReceiptsRepository {
             e.printStackTrace();
             logger.error("Exception in method getReceiptsSize. SQL query:" + stringQuery, e);
             return 0;
-        }
-    }
-
-    // Возвращает список всех пользователей, работавших с кассой под своей учеткой
-    public List<CashierListJSON>getListOfWorkedCashiers(Long companyId){
-        String stringQuery;
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        stringQuery=
-                "select name from users where master_id="+myMasterId+" and company_id="+companyId+" and id in " +
-                "(select creator_id from shifts where master_id="+myMasterId+" and company_id = "+companyId+" group by creator_id)"+
-                " order by name asc";
-
-        try
-        {
-            Query query =  entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<CashierListJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                CashierListJSON doc=new CashierListJSON();
-                doc.setId(Long.parseLong(                             obj[0].toString()));
-                doc.setName((String)                                  obj[1]);
-            }
-            return returnList;
-        }catch (Exception e) {
-            logger.error("Exception in method getListOfWorkedCashiers. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return null;
         }
     }
 }
