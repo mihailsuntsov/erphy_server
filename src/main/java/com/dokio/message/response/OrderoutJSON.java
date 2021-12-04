@@ -47,6 +47,15 @@ public class OrderoutJSON {
     private Long boxoffice_id; // касса предприятия (не путать с ККМ!)
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
     private Long boxoffice_to_id; // касса предприятия куда пермещаем ден. ср-ва
+    private Long kassa_to_id;             // id кассы ККМ - назначения (куда производим внесение ден средств)
+
+    public Long getKassa_to_id() {
+        return kassa_to_id;
+    }
+
+    public void setKassa_to_id(Long kassa_to_id) {
+        this.kassa_to_id = kassa_to_id;
+    }
 
     public Long getBoxoffice_to_id() {
         return boxoffice_to_id;

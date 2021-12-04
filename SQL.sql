@@ -2365,17 +2365,30 @@ insert into permissions (id,name,description,document_name,document_id) values
 insert into permissions (id,name,description,document_name,document_id) values
 (566,'Просмотр документов своих отделений','Прсмотр информации в документах "Кассовые смены" по своим отделениям','Кассовые смены',43);
 
+alter table receipts  drop constraint parent_doc_id_fkey;
+
+alter table receipts  add constraint parent_doc_id_fkey foreign key (parent_doc_id) references documents (id);
 
 
+alter table orderin add   column moving_type varchar (10);
+alter table paymentin add column moving_type varchar (10);
 
+alter table orderin add column payment_account_from_id bigint;
+alter table orderin add column boxoffice_from_id bigint;
+alter table orderin add column kassa_from_id bigint;
 
+alter table orderin add constraint payment_account_from_id_fkey foreign key (payment_account_from_id) references companies_payment_accounts (id);
+alter table orderin add constraint boxoffice_from_id_fkey foreign key (boxoffice_from_id) references sprav_boxoffice (id);
+alter table orderin add constraint kassa_from_id_fkey foreign key (kassa_from_id) references kassa (id);
 
+alter table paymentin add column payment_account_from_id bigint;
+alter table paymentin add column boxoffice_from_id bigint;
 
+alter table paymentin add constraint payment_account_from_id_fkey foreign key (payment_account_from_id) references companies_payment_accounts (id);
+alter table paymentin add constraint boxoffice_from_id_fkey foreign key (boxoffice_from_id) references sprav_boxoffice (id);
 
-
-
-
-
+alter table orderout add column kassa_to_id bigint;
+alter table orderout add constraint kassa_to_id_fkey foreign key (kassa_to_id) references kassa (id);
 
 
 

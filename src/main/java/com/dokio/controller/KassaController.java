@@ -405,11 +405,25 @@ public class KassaController {
     {
         logger.info("Processing get request for path /api/auth/getKassaListByDepId with parameters: " +
                 "id: " + id.toString());
-        List<KassaJSON> returnList;
         try {
-            returnList = kassaRepository.getKassaListByDepId(id);
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
+            return new ResponseEntity<>(kassaRepository.getKassaListByDepId(id), HttpStatus.OK);
         } catch (Exception e){
+            logger.error("Contrloller getKassaListByDepId error", e);
+            return new ResponseEntity<>("Ошибка запроса на список касс, доступных для пользователя", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    //отдаёт список касс для кассира по id отделения
+    @RequestMapping(
+            value = "/api/auth/getKassaListByBoxofficeId",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getKassaListByBoxofficeId(
+            @RequestParam("id") Long id)
+    {
+        logger.info("Processing get request for path /api/auth/getKassaListByBoxofficeId with parameters: id: " + id.toString());
+        try {return new ResponseEntity<>(kassaRepository.getKassaListByBoxofficeId(id), HttpStatus.OK);
+        } catch (Exception e){
+            logger.error("Contrloller getKassaListByBoxofficeId error", e);
             return new ResponseEntity<>("Ошибка запроса на список касс, доступных для пользователя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

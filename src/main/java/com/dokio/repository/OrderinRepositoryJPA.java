@@ -118,6 +118,10 @@ public class OrderinRepositoryJPA {
                     "           coalesce(p.summ,0) as summ, " +
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
+                    "           p.moving_type as moving_type, " +/*
+                    "           p.kassa_from_id as kassa_from_id, " +
+                    "           p.boxoffice_from_id as boxoffice_from_id, " +
+                    "           p.payment_account_from_id as payment_account_from_id, " +*/
 
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
@@ -170,26 +174,31 @@ public class OrderinRepositoryJPA {
                 List<OrderinJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
                     OrderinJSON doc=new OrderinJSON();
-                    doc.setId(Long.parseLong(                     obj[0].toString()));
-                    doc.setMaster((String)                        obj[1]);
-                    doc.setCreator((String)                       obj[2]);
-                    doc.setChanger((String)                       obj[3]);
-                    doc.setMaster_id(Long.parseLong(              obj[4].toString()));
-                    doc.setCreator_id(Long.parseLong(             obj[5].toString()));
-                    doc.setChanger_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
-                    doc.setCompany_id(Long.parseLong(             obj[7].toString()));
-                    doc.setDoc_number(Long.parseLong(             obj[8].toString()));
-                    doc.setCompany((String)                       obj[9]);
-                    doc.setDate_time_created((String)             obj[10]);
-                    doc.setDate_time_changed((String)             obj[11]);
-                    doc.setDescription((String)                   obj[12]);
-                    doc.setStatus_id(obj[13]!=null?Long.parseLong(obj[13].toString()):null);
-                    doc.setStatus_name((String)                   obj[14]);
-                    doc.setStatus_color((String)                  obj[15]);
-                    doc.setStatus_description((String)            obj[16]);
-                    doc.setSumm((BigDecimal)                      obj[17]);
-                    doc.setCagent((String)                        obj[18]);
-                    doc.setIs_completed((Boolean)                 obj[19]);
+                    doc.setId(Long.parseLong(                                       obj[0].toString()));
+                    doc.setMaster((String)                                          obj[1]);
+                    doc.setCreator((String)                                         obj[2]);
+                    doc.setChanger((String)                                         obj[3]);
+                    doc.setMaster_id(Long.parseLong(                                obj[4].toString()));
+                    doc.setCreator_id(Long.parseLong(                               obj[5].toString()));
+                    doc.setChanger_id(obj[6]!=null?Long.parseLong(                  obj[6].toString()):null);
+                    doc.setCompany_id(Long.parseLong(                               obj[7].toString()));
+                    doc.setDoc_number(Long.parseLong(                               obj[8].toString()));
+                    doc.setCompany((String)                                         obj[9]);
+                    doc.setDate_time_created((String)                               obj[10]);
+                    doc.setDate_time_changed((String)                               obj[11]);
+                    doc.setDescription((String)                                     obj[12]);
+                    doc.setStatus_id(obj[13]!=null?Long.parseLong(                  obj[13].toString()):null);
+                    doc.setStatus_name((String)                                     obj[14]);
+                    doc.setStatus_color((String)                                    obj[15]);
+                    doc.setStatus_description((String)                              obj[16]);
+                    doc.setSumm((BigDecimal)                                        obj[17]);
+                    doc.setCagent((String)                                          obj[18]);
+                    doc.setIs_completed((Boolean)                                   obj[19]);
+                    doc.setMoving_type((String)                                     obj[20]);/*
+                    doc.setKassa_from_id(obj[21]!=null?Long.parseLong(              obj[21].toString()):null);
+                    doc.setBoxoffice_from_id(obj[22]!=null?Long.parseLong(          obj[22].toString()):null);
+                    doc.setPayment_account_from_id(obj[23]!=null?Long.parseLong(    obj[23].toString()):null);*/
+
                     returnList.add(doc);
                 }
                 return returnList;
@@ -287,7 +296,11 @@ public class OrderinRepositoryJPA {
                     "           p.uid as uid, " +
                     "           p.is_completed as is_completed, " +
                     "           p.internal as internal," +
-                    "           p.boxoffice_id as boxoffice_id" +
+                    "           p.boxoffice_id as boxoffice_id," +
+                    "           p.moving_type as moving_type, " +
+                    "           p.kassa_from_id as kassa_from_id, " +
+                    "           p.boxoffice_from_id as boxoffice_from_id, " +
+                    "           p.payment_account_from_id as payment_account_from_id " +
 
                     "           from orderin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -336,6 +349,10 @@ public class OrderinRepositoryJPA {
                     returnObj.setIs_completed((Boolean)                     obj[22]);
                     returnObj.setInternal((Boolean)                         obj[23]);
                     returnObj.setBoxoffice_id(Long.parseLong(               obj[24].toString()));
+                    returnObj.setMoving_type((String)                                     obj[25]);
+                    returnObj.setKassa_from_id(obj[26]!=null?Long.parseLong(              obj[26].toString()):null);
+                    returnObj.setBoxoffice_from_id(obj[27]!=null?Long.parseLong(          obj[27].toString()):null);
+                    returnObj.setPayment_account_from_id(obj[28]!=null?Long.parseLong(    obj[28].toString()):null);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -451,6 +468,10 @@ public class OrderinRepositoryJPA {
                         " summ,"+
                         " internal,"+ //внутренний платеж (перемещение денег внутри предприятия)
                         " boxoffice_id," + // касса предприятия (это не ККМ, это именно касса предприятия, обычно в 99% случаев, она одна. Исключение - обособленные подразделения)
+                        " moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+                        " kassa_from_id," +// id кассы ККМ - источника
+                        " boxoffice_from_id," +// id кассы предприятия - источник
+                        " payment_account_from_id," +// id расч счёта
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -466,11 +487,16 @@ public class OrderinRepositoryJPA {
                         request.getSumm()+"," + //наименование заказа поставщику
                         request.getInternal()+"," +
                         request.getBoxoffice_id()+"," +
+                        ":moving_type," +
+                        request.getKassa_from_id()+"," +
+                        request.getBoxoffice_from_id()+"," +
+                        request.getPayment_account_from_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
+                    query.setParameter("moving_type",request.getMoving_type());
                     query.executeUpdate();
                     stringQuery="select id from orderin where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -518,7 +544,11 @@ public class OrderinRepositoryJPA {
                     " is_completed = " + request.getIs_completed() + "," +
                     " internal = " + request.getInternal() + "," +//внутренний платеж (перемещение денег внутри предприятия)
                     " boxoffice_id = " + request.getBoxoffice_id() + "," +// касса предприятия (это не ККМ, это именно касса предприятия, обычно в 99% случаев, она одна. Исключение - обособленные подразделения)
-                    " status_id = " + request.getStatus_id() +
+                    " status_id = " + request.getStatus_id() +"," +
+                    " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+                    " kassa_from_id = "+request.getKassa_from_id()+"," +// id кассы ККМ - источника
+                    " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
+                    " payment_account_from_id = "+request.getPayment_account_from_id() +// id расч счёта
                     " where " +
                     " id= "+request.getId()+
                     " and master_id="+myMasterId;
@@ -529,6 +559,7 @@ public class OrderinRepositoryJPA {
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
+                query.setParameter("moving_type",request.getMoving_type());
                 query.executeUpdate();
 
                 return 1;

@@ -119,6 +119,7 @@ public class OrderoutRepositoryJPA {
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           sei.name as expenditure," +
+                    "           p.moving_type as moving_type, " +
 
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
@@ -194,6 +195,7 @@ public class OrderoutRepositoryJPA {
                     doc.setCagent((String)                        obj[18]);
                     doc.setIs_completed((Boolean)                 obj[19]);
                     doc.setExpenditure((String)                   obj[20]);
+                    doc.setMoving_type((String)                   obj[21]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -297,7 +299,8 @@ public class OrderoutRepositoryJPA {
                     "           p.moving_type as moving_type," +   // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
                     "           p.boxoffice_id as boxoffice_id," +  // касса предприятия (не путать с ККМ!), откуда перемещаем деньги
                     "           p.payment_account_to_id as payment_account_to_id," + //  банковский счёт препдриятия, куда перемещаем денежные средства"
-                    "           p.boxoffice_to_id as boxoffice_to_id" + // касса предприятия куда перемещаем деньги
+                    "           p.boxoffice_to_id as boxoffice_to_id," + // касса предприятия куда перемещаем деньги
+                    "           p.kassa_to_id as kassa_to_id" + // касса ККМ куда перемещаем деньги (операция внесения)
 
                     "           from orderout p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -351,6 +354,7 @@ public class OrderoutRepositoryJPA {
                     returnObj.setBoxoffice_id( obj[26]!=null?Long.parseLong(obj[26].toString()):null);
                     returnObj.setPayment_account_to_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
                     returnObj.setBoxoffice_to_id(obj[28]!=null?Long.parseLong(obj[28].toString()):null);
+                    returnObj.setKassa_to_id(obj[29]!=null?Long.parseLong(obj[29].toString()):null);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -453,6 +457,7 @@ public class OrderoutRepositoryJPA {
                         " boxoffice_id," + // касса предприятия (не путать с ККМ!) из которой перемещаем деньги
                         " boxoffice_to_id," + // касса предприятия куда перемещаем деньги
                         " payment_account_to_id," +  //  банковский счёт препдриятия, куда перемещаем денежные средства
+                        " kassa_to_id, " + // касса ККМ, куда перемещаем деньги
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -471,6 +476,7 @@ public class OrderoutRepositoryJPA {
                         request.getBoxoffice_id()+"," +
                         request.getBoxoffice_to_id()+"," +
                         request.getPayment_account_to_id()+"," +
+                        request.getKassa_to_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -526,6 +532,7 @@ public class OrderoutRepositoryJPA {
                     " boxoffice_id = " + request.getBoxoffice_id()+ "," + // касса предприятия (не путать с ККМ!) из которой переводят ден. средства
                     " boxoffice_to_id = " + request.getBoxoffice_to_id()+ "," + // касса предприятия в которую переводят ден. средства
                     " payment_account_to_id = " + request.getPayment_account_to_id() + "," +//  банковский счёт препдриятия, куда перемещаем денежные средства
+                    " kassa_to_id = " + request.getKassa_to_id()+ "," +// ккасса ккм, куда перемещаем деньги
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();

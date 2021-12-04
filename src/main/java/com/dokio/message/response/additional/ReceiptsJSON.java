@@ -47,6 +47,15 @@ public class ReceiptsJSON {
     private Integer shift_number;
     private BigDecimal summ; //всего сумма в чеке (нал + электронные)
     private String uid;
+    private Long parent_doc_id;
+
+    public Long getParent_doc_id() {
+        return parent_doc_id;
+    }
+
+    public void setParent_doc_id(Long parent_doc_id) {
+        this.parent_doc_id = parent_doc_id;
+    }
 
     public BigDecimal getSumm() {
         return summ;

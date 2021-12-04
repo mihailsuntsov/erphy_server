@@ -20,6 +20,7 @@ import com.dokio.message.response.Settings.KassaCashierSettingsJSON;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -45,6 +46,8 @@ public class KassaRepository {
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+    @Autowired
+    CommonUtilites commonUtilites;
 
 //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -476,12 +479,12 @@ public class KassaRepository {
             } else return false;
         } else return false;
     }
-//отдает список касс (не удаленных) по
+//отдает список касс (не удаленных) по id отделения
     @SuppressWarnings("Duplicates")
     public List<KassaJSON> getKassaListByDepId(Long departmentId){
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
+//            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select p.id as id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
@@ -500,7 +503,7 @@ public class KassaRepository {
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           where  p.master_id = " + myMasterId +
                     "           and p.department_id = " + departmentId +
-                    "           and p.company_id = " + myCompanyId +
+//                    "           and p.company_id = " + myCompanyId +
                     "           and coalesce(p.is_deleted, false) = false " + //касса не удалена
                     "           and coalesce(p.allow_to_use, false) = true " + // и разрешена к использованию
                     "           and p.department_id in :myDepthsIds" + //чтобы нельзя было получить список касс по произвольному id отделения, не принадлежащему пользователю
@@ -533,10 +536,72 @@ public class KassaRepository {
                 return returnList;
             }catch (Exception e){
                 logger.error("Exception in method getKassaListByDepId. SQL query:"+stringQuery, e);
+                e.printStackTrace();
                 throw e;
             }
-
     }
+
+    // отдает список касс ККМ по отделениям, которые привязаны к кассе предприятия boxofficeId
+    public List<KassaJSON> getKassaListByBoxofficeId(Long boxofficeId){
+        List<Long> depthsListId = getDepthListOfBoxofficeId(boxofficeId);
+        if(!Objects.isNull(depthsListId)) {
+            List<KassaJSON> returnList = new ArrayList<>();
+            if (depthsListId.size() > 0) { // если к кассе привязаны отделения
+                String depths = commonUtilites.ListOfLongToString(depthsListId, ",", "(", ")");
+
+                String stringQuery;
+                Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+                stringQuery = "select p.id as id, " +
+                        "           p.name as name " +
+                        "           from kassa p " +
+                        "           where  p.master_id = " + myMasterId +
+                        "           and p.department_id in " + depths +
+                        "           and coalesce(p.is_deleted, false) = false " + //касса не удалена
+                        "           order by p.name ";
+                try {
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    List<Object[]> queryList = query.getResultList();
+                    for (Object[] obj : queryList) {
+                        KassaJSON doc = new KassaJSON();
+                        doc.setId(Long.parseLong(obj[0].toString()));
+                        doc.setName((String) obj[1]);
+                        returnList.add(doc);
+                    }
+                    return returnList;
+                } catch (Exception e) {
+                    logger.error("Exception in method getKassaListByBoxofficeId. SQL query:" + stringQuery, e);
+                    e.printStackTrace();
+                    return null;
+                }
+            } else return returnList;
+        } else return null;
+    }
+
+    // отдает список id отделений, привязанных к кассе предприятия boxofficeId
+    private List<Long> getDepthListOfBoxofficeId(Long boxofficeId){
+        String stringQuery = "select p.id, p.name as name from departments p where p.boxoffice_id=" +boxofficeId; // p.name надо чтобы был List<Object>
+        List<Long> returnList = new ArrayList<>();
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            for(Object[] obj:queryList){
+                returnList.add(Long.parseLong(obj[0].toString()));
+            }
+            return returnList;
+        } catch (NoResultException nre) {
+            return returnList;
+        } catch (Exception e){
+            logger.error("Exception in method getDepthListOfBoxofficeId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
+
+
 
    //отдает настройки кассира по выбранной им кассе
     @SuppressWarnings("Duplicates")

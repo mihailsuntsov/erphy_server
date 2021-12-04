@@ -45,6 +45,34 @@ public class PaymentinJSON {
     private Long payment_account_id;//id расчтёного счёта
     private String payment_account;// расчтёный счёт
     private Boolean internal; // внутренний платеж
+    private String moving_type;             // тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+    private Long boxoffice_from_id;         // id кассы предприятия - источника
+    private Long payment_account_from_id;   // id расч счёта
+
+    public String getMoving_type() {
+        return moving_type;
+    }
+
+    public void setMoving_type(String moving_type) {
+        this.moving_type = moving_type;
+    }
+
+    public Long getBoxoffice_from_id() {
+        return boxoffice_from_id;
+    }
+
+    public void setBoxoffice_from_id(Long boxoffice_from_id) {
+        this.boxoffice_from_id = boxoffice_from_id;
+    }
+
+    public Long getPayment_account_from_id() {
+        return payment_account_from_id;
+    }
+
+    public void setPayment_account_from_id(Long payment_account_from_id) {
+        this.payment_account_from_id = payment_account_from_id;
+    }
+
 
     public Boolean getInternal() {
         return internal;

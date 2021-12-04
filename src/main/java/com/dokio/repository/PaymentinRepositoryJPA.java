@@ -113,6 +113,7 @@ public class PaymentinRepositoryJPA {
                     "           p.income_number as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
+                    "           p.moving_type as moving_type, " +
 
                     "           p.income_number_date as income_number_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -190,6 +191,7 @@ public class PaymentinRepositoryJPA {
                     doc.setIncome_number((String)                 obj[20]);
                     doc.setIncome_number_date((String)            obj[21]);
                     doc.setPayment_account_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
+                    doc.setMoving_type((String)                   obj[23]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -291,7 +293,10 @@ public class PaymentinRepositoryJPA {
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
                     "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +
-                    "           p.internal as internal" +
+                    "           p.internal as internal," +
+                    "           p.moving_type as moving_type, " +
+                    "           p.boxoffice_from_id as boxoffice_from_id, " +
+                    "           p.payment_account_from_id as payment_account_from_id " +
 
 
                     "           from paymentin p " +
@@ -345,6 +350,9 @@ public class PaymentinRepositoryJPA {
                     returnObj.setPayment_account_id(obj[25]!=null?Long.parseLong(obj[25].toString()):null);
                     returnObj.setPayment_account((String)                   obj[26]);
                     returnObj.setInternal((Boolean)                         obj[27]);
+                    returnObj.setMoving_type((String)                                     obj[28]);
+                    returnObj.setBoxoffice_from_id(obj[29]!=null?Long.parseLong(          obj[29].toString()):null);
+                    returnObj.setPayment_account_from_id(obj[30]!=null?Long.parseLong(    obj[30].toString()):null);
 
                 }
                 return returnObj;
@@ -465,6 +473,9 @@ public class PaymentinRepositoryJPA {
                         " summ,"+
                         " payment_account_id,"+
                         " internal,"+ //внутренний платеж (перемещение денег внутри предприятия)
+                        " moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+                        " boxoffice_from_id," +// id кассы предприятия - источника
+                        " payment_account_from_id," +// id расч счёта
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -482,12 +493,16 @@ public class PaymentinRepositoryJPA {
                         request.getSumm()+"," + //наименование заказа поставщику
                         request.getPayment_account_id()+"," + //банковский счет
                         request.getInternal()+"," +
+                        ":moving_type," +
+                        request.getBoxoffice_from_id()+"," +
+                        request.getPayment_account_from_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
                     query.setParameter("income_number",request.getIncome_number());
+                    query.setParameter("moving_type",request.getMoving_type());
                     if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                         query.setParameter("income_number_date",request.getIncome_number_date());
                     query.executeUpdate();
@@ -539,6 +554,9 @@ public class PaymentinRepositoryJPA {
                     " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
                     ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +
+                    " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+                    " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
+                    " payment_account_from_id = "+request.getPayment_account_from_id()+"," +// id расч счёта
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -550,6 +568,7 @@ public class PaymentinRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
                 query.setParameter("income_number",request.getIncome_number());
+                query.setParameter("moving_type",request.getMoving_type());
                 if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                     query.setParameter("income_number_date",request.getIncome_number_date());
                 query.executeUpdate();

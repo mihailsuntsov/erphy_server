@@ -97,6 +97,7 @@ public class ReceiptsRepository {
                     "           p.electronically as electronically, " +
                     "           p.uid as uid, " +
                     "           p.cash+p.electronically as summ," +
+                    "           p.parent_doc_id as parent_doc_id," +
 
                     "           p.date_time_created as date_time_created_sort " +
 
@@ -194,6 +195,7 @@ public class ReceiptsRepository {
                     doc.setElectronically((BigDecimal)                      obj[27]);
                     doc.setUid((String)                                     obj[28]);
                     doc.setSumm((BigDecimal)                                obj[29]);
+                    doc.setParent_doc_id(obj[30]!=null?Long.parseLong(      obj[30].toString()):null);
                     returnList.add(doc);
                 }
                 return returnList;

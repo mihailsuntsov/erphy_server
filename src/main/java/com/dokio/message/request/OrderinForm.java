@@ -26,14 +26,50 @@ public class OrderinForm {
     private BigDecimal nds;
     private BigDecimal summ;
     private String uid;
-    private Long linked_doc_id;//id связанного документа
-    private String linked_doc_name;//имя (таблицы) связанного документа
-    private String parent_uid;// uid исходящего (родительского) документа
-    private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
-    private Boolean is_completed;// проведён
-    private Boolean internal;
-    private Long boxoffice_id;// касса предприятия (не ККМ!)
-    private Long department_id; //отделение, из которого создают приходный ордер. Нужно для определения кассы, привязанной к отделению
+    private Long linked_doc_id;             // id связанного документа
+    private String linked_doc_name;         // имя (таблицы) связанного документа
+    private String parent_uid;              // uid исходящего (родительского) документа
+    private String child_uid;               // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+    private Boolean is_completed;           // проведён
+    private Boolean internal;               // внутренний перевод
+    private Long boxoffice_id;              // касса предприятия (не ККМ!)
+    private Long department_id;             // отделение, из которого создают приходный ордер. Нужно для определения кассы, привязанной к отделению
+    private String moving_type;             // тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+    private Long kassa_from_id;             // id кассы ККМ - источника
+    private Long boxoffice_from_id;         // id кассы предприятия - источника
+    private Long payment_account_from_id;   // id расч счёта
+
+    public String getMoving_type() {
+        return moving_type;
+    }
+
+    public void setMoving_type(String moving_type) {
+        this.moving_type = moving_type;
+    }
+
+    public Long getKassa_from_id() {
+        return kassa_from_id;
+    }
+
+    public void setKassa_from_id(Long kassa_from_id) {
+        this.kassa_from_id = kassa_from_id;
+    }
+
+    public Long getBoxoffice_from_id() {
+        return boxoffice_from_id;
+    }
+
+    public void setBoxoffice_from_id(Long boxoffice_from_id) {
+        this.boxoffice_from_id = boxoffice_from_id;
+    }
+
+    public Long getPayment_account_from_id() {
+        return payment_account_from_id;
+    }
+
+    public void setPayment_account_from_id(Long payment_account_from_id) {
+        this.payment_account_from_id = payment_account_from_id;
+    }
 
     public Long getDepartment_id() {
         return department_id;
