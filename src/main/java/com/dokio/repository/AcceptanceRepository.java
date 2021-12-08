@@ -585,7 +585,7 @@ public class AcceptanceRepository {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class,Exception.class})
     public  Integer updateAcceptance(AcceptanceForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(15L,"190") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",request.getId().toString())) ||
@@ -597,6 +597,7 @@ public class AcceptanceRepository {
                 (securityRepositoryJPA.userHasPermissions_OR(15L,"198") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
+            BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всей приёмке
             if(updateAcceptanceWithoutTable(request,myMasterId)){                                      //апдейт основного документа, без таблицы товаров
                 try {//сохранение таблицы
                     insertAcceptanceProducts(request, request.getId(), myMasterId);
@@ -604,6 +605,7 @@ public class AcceptanceRepository {
                     if(request.getIs_completed()){
 
                         for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
+                            docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                             if (!addAcceptanceProductHistory(row, request, myMasterId)) {//       //сохранение истории операций с записью актуальной инфо о количестве товара в отделении
                                 break;
                             } else {
@@ -612,6 +614,8 @@ public class AcceptanceRepository {
                                 }
                             }
                         }
+                        // обновляем баланс с контрагентом
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "acceptance", request.getId(), docProductsSum);//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
                     }
                     return 1;
                 } catch (CantSaveProductQuantityException e) {

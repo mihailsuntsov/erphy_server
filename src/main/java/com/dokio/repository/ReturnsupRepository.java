@@ -75,7 +75,7 @@ public class ReturnsupRepository {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -449,7 +449,7 @@ public class ReturnsupRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class, CantInsertProductRowCauseOversellException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class, CantInsertProductRowCauseOversellException.class,Exception.class})
     public Integer updateReturnsup(ReturnsupForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(29L,"372") && securityRepositoryJPA.isItAllMyMastersDocuments("returnsup",request.getId().toString())) ||
@@ -462,6 +462,7 @@ public class ReturnsupRepository {
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
             String stringQuery;
             stringQuery =   " update returnsup set " +
                     " changer_id = " + myId + ", "+
@@ -487,6 +488,7 @@ public class ReturnsupRepository {
                 if(insertReturnsupProducts(request, request.getId(), myMasterId)){//если сохранение товаров из таблицы товаров прошло успешно
                     if(request.getIs_completed()){//если завершается возврат - запись в историю товара
                         for (ReturnsupProductTableForm row : request.getReturnsupProductTable()) {
+                            docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                             Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
                             if (!addReturnsupProductHistory(row, request, myMasterId)) {//      запись в историю товара
                                 break;
@@ -498,6 +500,8 @@ public class ReturnsupRepository {
                                 }
                             }
                         }
+                        // обновляем баланс с контрагентом
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "returnsup", request.getId(), docProductsSum.negate());//negate т.к. при отгрузке баланс с контрагентом должен смещаться в отрицательную сторону, т.е. в долг контрагента
                     }
                     return 1;
                 } else return null;

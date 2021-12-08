@@ -448,7 +448,7 @@ public class ReturnRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class,Exception.class})
     public Integer updateReturn(ReturnForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(28L,"356") && securityRepositoryJPA.isItAllMyMastersDocuments("return",request.getId().toString())) ||
@@ -461,6 +461,7 @@ public class ReturnRepository {
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
             String stringQuery;
             stringQuery =   " update return set " +
                     " changer_id = " + myId + ", "+
@@ -486,6 +487,7 @@ public class ReturnRepository {
                 if(insertReturnProducts(request, request.getId(), myMasterId)){//если сохранение товаров прошло успешно
                     if(request.getIs_completed()){//если завершается возврат - запись в историю товара
                         for (ReturnProductTableForm row : request.getReturnProductTable()) {
+                            docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                             Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
                             if (!addReturnProductHistory(row, request, myMasterId)) {//      запись в историю товара
                                 break;
@@ -497,6 +499,8 @@ public class ReturnRepository {
                                 }
                             }
                         }
+                        // обновляем баланс с контрагентом
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return", request.getId(), docProductsSum);//при возврате покупателя баланс с ним должен смещаться в положительную сторону, т.е. в наш долг покупателю
                     }
                     return 1;
                 } else return null;
@@ -517,6 +521,7 @@ public class ReturnRepository {
                 e.printStackTrace();
                 return null;
             }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method ReturnRepository/updateReturn. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;

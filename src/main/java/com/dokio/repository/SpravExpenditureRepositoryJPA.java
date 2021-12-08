@@ -409,4 +409,21 @@ public class SpravExpenditureRepositoryJPA {
             }
         } else return false;
     }
+
+    // позволяет поределить, какого типа расход (moving, taxes, purchases, other_opex и др) выбран по его id
+    public String getExpTypeByExpId(Long expId) throws Exception {
+        String stringQuery =
+                " select type from sprav_expenditure_items where " +
+                        " id= " + expId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (String) query.getSingleResult();
+        } catch (NoResultException nre) {
+            return "";
+        } catch (Exception e) {
+            logger.error("Exception in method getExpTypeByExpId. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();// чтобы отменилась транзакция в вызвавшем его документе
+        }
+    }
 }

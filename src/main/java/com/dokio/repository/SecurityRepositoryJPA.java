@@ -452,14 +452,14 @@ public class SecurityRepositoryJPA {
     }
 
     //true если id предприятия принадлежит аккаунту, который является master-аккаунтом текущего пользователя.
-    public Boolean companyBelongToMyMastersAccount(Long id){
+    public Boolean companyBelongsToMyMastersAccount(Long id){
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
         String stringQuery = "select p.id from companies p where p.id="+id+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
     //true если id отделения принадлежит аккаунту, который является master-аккаунтом текущего пользователя.
-    public Boolean departmentBelongToMyMastersAccount(Long id){
+    public Boolean departmentBelongsToMyMastersAccount(Long id){
         Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
         String stringQuery = "select p.id from departments p where p.id="+id+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
@@ -472,14 +472,14 @@ public class SecurityRepositoryJPA {
     public Boolean userHasPermissionsToCreateDoc(Long companyId, Long departmentId, Long docId, String p1, String p2, String p3) {
 
         //предприятие принадлежит мастер-аккаунту
-        Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
+        Boolean companyBelongsToMyMastersAccount=companyBelongsToMyMastersAccount(companyId);
         //отделение принадлежит мастер-аккаунту
-        Boolean departmentBelongToMyMastersAccount=departmentBelongToMyMastersAccount(departmentId);
+        Boolean departmentBelongsToMyMastersAccount=departmentBelongsToMyMastersAccount(departmentId);
         //отделение принадлежит предприятию
         Boolean departmentBelongToCompany=departmentRepositoryJPA.departmentBelongToCompany(companyId,departmentId);
 
         //Базовые проверки: Предприятие и отделение принадлежит мастер-аккаунту, и отделение входит в предприятие
-        if(departmentBelongToCompany && departmentBelongToMyMastersAccount && companyBelongToMyMastersAccount) {
+        if(departmentBelongToCompany && departmentBelongsToMyMastersAccount && companyBelongsToMyMastersAccount) {
 
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
@@ -507,14 +507,14 @@ public class SecurityRepositoryJPA {
     public Boolean userHasPermissionsToUpdateDoc(Long companyId, Long departmentId, String tableName, Long docId, Long id, String p1, String p2, String p3, String p4) {
 
         //предприятие принадлежит мастер-аккаунту
-        Boolean companyBelongToMyMastersAccount=companyBelongToMyMastersAccount(companyId);
+        Boolean companyBelongsToMyMastersAccount=companyBelongsToMyMastersAccount(companyId);
         //отделение принадлежит мастер-аккаунту
-        Boolean departmentBelongToMyMastersAccount=departmentBelongToMyMastersAccount(departmentId);
+        Boolean departmentBelongsToMyMastersAccount=departmentBelongsToMyMastersAccount(departmentId);
         //отделение принадлежит предприятию
         Boolean departmentBelongToCompany=departmentRepositoryJPA.departmentBelongToCompany(companyId,departmentId);
 
         //Базовые проверки: Предприятие и отделение принадлежит мастер-аккаунту, и отделение входит в предприятие
-        if(departmentBelongToCompany && departmentBelongToMyMastersAccount && companyBelongToMyMastersAccount) {
+        if(departmentBelongToCompany && departmentBelongsToMyMastersAccount && companyBelongsToMyMastersAccount) {
 
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();

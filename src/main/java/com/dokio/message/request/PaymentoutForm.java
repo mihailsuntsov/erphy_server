@@ -36,7 +36,7 @@ public class PaymentoutForm {
     private Long payment_account_id;//id расчтёного счёта
     private Long expenditure_id; // id вида расходов
 
-    private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
+    private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт предприятия
     private Long boxoffice_id; // касса предприятия (не путать с ККМ!)
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
 

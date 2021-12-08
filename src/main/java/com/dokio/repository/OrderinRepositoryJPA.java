@@ -26,6 +26,7 @@ import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -524,7 +525,7 @@ public class OrderinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
     public Integer updateOrderin(OrderinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(35L,"482") && securityRepositoryJPA.isItAllMyMastersDocuments("orderin",request.getId().toString())) ||
@@ -554,7 +555,7 @@ public class OrderinRepositoryJPA {
                     " and master_id="+myMasterId;
             try
             {
-                Date dateNow = new Date();
+//                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -562,8 +563,24 @@ public class OrderinRepositoryJPA {
                 query.setParameter("moving_type",request.getMoving_type());
                 query.executeUpdate();
 
+                // если проводим документ
+                if(request.getIs_completed()){
+                    // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    if(!request.getInternal()){// если это не внутренний платёж -
+                        // записываем контрагенту положительную сумму, увеличивая наш долг ему
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin", request.getId(), request.getSumm());
+                    }
+                    // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
+                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin", request.getId(), request.getSumm());
+                }
+
                 return 1;
 
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/updateOrderin.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderinRepository/updateOrderin. SQL query:"+stringQuery, e);

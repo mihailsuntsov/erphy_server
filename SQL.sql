@@ -2365,7 +2365,7 @@ insert into permissions (id,name,description,document_name,document_id) values
 insert into permissions (id,name,description,document_name,document_id) values
 (566,'Просмотр документов своих отделений','Прсмотр информации в документах "Кассовые смены" по своим отделениям','Кассовые смены',43);
 
-alter table receipts  drop constraint parent_doc_id_fkey;
+alter table receipts  drop constraint parent_doc_id_products_history_quantity_checkfkey;
 
 alter table receipts  add constraint parent_doc_id_fkey foreign key (parent_doc_id) references documents (id);
 
@@ -2392,18 +2392,121 @@ alter table orderout add constraint kassa_to_id_fkey foreign key (kassa_to_id) r
 
 
 
+create table history_cagent_summ (
+                              id                                  bigserial primary key not null,
+                              master_id                           bigint not null,
+                              company_id                          bigint not null,
+                              date_time_created                   timestamp with time zone not null,
+                              object_id                           bigint not null, -- = cagent_id
+                              doc_table_name                      varchar (16) not null, -- table name of document
+                              doc_id                              bigint not null,	-- document id in table doc_table_name
+                              summ_before                         numeric(15,2) not null,
+                              summ_change                         numeric(15,2) not null,
+                              summ_result                         numeric(15,2) not null,
+                              foreign key (master_id)  references users(id),
+                              foreign key (company_id) references companies(id),
+                              foreign key (object_id)  references cagents(id)
+);
+
+create table history_payment_account_summ (
+                              id                                  bigserial primary key not null,
+                              master_id                           bigint not null,
+                              company_id                          bigint not null,
+                              date_time_created                   timestamp with time zone not null,
+                              object_id                           bigint not null, -- = payment_account_id
+                              doc_table_name                      varchar (16) not null, -- table name of document
+                              doc_id                              bigint not null,	-- document id in table doc_table_name
+                              summ_before                         numeric(15,2) not null,
+                              summ_change                         numeric(15,2) not null,
+                              summ_result                         numeric(15,2) not null,
+                              foreign key (master_id)  references users(id),
+                              foreign key (company_id) references companies(id),
+                              foreign key (object_id)  references cagents(id)
+);
+
+create table history_boxoffice_summ (
+                              id                                  bigserial primary key not null,
+                              master_id                           bigint not null,
+                              company_id                          bigint not null,
+                              date_time_created                   timestamp with time zone not null,
+                              object_id                           bigint not null, -- = boxoffice_id
+                              doc_table_name                      varchar (16) not null, -- table name of document
+                              doc_id                              bigint not null,	-- document id in table doc_table_name
+                              summ_before                         numeric(15,2) not null,
+                              summ_change                         numeric(15,2) not null,
+                              summ_result                         numeric(15,2) not null,
+                              foreign key (master_id)  references users(id),
+                              foreign key (company_id) references companies(id),
+                              foreign key (object_id)  references cagents(id)
+);
+
+create table history_kassa_summ (
+                              id                                  bigserial primary key not null,
+                              master_id                           bigint not null,
+                              company_id                          bigint not null,
+                              date_time_created                   timestamp with time zone not null,
+                              object_id                           bigint not null, -- = kassa_id
+                              doc_table_name                      varchar (16) not null, -- table name of document
+                              doc_id                              bigint not null,	-- document id in table doc_table_name
+                              summ_before                         numeric(15,2) not null,
+                              summ_change                         numeric(15,2) not null,
+                              summ_result                         numeric(15,2) not null,
+                              foreign key (master_id)  references users(id),
+                              foreign key (company_id) references companies(id),
+                              foreign key (object_id)  references cagents(id)
+);
 
 
+alter table history_payment_account_summ add constraint summ_before_check CHECK (summ_before >= 0);
+alter table history_payment_account_summ add constraint summ_result_check CHECK (summ_result >= 0);
+alter table history_boxoffice_summ add constraint summ_before_check CHECK (summ_before >= 0);
+alter table history_boxoffice_summ add constraint summ_result_check CHECK (summ_result >= 0);
+alter table history_kassa_summ add constraint summ_before_check CHECK (summ_before >= 0);
+alter table history_kassa_summ add constraint summ_result_check CHECK (summ_result >= 0);
 
+CREATE INDEX history_payment_account_summ_master_id_index ON history_payment_account_summ USING btree (master_id);
+CREATE INDEX history_payment_account_summ_company_id_index ON history_payment_account_summ USING btree (company_id);
+CREATE INDEX history_boxoffice_summ_master_id_index ON history_boxoffice_summ USING btree (master_id);
+CREATE INDEX history_boxoffice_summ_company_id_index ON history_boxoffice_summ USING btree (company_id);
+CREATE INDEX history_kassa_summ_master_id_index ON history_kassa_summ USING btree (master_id);
+CREATE INDEX history_kassa_summ_company_id_index ON history_kassa_summ USING btree (company_id);
+CREATE INDEX history_cagent_summ_master_id_index ON history_cagent_summ USING btree (master_id);
+CREATE INDEX history_cagent_summ_company_id_index ON history_cagent_summ USING btree (company_id);
 
-
-
-
-
-
-
-
-
+-- Выемка
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (45,'Выемка','withdrawal',1,'withdrawal','Выемка');
+create table withdrawal(
+                         id bigserial primary key not null,
+                         master_id  bigint not null,
+                         creator_id bigint not null, -- кассир
+                         date_time_created timestamp with time zone not null, -- время операции
+                         company_id bigint not null, -- предприятие кассы
+                         department_id bigint not null, -- отделение в котором установлена касса
+                         kassa_id bigint not null, -- касса
+                         doc_number int not null,
+                         description varchar(2048),  -- примечание кассира к операции
+                         summ numeric(15,2) not null, --сумма операции
+                         is_delivered boolean,  -- деньги доставлены до кассы предприятия (false = "зависшие деньги" - между кассой ККМ и кассой предприятия)
+                         is_completed boolean,       -- проведено - всегда, т.к. выемка не редактируется, не проводится и не удаляется, создается уже проведенной
+                         uid varchar (36),
+                         linked_docs_group_id bigint,
+                         foreign key (master_id) references users(id),
+                         foreign key (creator_id) references users(id),
+                         foreign key (company_id) references companies(id),
+                         foreign key (department_id) references departments(id),
+                         foreign key (kassa_id) references kassa(id),
+                         foreign key (linked_docs_group_id) references linked_docs_groups(id));
+alter table linked_docs add column withdrawal_id bigint;
+alter table linked_docs add constraint withdrawal_id_fkey foreign key (withdrawal_id) references withdrawal (id);
+insert into permissions (id,name,description,document_name,document_id) values
+(567,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Выемка',45),
+(568,'Создание документов по всем предприятиям','Возможность создавать новые документы "Выемка" по всем предприятиям','Выемка',45),
+(569,'Создание документов своего предприятия','Возможность создавать новые документы "Выемка" своего предприятия','Выемка',45),
+(570,'Создание документов своих отделений','Возможность создавать новые документы "Выемка" по своим отделениям','Выемка',45),
+(571,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Выемка" по всем предприятиям','Выемка',45),
+(572,'Просмотр документов своего предприятия','Прсмотр информации в документах "Выемка" своего предприятия','Выемка',45),
+(573,'Просмотр документов своих отделений','Прсмотр информации в документах "Выемка" по своим отделениям','Выемка',45),
+(574,'Просмотр документов созданных собой','Прсмотр информации в документах "Выемка", созданных собой','Выемка',45);
 
 
 

@@ -26,6 +26,7 @@ import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -66,15 +67,13 @@ public class OrderoutRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private CagentRepositoryJPA cagentRepository;
-    @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    private SpravExpenditureRepositoryJPA spravExpenditureRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -510,7 +509,7 @@ public class OrderoutRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
     public Integer updateOrderout(OrderoutForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(36L,"524") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",request.getId().toString())) ||
@@ -531,8 +530,8 @@ public class OrderoutRepositoryJPA {
                     " moving_type = :moving_type" + "," +// тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
                     " boxoffice_id = " + request.getBoxoffice_id()+ "," + // касса предприятия (не путать с ККМ!) из которой переводят ден. средства
                     " boxoffice_to_id = " + request.getBoxoffice_to_id()+ "," + // касса предприятия в которую переводят ден. средства
-                    " payment_account_to_id = " + request.getPayment_account_to_id() + "," +//  банковский счёт препдриятия, куда перемещаем денежные средства
-                    " kassa_to_id = " + request.getKassa_to_id()+ "," +// ккасса ккм, куда перемещаем деньги
+                    " payment_account_to_id = " + request.getPayment_account_to_id() + "," +//  банковский счёт предприятия, куда перемещаем денежные средства
+                    " kassa_to_id = " + request.getKassa_to_id()+ "," +// касса ккм, куда перемещаем деньги
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -542,9 +541,23 @@ public class OrderoutRepositoryJPA {
                 query.setParameter("description",request.getDescription());
                 query.setParameter("moving_type",request.getMoving_type());
                 query.executeUpdate();
-
+                if(request.getIs_completed()) {
+                    // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    String expType = spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
+                    if (!expType.equals("moving")) {// если это не внутренний платёж -
+                        // записываем контрагенту отрицательную сумму, увеличивая его долг нашему предприятию
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout", request.getId(), request.getSumm().negate());
+                    }
+                    // обновляем состояние кассы нашего предприятия, вычитая из неё переводимую сумму
+                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout", request.getId(), request.getSumm().negate());
+                }
                 return 1;
 
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/updateOrderout.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderoutRepository/updateOrderout. SQL query:"+stringQuery, e);

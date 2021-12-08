@@ -26,6 +26,7 @@ import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -470,7 +471,7 @@ public class CorrectionRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class ,CantSetHistoryCauseNegativeSumException.class})
     public Integer updateCorrection(CorrectionForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(41L,"546") && securityRepositoryJPA.isItAllMyMastersDocuments("correction",request.getId().toString())) ||
@@ -485,10 +486,10 @@ public class CorrectionRepositoryJPA {
                     " type = :type,"+
                     " date_time_changed= now()," +
                     " description = :description, " +
-                    " summ=" + request.getSumm()+"," + // сумма платежа
-                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет с которого переводят
-                    " boxoffice_id = " + request.getBoxoffice_id()+ "," + // касса предприятия (не путать с ККМ!)
-                    " cagent_id = " + request.getCagent_id()+ "," + // контрагент
+                    " summ=" + request.getSumm()+"," + // сумма коррекции
+                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет который корректируют
+                    " boxoffice_id = " + request.getBoxoffice_id()+ "," + // касса предприятия (не путать с ККМ!),которую корректируют
+                    " cagent_id = " + request.getCagent_id()+ "," + // контрагент, баланс с которым корректируют
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -500,8 +501,24 @@ public class CorrectionRepositoryJPA {
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
 
+                // если проводим документ
+                if(request.getIs_completed()){
+                    // определим тип корректировки. boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
+                    if(request.getType().equals("boxoffice"))// если коррекция кассы предприятия -
+                        commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "correction", request.getId(), request.getSumm());
+                    if(request.getType().equals("cagent"))// если коррекция баланса с контрагентом -
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "correction", request.getId(), request.getSumm());
+                    if(request.getType().equals("account"))// если коррекция расч. счёта предприятия -
+                        commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "correction", request.getId(), request.getSumm());
+                }
+
                 return 1;
 
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CorrectionRepository/updateCorrection.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method CorrectionRepository/updateCorrection. SQL query:"+stringQuery, e);

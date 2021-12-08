@@ -21,6 +21,7 @@ import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -58,15 +59,11 @@ public class PaymentinRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private CagentRepositoryJPA cagentRepository;
-    @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
-    @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -532,7 +529,7 @@ public class PaymentinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
     public Integer updatePaymentin(PaymentinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(33L,"471") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentin",request.getId().toString())) ||
@@ -562,7 +559,7 @@ public class PaymentinRepositoryJPA {
                     " id= "+request.getId();
             try
             {
-                Date dateNow = new Date();
+//                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -572,9 +569,23 @@ public class PaymentinRepositoryJPA {
                 if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                     query.setParameter("income_number_date",request.getIncome_number_date());
                 query.executeUpdate();
-
+                // если проводим документ
+                if(request.getIs_completed()){
+                    // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    if(!request.getInternal()){// если это не внутренний платёж -
+                        // записываем контрагенту положительную сумму, увеличивая наш долг ему
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin", request.getId(), request.getSumm());
+                    }
+                    // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
+                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin", request.getId(), request.getSumm());
+                }
                 return 1;
 
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/updatePaymentin.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method PaymentinRepository/updatePaymentin. SQL query:"+stringQuery, e);

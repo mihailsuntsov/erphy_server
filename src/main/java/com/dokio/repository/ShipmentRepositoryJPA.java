@@ -727,7 +727,7 @@ public class ShipmentRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class,Exception.class})
     public Integer updateShipment(ShipmentForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(21L,"264") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",request.getId().toString())) ||
@@ -740,7 +740,7 @@ public class ShipmentRepositoryJPA {
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всей отгрузке
             String stringQuery;
             stringQuery =   " update shipment set " +
                     " changer_id = " + myId + ", "+
@@ -778,7 +778,7 @@ public class ShipmentRepositoryJPA {
 
                         // бежим по товарам в Отгрузке
                         for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
-
+                            docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                             //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
                             if(row.getIs_material() && customersOrdersProductTable.size()>0){
                                 //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
@@ -818,6 +818,8 @@ public class ShipmentRepositoryJPA {
                                 }
                             }
                         }
+                        // обновляем баланс с контрагентом
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment", request.getId(), docProductsSum.negate());//negate т.к. при отгрузке баланс с контрагентом должен смещаться в отрицательную сторону, т.е. в долг контрагента
                     }
                     return 1;
                 } else return null;

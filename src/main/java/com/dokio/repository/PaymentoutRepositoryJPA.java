@@ -27,6 +27,7 @@ import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -67,15 +68,13 @@ public class PaymentoutRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private CagentRepositoryJPA cagentRepository;
-    @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    private SpravExpenditureRepositoryJPA spravExpenditureRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -529,7 +528,7 @@ public class PaymentoutRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class ,CantSetHistoryCauseNegativeSumException.class})
     public Integer updatePaymentout(PaymentoutForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(34L,"513") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentout",request.getId().toString())) ||
@@ -562,13 +561,25 @@ public class PaymentoutRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
                 query.setParameter("moving_type",request.getMoving_type());
-//                query.setParameter("income_number",request.getIncome_number());
-//                if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
-//                    query.setParameter("income_number_date",request.getIncome_number_date());
                 query.executeUpdate();
 
+                // если проводим документ
+                if(request.getIs_completed()){
+                    // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    String expType=spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
+                    if(!expType.equals("moving")){// если это не внутренний платёж -
+                        // записываем контрагенту отрицательную сумму, увеличивая его долг нашему предприятию
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentout", request.getId(), request.getSumm().negate());
+                    }
+                    // обновляем состояние счета нашего предприятия, вычитая из него переводимую сумму
+                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout", request.getId(), request.getSumm().negate());
+                }
                 return 1;
-
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentoutRepository/updatePaymentout.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method PaymentoutRepository/updatePaymentout. SQL query:"+stringQuery, e);
