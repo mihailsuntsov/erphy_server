@@ -842,7 +842,44 @@ public class CompanyRepositoryJPA {
             return null;
         }
     }
+    @SuppressWarnings("Duplicates")// отдаёт кассу предприятия, к которой привязано отделение departmentId
+    public List<BoxofficeListJSON> getBoxofficeByDepId(Long companyId, Long departmentId) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery =   " select " +
+                " ap.id," +
+                " ap.name," +
+                " ap.description," +
+                " coalesce(ap.is_main,false)" +
+                " from " +
+                " sprav_boxoffice ap " +
+                " where ap.master_id = " + myMasterId +
+                " and ap.company_id = " + companyId +
+                " and ap.id = coalesce((select d.boxoffice_id from departments d where d.id="+departmentId+"),0)"+
+                " and coalesce(ap.is_deleted,false) != true";
 
+        stringQuery = stringQuery + " order by ap.id asc, ap.name asc ";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<BoxofficeListJSON> returnList = new ArrayList<>();
+
+            for(Object[] obj:queryList){
+                BoxofficeListJSON doc=new BoxofficeListJSON();
+                doc.setId(Long.parseLong(                               obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                doc.setDescription((String)                             obj[2]);
+                doc.setIs_main((Boolean)                                obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getBoxofficeByDepId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean deleteCompanies(String delNumbers) {

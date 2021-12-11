@@ -570,7 +570,7 @@ public class PaymentinRepositoryJPA {
                     query.setParameter("income_number_date",request.getIncome_number_date());
                 query.executeUpdate();
                 // если проводим документ
-                if(request.getIs_completed()){
+                if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему

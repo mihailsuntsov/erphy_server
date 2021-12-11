@@ -2482,7 +2482,9 @@ create table withdrawal(
                          date_time_created timestamp with time zone not null, -- время операции
                          company_id bigint not null, -- предприятие кассы
                          department_id bigint not null, -- отделение в котором установлена касса
-                         kassa_id bigint not null, -- касса
+                         kassa_id bigint not null, -- касса ККМ
+                         boxoffice_id bigint, -- касса ККМ
+                         status_id bigint, -- статуса нет у документа, но колонка нужна для работы связанности документов
                          doc_number int not null,
                          description varchar(2048),  -- примечание кассира к операции
                          summ numeric(15,2) not null, --сумма операции
@@ -2495,6 +2497,7 @@ create table withdrawal(
                          foreign key (company_id) references companies(id),
                          foreign key (department_id) references departments(id),
                          foreign key (kassa_id) references kassa(id),
+                         foreign key (boxoffice_id) references sprav_boxoffice(id),
                          foreign key (linked_docs_group_id) references linked_docs_groups(id));
 alter table linked_docs add column withdrawal_id bigint;
 alter table linked_docs add constraint withdrawal_id_fkey foreign key (withdrawal_id) references withdrawal (id);
@@ -2522,9 +2525,7 @@ insert into permissions (id,name,description,document_name,document_id) values
 
 
 
-
-
-WITH
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

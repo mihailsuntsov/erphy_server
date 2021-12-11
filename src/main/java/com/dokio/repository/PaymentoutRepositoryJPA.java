@@ -564,7 +564,7 @@ public class PaymentoutRepositoryJPA {
                 query.executeUpdate();
 
                 // если проводим документ
-                if(request.getIs_completed()){
+                if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
                     String expType=spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
                     if(!expType.equals("moving")){// если это не внутренний платёж -

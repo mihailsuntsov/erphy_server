@@ -716,7 +716,7 @@ public class InvoiceinRepositoryJPA {
                     " id= "+request.getId();
             try
             {
-                Date dateNow = new Date();
+//                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);

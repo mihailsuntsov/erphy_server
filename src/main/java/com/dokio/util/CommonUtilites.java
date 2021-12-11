@@ -165,6 +165,8 @@ public class CommonUtilites {
                     "payment_account",
                     "boxoffice",
                     "kassa",
+                    "withdrawal", // изъятие из кассы ККТ
+                    "depositing", // внесение в кассу ККТ
                     "correction")
             .collect(Collectors.toCollection(HashSet::new)));
 

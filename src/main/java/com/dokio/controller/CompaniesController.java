@@ -261,6 +261,20 @@ public class CompaniesController {
         }
     }
 
+    @RequestMapping(
+            value = "/api/auth/getBoxofficeByDepId",// отдаёт список видов расходов
+            params = {"company_id","dep_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getBoxofficeByDepId(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("dep_id") Long dep_id){
+        logger.info("Processing post request for path /api/auth/getBoxofficeByDepId, company_id = " + company_id + ", dep_id=" + dep_id);
+        try {
+            return  new ResponseEntity<>(companyRepositoryJPA.getBoxofficeByDepId(company_id,dep_id), HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка запроса кассы отделения", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************

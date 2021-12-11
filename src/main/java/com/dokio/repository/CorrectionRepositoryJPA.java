@@ -148,7 +148,6 @@ public class CorrectionRepositoryJPA {
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
@@ -241,7 +240,6 @@ public class CorrectionRepositoryJPA {
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
@@ -502,7 +500,7 @@ public class CorrectionRepositoryJPA {
                 query.executeUpdate();
 
                 // если проводим документ
-                if(request.getIs_completed()){
+                if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип корректировки. boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
                     if(request.getType().equals("boxoffice"))// если коррекция кассы предприятия -
                         commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "correction", request.getId(), request.getSumm());

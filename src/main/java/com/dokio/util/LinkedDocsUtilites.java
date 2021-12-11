@@ -61,6 +61,8 @@ public class LinkedDocsUtilites {
                     "orderout",
                     "vatinvoiceout",
                     "correction",
+                    "withdrawal",//выемка из кассы ККМ
+                    "depositing", // внесение средств в кассу ККМ
                     "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
@@ -87,6 +89,8 @@ public class LinkedDocsUtilites {
                     "paymentout",
                     "orderin",
                     "correction",
+                    "withdrawal",//выемка из кассы ККМ
+                    "depositing", // внесение средств в кассу ККМ
                     "orderout")
                     .collect(Collectors.toCollection(HashSet::new)));
 
