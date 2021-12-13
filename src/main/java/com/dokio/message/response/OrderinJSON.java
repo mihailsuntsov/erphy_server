@@ -46,6 +46,98 @@ public class OrderinJSON {
     private Long kassa_from_id;             // id кассы ККМ - источника
     private Long boxoffice_from_id;         // id кассы предприятия - источника
     private Long payment_account_from_id;   // id расч счёта
+    private Long withdrawal_id;             // id выемки, из которой поступили средства
+    private Long paymentout_id;             // id исходящего платежа, из которого поступили средства
+    private Long orderout_id;               // id расходного ордера, из которого поступили средства
+    private String withdrawal;              // выемка, из которой поступили средства
+    private String paymentout;              // исходящий платеж, из которого поступили средства
+    private String orderout;                // расходный ордер, из которого поступили средства
+
+    private String kassa_from;              // наименование кассы ККМ - источника
+    private String boxoffice_from;          // наименование кассы предприятия - источника
+    private String payment_account_from;    // наименование расч счёта - источника
+
+    private String boxoffice;               // наименование кассы предприятия - назначения
+
+    public String getBoxoffice() {
+        return boxoffice;
+    }
+
+    public void setBoxoffice(String boxoffice) {
+        this.boxoffice = boxoffice;
+    }
+
+    public String getKassa_from() {
+        return kassa_from;
+    }
+
+    public void setKassa_from(String kassa_from) {
+        this.kassa_from = kassa_from;
+    }
+
+    public String getBoxoffice_from() {
+        return boxoffice_from;
+    }
+
+    public void setBoxoffice_from(String boxoffice_from) {
+        this.boxoffice_from = boxoffice_from;
+    }
+
+    public String getPayment_account_from() {
+        return payment_account_from;
+    }
+
+    public void setPayment_account_from(String payment_account_from) {
+        this.payment_account_from = payment_account_from;
+    }
+
+    public String getWithdrawal() {
+        return withdrawal;
+    }
+
+    public void setWithdrawal(String withdrawal) {
+        this.withdrawal = withdrawal;
+    }
+
+    public String getPaymentout() {
+        return paymentout;
+    }
+
+    public void setPaymentout(String paymentout) {
+        this.paymentout = paymentout;
+    }
+
+    public String getOrderout() {
+        return orderout;
+    }
+
+    public void setOrderout(String orderout) {
+        this.orderout = orderout;
+    }
+
+    public Long getWithdrawal_id() {
+        return withdrawal_id;
+    }
+
+    public void setWithdrawal_id(Long withdrawal_id) {
+        this.withdrawal_id = withdrawal_id;
+    }
+
+    public Long getPaymentout_id() {
+        return paymentout_id;
+    }
+
+    public void setPaymentout_id(Long paymentout_id) {
+        this.paymentout_id = paymentout_id;
+    }
+
+    public Long getOrderout_id() {
+        return orderout_id;
+    }
+
+    public void setOrderout_id(Long orderout_id) {
+        this.orderout_id = orderout_id;
+    }
 
     public String getMoving_type() {
         return moving_type;

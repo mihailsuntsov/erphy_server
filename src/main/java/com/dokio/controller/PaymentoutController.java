@@ -257,4 +257,14 @@ class PaymentoutController {
     }
 
 
+    @RequestMapping(
+            value = "/api/auth/getPaymentoutList",
+            params = {"account_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPaymentoutList(
+            @RequestParam("account_id") Long id){
+        logger.info("Processing get request for path /api/auth/getPaymentoutList with parameters: " + "account_id: " + id);
+        try {return new ResponseEntity<>(paymentoutRepository.getPaymentoutList(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

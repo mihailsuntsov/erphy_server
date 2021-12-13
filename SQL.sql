@@ -2511,6 +2511,20 @@ insert into permissions (id,name,description,document_name,document_id) values
 (573,'Просмотр документов своих отделений','Прсмотр информации в документах "Выемка" по своим отделениям','Выемка',45),
 (574,'Просмотр документов созданных собой','Прсмотр информации в документах "Выемка", созданных собой','Выемка',45);
 
+alter table orderin add column withdrawal_id bigint;
+alter table orderin add constraint withdrawal_id_fkey foreign key (withdrawal_id) references withdrawal (id);
+alter table orderin add column paymentout_id bigint;
+alter table orderin add constraint paymentout_id_fkey foreign key (paymentout_id) references paymentout (id);
+alter table orderin add column orderout_id bigint;
+alter table orderin add constraint orderout_id_fkey foreign key (orderout_id) references orderout (id);
+
+alter table paymentin add column paymentout_id bigint;
+alter table paymentin add constraint paymentout_id_fkey foreign key (paymentout_id) references paymentout (id);
+alter table paymentin add column orderout_id bigint;
+alter table paymentin add constraint orderout_id_fkey foreign key (orderout_id) references orderout (id);
+
+alter table paymentout add column is_delivered boolean;
+alter table orderout add column is_delivered boolean;
 
 
 
@@ -2521,11 +2535,7 @@ insert into permissions (id,name,description,document_name,document_id) values
 
 
 
-
-
-
-
-  WITH
+WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

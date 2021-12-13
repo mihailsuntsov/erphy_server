@@ -168,4 +168,15 @@ public class WithdrawalController {
         try {return new ResponseEntity<>(withdrawalRepository.getWithdrawalValuesById(id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(
+            value = "/api/auth/getWithdrawalList",
+            params = {"kassa_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getWithdrawalList(
+            @RequestParam("kassa_id") Long id){
+        logger.info("Processing get request for path /api/auth/getWithdrawalList with parameters: " + "kassa_id: " + id);
+        try {return new ResponseEntity<>(withdrawalRepository.getWithdrawalList(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка выемок", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

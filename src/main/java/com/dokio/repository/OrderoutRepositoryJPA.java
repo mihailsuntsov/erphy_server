@@ -863,4 +863,41 @@ public class OrderoutRepositoryJPA {
             }
         } else return false;
     }
+    // отдает список внутренних наличных платежей по кассе предприятия, деньги из которых еще не были доставлены в кассу предприятия или на расч. счёт (т.е. нет проведения приходного ордера или входящего платежа по этим деньгам)
+    @SuppressWarnings("Duplicates")
+    public List<OrderoutJSON> getOrderoutList(Long boxoffice_id) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery = "select  p.id as id, " +
+                "           '№'||p.doc_number||', '||to_char(p.summ, '9990.99')||' руб.' as boxoffice, " +// наименование кассы
+                "           p.doc_number as doc_number, " +
+                "           coalesce(p.summ,0) as summ " +
+
+                "           from orderout p " +
+                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           INNER JOIN sprav_boxoffice ap ON p.boxoffice_id=ap.id " +
+                "           where  p.master_id=" + myMasterId +
+                "           and p.boxoffice_id = " + boxoffice_id +
+                "           and coalesce(p.is_completed,false) = true" +
+                "           and coalesce(p.is_delivered,false) = false";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<OrderoutJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                OrderoutJSON doc=new OrderoutJSON();
+                doc.setId(Long.parseLong(                     obj[0].toString()));
+                doc.setBoxoffice((String)                     obj[1]);
+                doc.setDoc_number(Long.parseLong(             obj[2].toString()));
+                doc.setSumm((BigDecimal)                      obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getOrderoutList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 }

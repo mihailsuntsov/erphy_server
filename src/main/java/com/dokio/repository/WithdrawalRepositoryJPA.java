@@ -449,4 +449,51 @@ public class WithdrawalRepositoryJPA {
             return null;
         }
     }
+
+    // отдает список выемок по кассе, деньги из которых еще не были доставлены в кассу предприятия (т.е. нет проведения приходного ордера по этим деньгам)
+    @SuppressWarnings("Duplicates")
+    public List<WithdrawalJSON> getWithdrawalList(Long kassa_id) {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            stringQuery = "select  p.id as id, " +
+                    "           us.name as creator, " +
+                    "           '№'||p.doc_number||', '||to_char(p.summ, '9990.99')||' руб.' as kassa, " +
+                    "           dp.name as department, " +
+                    "           p.doc_number as doc_number, " +
+                    "           coalesce(p.summ,0) as summ " +
+
+                    "           from withdrawal p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                    "           INNER JOIN kassa ka ON p.kassa_id=ka.id " +
+                    "           INNER JOIN users us ON p.creator_id=us.id " +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and p.kassa_id = " + kassa_id +
+                    "           and coalesce(p.is_completed,false) = true" +
+                    "           and coalesce(p.is_delivered,false) = false";
+
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                List<WithdrawalJSON> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+                    WithdrawalJSON doc=new WithdrawalJSON();
+                    doc.setId(Long.parseLong(                     obj[0].toString()));
+                    doc.setCreator((String)                       obj[1]);
+                    doc.setKassa((String)                         obj[2]);
+                    doc.setDepartment((String)                    obj[3]);
+                    doc.setDoc_number(Long.parseLong(             obj[4].toString()));
+                    doc.setSumm((BigDecimal)                      obj[5]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getWithdrawalList. SQL query:" + stringQuery, e);
+                return null;
+            }
+    }
+
+
+
 }

@@ -252,4 +252,26 @@ public class CommonUtilites {
         } else return null; // попытка запроса не по правильным таблицам
     }
 
+    private static final Set VALID_OUTCOME_PAYMENTS_TABLE_NAMES
+        = Collections.unmodifiableSet((Set<? extends String>) Stream.of("paymentout","orderout","withdrawal").collect(Collectors.toCollection(HashSet::new)));
+    // устанавливает доставлено=true для исходящего внутреннего платежа (например Выемки, либо внутреннего Исходящего платежа, или внутреннего Расходного ордера)
+    public boolean setDelivered(String tableName, Long id) throws Exception {
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery = "Update "+tableName+" p" +
+                " set is_delivered=true " +
+                " where p.id = " + id + " and p.master_id=" + myMasterId;
+        if (!VALID_OUTCOME_PAYMENTS_TABLE_NAMES.contains(tableName))
+            throw new IllegalArgumentException("Недопустимые параметры запроса. Таблицы нет в списке разрешённых: "+tableName); // отмена всей транзакции из вызывающего метода
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method setDelivered. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(); // отмена всей транзакции из вызывающего метода
+        }
+    }
+
+
 }

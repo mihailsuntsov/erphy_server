@@ -119,7 +119,13 @@ public class OrderinRepositoryJPA {
                     "           coalesce(p.summ,0) as summ, " +
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
-                    "           p.moving_type as moving_type, " +/*
+                    "           p.moving_type as moving_type, " +
+
+                    "           p.paymentout_id as paymentout_id," +
+                    "           p.orderout_id as orderout_id," +
+                    "           p.withdrawal_id as withdrawal_id," +
+
+                    /*
                     "           p.kassa_from_id as kassa_from_id, " +
                     "           p.boxoffice_from_id as boxoffice_from_id, " +
                     "           p.payment_account_from_id as payment_account_from_id, " +*/
@@ -195,7 +201,14 @@ public class OrderinRepositoryJPA {
                     doc.setSumm((BigDecimal)                                        obj[17]);
                     doc.setCagent((String)                                          obj[18]);
                     doc.setIs_completed((Boolean)                                   obj[19]);
-                    doc.setMoving_type((String)                                     obj[20]);/*
+                    doc.setMoving_type((String)                                     obj[20]);
+                    doc.setPaymentout_id(obj[21]!=null?Long.parseLong(              obj[21].toString()):null);
+                    doc.setOrderout_id(obj[22]!=null?Long.parseLong(                obj[22].toString()):null);
+                    doc.setWithdrawal_id(obj[23]!=null?Long.parseLong(              obj[23].toString()):null);
+
+
+
+                    /*
                     doc.setKassa_from_id(obj[21]!=null?Long.parseLong(              obj[21].toString()):null);
                     doc.setBoxoffice_from_id(obj[22]!=null?Long.parseLong(          obj[22].toString()):null);
                     doc.setPayment_account_from_id(obj[23]!=null?Long.parseLong(    obj[23].toString()):null);*/
@@ -301,15 +314,39 @@ public class OrderinRepositoryJPA {
                     "           p.moving_type as moving_type, " +
                     "           p.kassa_from_id as kassa_from_id, " +
                     "           p.boxoffice_from_id as boxoffice_from_id, " +
-                    "           p.payment_account_from_id as payment_account_from_id " +
+                    "           p.payment_account_from_id as payment_account_from_id, " +
+
+                    "           p.paymentout_id as paymentout_id," +
+                    "           p.orderout_id as orderout_id," +
+                    "           p.withdrawal_id as withdrawal_id," +
+
+                    "           '№'||pto.doc_number||', '||to_char(pto.summ, '9990.99')||' руб.' as paymentout," +
+                    "           '№'||oou.doc_number||', '||to_char(oou.summ, '9990.99')||' руб.' as orderout," +
+                    "           '№'||wdw.doc_number||', '||to_char(wdw.summ, '9990.99')||' руб.' as withdrawal," +
+
+                    "           ka.name as kassa_from, " +
+                    "           sb.name as boxoffice_from, " +
+                    "           cpa.payment_account||', '||cpa.name as payment_account_from, " +
+
+                    "           sbx.name as boxoffice " +
 
                     "           from orderin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           INNER JOIN sprav_boxoffice sbx ON p.boxoffice_id=sbx.id " +
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+
+                    "           LEFT OUTER JOIN withdrawal wdw ON p.withdrawal_id=wdw.id " +
+                    "           LEFT OUTER JOIN orderout oou ON p.orderout_id=oou.id " +
+                    "           LEFT OUTER JOIN paymentout pto ON p.paymentout_id=pto.id " +
+
+                    "           LEFT OUTER JOIN kassa ka ON p.kassa_from_id=ka.id " +
+                    "           LEFT OUTER JOIN sprav_boxoffice sb ON p.boxoffice_from_id=sb.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_from_id=cpa.id " +
+
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
@@ -354,7 +391,21 @@ public class OrderinRepositoryJPA {
                     returnObj.setKassa_from_id(obj[26]!=null?Long.parseLong(              obj[26].toString()):null);
                     returnObj.setBoxoffice_from_id(obj[27]!=null?Long.parseLong(          obj[27].toString()):null);
                     returnObj.setPayment_account_from_id(obj[28]!=null?Long.parseLong(    obj[28].toString()):null);
+                    returnObj.setPaymentout_id(obj[29]!=null?Long.parseLong(              obj[29].toString()):null);
+                    returnObj.setOrderout_id(obj[30]!=null?Long.parseLong(                obj[30].toString()):null);
+                    returnObj.setWithdrawal_id(obj[31]!=null?Long.parseLong(              obj[31].toString()):null);
+
+                    returnObj.setPaymentout(obj[32]!=null?                  obj[32].toString():"");
+                    returnObj.setOrderout(obj[33]!=null?                    obj[33].toString():"");
+                    returnObj.setWithdrawal(obj[34]!=null?                  obj[34].toString():"");
+
+                    returnObj.setKassa_from(obj[35]!=null?                  obj[35].toString():"");
+                    returnObj.setBoxoffice_from(obj[36]!=null?              obj[36].toString():"");
+                    returnObj.setPayment_account_from(obj[37]!=null?        obj[37].toString():"");
+
+                    returnObj.setBoxoffice((String)                         obj[38]);
                 }
+
                 return returnObj;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -473,6 +524,9 @@ public class OrderinRepositoryJPA {
                         " kassa_from_id," +// id кассы ККМ - источника
                         " boxoffice_from_id," +// id кассы предприятия - источник
                         " payment_account_from_id," +// id расч счёта
+                        " withdrawal_id," +             // id выемки, из которой поступили средства
+                        " paymentout_id," +             // id исходящего платежа, из которого поступили средства
+                        " orderout_id," +               // id расходного ордера, из которого поступили средства
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -492,6 +546,9 @@ public class OrderinRepositoryJPA {
                         request.getKassa_from_id()+"," +
                         request.getBoxoffice_from_id()+"," +
                         request.getPayment_account_from_id()+"," +
+                        request.getWithdrawal_id() +"," +
+                        request.getPaymentout_id() +"," +
+                        request.getOrderout_id() +"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -525,7 +582,7 @@ public class OrderinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, IllegalArgumentException.class, CantSetHistoryCauseNegativeSumException.class})
     public Integer updateOrderin(OrderinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(35L,"482") && securityRepositoryJPA.isItAllMyMastersDocuments("orderin",request.getId().toString())) ||
@@ -549,6 +606,9 @@ public class OrderinRepositoryJPA {
                     " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
                     " kassa_from_id = "+request.getKassa_from_id()+"," +// id кассы ККМ - источника
                     " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
+                    " withdrawal_id = " +   request.getWithdrawal_id()+"," +        // id выемки, из которой поступили средства
+                    " paymentout_id = " +   request.getPaymentout_id()+"," +        // id исходящего платежа, из которого поступили средства
+                    " orderout_id = " +     request.getOrderout_id()+"," +          // id расходного ордера, из которого поступили средства
                     " payment_account_from_id = "+request.getPayment_account_from_id() +// id расч счёта
                     " where " +
                     " id= "+request.getId()+
@@ -566,9 +626,23 @@ public class OrderinRepositoryJPA {
                 // если проводим документ
                 if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin", request.getId(), request.getSumm());
+                    } else { // если платеж внутренний -
+                        // отмечаем исходящий внутренний платеж как доставленный
+                        switch (request.getMoving_type()) {
+                            case "kassa":
+                                commonUtilites.setDelivered("withdrawal", request.getWithdrawal_id());
+                                break;
+                            case "account":
+                                commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
+                                break;
+                            case "boxoffice":
+                                commonUtilites.setDelivered("orderout", request.getOrderout_id());
+                                break;
+                        }
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
                     commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin", request.getId(), request.getSumm());
@@ -581,6 +655,11 @@ public class OrderinRepositoryJPA {
                 logger.error("Exception in method OrderinRepository/updateOrderin.", e);
                 e.printStackTrace();
                 return -30; // см. _ErrorCodes
+            } catch (IllegalArgumentException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method setDelivered ", e);
+                e.printStackTrace();
+                return null; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderinRepository/updateOrderin. SQL query:"+stringQuery, e);

@@ -40,6 +40,24 @@ public class PaymentinForm {
     private String moving_type;             // тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
     private Long boxoffice_from_id;         // id кассы предприятия - источника
     private Long payment_account_from_id;   // id расч счёта
+    private Long paymentout_id;             // id исходящего платежа, из которого поступили средства
+    private Long orderout_id;               // id расходного ордера, из которого поступили средства
+
+    public Long getPaymentout_id() {
+        return paymentout_id;
+    }
+
+    public void setPaymentout_id(Long paymentout_id) {
+        this.paymentout_id = paymentout_id;
+    }
+
+    public Long getOrderout_id() {
+        return orderout_id;
+    }
+
+    public void setOrderout_id(Long orderout_id) {
+        this.orderout_id = orderout_id;
+    }
 
     public String getMoving_type() {
         return moving_type;

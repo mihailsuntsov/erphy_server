@@ -922,4 +922,41 @@ public class PaymentoutRepositoryJPA {
             }
         } else return false;
     }
+    // отдает список внутренних безналичных платежей по р. счёту, деньги из которых еще не были доставлены в кассу предприятия или на расч. счёт (т.е. нет проведения приходного ордера или входящего платежа по этим деньгам)
+    @SuppressWarnings("Duplicates")
+    public List<PaymentoutJSON> getPaymentoutList(Long account_id) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery = "select  p.id as id, " +
+                "           '№'||p.doc_number||', '||to_char(p.summ, '9990.99')||' руб.' as account, " +// наименование р. счета
+                "           p.doc_number as doc_number, " +
+                "           coalesce(p.summ,0) as summ " +
+
+                "           from paymentout p " +
+                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           INNER JOIN companies_payment_accounts ap ON p.payment_account_id=ap.id " +
+                "           where  p.master_id=" + myMasterId +
+                "           and p.payment_account_id = " + account_id +
+                "           and coalesce(p.is_completed,false) = true" +
+                "           and coalesce(p.is_delivered,false) = false";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<PaymentoutJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                PaymentoutJSON doc=new PaymentoutJSON();
+                doc.setId(Long.parseLong(                     obj[0].toString()));
+                doc.setPayment_account((String)               obj[1]);
+                doc.setDoc_number(Long.parseLong(             obj[2].toString()));
+                doc.setSumm((BigDecimal)                      obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getPaymentoutList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 }

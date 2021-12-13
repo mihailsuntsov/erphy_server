@@ -111,6 +111,8 @@ public class PaymentinRepositoryJPA {
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
                     "           p.moving_type as moving_type, " +
+                    "           p.paymentout_id as paymentout_id," +
+                    "           p.orderout_id as orderout_id," +
 
                     "           p.income_number_date as income_number_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -189,6 +191,8 @@ public class PaymentinRepositoryJPA {
                     doc.setIncome_number_date((String)            obj[21]);
                     doc.setPayment_account_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
                     doc.setMoving_type((String)                   obj[23]);
+                    doc.setPaymentout_id(obj[24]!=null?Long.parseLong(              obj[24].toString()):null);
+                    doc.setOrderout_id(obj[25]!=null?Long.parseLong(                obj[25].toString()):null);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -289,21 +293,37 @@ public class PaymentinRepositoryJPA {
                     "           coalesce(p.income_number,'') as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +
+                    "           cpas.payment_account||' ('||cpas.name||')' as payment_account," +
                     "           p.internal as internal," +
                     "           p.moving_type as moving_type, " +
                     "           p.boxoffice_from_id as boxoffice_from_id, " +
-                    "           p.payment_account_from_id as payment_account_from_id " +
+                    "           p.payment_account_from_id as payment_account_from_id, " +
+
+                    "           p.paymentout_id as paymentout_id," +
+                    "           p.orderout_id as orderout_id," +
+
+                    "           '№'||pto.doc_number||', '||to_char(pto.summ, '9990.99')||' руб.' as paymentout," +
+                    "           '№'||oou.doc_number||', '||to_char(oou.summ, '9990.99')||' руб.' as orderout," +
+
+                    "           sb.name as boxoffice_from, " +
+                    "           cpa.payment_account||', '||cpa.name as payment_account_from " +
 
 
                     "           from paymentin p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
-                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_id=cpa.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpas ON p.payment_account_id=cpas.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+
+                    "           LEFT OUTER JOIN orderout oou ON p.orderout_id=oou.id " +
+                    "           LEFT OUTER JOIN paymentout pto ON p.paymentout_id=pto.id " +
+
+                    "           LEFT OUTER JOIN sprav_boxoffice sb ON p.boxoffice_from_id=sb.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_from_id=cpa.id " +
+
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
@@ -350,7 +370,14 @@ public class PaymentinRepositoryJPA {
                     returnObj.setMoving_type((String)                                     obj[28]);
                     returnObj.setBoxoffice_from_id(obj[29]!=null?Long.parseLong(          obj[29].toString()):null);
                     returnObj.setPayment_account_from_id(obj[30]!=null?Long.parseLong(    obj[30].toString()):null);
+                    returnObj.setPaymentout_id(obj[31]!=null?Long.parseLong(              obj[31].toString()):null);
+                    returnObj.setOrderout_id(obj[32]!=null?Long.parseLong(                obj[32].toString()):null);
 
+                    returnObj.setPaymentout((String)                        obj[33]);
+                    returnObj.setOrderout((String)                          obj[34]);
+
+                    returnObj.setBoxoffice_from(obj[35]!=null?              obj[35].toString():"");
+                    returnObj.setPayment_account_from(obj[36]!=null?        obj[36].toString():"");
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -473,6 +500,8 @@ public class PaymentinRepositoryJPA {
                         " moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
                         " boxoffice_from_id," +// id кассы предприятия - источника
                         " payment_account_from_id," +// id расч счёта
+                        " paymentout_id," +             // id исходящего платежа, из которого поступили средства
+                        " orderout_id," +               // id расходного ордера, из которого поступили средства
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -493,6 +522,8 @@ public class PaymentinRepositoryJPA {
                         ":moving_type," +
                         request.getBoxoffice_from_id()+"," +
                         request.getPayment_account_from_id()+"," +
+                        request.getPaymentout_id() +"," +
+                        request.getOrderout_id() +"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -537,7 +568,7 @@ public class PaymentinRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(33L,"472") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentin",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             String stringQuery;
             stringQuery =   " update paymentin set " +
@@ -554,6 +585,8 @@ public class PaymentinRepositoryJPA {
                     " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
                     " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
                     " payment_account_from_id = "+request.getPayment_account_from_id()+"," +// id расч счёта
+                    " paymentout_id = " +   request.getPaymentout_id()+"," +        // id исходящего платежа, из которого поступили средства
+                    " orderout_id = " +     request.getOrderout_id()+"," +          // id расходного ордера, из которого поступили средства
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -572,10 +605,21 @@ public class PaymentinRepositoryJPA {
                 // если проводим документ
                 if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                    if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin", request.getId(), request.getSumm());
+                    } else { // если платеж внутренний -
+                    // отмечаем исходящий внутренний платеж как доставленный
+                    switch (request.getMoving_type()) {
+                        case "account":
+                            commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
+                            break;
+                        case "boxoffice":
+                            commonUtilites.setDelivered("orderout", request.getOrderout_id());
+                            break;
                     }
+                }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
                     commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin", request.getId(), request.getSumm());
                 }
@@ -586,6 +630,11 @@ public class PaymentinRepositoryJPA {
                 logger.error("Exception in method PaymentinRepository/updatePaymentin.", e);
                 e.printStackTrace();
                 return -30; // см. _ErrorCodes
+            } catch (IllegalArgumentException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method setDelivered ", e);
+                e.printStackTrace();
+                return null; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method PaymentinRepository/updatePaymentin. SQL query:"+stringQuery, e);

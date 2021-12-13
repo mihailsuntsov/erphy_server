@@ -37,17 +37,72 @@ public class PaymentinJSON {
     private String status_color;
     private String status_description;
     private Long status_id;
-    private Boolean is_completed;               // проведено
+    private Boolean is_completed;           // проведено
     private String uid;
-    private BigDecimal summ;
-    private String income_number;              // входящий внутренний номер поставщика
-    private String income_number_date;         // входящая дата счета поставщика
-    private Long payment_account_id;//id расчтёного счёта
-    private String payment_account;// расчтёный счёт
-    private Boolean internal; // внутренний платеж
+    private BigDecimal summ;                // сумма операции
+    private String income_number;           // входящий внутренний номер поставщика
+    private String income_number_date;      // входящая дата счета поставщика
+    private Long payment_account_id;        // id расчтёного счёта
+    private String payment_account;         // расчтёный счёт
+    private Boolean internal;               // внутренний платеж
     private String moving_type;             // тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
     private Long boxoffice_from_id;         // id кассы предприятия - источника
     private Long payment_account_from_id;   // id расч счёта
+    private Long paymentout_id;             // id исходящего платежа, из которого поступили средства
+    private Long orderout_id;               // id расходного ордера, из которого поступили средства
+    private String paymentout;              // исходящий платеж, из которого поступили средства
+    private String orderout;                // расходный ордер, из которого поступили средства
+
+    private String boxoffice_from;          // наименование кассы предприятия - источника
+    private String payment_account_from;    // наименование расч счёта - источника
+
+
+    public String getBoxoffice_from() {
+        return boxoffice_from;
+    }
+
+    public void setBoxoffice_from(String boxoffice_from) {
+        this.boxoffice_from = boxoffice_from;
+    }
+
+    public String getPayment_account_from() {
+        return payment_account_from;
+    }
+
+    public void setPayment_account_from(String payment_account_from) {
+        this.payment_account_from = payment_account_from;
+    }
+
+    public String getPaymentout() {
+        return paymentout;
+    }
+
+    public void setPaymentout(String paymentout) {
+        this.paymentout = paymentout;
+    }
+
+    public String getOrderout() {
+        return orderout;
+    }
+
+    public void setOrderout(String orderout) {
+        this.orderout = orderout;
+    }
+    public Long getPaymentout_id() {
+        return paymentout_id;
+    }
+
+    public void setPaymentout_id(Long paymentout_id) {
+        this.paymentout_id = paymentout_id;
+    }
+
+    public Long getOrderout_id() {
+        return orderout_id;
+    }
+
+    public void setOrderout_id(Long orderout_id) {
+        this.orderout_id = orderout_id;
+    }
 
     public String getMoving_type() {
         return moving_type;

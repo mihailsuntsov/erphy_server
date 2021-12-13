@@ -240,4 +240,15 @@ public class OrderoutController {
         try{return new ResponseEntity<>(orderoutRepository.addFilesToOrderout(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(
+            value = "/api/auth/getOrderoutList",
+            params = {"kassa_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getOrderoutList(
+            @RequestParam("kassa_id") Long id){
+        logger.info("Processing get request for path /api/auth/getOrderoutList with parameters: " + "kassa_id: " + id);
+        try {return new ResponseEntity<>(orderoutRepository.getOrderoutList(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }
