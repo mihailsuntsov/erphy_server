@@ -254,6 +254,8 @@ public class CommonUtilites {
 
     private static final Set VALID_OUTCOME_PAYMENTS_TABLE_NAMES
         = Collections.unmodifiableSet((Set<? extends String>) Stream.of("paymentout","orderout","withdrawal").collect(Collectors.toCollection(HashSet::new)));
+//    private static final Set VALID_INCOME_PAYMENTS_TABLE_NAMES
+//            = Collections.unmodifiableSet((Set<? extends String>) Stream.of("paymentout","orderout","withdrawal").collect(Collectors.toCollection(HashSet::new)));
     // устанавливает доставлено=true для исходящего внутреннего платежа (например Выемки, либо внутреннего Исходящего платежа, или внутреннего Расходного ордера)
     public boolean setDelivered(String tableName, Long id) throws Exception {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());

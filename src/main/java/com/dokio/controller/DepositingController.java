@@ -12,13 +12,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
-import com.dokio.message.request.OrderoutForm;
 import com.dokio.message.request.SearchForm;
-import com.dokio.message.request.Settings.SettingsOrderoutForm;
-import com.dokio.message.request.SignUpForm;
-import com.dokio.message.request.UniversalForm;
-import com.dokio.message.response.OrderoutJSON;
-import com.dokio.repository.OrderoutRepositoryJPA;
+import com.dokio.message.request.DepositingForm;
+import com.dokio.message.response.DepositingJSON;
+import com.dokio.repository.DepositingRepositoryJPA;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,17 +27,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class OrderoutController {
+public class DepositingController {
 
-    Logger logger = Logger.getLogger("OrderoutController");
+    Logger logger = Logger.getLogger("DepositingController");
 
     @Autowired
-    OrderoutRepositoryJPA orderoutRepository;
+    DepositingRepositoryJPA depositingRepository;
 
-    @PostMapping("/api/auth/getOrderoutTable")
+    @PostMapping("/api/auth/getDepositingTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getOrderoutTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getOrderoutTable: " + searchRequest.toString());
+    public ResponseEntity<?> getDepositingTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDepositingTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -49,7 +46,7 @@ public class OrderoutController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<OrderoutJSON> returnList;
+        List<DepositingJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -78,15 +75,15 @@ public class OrderoutController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = orderoutRepository.getOrderoutTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = depositingRepository.getDepositingTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getOrderoutPagesList")
+    @PostMapping("/api/auth/getDepositingPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getOrderoutPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getOrderoutPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getDepositingPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getDepositingPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -108,7 +105,7 @@ public class OrderoutController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = orderoutRepository.getOrderoutSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = depositingRepository.getDepositingSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -154,101 +151,21 @@ public class OrderoutController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertOrderout")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertOrderout(@RequestBody OrderoutForm request){
-        logger.info("Processing post request for path /api/auth/insertOrderout: " + request.toString());
-        return new ResponseEntity<>(orderoutRepository.insertOrderout(request), HttpStatus.OK);
+    @PostMapping("/api/auth/insertDepositing")
+    public ResponseEntity<?> insertDepositing(@RequestBody DepositingForm request){
+        logger.info("Processing post request for path /api/auth/insertDepositing: " + request.toString());
+        try {return new ResponseEntity<>(depositingRepository.insertDepositing(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
-            value = "/api/auth/getOrderoutValuesById",
+            value = "/api/auth/getDepositingValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getOrderoutValuesById(
+    public ResponseEntity<?> getDepositingValuesById(
             @RequestParam("id") Long id){
-        logger.info("Processing get request for path /api/auth/getOrderoutValuesById with parameters: " + "id: " + id);
-        try {return new ResponseEntity<>(orderoutRepository.getOrderoutValuesById(id), HttpStatus.OK);}
+        logger.info("Processing get request for path /api/auth/getDepositingValuesById with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(depositingRepository.getDepositingValuesById(id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @PostMapping("/api/auth/updateOrderout")
-    public ResponseEntity<?> updateOrderout(@RequestBody OrderoutForm request){
-        logger.info("Processing post request for path /api/auth/updateOrderout: " + request.toString());
-        try {return new ResponseEntity<>(orderoutRepository.updateOrderout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @PostMapping("/api/auth/saveSettingsOrderout")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveSettingsOrderout(@RequestBody SettingsOrderoutForm request){
-        logger.info("Processing post request for path /api/auth/saveSettingsOrderout: " + request.toString());
-        try {return new ResponseEntity<>(orderoutRepository.saveSettingsOrderout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/getSettingsOrderout",
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsOrderout(){
-        logger.info("Processing get request for path /api/auth/getSettingsOrderout without request parameters");
-        try {return new ResponseEntity<>(orderoutRepository.getSettingsOrderout(), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @PostMapping("/api/auth/deleteOrderout")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteOrderout(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteOrderout: " + request.toString());
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        try {return new ResponseEntity<>(orderoutRepository.deleteOrderout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @PostMapping("/api/auth/undeleteOrderout")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteOrderout(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/undeleteOrderout: " + request.toString());
-        String checked = request.getChecked() == null ? "" : request.getChecked();
-        try {return new ResponseEntity<>(orderoutRepository.undeleteOrderout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @RequestMapping(
-            value = "/api/auth/getListOfOrderoutFiles",
-            params = {"id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getListOfOrderoutFiles(
-            @RequestParam("id") Long id){
-        logger.info("Processing post request for path api/auth/getListOfOrderoutFiles: " + id);
-        try {return new ResponseEntity<>(orderoutRepository.getListOfOrderoutFiles(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @PostMapping("/api/auth/deleteOrderoutFile")
-    public ResponseEntity<?> deleteOrderoutFile(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/deleteOrderoutFile: " + request.toString());
-        try {return new ResponseEntity<>(orderoutRepository.deleteOrderoutFile(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @SuppressWarnings("Duplicates")
-    @PostMapping("/api/auth/addFilesToOrderout")
-    public ResponseEntity<?> addFilesToOrderout(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path api/auth/addFilesToOrderout: " + request.toString());
-        try{return new ResponseEntity<>(orderoutRepository.addFilesToOrderout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
-
-    @RequestMapping(
-            value = "/api/auth/getOrderoutList",
-            params = {"boxoffice_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getOrderoutList(
-            @RequestParam("boxoffice_id") Long id){
-        logger.info("Processing get request for path /api/auth/getOrderoutList with parameters: " + "boxoffice_id: " + id);
-        try {return new ResponseEntity<>(orderoutRepository.getOrderoutList(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

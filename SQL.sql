@@ -2526,6 +2526,119 @@ alter table paymentin add constraint orderout_id_fkey foreign key (orderout_id) 
 alter table paymentout add column is_delivered boolean;
 alter table orderout add column is_delivered boolean;
 
+-- Внесение
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (46,'Внесение','depositing',1,'depositing','Внесение');
+create table depositing(
+                         id bigserial primary key not null,
+                         master_id  bigint not null,
+                         creator_id bigint not null, -- кассир
+                         date_time_created timestamp with time zone not null, -- время операции
+                         company_id bigint not null, -- предприятие кассы
+                         department_id bigint not null, -- отделение в котором установлена касса
+                         kassa_id bigint not null, -- касса ККМ
+                         boxoffice_id bigint, -- касса предприятия
+                         status_id bigint, -- статуса нет у документа, но колонка нужна для работы связанности документов
+                         doc_number int not null,
+                         description varchar(2048),  -- примечание кассира к операции
+                         summ numeric(15,2) not null, --сумма операции
+                         orderout_id bigint not null,  -- id расходного ордера, деньги по которому вносятся
+                         is_completed boolean,       -- проведено - всегда, т.к. Внесение не редактируется, не проводится и не удаляется, создается уже проведенной
+                         uid varchar (36),
+                         linked_docs_group_id bigint,
+                         foreign key (master_id) references users(id),
+                         foreign key (creator_id) references users(id),
+                         foreign key (company_id) references companies(id),
+                         foreign key (department_id) references departments(id),
+                         foreign key (orderout_id) references orderout(id),
+                         foreign key (kassa_id) references kassa(id),
+                         foreign key (boxoffice_id) references sprav_boxoffice(id),
+                         foreign key (linked_docs_group_id) references linked_docs_groups(id));
+alter table linked_docs add column depositing_id bigint;
+alter table linked_docs add constraint depositing_id_fkey foreign key (depositing_id) references depositing (id);
+insert into permissions (id,name,description,document_name,document_id) values
+(575,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Внесение',46),
+(576,'Создание документов по всем предприятиям','Возможность создавать новые документы "Внесение" по всем предприятиям','Внесение',46),
+(577,'Создание документов своего предприятия','Возможность создавать новые документы "Внесение" своего предприятия','Внесение',46),
+(578,'Создание документов своих отделений','Возможность создавать новые документы "Внесение" по своим отделениям','Внесение',46),
+(579,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Внесение" по всем предприятиям','Внесение',46),
+(580,'Просмотр документов своего предприятия','Прсмотр информации в документах "Внесение" своего предприятия','Внесение',46),
+(581,'Просмотр документов своих отделений','Прсмотр информации в документах "Внесение" по своим отделениям','Внесение',46),
+(582,'Просмотр документов созданных собой','Прсмотр информации в документах "Внесение", созданных собой','Внесение',46);
+
+
+alter table orderout add column kassa_department_id bigint; -- отделение, где находится касса ККМ, в которую будет внесение
+alter table orderout add constraint kassa_department_id_fkey foreign key (kassa_department_id) references departments (id);
+
+-- уникальность на то, что в приходном документе (вход. платеж, приходный ордер, внесение) только 1 уже проведенный расходный документ (чтобы убрать возможность создавать несколько проводок одного и того же исходящего внутреннего платежа, тем самым порождая деньги из воздуха)
+CREATE UNIQUE INDEX paymentin_paymentout_unique_index ON paymentin (paymentout_id) WHERE is_completed;
+CREATE UNIQUE INDEX paymentin_orderout_unique_index ON paymentin (orderout_id) WHERE is_completed;
+CREATE UNIQUE INDEX orderin_orderout_unique_index ON orderin (orderout_id) WHERE is_completed;
+CREATE UNIQUE INDEX orderin_paymentout_unique_index ON orderin (paymentout_id) WHERE is_completed;
+CREATE UNIQUE INDEX orderin_withdrawal_unique_index ON orderin (withdrawal_id) WHERE is_completed;
+CREATE UNIQUE INDEX depositing_orderout_unique_index ON depositing (orderout_id) WHERE is_completed;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

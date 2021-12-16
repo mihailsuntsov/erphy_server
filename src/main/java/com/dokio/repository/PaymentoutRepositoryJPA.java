@@ -938,6 +938,7 @@ public class PaymentoutRepositoryJPA {
                 "           where  p.master_id=" + myMasterId +
                 "           and p.payment_account_id = " + account_id +
                 "           and coalesce(p.is_completed,false) = true" +
+                "           and coalesce(p.is_deleted,false) = false" +
                 "           and coalesce(p.is_delivered,false) = false";
 
         try{

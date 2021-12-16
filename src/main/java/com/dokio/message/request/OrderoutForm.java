@@ -32,12 +32,21 @@ public class OrderoutForm {
     private String parent_uid;// uid исходящего (родительского) документа
     private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
+    private Long kassa_department_id;// отделение, где находится касса ККМ, в которую будет внесение
 
     private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
     private Long boxoffice_id; // касса предприятия (не путать с ККМ!) из которой производится выплата
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
     private Long boxoffice_to_id; // касса предприятия куда пермещаем ден. ср-ва
     private Long kassa_to_id;             // id кассы ККМ - назначения платежа (куда производится внесение)
+
+    public Long getKassa_department_id() {
+        return kassa_department_id;
+    }
+
+    public void setKassa_department_id(Long kassa_department_id) {
+        this.kassa_department_id = kassa_department_id;
+    }
 
     public Long getKassa_to_id() {
         return kassa_to_id;

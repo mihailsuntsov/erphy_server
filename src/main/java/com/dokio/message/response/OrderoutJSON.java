@@ -43,12 +43,40 @@ public class OrderoutJSON {
     private Long expenditure_id; // id вида расходов
     private String expenditure; // вид расходов
 
+    private Long kassa_department_id;// id отделения, где находится касса ККМ, в которую будет внесение
+    private String kassa_department;// отделение, где находится касса ККМ, в которую будет внесение
+
     private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
     private Long boxoffice_id; // id кассы предприятия (не путать с ККМ!)
     private String boxoffice; // наименование кассы предприятия (не путать с ККМ!)
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
     private Long boxoffice_to_id; // касса предприятия куда пермещаем ден. ср-ва
     private Long kassa_to_id;             // id кассы ККМ - назначения (куда производим внесение ден средств)
+    private String kassa_to;             // касса ККМ - назначения (куда производим внесение ден средств)
+
+    public String getKassa_to() {
+        return kassa_to;
+    }
+
+    public void setKassa_to(String kassa_to) {
+        this.kassa_to = kassa_to;
+    }
+
+    public Long getKassa_department_id() {
+        return kassa_department_id;
+    }
+
+    public void setKassa_department_id(Long kassa_department_id) {
+        this.kassa_department_id = kassa_department_id;
+    }
+
+    public String getKassa_department() {
+        return kassa_department;
+    }
+
+    public void setKassa_department(String kassa_department) {
+        this.kassa_department = kassa_department;
+    }
 
     public String getBoxoffice() {
         return boxoffice;

@@ -577,7 +577,7 @@ public class KassaRepository {
         } else return null;
     }
 
-    // отдает список id отделений, привязанных к кассе предприятия boxofficeId
+    // отдает список id отделений, привязанных к кассе предприятия boxofficeId (getDepartmentsListByBoxofficeId getDepartmentListByBoxofficeId)
     private List<Long> getDepthListOfBoxofficeId(Long boxofficeId){
         String stringQuery = "select p.id, p.name as name from departments p where p.boxoffice_id=" +boxofficeId; // p.name надо чтобы был List<Object>
         List<Long> returnList = new ArrayList<>();

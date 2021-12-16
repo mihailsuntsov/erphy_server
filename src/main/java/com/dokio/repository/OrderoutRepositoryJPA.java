@@ -299,15 +299,20 @@ public class OrderoutRepositoryJPA {
                     "           p.boxoffice_id as boxoffice_id," +  // касса предприятия (не путать с ККМ!), откуда перемещаем деньги
                     "           p.payment_account_to_id as payment_account_to_id," + //  банковский счёт препдриятия, куда перемещаем денежные средства"
                     "           p.boxoffice_to_id as boxoffice_to_id," + // касса предприятия куда перемещаем деньги
-                    "           p.kassa_to_id as kassa_to_id" + // касса ККМ куда перемещаем деньги (операция внесения)
+                    "           p.kassa_to_id as kassa_to_id," + // id касса ККМ куда перемещаем деньги (операция внесения)
+                    "           p.kassa_department_id as kassa_department_id," + //id отделения, где находится касса ККМ, в которую будет внесение
+                    "           kd.name as kassa_department," + // отделение, где находится касса ККМ, в которую будет внесение
+                    "           ka.name as kassa_to " +// наименование кассы ККМ куда перемещаем деньги (операция внесения)
 
                     "           from orderout p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN sprav_expenditure_items sei ON p.expenditure_id=sei.id " +
+                    "           LEFT OUTER JOIN kassa ka ON p.kassa_to_id=ka.id " +
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN departments kd ON p.kassa_department_id=kd.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
@@ -353,7 +358,10 @@ public class OrderoutRepositoryJPA {
                     returnObj.setBoxoffice_id( obj[26]!=null?Long.parseLong(obj[26].toString()):null);
                     returnObj.setPayment_account_to_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
                     returnObj.setBoxoffice_to_id(obj[28]!=null?Long.parseLong(obj[28].toString()):null);
-                    returnObj.setKassa_to_id(obj[29]!=null?Long.parseLong(obj[29].toString()):null);
+                    returnObj.setKassa_to_id(obj[29]!=null?Long.parseLong(  obj[29].toString()):null);
+                    returnObj.setKassa_department_id(obj[30]!=null?Long.parseLong(obj[30].toString()):null);
+                    returnObj.setKassa_department((String)                  obj[31]);
+                    returnObj.setKassa_to((String)                          obj[32]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -457,6 +465,7 @@ public class OrderoutRepositoryJPA {
                         " boxoffice_to_id," + // касса предприятия куда перемещаем деньги
                         " payment_account_to_id," +  //  банковский счёт препдриятия, куда перемещаем денежные средства
                         " kassa_to_id, " + // касса ККМ, куда перемещаем деньги
+                        " kassa_department_id, " + //отделение, где находится касса ККМ, в которую будет внесение
                         " uid"+// уникальный идентификатор документа
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -476,6 +485,7 @@ public class OrderoutRepositoryJPA {
                         request.getBoxoffice_to_id()+"," +
                         request.getPayment_account_to_id()+"," +
                         request.getKassa_to_id()+"," +
+                        request.getKassa_department_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -532,6 +542,7 @@ public class OrderoutRepositoryJPA {
                     " boxoffice_to_id = " + request.getBoxoffice_to_id()+ "," + // касса предприятия в которую переводят ден. средства
                     " payment_account_to_id = " + request.getPayment_account_to_id() + "," +//  банковский счёт предприятия, куда перемещаем денежные средства
                     " kassa_to_id = " + request.getKassa_to_id()+ "," +// касса ккм, куда перемещаем деньги
+                    " kassa_department_id = " + request.getKassa_department_id()+"," +//отделение, где находится касса ККМ, в которую будет внесение
                     " status_id = " + request.getStatus_id() +
                     " where " +
                     " id= "+request.getId();
@@ -879,6 +890,7 @@ public class OrderoutRepositoryJPA {
                 "           where  p.master_id=" + myMasterId +
                 "           and p.boxoffice_id = " + boxoffice_id +
                 "           and coalesce(p.is_completed,false) = true" +
+                "           and coalesce(p.is_deleted,false) = false" +
                 "           and coalesce(p.is_delivered,false) = false";
 
         try{

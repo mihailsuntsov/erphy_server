@@ -31,6 +31,7 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -660,13 +661,22 @@ public class OrderinRepositoryJPA {
                 logger.error("Exception in method setDelivered ", e);
                 e.printStackTrace();
                 return null; // см. _ErrorCodes
-            }catch (Exception e) {
+            }catch (Exception e) {//ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method OrderinRepository/updateOrderin. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return null;
+                Throwable t = e.getCause();
+                while ((t != null) && !(t instanceof ConstraintViolationException)) {
+                    t = t.getCause();
+                }
+                if (t != null) {
+                    logger.error("ConstraintViolationException in method OrderinRepository/updateOrderin.", e);
+                    return -40; // см. _ErrorCodes
+                } else {
+                    logger.error("Exception in method OrderinRepository/updateOrderin. SQL query:"+stringQuery, e);
+                    return null;
+                }
             }
-        } else return -1; //недостаточно прав
+        } else return -1; //см. _ErrorCodes
     }
 
     //сохраняет настройки документа "Розничные продажи"
