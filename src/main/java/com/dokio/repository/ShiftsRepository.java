@@ -12,6 +12,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.repository;
 
+import com.dokio.message.response.Reports.ShiftsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;

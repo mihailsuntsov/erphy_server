@@ -1,7 +1,7 @@
 package com.dokio.controller.Reports;
 
 import com.dokio.message.request.Reports.ReceiptSearchForm;
-import com.dokio.message.response.additional.ReceiptsJSON;
+import com.dokio.message.response.Reports.ReceiptsJSON;
 import com.dokio.repository.ReceiptsRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

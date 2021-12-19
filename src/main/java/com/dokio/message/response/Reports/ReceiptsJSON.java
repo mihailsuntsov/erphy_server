@@ -10,7 +10,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.message.response.additional;
+package com.dokio.message.response.Reports;
 
 import java.math.BigDecimal;
 

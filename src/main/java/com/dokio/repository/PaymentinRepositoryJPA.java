@@ -609,20 +609,20 @@ public class PaymentinRepositoryJPA {
                     if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin", request.getId(), request.getSumm());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin","paymentin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
                     } else { // если платеж внутренний -
                     // отмечаем исходящий внутренний платеж как доставленный
-                    switch (request.getMoving_type()) {
-                        case "account":
-                            commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
-                            break;
-                        case "boxoffice":
-                            commonUtilites.setDelivered("orderout", request.getOrderout_id());
-                            break;
+                        switch (request.getMoving_type()) {
+                            case "account":
+                                commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
+                                break;
+                            case "boxoffice":
+                                commonUtilites.setDelivered("orderout", request.getOrderout_id());
+                                break;
+                        }
                     }
-                }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
-                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin", request.getId(), request.getSumm());
+                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
 

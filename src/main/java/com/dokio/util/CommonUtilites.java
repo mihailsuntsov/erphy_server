@@ -176,7 +176,7 @@ public class CommonUtilites {
             .collect(Collectors.toCollection(HashSet::new)));
 
 
-    public Boolean addDocumentHistory(String docAlias, Long companyId, Long objectId, String docTableName, Long docId, BigDecimal summChange) throws Exception {
+    public Boolean addDocumentHistory(String docAlias, Long companyId, Long objectId, String docTableName, String docPageName, Long docId, BigDecimal summChange, String doc_number, Long doc_status_id) throws Exception {
         // docAlias - alias таблицы объекта, по которому идет запись. Данная таблица хранит историю изменений по этому объекту. Может быть: cagent, payment_account и др (см. VALID_TABLE_NAMES)
         // objectId - id объекта, к которому относится изменение. Например, id контрагента в случае docAlias='cagent', или кассы предприятия в случае docAlias='boxoffice'
         // docTableName - таблица документа, который влияет на сумму (из которого производится запись) - например shipment для отгрузки
@@ -207,7 +207,10 @@ public class CommonUtilites {
                     " doc_id," +
                     " summ_before," +
                     " summ_change," +
-                    " summ_result" +
+                    " summ_result," +
+                    " doc_number," +
+                    " doc_page_name," +
+                    " doc_status_id" +
                     ") values (" +
                     myMasterId + ", " +
                     companyId + ", " +
@@ -217,7 +220,10 @@ public class CommonUtilites {
                     docId + ", " +
                     summBefore + ", " +
                     summChange + ", " +
-                    summChange.add(summBefore) +
+                    summChange.add(summBefore) + ", " +
+                    doc_number + ", " +
+                    "'"+docPageName+"', " +
+                    doc_status_id +
                     ")";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -275,5 +281,54 @@ public class CommonUtilites {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    // возвращает список страниц (первые 3 параметра - Найдено: p1, страница p2 из p3)
+    // size - общее количество выборки
+    // result - количество записей, отображаемых на странице
+    // pagenum - отображаемый в пагинации номер страницы
+    public List<Integer> getPagesList(int pagenum, int size, int result){
+        int listsize;//количество страниц пагинации
+        if((size%result) == 0){//общее количество выборки делим на количество записей на странице
+            listsize= size/result;//если делится без остатка
+        }else{
+            listsize= (size/result)+1;}
+        int maxPagenumInBegin;//
+        List<Integer> pageList = new ArrayList<Integer>();//список, в котором первые 3 места - "всего найдено", "страница", "всего страниц", остальное - номера страниц для пагинации
+        pageList.add(size);
+        pageList.add(pagenum);
+        pageList.add(listsize);
+
+        if (listsize<=5){
+            maxPagenumInBegin=listsize;//
+        }else{
+            maxPagenumInBegin=5;
+        }
+        if(pagenum >=3) {
+            if((pagenum==listsize)||(pagenum+1)==listsize){
+                for(int i=(pagenum-(4-(listsize-pagenum))); i<=pagenum-3; i++){
+                    if(i>0) {
+                        pageList.add(i);  //создается список пагинации за - 4 шага до номера страницы (для конца списка пагинации)
+                    }}}
+            for(int i=(pagenum-2); i<=pagenum; i++){
+                pageList.add(i);  //создается список пагинации за -2 шага до номера страницы
+            }
+            if((pagenum+2) <=listsize) {
+                for(int i=(pagenum+1); i<=(pagenum+2); i++){
+                    pageList.add(i);  //создается список пагинации  на +2 шага от номера страницы
+                }
+            }else{
+                if(pagenum<listsize) {
+                    for (int i = (pagenum + (listsize - pagenum)); i <= listsize; i++) {
+                        pageList.add(i);  //создается список пагинации от номера страницы до конца
+                    }}}
+        }else{//номер страницы меньше 3
+            for(int i=1; i<=pagenum; i++){
+                pageList.add(i);  //создается список пагинации от 1 до номера страницы
+            }
+            for(int i=(pagenum+1); i<=maxPagenumInBegin; i++){
+                pageList.add(i);  //создаются дополнительные номера пагинации, но не более 5 в сумме
+            }}
+        return pageList;
+    }
 
 }

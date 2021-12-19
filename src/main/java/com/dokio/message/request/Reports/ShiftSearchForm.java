@@ -14,9 +14,9 @@ public class ShiftSearchForm {
         private Long departmentId;  //  id отделения
         private String sortColumn;  //  колонка сортировки
         private String sortAsc;     //  asc desc
-        private String result;      //  количество записей, отображаемых на странице
-        private String pagenum;     //  отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        private String offset;      //  это номер страницы начиная с 0. Изначально (при первом запросе таблицы) это null
+        private Integer result;     //  количество записей, отображаемых на странице
+        private Integer pagenum;    //  отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
+        private Integer offset;     //  это номер страницы начиная с 0. Изначально (при первом запросе таблицы) это null
         private Long kassaId;       //  касса
         private Long cashierId;     //  кассир
         private Set<Integer> filterOptionsIds; //опции поиска
@@ -85,30 +85,6 @@ public class ShiftSearchForm {
         this.sortAsc = sortAsc;
     }
 
-    public String getResult() {
-        return result;
-    }
-
-    public void setResult(String result) {
-        this.result = result;
-    }
-
-    public String getPagenum() {
-        return pagenum;
-    }
-
-    public void setPagenum(String pagenum) {
-        this.pagenum = pagenum;
-    }
-
-    public String getOffset() {
-        return offset;
-    }
-
-    public void setOffset(String offset) {
-        this.offset = offset;
-    }
-
     public Long getKassaId() {
         return kassaId;
     }
@@ -123,5 +99,29 @@ public class ShiftSearchForm {
 
     public void setCashierId(Long cashierId) {
         this.cashierId = cashierId;
+    }
+
+    public Integer getResult() {
+        return result;
+    }
+
+    public void setResult(Integer result) {
+        this.result = result;
+    }
+
+    public Integer getPagenum() {
+        return pagenum;
+    }
+
+    public void setPagenum(Integer pagenum) {
+        this.pagenum = pagenum;
+    }
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
     }
 }

@@ -500,7 +500,7 @@ public class ReturnRepository {
                             }
                         }
                         // обновляем баланс с контрагентом
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return", request.getId(), docProductsSum);//при возврате покупателя баланс с ним должен смещаться в положительную сторону, т.е. в наш долг покупателю
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return","return", request.getId(), docProductsSum,request.getDoc_number(),request.getStatus_id());//при возврате покупателя баланс с ним должен смещаться в положительную сторону, т.е. в наш долг покупателю
                     }
                     return 1;
                 } else return null;

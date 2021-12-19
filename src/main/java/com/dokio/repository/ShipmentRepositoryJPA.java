@@ -819,7 +819,7 @@ public class ShipmentRepositoryJPA {
                             }
                         }
                         // обновляем баланс с контрагентом
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment", request.getId(), docProductsSum.negate());//negate т.к. при отгрузке баланс с контрагентом должен смещаться в отрицательную сторону, т.е. в долг контрагента
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), docProductsSum.negate(),request.getDoc_number(),request.getStatus_id());//negate т.к. при отгрузке баланс с контрагентом должен смещаться в отрицательную сторону, т.е. в долг контрагента
                     }
                     return 1;
                 } else return null;

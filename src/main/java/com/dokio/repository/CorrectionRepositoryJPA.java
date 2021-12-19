@@ -503,11 +503,11 @@ public class CorrectionRepositoryJPA {
                 if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип корректировки. boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
                     if(request.getType().equals("boxoffice"))// если коррекция кассы предприятия -
-                        commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "correction", request.getId(), request.getSumm());
+                        commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "correction","correction", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
                     if(request.getType().equals("cagent"))// если коррекция баланса с контрагентом -
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "correction", request.getId(), request.getSumm());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "correction","correction", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
                     if(request.getType().equals("account"))// если коррекция расч. счёта предприятия -
-                        commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "correction", request.getId(), request.getSumm());
+                        commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "correction","correction", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
                 }
 
                 return 1;

@@ -2578,8 +2578,32 @@ CREATE UNIQUE INDEX orderin_withdrawal_unique_index ON orderin (withdrawal_id) W
 CREATE UNIQUE INDEX depositing_orderout_unique_index ON depositing (orderout_id) WHERE is_completed;
 
 
+-- Взаиморасчёты
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (47,'Взаиморасчёты','mutualpayment',1,'','Взаиморасчёты');
+insert into permissions (id,name,description,document_name,document_id) values
+(583,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Взаиморасчёты',47),
+(584,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Взаиморасчёты" по всем предприятиям','Взаиморасчёты',47),
+(585,'Просмотр документов своего предприятия','Прсмотр информации в документах "Взаиморасчёты" своего предприятия','Взаиморасчёты',47);
 
+alter table history_payment_account_summ add column doc_number varchar(32);
+alter table history_payment_account_summ add column doc_status_id bigint;
+alter table history_payment_account_summ add constraint doc_status_id_fkey foreign key (doc_status_id) references sprav_status_dock (id);
+alter table history_boxoffice_summ add column doc_number varchar(32);
+alter table history_boxoffice_summ add column doc_status_id bigint;
+alter table history_boxoffice_summ add constraint doc_status_id_fkey foreign key (doc_status_id) references sprav_status_dock (id);
+alter table history_cagent_summ add column doc_number varchar(32);
+alter table history_cagent_summ add column doc_status_id bigint;
+alter table history_cagent_summ add constraint doc_status_id_fkey foreign key (doc_status_id) references sprav_status_dock (id);
 
+alter table history_payment_account_summ add column doc_page_name varchar(32);
+alter table history_boxoffice_summ add column doc_page_name varchar(32);
+alter table history_cagent_summ add column doc_page_name varchar(32);
+update history_payment_account_summ set doc_page_name = doc_table_name;
+update history_boxoffice_summ set doc_page_name = doc_table_name;
+update history_cagent_summ set doc_page_name = doc_table_name;
+alter table history_payment_account_summ alter column doc_page_name set not null;
+alter table history_boxoffice_summ alter column doc_page_name set not null;
+alter table history_cagent_summ alter column doc_page_name set not null;
 
 
 
@@ -2641,14 +2665,7 @@ CREATE UNIQUE INDEX depositing_orderout_unique_index ON depositing (orderout_id)
 
 
 
-
-
-
-
-
-
-
-WITH
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

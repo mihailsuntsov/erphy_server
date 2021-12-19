@@ -18,20 +18,27 @@ import com.dokio.message.request.CagentCategoriesForm;
 import com.dokio.message.request.CagentsContactsForm;
 import com.dokio.message.request.CagentsForm;
 import com.dokio.message.request.CagentsPaymentAccountsForm;
+import com.dokio.message.request.Reports.HistoryCagentBalanceForm;
 import com.dokio.message.response.CagentCategoriesTableJSON;
 import com.dokio.message.response.CagentsJSON;
+import com.dokio.message.response.Reports.HistoryCagentBalanceJSON;
+import com.dokio.message.response.Reports.HistoryCagentDocsJSON;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.model.Cagents;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class CagentRepositoryJPA {
@@ -49,6 +56,19 @@ public class CagentRepositoryJPA {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+
+    Logger logger = Logger.getLogger("CagentRepositoryJPA");
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("name","company","department","creator","date_time_created_sort","doc_name","cagent","summ","status","summ_in","summ_out","doc_number","summ_on_start","summ_on_end")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+
+
     @SuppressWarnings("Duplicates")
     public List<CagentsJSON> getCagentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
@@ -1015,7 +1035,6 @@ public class CagentRepositoryJPA {
     }
     //отдает список наименований контрагентов по поисковой подстроке и предприятию
     // тут не надо прописывать права, т.к. это сервисный запрос
-    @SuppressWarnings("Duplicates")
     public List getCagentsList(String searchString, int companyId) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -1047,8 +1066,361 @@ public class CagentRepositoryJPA {
         }
         return returnList;
     }
+/*
+    @SuppressWarnings("Duplicates")
+    public List<HistoryCagentDocsJSON> getHistoryCagentDocsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long departmentId, Set<Integer> filterOptionsIds) {
+//        if(securityRepositoryJPA.userHasPermissions_OR(43L, "560,561,566"))//(см. файл Permissions Id)
+//        {
+            String stringQuery;
+            String myTimeZone = userRepository.getUserTimeZone();
+            boolean needToSetParameter_MyDepthsIds = false;
+//            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
 
+            stringQuery = "     select  p.id as id, " +
+
+                    "           p.company_id as company_id, " +
+                    "           p.department_id as department_id, " +
+                    "           p.creator_id as creator_id, " +
+                    "           p.cagent_id as cagent_id, " +
+
+                    "           cmp.name as company, " +
+                    "           dp.name as department, " +
+                    "           us.name as creator, " +
+                    "           cg.name as cagent," +
+
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+
+                    "           d.doc_name_ru as doc_name, " +
+                    "           d.page_name as pagename, " +
+                    "           p.doc_id as doc_id, " +
+                    "           abs(p.summ_change) as summ, " +
+
+                    "           p.date_time_created as date_time_created_sort " +
+
+                    "           from history_cagent_summ p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                    "           INNER JOIN users us ON p.creator_id=us.id " +
+                    "           INNER JOIN cagents cg ON p.object_id=cg.id " +
+                    "           INNER JOIN documents d ON p.doc_table_name=d.table_name " +
+                    "           where  p.master_id=" + myMasterId;
+
+
+            if (searchString != null && !searchString.isEmpty()) {
+                stringQuery = stringQuery + " and (" +
+                        " to_char(p.shift_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
+            }
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and p.company_id=" + companyId;
+            }
+            if (departmentId > 0) {
+                stringQuery = stringQuery + " and p.department_id=" + departmentId;
+            }
+
+
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+            }
+
+
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
+                if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+                {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
+                query.setFirstResult(offsetreal).setMaxResults(result);
+
+
+                List<Object[]> queryList = query.getResultList();
+                List<HistoryCagentDocsJSON> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+                    HistoryCagentDocsJSON doc=new HistoryCagentDocsJSON();
+                    doc.setId(Long.parseLong(                     obj[0].toString()));
+                    doc.setCreator((String)                       obj[2]);
+                    doc.setCreator_id(Long.parseLong(             obj[5].toString()));
+                    doc.setCompany_id(Long.parseLong(             obj[7].toString()));
+                    doc.setDepartment_id(Long.parseLong(          obj[8].toString()));
+                    doc.setDepartment((String)                    obj[9]);
+                    doc.setCompany((String)                       obj[11]);
+                    doc.setDate_time_created((String)             obj[12]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getShiftsTable. SQL query:" + stringQuery, e);
+                return null;
+            }
+//        } else return null;
+    }
+*/
+/*
+@SuppressWarnings("Duplicates")
+public List<HistoryCagentBalanceJSON> getHistoryCagentBalanceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
+    String stringQuery;
+    String myTimeZone = userRepository.getUserTimeZone();
+    Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+    stringQuery =   "           select  " +
+
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           cmp.name as company, " +
+                    "           cg.name as cagent," +
+
+                    "           p.summ_change as summ_on_start, " +// начальный остаток
+                    "           p.summ_change as summ_on_end, " +  // конечный остаток
+                    "           p.summ_change as summ_in, " +// приход
+                    "           p.summ_change as summ_out, " +  // расход
+
+                    "           d.doc_name_ru as doc_name, " +  // aka doc_name_ru - Наименование документа из таблицы documents
+                    "           d.page_name as pagename, " +// имя страницы в ангулар
+                    "           p.doc_id as doc_id, " +// id документа (для формирования ссылки на док типа .../shipment/344 )
+    //              "           p.doc_number as doc_number, "   // на будущее
+    //              "           p.status as status, "           // на будущее
+                    "           p.date_time_created as date_time_created_sort " +
+
+                    "           from history_cagent_summ p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN cagents cg ON p.object_id=cg.id " +
+                    "           INNER JOIN documents d ON p.doc_table_name=d.table_name " +
+                    "           where  p.master_id=" + myMasterId;
+
+    if (searchString != null && !searchString.isEmpty()) {
+        stringQuery = stringQuery + " and (" +
+                " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
+    }
+    if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+        stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+    } else {
+        throw new IllegalArgumentException("Недопустимые параметры запроса");
+    }
+    try{
+        Query query = entityManager.createNativeQuery(stringQuery);
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("sg", searchString);}
+
+        query.setFirstResult(offsetreal).setMaxResults(result);
+
+        List<Object[]> queryList = query.getResultList();
+        List<HistoryCagentBalanceJSON> returnList = new ArrayList<>();
+        for(Object[] obj:queryList){
+            HistoryCagentBalanceJSON doc=new HistoryCagentBalanceJSON();
+            doc.setDate_time_created((String)                           obj[0]);
+            doc.setCompany((String)                                     obj[1]);
+            doc.setCagent((String)                                      obj[2]);
+            doc.setSumm_on_start((BigDecimal)                           obj[3]);
+            doc.setSumm_on_end((BigDecimal)                             obj[4]);
+            doc.setSumm_in((BigDecimal)                                 obj[5]);
+            doc.setSumm_out((BigDecimal)                                obj[6]);
+            doc.setDoc_name((String)                                    obj[7]);
+            doc.setPagename((String)                                    obj[8]);
+            doc.setDoc_id(Long.parseLong(                               obj[9].toString()));
+            returnList.add(doc);
+        }
+        return returnList;
+    } catch (Exception e) {
+        e.printStackTrace();
+        logger.error("Exception in method getHistoryCagentBalanceTable. SQL query:" + stringQuery, e);
+        return null;
+    }
+}
+*/
+@SuppressWarnings("Duplicates")
+public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
+    String stringQuery;
+    String myTimeZone = userRepository.getUserTimeZone();
+    Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+    if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
+        throw new IllegalArgumentException("Недопустимые параметры запроса");
+
+    stringQuery =   "select " +
+            " cg.id as cagent_id, " +
+            " cg.name as cagent, " +
+            " coalesce((select         p2.summ_result   from history_cagent_summ p2 where p2.master_id="+myMasterId+" and p2.company_id="+companyId+" and                      p2.object_id = cg.id and p2.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateFrom||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') order by p2.id desc limit 1),0) as summ_on_start, " +
+            " coalesce((select SUM(    p4.summ_change)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.summ_change>0 and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_in, " +
+            " coalesce((select SUM(abs(p5.summ_change)) from history_cagent_summ p5 where p5.master_id="+myMasterId+" and p5.company_id="+companyId+" and p5.summ_change<0 and p5.object_id = cg.id and p5.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p5.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_out, " +
+            " coalesce((select         p3.summ_result   from history_cagent_summ p3 where p3.master_id="+myMasterId+" and p3.company_id="+companyId+" and                      p3.object_id = cg.id and p3.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') order by p3.id desc limit 1),0) as summ_on_end " +
+            " from history_cagent_summ p " +
+            " INNER JOIN cagents cg ON p.object_id=cg.id "+
+            " where p.master_id="+myMasterId+" and p.company_id="+companyId;
+
+    if (searchString != null && !searchString.isEmpty()) {
+        stringQuery = stringQuery + " and (" + " upper(cg.name)  like upper(CONCAT('%',:sg,'%'))"+")";
+    }
+
+    stringQuery = stringQuery + " group by cagent,cagent_id ";
+    stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+    try{
+        Query query = entityManager.createNativeQuery(stringQuery);
+        if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+        query.setParameter("dateFrom", dateFrom);
+        query.setParameter("dateTo", dateTo);
+
+        query.setFirstResult(offsetreal).setMaxResults(result);
+
+        List<Object[]> queryList = query.getResultList();
+        List<HistoryCagentBalanceJSON> returnList = new ArrayList<>();
+        for(Object[] obj:queryList){
+            HistoryCagentBalanceJSON doc=new HistoryCagentBalanceJSON();
+            doc.setCagent((String)                                      obj[1]);
+            doc.setSumm_on_start((BigDecimal)                           obj[2]);
+            doc.setSumm_in((BigDecimal)                                 obj[3]);
+            doc.setSumm_out((BigDecimal)                                obj[4]);
+            doc.setSumm_on_end((BigDecimal)                             obj[5]);
+            doc.setCagent_id(Long.parseLong(                            obj[0].toString()));
+            returnList.add(doc);
+        }
+        return returnList;
+    } catch (Exception e) {
+        e.printStackTrace();
+        logger.error("Exception in method getMutualpaymentTable. SQL query:" + stringQuery, e);
+        return null;
+    }
+}
+    @SuppressWarnings("Duplicates")
+    public Integer getMutualpaymentSize(String searchString, Long companyId, Set<Integer> filterOptionsIds) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        stringQuery =   "select " +
+                " cg.id as cagent_id, " +
+                " cg.name as cagent " +
+                " from history_cagent_summ p " +
+                " INNER JOIN cagents cg ON p.object_id=cg.id " +
+                " where p.master_id="+myMasterId+" and p.company_id="+companyId;
+        if (searchString != null && !searchString.isEmpty()) {
+            stringQuery = stringQuery + " and (" + " upper(cg.name)  like upper(CONCAT('%',:sg,'%'))"+")";
+        }
+
+        stringQuery = stringQuery + " group by cagent,cagent_id ";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+            return query.getResultList().size();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMutualpaymentTable. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    //возвращает детализированный отчет по взаиморасчетам с выбранным контрагентом за период
+    @SuppressWarnings("Duplicates")
+    public List<HistoryCagentBalanceJSON> getMutualpaymentDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long cagentId, String dateFrom, String dateTo) {
+        String stringQuery;
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
+            throw new IllegalArgumentException("Недопустимые параметры запроса");
+
+        stringQuery =   " select " +
+                        " d.doc_name_ru as doc_name, " +
+                        " p.doc_number as doc_number, " +
+                        " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                        " CASE 	WHEN p.summ_change>0 THEN  p.summ_change ELSE 0 END as summ_in, " +
+                        " CASE 	WHEN p.summ_change<0 THEN  abs(p.summ_change) ELSE 0 END as summ_out, " +
+                        " st.name as status, " +
+                        " p.doc_page_name as doc_page_name, " +
+                        " p.doc_id as doc_id, " +
+                        " p.date_time_created as date_time_created_sort " +
+                        " from history_cagent_summ p " +
+                        " INNER JOIN documents d ON p.doc_table_name=d.table_name " +
+                        " LEFT OUTER JOIN sprav_status_dock st ON p.doc_status_id=st.id " +
+                        " where " +
+                        "     p.master_id="+myMasterId+
+                        " and p.company_id="+companyId+
+                        " and p.object_id="+cagentId+
+                        " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
+                        " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
+        if (searchString != null && !searchString.isEmpty()) {
+            stringQuery = stringQuery + " and (" + " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
+        }
+
+        stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+            query.setParameter("dateFrom", dateFrom);
+            query.setParameter("dateTo", dateTo);
+
+            query.setFirstResult(offsetreal).setMaxResults(result);
+
+            List<Object[]> queryList = query.getResultList();
+            List<HistoryCagentBalanceJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                HistoryCagentBalanceJSON doc=new HistoryCagentBalanceJSON();
+                doc.setDoc_name((String)                                    obj[0]);
+                doc.setDoc_number((String)                                  obj[1]);
+                doc.setDate_time_created((String)                           obj[2]);
+                doc.setSumm_in((BigDecimal)                                 obj[3]);
+                doc.setSumm_out((BigDecimal)                                obj[4]);
+                doc.setStatus((String)                                      obj[5]);
+                doc.setDoc_page_name((String)                               obj[6]);
+                doc.setDoc_id(Long.parseLong(                               obj[7].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMutualpaymentDetailedTable. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    public Integer getMutualpaymentDetailedSize(String searchString, Long companyId, Long cagentId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo) {
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
+        stringQuery =   " select " +
+                " p.id " +
+                " from history_cagent_summ p " +
+                " INNER JOIN documents d ON p.doc_table_name=d.table_name " +
+                " LEFT OUTER JOIN sprav_status_dock st ON p.doc_status_id=st.id " +
+                " where " +
+                "     p.master_id="+myMasterId+
+                " and p.company_id="+companyId+
+                " and p.object_id="+cagentId+
+                " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
+                " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
+        if (searchString != null && !searchString.isEmpty()) {
+            stringQuery = stringQuery + " and (" + " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
+        }
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+            query.setParameter("dateFrom", dateFrom);
+            query.setParameter("dateTo", dateTo);
+            return query.getResultList().size();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMutualpaymentDetailedSize. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
 //*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
@@ -1298,7 +1670,6 @@ public class CagentRepositoryJPA {
     }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public boolean saveChangeCategoriesOrder(List<CagentCategoriesForm> request)
     {
         if(securityRepositoryJPA.userHasPermissions_OR(12L,"139,140"))//  Контрагенты : "Редактирование категорий"
@@ -1330,7 +1701,6 @@ public class CagentRepositoryJPA {
         } else return false;
     }
 
-    @SuppressWarnings("Duplicates")
     //удаление всех категорий из контрагента - нужно для сохранения контрагента на стадии сохранения его категорий - они перезаписываются заново
     //т.к. некоторые могли быть добавлены, а какие-то удалены.
     private Boolean deleteAllCagentCategories(Long cagent_id) {
@@ -1348,7 +1718,6 @@ public class CagentRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates")//добавляет контрагенту все выбранные в карточке контрагента категории
     private Boolean addSetOfCagentCategories(Long cagent_id, Set<Long> categories) {
         String stringQuery;
         int i=0;

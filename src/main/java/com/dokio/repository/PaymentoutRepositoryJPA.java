@@ -569,10 +569,10 @@ public class PaymentoutRepositoryJPA {
                     String expType=spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
                     if(!expType.equals("moving")){// если это не внутренний платёж -
                         // записываем контрагенту отрицательную сумму, увеличивая его долг нашему предприятию
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentout", request.getId(), request.getSumm().negate());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentout","paymentout", request.getId(), request.getSumm().negate(),request.getDoc_number(),request.getStatus_id());
                     }
                     // обновляем состояние счета нашего предприятия, вычитая из него переводимую сумму
-                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout", request.getId(), request.getSumm().negate());
+                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout","paymentout", request.getId(), request.getSumm().negate(),request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
             } catch (CantSetHistoryCauseNegativeSumException e) {

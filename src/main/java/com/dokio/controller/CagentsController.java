@@ -15,10 +15,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Reports.HistoryCagentBalanceJSON;
+import com.dokio.message.response.Reports.HistoryCagentDocsJSON;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.repository.*;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Controller
@@ -35,6 +40,8 @@ public class CagentsController {
 
     @Autowired
     CagentRepositoryJPA cagentsRepositoryJPA;
+    @Autowired
+    CommonUtilites commonUtilites;
 
     @PostMapping("/api/auth/getCagentsTable")
     @SuppressWarnings("Duplicates")
@@ -273,7 +280,117 @@ public class CagentsController {
             return new ResponseEntity<>("Ошибка загрузки контактных лиц контрагента", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+/*
+    @PostMapping("/api/auth/getHistoryCagentDocsTable")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getHistoryCagentDocsTable(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getHistoryCagentDocsTable: " + searchRequest.toString());
+        String searchString = searchRequest.getSearchString();
+        String sortColumn = searchRequest.getSortColumn();
+        String sortAsc;
+        if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
+            sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
+        } else {
+            sortColumn = "name";
+            sortAsc = "asc";
+        }
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int offsetreal = offset * result;//создана переменная с номером страницы
+        List<HistoryCagentDocsJSON> returnList = cagentsRepositoryJPA.getHistoryCagentDocsTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        return new ResponseEntity<List>(returnList, HttpStatus.OK);
+    }
 
+    @PostMapping("/api/auth/getHistoryCagentDocsPagesList")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getHistoryCagentDocsPagesList(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getHistoryCagentDocsPagesList: " + searchRequest.toString());
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        String searchString = searchRequest.getSearchString();
+        int size = cagentsRepositoryJPA.getHistoryCagentDocsSize(result, searchString, searchRequest.getCompanyId(),searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
+    }
+*/
+/*
+    @PostMapping("/api/auth/getHistoryCagentDocsTable")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getHistoryCagentBalanceTable(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getHistoryCagentBalanceTable: " + searchRequest.toString());
+        String searchString = searchRequest.getSearchString();
+        String sortColumn = searchRequest.getSortColumn();
+        String sortAsc;
+        if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
+            sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
+        } else {
+            sortColumn = "cagent";
+            sortAsc = "asc";
+        }
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int offsetreal = offset * result;//создана переменная с номером страницы
+        List<HistoryCagentBalanceJSON> returnList = cagentsRepositoryJPA.getHistoryCagentBalanceTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        return new ResponseEntity<List>(returnList, HttpStatus.OK);
+    }
+    */
+@PostMapping("/api/auth/getMutualpaymentTable")
+@SuppressWarnings("Duplicates")
+public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+    logger.info("Processing post request for path /api/auth/getMutualpaymentTable: " + searchRequest.toString());
+    String searchString = searchRequest.getSearchString();
+    String sortColumn = searchRequest.getSortColumn();
+    String sortAsc;
+    if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
+        sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
+    } else {
+        sortColumn = "cagent";
+        sortAsc = "asc";
+    }
+    int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+    int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+    int offsetreal = offset * result;//создана переменная с номером страницы
+    List<HistoryCagentBalanceJSON> returnList = cagentsRepositoryJPA.getMutualpaymentTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo());//запрос списка: взять кол-во rezult, начиная с offsetreal
+    return new ResponseEntity<List>(returnList, HttpStatus.OK);
+}
+    @PostMapping("/api/auth/getMutualpaymentPagesList")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getMutualpaymentPagesList(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getMutualpaymentPagesList: " + searchRequest.toString());
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        String searchString = searchRequest.getSearchString();
+        int size = cagentsRepositoryJPA.getMutualpaymentSize(searchString, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
+    }
+    @PostMapping("/api/auth/getMutualpaymentDetailedTable")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getMutualpaymentDetailedTable(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getMutualpaymentDetailedTable: " + searchRequest.toString());
+        String searchString = searchRequest.getSearchString();
+        String sortColumn = searchRequest.getSortColumn();
+        String sortAsc;
+        if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
+            sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
+        } else {
+            sortColumn = "cagent";
+            sortAsc = "asc";
+        }
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int offsetreal = offset * result;//создана переменная с номером страницы
+        List<HistoryCagentBalanceJSON> returnList = cagentsRepositoryJPA.getMutualpaymentDetailedTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getCagentId(),searchRequest.getDateFrom(), searchRequest.getDateTo());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        return new ResponseEntity<List>(returnList, HttpStatus.OK);
+    }
+    @PostMapping("/api/auth/getMutualpaymentDetailedPagesList")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getMutualpaymentDetailedPagesList(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getMutualpaymentDetailedPagesList: " + searchRequest.toString());
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        String searchString = searchRequest.getSearchString();
+        int size = cagentsRepositoryJPA.getMutualpaymentDetailedSize(searchString, searchRequest.getCompanyId(),searchRequest.getCagentId(),searchRequest.getFilterOptionsIds(),searchRequest.getDateFrom(), searchRequest.getDateTo());//  - общее количество записей выборки
+        return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
+    }
 //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************

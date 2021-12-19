@@ -680,65 +680,65 @@ public class RetailSalesRepository {
                     Query query2 = entityManager.createNativeQuery(stringQuery);
                     newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                    if(insertRetailSalesProducts(request, newDocId, myMasterId)){
+                    BigDecimal summ=insertRetailSalesProducts(request, newDocId, myMasterId);
 
+                    // корректируем резервы в родительском "Заказе покупателя" (если он есть и если резервы проставлены)
+                    // берем id Заказа покупателя (или 0 если его нет)
+                    Long customersOrdersId = request.getCustomers_orders_id()==null?0L:request.getCustomers_orders_id();
 
+                    //получаем таблицу из родительского Заказа покупателя (если его нет - у листа просто будет size = 0)
+                    List<CustomersOrdersProductTableJSON> customersOrdersProductTable = new ArrayList<>();
+                    if(customersOrdersId>0L) {
+                        customersOrdersProductTable = customersOrdersRepository.getCustomersOrdersProductTable(customersOrdersId);
+                    }
 
-                        // корректируем резервы в родительском "Заказе покупателя" (если он есть и если резервы проставлены)
-                        // берем id Заказа покупателя (или 0 если его нет)
-                        Long customersOrdersId = request.getCustomers_orders_id()==null?0L:request.getCustomers_orders_id();
+                    // бежим по товарам в Розничной продаже
+                    for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
 
-                        //получаем таблицу из родительского Заказа покупателя (если его нет - у листа просто будет size = 0)
-                        List<CustomersOrdersProductTableJSON> customersOrdersProductTable = new ArrayList<>();
-                        if(customersOrdersId>0L) {
-                            customersOrdersProductTable = customersOrdersRepository.getCustomersOrdersProductTable(customersOrdersId);
-                        }
+                        //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
+                        if(row.getIs_material() && customersOrdersProductTable.size()>0){
+                            //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
+                            for (CustomersOrdersProductTableJSON cuRow : customersOrdersProductTable) {
+                                if(cuRow.getProduct_id().equals(row.getProduct_id()) && cuRow.getDepartment_id().equals(row.getDepartment_id())){
+                                    //Товар найден. Сейчас нужно списать его резервы. Для этого нам нужны:
 
+                                    // [Всего заказ] Всего кол-во товара в заказе
+                                    BigDecimal product_count = cuRow.getProduct_count();
+                                    // [Всего отгружено] - это сумма отгруженных в дочерних документах Заказа покупателя (по проведенным Отгрузкам, проданных по Розничным продажам и в данной отгрузке. )
+                                    BigDecimal shipped = productsRepository.getShippedAndSold(row.getProduct_id(),row.getDepartment_id(),request.getCustomers_orders_id())/*.add(product_count)*/;
+                                    // [Резервы] - Резервы на данный момент по данному товару в данном складе в данном Заказе покупателя
+                                    BigDecimal reserves = productsRepository.getProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id());
 
+                                    // формула расчета нового количества резервов (т.е. до какого значения резервы должны уменьшиться):
 
-                        // бежим по товарам в Розничной продаже
-                        for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
+                                    // ЕСЛИ [Всего заказ] - [Всего отгружено] < [Резервы] ТО [Резервы] = [Всего заказ] - [Всего отгружено] ИНАЧЕ [Резервы] не трогаем
 
-                            //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
-                            if(row.getIs_material() && customersOrdersProductTable.size()>0){
-                                //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
-                                for (CustomersOrdersProductTableJSON cuRow : customersOrdersProductTable) {
-                                    if(cuRow.getProduct_id().equals(row.getProduct_id()) && cuRow.getDepartment_id().equals(row.getDepartment_id())){
-                                        //Товар найден. Сейчас нужно списать его резервы. Для этого нам нужны:
+                                    if(((product_count.subtract(shipped)).compareTo(reserves)) < 0){
+                                        reserves = product_count.subtract(shipped);
+                                    if(reserves.compareTo(new BigDecimal(0)) < 0) // на тот случай, если отгрузили больше чем в заказе, и резерв насчитался отрицательный - делаем его = 0
+                                        reserves = new BigDecimal(0);
 
-                                        // [Всего заказ] Всего кол-во товара в заказе
-                                        BigDecimal product_count = cuRow.getProduct_count();
-                                        // [Всего отгружено] - это сумма отгруженных в дочерних документах Заказа покупателя (по проведенным Отгрузкам, проданных по Розничным продажам и в данной отгрузке. )
-                                        BigDecimal shipped = productsRepository.getShippedAndSold(row.getProduct_id(),row.getDepartment_id(),request.getCustomers_orders_id())/*.add(product_count)*/;
-                                        // [Резервы] - Резервы на данный момент по данному товару в данном складе в данном Заказе покупателя
-                                        BigDecimal reserves = productsRepository.getProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id());
+                                        productsRepository.updateProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id(), reserves);
 
-                                        // формула расчета нового количества резервов (т.е. до какого значения резервы должны уменьшиться):
-
-                                        // ЕСЛИ [Всего заказ] - [Всего отгружено] < [Резервы] ТО [Резервы] = [Всего заказ] - [Всего отгружено] ИНАЧЕ [Резервы] не трогаем
-
-                                        if(((product_count.subtract(shipped)).compareTo(reserves)) < 0){
-                                            reserves = product_count.subtract(shipped);
-                                        if(reserves.compareTo(new BigDecimal(0)) < 0) // на тот случай, если отгрузили больше чем в заказе, и резерв насчитался отрицательный - делаем его = 0
-                                            reserves = new BigDecimal(0);
-
-                                            productsRepository.updateProductReserves(row.getDepartment_id(),row.getProduct_id(),request.getCustomers_orders_id(), reserves);
-
-                                        }
                                     }
                                 }
                             }
                         }
+                    }
 
+                    //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                    if (request.getLinked_doc_id() != null) {
+                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "retail_sales", request.getUid(), request.getCompany_id(), myMasterId);
+                    }
 
-
-                        //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
-                        if (request.getLinked_doc_id() != null) {
-                            linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "retail_sales", request.getUid(), request.getCompany_id(), myMasterId);
-                        }
-                        return newDocId;
-                    } else return null;
-
+                    // на данный момент Розничная продажа - документ, не создающий задолженностей ни одной стороне, т.к. оплата за товар происходит сразу при получении товара
+                    // но запись в истории документов мы создать должны, чтобы отразить движение ден. средств (например, для Взаиморасчетов)
+                    // поэтому создаем 2 противоположных записи
+                    // записываем контрагенту положительную сумму, увеличивая наш долг ему
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ,         doc_number.toString(),request.getStatus_id());
+                    // записываем контрагенту отрицательную сумму, уменьшая наш долг ему
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ.negate(),doc_number.toString(),request.getStatus_id());
+                    return newDocId;
 
                 } catch (CantSaveProductQuantityException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -776,11 +776,11 @@ public class RetailSalesRepository {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    private boolean insertRetailSalesProducts(RetailSalesForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
+    // записывает товар в таблицу товаров, а заодно считает сумму и возвращает её
+    private BigDecimal insertRetailSalesProducts(RetailSalesForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
 
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
-
+        BigDecimal summ=new BigDecimal(0);
         //сохранение таблицы
         if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
             for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
@@ -804,8 +804,9 @@ public class RetailSalesRepository {
                         }
                     }
                 }
+                summ=summ.add(row.getProduct_sumprice());
             }
-            return true;
+            return summ;
         } else {
             throw new CantInsertProductRowCauseErrorException();
         }
