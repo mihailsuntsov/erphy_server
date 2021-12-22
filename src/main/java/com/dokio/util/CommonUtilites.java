@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -331,4 +333,9 @@ public class CommonUtilites {
         return pageList;
     }
 
+    public boolean isDateValid(String s) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
+        sdf.setLenient(false);
+        return sdf.parse(s, new ParsePosition(0)) != null;
+    }
 }

@@ -1318,7 +1318,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getMutualpaymentTable. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getMutualpaymentSize. SQL query:" + stringQuery, e);
             return null;
         }
     }

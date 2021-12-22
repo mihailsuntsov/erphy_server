@@ -2606,7 +2606,19 @@ alter table history_boxoffice_summ alter column doc_page_name set not null;
 alter table history_cagent_summ alter column doc_page_name set not null;
 
 
+-- Движение денежных средств
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (48,'Движение денежных средств','moneyflow',1,'','Движение денежных средств');
+insert into permissions (id,name,description,document_name,document_id) values
+(586,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Движение денежных средств',48),
+(587,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Движение денежных средств" по всем предприятиям','Движение денежных средств',48),
+(588,'Просмотр документов своего предприятия','Прсмотр информации в документах "Движение денежных средств" своего предприятия','Движение денежных средств',48);
 
+alter table history_kassa_summ add column doc_number varchar(32);
+alter table history_kassa_summ add column doc_status_id bigint;
+alter table history_kassa_summ add constraint doc_status_id_fkey foreign key (doc_status_id) references sprav_status_dock (id);
+alter table history_kassa_summ add column doc_page_name varchar(32);
+update history_kassa_summ set doc_page_name = doc_table_name;
+alter table history_kassa_summ alter column doc_page_name set not null;
 
 
 

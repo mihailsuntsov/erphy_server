@@ -427,7 +427,7 @@ public class WithdrawalRepositoryJPA {
                         linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "withdrawal", request.getUid(), request.getCompany_id(), myMasterId);
                     }
                     // обновляем состояние кассы ККМ, вычитая из неё изымаемую сумму
-                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "withdrawal","withdrawal", newDocId, request.getSumm().negate(),request.getDoc_number(),null);
+                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "withdrawal","withdrawal", newDocId, request.getSumm().negate(),doc_number.toString(),null);
 
                     return newDocId;
                 } catch (CantSetHistoryCauseNegativeSumException e) {
