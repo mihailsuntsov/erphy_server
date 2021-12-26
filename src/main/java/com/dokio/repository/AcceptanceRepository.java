@@ -66,7 +66,7 @@ public class AcceptanceRepository {
     @Autowired
     ProductsRepositoryJPA productsRepository;
 
-    Logger logger = Logger.getLogger("AcceptanceRepository");
+    private Logger logger = Logger.getLogger("AcceptanceRepository");
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream

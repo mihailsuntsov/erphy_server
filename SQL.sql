@@ -2621,6 +2621,12 @@ update history_kassa_summ set doc_page_name = doc_table_name;
 alter table history_kassa_summ alter column doc_page_name set not null;
 
 
+-- Прибыли и убытки
+insert into documents (id, name, page_name, show, table_name, doc_name_ru) values (49,'Прибыли и убытки','profitloss',1,'','Прибыли и убытки');
+insert into permissions (id,name,description,document_name,document_id) values
+(589,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Прибыли и убытки',49),
+(590,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Прибыли и убытки" по всем предприятиям','Прибыли и убытки',49),
+(591,'Просмотр документов своего предприятия','Прсмотр информации в документах "Прибыли и убытки" своего предприятия','Прибыли и убытки',49);
 
 
 
