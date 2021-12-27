@@ -2628,12 +2628,14 @@ insert into permissions (id,name,description,document_name,document_id) values
 (590,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Прибыли и убытки" по всем предприятиям','Прибыли и убытки',49),
 (591,'Просмотр документов своего предприятия','Прсмотр информации в документах "Прибыли и убытки" своего предприятия','Прибыли и убытки',49);
 
+CREATE INDEX permissions_id_index ON permissions USING btree (id);
+CREATE INDEX usergroup_permissions_usergroup_id_index ON usergroup_permissions USING btree (usergroup_id);
+CREATE INDEX usergroup_permissions_permission_id_index ON usergroup_permissions USING btree (permission_id);
+CREATE INDEX users_username_index ON users USING btree (username);
+CREATE INDEX users_password_index ON users USING btree (password);
 
-
-
-
-
-
+drop table perm_permgroup;
+drop table permgroup;
 
 
 

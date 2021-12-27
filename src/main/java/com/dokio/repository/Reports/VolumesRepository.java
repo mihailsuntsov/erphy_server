@@ -17,6 +17,8 @@ import com.dokio.message.request.Reports.VolumesReportForm;
 import com.dokio.message.response.Reports.VolumeSerie;
 import com.dokio.message.response.Reports.VolumesReportJSON;
 import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.repository.UserRepositoryJPA;
+import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +43,11 @@ public class VolumesRepository {
     @Autowired
     private ProductsRepositoryJPA productsRepository;
     @Autowired
+    private UserDetailsServiceImpl userRepository;
+    @Autowired
     private CommonUtilites commonUtilites;
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
 
     // Отдает данные по виджету "Объемы"
     @SuppressWarnings("Duplicates")
@@ -50,104 +56,148 @@ public class VolumesRepository {
         String current_time_interval = ""; //текущий временной интервал (ВИ) (поле NAME у объекта VolumesReportJSON). При смене данного интервала VolumesReportJSON добавляется в сет, и формируется новый VolumesReportJSON
         List<VolumeSerie> seriesList = new ArrayList<>();//список значений за один ВИ (от 1 до n здначений на ВИ)
         Set<Long> childCategories = new HashSet<>();
-        String stringQuery = "";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        // объемы считаем из Розничных продаж и из Отгрузок, суммируя их
+        String[] tableNames = new String[]{"retail_sales","shipment"};
+        String stringQuery;
         boolean notAll=(!request.getAll()&&request.getReportOnIds().size()>0);//true - то только по выбранным (товарам или категориям) - в форме не выставлен флаг All и есть присланные id
 
 
         if(notAll && request.getWithSeparation()){ //если не "Все ..." и "С разбивкой"
-            // в данном случае нужно копить разбитые категории/товары в цикле, на каждый временной интервал (ВИ)
-            for(Long id : request.getReportOnIds()){
-                if(id!=request.getReportOnIds().get(0)){//если это не 1й виток цикла - объединяем запросы
-                    stringQuery += " union ";
-                }
-                stringQuery += "(select ";
-                if (request.getReportOn().equals("products"))
-                    stringQuery = stringQuery + " (select prd.name from products prd where prd.id="+id+")as name,";
-                if (request.getReportOn().equals("categories"))
-                    stringQuery = stringQuery + " (select cat.name from product_categories cat where cat.id="+id+") as name, ";
-                stringQuery += getVolumesReportTimeInterval(request,false) + ", ";
-                stringQuery += " SUM(ABS(rsp.product_count*rsp.product_price)) as summ, ";
-                stringQuery +=   id + " as id_, ";
-                stringQuery +=  getVolumesReportTimeInterval(request,true);
-                stringQuery += " from retail_sales_product rsp";
-                stringQuery += " INNER JOIN products p ON p.id=rsp.product_id";
-                stringQuery += " INNER JOIN retail_sales rs ON rs.id=rsp.retail_sales_id";
-                stringQuery += " where ";
-                stringQuery = stringQuery + " rs.date_time_created >=to_timestamp('"+request.getDateFrom()+" 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
-                        " and rs.date_time_created <=to_timestamp('"+request.getDateTo()+" 23:59:59','DD.MM.YYYY HH24:MI:SS')";
 
-                stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
 
-                if (request.getReportOn().equals("products"))
-                    stringQuery +=  " and p.id = " + id ;
-                if (request.getReportOn().equals("categories")) {
-                    stringQuery +=  " and rsp.product_id in (select ppc.product_id from product_productcategories ppc where ppc.category_id ";
-                    if(request.getIncludeChilds()){//если идет запрос "С подкатегориями"
-                        //Для запроса "С подкатегориями" - нужно запросить все айдишники подкатегорий у присланных id родительских категорий
-                        childCategories = productsRepository.getProductCategoryChildIds(id);
-                        String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
-                        stringQuery +=  "in (" + id + (childIds.length()>0?",":"") + childIds + "))";
-                    } else
-                        stringQuery +=  " = " + id + ")";
+
+            stringQuery =
+                    " select  " +
+                            " z.name, " +
+                            " z.time_interval, " +
+                            " sum(z.summ), " +
+                            " z.id_, " +
+                            " z.time_interval_sort " +
+                            " from " +
+                            "(";
+            // нужно сконструировать 2 запроса, объединенные union, один по розничным продажам (retail_sales), второй по отгрузкам (shipment)
+            for (int i=0; i<=1 ; i++) {
+                if(i==1) stringQuery += " union all ";
+
+
+
+                // В данном случае нужно копить разбитые категории/товары в цикле, на каждый временной интервал (ВИ),
+                // объединяя их union'ом
+                // В итоге всей этой конструкции, например, для 2 категорий получится 4 запроса, объединенные union'ом:
+                // 2 для каждой категории по Розничным продажам и 2 для каждой категории по Отгрузкам
+                for(Long id : request.getReportOnIds()){
+                    if(id!=request.getReportOnIds().get(0)){//если это не 1й виток цикла - объединяем запросы
+                        stringQuery += " union all ";
+                    }
+                    stringQuery += "select ";
+                    if (request.getReportOn().equals("products"))
+                        stringQuery = stringQuery + " (select prd.name from products prd where prd.id="+id+")as name,";
+                    if (request.getReportOn().equals("categories"))
+                        stringQuery = stringQuery + " (select cat.name from product_categories cat where cat.id="+id+") as name, ";
+                    stringQuery += getVolumesReportTimeInterval(request,false) + ", ";
+                    stringQuery += " SUM(ABS(rsp.product_count*rsp.product_price)) as summ, ";
+                    stringQuery +=   id + " as id_, ";
+                    stringQuery +=  getVolumesReportTimeInterval(request,true);
+                    stringQuery += " from "+tableNames[i]+"_product rsp";
+                    stringQuery += " INNER JOIN products p ON p.id=rsp.product_id";
+                    stringQuery += " INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id";
+                    stringQuery += " where ";
+                    stringQuery = stringQuery + " rs.date_time_created >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
+                            " and rs.date_time_created <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+
+                    stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
+
+                    if (request.getReportOn().equals("products"))
+                        stringQuery +=  " and p.id = " + id ;
+                    if (request.getReportOn().equals("categories")) {
+                        stringQuery +=  " and rsp.product_id in (select ppc.product_id from product_productcategories ppc where ppc.category_id ";
+                        if(request.getIncludeChilds()){//если идет запрос "С подкатегориями"
+                            //Для запроса "С подкатегориями" - нужно запросить все айдишники подкатегорий у присланных id родительских категорий
+                            childCategories = productsRepository.getProductCategoryChildIds(id);
+                            String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
+                            stringQuery +=  "in (" + id + (childIds.length()>0?",":"") + childIds + "))";
+                        } else
+                            stringQuery +=  " = " + id + ")";
+                    }
+                    stringQuery += " and rs.master_id="+myMasterId+" and rs.company_id="+request.getCompanyId();
+                    stringQuery += " group by time_interval, time_interval_sort";
                 }
-                stringQuery += " and rs.company_id="+request.getCompanyId();
-                stringQuery += " group by time_interval, time_interval_sort)";
             }
-            stringQuery += " order by time_interval_sort, name";
+            stringQuery +=") as z group by  z.name, z.time_interval, z.id_, z.time_interval_sort order by z.time_interval_sort, name";
 
+
+            
         } else { // все остальные случаи
 
-            stringQuery = " select ";
-            if (notAll) {
-                stringQuery += " 'Выбранные' as name,";
-            } else {
-                stringQuery += "'Все' as name,";
-            }
 
-            stringQuery += getVolumesReportTimeInterval(request, false) + ", ";
-            stringQuery += "           sum(ABS(rsp.product_count*rsp.product_price)) as summ";
 
-            if (notAll) {//только по выбранным (товарам или категориям)
-                stringQuery += ", 0 as id_ "; // чтобы группировалось только по ВИ, а все id категорий, которые в данном случае нули, схлопывались
-            }
-            stringQuery +=   ", " + getVolumesReportTimeInterval(request,true);
-            stringQuery = stringQuery + "           from retail_sales_product rsp" +
-                    "           INNER JOIN products p ON p.id=rsp.product_id" +
-                    "           INNER JOIN retail_sales rs ON rs.id=rsp.retail_sales_id" +
-                    "           where ";
 
-            stringQuery = stringQuery + " rs.date_time_created >=to_timestamp('"+request.getDateFrom()+" 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
-                                    " and rs.date_time_created <=to_timestamp('"+request.getDateTo()+" 23:59:59','DD.MM.YYYY HH24:MI:SS')";
 
-            stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
+            stringQuery =
+                    " select  " +
+                    " z.name, " +
+                    " z.time_interval, " +
+                    " sum(z.summ), " +
+                    " z.time_interval_sort " +
+                    " from " +
+                    "(";
+            // нужно сконструировать 2 запроса, объединенные union, один по розничным продажам (retail_sales), второй по отгрузкам (shipment)
+            for (int i=0; i<=1 ; i++) {
+                if(i==1) stringQuery += " union all ";
 
-            if (notAll) {//только по выбранным (товарам или категориям)
-                String ids = commonUtilites.ListOfLongToString(request.getReportOnIds(), ",", "", "");
-                if (request.getReportOn().equals("products"))
-                    stringQuery = stringQuery + " and p.id in (" + ids + ")";
-                if (request.getReportOn().equals("categories")) {
-                    stringQuery = stringQuery + " and rsp.product_id in (select ppc.product_id from product_productcategories ppc where ppc.category_id ";
-                    if (request.getIncludeChilds()) {//если идет запрос "С подкатегориями"
 
-                        //Для запроса "С подкатегориями" - нужно запросить все айдишники подкатегорий у присланных id родительских категорий
-                        childCategories = productsRepository.getProductCategoriesChildIds(request.getReportOnIds());
-                        String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
-                        stringQuery = stringQuery + "in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
-                    } else
-                        stringQuery = stringQuery + "in (" + ids + "))";
+                stringQuery += " select ";
+                if (notAll) {
+                    stringQuery += " 'Выбранные' as name,";
+                } else {
+                    stringQuery += "'Все' as name,";
                 }
+                stringQuery += getVolumesReportTimeInterval(request, false) + ", "; // as time_interval
+                stringQuery += "           sum(ABS(rsp.product_count*rsp.product_price)) as summ";
+                if (notAll) {//только по выбранным (товарам или категориям)
+                    stringQuery += ", 0 as id_ "; // чтобы группировалось только по ВИ, а все id категорий, которые в данном случае нули, схлопывались
+                }
+                stringQuery += ", " + getVolumesReportTimeInterval(request, true);
+                stringQuery = stringQuery + "           from "+tableNames[i]+"_product rsp" +
+                        "           INNER JOIN products p ON p.id=rsp.product_id" +
+                        "           INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id" +
+                        "           where " +
+                        " rs.date_time_created >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')" +
+                        " and rs.date_time_created <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+                stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
+                if (notAll) {//только по выбранным (товарам или категориям)
+                    String ids = commonUtilites.ListOfLongToString(request.getReportOnIds(), ",", "", "");
+                    if (request.getReportOn().equals("products"))
+                        stringQuery = stringQuery + " and p.id in (" + ids + ")";
+                    if (request.getReportOn().equals("categories")) {
+                        stringQuery = stringQuery + " and rsp.product_id in (select ppc.product_id from product_productcategories ppc where ppc.category_id ";
+                        if (request.getIncludeChilds()) {//если идет запрос "С подкатегориями"
+
+                            //Для запроса "С подкатегориями" - нужно запросить все айдишники подкатегорий у присланных id родительских категорий
+                            childCategories = productsRepository.getProductCategoriesChildIds(request.getReportOnIds());
+                            String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
+                            stringQuery = stringQuery + "in (" + ids + (childIds.length() > 0 ? "," : "") + childIds + "))";
+                        } else
+                            stringQuery = stringQuery + "in (" + ids + "))";
+                    }
+                }
+                stringQuery += " and rs.master_id="+myMasterId+" and rs.company_id="+request.getCompanyId();
+                stringQuery = stringQuery + "           group by time_interval, time_interval_sort";
+//                if (notAll) {
+//                    stringQuery = stringQuery + ", name";
+//                }
             }
-            stringQuery += " and rs.company_id="+request.getCompanyId();
-            stringQuery = stringQuery + "           group by time_interval, time_interval_sort order by time_interval_sort";
-            if (notAll) {
-                stringQuery = stringQuery + ", name";
-            }
+
+            stringQuery +=") as z group by z.name,z.time_interval,z.time_interval_sort order by z.time_interval_sort";
+
         }
 
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
-
+            query.setParameter("dateFrom", request.getDateFrom());
+            query.setParameter("dateTo", request.getDateTo());
             List<Object[]> queryList = query.getResultList();
             List<VolumesReportJSON> returnList = new ArrayList<>();
 
@@ -257,7 +307,7 @@ public class VolumesRepository {
         return s;
     }
 
-    //ВОзвращает строку, ответственную за формирование временного интервала
+    //Возвращает строку, ответственную за формирование временного интервала
     private String getVolumesReportTimeInterval(VolumesReportForm request, Boolean forSorting){
         String s = "";
         // Если ДЕНЬ - ЧАС - извлекаем только часы, т.к шкала юнитов для ДЕНЬ состоит только из 1 элемента - ЧАС
@@ -276,7 +326,7 @@ public class VolumesRepository {
         // Если МЕСЯЦ -  шкала юнитов состоит из ДЕНЬ, НЕДЕЛЯ
         if(request.getPeriodType().equals("month")){
             if(request.getUnit().equals("day"))
-                s=     s + "to_char(rs.date_time_created, 'DD.MM.YYYY')";
+                s=     s + "to_char(rs.date_time_created, '"+(forSorting?"YYYYMMDD":"DD.MM.YYYY")+"')";
             if(request.getUnit().equals("week"))
                 s=     s + "to_char(EXTRACT(week from rs.date_time_created),'00')";
         }
@@ -285,7 +335,7 @@ public class VolumesRepository {
             if(request.getUnit().equals("week"))
                 s=     s + "to_char(EXTRACT(week from rs.date_time_created),'00')";
             if(request.getUnit().equals("month"))
-                s=     s + "to_char(rs.date_time_created, 'MM.YYYY')";
+                s=     s + "to_char(rs.date_time_created, '"+(forSorting?"YYYYMM":"MM.YYYY")+"')";
         }
         // Если ПРОИЗВОЛЬНЫЙ ПЕРИОД -  шкала юнитов состоит из ЧАС, ДЕНЬ, НЕДЕЛЯ, МЕСЯЦ, ГОД
         if(request.getPeriodType().equals("period")) {
