@@ -12,8 +12,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller.Reports;
 
+import com.dokio.message.request.Reports.IncomeOutcomeReportForm;
 import com.dokio.message.request.Reports.VolumesReportForm;
 import com.dokio.message.response.Reports.VolumesReportJSON;
+import com.dokio.repository.Reports.IncomeOutcomeRepository;
 import com.dokio.repository.Reports.VolumesRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,29 +26,36 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
-
-
-
 @Controller
-public class VolumesController {
+public class DashboardVidgetsController {
 
-    Logger logger = Logger.getLogger("VolumesController");
+    Logger logger = Logger.getLogger("DashboardVidgetsController");
+
     @Autowired
     VolumesRepository volumesRepository;
+    @Autowired
+    IncomeOutcomeRepository incomeOutcomeRepository;
 
     @PostMapping("/api/auth/getVolumesReportData")
-    @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getVolumesReportData(@RequestBody VolumesReportForm request){
         logger.info("Processing post request for path /api/auth/getVolumesReportData: " + request.toString());
-        List<VolumesReportJSON> returnList;
         try {
-            returnList = volumesRepository.getVolumesReportData(request);
-            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-            return responseEntity;
+            return new ResponseEntity<>(volumesRepository.getVolumesReportData(request), HttpStatus.OK);
         } catch (Exception e){
             e.printStackTrace();
-            ResponseEntity responseEntity = new ResponseEntity<>("Ошибка при запросе отчёта объёмов", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
+            logger.error("Exception in method getVolumesReportData.", e);
+            return new ResponseEntity<>("Ошибка при запросе отчёта объёмов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/api/auth/getIncomeOutcomeReportData")
+    public ResponseEntity<?> getIncomeOutcomeReportData(@RequestBody IncomeOutcomeReportForm request){
+        logger.info("Processing post request for path /api/auth/getIncomeOutcomeReportData: " + request.toString());
+        try {
+            return new ResponseEntity<>(incomeOutcomeRepository.getIncomeOutcomeReportData(request), HttpStatus.OK);
+        } catch (Exception e){
+            e.printStackTrace();
+            logger.error("Exception in method getIncomeOutcomeReportData.", e);
+            return new ResponseEntity<>("Ошибка при запросе отчёта прихода и расхода", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

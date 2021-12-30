@@ -186,7 +186,51 @@ public class FinanceUtilites {
     }
 
 
+    public BigDecimal getBalancesOnDate(Long companyId, String dateTo) {
 
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
+        String stringQuery =" WITH " +
+        " income_payment_account as ( " +
+        "   select " +
+        "       (select coalesce(sum(pi.summ),0) from paymentin pi  where pi.master_id="+myMasterId+" and pi.company_id="+companyId+" and coalesce(pi.is_completed,false)=true and pi.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and payment_account_id in (select id from companies_payment_accounts where master_id=4 and company_id=1)) " +
+        "   ), " +
+        " outcome_payment_account as( " +
+        "   select " +
+        "       (select coalesce(sum(po.summ),0) from paymentout po where po.master_id="+myMasterId+" and po.company_id="+companyId+" and coalesce(po.is_completed,false)=true and po.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')  and payment_account_id in (select id from companies_payment_accounts where master_id=4 and company_id=1)) " +
+        "   ), " +
+        " correction_payment_account as( " +
+        "   select " +
+        "       (select coalesce(sum(co.summ),0) from correction co where co.master_id="+myMasterId+" and co.company_id="+companyId+" and coalesce(co.is_completed,false)=true and co.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and co.type='account' and payment_account_id in (select id from companies_payment_accounts where master_id=4 and company_id=1)) " +
+        "   ), " +
+        " income_boxoffice as ( " +
+        "   select " +
+        "       (select coalesce(sum(pi.summ),0) from orderin pi    where pi.master_id="+myMasterId+" and pi.company_id="+companyId+" and coalesce(pi.is_completed,false)=true and pi.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and boxoffice_id in (select id from companies_payment_accounts where master_id=4 and company_id=1)) " +
+        "   ), " +
+        " outcome_boxoffice as( " +
+        "   select " +
+        "       (select coalesce(sum(po.summ),0) from orderout po   where po.master_id="+myMasterId+" and po.company_id="+companyId+" and coalesce(po.is_completed,false)=true and po.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and boxoffice_id in (select id from companies_payment_accounts where master_id=4 and company_id=1)) " +
+        "   ), " +
+        " correction_boxoffice as( " +
+        "   select " +
+        "       (select coalesce(sum(co.summ),0) from correction co where co.master_id="+myMasterId+" and co.company_id="+companyId+" and coalesce(co.is_completed,false)=true and co.date_time_created at time zone '"+myTimeZone+"'  < to_timestamp(:dateTo||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and co.type='boxoffice' and boxoffice_id in (select id from sprav_boxoffice where master_id=4 and company_id=1)) " +
+        "   ) " +
+        " select " +
+        " ((select * from income_payment_account)-(select * from outcome_payment_account)+(select * from correction_payment_account))+ " +
+        " ((select * from income_boxoffice)-(select * from outcome_boxoffice)+(select * from correction_boxoffice)) as balance; ";
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("dateTo",dateTo);
+            return (BigDecimal) query.getSingleResult();
+        } catch (NoResultException nre) {
+            return  new BigDecimal(0);
+        } catch (Exception e) {
+            logger.error("Exception in method getBalancesOnDate. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 
 

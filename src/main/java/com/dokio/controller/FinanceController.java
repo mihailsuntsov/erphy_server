@@ -12,6 +12,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
+import com.dokio.message.request.Reports.ProfitLossForm;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.FinanceUtilites;
 import org.apache.log4j.Logger;
@@ -80,5 +81,12 @@ class FinanceController {
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("kassa",companyId,kassaId), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Contrloller getKassaBalance error", e);
             return new ResponseEntity<>("Ошибка запроса баланса кассы ККМ", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/getBalancesOnDate")
+    public ResponseEntity<?> getBalancesOnDate(@RequestBody ProfitLossForm request){
+        logger.info("Processing post request for path /api/auth/getProfitLoss: " + request.toString());
+        try {return new ResponseEntity<>(financeUtilites.getBalancesOnDate(request.getCompanyId(),request.getDateFrom()), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка запроса баланса на начальную дату", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

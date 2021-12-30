@@ -127,7 +127,7 @@ public class VolumesRepository {
             stringQuery +=") as z group by  z.name, z.time_interval, z.id_, z.time_interval_sort order by z.time_interval_sort, name";
 
 
-            
+
         } else { // все остальные случаи
 
 
