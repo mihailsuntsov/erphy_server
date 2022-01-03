@@ -1,0 +1,198 @@
+/*
+Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
+Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
+БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
+ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
+лицензией GNU для получения более подробной информации.
+Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
+package com.dokio.repository.Reports;
+
+import com.dokio.message.request.Reports.ProfitLossForm;
+import com.dokio.message.response.Reports.ProfitLossJSON;
+import com.dokio.message.response.Reports.VolumeSerie;
+import com.dokio.repository.UserRepositoryJPA;
+import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.FinanceUtilites;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+@Repository
+public class IndicatorsRepository {
+
+    Logger logger = Logger.getLogger("IndicatorsRepository");
+
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private UserDetailsServiceImpl userRepository;
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    ProfitLossRepositoryJPA profitLossRepositoryJPA;
+    @Autowired
+    FinanceUtilites financeUtilites;
+
+
+    @SuppressWarnings("Duplicates")
+    public List<VolumeSerie> getIndicatorsData(Long companyId) {
+        Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
+        Date dateNow = new Date();
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        dateFormat.setTimeZone(TimeZone.getTimeZone(myTimeZone));
+        List<VolumeSerie> retList = new ArrayList<>();
+
+        VolumeSerie serie1 = new VolumeSerie();
+        serie1.setName("Просроченные счета");
+        serie1.setValue(BigDecimal.valueOf(getOverdueBills(companyId, myMasterId)));
+        retList.add(serie1);
+
+        VolumeSerie serie2 = new VolumeSerie();
+        serie2.setName("Просроченные заказы");
+        serie2.setValue(BigDecimal.valueOf(getOverdueOrders(companyId, myMasterId)));
+        retList.add(serie2);
+
+        VolumeSerie serie3 = new VolumeSerie();
+        serie3.setName("Новые заказы");
+        serie3.setValue(BigDecimal.valueOf(getNewOrders(companyId, myMasterId)));
+        retList.add(serie3);
+
+//        VolumeSerie serie4 = new VolumeSerie();
+//        serie4.setName("Чистая прибыль");
+//        ProfitLossForm profitLossForm = new ProfitLossForm();
+//        profitLossForm.setCompanyId(companyId);
+//        profitLossForm.setDateFrom("01.01.1970");
+//        profitLossForm.setDateTo(dateFormat.format(dateNow));
+//        ProfitLossJSON profitLoss = profitLossRepositoryJPA.getProfitLoss(profitLossForm);
+//        serie4.setValue(profitLoss.getNet_profit());
+//        retList.add(serie4);
+
+        VolumeSerie serie5 = new VolumeSerie();
+        serie5.setName("Деньги");
+        serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(dateNow)));
+        retList.add(serie5);
+
+        VolumeSerie serie6_1 = new VolumeSerie();
+        VolumeSerie serie6_2 = new VolumeSerie();
+        List<BigDecimal> cagentsBalances = getCagentsBalances(companyId, myMasterId);
+        BigDecimal weDebt = new BigDecimal(0);// мы должны
+        BigDecimal usDebt = new BigDecimal(0);// нам должны
+        if(!Objects.isNull(cagentsBalances))
+            for (BigDecimal m : cagentsBalances) {
+                if(m.compareTo(new BigDecimal(0)) < 0)
+                    usDebt=usDebt.add(m);
+                else
+                    weDebt=weDebt.add(m);
+            }
+        serie6_1.setName("Мы должны");
+        serie6_1.setValue(weDebt);
+        retList.add(serie6_1);
+        serie6_2.setName("Нам должны");
+        serie6_2.setValue(usDebt.abs());
+        retList.add(serie6_2);
+
+        return retList;
+    }
+
+
+    // возвращает количество просроченных счетов
+    @SuppressWarnings("Duplicates")
+    private int getOverdueBills(Long companyId, Long masterId) {
+        String stringQuery;
+        stringQuery =
+                " select p.id from invoiceout p " +
+                " where " +
+                " p.master_id = " + masterId + " and p.company_id = " + companyId +
+                " and coalesce(p.is_completed,false)=false " +
+                " and coalesce(p.is_deleted,false)=false " +
+//                " and p.invoiceout_date < now()";
+//                        " and p.invoiceout_date at time zone '" + myTimeZone + "'  < date(timezone('" + myTimeZone + "', now()))";
+                " and to_timestamp(to_char(p.invoiceout_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getResultList().size();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getOverdueBills. SQL query:" + stringQuery, e);
+            return 0;
+        }
+    }
+    // возвращает количество просроченных заказов
+    @SuppressWarnings("Duplicates")
+    private int getOverdueOrders(Long companyId, Long masterId) {
+//        Date dateNow = new Date();
+//        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+        String stringQuery;
+        stringQuery =
+                " select p.id from customers_orders p " +
+                " where " +
+                " p.master_id = " + masterId + " and p.company_id = " + companyId +
+                " and coalesce(p.is_completed,false)=false " +
+                " and coalesce(p.is_deleted,false)=false " +
+//                        " and p.shipment_date < to_date('"+dateFormat.format(dateNow)+"','DD.MM.YYYY')";
+                " and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getResultList().size();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getOverdueOrders. SQL query:" + stringQuery, e);
+            return 0;
+        }
+    }
+
+    // возвращает количество новых заказов
+    @SuppressWarnings("Duplicates")
+    private int getNewOrders(Long companyId, Long masterId) {
+        String stringQuery;
+        stringQuery =
+                " select p.id from customers_orders p " +
+                " where " +
+                " p.master_id = " + masterId + " and p.company_id = " + companyId +
+                " and coalesce(p.is_completed,false)=false " +
+                " and coalesce(p.is_deleted,false)=false " +
+                " and (p.linked_docs_group_id is null or p.date_time_changed is null)";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getResultList().size();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getNewOrders. SQL query:" + stringQuery, e);
+            return 0;
+        }
+    }
+
+    // возвращает балансы по контрагентам
+    private List<BigDecimal> getCagentsBalances (Long companyId, Long masterId) {
+        String stringQuery;
+        stringQuery =
+                " select " +
+                " coalesce((select p3.summ_result from history_cagent_summ p3 where p3.master_id = " + masterId + " and p3.company_id = " + companyId + " and p3.object_id = p.id order by p3.id desc limit 1),0) as summ_on_end  " +
+                " from cagents p   " +
+                " where p.master_id = " + masterId + " and p.company_id = " + companyId +
+                " order by summ_on_end desc";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getCagentsBalances. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+}

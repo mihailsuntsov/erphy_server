@@ -59,6 +59,7 @@ public class VolumesRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         // объемы считаем из Розничных продаж и из Отгрузок, суммируя их
         String[] tableNames = new String[]{"retail_sales","shipment"};
+        String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
         boolean notAll=(!request.getAll()&&request.getReportOnIds().size()>0);//true - то только по выбранным (товарам или категориям) - в форме не выставлен флаг All и есть присланные id
 
@@ -103,8 +104,11 @@ public class VolumesRepository {
                     stringQuery += " INNER JOIN products p ON p.id=rsp.product_id";
                     stringQuery += " INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id";
                     stringQuery += " where ";
-                    stringQuery = stringQuery + " rs.date_time_created >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
-                            " and rs.date_time_created <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+                    stringQuery = stringQuery + " rs.date_time_created at time zone '"+myTimeZone+"'  >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
+                            " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+
+                    if(tableNames[i].equals("shipment"))
+                        stringQuery = stringQuery + " and coalesce(rs.is_completed,false)=true ";
 
                     stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
 
@@ -163,8 +167,10 @@ public class VolumesRepository {
                         "           INNER JOIN products p ON p.id=rsp.product_id" +
                         "           INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id" +
                         "           where " +
-                        " rs.date_time_created >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')" +
-                        " and rs.date_time_created <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+                        " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')" +
+                        " and rs.date_time_created at time zone '"+myTimeZone+"'  <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
+                if(tableNames[i].equals("shipment"))
+                    stringQuery = stringQuery + " and coalesce(rs.is_completed,false)=true ";
                 stringQuery += getVolumesReportDepAndEmpl(request);// фильтр по отделениям и сотрудникам
                 if (notAll) {//только по выбранным (товарам или категориям)
                     String ids = commonUtilites.ListOfLongToString(request.getReportOnIds(), ",", "", "");

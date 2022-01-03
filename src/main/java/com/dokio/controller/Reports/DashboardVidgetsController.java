@@ -13,17 +13,19 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller.Reports;
 
 import com.dokio.message.request.Reports.IncomeOutcomeReportForm;
+import com.dokio.message.request.Reports.IndicatorsForm;
 import com.dokio.message.request.Reports.VolumesReportForm;
 import com.dokio.message.response.Reports.VolumesReportJSON;
 import com.dokio.repository.Reports.IncomeOutcomeRepository;
+import com.dokio.repository.Reports.IndicatorsRepository;
 import com.dokio.repository.Reports.VolumesRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @Controller
@@ -35,6 +37,8 @@ public class DashboardVidgetsController {
     VolumesRepository volumesRepository;
     @Autowired
     IncomeOutcomeRepository incomeOutcomeRepository;
+    @Autowired
+    IndicatorsRepository indicatorsRepository;
 
     @PostMapping("/api/auth/getVolumesReportData")
     public ResponseEntity<?> getVolumesReportData(@RequestBody VolumesReportForm request){
@@ -47,6 +51,7 @@ public class DashboardVidgetsController {
             return new ResponseEntity<>("Ошибка при запросе отчёта объёмов", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @PostMapping("/api/auth/getIncomeOutcomeReportData")
     public ResponseEntity<?> getIncomeOutcomeReportData(@RequestBody IncomeOutcomeReportForm request){
         logger.info("Processing post request for path /api/auth/getIncomeOutcomeReportData: " + request.toString());
@@ -58,4 +63,17 @@ public class DashboardVidgetsController {
             return new ResponseEntity<>("Ошибка при запросе отчёта прихода и расхода", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @RequestMapping(
+            value = "/api/auth/getIndicatorsData",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getIndicatorsData(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getIndicatorsData with parameters: " + "company_id: " + company_id);
+        try {return new ResponseEntity<>(indicatorsRepository.getIndicatorsData(company_id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller getIndicatorsData error", e);
+            return new ResponseEntity<>("Ошибка загрузки данных для индикаторов стартовой страницы", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

@@ -141,6 +141,9 @@ public class InvoiceoutRepositoryJPA {
                 } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
+            if(filterOptionsIds.contains(2)) // Только просроченные счета
+                stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.invoiceout_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
@@ -242,6 +245,8 @@ public class InvoiceoutRepositoryJPA {
                 }else{stringQuery = stringQuery + " and p.company_id=" + myCompanyId+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
             } else stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
         }
+        if(filterOptionsIds.contains(2)) // Только просроченные счета
+            stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.invoiceout_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+

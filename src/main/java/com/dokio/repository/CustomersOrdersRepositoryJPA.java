@@ -136,6 +136,12 @@ public class CustomersOrdersRepositoryJPA {
                 } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
 
+            if(filterOptionsIds.contains(2)) // Только просроченные заказы
+                stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+            if(filterOptionsIds.contains(3)) // Только новые заказы
+                stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now() and (p.linked_docs_group_id is null or p.date_time_changed is null)";
+
+
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
@@ -235,6 +241,10 @@ public class CustomersOrdersRepositoryJPA {
                 }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
             } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
         }
+        if(filterOptionsIds.contains(2)) // Только просроченные заказы
+            stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+        if(filterOptionsIds.contains(3)) // Только новые заказы
+            stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now() and (p.linked_docs_group_id is null or p.date_time_changed is null)";
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
