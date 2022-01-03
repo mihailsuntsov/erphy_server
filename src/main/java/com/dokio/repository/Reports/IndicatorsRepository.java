@@ -15,6 +15,7 @@ package com.dokio.repository.Reports;
 import com.dokio.message.request.Reports.ProfitLossForm;
 import com.dokio.message.response.Reports.ProfitLossJSON;
 import com.dokio.message.response.Reports.VolumeSerie;
+import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.FinanceUtilites;
@@ -44,11 +45,13 @@ public class IndicatorsRepository {
     ProfitLossRepositoryJPA profitLossRepositoryJPA;
     @Autowired
     FinanceUtilites financeUtilites;
-
+    @Autowired
+    SecurityRepositoryJPA securityRepository;
 
     @SuppressWarnings("Duplicates")
     public List<VolumeSerie> getIndicatorsData(Long companyId) {
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+        List<Integer> myPermissions = securityRepository.giveMeMyPermissions(26L);
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myTimeZone = userRepository.getUserTimeZone();
         Date dateNow = new Date();
@@ -56,55 +59,58 @@ public class IndicatorsRepository {
         dateFormat.setTimeZone(TimeZone.getTimeZone(myTimeZone));
         List<VolumeSerie> retList = new ArrayList<>();
 
-        VolumeSerie serie1 = new VolumeSerie();
-        serie1.setName("Просроченные счета");
-        serie1.setValue(BigDecimal.valueOf(getOverdueBills(companyId, myMasterId)));
-        retList.add(serie1);
+        if(myPermissions.contains(604) || (myPermissions.contains(605) && myCompanyId.equals(companyId))) {
+            VolumeSerie serie1 = new VolumeSerie();
+            serie1.setName("Просроченные счета");
+            serie1.setValue(BigDecimal.valueOf(getOverdueBills(companyId, myMasterId)));
+            retList.add(serie1);
+        }
 
-        VolumeSerie serie2 = new VolumeSerie();
-        serie2.setName("Просроченные заказы");
-        serie2.setValue(BigDecimal.valueOf(getOverdueOrders(companyId, myMasterId)));
-        retList.add(serie2);
+        if(myPermissions.contains(602) || (myPermissions.contains(603) && myCompanyId.equals(companyId))) {
+            VolumeSerie serie2 = new VolumeSerie();
+            serie2.setName("Просроченные заказы");
+            serie2.setValue(BigDecimal.valueOf(getOverdueOrders(companyId, myMasterId)));
+            retList.add(serie2);
+        }
 
-        VolumeSerie serie3 = new VolumeSerie();
-        serie3.setName("Новые заказы");
-        serie3.setValue(BigDecimal.valueOf(getNewOrders(companyId, myMasterId)));
-        retList.add(serie3);
+        if(myPermissions.contains(600) || (myPermissions.contains(601) && myCompanyId.equals(companyId))) {
+            VolumeSerie serie3 = new VolumeSerie();
+            serie3.setName("Новые заказы");
+            serie3.setValue(BigDecimal.valueOf(getNewOrders(companyId, myMasterId)));
+            retList.add(serie3);
+        }
 
-//        VolumeSerie serie4 = new VolumeSerie();
-//        serie4.setName("Чистая прибыль");
-//        ProfitLossForm profitLossForm = new ProfitLossForm();
-//        profitLossForm.setCompanyId(companyId);
-//        profitLossForm.setDateFrom("01.01.1970");
-//        profitLossForm.setDateTo(dateFormat.format(dateNow));
-//        ProfitLossJSON profitLoss = profitLossRepositoryJPA.getProfitLoss(profitLossForm);
-//        serie4.setValue(profitLoss.getNet_profit());
-//        retList.add(serie4);
+        if(myPermissions.contains(594) || (myPermissions.contains(595) && myCompanyId.equals(companyId))) {
+            VolumeSerie serie5 = new VolumeSerie();
+            serie5.setName("Деньги");
+            serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(dateNow)));
+            retList.add(serie5);
+        }
 
-        VolumeSerie serie5 = new VolumeSerie();
-        serie5.setName("Деньги");
-        serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(dateNow)));
-        retList.add(serie5);
-
-        VolumeSerie serie6_1 = new VolumeSerie();
-        VolumeSerie serie6_2 = new VolumeSerie();
-        List<BigDecimal> cagentsBalances = getCagentsBalances(companyId, myMasterId);
-        BigDecimal weDebt = new BigDecimal(0);// мы должны
-        BigDecimal usDebt = new BigDecimal(0);// нам должны
-        if(!Objects.isNull(cagentsBalances))
-            for (BigDecimal m : cagentsBalances) {
-                if(m.compareTo(new BigDecimal(0)) < 0)
-                    usDebt=usDebt.add(m);
-                else
-                    weDebt=weDebt.add(m);
+        if(myPermissions.contains(596) || myPermissions.contains(597) || myPermissions.contains(598) || myPermissions.contains(599)) {
+            VolumeSerie serie6_1 = new VolumeSerie();
+            VolumeSerie serie6_2 = new VolumeSerie();
+            List<BigDecimal> cagentsBalances = getCagentsBalances(companyId, myMasterId);
+            BigDecimal weDebt = new BigDecimal(0);// мы должны
+            BigDecimal usDebt = new BigDecimal(0);// нам должны
+            if (!Objects.isNull(cagentsBalances))
+                for (BigDecimal m : cagentsBalances) {
+                    if (m.compareTo(new BigDecimal(0)) < 0)
+                        usDebt = usDebt.add(m);
+                    else
+                        weDebt = weDebt.add(m);
+                }
+            if(myPermissions.contains(596) || (myPermissions.contains(597) && myCompanyId.equals(companyId))) {
+                serie6_1.setName("Мы должны");
+                serie6_1.setValue(weDebt);
+                retList.add(serie6_1);
             }
-        serie6_1.setName("Мы должны");
-        serie6_1.setValue(weDebt);
-        retList.add(serie6_1);
-        serie6_2.setName("Нам должны");
-        serie6_2.setValue(usDebt.abs());
-        retList.add(serie6_2);
-
+            if(myPermissions.contains(598) || (myPermissions.contains(599) && myCompanyId.equals(companyId))) {
+                serie6_2.setName("Нам должны");
+                serie6_2.setValue(usDebt.abs());
+                retList.add(serie6_2);
+            }
+        }
         return retList;
     }
 
