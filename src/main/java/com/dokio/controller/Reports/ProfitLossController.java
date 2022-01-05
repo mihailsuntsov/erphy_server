@@ -35,5 +35,10 @@ public class ProfitLossController {
         try {return new ResponseEntity<>(profitLossRepositoryJPA.getProfitLoss(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка запроса данных отчёта", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @PostMapping("/api/auth/getOpexOnly")
+    public ResponseEntity<?> getOpexOnly(@RequestBody ProfitLossForm request){
+        logger.info("Processing post request for path /api/auth/getOpexOnly: " + request.toString());
+        try {return new ResponseEntity<>(profitLossRepositoryJPA.getOpexOnly(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка запроса данных по операционным расходам", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

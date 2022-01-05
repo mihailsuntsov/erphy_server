@@ -96,6 +96,34 @@ public class ProfitLossRepositoryJPA {
         } else return null;
     }
 
+    @SuppressWarnings("Duplicates")
+    public List<ProfitLossSerie> getOpexOnly(ProfitLossForm reqest) {
+        if(securityRepositoryJPA.userHasPermissions_OR(26L, "609,610"))//(см. файл Permissions Id)
+        {
+            String myTimeZone = userRepository.getUserTimeZone();
+            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            if (    !commonUtilites.isDateValid(reqest.getDateFrom()) ||
+                    !commonUtilites.isDateValid(reqest.getDateTo()) ||
+                    (!securityRepositoryJPA.userHasPermissions_OR(26L, "609") && !myCompanyId.equals(reqest.getCompanyId())))//если есть право только на своё предприятие, но запрашиваем не своё
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+
+            try {
+                // Операционные расходы
+                List<ProfitLossSerie> operational=getProfitLossOpex(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone);
+                // списания в операционных расходах считаются отдельно:
+                ProfitLossSerie writeoffs = new ProfitLossSerie();
+                writeoffs.setName("Списания");
+                writeoffs.setValue(getProfitLossWriteoffs(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone));
+                operational.add(writeoffs);
+                return operational;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getOpexOnly.", e);
+                return null;
+            }
+        } else return null;
+    }
 
     //возвращает выручку
     @SuppressWarnings("Duplicates")
