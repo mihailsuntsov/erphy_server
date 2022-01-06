@@ -14,6 +14,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.request;
 
+import java.math.BigDecimal;
+
 public class KassaForm {
     private Long id;
     private Long company_id;
@@ -28,6 +30,42 @@ public class KassaForm {
     private Boolean allow_to_use;
     private Boolean is_deleted;
     private String zn_kkt;
+    private Boolean is_virtual; //виртуальная касса
+    private Boolean allow_acquiring; //прием безнала на данной кассе
+    private Long acquiring_bank_id; // id банк-эквайер
+    private BigDecimal acquiring_precent; // процент банку за услугу эквайринга
+
+    public Boolean getIs_virtual() {
+        return is_virtual;
+    }
+
+    public void setIs_virtual(Boolean is_virtual) {
+        this.is_virtual = is_virtual;
+    }
+
+    public Boolean getAllow_acquiring() {
+        return allow_acquiring;
+    }
+
+    public void setAllow_acquiring(Boolean allow_acquiring) {
+        this.allow_acquiring = allow_acquiring;
+    }
+
+    public Long getAcquiring_bank_id() {
+        return acquiring_bank_id;
+    }
+
+    public void setAcquiring_bank_id(Long acquiring_bank_id) {
+        this.acquiring_bank_id = acquiring_bank_id;
+    }
+
+    public BigDecimal getAcquiring_precent() {
+        return acquiring_precent;
+    }
+
+    public void setAcquiring_precent(BigDecimal acquiring_precent) {
+        this.acquiring_precent = acquiring_precent;
+    }
 
     public String getZn_kkt() {
         return zn_kkt;

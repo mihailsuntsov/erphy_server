@@ -89,13 +89,20 @@ public class KassaRepository {
                     "           coalesce(p.allow_to_use,false) as allow_to_use, " +
                     "           coalesce(p.is_deleted,false) as is_deleted, " +
                     "           p.billing_address as billing_address, " +
-                    "           p.zn_kkt as zn_kkt" +
+                    "           p.zn_kkt as zn_kkt," +
+                    "           p.is_virtual as is_virtual, " + //виртуальная касса
+                    "           p.allow_acquiring as allow_acquiring, " + //прием безнала на данной кассе
+                    "           p.acquiring_bank_id as acquiring_bank_id, " + // id банк-эквайер
+                    "           coalesce(p.acquiring_precent,0) as acquiring_precent, " + // процент банку за услугу эквайринга
+                    "           cag.name as acquiring_bank " + // банк-эквайер
+
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           INNER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
                     "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
@@ -161,6 +168,13 @@ public class KassaRepository {
                 doc.setIs_deleted((Boolean)                   obj[22]);
                 doc.setBilling_address((String)               obj[23]);
                 doc.setZn_kkt((String)                        obj[24]);
+                doc.setIs_virtual((Boolean)                   obj[25]);
+                doc.setAllow_acquiring((Boolean)              obj[26]);
+                doc.setAcquiring_bank_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
+                doc.setAcquiring_precent((BigDecimal)         obj[28]);
+                doc.setAcquiring_bank((String)                obj[29]);
+
+
                 returnList.add(doc);
             }
             return returnList;
@@ -181,6 +195,7 @@ public class KassaRepository {
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
                 "           INNER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
                 "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
@@ -255,13 +270,19 @@ public class KassaRepository {
                     "           coalesce(p.allow_to_use,false) as allow_to_use, " +
                     "           coalesce(p.is_deleted,false) as is_deleted, " +
                     "           p.billing_address as billing_address, " +
-                    "           p.zn_kkt as zn_kkt" +
+                    "           p.zn_kkt as zn_kkt," +
+                    "           p.is_virtual as is_virtual, " + //виртуальная касса
+                    "           p.allow_acquiring as allow_acquiring, " + //прием безнала на данной кассе
+                    "           p.acquiring_bank_id as acquiring_bank_id, " + // id банк-эквайер
+                    "           coalesce(p.acquiring_precent,0) as acquiring_precent, " + // процент банку за услугу эквайринга
+                    "           cag.name as acquiring_bank " + // банк-эквайер
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
                     "           INNER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
                     "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id=" + id;
@@ -308,6 +329,11 @@ public class KassaRepository {
                 doc.setIs_deleted((Boolean)                   obj[22]);
                 doc.setBilling_address((String)               obj[23]);
                 doc.setZn_kkt((String)                        obj[24]);
+                doc.setIs_virtual((Boolean)                   obj[25]);
+                doc.setAllow_acquiring((Boolean)              obj[26]);
+                doc.setAcquiring_bank_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
+                doc.setAcquiring_precent((BigDecimal)         obj[28]);
+                doc.setAcquiring_bank((String)                obj[29]);
             }
             return doc;
         } else return null;
@@ -360,6 +386,12 @@ public class KassaRepository {
                         " allow_to_use," + // разрешено исползовать
                         " billing_address," + // место расчетов
                         " zn_kkt," +//заводской номер ККТ
+
+                        " is_virtual," + //виртуальная касса
+                        " allow_acquiring," + //прием безнала на данной кассе
+                        " acquiring_bank_id," + // id банк-эквайер
+                        " p.acquiring_precent," + // процент банку за услугу эквайринга
+
                         " is_deleted" + // касса удалена
                         ") values ("+
                         myMasterId + ", "+//мастер-аккаунт
@@ -373,10 +405,14 @@ public class KassaRepository {
                         "'" + request.getDevice_server_uid() + "', " +//идентификатор кассы на сервере касс (atol web server или kkmserver)
                         "'" + (request.getAdditional() == null ? "": request.getAdditional()) +  "', " +//дополнительная информация
                         "'" + request.getServer_address() + "', " +//адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
-                        true + ", " +// разрешено исползовать
+                        request.getAllow_to_use() + ", " +// разрешено исползовать
                         "'" + (request.getBilling_address() == null ? "":request.getBilling_address())  + "', " +//место расчетов
-                        "'" + request.getZn_kkt() + "', " +//заводской номер ККТ
-                        false + ")";// касса удалена
+                        "'" + request.getZn_kkt() + "', " +     // заводской номер ККТ
+                        false + ", " +                          // виртуальная касса
+                        request.getAllow_acquiring() + ", " +   // прием безнала на данной кассе
+                        request.getAcquiring_bank_id() + ", " + // id банк-эквайер
+                        request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
+                        false + ")";                            // касса удалена
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.executeUpdate();
@@ -418,6 +454,10 @@ public class KassaRepository {
                 " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
                 " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
                 " zn_kkt = '" + request.getZn_kkt() + "', " +
+                " is_virtual = false, " +// виртуальная касса
+                " allow_acquiring = " + request.getAllow_acquiring() + ", " +// прием безнала на данной кассе
+                " acquiring_bank_id = " + request.getAcquiring_bank_id() + ", " + // id банк-эквайер
+                " acquiring_precent = " + request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
                 " is_deleted =" + request.getIs_deleted() + //  касса удалена
                 " where " +
                 " id= "+request.getId();

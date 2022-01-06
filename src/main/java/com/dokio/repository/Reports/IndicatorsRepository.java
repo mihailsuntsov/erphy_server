@@ -55,6 +55,10 @@ public class IndicatorsRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myTimeZone = userRepository.getUserTimeZone();
         Date dateNow = new Date();
+
+        Calendar calendar = Calendar.getInstance();// get a calendar instance, which defaults to "now"
+        calendar.add(Calendar.DAY_OF_YEAR, 1);// add one day to the date/calendar
+        Date tomorrow = calendar.getTime();// now get "tomorrow"
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone(myTimeZone));
         List<VolumeSerie> retList = new ArrayList<>();
@@ -83,7 +87,7 @@ public class IndicatorsRepository {
         if(myPermissions.contains(594) || (myPermissions.contains(595) && myCompanyId.equals(companyId))) {
             VolumeSerie serie5 = new VolumeSerie();
             serie5.setName("Деньги");
-            serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(dateNow)));
+            serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(tomorrow)));
             retList.add(serie5);
         }
 

@@ -2665,10 +2665,11 @@ insert into permissions (id,name,description,document_name,document_id) values
 (609,'Отчёт "Операционные расходы" - просмотр по всем предприятиям','Возможность построения отчёта по операционным расходам по всем предприятиям','Стартовая страница',26),
 (610,'Отчёт "Операционные расходы" - просмотр по своему предприятию','Возможность построения отчёта по операционным расходам по своему предприятию','Стартовая страница',26);
 
-
-
-
-
+alter table kassa add column is_virtual boolean; --виртуальная касса
+alter table kassa add column allow_acquiring boolean; --прием безнала на данной кассе
+alter table kassa add column acquiring_bank_id bigint; -- банк-эквайер
+alter table kassa add column acquiring_precent numeric(4,2); -- процент банку за услугу эквайринга
+alter table kassa add constraint acquiring_bank_id_fkey foreign key (acquiring_bank_id) references cagents (id);
 
 
 

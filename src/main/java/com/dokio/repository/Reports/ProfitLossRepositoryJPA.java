@@ -115,7 +115,8 @@ public class ProfitLossRepositoryJPA {
                 ProfitLossSerie writeoffs = new ProfitLossSerie();
                 writeoffs.setName("Списания");
                 writeoffs.setValue(getProfitLossWriteoffs(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone));
-                operational.add(writeoffs);
+                if(writeoffs.getValue().compareTo(new BigDecimal(0))>0)
+                    operational.add(writeoffs);
                 return operational;
             } catch (Exception e) {
                 e.printStackTrace();

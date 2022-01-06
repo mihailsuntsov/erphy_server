@@ -14,6 +14,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.response;
 
+import java.math.BigDecimal;
+
 public class KassaJSON {
     private Long id;
     private String master;
@@ -44,6 +46,52 @@ public class KassaJSON {
     private String company_vatin;
     private String billing_address;
     private String zn_kkt;
+
+    private Boolean is_virtual; //виртуальная касса
+    private Boolean allow_acquiring; //прием безнала на данной кассе
+    private Long acquiring_bank_id; // id банк-эквайер
+    private BigDecimal acquiring_precent; // процент банку за услугу эквайринга
+    private String acquiring_bank; // банк-эквайер
+
+    public String getAcquiring_bank() {
+        return acquiring_bank;
+    }
+
+    public void setAcquiring_bank(String acquiring_bank) {
+        this.acquiring_bank = acquiring_bank;
+    }
+
+    public Boolean getIs_virtual() {
+        return is_virtual;
+    }
+
+    public void setIs_virtual(Boolean is_virtual) {
+        this.is_virtual = is_virtual;
+    }
+
+    public Boolean getAllow_acquiring() {
+        return allow_acquiring;
+    }
+
+    public void setAllow_acquiring(Boolean allow_acquiring) {
+        this.allow_acquiring = allow_acquiring;
+    }
+
+    public Long getAcquiring_bank_id() {
+        return acquiring_bank_id;
+    }
+
+    public void setAcquiring_bank_id(Long acquiring_bank_id) {
+        this.acquiring_bank_id = acquiring_bank_id;
+    }
+
+    public BigDecimal getAcquiring_precent() {
+        return acquiring_precent;
+    }
+
+    public void setAcquiring_precent(BigDecimal acquiring_precent) {
+        this.acquiring_precent = acquiring_precent;
+    }
 
     public String getZn_kkt() {
         return zn_kkt;
