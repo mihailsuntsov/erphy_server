@@ -34,6 +34,33 @@ public class KassaForm {
     private Boolean allow_acquiring; //прием безнала на данной кассе
     private Long acquiring_bank_id; // id банк-эквайер
     private BigDecimal acquiring_precent; // процент банку за услугу эквайринга
+    private Long acquiring_service_id; // id услуги банка-эквайера
+    private Long payment_account_id; // id расчетного счета
+    private Long expenditure_id; // id статьи расходов
+
+    public Long getPayment_account_id() {
+        return payment_account_id;
+    }
+
+    public void setPayment_account_id(Long payment_account_id) {
+        this.payment_account_id = payment_account_id;
+    }
+
+    public Long getExpenditure_id() {
+        return expenditure_id;
+    }
+
+    public void setExpenditure_id(Long expenditure_id) {
+        this.expenditure_id = expenditure_id;
+    }
+
+    public Long getAcquiring_service_id() {
+        return acquiring_service_id;
+    }
+
+    public void setAcquiring_service_id(Long acquiring_service_id) {
+        this.acquiring_service_id = acquiring_service_id;
+    }
 
     public Boolean getIs_virtual() {
         return is_virtual;

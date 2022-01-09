@@ -57,6 +57,7 @@ public class LinkedDocsUtilites {
                     "invoicein",
                     "paymentin",
                     "paymentout",
+                    "shifts",
                     "orderin",
                     "orderout",
                     "vatinvoiceout",

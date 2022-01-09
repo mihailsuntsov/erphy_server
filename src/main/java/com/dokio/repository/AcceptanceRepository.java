@@ -474,7 +474,7 @@ public class AcceptanceRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public Long insertAcceptance(AcceptanceForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());

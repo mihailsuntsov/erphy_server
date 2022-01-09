@@ -1,22 +1,23 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.KassaCashierSettingsForm;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Reports.ReceiptsJSON;
+import com.dokio.message.response.Reports.ShiftsJSON;
 import com.dokio.message.response.Settings.KassaCashierSettingsJSON;
+import com.dokio.message.response.additional.AcquiringInfoJSON;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -24,9 +25,11 @@ import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -48,6 +51,14 @@ public class KassaRepository {
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     CommonUtilites commonUtilites;
+    @Autowired
+    AcceptanceRepository acceptanceRepository;
+    @Autowired
+    PaymentinRepositoryJPA paymentinRepository;
+    @Autowired
+    PaymentoutRepositoryJPA paymentoutRepository;
+    @Autowired
+    CorrectionRepositoryJPA correctionRepository;
 
 //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -94,7 +105,14 @@ public class KassaRepository {
                     "           p.allow_acquiring as allow_acquiring, " + //прием безнала на данной кассе
                     "           p.acquiring_bank_id as acquiring_bank_id, " + // id банк-эквайер
                     "           coalesce(p.acquiring_precent,0) as acquiring_precent, " + // процент банку за услугу эквайринга
-                    "           cag.name as acquiring_bank " + // банк-эквайер
+                    "           cag.name as acquiring_bank, " + // банк-эквайер
+                    "           p.acquiring_service_id as acquiring_service_id, " + // id услуги банка-эквайера
+                    "           pr.name as acquiring_service, " + // услуга банка-эквайера
+
+                    "           p.payment_account_id as payment_account_id, " + // id расчетного счета
+                    "           cpa.name as payment_account, " + //  расчетный счет
+                    "           p.expenditure_id as expenditure_id, " + // id статьи расходов
+                    "           sei.name as expenditure " + // статья расходов
 
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -103,6 +121,9 @@ public class KassaRepository {
                     "           INNER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
+                    "           LEFT OUTER JOIN products pr ON p.acquiring_service_id=pr.id " +
+                    "           LEFT OUTER JOIN sprav_expenditure_items sei ON p.expenditure_id = sei.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_id = cpa.id " +
                     "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
@@ -173,6 +194,13 @@ public class KassaRepository {
                 doc.setAcquiring_bank_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
                 doc.setAcquiring_precent((BigDecimal)         obj[28]);
                 doc.setAcquiring_bank((String)                obj[29]);
+                doc.setAcquiring_service_id(obj[30]!=null?Long.parseLong(obj[30].toString()):null);
+                doc.setAcquiring_service((String)             obj[31]);
+                doc.setPayment_account_id(obj[32]!=null?Long.parseLong(obj[32].toString()):null);
+                doc.setPayment_account((String)               obj[33]);
+                doc.setExpenditure_id(obj[34]!=null?Long.parseLong(obj[34].toString()):null);
+                doc.setExpenditure((String)                   obj[35]);
+
 
 
                 returnList.add(doc);
@@ -196,6 +224,9 @@ public class KassaRepository {
                 "           INNER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                 "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
+                "           LEFT OUTER JOIN products pr ON p.acquiring_service_id=pr.id " +
+                "           LEFT OUTER JOIN sprav_expenditure_items sei ON p.expenditure_id = sei.id " +
+                "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_id = cpa.id " +
                 "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
@@ -275,7 +306,14 @@ public class KassaRepository {
                     "           p.allow_acquiring as allow_acquiring, " + //прием безнала на данной кассе
                     "           p.acquiring_bank_id as acquiring_bank_id, " + // id банк-эквайер
                     "           coalesce(p.acquiring_precent,0) as acquiring_precent, " + // процент банку за услугу эквайринга
-                    "           cag.name as acquiring_bank " + // банк-эквайер
+                    "           cag.name as acquiring_bank, " + // банк-эквайер
+                    "           p.acquiring_service_id as acquiring_service_id, " + // id услуги банка-эквайера
+                    "           pr.name as acquiring_service, " + // услуга банка-эквайера
+                    "           p.payment_account_id as payment_account_id, " + // id расчетного счета
+                    "           cpa.name as payment_account, " + //  расчетный счет
+                    "           p.expenditure_id as expenditure_id, " + // id статьи расходов
+                    "           sei.name as expenditure " + // статья расходов
+
                     "           from kassa p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -283,6 +321,9 @@ public class KassaRepository {
                     "           INNER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN cagents cag ON p.acquiring_bank_id=cag.id " +
+                    "           LEFT OUTER JOIN products pr ON p.acquiring_service_id=pr.id " +
+                    "           LEFT OUTER JOIN sprav_expenditure_items sei ON p.expenditure_id = sei.id " +
+                    "           LEFT OUTER JOIN companies_payment_accounts cpa ON p.payment_account_id = cpa.id " +
                     "           INNER JOIN sprav_sys_taxation_types ss ON p.sno1_id=ss.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id=" + id;
@@ -334,6 +375,12 @@ public class KassaRepository {
                 doc.setAcquiring_bank_id(obj[27]!=null?Long.parseLong(obj[27].toString()):null);
                 doc.setAcquiring_precent((BigDecimal)         obj[28]);
                 doc.setAcquiring_bank((String)                obj[29]);
+                doc.setAcquiring_service_id(obj[30]!=null?Long.parseLong(obj[30].toString()):null);
+                doc.setAcquiring_service((String)             obj[31]);
+                doc.setPayment_account_id(obj[32]!=null?Long.parseLong(obj[32].toString()):null);
+                doc.setPayment_account((String)               obj[33]);
+                doc.setExpenditure_id(obj[34]!=null?Long.parseLong(obj[34].toString()):null);
+                doc.setExpenditure((String)                   obj[35]);
             }
             return doc;
         } else return null;
@@ -390,7 +437,10 @@ public class KassaRepository {
                         " is_virtual," + //виртуальная касса
                         " allow_acquiring," + //прием безнала на данной кассе
                         " acquiring_bank_id," + // id банк-эквайер
-                        " p.acquiring_precent," + // процент банку за услугу эквайринга
+                        " acquiring_precent," + // процент банку за услугу эквайринга
+                        " acquiring_service_id," + //id услуги банка-эквайера
+                        " payment_account_id," + //id расчетного счета
+                        " expenditure_id," + //id статьи расходов
 
                         " is_deleted" + // касса удалена
                         ") values ("+
@@ -412,6 +462,10 @@ public class KassaRepository {
                         request.getAllow_acquiring() + ", " +   // прием безнала на данной кассе
                         request.getAcquiring_bank_id() + ", " + // id банк-эквайер
                         request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
+                        request.getAcquiring_service_id() + ", " + //id услуги банка-эквайера
+                        request.getPayment_account_id() + ", " + // id расчетного счета
+                        request.getExpenditure_id() + ", " + //id статьи расходов
+
                         false + ")";                            // касса удалена
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -458,6 +512,10 @@ public class KassaRepository {
                 " allow_acquiring = " + request.getAllow_acquiring() + ", " +// прием безнала на данной кассе
                 " acquiring_bank_id = " + request.getAcquiring_bank_id() + ", " + // id банк-эквайер
                 " acquiring_precent = " + request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
+                " acquiring_service_id = " + request.getAcquiring_service_id() + ", " + // id услуги банка-эквайера
+                " payment_account_id = " + request.getPayment_account_id() + ", " + //id расчетного счета
+                " expenditure_id = " + request.getExpenditure_id() + ", " + //id статьи расходов
+
                 " is_deleted =" + request.getIs_deleted() + //  касса удалена
                 " where " +
                 " id= "+request.getId();
@@ -745,12 +803,21 @@ public class KassaRepository {
 
     // запись в БД состояния смены (создание новой смены или изменение её статуса)
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Boolean updateShiftStatus(String zn_kkt, String shiftStatusId, Long shiftNumber, String shiftExpiredAt, Long companyId, Long kassaId, String fnSerial) {
         // Из фронтэнда может прийти номер смены (shiftNumber) = 0, если в кассе не установлен ФН. Это возможно в режиме разработки. В этом случае номер смены получаем из счетчика (если статус смены closed - текущее значение, если не closed - текущее значение +1)
         if(shiftNumber==0){shiftNumber=(shiftStatusId.equals("closed")?getShiftNumber_DevMode("currval"):getShiftNumber_DevMode("nextval"));}
         //если смена закрыта, то смысл изменять ее статус в БД отсутствует
         if (!isShiftClosed(kassaId, shiftNumber, fnSerial)){
+            // т.е. тут либо смена есть и она открыта, либо ее вообще нет
+
+
+
+
+
+
+
+
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepository.getUserId();
@@ -771,6 +838,7 @@ public class KassaRepository {
                             " kassa_id, " + //id кассы в БД
                             " shift_number, " + // номер смены (по фискальному накопителю)
                             " zn_kkt, " + //заводской номер кассы
+                            " uid, " + //UUID
                             " shift_status_id, " + // статус смены: opened closed expired
                             " shift_expired_at, " + // время истечения (экспирации) смены в текстовом формате, генерируемом самой ККТ.
                             " fn_serial" + //Серийный номер ФН. Вместе с kassa_id и shift_number используется для уникальности смены (constraint kassaid_shiftnumber_fnserial_uq),
@@ -789,6 +857,7 @@ public class KassaRepository {
                             kassaId + ", " +
                             shiftNumber + ", '" +
                             zn_kkt + "', '" +
+                            UUID.randomUUID().toString() + "', '" +
                             shiftStatusId + "', '" +
                             shiftExpiredAt + "', '" +
                             fnSerial + "'" +
@@ -798,9 +867,33 @@ public class KassaRepository {
                             " closer_id = " + ((shiftStatusId.equals("closed")) ? myId : null) + ", " +
                             " date_time_closed = " + (!shiftStatusId.equals("closed") ? null : ("to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')")) + ", " + // время закрытия вставляем только если статус смены меняется на closed (может меняться с opened ещё и на expired, а это не зактыта)
                             " department_id = " + kassaDeptId + ", " +//потому что отделение за время сессии может измениться (маловероятно, но всё же)
-                            "shift_status_id = '" + shiftStatusId + "'";
+                            " shift_status_id = '" + shiftStatusId + "'";
             try {
+                // нам нужно отловить закрытие смены (т.е. что смена закроется в результате запроса в этом методе
+                // для этого она должна подходить под требования констрайнта kassaid_shiftnumber_fnserial_uq
+                // т.е. в БД уже должна быть смена с такими kassaid, shiftnumber и fnserial
+                ShiftsJSON shift =  doesShiftExists (kassaId, shiftNumber, fnSerial);
 
+
+
+
+                // Если смена есть (пришел ее объект)
+                if(shift!=null){
+                    // До отработки данного запроса смена уже была, значит запрос отработал на ее заакрытие
+                    // значит нужно создать все необходимые документы по эквайрингу:
+                        // -  Корректировка (Создадим задолженность банка по операциям эквайринга, возникшую после закрытия торговой смены)
+                        // -  Входящий платеж (от банка), 100% перекрывающий (равный) корректировке
+                        // -  Исходящий платеж (%% банку за услугу эквайринга), без НДС
+                        // -  Приёмка услуги на сумму, равную %% банку за услугу эквайринга
+
+                    Long shiftId = shift.getId();
+                    String shiftUUID = shift.getUid();
+                    // Получим информацию по эквайрингу на данной ККТ:
+                    AcquiringInfoJSON acquiringInfo = getAcquiringInfo(kassaId);
+                    // На основе данной информации создадим набор документов для эквайринга
+                    createAcquiringDocPack(myId, myMasterId, companyId, kassaId, shiftId, shiftUUID, acquiringInfo);
+
+                }
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
                 closeOtherShifts(zn_kkt, shiftNumber, companyId, timestamp); //закрываем другие смены этой ККТ (подробнее - в методе)
@@ -811,6 +904,256 @@ public class KassaRepository {
                 return null;
             }
         } else return true;
+    }
+
+
+    // Создает документы для эквайринга у закрытой торговой смены
+    // -  Корректировка (Создадим задолженность банка по операциям эквайринга, возникшую после закрытия торговой смены)
+    // -  Входящий платеж (от банка), 100% перекрывающий (равный) корректировке
+    // -  Исходящий платеж (%% банку за услугу эквайринга), без НДС
+    // -  Приёмка услуги на сумму, равную %% банку за услугу эквайринга
+    private Boolean createAcquiringDocPack(Long myId, Long masterId, Long companyId, Long kassaId, Long shiftId, String shiftUUID, AcquiringInfoJSON acquiringInfo) throws Exception {
+
+        try {
+            // Загрузим все платежи за данную смену
+            List<ReceiptsJSON> shiftReceipts = getShiftReceipts(masterId, kassaId, shiftId);
+            // Посчитаем:
+            BigDecimal sum = new BigDecimal(0); // общую сумму по электронным платежам за смену (входящие - положительные, исходящие - отрицательные)
+            BigDecimal sum_proc = new BigDecimal(0); // сумму по процентам за платежи по покупкам (приход)
+            Long acceptanceId = null;
+            Long paymentinId  = null;
+            Long paymentoutId = null;
+            Long correctionId = null;
+            for(ReceiptsJSON shiftReceipt: shiftReceipts){
+                // если есть действия с безналом
+                if(!Objects.isNull(shiftReceipt.getElectronically()))
+                    switch (shiftReceipt.getOperation_id()){
+                        case "sell":
+                            sum_proc=sum_proc.add(shiftReceipt.getElectronically().multiply(acquiringInfo.getAcquiring_precent()).divide(new BigDecimal(100),2,BigDecimal.ROUND_HALF_UP));
+                            sum=sum.add(shiftReceipt.getElectronically());
+                            break;
+                        case "sell_return":
+                            sum=sum.subtract(shiftReceipt.getElectronically());
+                            break;
+                    }
+            }
+
+            // создаем Приёмку на услугу эквайринга от банка
+            if(sum_proc.compareTo(new BigDecimal(0))!=0) {
+                Set<AcceptanceProductForm> acceptanceProductTable = new HashSet<>();
+                AcceptanceForm acceptanceForm = new AcceptanceForm();
+                AcceptanceProductForm apf = new AcceptanceProductForm();
+                String acceptance_UUID = UUID.randomUUID().toString();
+                apf.setAcceptance_id(0L);
+                apf.setNds_id(1);
+                apf.setProduct_count(new BigDecimal(1));
+                apf.setProduct_id(acquiringInfo.getAcquiring_service_id());
+                apf.setProduct_netcost(sum_proc);
+                apf.setProduct_price(sum_proc);
+                apf.setProduct_sumprice(sum_proc);
+                acceptanceProductTable.add(apf);
+                acceptanceForm.setDepartment_id(getMyDepartmentId(myId));
+                acceptanceForm.setAcceptanceProductTable(acceptanceProductTable);
+                acceptanceForm.setCagent_id(acquiringInfo.getAcquiring_bank_id());
+                acceptanceForm.setCompany_id(companyId);
+                acceptanceForm.setDescription("Приёмка услуги эквайринга. Документ создан автоматически");
+                acceptanceForm.setNds(false);
+                acceptanceForm.setNds_included(true);
+                acceptanceForm.setOverhead(new BigDecimal(0));
+                acceptanceForm.setOverhead_netcost_method(0);
+                acceptanceForm.setLinked_doc_id(shiftId);
+                acceptanceForm.setLinked_doc_name("shifts");
+                acceptanceForm.setParent_uid(shiftUUID);
+                acceptanceForm.setChild_uid(acceptance_UUID);
+                acceptanceForm.setUid(acceptance_UUID);
+                acceptanceId = acceptanceRepository.insertAcceptance(acceptanceForm);
+            }
+            // Если образовались проценты по платежам - создаём Исходящий платеж
+            if(sum_proc.compareTo(new BigDecimal(0))>0) {
+                PaymentoutForm paymentout = new PaymentoutForm();
+                String paymentout_UUID = UUID.randomUUID().toString();
+                paymentout.setCompany_id(companyId);
+                paymentout.setPayment_account_id(acquiringInfo.getPayment_account_id());
+                paymentout.setCagent_id(acquiringInfo.getAcquiring_bank_id());
+                paymentout.setExpenditure_id(acquiringInfo.getExpenditure_id());
+                paymentout.setSumm(sum_proc);
+                paymentout.setNds(new BigDecimal(0));
+                paymentout.setDescription("Расходы по уплате комиссионных банку за услуги эквайринга. Документ создан автоматически");
+                paymentout.setLinked_doc_id(shiftId);
+                paymentout.setLinked_doc_name("shifts");
+                paymentout.setParent_uid(shiftUUID);
+                paymentout.setChild_uid(paymentout_UUID);
+                paymentout.setUid(paymentout_UUID);
+                paymentoutId = paymentoutRepository.insertPaymentout(paymentout);
+            }
+            // Если есть чему поступать на счёт - создаем Входящий платёж и, для уравнивания баланса, Корректировку, которая создаст задолженность банка по операциям эквайринга, возникшую после закрытия торговой смены
+            if(sum.compareTo(new BigDecimal(0))>0){
+                String paymentin_UUID = UUID.randomUUID().toString();
+                PaymentinForm paymentin = new PaymentinForm();
+                paymentin.setCompany_id(companyId);
+                paymentin.setPayment_account_id(acquiringInfo.getPayment_account_id());
+                paymentin.setInternal(false);
+                paymentin.setCagent_id(acquiringInfo.getAcquiring_bank_id());
+                paymentin.setSumm(sum);
+                paymentin.setNds(new BigDecimal(0));
+                paymentin.setDescription("Поступление по эквайрингу платежей, принятых в течении торговой смены. Документ создан автоматически");
+                paymentin.setLinked_doc_id(shiftId);
+                paymentin.setLinked_doc_name("shifts");
+                paymentin.setParent_uid(shiftUUID);
+                paymentin.setChild_uid(paymentin_UUID);
+                paymentin.setUid(paymentin_UUID);
+                paymentinId = paymentinRepository.insertPaymentin(paymentin);
+                // Корректировка -  для созданиия задолженности банка по операциям эквайринга
+                CorrectionForm correction = new CorrectionForm();
+                String corretion_UUID = UUID.randomUUID().toString();
+                correction.setCompany_id(companyId);
+                correction.setCagent_id(acquiringInfo.getAcquiring_bank_id());
+                correction.setSumm(sum.negate());// т.к. "Нам должны" - это отрицательная сумма баланса, нужно отправить в Корректировку отрицательную сумму
+                correction.setType("cagent");
+                correction.setDescription("Корректировка для созданиия задолженности банка по операциям эквайринга, проведённым в течении торговой смены. Документ создан автоматически");
+                correction.setLinked_doc_id(shiftId);
+                correction.setLinked_doc_name("shifts");
+                correction.setParent_uid(shiftUUID);
+                correction.setChild_uid(corretion_UUID);
+                correction.setUid(corretion_UUID);
+                correctionId = correctionRepository.insertCorrection(correction);
+            }
+            // запишем в смену информацию об всех созданных документах:
+            afterShiftClose(acceptanceId, paymentinId, paymentoutId, correctionId, shiftId, masterId);
+
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method createAcquiringDocPack.", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    // после закрытия смены сохраняет id-шники документов, созданных для поддержки эквайринговых операций
+    public Boolean afterShiftClose(Long acceptanceId, Long paymentinId, Long paymentoutId, Long correctionId, Long shiftId, Long masterId) throws Exception {
+        String stringQuery;
+        stringQuery =
+                " update shifts set acqu_acceptance_id = "+acceptanceId+", "+
+                " acqu_paymentin_id = "+paymentinId+", "+
+                " acqu_paymentout_id = "+paymentoutId+", "+
+                " acqu_correction_id = "+correctionId+
+                " where id="+shiftId+" and master_id="+masterId;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }catch (Exception e) {
+            logger.error("Exception in method afterShiftClose. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    // отдает чеки за смену
+    private List<ReceiptsJSON> getShiftReceipts(Long masterId, Long kassaId, Long shiftId) throws Exception {
+        String stringQuery;
+        stringQuery =
+                " select operation_id, cash, electronically from receipts where " +
+                        " master_id = " + masterId + " and " +
+                        " kassa_id = " + kassaId + " and " +
+                        " shift_id = " + shiftId;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<ReceiptsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                ReceiptsJSON doc=new ReceiptsJSON();
+                doc.setOperation_id((String)                  obj[0]);
+                doc.setCash((BigDecimal)                      obj[1]);
+                doc.setElectronically((BigDecimal)            obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getShiftReceipts. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+
+
+    }
+
+
+
+    // возвращает информацию по эквайрингу у кассы   ***
+    private AcquiringInfoJSON getAcquiringInfo(Long kassaId){
+
+        String stringQuery;
+        stringQuery = "" +
+                " select acquiring_bank_id, acquiring_precent, acquiring_service_id, expenditure_id, payment_account_id from kassa where " +
+                " id="+kassaId;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            AcquiringInfoJSON doc = new AcquiringInfoJSON();
+            for(Object[] obj:queryList) {
+                doc.setAcquiring_bank_id(obj[0]!=null?Long.parseLong(obj[0].toString()):null);
+                doc.setAcquiring_precent(obj[1]!=null?((BigDecimal) obj[1]):new BigDecimal(0));
+                doc.setAcquiring_service_id(obj[2]!=null?Long.parseLong(obj[2].toString()):null);
+                doc.setExpenditure_id(obj[3]!=null?Long.parseLong(obj[3].toString()):null);
+                doc.setPayment_account_id(obj[4]!=null?Long.parseLong(obj[4].toString()):null);
+            }
+            return doc;
+        }catch (Exception e) {
+            logger.error("Exception in method getAcquiringInfo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // возвращает один id отделения сотрудника. Нужен для создания Приёмки
+    public Long getMyDepartmentId(Long myId) {
+        String stringQuery="" +
+                "select p.department_id as did" +
+                " from " +
+                " user_department p," +
+                " departments dpts" +
+                " where " +
+                " p.user_id= "+myId+
+                " and p.department_id=dpts.id " +
+                " and coalesce(dpts.is_deleted,false)!=true limit 1";
+        Query query = entityManager.createNativeQuery(stringQuery);
+        try
+        {
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (Exception e) {
+            logger.error("Exception in method getMyDepartmentId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    //возвращает id смены, если такая смена с данными параметрами есть в БД
+    private ShiftsJSON doesShiftExists (Long kassaId, Long shift_number, String fnSerial) throws Exception {
+        String stringQuery;
+        stringQuery =
+                " select id, uid from shifts where " +
+                " kassa_id="+kassaId+
+                " and shift_number="+shift_number +
+                " and fn_serial ='"+fnSerial + "'";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            ShiftsJSON doc = new ShiftsJSON();
+            for(Object[] obj:queryList) {
+                doc.setId(Long.parseLong(obj[0].toString()));
+                doc.setUid((String) obj[1]);
+            }
+            return doc;
+        } catch (NoResultException nre) {
+            return null;
+        }catch (Exception e) {
+            logger.error("Exception in method doesShiftExists. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
     }
 
     @SuppressWarnings("Duplicates")

@@ -2671,17 +2671,29 @@ alter table kassa add column acquiring_bank_id bigint; -- банк-эквайе�
 alter table kassa add column acquiring_precent numeric(4,2); -- процент банку за услугу эквайринга
 alter table kassa add constraint acquiring_bank_id_fkey foreign key (acquiring_bank_id) references cagents (id);
 
+alter table kassa add column acquiring_service_id bigint; --  id услуги банка-эквайера
+alter table kassa add constraint acquiring_service_id_fkey foreign key (acquiring_service_id) references products (id);
 
+alter table acceptance alter column department_id drop not null;
 
+alter table kassa add column payment_account_id bigint; --  id расчетного счета
+alter table kassa add constraint payment_account_id_fkey foreign key (payment_account_id) references companies_payment_accounts (id);
+alter table kassa add column expenditure_id bigint; --  id статьи расходов
+alter table kassa add constraint expenditure_id_fkey foreign key (expenditure_id) references sprav_expenditure_items (id);
 
+alter table shifts add column acqu_acceptance_id bigint;
+alter table shifts add constraint acqu_acceptance_id_fkey foreign key (acqu_acceptance_id) references acceptance (id);
+alter table shifts add column acqu_paymentin_id bigint;
+alter table shifts add constraint acqu_paymentin_id_fkey foreign key (acqu_paymentin_id) references paymentin (id);
+alter table shifts add column acqu_paymentout_id bigint;
+alter table shifts add constraint acqu_paymentout_id_fkey foreign key (acqu_paymentout_id) references paymentout (id);
+alter table shifts add column acqu_correction_id bigint;
+alter table shifts add constraint acqu_correction_id_fkey foreign key (acqu_correction_id) references correction (id);
 
-
-
-
-
-
-
-
+alter table linked_docs add column shifts_id bigint;
+alter table linked_docs add constraint shifts_id_fkey foreign key (shifts_id) references shifts (id);
+alter table linked_docs add column correction_id bigint;
+alter table linked_docs add constraint correction_id_fkey foreign key (correction_id) references correction (id);
 
 
 

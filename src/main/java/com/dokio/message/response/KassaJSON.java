@@ -52,6 +52,60 @@ public class KassaJSON {
     private Long acquiring_bank_id; // id банк-эквайер
     private BigDecimal acquiring_precent; // процент банку за услугу эквайринга
     private String acquiring_bank; // банк-эквайер
+    private Long acquiring_service_id; // id услуги банка-эквайера
+    private String acquiring_service; // услуга банка-эквайера
+    private Long payment_account_id; // id расчетного счета
+    private String payment_account; // расчетный счет
+    private Long expenditure_id; // id статьи расходов
+    private String expenditure; // статья расходов
+
+    public Long getPayment_account_id() {
+        return payment_account_id;
+    }
+
+    public void setPayment_account_id(Long payment_account_id) {
+        this.payment_account_id = payment_account_id;
+    }
+
+    public String getPayment_account() {
+        return payment_account;
+    }
+
+    public void setPayment_account(String payment_account) {
+        this.payment_account = payment_account;
+    }
+
+    public Long getExpenditure_id() {
+        return expenditure_id;
+    }
+
+    public void setExpenditure_id(Long expenditure_id) {
+        this.expenditure_id = expenditure_id;
+    }
+
+    public String getExpenditure() {
+        return expenditure;
+    }
+
+    public void setExpenditure(String expenditure) {
+        this.expenditure = expenditure;
+    }
+
+    public Long getAcquiring_service_id() {
+        return acquiring_service_id;
+    }
+
+    public void setAcquiring_service_id(Long acquiring_service_id) {
+        this.acquiring_service_id = acquiring_service_id;
+    }
+
+    public String getAcquiring_service() {
+        return acquiring_service;
+    }
+
+    public void setAcquiring_service(String acquiring_service) {
+        this.acquiring_service = acquiring_service;
+    }
 
     public String getAcquiring_bank() {
         return acquiring_bank;
