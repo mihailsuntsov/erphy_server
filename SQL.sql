@@ -2695,9 +2695,12 @@ alter table linked_docs add constraint shifts_id_fkey foreign key (shifts_id) re
 alter table linked_docs add column correction_id bigint;
 alter table linked_docs add constraint correction_id_fkey foreign key (correction_id) references correction (id);
 
-
-
-
+alter table history_payment_account_summ drop constraint history_payment_account_summ_object_id_fkey;
+alter table history_kassa_summ drop constraint history_kassa_summ_object_id_fkey;
+alter table history_boxoffice_summ drop constraint history_boxoffice_summ_object_id_fkey;
+alter table history_payment_account_summ add constraint history_payment_account_summ_object_id_fkey foreign key (object_id) references companies_payment_accounts (id);
+alter table history_kassa_summ add constraint history_kassa_summ_object_id_fkey foreign key (object_id) references kassa (id);
+alter table history_boxoffice_summ add constraint history_boxoffice_summ_object_id_fkey foreign key (object_id) references sprav_boxoffice (id);
 
 
 
