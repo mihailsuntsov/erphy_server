@@ -1113,7 +1113,7 @@ public class CompanyRepositoryJPA {
     public Long getBoxofficeIdByDepartment(Long depId){
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery  =  " select boxoffice_id from departments where master_id = " + myMasterId + "and id = " + depId+
+        stringQuery  =  " select boxoffice_id from departments where master_id = " + myMasterId + " and id = " + depId+
                         " and coalesce(is_deleted,false) != true";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1135,7 +1135,7 @@ public class CompanyRepositoryJPA {
                         " master_id="+myMasterId+
                         " and company_id="+companyId+
                         " and coalesce(is_deleted,false) != true" +
-                        " order by id asc";
+                        " order by id asc limit 1";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
@@ -1152,7 +1152,7 @@ public class CompanyRepositoryJPA {
     public Long getPaymentAccountIdByDepartment(Long depId){
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery  =  " select payment_account_id from departments where master_id = " + myMasterId + "and id = " + depId;
+        stringQuery  =  " select payment_account_id from departments where master_id = " + myMasterId + " and id = " + depId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
@@ -1169,7 +1169,7 @@ public class CompanyRepositoryJPA {
     public Long getMainPaymentAccountIdOfCompany(Long companyId){
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
-        stringQuery=" select id from companies_payment_accounts where master_id ="+myMasterId+" and company_id="+companyId+" order by output_order asc";
+        stringQuery=" select id from companies_payment_accounts where master_id ="+myMasterId+" and company_id="+companyId+" order by output_order asc limit 1";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());

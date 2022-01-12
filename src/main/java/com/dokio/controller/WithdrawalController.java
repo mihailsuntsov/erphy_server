@@ -155,7 +155,9 @@ public class WithdrawalController {
     public ResponseEntity<?> insertWithdrawal(@RequestBody WithdrawalForm request){
         logger.info("Processing post request for path /api/auth/insertWithdrawal: " + request.toString());
         try {return new ResponseEntity<>(withdrawalRepository.insertWithdrawal(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Exception in method insertWithdrawal. " + request.toString(), e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(

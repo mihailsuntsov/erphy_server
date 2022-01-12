@@ -462,7 +462,7 @@ public class OrderinRepositoryJPA {
                     if(Objects.isNull(request.getBoxoffice_id())) {
                         // но известно отделение -
                         if (!Objects.isNull(request.getDepartment_id())) {
-                            //пытаемся получть расч. счёт из привязки к отделению
+                            //пытаемся получть кассу из привязки к отделению
                             request.setBoxoffice_id(companyRepositoryJPA.getBoxofficeIdByDepartment(request.getDepartment_id()));
                         }
                     }

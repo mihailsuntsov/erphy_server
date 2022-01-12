@@ -718,11 +718,11 @@ ALTER TABLE writeoff_product ADD CONSTRAINT writeoff_product_uq UNIQUE (product_
 ***********************************************************************************************************************************************
 ***********************************************************************************************************************************************
 create table inventory_files (
- inventory_id bigint not null,
- file_id bigint not null,
- foreign key (file_id) references files (id) ON DELETE CASCADE,
- foreign key (inventory_id ) references inventory (id) ON DELETE CASCADE
-);
+                                 inventory_id bigint not null,
+                                 file_id bigint not null,
+                                 foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                 foreign key (inventory_id ) references inventory (id) ON DELETE CASCADE
+  );
 
 CREATE INDEX CONCURRENTLY sales_quantity_index ON sales_table (quantity);
 CREATE INDEX retail_sales_id_index ON public.retail_sales_product USING btree (retail_sales_id);
@@ -2701,6 +2701,69 @@ alter table history_boxoffice_summ drop constraint history_boxoffice_summ_object
 alter table history_payment_account_summ add constraint history_payment_account_summ_object_id_fkey foreign key (object_id) references companies_payment_accounts (id);
 alter table history_kassa_summ add constraint history_kassa_summ_object_id_fkey foreign key (object_id) references kassa (id);
 alter table history_boxoffice_summ add constraint history_boxoffice_summ_object_id_fkey foreign key (object_id) references sprav_boxoffice (id);
+
+alter table shifts add column status_id bigint;
+alter table shifts add constraint shift_status_id_fkey foreign key (status_id) references sprav_status_dock (id);
+alter table shifts add column doc_number bigint;
+alter table shifts add column is_completed boolean;
+
+--********************************************************************************************************************************************
+--********************************************************************************************************************************************
+--********************************************************************************************************************************************
+create table kassa_files (
+                               kassa_id bigint not null,
+                               file_id bigint not null,
+                               foreign key (file_id) references files (id) ON DELETE CASCADE,
+                               foreign key (kassa_id ) references kassa (id) ON DELETE CASCADE
+);
+ update shifts set doc_number=shift_number;
+ update shifts set is_completed=true where closer_id is not null;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

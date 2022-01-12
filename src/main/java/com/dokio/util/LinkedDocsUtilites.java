@@ -490,7 +490,7 @@ public class LinkedDocsUtilites {
                                         ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tableWithSumm + "_product where " + tableWithSumm + "_id=" + idInTableWithSumm + "),0)") :
                                         (DOCS_WITH_PAY_SUMM.contains(tableWithSumm) ?
                                                 ("  coalesce((select sum(coalesce(summ,0)) from " + tableWithSumm + " where id=" + idInTableWithSumm + "),0)") :
-                                                0
+                                                0.00
                                         )
                                 )
                         )
@@ -508,7 +508,8 @@ public class LinkedDocsUtilites {
             LinkedDocsJSON returnObj = new LinkedDocsJSON();
 
             for (Object[] obj : queryList) {
-                returnObj.setDoc_number(Long.parseLong(obj[0].toString()));
+//                returnObj.setDoc_number(Long.parseLong(obj[0].toString()));
+                returnObj.setDoc_number(obj[0]!=null?Long.parseLong(obj[0].toString()):null);
                 returnObj.setDate_time_created((String) obj[1]);
                 returnObj.setName((String) obj[2]);
                 returnObj.setStatus((String) obj[3]);

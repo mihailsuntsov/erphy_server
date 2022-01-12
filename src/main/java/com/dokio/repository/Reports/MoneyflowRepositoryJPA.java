@@ -85,7 +85,8 @@ public class MoneyflowRepositoryJPA {
             " ABS(summ_before_pa+summ_before_bx) as summ_before_all, " +
             " summ_in_pa+summ_in_bx as summ_in_all, " +
             " ABS(summ_out_pa+summ_out_bx) as summ_out_all, " +
-            " ABS(summ_result_pa+summ_result_bx) as summ_result_all " +
+            " ABS(summ_result_pa+summ_result_bx) as summ_result_all, " +
+            " dc at time zone '"+myTimeZone+"' as date_created_sort " +
             " from " +
             " generate_series(timestamp with time zone '"+dateFrom+"', " +
             " timestamp with time zone '"+dateTo+"' " +
@@ -100,8 +101,8 @@ public class MoneyflowRepositoryJPA {
             " coalesce((select SUM(    bx4.summ_change)  from history_boxoffice_summ bx4 where bx4.master_id="+myMasterId+" and bx4.company_id="+companyId+" and bx4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_result_bx " +
             " where (summ_in_pa>0 or summ_out_pa>0 or summ_in_bx>0 or summ_out_bx>0) ";
             stringQuery = stringQuery + " group by  date_created, summ_before_pa, summ_before_bx, " +
-            " summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_result_pa " +
-            " order by date_created asc";
+            " summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_result_pa, date_created_sort " +
+            " order by date_created_sort asc";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setFirstResult(offsetreal).setMaxResults(result);

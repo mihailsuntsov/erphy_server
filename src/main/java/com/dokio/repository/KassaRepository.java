@@ -837,6 +837,8 @@ public class KassaRepository {
                             " department_id, " + // id  отделения кассы на момент изменения статуса смены
                             " kassa_id, " + //id кассы в БД
                             " shift_number, " + // номер смены (по фискальному накопителю)
+                            " doc_number, " + // номер документа - нужен для схемы связанности, равен номеру смены
+                            " is_completed, " + //
                             " zn_kkt, " + //заводской номер кассы
                             " uid, " + //UUID
                             " shift_status_id, " + // статус смены: opened closed expired
@@ -855,7 +857,9 @@ public class KassaRepository {
                             companyId + ", " +
                             kassaDeptId + ", " +
                             kassaId + ", " +
-                            shiftNumber + ", '" +
+                            shiftNumber + ", " +
+                            shiftNumber + ", " +
+                            false + ", '" +
                             zn_kkt + "', '" +
                             UUID.randomUUID().toString() + "', '" +
                             shiftStatusId + "', '" +
@@ -867,6 +871,7 @@ public class KassaRepository {
                             " closer_id = " + ((shiftStatusId.equals("closed")) ? myId : null) + ", " +
                             " date_time_closed = " + (!shiftStatusId.equals("closed") ? null : ("to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')")) + ", " + // время закрытия вставляем только если статус смены меняется на closed (может меняться с opened ещё и на expired, а это не зактыта)
                             " department_id = " + kassaDeptId + ", " +//потому что отделение за время сессии может измениться (маловероятно, но всё же)
+                            " is_completed = true " + ", " +
                             " shift_status_id = '" + shiftStatusId + "'";
             try {
                 // нам нужно отловить закрытие смены (т.е. что смена закроется в результате запроса в этом методе

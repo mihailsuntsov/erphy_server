@@ -236,15 +236,14 @@ public class InventoryController {
 //            return new ResponseEntity<>("Ошибка при загрузке списка связанных Оприходований", HttpStatus.INTERNAL_SERVER_ERROR);
 //        }
 //    }
+
     @PostMapping("/api/auth/updateInventory")
     public ResponseEntity<?> updateInventory(@RequestBody InventoryForm request){
         logger.info("Processing post request for path /api/auth/updateInventory: " + request.toString());
-        Boolean updateResults = inventoryRepository.updateInventory(request);
-        if(updateResults){
-            return new ResponseEntity<>(updateResults, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Инвентаризация", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        try {return new ResponseEntity<>(inventoryRepository.updateInventory(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Exception in method updateInventory. " + request.toString(), e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsInventory")
