@@ -263,7 +263,7 @@ alter table settings_customers_orders add column autocreate_on_cheque boolean;
 alter table settings_customers_orders add column status_id_on_autocreate_on_cheque bigint;
 alter table settings_customers_orders add constraint status_id_on_autocreate_on_cheque_fkey foreign key (status_id_on_autocreate_on_cheque) references sprav_status_dock (id);
 
-удалить вручную "product_prices_uq" в product_prices
+-- удалить вручную "product_prices_uq" в product_prices
 
 ALTER TABLE product_prices ADD CONSTRAINT product_prices_uq UNIQUE (product_id, price_type_id) ;
 
@@ -2707,9 +2707,6 @@ alter table shifts add constraint shift_status_id_fkey foreign key (status_id) r
 alter table shifts add column doc_number bigint;
 alter table shifts add column is_completed boolean;
 
---********************************************************************************************************************************************
---********************************************************************************************************************************************
---********************************************************************************************************************************************
 create table kassa_files (
                                kassa_id bigint not null,
                                file_id bigint not null,
@@ -2721,15 +2718,49 @@ create table kassa_files (
 
 
 
+--********************************************************************************************************************************************
+--********************************************************************************************************************************************
+--********************************************************************************************************************************************
+
+CREATE INDEX files_name ON files USING btree (name);
+CREATE INDEX files_master_id ON files USING btree (master_id);
+CREATE INDEX files_company_id ON files USING btree (company_id);
+
+create table template_types (
+                           id int primary key not null,
+                           template_type varchar(64) not null,
+                           name_ru varchar(64) not null
+);
+
+insert into template_types (id,name_ru,template_type) values
+(1,'Товарный чек','product_receipt'),
+(2,'Акт','act'),
+(3,'Счёт покупателю','invoiceout'),
+(4,'Счёт покупателю с печатью и подписью','invoiceout_stamp_sign'),
+(5,'Транспортная накладная','transport_invoice'),
+(6,'Расходная накладная','expenditure_invoice'),
+(7,'ТОРГ-12','torg12'),
+(8,'УПД (с прослеживаемостью)','upd_with'),
+(9,'УПД (без прослеживаемости)','upd_without');
+
+create table template_docs (
+                             id               bigserial primary key not null,
+                             master_id        bigint not null,
+                             company_id       bigint not null,
+                             template_type_id int not null,                  -- id типа шаблона из таблицы template_types
+                             file_id          bigint not null,                  -- id файла, содержащего шаблон
+                             document_id      int not null,                     -- документ, в котором будет находиться шаблон
+                             is_show          boolean not null,                 -- отображать шаблон в списке шаблонов
+                             output_order     int not null,                     -- порядок вывода шаблона в списке шаблонов
+                             foreign key (master_id)        references users(id),
+                             foreign key (company_id)       references companies(id),
+                             foreign key (document_id)      references documents(id),
+                             foreign key (file_id)          references files(id),
+                             foreign key (template_type_id) references template_types(id)
+);
 
 
-
-
-
-
-
-
-
+ALTER TABLE template_docs ADD CONSTRAINT company_document_template_uq UNIQUE (company_id, template_type_id, document_id) ;
 
 
 

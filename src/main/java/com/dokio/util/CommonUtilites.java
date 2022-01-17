@@ -130,7 +130,13 @@ public class CommonUtilites {
                 .collect(Collectors.joining(delimitter, prefix, suffix));
         return result;
     }
-
+    //превращает список Integer в строку с заданным делимитером, началом и концом. Например (1,2,3,4,5)
+    public String SetOfIntToString(Set<Integer> intSet, String delimitter, String prefix, String suffix) {
+        String result = intSet.stream()
+                .map(n -> String.valueOf(n))
+                .collect(Collectors.joining(delimitter, prefix, suffix));
+        return result;
+    }
     //есть ли запись с идентичной UID в таблице? UID используется, чтобы исключить дубли при создании документов с использованием медленного интернета, когда браузер может дублировать POST-запросы
     public Boolean isDocumentUidUnical(String uid, String docTableName){
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());

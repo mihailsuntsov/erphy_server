@@ -12,42 +12,33 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.message.response.Sprav;
 
-public class SpravSysWriteoffJSON {
+public class TemplateTypesJSON {
 
-        private Long id;
-        private String name;
-        private String debet;
-        private String description;
+    private int id;
+    private String template_type_name;
+    private String template_type;
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getTemplate_type_name() {
+        return template_type_name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTemplate_type_name(String template_type_name) {
+        this.template_type_name = template_type_name;
     }
 
-    public String getDebet() {
-        return debet;
+    public String getTemplate_type() {
+        return template_type;
     }
 
-    public void setDebet(String debet) {
-        this.debet = debet;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
+    public void setTemplate_type(String template_type) {
+        this.template_type = template_type;
     }
 }

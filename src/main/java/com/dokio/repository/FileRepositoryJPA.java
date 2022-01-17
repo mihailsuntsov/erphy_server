@@ -1,17 +1,15 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.FileCategoriesForm;
@@ -450,22 +448,27 @@ public class FileRepositoryJPA {
 
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права или если он открыт на общий доступ
     public FileInfoJSON getFileAuth(String filename) {
-        //сначала проверим, не открыт ли он для общего доступа:
-        if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
+
+        List<Integer> myPermissions = securityRepositoryJPA.giveMeMyPermissions(13L);
+        if(myPermissions.contains(150) || (myPermissions.contains(151)))
+//        if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
         {
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
+//            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery = "select " +
                     "           p.original_name as original_name, " +
                     "           p.path as path " +
                     "           from files p " +
-                    "           where p.name= '" + filename + "' and  p.master_id=" + myMasterId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(13L, "150")) //Если нет прав на "Просмотр документов по всем предприятиям"
+//                    "           where  p.master_id = :myMasterId and p.name = :filename";
+            "           where p.name = :filename";
+            if (!myPermissions.contains(150)) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
                 //остается только на своё предприятие (151)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("filename",filename);
+//            query.setParameter("myMasterId",myMasterId);
             List<Object[]> queryList = query.getResultList();
             if(queryList.size()>0) {//есть права на просмотр и скачивание файла
                 FileInfoJSON doc = new FileInfoJSON();
@@ -487,9 +490,10 @@ public class FileRepositoryJPA {
                 "           p.original_name as original_name, " +
                 "           p.path as path " +
                 "           from files p " +
-                "           where p.name= '" + filename + "' and p.anonyme_access = true ";
+                "           where p.name= :filename and p.anonyme_access = true ";
 
         Query query = entityManager.createNativeQuery(stringQuery );
+        query.setParameter("filename",filename);
         List<Object[]> queryList = query.getResultList();
         if(queryList.size()>0) {//файл открыт для общего доступа
             FileInfoJSON doc = new FileInfoJSON();
