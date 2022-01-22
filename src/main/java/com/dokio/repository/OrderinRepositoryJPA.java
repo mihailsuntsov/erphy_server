@@ -598,6 +598,7 @@ public class OrderinRepositoryJPA {
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
+                    " cagent_id = " +request.getCagent_id() +"," +
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
                     " is_completed = " + request.getIs_completed() + "," +

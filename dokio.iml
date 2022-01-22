@@ -108,5 +108,6 @@
     <orderEntry type="library" name="Maven: com.google.guava:guava:20.0" level="project" />
     <orderEntry type="library" name="Maven: com.thedeanda:lorem:2.1" level="project" />
     <orderEntry type="library" name="Maven: com.j256.simplemagic:simplemagic:1.6" level="project" />
+    <orderEntry type="library" name="Maven: com.github.javadev:moneytostr:1.19" level="project" />
   </component>
 </module>

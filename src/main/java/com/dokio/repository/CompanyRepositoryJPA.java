@@ -1182,6 +1182,21 @@ public class CompanyRepositoryJPA {
             return null;
         }
     }
+
+    //Банковские реквизиты (если они есть). Берётся самый верхний банк из списка карточек банковских реквизитов
+    public CompaniesPaymentAccountsForm getMainPaymentAccountOfCompany(Long companyId){
+        List<CompaniesPaymentAccountsForm> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
+        CompaniesPaymentAccountsForm account = new CompaniesPaymentAccountsForm();
+        if(companyPaymentAccounts.size()>0){
+            account.setName(companyPaymentAccounts.get(0).getName());
+            account.setBik(companyPaymentAccounts.get(0).getBik());
+            account.setAddress(companyPaymentAccounts.get(0).getAddress());
+            account.setCorr_account(companyPaymentAccounts.get(0).getCorr_account());
+            account.setPayment_account(companyPaymentAccounts.get(0).getPayment_account());
+        }
+        return account;
+    }
+
     @SuppressWarnings("Duplicates")
     public Resource getCompanyCard(FileInfoJSON fileInfo) {
 
@@ -1258,5 +1273,41 @@ public class CompanyRepositoryJPA {
         } catch (MalformedURLException e) {
             throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+outputDocument+"'");
         }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public String getMyCompanyFullName(CompaniesJSON company){
+        String result = "";
+        // получим наименование организационно-правовой формы
+        switch (company.getOpf_id()) {
+            case (1):// Индивидуальный предприниматель
+                result = company.getOpf() +" "+ company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                break;
+            case (2): // Самозанятый
+                result = company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = company.getJr_jur_full_name();
+                break;
+        }
+        return result;
+    }
+
+    @SuppressWarnings("Duplicates")
+    public String getMyCompanyAddress(CompaniesJSON company){
+        String result;
+        // получим адрес предприятия
+        switch (company.getOpf_id()) {
+            case (1):// Индивидуальный предприниматель
+                result = company.getZip_code()+" "+company.getRegion()+", "+company.getArea()+", "+company.getCity()+" "+company.getStreet()+" д."+company.getHome()+(!Objects.isNull(company.getFlat())?(" кв."+company.getFlat()):"");
+                break;
+            case (2): // Самозанятый
+                result = company.getZip_code()+" "+company.getRegion()+", "+company.getArea()+", "+company.getCity()+" "+company.getStreet()+" д."+company.getHome()+(!Objects.isNull(company.getFlat())?(" кв."+company.getFlat()):"");
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = company.getZip_code()+" "+company.getJr_region()+", "+company.getJr_area()+", "+company.getJr_city()+" "+company.getJr_street()+" "+company.getJr_home()+(!Objects.isNull(company.getJr_flat())?(" "+company.getJr_flat()):"");
+                break;
+        }
+        return result;
     }
 }

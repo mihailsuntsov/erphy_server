@@ -2763,6 +2763,12 @@ create table template_docs (
 ALTER TABLE template_docs ADD CONSTRAINT company_document_template_uq UNIQUE (company_id, template_type_id, document_id) ;
 
 
+ALTER TABLE sprav_sys_nds ADD COLUMN value int;
+ALTER TABLE sprav_sys_nds ADD COLUMN multiplier numeric(6,4);
+update sprav_sys_nds set value=20, multiplier=1.2 where name='20%';
+update sprav_sys_nds set value=10, multiplier=1.1 where name='10%';
+update sprav_sys_nds set value=0, multiplier=1 where name='0%';
+update sprav_sys_nds set value=0, multiplier=1 where name='Без НДС';
 
 
 
@@ -2801,10 +2807,7 @@ ALTER TABLE template_docs ADD CONSTRAINT company_document_template_uq UNIQUE (co
 
 
 
-
-
-
-WITH
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

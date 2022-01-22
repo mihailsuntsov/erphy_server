@@ -360,7 +360,7 @@ public class CagentRepositoryJPA {
 //*****************************************************************************************************************************************************
 
     @SuppressWarnings("Duplicates")
-    public CagentsJSON getCagentValues(int id) {
+    public CagentsJSON getCagentValues(Long id) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
         {
             String stringQuery;
@@ -1420,6 +1420,42 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             logger.error("Exception in method getMutualpaymentDetailedSize. SQL query:" + stringQuery, e);
             return null;
         }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public String getCagentFullName(CagentsJSON cagent){
+        String result;
+        // получим наименование организационно-правовой формы
+        switch (cagent.getOpf_id()) {
+            case  (1):// Индивидуальный предприниматель
+                result = cagent.getOpf() + cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
+                break;
+            case (2): // Самозанятый
+                result = cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = cagent.getJr_jur_full_name();
+                break;
+        }
+        return result;
+    }
+
+    @SuppressWarnings("Duplicates")
+    public String getCagentAddress(CagentsJSON cagent){
+        String result;
+        // получим адрес контрагента
+        switch (cagent.getOpf_id()) {
+            case (1):// Индивидуальный предприниматель
+                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
+                break;
+            case (2): // Самозанятый
+                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = cagent.getZip_code()+" "+cagent.getJr_region()+", "+cagent.getJr_area()+", "+cagent.getJr_city()+" "+cagent.getJr_street()+" "+cagent.getJr_home()+(!Objects.isNull(cagent.getJr_flat())?(" "+cagent.getJr_flat()):"");
+                break;
+        }
+        return result;
     }
 
 //*****************************************************************************************************************************************************

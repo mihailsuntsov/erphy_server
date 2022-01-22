@@ -21,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+
 @Controller
 public class TemplatesController {
 
@@ -61,4 +63,10 @@ public class TemplatesController {
         catch (Exception e){return new ResponseEntity<>("Ошибка сохранения шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @RequestMapping("/api/auth/getPrintVersion")
+    public void getPrintVersion (HttpServletResponse response) throws Exception {
+
+
+
+    }
 }

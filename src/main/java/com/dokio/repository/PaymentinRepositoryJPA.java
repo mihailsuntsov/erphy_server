@@ -576,6 +576,7 @@ public class PaymentinRepositoryJPA {
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
+                    " cagent_id = " +request.getCagent_id() +"," +
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа
                     " income_number = :income_number," +// входящий номер

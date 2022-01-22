@@ -16,8 +16,17 @@ package com.dokio.message.response;
 
 public class FileInfoJSON {
 
+    private String name;
     private String original_name;
     private String path;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getPath() {
         return path;

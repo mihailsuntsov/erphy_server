@@ -533,6 +533,7 @@ public class OrderoutRepositoryJPA {
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
+                    " cagent_id = " +request.getCagent_id() +"," +
                     " expenditure_id = " + request.getExpenditure_id()+"," + // вид расхода
                     " nds = "+request.getNds()+"," +// НДС
                     " summ=" + request.getSumm()+"," + // сумма платежа

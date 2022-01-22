@@ -297,7 +297,7 @@ public class InvoiceoutRepositoryJPA {
                     " p.name as name," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " ap.nds_id," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
+                    " nds.name as nds," +
                     " ap.price_type_id," +
                     " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
@@ -316,12 +316,16 @@ public class InvoiceoutRepositoryJPA {
                     " ap.id  as row_id, " +
                     " ppr.is_material as is_material, " +
 //                    " ap.product_count as reserved_current " +//в розничных продажах нет резервов, так что приравниваем резерв к количеству товара в продаже (т.е. весь товар априори зарезервирован)
-                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " p.indivisible as indivisible,"+// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " nds.value  as nds_value" +
+//                    " ROUND(((cast(nds.value AS numeric)/100)*ap.product_count*ap.product_price),2) as nds_value" +
+//                    " (cast(nds.value AS numeric)/100) as nds_value" +
                     " from " +
                     " invoiceout_product ap " +
                     " INNER JOIN invoiceout a ON ap.invoiceout_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.invoiceout_id = " + docId;
 
@@ -345,8 +349,10 @@ public class InvoiceoutRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
                 List<InvoiceoutProductTableJSON> returnList = new ArrayList<>();
+                int row_num = 1; // номер строки при выводе печатной версии
                 for(Object[] obj:queryList){
                     InvoiceoutProductTableJSON doc=new InvoiceoutProductTableJSON();
+                    doc.setRow_num(row_num);
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                     doc.setInvoiceout_id(Long.parseLong(                    obj[1].toString()));
                     doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
@@ -365,7 +371,11 @@ public class InvoiceoutRepositoryJPA {
                     doc.setId(Long.parseLong(                               obj[15].toString()));
                     doc.setIs_material((Boolean)                            obj[16]);
                     doc.setIndivisible((Boolean)                            obj[17]);
+                    doc.setNds_value((Integer)                              obj[18]);
+//                    doc.setNds_value(                                       obj[18]==null?BigDecimal.ZERO:(BigDecimal)obj[18]);
+
                     returnList.add(doc);
+                    row_num++;
                 }
                 return returnList;
             } catch (Exception e) {
@@ -696,6 +706,8 @@ public class InvoiceoutRepositoryJPA {
             String stringQuery;
             stringQuery =   " update invoiceout set " +
                     " changer_id = " + myId + ", "+
+                    " nds  = " + request.isNds() + ", " +
+                    " nds_included  = " + request.isNds_included() + ", " +
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " invoiceout_date = to_date(:invoiceout_date,'DD.MM.YYYY'), " +

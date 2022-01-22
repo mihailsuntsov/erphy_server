@@ -162,11 +162,11 @@ public class CagentsController {
 
     @PostMapping("/api/auth/getCagentValues")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCagentValuesById(@RequestBody SearchForm request) {
+    public ResponseEntity<?> getCagentValuesById(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path /api/auth/getCagentValues: " + request.toString());
 
         CagentsJSON response;
-        int id = request.getId();
+        Long id = request.getId();
         response=cagentsRepositoryJPA.getCagentValues(id);
         try
         {
