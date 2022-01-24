@@ -311,12 +311,15 @@ public class InvoiceinRepositoryJPA {
                     "   and department_id = a.department_id) as reserved, "+//зарезервировано в выбранном отделении
                     " ap.id  as id, " +
                     " ppr.is_material as is_material, " +
-                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce(nds.value,0) as nds_value," +
+                    " ap.product_sumprice" +
                     " from " +
                     " invoicein_product ap " +
                     " INNER JOIN invoicein a ON ap.invoicein_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.invoicein_id = " + docId;
 
@@ -340,8 +343,10 @@ public class InvoiceinRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
                 List<InvoiceinProductTableJSON> returnList = new ArrayList<>();
+                int row_num = 1; // номер строки при выводе печатной версии
                 for(Object[] obj:queryList){
                     InvoiceinProductTableJSON doc=new InvoiceinProductTableJSON();
+                    doc.setRow_num(row_num);
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                     doc.setProduct_count(                                   obj[1]==null?BigDecimal.ZERO:(BigDecimal)obj[1]);
                     doc.setProduct_price(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
@@ -353,7 +358,10 @@ public class InvoiceinRepositoryJPA {
                     doc.setId(Long.parseLong(                               obj[8].toString()));
                     doc.setIs_material((Boolean)                            obj[9]);
                     doc.setIndivisible((Boolean)                            obj[10]);
+                    doc.setNds_value((Integer)                              obj[11]);
+                    doc.setProduct_sumprice(                                obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
                     returnList.add(doc);
+                    row_num++;
                 }
                 return returnList;
             } catch (Exception e) {

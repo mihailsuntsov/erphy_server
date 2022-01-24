@@ -16,20 +16,33 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsAcceptanceForm;
-import com.dokio.message.response.AcceptanceJSON;
+import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
 import com.dokio.message.response.additional.FilesAcceptanceJSON;
+import com.dokio.message.response.additional.InvoiceoutProductTableJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import com.dokio.service.TemplatesService;
 import org.apache.log4j.Logger;
+import org.jxls.common.Context;
+import org.jxls.util.JxlsHelper;
+import org.jxls.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -52,6 +65,15 @@ public class AcceptanceController {
     AcceptanceRepository acceptanceRepositoryJPA;
     @Autowired
     StorageService storageService;
+    // связи для печатных форм
+    @Autowired
+    private TemplatesService tservice;
+    @Autowired
+    FileRepositoryJPA fileRepository;
+    @Autowired
+    CagentRepositoryJPA cagentRepository;
+    @Autowired
+    CompanyRepositoryJPA company;
 
     @PostMapping("/api/auth/getAcceptanceTable")
     @SuppressWarnings("Duplicates")
@@ -337,6 +359,79 @@ public class AcceptanceController {
             return new ResponseEntity<>(returnList, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // печать документов
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/acceptancePrint",
+            params = {"file_name", "tt_id", "doc_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public void acceptancePrint (HttpServletResponse response,
+                                 @RequestParam("file_name") String filename,
+                                 @RequestParam("doc_id") Long doc_id,
+                                 @RequestParam("tt_id")int templateTypeId) throws Exception {
+        FileInfoJSON fileInfo = tservice.getFileInfo(filename);
+        InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        OutputStream os = response.getOutputStream();
+        try {
+            AcceptanceJSON doc = acceptanceRepositoryJPA.getAcceptanceValuesById(doc_id);
+            List<AcceptanceProductForm> product_table=acceptanceRepositoryJPA.getAcceptanceProductTable(doc_id);
+            CagentsJSON cg = cagentRepository.getCagentValues(doc.getCagent_id());
+            CompaniesJSON mc = company.getCompanyValues(doc.getCompany_id());
+            CompaniesPaymentAccountsForm mainPaymentAccount = company.getMainPaymentAccountOfCompany(doc.getCompany_id());
+
+            BigDecimal sumNds = new BigDecimal(0);
+            BigDecimal totalSum = new BigDecimal(0);
+            // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
+            for(AcceptanceProductForm product:product_table){// бежим по товарам
+                if(doc.isNds()){// если в документе включен переключатель НДС
+                    BigDecimal nds_val = new BigDecimal(product.getNds_value());// величина НДС в процентах у текущего товара. Например, 20
+                    // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
+                    sumNds=sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val),2,BigDecimal.ROUND_HALF_UP));
+                }
+                totalSum=totalSum.add(product.getProduct_sumprice());
+            }
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileInfo.getOriginal_name());
+            Context context = new Context();
+            context.putVar("doc", doc);
+            context.putVar("mc", mc); // предприятие
+            context.putVar("cg", cg); // контрагент
+            context.putVar("tservice", tservice); // helper-класс для формирования файла
+            context.putVar("productTable", product_table);// таблица с товарами
+            context.putVar("mainPaymentAccount", mainPaymentAccount);// первый в списке расчётный счёт предприятия
+            context.putVar("sumNds", sumNds);
+            context.putVar("totalSum", totalSum);
+
+            // вставка печати и подписей
+            if(!Objects.isNull(mc.getStamp_id())){
+                FileInfoJSON fileStampInfo = tservice.getFileInfo(mc.getStamp_id());
+                InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath()+"/"+fileStampInfo.getName()));
+                byte[] stamp = Util.toByteArray(stampIs);
+                context.putVar("stamp", stamp);
+                stampIs.close();}
+            if(!Objects.isNull(mc.getDirector_signature_id())){
+                FileInfoJSON fileDirSignatInfo = tservice.getFileInfo(mc.getDirector_signature_id());
+                InputStream dirSignIs = new FileInputStream(new File(fileDirSignatInfo.getPath()+"/"+fileDirSignatInfo.getName()));
+                byte[] dirSignature = Util.toByteArray(dirSignIs);
+                context.putVar("dirSignature", dirSignature);
+                dirSignIs.close();}
+            if(!Objects.isNull(mc.getGlavbuh_signature_id())){
+                FileInfoJSON fileGbSignatInfo = tservice.getFileInfo(mc.getGlavbuh_signature_id());
+                InputStream gbSignIs = new FileInputStream(new File(fileGbSignatInfo.getPath()+"/"+fileGbSignatInfo.getName()));
+                byte[] gbSignature = Util.toByteArray(gbSignIs);
+                context.putVar("gbSignature", gbSignature);
+                gbSignIs.close();}
+
+            JxlsHelper.getInstance().processTemplate(is, os, context);
+        } catch (Exception e){
+            logger.error("Exception in method acceptancePrint.", e);
+            e.printStackTrace();
+        } finally {
+            is.close();
+            os.close();
         }
     }
 }

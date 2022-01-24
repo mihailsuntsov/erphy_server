@@ -10,7 +10,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-        package com.dokio.message.response;
+        package com.dokio.message.response.additional;
 
         import java.math.BigDecimal;
 
@@ -25,11 +25,39 @@ public class InvoiceinProductTableJSON {
     private String edizm;                       // наименование единицы измерения товара
     private Long nds_id;                        // id ндс
     private BigDecimal product_price;           // цена товара (может быть разная - закупочная, себестоимость, одна из типов цен)
+    private BigDecimal product_sumprice;
     private String additional;                  // доп. инфо для поставщика
     private Boolean indivisible;                // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
     private BigDecimal total;                   // всего на складе
     private BigDecimal reserved;                // в резервах
     private Boolean is_material;                // материален ли товар
+    // для печатной версии
+    private Integer row_num;                    // номер строки при выводе печатной версии
+    private Integer nds_value;                  // сколько % НДС у данного товара
+
+    public Integer getRow_num() {
+        return row_num;
+    }
+
+    public void setRow_num(Integer row_num) {
+        this.row_num = row_num;
+    }
+
+    public Integer getNds_value() {
+        return nds_value;
+    }
+
+    public void setNds_value(Integer nds_value) {
+        this.nds_value = nds_value;
+    }
+
+    public BigDecimal getProduct_sumprice() {
+        return product_sumprice;
+    }
+
+    public void setProduct_sumprice(BigDecimal product_sumprice) {
+        this.product_sumprice = product_sumprice;
+    }
 
     public Long getId() {
         return id;

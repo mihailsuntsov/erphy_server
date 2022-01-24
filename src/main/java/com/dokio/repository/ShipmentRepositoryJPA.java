@@ -311,7 +311,7 @@ public class ShipmentRepositoryJPA {
                     " p.name as name," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " ap.nds_id," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
+                    " nds.name as nds," +
                     " ap.price_type_id," +
                     " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
@@ -333,12 +333,14 @@ public class ShipmentRepositoryJPA {
                     " ppr.name_api_atol as ppr_name_api_atol, " +
                     " ppr.is_material as is_material, " +
 //                    " ap.product_count as reserved_current " +//в розничных продажах нет резервов, так что приравниваем резерв к количеству товара в продаже (т.е. весь товар априори зарезервирован)
-                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce(nds.value,0) as nds_value" +
                     " from " +
                     " shipment_product ap " +
                     " INNER JOIN shipment a ON ap.shipment_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.shipment_id = " + docId;
 
@@ -362,8 +364,10 @@ public class ShipmentRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
                 List<ShipmentProductTableJSON> returnList = new ArrayList<>();
+                int row_num = 1; // номер строки при выводе печатной версии
                 for(Object[] obj:queryList){
                     ShipmentProductTableJSON doc=new ShipmentProductTableJSON();
+                    doc.setRow_num(row_num);
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                     doc.setCustomers_orders_id(Long.parseLong(              obj[1].toString()));
                     doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
@@ -383,7 +387,9 @@ public class ShipmentRepositoryJPA {
                     doc.setPpr_name_api_atol((String)                       obj[16]);
                     doc.setIs_material((Boolean)                            obj[17]);
                     doc.setIndivisible((Boolean)                            obj[18]);
+                    doc.setNds_value((Integer)                              obj[19]);
                     returnList.add(doc);
+                    row_num++;
                 }
                 return returnList;
             } catch (Exception e) {
@@ -744,6 +750,8 @@ public class ShipmentRepositoryJPA {
             String stringQuery;
             stringQuery =   " update shipment set " +
                     " changer_id = " + myId + ", "+
+                    " nds  = " + request.isNds() + ", " +
+                    " nds_included  = " + request.isNds_included() + ", " +
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " shipment_date = to_date(:shipment_date,'DD.MM.YYYY'), " +

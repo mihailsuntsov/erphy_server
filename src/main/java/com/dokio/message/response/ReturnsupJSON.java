@@ -145,6 +145,10 @@ public class ReturnsupJSON {
         return nds;
     }
 
+    public Boolean isNds() {
+        return nds;
+    } // для печати документов
+
     public void setNds(Boolean nds) {
         this.nds = nds;
     }

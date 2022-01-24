@@ -306,11 +306,13 @@ public class AcceptanceRepository {
                     " (select nds.name from sprav_sys_nds nds where nds.id = p.nds_id) as nds," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
+                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total, "+ //всего на складе (т.е остаток)
+                    " coalesce(nds.value,0) as nds_value" +
                     " from " +
                     " acceptance_product ap " +
                     " INNER JOIN acceptance a ON ap.acceptance_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.acceptance_id = " + docId;
 
@@ -333,8 +335,10 @@ public class AcceptanceRepository {
 
                 List<Object[]> queryList = query.getResultList();
                 List<AcceptanceProductForm> returnList = new ArrayList<>();
+                int row_num = 1; // номер строки при выводе печатной версии
                 for(Object[] obj:queryList){
                     AcceptanceProductForm doc=new AcceptanceProductForm();
+                    doc.setRow_num(row_num);
                     doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                     doc.setAcceptance_id(Long.parseLong(                    obj[1].toString()));
                     doc.setProduct_count((BigDecimal)                       obj[2]);
@@ -348,7 +352,9 @@ public class AcceptanceRepository {
                     doc.setEdizm((String)                                   obj[10]);
                     doc.setIndivisible((Boolean)                            obj[11]);
                     doc.setTotal((BigDecimal)                               obj[12]);
+                    doc.setNds_value((Integer)                              obj[13]);
                     returnList.add(doc);
+                    row_num++;
                 }
                 return returnList;
             } catch (Exception e) {

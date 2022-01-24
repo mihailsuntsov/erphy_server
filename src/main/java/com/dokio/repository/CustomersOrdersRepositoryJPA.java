@@ -294,7 +294,7 @@ public class CustomersOrdersRepositoryJPA {
                     " p.name as name," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm," +
                     " ap.nds_id," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
+                    " nds.name as nds," +
                     " ap.price_type_id," +
                     " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
@@ -358,13 +358,14 @@ public class CustomersOrdersRepositoryJPA {
                     " ppr.name_api_atol as ppr_name_api_atol, " +
                     " ppr.is_material as is_material, " +
                     " coalesce(ap.reserved_current,0) as reserved_current, " +//зарезервировано в данном документе Заказ покупателя
-                    " p.indivisible as indivisible" +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-
+                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                    " coalesce(nds.value,0) as nds_value" +
                     " from " +
                     " customers_orders_product ap " +
                     " INNER JOIN customers_orders a ON ap.customers_orders_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
 //                    " INNER JOIN sprav_sys_nds nds ON p.nds_id=nds.id " +
                     " where a.master_id = " + myMasterId +
                     " and ap.customers_orders_id = " + docId;
@@ -388,8 +389,10 @@ public class CustomersOrdersRepositoryJPA {
 
             List<Object[]> queryList = query.getResultList();
             List<CustomersOrdersProductTableJSON> returnList = new ArrayList<>();
+            int row_num = 1; // номер строки при выводе печатной версии
             for(Object[] obj:queryList){
                 CustomersOrdersProductTableJSON doc=new CustomersOrdersProductTableJSON();
+                doc.setRow_num(row_num);
                 doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
                 doc.setCustomers_orders_id(Long.parseLong(              obj[1].toString()));
                 doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
@@ -412,8 +415,10 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setIs_material((Boolean)                            obj[19]);
                 doc.setReserved_current(                                obj[20]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
                 doc.setIndivisible((Boolean)                            obj[21]);
+                doc.setNds_value((Integer)                              obj[22]);
 
                 returnList.add(doc);
+                row_num++;
             }
             return returnList;
         } else return null;

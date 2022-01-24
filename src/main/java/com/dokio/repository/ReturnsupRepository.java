@@ -287,12 +287,14 @@ public class ReturnsupRepository {
                     " ip.product_sumprice," +
                     " ip.nds_id, " +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                    " coalesce((select quantity from product_quantity where product_id = ip.product_id and department_id = i.department_id),0) as remains "+ //всего на складе (т.е остаток)
+                    " coalesce((select quantity from product_quantity where product_id = ip.product_id and department_id = i.department_id),0) as remains, "+ //всего на складе (т.е остаток)
+                    " coalesce(nds.value,0) as nds_value" +
 
                     " from " +
                     " returnsup_product ip " +
                     " INNER JOIN products p ON ip.product_id=p.id " +
                     " INNER JOIN returnsup i ON ip.returnsup_id=i.id " +
+                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ip.nds_id" +
                     " where ip.master_id = " + myMasterId +
                     " and ip.returnsup_id = " + docId;
 
@@ -316,8 +318,10 @@ public class ReturnsupRepository {
 
                 List<Object[]> queryList = query.getResultList();
                 List<ReturnsupProductTableJSON> returnsupList = new ArrayList<>();
+                int row_num = 1; // номер строки при выводе печатной версии
                 for(Object[] obj:queryList){
                     ReturnsupProductTableJSON doc=new ReturnsupProductTableJSON();
+                    doc.setRow_num(row_num);
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setName((String)                                    obj[1]);
                     doc.setProduct_id(Long.parseLong(                       obj[2].toString()));
@@ -328,7 +332,9 @@ public class ReturnsupRepository {
                     doc.setNds_id((Integer)                                 obj[7]);
                     doc.setIndivisible((Boolean)                            obj[8]);
                     doc.setRemains((BigDecimal)                             obj[9]);
+                    doc.setNds_value((Integer)                              obj[10]);
                     returnsupList.add(doc);
+                    row_num++;
                 }
                 return returnsupList;
             } catch (Exception e) {

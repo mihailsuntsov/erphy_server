@@ -317,7 +317,7 @@ public class InvoiceoutRepositoryJPA {
                     " ppr.is_material as is_material, " +
 //                    " ap.product_count as reserved_current " +//в розничных продажах нет резервов, так что приравниваем резерв к количеству товара в продаже (т.е. весь товар априори зарезервирован)
                     " p.indivisible as indivisible,"+// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                    " nds.value  as nds_value" +
+                    " coalesce(nds.value,0) as nds_value" +
 //                    " ROUND(((cast(nds.value AS numeric)/100)*ap.product_count*ap.product_price),2) as nds_value" +
 //                    " (cast(nds.value AS numeric)/100) as nds_value" +
                     " from " +
@@ -372,7 +372,6 @@ public class InvoiceoutRepositoryJPA {
                     doc.setIs_material((Boolean)                            obj[16]);
                     doc.setIndivisible((Boolean)                            obj[17]);
                     doc.setNds_value((Integer)                              obj[18]);
-//                    doc.setNds_value(                                       obj[18]==null?BigDecimal.ZERO:(BigDecimal)obj[18]);
 
                     returnList.add(doc);
                     row_num++;

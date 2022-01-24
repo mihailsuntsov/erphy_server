@@ -1,8 +1,10 @@
 package com.dokio.service;
 
+import com.dokio.message.response.CompaniesJSON;
 import com.dokio.message.response.FileInfoJSON;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
+import com.github.moneytostr.MoneyToStr;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -10,8 +12,9 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.util.List;
-
+import java.util.Objects;
 
 
 @Service
@@ -92,5 +95,61 @@ public class TemplatesService {
 
     }
 
+
+    @SuppressWarnings("Duplicates")
+    public String getMyCompanyFullName(CompaniesJSON company){
+        String result = "";
+        // получим наименование организационно-правовой формы
+        switch (company.getOpf_id()) {
+            case (1):// Индивидуальный предприниматель
+                result = company.getOpf() +" "+ company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                break;
+            case (2): // Самозанятый
+                result = company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = company.getJr_jur_full_name();
+                break;
+        }
+        return result;
+    }
+
+    @SuppressWarnings("Duplicates")
+    public String getMyCompanyAddress(CompaniesJSON company){
+        String result;
+        // получим адрес предприятия
+        switch (company.getOpf_id()) {
+            case (1):// Индивидуальный предприниматель
+                result = company.getZip_code()+" "+company.getRegion()+", "+company.getArea()+", "+company.getCity()+" "+company.getStreet()+" д."+company.getHome()+(!Objects.isNull(company.getFlat())?(" кв."+company.getFlat()):"");
+                break;
+            case (2): // Самозанятый
+                result = company.getZip_code()+" "+company.getRegion()+", "+company.getArea()+", "+company.getCity()+" "+company.getStreet()+" д."+company.getHome()+(!Objects.isNull(company.getFlat())?(" кв."+company.getFlat()):"");
+                break;
+            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+                result = company.getZip_code()+" "+company.getJr_region()+", "+company.getJr_area()+", "+company.getJr_city()+" "+company.getJr_street()+" "+company.getJr_home()+(!Objects.isNull(company.getJr_flat())?(" "+company.getJr_flat()):"");
+                break;
+        }
+        return result;
+    }
+
+    public String getIfElse(Boolean condition, String ifTrue, String ifFalse){
+        if(Objects.isNull(condition))
+            return ifFalse;
+        else
+            return(condition?ifTrue:ifFalse);
+    }
+
+    public String getIfElse(Boolean condition, BigDecimal ifTrue, String ifFalse){
+        if(Objects.isNull(condition))
+            return ifFalse;
+        else
+            return(condition?ifTrue.toString():ifFalse);
+    }
+
+    // сумма прописью
+    public String moneyAsString(Double sum){
+        MoneyToStr moneyToStr = new MoneyToStr(MoneyToStr.Currency.RUR, MoneyToStr.Language.RUS, MoneyToStr.Pennies.NUMBER);
+        return( moneyToStr.convert(sum));
+    }
 
 }
