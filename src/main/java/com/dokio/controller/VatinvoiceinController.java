@@ -12,22 +12,38 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.controller;
 
-import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsVatinvoiceinForm;
-import com.dokio.message.request.SignUpForm;
-import com.dokio.message.request.UniversalForm;
-import com.dokio.message.request.VatinvoiceinForm;
-import com.dokio.message.response.VatinvoiceinJSON;
-import com.dokio.repository.VatinvoiceinRepositoryJPA;
+import com.dokio.message.response.*;
+import com.dokio.message.response.additional.InvoiceinProductTableJSON;
+import com.dokio.message.response.additional.InvoiceoutProductTableJSON;
+import com.dokio.message.response.additional.LinkedDocsJSON;
+import com.dokio.message.response.additional.ProductTableJSON;
+import com.dokio.repository.*;
+import com.dokio.service.TemplatesService;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
+import org.jxls.common.Context;
+import org.jxls.util.JxlsHelper;
+import org.jxls.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class VatinvoiceinController {
@@ -35,7 +51,21 @@ public class VatinvoiceinController {
     Logger logger = Logger.getLogger("VatinvoiceinController");
 
     @Autowired
-    VatinvoiceinRepositoryJPA vatinvoiceinRepository;
+    private VatinvoiceinRepositoryJPA vatinvoiceinRepository;
+    // связи для печатных форм
+    @Autowired
+    private TemplatesService tservice;
+    @Autowired
+    private FileRepositoryJPA fileRepository;
+    @Autowired
+    private CagentRepositoryJPA cagentRepository;
+    @Autowired
+    private CompanyRepositoryJPA company;
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private AcceptanceRepository acceptanceRepository;
+    @Autowired InvoiceinRepositoryJPA invoiceinRepository;
 
     @PostMapping("/api/auth/getVatinvoiceinTable")
     @SuppressWarnings("Duplicates")
@@ -239,5 +269,127 @@ public class VatinvoiceinController {
         logger.info("Processing post request for path api/auth/addFilesToVatinvoicein: " + request.toString());
         try{return new ResponseEntity<>(vatinvoiceinRepository.addFilesToVatinvoicein(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }// печать документов
+
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/vatinvoiceinPrint",
+            params = {"file_name", "tt_id", "doc_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public void vatinvoiceinPrint (HttpServletResponse response,
+                                 @RequestParam("file_name") String filename,
+                                 @RequestParam("doc_id") Long doc_id,
+                                 @RequestParam("tt_id")int templateTypeId) throws Exception {
+        FileInfoJSON fileInfo = tservice.getFileInfo(filename);
+        InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        OutputStream os = response.getOutputStream();
+        try {
+            VatinvoiceinJSON doc = vatinvoiceinRepository.getVatinvoiceinValuesById(doc_id);
+            CagentsJSON cg = cagentRepository.getCagentValues(doc.getCagent_id());
+//            CagentsJSON consignee = cagentRepository.getCagentValues();
+            CompaniesJSON mc = company.getCompanyValues(doc.getCompany_id());
+            CompaniesPaymentAccountsForm mainPaymentAccount = company.getMainPaymentAccountOfCompany(doc.getCompany_id());
+
+            // Документ "Счет Фактура" сам по себе не содержит товарных позиций, поэтому нужно по цепочке связанных документов
+            // найти родителя, который содержит товарные позиции. Это может быть Заказ поставщику, Счёт поставщика, Приёмка
+            // Такой родитель может быть выше на 1 или 2 (максимум) ступени, например:
+            // Приёмка (тут товары) -> Счёт-фактура
+            // Счёт поставщика (тут товары) -> Исходящий платёж -> Счёт-фактура
+
+            // id родительского документа содержится в одной из переменных: doc.orderout_id, doc.paymentout_id, doc.acceptance_id
+            // вычленим его:
+            Long parentDocId = !Objects.isNull(doc.getAcceptance_id())?doc.getAcceptance_id():(
+                    !Objects.isNull(doc.getOrderout_id())?doc.getOrderout_id():doc.getPaymentout_id()
+                    );
+            // возьмем информацию по родительскому документу, в котором есть товарные позиции
+            LinkedDocsJSON parentDocWithProductsId = linkedDocsUtilites.getParentDocWithProducts(doc.getParent_tablename(), parentDocId);
+
+            BigDecimal sumNds = new BigDecimal(0);
+            BigDecimal totalSum = new BigDecimal(0);
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileInfo.getOriginal_name());
+            Context context = new Context();
+            context.putVar("doc", doc); // документ - Счёт-фактура
+            context.putVar("mc", mc); // предприятие
+            context.putVar("cg", cg); // контрагент
+            context.putVar("tservice", tservice); // helper-класс для формирования файла
+            context.putVar("mainPaymentAccount", mainPaymentAccount);// первый в списке расчётный счёт предприятия
+
+            switch (parentDocWithProductsId.getTablename()) {
+                case "acceptance":{     // Приёмка
+                    AcceptanceJSON parentDoc = acceptanceRepository.getAcceptanceValuesById(parentDocWithProductsId.getId());
+                    List<AcceptanceProductForm> product_table=acceptanceRepository.getAcceptanceProductTable(parentDocWithProductsId.getId());
+                    context.putVar("parentDocWithProducts", parentDoc); // родительский документ - Приёмка
+                    context.putVar("productTable", product_table);// таблица с товарами
+                    // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
+                    for(AcceptanceProductForm product:product_table){// бежим по товарам
+                        if(parentDoc.isNds()){// если в документе включен переключатель НДС
+                            BigDecimal nds_val = new BigDecimal(product.getNds_value());// величина НДС в процентах у текущего товара. Например, 20
+                            // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
+                            sumNds=sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val),2,BigDecimal.ROUND_HALF_UP));
+                        }
+                        totalSum=totalSum.add(product.getProduct_sumprice());
+                    }
+                    context.putVar("sumNds", sumNds);
+                    context.putVar("totalSum", totalSum);
+                }
+                case "invoicein":{      // Счёт поставщика
+                    InvoiceinJSON parentDoc = invoiceinRepository.getInvoiceinValuesById(parentDocWithProductsId.getId());
+                    List<InvoiceinProductTableJSON> product_table=invoiceinRepository.getInvoiceinProductTable(parentDocWithProductsId.getId());
+                    context.putVar("parentDocWithProducts", parentDoc); // родительский документ - Счёт поставщика
+                    context.putVar("productTable", product_table);// таблица с товарами
+                    // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
+                    for(InvoiceinProductTableJSON product:product_table){// бежим по товарам
+                        if(parentDoc.isNds()){// если в документе включен переключатель НДС
+                            BigDecimal nds_val = new BigDecimal(product.getNds_value());// величина НДС в процентах у текущего товара. Например, 20
+                            // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
+                            sumNds=sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val),2,BigDecimal.ROUND_HALF_UP));
+                        }
+                        totalSum=totalSum.add(product.getProduct_sumprice());
+                    }
+                    context.putVar("sumNds", sumNds);
+                    context.putVar("totalSum", totalSum);
+                }
+//                Заказ поставщику  - ???????????????????????????????????????????
+                default: InvoiceinJSON parentDoc = null;
+            }
+
+            // вставка печати и подписей
+            if(!Objects.isNull(mc.getStamp_id())){
+                FileInfoJSON fileStampInfo = tservice.getFileInfo(mc.getStamp_id());
+                InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath()+"/"+fileStampInfo.getName()));
+                byte[] stamp = Util.toByteArray(stampIs);
+                context.putVar("stamp", stamp);
+                stampIs.close();}
+            if(!Objects.isNull(mc.getDirector_signature_id())){
+                FileInfoJSON fileDirSignatInfo = tservice.getFileInfo(mc.getDirector_signature_id());
+                InputStream dirSignIs = new FileInputStream(new File(fileDirSignatInfo.getPath()+"/"+fileDirSignatInfo.getName()));
+                byte[] dirSignature = Util.toByteArray(dirSignIs);
+                context.putVar("dirSignature", dirSignature);
+                dirSignIs.close();}
+            if(!Objects.isNull(mc.getGlavbuh_signature_id())){
+                FileInfoJSON fileGbSignatInfo = tservice.getFileInfo(mc.getGlavbuh_signature_id());
+                InputStream gbSignIs = new FileInputStream(new File(fileGbSignatInfo.getPath()+"/"+fileGbSignatInfo.getName()));
+                byte[] gbSignature = Util.toByteArray(gbSignIs);
+                context.putVar("gbSignature", gbSignature);
+                gbSignIs.close();}
+
+            JxlsHelper.getInstance().processTemplate(is, os, context);
+        } catch (Exception e){
+            logger.error("Exception in method invoiceoutPrint.", e);
+            e.printStackTrace();
+            response.resetBuffer();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getOutputStream().println("{");
+            response.getOutputStream().println("\"status\": " + 500 + ",");
+            response.getOutputStream().println("\"error\": \"" + "Internal server error" + "\",");
+            response.getOutputStream().println("\"message\": \"" + "Error -> INTERNAL_SERVER_ERROR" + "\"");
+            response.getOutputStream().println("}");
+            response.flushBuffer();
+        } finally {
+
+            is.close();
+            os.close();
+        }
     }
 }

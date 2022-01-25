@@ -316,7 +316,16 @@ public class InvoiceoutController {
         } catch (Exception e){
             logger.error("Exception in method invoiceoutPrint.", e);
             e.printStackTrace();
+            response.resetBuffer();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getOutputStream().println("{");
+            response.getOutputStream().println("\"status\": " + 500 + ",");
+            response.getOutputStream().println("\"error\": \"" + "Internal server error" + "\",");
+            response.getOutputStream().println("\"message\": \"" + "Error -> INTERNAL_SERVER_ERROR" + "\"");
+            response.getOutputStream().println("}");
+            response.flushBuffer();
         } finally {
+
             is.close();
             os.close();
         }

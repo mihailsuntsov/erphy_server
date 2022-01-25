@@ -26,7 +26,7 @@ public class LinkedDocsJSON {
     private Long        doc_number;             // Номер документа
     private Long        group_id;               // id группы связанных документов
     private String      date_time_created;      // Дата время создания
-    private String      name;                   // наименование, например Инвенторизация
+    private String      name;                   // наименование, например Инвентаризация
     private boolean     is_completed;           // Завершен
     private String      status;                 // наименование статуса
     private BigDecimal  sumprice;               // сумма по документу

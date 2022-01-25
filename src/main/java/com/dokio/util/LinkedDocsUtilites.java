@@ -67,7 +67,7 @@ public class LinkedDocsUtilites {
                     "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    private static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
+    public static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of(    "acceptance",
                     "return",
@@ -93,7 +93,7 @@ public class LinkedDocsUtilites {
                     "withdrawal",//выемка из кассы ККМ
                     "depositing", // внесение средств в кассу ККМ
                     "orderout")
-                    .collect(Collectors.toCollection(HashSet::new)));
+            .collect(Collectors.toCollection(HashSet::new)));
 
     private static final Set DOCS_WITHOUT_PAY_SUMM // таблицы документов, у которых (в их таблице <tablename>) нет колонки summ (эти документы берут summ у родительского документа)
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -515,7 +515,7 @@ public class LinkedDocsUtilites {
                 returnObj.setStatus((String) obj[3]);
                 returnObj.setSumprice((BigDecimal) obj[4]);
                 returnObj.setIs_completed((Boolean) obj[5]);
-                returnObj.setName((String) obj[2]);
+//                returnObj.setName((String) obj[2]);
                 returnObj.setPagename((String) obj[6]);
             }
             return returnObj;
@@ -717,7 +717,7 @@ public class LinkedDocsUtilites {
     }
 
     // для документов, которые не содержат summ, а берут ее из родительского документа (таких как Счёт-факутра выданный) вернёт название таблицы родительского документа, где можно взять эту summ
-    private String getTablenameOfDocWithoutSumm(String tablename, Long id){
+    public String getTablenameOfDocWithoutSumm(String tablename, Long id){
         String stringQuery = "select parent_tablename from "+tablename+" where id = "+id;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -732,7 +732,7 @@ public class LinkedDocsUtilites {
         }
     }
     // для документов, которые не содержат summ, а берут ее из родительского документа (таких как Счёт-факутра выданный) вернёт id родительского документа в таблице родительского документа, где можно взять эту summ
-    private Long getIdOfDocWithoutSumm(String tablename, String columnName, Long id) {
+    public Long getIdOfDocWithoutSumm(String tablename, String columnName, Long id) {
 
         String stringQuery = "select "+columnName+"_id from "+tablename+" where id = "+id;
 
@@ -748,5 +748,98 @@ public class LinkedDocsUtilites {
             return null;
         }
     }
+
+    // отдает
+    private String getUidById(String tablename, Long docId){
+        String stringQuery = "select uid from "+tablename+" where id = "+docId+" and uid is not null";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getSingleResult().toString();
+        } catch (NoResultException nre) {
+            logger.error("Can't find UID by ID in method getUidById. Sql: " + stringQuery, nre);
+            return null;
+        } catch (Exception e) {
+            logger.error("Exception in method getUidById. Sql: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Некоторые документы, например "Счет Фактура" сами по себе не содержат товарных позиций, поэтому нужно по цепочке связанных документов
+    // найти родителя, который содержит товарные позиции. Это может быть Заказ поставщику, Счёт поставщика, Приёмка
+    // Такой родитель может быть выше на 1 или 2 (максимум) ступени, например:
+    // Приёмка (тут товары) -> Счёт-фактура
+    // Счёт поставщика (тут товары) -> Исходящий платёж -> Счёт-фактура
+
+    // Метод вернет инфу (id, uid, group_id и tablename) по родительскому документу с товарами, для дочернего документа без оных (например, для Счёт-фактуры).
+    // но только на 2 ступени вверх (больше обычно и не надо) - для 1й ступени этот документ уже может
+    // являться искомым, т.к. инфа по нему (parent_tablename и id) уже содержится в дочернем документе,
+    // просто мы не знаем, есть в нем товары или нет
+    public LinkedDocsJSON getParentDocWithProducts(String parentTablename, Long parentDocId) throws Exception {
+        //parentTablename -    имя таблицы родительского документа, прописанное в дочернем документе (например, в vatinvoicein), находящегося на 1 ступень над дочерним
+        //parentDocId  -       id родительского документа, прописанное в дочернем документе
+
+
+
+        // Сначала проверим 1ю ступень, вдруг этот документ уже содержит товарные позиции:
+        if(DOCS_WITH_PRODUCT_SUMPRICE.contains(parentTablename)){
+            // таблица родителя входит в таблицы, содержащие товарные позиции, значит
+            // содержащий товары родитель находится на 1 ступень выше.
+            LinkedDocsJSON info = new LinkedDocsJSON();
+            info.setId(parentDocId);
+            info.setTablename(parentTablename);
+            return info;
+        } else {// содержащий товары родитель находится на 2 ступени выше.
+            try {
+                Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+                // узнаем id группы связанных документов (по родителю с 1й ступени):
+                Long groupId = getLinkedGroupId(myMasterId, parentTablename, parentDocId);
+                if(Objects.isNull(groupId) || groupId==0L) return null;
+
+                // узнаем UID родителя 1й ступени, чтобы узнать, какой UID на него ссылается в таблице linked_docs_links
+                String childParentDocUid = getUidById(parentTablename, parentDocId);
+                if (Objects.isNull(childParentDocUid)) return null;
+
+                // загрузим список ссылок по данной группе связанных документов
+                List<LinkedDocsLinksJSON> links = getLinks(groupId);
+                if (Objects.isNull(links)) return null;
+
+                // прочешем список и найдем UIDы документов, которые ссылаются на родителя 1й ступени (в 99% это будет 1 документ, но все же..)
+                List<String> secondLevelParentUids = new ArrayList<>();
+                for(LinkedDocsLinksJSON linkRow:links){
+                    if(linkRow.getUid_to().equals(childParentDocUid)) secondLevelParentUids.add(linkRow.getUid_from());
+                }
+                if (secondLevelParentUids.isEmpty()) return null;
+
+                // загрузим информацию (базовую - только id, uid и tablename) по документам данной группы связанных документов (groupId)
+                List<LinkedDocsJSON> baseList = getBaseInfoOfLinkedDocs(groupId);
+                if (Objects.isNull(baseList)) return null;
+
+                // прочешем этот список, и оставим в нем только документы с UID которые есть в secondLevelParentUids,
+                // и таблицами из списка DOCS_WITH_PRODUCT_SUMPRICE
+                baseList.removeIf(e -> !DOCS_WITH_PRODUCT_SUMPRICE.contains(e.getTablename()) || !secondLevelParentUids.contains(e.getUid()));
+//                Iterator<LinkedDocsJSON> iterator = baseList.iterator();
+//                while (iterator.hasNext()) {
+//                    LinkedDocsJSON e = iterator.next();
+//                    if (!DOCS_WITH_PRODUCT_SUMPRICE.contains(e.getTablename()) || !secondLevelParentUids.contains(e.getUid())) {
+//                        iterator.remove();
+//                    }
+//                }
+                // если от списка ничего не осталось (маловероятно но вдруг) - это значит ничего не нашли
+                if(baseList.isEmpty()) return null;
+                // если осталось - это то что нужно. На случай - если осталось более 1 элемента (маловероятно очень) - просто возьмётся 1й
+                return baseList.get(0);
+
+            } catch (Exception e) {
+                logger.error("Exception in method getParentDocWithProducts.", e);
+                e.printStackTrace();
+                return null;
+            }
+
+        }
+    }
+
+
+
 
 }
