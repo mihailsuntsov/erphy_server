@@ -74,18 +74,14 @@ public class MoneyflowRepositoryJPA {
                 throw new IllegalArgumentException("Недопустимые параметры запроса");
             stringQuery = "select " +
                     " to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_created,   " +
-                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa) as summ_before_pa,     " +
                     " (summ_in_pa + summ_corr_in_pa) as summ_in_pa,   " +
                     " (summ_out_pa + ABS(summ_corr_out_pa)) as summ_out_pa,   " +
                     " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa) as summ_result_pa,   " +
 
-                    " (summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_bx,     " +
                     " (summ_in_bx + summ_corr_in_bx) as summ_in_bx,   " +
                     " (summ_out_bx + ABS(summ_corr_out_bx)) as summ_out_bx,   " +
                     " (summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_bx,   " +
 
-
-                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa)+(summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_all,   " +
                     " (summ_in_pa + summ_corr_in_pa)+(summ_in_bx + summ_corr_in_bx) as summ_in_all,   " +
                     " (summ_out_pa + ABS(summ_corr_out_pa))+(summ_out_bx + ABS(summ_corr_out_bx))as summ_out_all,   " +
                     " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa)+(summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_all, " +
@@ -93,9 +89,6 @@ public class MoneyflowRepositoryJPA {
 
                     " from   " +
                     " generate_series(timestamp with time zone '"+dateFrom+"',  timestamp with time zone '"+dateTo+"'  , interval  '1 day') AS dc,   " +
-                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_pa,   " +
-                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_pa, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_corr_before_pa, " +
 
                     " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
                     " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_in_pa, " +
@@ -106,12 +99,6 @@ public class MoneyflowRepositoryJPA {
                     " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
                     " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
                     " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
-
-
-
-                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_bx,   " +
-                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_bx, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_before_bx, " +
 
                     " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
                     " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
@@ -124,7 +111,7 @@ public class MoneyflowRepositoryJPA {
                     " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx " +
 
                     " where (summ_in_pa!=0 or summ_out_pa!=0 or summ_in_bx!=0 or summ_out_bx!=0) " +
-                    " group by  date_created, summ_before_pa, summ_before_bx,  summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_result_pa,summ_corr_in_pa,summ_corr_out_pa,summ_corr_in_bx,summ_corr_out_bx, dc  order by date_created_sort asc ";
+                    " group by  date_created, summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_corr_in_pa,summ_corr_out_pa,summ_corr_in_bx,summ_corr_out_bx, dc  order by date_created_sort asc ";
 
 
             try {
@@ -135,18 +122,18 @@ public class MoneyflowRepositoryJPA {
                 for (Object[] obj : queryList) {
                     MoneyflowTableJSON doc = new MoneyflowTableJSON();
                     doc.setDate_created((String)            obj[0]);
-                    doc.setSumm_before_pa((BigDecimal)      obj[1]);
-                    doc.setSumm_in_pa((BigDecimal)          obj[2]);
-                    doc.setSumm_out_pa((BigDecimal)         obj[3]);
-                    doc.setSumm_result_pa((BigDecimal)      obj[4]);
-                    doc.setSumm_before_bx((BigDecimal)      obj[5]);
-                    doc.setSumm_in_bx((BigDecimal)          obj[6]);
-                    doc.setSumm_out_bx((BigDecimal)         obj[7]);
-                    doc.setSumm_result_bx((BigDecimal)      obj[8]);
-                    doc.setSumm_before_all((BigDecimal)     obj[9]);
-                    doc.setSumm_in_all((BigDecimal)         obj[10]);
-                    doc.setSumm_out_all((BigDecimal)        obj[11]);
-                    doc.setSumm_result_all((BigDecimal)     obj[12]);
+//                    doc.setSumm_before_pa((BigDecimal)      obj[1]);
+                    doc.setSumm_in_pa((BigDecimal)          obj[1]);
+                    doc.setSumm_out_pa((BigDecimal)         obj[2]);
+                    doc.setSumm_result_pa((BigDecimal)      obj[3]);
+//                    doc.setSumm_before_bx((BigDecimal)      obj[5]);
+                    doc.setSumm_in_bx((BigDecimal)          obj[4]);
+                    doc.setSumm_out_bx((BigDecimal)         obj[5]);
+                    doc.setSumm_result_bx((BigDecimal)      obj[6]);
+//                    doc.setSumm_before_all((BigDecimal)     obj[9]);
+                    doc.setSumm_in_all((BigDecimal)         obj[7]);
+                    doc.setSumm_out_all((BigDecimal)        obj[8]);
+                    doc.setSumm_result_all((BigDecimal)     obj[9]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -218,22 +205,15 @@ public class MoneyflowRepositoryJPA {
                 throw new IllegalArgumentException("Недопустимые параметры запроса");
             stringQuery = " select   " +
                     " to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_created,   " +
-                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa) as summ_before_pa,     " +
-                    " (summ_in_pa + summ_corr_in_pa) as summ_in_pa,   " +
-                    " (summ_out_pa + ABS(summ_corr_out_pa)) as summ_out_pa,   " +
-                    " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa) as summ_result_pa,   " +
-
-                    " (summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_bx,    " +
-                    " (summ_in_bx + summ_corr_in_bx) as summ_in_bx,   " +
-                    " (summ_out_bx + ABS(summ_corr_out_bx)) as summ_out_bx,   " +
-                    " (summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_bx,   " +
 
 
-                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa)+(summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_all,   " +
-                    " (summ_in_pa + summ_corr_in_pa)+(summ_in_bx + summ_corr_in_bx) as summ_in_all,   " +
-                    " (summ_out_pa + ABS(summ_corr_out_pa))+(summ_out_bx + ABS(summ_corr_out_bx))as summ_out_all,   " +
-                    " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa)+(summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_all,   " +
+                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa) as summ_before_pa,     " +  // Начальный остаток - Расчётные счета
+                    " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa) as summ_result_pa,   " +    // Конечный остаток - Расчётные счета
+                    " (summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_bx,    " +  // Начальный остаток - Кассы предприятия
+                    " (summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_bx,   " +   // Конечный остаток - Кассы предприятия
 
+                    " (summ_in_before_pa-summ_out_before_pa+summ_corr_before_pa)+(summ_in_before_bx-summ_out_before_bx+summ_corr_before_bx) as summ_before_all,   " +  // Начальный остаток - Все
+                    " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa)+(summ_result_in_bx-summ_result_out_bx+summ_result_corr_bx) as summ_result_all,   " + // Конечный остаток - Все
 
                     " total_summ_in_pa+total_summ_corr_in_pa as total_summ_in_pa,   " +
                     " total_summ_out_pa+ABS(total_summ_corr_out_pa) as total_summ_out_pa,   " +
@@ -243,70 +223,67 @@ public class MoneyflowRepositoryJPA {
                     " (total_summ_out_pa+ABS(total_summ_corr_out_pa))+(total_summ_out_bx+ABS(total_summ_corr_out_bx)) as total_summ_out_all  " +
 
                     " from   " +
-                    " generate_series(timestamp with time zone '"+dateFrom+"',  timestamp with time zone '"+dateTo+"'  , interval  '1 day') AS dc,   " +
-                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_pa,   " +
-                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_pa, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_corr_before_pa, " +
+                    " generate_series(timestamp with time zone '"+dateFrom+"',  timestamp with time zone '"+dateTo+"', interval  '1 day') AS dc,   " +
 
-                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_in_pa, " +
+                    // Начальный остаток
+                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_pa,   " +
+                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_pa, " +
+                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_corr_before_pa, " +
 
-                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_pa, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_out_pa,  " +
+                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_bx,   " +
+                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_bx, " +
+                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_before_bx, " +
+                    // Конечный остаток
+                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
+                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
 
-                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
-                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
+                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
+                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx, " +
+
+                    //Сумма за период
+                    " coalesce((select SUM(tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_pa,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_in_pa, " +
+                    " coalesce((select SUM(tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_pa,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_out_pa, " +
+
+                    " coalesce((select SUM(tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_bx,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_in_bx, " +
+                    " coalesce((select SUM(tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_bx,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_out_bx " +
+//                    " where (summ_in_pa!=0 or summ_out_pa!=0 or summ_in_bx!=0 or summ_out_bx!=0) " +
+                    " group by  date_created, summ_before_pa, summ_before_bx,  summ_result_pa, summ_result_bx, total_summ_in_pa,total_summ_out_pa,total_summ_in_bx,total_summ_out_bx,total_summ_in_all,total_summ_out_all,dc,total_summ_corr_in_pa,total_summ_corr_out_pa,total_summ_in_bx,total_summ_corr_in_bx,total_summ_corr_out_bx  order by dc asc ";
 
 
 
-                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_bx,   " +
-                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_bx, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_before_bx, " +
 
-                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
-
-                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_bx, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc at time zone '"+myTimeZone+"', 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_out_bx,  " +
-
-                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
-                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc at time zone '"+myTimeZone+"','DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx, " +
-
-
-
-                    " coalesce((select SUM(tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_pa,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_in_pa, " +
-                    " coalesce((select SUM(tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_pa,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_out_pa, " +
-
-                    " coalesce((select SUM(tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_bx,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_in_bx, " +
-                    " coalesce((select SUM(tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_bx,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('01.01.2022'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('26.01.2022'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_out_bx " +
-                    " where (summ_in_pa!=0 or summ_out_pa!=0 or summ_in_bx!=0 or summ_out_bx!=0) " +
-                    " group by  date_created, summ_before_pa, summ_before_bx,  summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_result_pa,  total_summ_in_pa,total_summ_out_pa,total_summ_in_bx,total_summ_out_bx,total_summ_in_all,total_summ_out_all,dc,summ_corr_in_pa,summ_corr_out_pa, summ_corr_in_bx,summ_corr_out_bx,total_summ_corr_in_pa,total_summ_corr_out_pa,total_summ_in_bx,total_summ_corr_in_bx,total_summ_corr_out_bx  order by dc asc ";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("dateFrom",dateFrom);
-                query.setParameter("dateTo",dateTo);
+//                query.setParameter(1,dateFrom); // не знаю почему, но с generate_series не работают ни named параметры, ни параметры типа ?1 .
+//                query.setParameter(2,dateTo);
                 List<Object[]> queryList = query.getResultList();
                 MoneyflowTableJSON doc = new MoneyflowTableJSON();
                 if(queryList.size()>0) {
-                    // Из первой строки получаем Начальный остаток, из последней строки - Конечный остаток
-                    doc.setSumm_before_pa((BigDecimal) queryList.get(0)[1]);
-                    doc.setSumm_before_bx((BigDecimal) queryList.get(0)[5]);
-                    doc.setSumm_before_all((BigDecimal) queryList.get(0)[9]);
-                    doc.setSumm_result_pa((BigDecimal) queryList.get(queryList.size() - 1)[4]);
-                    doc.setSumm_result_bx((BigDecimal) queryList.get(queryList.size() - 1)[8]);
-                    doc.setSumm_result_all((BigDecimal) queryList.get(queryList.size() - 1)[12]);
-                    doc.setTotal_summ_in_pa((BigDecimal) queryList.get(0)[13]);
-                    doc.setTotal_summ_out_pa((BigDecimal) queryList.get(0)[14]);
-                    doc.setTotal_summ_in_bx((BigDecimal) queryList.get(0)[15]);
-                    doc.setTotal_summ_out_bx((BigDecimal) queryList.get(0)[16]);
-                    doc.setTotal_summ_in_all((BigDecimal) queryList.get(0)[17]);
-                    doc.setTotal_summ_out_all((BigDecimal) queryList.get(0)[18]);
+
+
+                    // Начальный остаток
+                    doc.setSumm_before_pa((BigDecimal) queryList.get(0)[1]); // Расчётные счета
+                    doc.setSumm_before_bx((BigDecimal) queryList.get(0)[3]); // Кассы предприятия
+                    doc.setSumm_before_all((BigDecimal) queryList.get(0)[5]);// Все
+
+                    // Кончный остаток
+                    doc.setSumm_result_pa((BigDecimal) queryList.get(queryList.size() - 1)[2]);   // Расчётные счета
+                    doc.setSumm_result_bx((BigDecimal) queryList.get(queryList.size() - 1)[4]);   // Кассы предприятия
+                    doc.setSumm_result_all((BigDecimal) queryList.get(queryList.size() - 1)[6]); // Все
+
+                    // Сумма за период
+                    doc.setTotal_summ_in_pa((BigDecimal) queryList.get(0)[7]);
+                    doc.setTotal_summ_out_pa((BigDecimal) queryList.get(0)[8]);
+                    doc.setTotal_summ_in_bx((BigDecimal) queryList.get(0)[9]);
+                    doc.setTotal_summ_out_bx((BigDecimal) queryList.get(0)[10]);
+                    doc.setTotal_summ_in_all((BigDecimal) queryList.get(0)[11]);
+                    doc.setTotal_summ_out_all((BigDecimal) queryList.get(0)[12]);
                 }
                 return doc;
             } catch (Exception e) {
