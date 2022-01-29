@@ -186,6 +186,7 @@ public class FinanceUtilites {
     }
 
 
+    // возвращает балансы на дату
     public BigDecimal getBalancesOnDate(Long companyId, String dateTo) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());

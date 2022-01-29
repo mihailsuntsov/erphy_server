@@ -621,7 +621,7 @@ public class AcceptanceRepository {
                             }
                         }
                         // обновляем баланс с контрагентом
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "acceptance","acceptance", request.getId(), docProductsSum,request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "acceptance","acceptance", request.getId(), docProductsSum,new BigDecimal(0),true, request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
                     }
                     return 1;
                 } catch (CantSaveProductQuantityException e) {

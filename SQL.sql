@@ -2776,6 +2776,73 @@ update sprav_sys_nds set value=0, multiplier=1 where name='Без НДС';
 
 
 
+alter table history_cagent_summ           add column is_completed boolean;
+alter table history_payment_account_summ  add column is_completed boolean;
+alter table history_boxoffice_summ        add column is_completed boolean;
+alter table history_kassa_summ            add column is_completed boolean;
+
+update history_cagent_summ           set is_completed = true;
+update history_payment_account_summ  set is_completed = true;
+update history_boxoffice_summ        set is_completed = true;
+update history_kassa_summ            set is_completed = true;
+
+alter table history_cagent_summ           alter column is_completed set not null;
+alter table history_payment_account_summ  alter column is_completed set not null;
+alter table history_boxoffice_summ        alter column is_completed set not null;
+alter table history_kassa_summ            alter column is_completed set not null;
+
+alter table history_cagent_summ           add column summ_in  numeric(15,2);
+alter table history_payment_account_summ  add column summ_in  numeric(15,2);
+alter table history_boxoffice_summ        add column summ_in  numeric(15,2);
+alter table history_kassa_summ            add column summ_in  numeric(15,2);
+alter table history_cagent_summ           add column summ_out  numeric(15,2);
+alter table history_payment_account_summ  add column summ_out  numeric(15,2);
+alter table history_boxoffice_summ        add column summ_out  numeric(15,2);
+alter table history_kassa_summ            add column summ_out  numeric(15,2);
+
+update history_cagent_summ set summ_in = (CASE WHEN summ_change>0 THEN summ_change ELSE 0.00 END);
+update history_cagent_summ set summ_out = (CASE WHEN summ_change<0 THEN summ_change ELSE 0.00 END);
+update history_payment_account_summ set summ_in = (CASE WHEN summ_change>0 THEN summ_change ELSE 0.00 END);
+update history_payment_account_summ set summ_out = (CASE WHEN summ_change<0 THEN summ_change ELSE 0.00 END);
+update history_boxoffice_summ set summ_in = (CASE WHEN summ_change>0 THEN summ_change ELSE 0.00 END);
+update history_boxoffice_summ set summ_out = (CASE WHEN summ_change<0 THEN summ_change ELSE 0.00 END);
+update history_kassa_summ set summ_in = (CASE WHEN summ_change>0 THEN summ_change ELSE 0.00 END);
+update history_kassa_summ set summ_out = (CASE WHEN summ_change<0 THEN summ_change ELSE 0.00 END);
+
+update history_cagent_summ set summ_out = 0-summ_in where doc_table_name='retail_sales';
+delete from history_cagent_summ where summ_out = 0 and summ_in = 0 and doc_table_name='retail_sales';
+
+alter table history_cagent_summ           alter column summ_in set not null;
+alter table history_payment_account_summ  alter column summ_in set not null;
+alter table history_boxoffice_summ        alter column summ_in set not null;
+alter table history_kassa_summ            alter column summ_in set not null;
+alter table history_cagent_summ           alter column summ_out set not null;
+alter table history_payment_account_summ  alter column summ_out set not null;
+alter table history_boxoffice_summ        alter column summ_out set not null;
+alter table history_kassa_summ            alter column summ_out set not null;
+
+ALTER TABLE history_cagent_summ           ADD CONSTRAINT hc_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_payment_account_summ  ADD CONSTRAINT hp_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_boxoffice_summ        ADD CONSTRAINT hb_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_kassa_summ            ADD CONSTRAINT hk_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+
+update history_cagent_summ set summ_out=summ_out*(-1) where summ_out<0;
+update history_payment_account_summ set summ_out=summ_out*(-1) where summ_out<0;
+update history_boxoffice_summ set summ_out=summ_out*(-1) where summ_out<0;
+update history_kassa_summ set summ_out=summ_out*(-1) where summ_out<0;
+
+alter table history_cagent_summ           drop column summ_before;
+alter table history_payment_account_summ  drop column summ_before;
+alter table history_boxoffice_summ        drop column summ_before;
+alter table history_kassa_summ            drop column summ_before;
+alter table history_cagent_summ           drop column summ_result;
+alter table history_payment_account_summ  drop column summ_result;
+alter table history_boxoffice_summ        drop column summ_result;
+alter table history_kassa_summ            drop column summ_result;
+alter table history_cagent_summ           drop column summ_change;
+alter table history_payment_account_summ  drop column summ_change;
+alter table history_boxoffice_summ        drop column summ_change;
+alter table history_kassa_summ            drop column summ_change;
 
 
 
@@ -2809,7 +2876,15 @@ update sprav_sys_nds set value=0, multiplier=1 where name='Без НДС';
 
 
 
-  WITH
+
+
+
+
+
+
+
+
+WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

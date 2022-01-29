@@ -558,10 +558,10 @@ public class OrderoutRepositoryJPA {
                     String expType = spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
                     if (!expType.equals("moving")) {// если это не внутренний платёж -
                         // записываем контрагенту отрицательную сумму, увеличивая его долг нашему предприятию
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout","orderout", request.getId(), request.getSumm().negate(),request.getDoc_number(),request.getStatus_id());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                     }
                     // обновляем состояние кассы нашего предприятия, вычитая из неё переводимую сумму
-                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), request.getSumm().negate(),request.getDoc_number(),request.getStatus_id());
+                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
 

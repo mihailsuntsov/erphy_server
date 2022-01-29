@@ -1251,10 +1251,10 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     stringQuery =   "select " +
             " cg.id as cagent_id, " +
             " cg.name as cagent, " +
-            " coalesce((select         p2.summ_result   from history_cagent_summ p2 where p2.master_id="+myMasterId+" and p2.company_id="+companyId+" and                      p2.object_id = cg.id and p2.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateFrom||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') order by p2.id desc limit 1),0) as summ_on_start, " +
-            " coalesce((select SUM(    p4.summ_change)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.summ_change>0 and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_in, " +
-            " coalesce((select SUM(abs(p5.summ_change)) from history_cagent_summ p5 where p5.master_id="+myMasterId+" and p5.company_id="+companyId+" and p5.summ_change<0 and p5.object_id = cg.id and p5.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p5.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_out, " +
-            " coalesce((select         p3.summ_result   from history_cagent_summ p3 where p3.master_id="+myMasterId+" and p3.company_id="+companyId+" and                      p3.object_id = cg.id and p3.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') order by p3.id desc limit 1),0) as summ_on_end " +
+            " coalesce((select SUM(    p4.summ_in-p4.summ_out)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.is_completed=true and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_on_start, " +
+            " coalesce((select SUM(    p4.summ_in)              from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.is_completed=true and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_in, " +
+            " coalesce((select SUM(    p5.summ_out)             from history_cagent_summ p5 where p5.master_id="+myMasterId+" and p5.company_id="+companyId+" and p5.is_completed=true and p5.object_id = cg.id and p5.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p5.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_out, " +
+            " coalesce((select SUM(    p4.summ_in-p4.summ_out)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.is_completed=true and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_on_end " +
             " from history_cagent_summ p " +
             " INNER JOIN cagents cg ON p.object_id=cg.id "+
             " where p.master_id="+myMasterId+" and p.company_id="+companyId;
@@ -1336,8 +1336,8 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                         " d.doc_name_ru as doc_name, " +
                         " p.doc_number as doc_number, " +
                         " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                        " CASE 	WHEN p.summ_change>0 THEN  p.summ_change ELSE 0 END as summ_in, " +
-                        " CASE 	WHEN p.summ_change<0 THEN  abs(p.summ_change) ELSE 0 END as summ_out, " +
+                        " p.summ_in as summ_in, " +
+                        " p.summ_out as summ_out, " +
                         " st.name as status, " +
                         " p.doc_page_name as doc_page_name, " +
                         " p.doc_id as doc_id, " +
@@ -1349,6 +1349,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                         "     p.master_id="+myMasterId+
                         " and p.company_id="+companyId+
                         " and p.object_id="+cagentId+
+                        " and p.is_completed=true"+
                         " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                         " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
         if (searchString != null && !searchString.isEmpty()) {
@@ -1401,6 +1402,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 "     p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.object_id="+cagentId+
+                " and p.is_completed=true"+
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
         if (searchString != null && !searchString.isEmpty()) {

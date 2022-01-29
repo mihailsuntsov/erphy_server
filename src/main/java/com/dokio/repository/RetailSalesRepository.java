@@ -733,11 +733,9 @@ public class RetailSalesRepository {
 
                     // на данный момент Розничная продажа - документ, не создающий задолженностей ни одной стороне, т.к. оплата за товар происходит сразу при получении товара
                     // но запись в истории документов мы создать должны, чтобы отразить движение ден. средств (например, для Взаиморасчетов)
-                    // поэтому создаем 2 противоположных записи
-                    // записываем контрагенту положительную сумму, увеличивая наш долг ему
-                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ,         doc_number.toString(),request.getStatus_id());
-                    // записываем контрагенту отрицательную сумму, уменьшая наш долг ему
-                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ.negate(),doc_number.toString(),request.getStatus_id());
+                    // поэтому создаем запись одновременно с равными друг другу положительной и отрицательной суммами
+                    // записываем контрагенту положительную сумму, увеличивая наш долг ему, и записываем контрагенту отрицательную сумму, уменьшая наш долг ему
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ, summ,true, doc_number.toString(),request.getStatus_id());
                     return newDocId;
 
                 } catch (CantSaveProductQuantityException e) {

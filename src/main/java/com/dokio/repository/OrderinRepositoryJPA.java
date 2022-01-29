@@ -631,7 +631,7 @@ public class OrderinRepositoryJPA {
                     if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin","orderin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin","orderin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                     } else { // если платеж внутренний -
                         // отмечаем исходящий внутренний платеж как доставленный
                         switch (request.getMoving_type()) {
@@ -647,7 +647,7 @@ public class OrderinRepositoryJPA {
                         }
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
-                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin","orderin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
+                    commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin","orderin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                 }
 
                 return 1;

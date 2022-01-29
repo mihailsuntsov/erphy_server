@@ -436,7 +436,7 @@ public class DepositingRepositoryJPA {
                     // отмечаем расходный ордер, которым производится внесение, как доставленный
                     commonUtilites.setDelivered("orderout", request.getOrderout_id());
                     // обновляем состояние кассы ККМ, добавляя к ней вносимую сумму
-                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "depositing","depositing", newDocId, request.getSumm(),request.getDoc_number().toString(),null);
+                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "depositing","depositing", newDocId, request.getSumm(),new BigDecimal(0),true,request.getDoc_number().toString(),null);
 
                     return newDocId;
                 } catch (CantSetHistoryCauseNegativeSumException e) {

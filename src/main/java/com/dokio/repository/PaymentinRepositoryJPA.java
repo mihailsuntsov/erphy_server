@@ -610,7 +610,7 @@ public class PaymentinRepositoryJPA {
                     if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin","paymentin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin","paymentin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                     } else { // если платеж внутренний -
                     // отмечаем исходящий внутренний платеж как доставленный
                         switch (request.getMoving_type()) {
@@ -623,7 +623,7 @@ public class PaymentinRepositoryJPA {
                         }
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
-                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(),request.getDoc_number(),request.getStatus_id());
+                    commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
 

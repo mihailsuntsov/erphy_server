@@ -192,9 +192,10 @@ public class IndicatorsRepository {
         String stringQuery;
         stringQuery =
                 " select " +
-                " coalesce((select p3.summ_result from history_cagent_summ p3 where p3.master_id = " + masterId + " and p3.company_id = " + companyId + " and p3.object_id = p.id order by p3.id desc limit 1),0) as summ_on_end  " +
+                " coalesce((select SUM(p3.summ_in-p3.summ_out) from history_cagent_summ p3 where p3.master_id = " + masterId + " and p3.company_id = " + companyId + " and p3.object_id = p.id and p3.is_completed = true limit 1),0) as summ_on_end  " +
                 " from cagents p   " +
-                " where p.master_id = " + masterId + " and p.company_id = " + companyId +
+                " where p.master_id = " + masterId +
+                " and p.company_id = " + companyId +
                 " order by summ_on_end desc";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
