@@ -23,10 +23,7 @@ import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -519,13 +516,26 @@ public class OrderoutRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
     public Integer updateOrderout(OrderoutForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(36L,"524") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(36L,"525") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderout",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                    !(
+                        (securityRepositoryJPA.userHasPermissions_OR(36L,"526") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",request.getId().toString())) ||
+                        //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(36L,"527") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderout",request.getId().toString()))
+                    )
+                ) return -1;
+            }
+
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
             String stringQuery;
@@ -564,7 +574,11 @@ public class OrderoutRepositoryJPA {
                     commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
-
+            } catch (NotEnoughPermissionsException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/updateOrderout.", e);
+                e.printStackTrace();
+                return -1; // см. _ErrorCodes
             } catch (CantSetHistoryCauseNegativeSumException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderoutRepository/updateOrderout.", e);
@@ -577,6 +591,57 @@ public class OrderoutRepositoryJPA {
                 return null;
             }
         } else return -1; //недостаточно прав
+    }
+
+
+
+
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setOrderoutAsDecompleted(OrderoutForm request){
+        // Есть ли права на проведение
+        if((securityRepositoryJPA.userHasPermissions_OR(36L,"526") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",request.getId().toString())) ||
+            //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(36L,"527") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderout",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update orderout set " +
+                    " changer_id = " + myId + ", "+
+                    " date_time_changed= now()," +
+                    " is_completed = false" +
+                    " where " +
+                    " id= " + request.getId();
+
+            try {
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+
+                // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                String expType = spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
+                if (!expType.equals("moving")) {// если это не внутренний платёж -
+                    // меняем в истории контрагента проведенность, уменьшая его долг нашему предприятию
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
+                }
+                // меняем проведенность в истории кассы нашего предприятия, добавляя к ней переводимую сумму
+                commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
+
+                return 1;
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/setOrderoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/setOrderoutAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+
     }
 
     //сохраняет настройки документа "Розничные продажи"

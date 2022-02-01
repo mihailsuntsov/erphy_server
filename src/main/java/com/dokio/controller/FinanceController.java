@@ -89,4 +89,6 @@ class FinanceController {
         try {return new ResponseEntity<>(financeUtilites.getBalancesOnDate(request.getCompanyId(),request.getDateFrom()), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка запроса баланса на начальную дату", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
 }

@@ -13,6 +13,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.controller;
 
 import com.dokio.message.request.OrderoutForm;
+import com.dokio.message.request.Reports.ProfitLossForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.SettingsOrderoutForm;
 import com.dokio.message.request.SignUpForm;
@@ -250,5 +251,13 @@ public class OrderoutController {
         logger.info("Processing get request for path /api/auth/getOrderoutList with parameters: " + "boxoffice_id: " + id);
         try {return new ResponseEntity<>(orderoutRepository.getOrderoutList(id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/setOrderoutAsDecompleted")
+    public ResponseEntity<?> setOrderoutAsDecompleted(@RequestBody OrderoutForm request){
+        logger.info("Processing post request for path /api/auth/setOrderoutAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(orderoutRepository.setOrderoutAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setOrderoutAsDecompleted error", e);
+        return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

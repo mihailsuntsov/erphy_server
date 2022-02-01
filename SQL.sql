@@ -2821,10 +2821,10 @@ alter table history_payment_account_summ  alter column summ_out set not null;
 alter table history_boxoffice_summ        alter column summ_out set not null;
 alter table history_kassa_summ            alter column summ_out set not null;
 
-ALTER TABLE history_cagent_summ           ADD CONSTRAINT hc_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
-ALTER TABLE history_payment_account_summ  ADD CONSTRAINT hp_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
-ALTER TABLE history_boxoffice_summ        ADD CONSTRAINT hb_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
-ALTER TABLE history_kassa_summ            ADD CONSTRAINT hk_company_table_document_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_cagent_summ           ADD CONSTRAINT history_cagent_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_payment_account_summ  ADD CONSTRAINT history_payment_account_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_boxoffice_summ        ADD CONSTRAINT history_boxoffice_uq UNIQUE (company_id, doc_table_name, doc_id) ;
+ALTER TABLE history_kassa_summ            ADD CONSTRAINT history_kassa_uq UNIQUE (company_id, doc_table_name, doc_id) ;
 
 update history_cagent_summ set summ_out=summ_out*(-1) where summ_out<0;
 update history_payment_account_summ set summ_out=summ_out*(-1) where summ_out<0;
@@ -2843,7 +2843,6 @@ alter table history_cagent_summ           drop column summ_change;
 alter table history_payment_account_summ  drop column summ_change;
 alter table history_boxoffice_summ        drop column summ_change;
 alter table history_kassa_summ            drop column summ_change;
-
 
 
 

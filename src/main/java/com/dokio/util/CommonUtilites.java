@@ -196,16 +196,37 @@ public class CommonUtilites {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         BigDecimal summBefore = getSummFromHistory(docAlias, companyId, objectId);
-        // если документ не относится к тем, для которых разрешена отрицательная сумма, и сумма отрицательная
-        // (например, в кассе проедприятия, или на расчетном счету не может быть отрицательная сумма), ...
-        if(!NEGATIVE_ALLOWED_TABLE_NAMES.contains(docAlias) && summIn.subtract(summOut).add(summBefore).compareTo(new BigDecimal(0)) < 0)
-            throw new CantSetHistoryCauseNegativeSumException();// то кидаем исключение 'Невозможно записать отрицательную сумму', чтобы произошла отмена транзакции
+
+        if(
+                (
+                        // если документ проводится, и не относится к тем, для которых разрешена отрицательная сумма, и итоговая сумма отрицательная
+                        // (например, в кассе предприятия, или на расчетном счету не может быть отрицательная сумма), ...
+                        isCompleted && // документ проводится
+                        !NEGATIVE_ALLOWED_TABLE_NAMES.contains(docAlias) && // документ не относится к тем, для которых разрешена отрицательная сумма
+                        summIn.subtract(summOut).add(summBefore).compareTo(new BigDecimal(0)) < 0 // и итоговая сумма отрицательная
+                )
+                        || // ИЛИ
+                (
+                        // если документ снимается с проведения, и не относится к тем, для которых разрешена отрицательная сумма
+                        // (например, в кассе предприятия, или на расчетном счету не может быть отрицательная сумма),
+                        // и итоговая сумма после отмены проведения будет отрицательная
+                        // (т.е. summBefore (сумма до отмены проведения, или сумма на данный момент) меньше summIn (сумма, которая была про проведении прибавлена на счёт,
+                        // а сейчас, с отменой проведения, система пытается её вычесть со счёта.))
+
+                        !isCompleted && // документ снимается с проведения
+                        !NEGATIVE_ALLOWED_TABLE_NAMES.contains(docAlias) && // документ не относится к тем, для которых разрешена отрицательная сумма
+                        summBefore.compareTo(summIn) < 0 // и итоговая сумма после отмены проведения будет отрицательная
+                )
+        ) throw new CantSetHistoryCauseNegativeSumException();// то кидаем исключение 'Невозможно записать отрицательную сумму', чтобы произошла отмена транзакции
+
         if(     securityRepository.companyBelongsToMyMastersAccount(companyId) &&
                 !Objects.isNull(summBefore) &&
                 VALID_TABLE_NAMES.contains(docAlias) &&
                 VALID_TABLE_NAMES.contains(docTableName)) {
+
             String stringQuery;
-            stringQuery = "" +
+            stringQuery =
+                    // при первом проведении (т.е. в истории еще нет документа с такими company_id, doc_table_name и doc_id)
                     " insert into history_" + docAlias + "_summ (" +
                     " master_id," +
                     " company_id," +
@@ -232,14 +253,15 @@ public class CommonUtilites {
                     "'"+docPageName+"', " +
                     isCompleted+", " +
                     doc_status_id +
-                    " ) " +// при отмене проведения или повторном проведении
-                    " ON CONFLICT " +// "upsert"
+                    " ) " +
+                    // при отмене проведения или повторном проведении срабатывает ключ уникальности записи в БД по company_id, doc_table_name, doc_id
+                    " ON CONFLICT ON CONSTRAINT history_" + docAlias + "_uq" +// "upsert"
                     " DO update set " +
-                    " summ_in = " + summIn +", " +
-                    " summ_out = " + summOut +", " +
-//                    " doc_number = " + doc_number  +", " + // на будущее, когда будет можно менять номер документа
-                    " is_completed = " + isCompleted +", " +
-                    " doc_status_id = " + doc_status_id;
+                    (isCompleted?(" summ_in = " + summIn +", "):" ") + // только если проводим
+                    (isCompleted?(" summ_out = " + summOut +", "):" ") + // только если проводим
+                    (isCompleted?(" object_id = " + objectId +", "):" ") + // только если проводим
+                    " is_completed = " + isCompleted + // единственный апдейт при отмене проведения
+                    (isCompleted?(", " + " doc_status_id = " + doc_status_id):""); // только если проводим
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -253,16 +275,17 @@ public class CommonUtilites {
         } else throw new Exception(); // отмена всей транзакции по причине попытки создать запись по не своему предприятию или не по правильным таблицам
     }
 
-//    private Boolean isDocInHistor
 
+
+
+// вожвращает сумму разности входящих и исходящих поступлений по исторической таблице
     public BigDecimal getSummFromHistory(String objectName, Long companyId, Long objectId) {
         if(VALID_TABLE_NAMES.contains(objectName)) {
             String stringQuery =
-                    " select SUM(summ_in-summ_out) from history_"+objectName+"_summ where " +
+                    " select coalesce(SUM(coalesce(summ_in,0)-coalesce(summ_out,0)),0) from history_"+objectName+"_summ where " +
                     " company_id= " + companyId +
                     " and object_id= " + objectId +
-                    " and is_completed=true " +
-                    " order by id desc limit 1";
+                    " and is_completed=true ";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 return (BigDecimal) query.getSingleResult();
