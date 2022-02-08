@@ -16,6 +16,7 @@ import com.dokio.message.request.DepositingForm;
 import com.dokio.message.response.DepositingJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.OutcomingPaymentIsDecompletedException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -343,7 +344,7 @@ public class DepositingRepositoryJPA {
     }
 
     // Возвращаем id в случае успешного создания
-    // Возвращаем 0 если невозможно создать товарные позиции
+    // Возвращаем 0 если невозможно создать
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, IllegalArgumentException.class, CantSetHistoryCauseNegativeSumException.class})
@@ -389,6 +390,10 @@ public class DepositingRepositoryJPA {
                     if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
                 }
 
+                // Чтобы нельзя было "нарисовать" любую сумму прихода - берём ее из расходного ордера
+                request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("orderout","summ", myMasterId, request.getOrderout_id()));
+
+
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 stringQuery =   "insert into depositing (" +
                         " master_id," + //мастер-аккаунт
@@ -433,12 +438,31 @@ public class DepositingRepositoryJPA {
                     if (request.getLinked_doc_id() != null) {
                         linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "depositing", request.getUid(), request.getCompany_id(), myMasterId);
                     }
+
+                    // проверка на то, что исходящий платёж всё ещё проведён
+                    if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getOrderout_id(),"orderout"))
+                        throw new OutcomingPaymentIsDecompletedException();
+
                     // отмечаем расходный ордер, которым производится внесение, как доставленный
                     commonUtilites.setDelivered("orderout", request.getOrderout_id());
                     // обновляем состояние кассы ККМ, добавляя к ней вносимую сумму
-                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "depositing","depositing", newDocId, request.getSumm(),new BigDecimal(0),true,request.getDoc_number().toString(),null);
+                    commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "depositing","depositing", newDocId, request.getSumm(), new BigDecimal(0),true, doc_number.toString(),null);
+
+
+
+
+
+
+
+
 
                     return newDocId;
+
+                } catch (OutcomingPaymentIsDecompletedException e) { //
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    logger.error("Exception in method OrderinRepository/updateOrderin.", e);
+                    e.printStackTrace();
+                    return -31L; // см. _ErrorCodes
                 } catch (CantSetHistoryCauseNegativeSumException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method insertDepositing on inserting into setting kassa financial history (not enougth money).", e);

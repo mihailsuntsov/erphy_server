@@ -244,12 +244,13 @@ public class OrderoutController {
 
     @RequestMapping(
             value = "/api/auth/getOrderoutList",
-            params = {"boxoffice_id"},
+            params = {"boxoffice_id","recipient_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getOrderoutList(
-            @RequestParam("boxoffice_id") Long id){
-        logger.info("Processing get request for path /api/auth/getOrderoutList with parameters: " + "boxoffice_id: " + id);
-        try {return new ResponseEntity<>(orderoutRepository.getOrderoutList(id), HttpStatus.OK);}
+            @RequestParam("boxoffice_id") Long id,
+            @RequestParam("recipient_id") Long recipient_id){
+        logger.info("Processing get request for path /api/auth/getOrderoutList with parameters: " + "boxoffice_id: " + id +", recipient_id: " + recipient_id);
+        try {return new ResponseEntity<>(orderoutRepository.getOrderoutList(id,recipient_id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

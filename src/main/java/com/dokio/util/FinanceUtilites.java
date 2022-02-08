@@ -235,6 +235,29 @@ public class FinanceUtilites {
 
 
 
+    // есть ли проведенный Входящий платеж или Приходный оредр у Исходящего платежа или Расходного ордера с данным id
+    public Boolean isRecipientCompleted(Long myMasterId, Long id, String docTableName, String docColumnName){
+
+        String stringQuery;
+        stringQuery =
+            " select id from "+docTableName+
+            " where master_id = :myMasterId and " + docColumnName + " = :id and is_completed = true";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("id",id);
+            query.setParameter("myMasterId",myMasterId);
+            return (query.getResultList().size()>0);
+        }
+        catch (NoResultException nre) {
+            return false;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isRecipientCompleted. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 
 }

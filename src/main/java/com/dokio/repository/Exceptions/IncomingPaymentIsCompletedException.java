@@ -12,9 +12,12 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.repository.Exceptions;
 
-public class CantInsertProductRowCauseErrorException extends Exception {
+// Используем при отмене проведения исходящих платежей (Исходящий платеж, Расходный ордер, Выемка), если входящий платеж уже проведён
+// В этом случае сначала нужно отменить проведение входящего платежа (Входящий плтаёж, Приходный ордер, Внесение), а затем уже отменять
+// проведение исходящего
+public class IncomingPaymentIsCompletedException extends Exception {
     @Override
     public void printStackTrace() {
-        System.err.println("Can't insert products table row - operation error");
+        System.err.println("Can't do operation because outcoming payment is not completed");
     }
 }

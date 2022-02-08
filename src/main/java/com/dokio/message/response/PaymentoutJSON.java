@@ -38,6 +38,7 @@ public class PaymentoutJSON {
     private String status_description;
     private Long status_id;
     private Boolean is_completed;               // проведено
+    private Boolean is_delivered;               // для внутренних переводов - доставлено или нет
     private String uid;
     private BigDecimal summ;
     private String income_number;              // входящий внутренний номер поставщика
@@ -46,10 +47,27 @@ public class PaymentoutJSON {
     private String payment_account;// расчтёный счёт
     private Long expenditure_id;// id вида расходов
     private String expenditure;//  вид расходов
+    private String expenditure_type; // тип вида расходов. Например вид расходов - Внутренний платеж, его тип - moving
 
     private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия
     private Long boxoffice_id; // касса предприятия (не путать с ККМ!)
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
+
+    public Boolean getIs_delivered() {
+        return is_delivered;
+    }
+
+    public String getExpenditure_type() {
+        return expenditure_type;
+    }
+
+    public void setExpenditure_type(String expenditure_type) {
+        this.expenditure_type = expenditure_type;
+    }
+
+    public void setIs_delivered(Boolean is_delivered) {
+        this.is_delivered = is_delivered;
+    }
 
     public String getMoving_type() {
         return moving_type;

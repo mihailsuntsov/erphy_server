@@ -23,10 +23,7 @@ import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -583,15 +580,55 @@ public class OrderinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, IllegalArgumentException.class, CantSetHistoryCauseNegativeSumException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, IllegalArgumentException.class, OutcomingPaymentIsDecompletedException.class, CantSetHistoryCauseNegativeSumException.class})
     public Integer updateOrderin(OrderinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(35L,"482") && securityRepositoryJPA.isItAllMyMastersDocuments("orderin",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(35L,"483") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderin",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                        !(
+                                (securityRepositoryJPA.userHasPermissions_OR(35L,"484") && securityRepositoryJPA.isItAllMyMastersDocuments("orderin",request.getId().toString())) ||
+                                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(35L,"485") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderin",request.getId().toString()))
+                        )
+                ) return -1;
+            }
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+            // если перевод внутренний - чтобы нельзя было "нарисовать" любую сумму, берем ее из исходящего платежа
+
+            // также из исходящего платежа берем moving_type, т.к. в теории может быть такая ситуация, что пока принимающий документ открыт, в исходящем платеже
+            // можно изменить тип перемещения, и провести как Приходный ордер, так и Входящий платёж из одного исходящего платежа
+            String outgoingPaymentMovingType = request.getMoving_type();
+            if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+            if(request.getInternal()){
+                switch (request.getMoving_type()){
+                    case "account": {
+                        request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("paymentout","summ", myMasterId, request.getPaymentout_id()));
+                        outgoingPaymentMovingType = (String)commonUtilites.getFieldValueFromTableById("paymentout","moving_type", myMasterId, request.getPaymentout_id());
+                        break;
+                    }
+                    case "boxoffice": {
+                        request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("orderout","summ", myMasterId, request.getOrderout_id()));
+                        outgoingPaymentMovingType = (String)commonUtilites.getFieldValueFromTableById("orderout","moving_type", myMasterId, request.getOrderout_id());
+                        break;
+                    }
+                    case "kassa": {
+                        request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("withdrawal","summ", myMasterId, request.getWithdrawal_id()));
+                        outgoingPaymentMovingType = "boxoffice"; // из кассы ККМ можно перевеси только в кассу предприятия
+                        break;
+                    }
+                }
+            }
+
+
 
             String stringQuery;
             stringQuery =   " update orderin set " +
@@ -617,6 +654,17 @@ public class OrderinRepositoryJPA {
                     " and master_id="+myMasterId;
             try
             {
+                // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderin"))
+                    throw new DocumentAlreadyCompletedException();
+                if(Objects.isNull(request.getSumm()))
+                    throw new Exception("Ошибка определения суммы в исходящем платеже");
+                if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+                if(request.getInternal()&&Objects.isNull(outgoingPaymentMovingType))
+                    throw new Exception("Ошибка определения типа перемещения в исходящем платеже");
+                if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+                if(request.getInternal()&&!(outgoingPaymentMovingType.equals("boxoffice")||outgoingPaymentMovingType.equals("kassa")))
+                    throw new Exception("Тип перемещения в принимающем платеже не соответствует типу перемещения в исходящем платеже. Исходящий - " +outgoingPaymentMovingType+", принимающий - boxoffice или kassa");
 //                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
@@ -633,17 +681,25 @@ public class OrderinRepositoryJPA {
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin","orderin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                     } else { // если платеж внутренний -
-                        // отмечаем исходящий внутренний платеж как доставленный
+
+                        // отмечаем исходящий внутренний платеж как доставленный,
+                        // предварительно проверяя, проведён ли он
                         switch (request.getMoving_type()) {
-                            case "kassa":
+                            case "kassa":{
+                                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getWithdrawal_id(),"withdrawal"))
+                                    throw new OutcomingPaymentIsDecompletedException();
                                 commonUtilites.setDelivered("withdrawal", request.getWithdrawal_id());
-                                break;
-                            case "account":
+                                break;}
+                            case "account":{
+                                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getPaymentout_id(),"paymentout"))
+                                    throw new OutcomingPaymentIsDecompletedException();
                                 commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
-                                break;
-                            case "boxoffice":
+                                break;}
+                            case "boxoffice":{
+                                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getOrderout_id(),"orderout"))
+                                    throw new OutcomingPaymentIsDecompletedException();
                                 commonUtilites.setDelivered("orderout", request.getOrderout_id());
-                                break;
+                                break;}
                         }
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
@@ -652,6 +708,16 @@ public class OrderinRepositoryJPA {
 
                 return 1;
 
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/updateOrderin.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
+            } catch (OutcomingPaymentIsDecompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/updateOrderin.", e);
+                e.printStackTrace();
+                return -31; // см. _ErrorCodes
             } catch (CantSetHistoryCauseNegativeSumException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderinRepository/updateOrderin.", e);
@@ -678,6 +744,69 @@ public class OrderinRepositoryJPA {
                 }
             }
         } else return -1; //см. _ErrorCodes
+    }
+
+    // смена проведёности документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setOrderinAsDecompleted(OrderinForm request){
+        // Есть ли права на проведение
+        if((securityRepositoryJPA.userHasPermissions_OR(35L,"484") && securityRepositoryJPA.isItAllMyMastersDocuments("orderin",request.getId().toString())) ||
+        //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+        (securityRepositoryJPA.userHasPermissions_OR(35L,"485") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderin",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update orderin set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderin"))
+                    throw new DocumentAlreadyDecompletedException();
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+                if (!request.getInternal()) {// если это не внутренний платёж -
+                    // меняем в истории контрагента проведенность, увеличивая его долг нашему предприятию (т.к. при отмене входящего платежа деньги возвращаются контрагенту)
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderin","orderin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
+                } else { // если это внутренний платеж
+
+                    // Необходимо установить у исходящего документа is_delivered=false
+                    if (request.getMoving_type().equals("account"))
+                        commonUtilites.setUndelivered("paymentout", request.getPaymentout_id());
+                    else if (request.getMoving_type().equals("boxoffice"))
+                        commonUtilites.setUndelivered("orderout", request.getOrderout_id());
+                    else if (request.getMoving_type().equals("kassa"))
+                        commonUtilites.setUndelivered("withdrawal", request.getWithdrawal_id());
+                    else throw new Exception("Исходящий документ не определён");
+                }
+                // меняем проведенность в истории кассы, тем самым отнимая у неё переводимую сумму
+                commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin","orderin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
+                return 1;
+
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/setOrderinAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/setOrderinAsDecompleted.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderinRepository/setOrderinAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
 
     //сохраняет настройки документа "Розничные продажи"

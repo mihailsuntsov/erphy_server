@@ -165,14 +165,14 @@ public class PaymentinController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getPaymentinValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(paymentinRepository.getPaymentinValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updatePaymentin")
     public ResponseEntity<?> updatePaymentin(@RequestBody PaymentinForm request){
         logger.info("Processing post request for path /api/auth/updatePaymentin: " + request.toString());
         try {return new ResponseEntity<>(paymentinRepository.updatePaymentin(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsPaymentin")
@@ -180,7 +180,7 @@ public class PaymentinController {
     public ResponseEntity<?> saveSettingsPaymentin(@RequestBody SettingsPaymentinForm request){
         logger.info("Processing post request for path /api/auth/saveSettingsPaymentin: " + request.toString());
         try {return new ResponseEntity<>(paymentinRepository.saveSettingsPaymentin(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")
@@ -190,7 +190,7 @@ public class PaymentinController {
     public ResponseEntity<?> getSettingsPaymentin(){
         logger.info("Processing get request for path /api/auth/getSettingsPaymentin without request parameters");
         try {return new ResponseEntity<>(paymentinRepository.getSettingsPaymentin(), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deletePaymentin")
@@ -199,7 +199,7 @@ public class PaymentinController {
         logger.info("Processing post request for path /api/auth/deletePaymentin: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(paymentinRepository.deletePaymentin(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeletePaymentin")
@@ -208,7 +208,7 @@ public class PaymentinController {
         logger.info("Processing post request for path /api/auth/undeletePaymentin: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(paymentinRepository.undeletePaymentin(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -219,7 +219,7 @@ public class PaymentinController {
             @RequestParam("id") Long id){
         logger.info("Processing post request for path api/auth/getListOfPaymentinFiles: " + id);
         try {return new ResponseEntity<>(paymentinRepository.getListOfPaymentinFiles(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deletePaymentinFile")
@@ -236,4 +236,13 @@ public class PaymentinController {
         try{return new ResponseEntity<>(paymentinRepository.addFilesToPaymentin(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @PostMapping("/api/auth/setPaymentinAsDecompleted")
+    public ResponseEntity<?> setPaymentinAsDecompleted(@RequestBody PaymentinForm request){
+        logger.info("Processing post request for path /api/auth/setPaymentinAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(paymentinRepository.setPaymentinAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setPaymentinAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

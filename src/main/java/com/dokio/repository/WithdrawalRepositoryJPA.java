@@ -97,6 +97,9 @@ public class WithdrawalRepositoryJPA {
                     "           coalesce(p.is_delivered,false) as is_delivered, " +  //-- деньги доставлены до кассы предприятия (проведён документ Входящий ордер) (false = "зависшие деньги" - между кассой ККМ и кассой предприятия)
                     "           p.boxoffice_id as boxoffice_id, " +
                     "           bx.name as boxoffice, " +
+
+
+
                     "           p.date_time_created as date_time_created_sort " +
 
                     "           from withdrawal p " +

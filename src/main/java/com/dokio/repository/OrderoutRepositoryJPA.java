@@ -26,6 +26,7 @@ import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.FinanceUtilites;
 import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +72,8 @@ public class OrderoutRepositoryJPA {
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
     private SpravExpenditureRepositoryJPA spravExpenditureRepository;
+    @Autowired
+    private FinanceUtilites financeUtilites;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -116,6 +119,8 @@ public class OrderoutRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           sei.name as expenditure," +
                     "           p.moving_type as moving_type, " +
+                    "           coalesce(p.is_delivered,false) as is_delivered, " +
+                    "           sei.type as expenditure_type," +
 
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
@@ -192,6 +197,8 @@ public class OrderoutRepositoryJPA {
                     doc.setIs_completed((Boolean)                 obj[19]);
                     doc.setExpenditure((String)                   obj[20]);
                     doc.setMoving_type((String)                   obj[21]);
+                    doc.setIs_delivered((Boolean)                 obj[22]);
+                    doc.setExpenditure_type((String)              obj[23]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -559,21 +566,31 @@ public class OrderoutRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderout"))
+                    throw new DocumentAlreadyCompletedException();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
                 query.setParameter("moving_type",request.getMoving_type());
                 query.executeUpdate();
+
+                // если проводим документ
                 if((request.getIs_completed()==null?false:request.getIs_completed())){
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
                     String expType = spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
                     if (!expType.equals("moving")) {// если это не внутренний платёж -
-                        // записываем контрагенту отрицательную сумму, увеличивая его долг нашему предприятию
+                        // меняем в истории контрагента проведенность, уменьшая его долг нашему предприятию
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                     }
-                    // обновляем состояние кассы нашего предприятия, вычитая из неё переводимую сумму
+                    // обновляем состояние в истории кассы нашего предприятия, вычитая из нее переводимую сумму
                     commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/updateOrderout.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             } catch (NotEnoughPermissionsException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderoutRepository/updateOrderout.", e);
@@ -598,7 +615,7 @@ public class OrderoutRepositoryJPA {
 
     // смена проведености документа с "Проведён" на "Не проведён"
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class,IncomingPaymentIsCompletedException.class})
     public Integer setOrderoutAsDecompleted(OrderoutForm request){
         // Есть ли права на проведение
         if((securityRepositoryJPA.userHasPermissions_OR(36L,"526") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",request.getId().toString())) ||
@@ -606,6 +623,7 @@ public class OrderoutRepositoryJPA {
             (securityRepositoryJPA.userHasPermissions_OR(36L,"527") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("orderout",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery =
                     " update orderout set " +
                     " changer_id = " + myId + ", "+
@@ -615,6 +633,9 @@ public class OrderoutRepositoryJPA {
                     " id= " + request.getId();
 
             try {
+                // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderout"))
+                    throw new DocumentAlreadyDecompletedException();
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -624,16 +645,46 @@ public class OrderoutRepositoryJPA {
                 if (!expType.equals("moving")) {// если это не внутренний платёж -
                     // меняем в истории контрагента проведенность, уменьшая его долг нашему предприятию
                     commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
+                } else { // если это внутренний платёж
+                    // При отмене проведения исходящих платежей (Исходящий платеж, Расходный ордер, Выемка) необходимо проверить,
+                    // проведён ли входящий платёж.
+                    // Если да - сначала нужно отменить проведение входящего платежа (Входящий платёж, Приходный ордер, Внесение),
+                    // а затем уже отменять проведение исходящего (естесственно, не программно здесь, а пользователем)
+                    Boolean isRecipientCompleted;
+                    if(request.getMoving_type().equals("account")) {
+                        isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId, request.getId(), "paymentin","orderout_id");
+                        if(Objects.isNull(isRecipientCompleted))
+                            throw new Exception("Ошибка определения наличия проведённого входящего платежа для данного исходящего платежа");
+                        if(isRecipientCompleted)
+                            throw new IncomingPaymentIsCompletedException();
+                    }else if(request.getMoving_type().equals("boxoffice")) {
+                        isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId,  request.getId(), "orderin", "orderout_id");
+                        if(Objects.isNull(isRecipientCompleted))
+                            throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
+                        if(isRecipientCompleted)
+                            throw new IncomingPaymentIsCompletedException();
+                    }else if(request.getMoving_type().equals("kassa")) {
+                        isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId,  request.getId(), "depositing", "orderout_id");
+                        if(Objects.isNull(isRecipientCompleted))
+                            throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
+                        if(isRecipientCompleted)
+                            throw new IncomingPaymentIsCompletedException();
+                    }else throw new Exception("Исходящий документ не определён");
                 }
-                // меняем проведенность в истории кассы нашего предприятия, добавляя к ней переводимую сумму
+                // меняем проведенность в истории кассы нашего предприятия, тем самым добавляя к ней переводимую сумму
                 commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
 
                 return 1;
-            } catch (CantSetHistoryCauseNegativeSumException e) {
+            } catch (DocumentAlreadyDecompletedException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderoutRepository/setOrderoutAsDecompleted.", e);
                 e.printStackTrace();
-                return -30; // см. _ErrorCodes
+                return -60; // см. _ErrorCodes
+            } catch (IncomingPaymentIsCompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method OrderoutRepository/setOrderoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -32; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method OrderoutRepository/setOrderoutAsDecompleted. SQL query:"+stringQuery, e);
@@ -641,7 +692,6 @@ public class OrderoutRepositoryJPA {
                 return null;
             }
         } else return -1; // Нет прав на проведение либо отмену проведения документа
-
     }
 
     //сохраняет настройки документа "Розничные продажи"
@@ -942,25 +992,31 @@ public class OrderoutRepositoryJPA {
     }
     // отдает список внутренних наличных платежей по кассе предприятия, деньги из которых еще не были доставлены в кассу предприятия или на расч. счёт (т.е. нет проведения приходного ордера или входящего платежа по этим деньгам)
     @SuppressWarnings("Duplicates")
-    public List<OrderoutJSON> getOrderoutList(Long boxoffice_id) {
+    public List<OrderoutJSON> getOrderoutList(Long boxoffice_id,Long recipient_id) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         stringQuery = "select  p.id as id, " +
-                "           '№'||p.doc_number||', '||to_char(p.summ, '9990.99')||' руб.' as boxoffice, " +// наименование кассы
+                "           '№'||p.doc_number||', '||to_char(p.summ, '999999999990.99')||' руб.' as boxoffice, " +// наименование кассы
                 "           p.doc_number as doc_number, " +
                 "           coalesce(p.summ,0) as summ " +
 
                 "           from orderout p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           INNER JOIN sprav_expenditure_items exp on p.expenditure_id=exp.id" +
                 "           INNER JOIN sprav_boxoffice ap ON p.boxoffice_id=ap.id " +
                 "           where  p.master_id=" + myMasterId +
                 "           and p.boxoffice_id = " + boxoffice_id +
                 "           and coalesce(p.is_completed,false) = true" +
                 "           and coalesce(p.is_deleted,false) = false" +
+                "           and ((      p.moving_type='boxoffice'   and p.boxoffice_id=:recipient_id) " +
+                "                   or (p.moving_type='account'     and p.payment_account_to_id=:recipient_id) " +
+                "                   or (p.moving_type='kassa'       and p.kassa_to_id=:recipient_id))" +
+                "           and exp.type = 'moving'" +                  // moving - внутреннее перевод
                 "           and coalesce(p.is_delivered,false) = false";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("recipient_id",recipient_id);
             List<Object[]> queryList = query.getResultList();
             List<OrderoutJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){

@@ -240,4 +240,12 @@ public class OrderinController {
         try{return new ResponseEntity<>(orderinRepository.addFilesToOrderin(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @PostMapping("/api/auth/setOrderinAsDecompleted")
+    public ResponseEntity<?> setOrderinAsDecompleted(@RequestBody OrderinForm request){
+        logger.info("Processing post request for path /api/auth/setOrderinAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(orderinRepository.setOrderinAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setOrderinAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

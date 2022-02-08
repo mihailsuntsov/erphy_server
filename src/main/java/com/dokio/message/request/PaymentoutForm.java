@@ -33,7 +33,7 @@ public class PaymentoutForm {
     private Boolean is_completed;// проведён
     private String income_number;
     private String income_number_date;
-    private Long payment_account_id;//id расчтёного счёта
+    private Long payment_account_id;//id расчётного счёта
     private Long expenditure_id; // id вида расходов
 
     private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт предприятия

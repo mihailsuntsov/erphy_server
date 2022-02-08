@@ -37,11 +37,13 @@ public class OrderoutJSON {
     private String status_color;
     private String status_description;
     private Long status_id;
+    private Boolean is_delivered;               // для внутренних переводов - доставлено или нет
     private Boolean is_completed;               // проведено
     private String uid;
     private BigDecimal summ;
     private Long expenditure_id; // id вида расходов
     private String expenditure; // вид расходов
+    private String expenditure_type; // тип вида расходов. Например вид расходов - Внутренний платеж, его тип - moving
 
     private Long kassa_department_id;// id отделения, где находится касса ККМ, в которую будет внесение
     private String kassa_department;// отделение, где находится касса ККМ, в которую будет внесение
@@ -53,6 +55,22 @@ public class OrderoutJSON {
     private Long boxoffice_to_id; // касса предприятия куда пермещаем ден. ср-ва
     private Long kassa_to_id;             // id кассы ККМ - назначения (куда производим внесение ден средств)
     private String kassa_to;             // касса ККМ - назначения (куда производим внесение ден средств)
+
+    public Boolean getIs_delivered() {
+        return is_delivered;
+    }
+
+    public String getExpenditure_type() {
+        return expenditure_type;
+    }
+
+    public void setExpenditure_type(String expenditure_type) {
+        this.expenditure_type = expenditure_type;
+    }
+
+    public void setIs_delivered(Boolean is_delivered) {
+        this.is_delivered = is_delivered;
+    }
 
     public String getKassa_to() {
         return kassa_to;

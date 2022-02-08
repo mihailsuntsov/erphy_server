@@ -12,9 +12,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.repository.Exceptions;
 
-public class CantInsertProductRowCauseErrorException extends Exception {
+// При попытке отмены проведения у документа с уже отменённым проведением
+public class DocumentAlreadyDecompletedException extends Exception {
     @Override
     public void printStackTrace() {
-        System.err.println("Can't insert products table row - operation error");
+        System.err.println("Can't do operation because document is already decompleted");
     }
 }

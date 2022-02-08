@@ -18,10 +18,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsPaymentinJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -561,40 +558,84 @@ public class PaymentinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, IllegalArgumentException.class, CantSetHistoryCauseNegativeSumException.class, OutcomingPaymentIsDecompletedException.class})
     public Integer updatePaymentin(PaymentinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(33L,"471") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentin",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(33L,"472") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentin",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                        !(
+                                (securityRepositoryJPA.userHasPermissions_OR(33L,"473") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentin",request.getId().toString())) ||
+                                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(33L,"474") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentin",request.getId().toString()))
+                        )
+                ) return -1;
+            }
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-//            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
+            // Если перевод внутренний - чтобы нельзя было "нарисовать" любую сумму, берем ее из исходящего платежа.
+            // Также из исходящего платежа берем moving_type, т.к. в теории может быть такая ситуация, что пока принимающий документ открыт, в исходящем платеже
+            // можно изменить тип перемещения, и провести как Приходный ордер, так и Входящий платёж из одного исходящего платежа
+            String outgoingPaymentMovingType = request.getMoving_type();
+            if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+            if(request.getInternal()){
+                switch (request.getMoving_type()){
+                    case "account": {
+                        request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("paymentout","summ", myMasterId, request.getPaymentout_id()));
+                        outgoingPaymentMovingType = (String)commonUtilites.getFieldValueFromTableById("paymentout","moving_type", myMasterId, request.getPaymentout_id());
+                        break;
+                    }
+                    case "boxoffice": {
+                        request.setSumm((BigDecimal)commonUtilites.getFieldValueFromTableById("orderout","summ", myMasterId, request.getOrderout_id()));
+                        outgoingPaymentMovingType = (String)commonUtilites.getFieldValueFromTableById("orderout","moving_type", myMasterId, request.getOrderout_id());
+                        break;
+                    }
+                }
+            }
+
 
             String stringQuery;
             stringQuery =   " update paymentin set " +
-                    " changer_id = " + myId + ", "+
-                    " date_time_changed= now()," +
-                    " description = :description, " +
-                    " cagent_id = " +request.getCagent_id() +"," +
-                    " nds = "+request.getNds()+"," +// НДС
-                    " summ=" + request.getSumm()+"," + // сумма платежа
-                    " income_number = :income_number," +// входящий номер
-                    " internal = " + request.getInternal() + "," +//внутренний платеж (перемещение денег внутри предприятия)
-                    " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
-                    ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
-                    " is_completed = " + request.getIs_completed() + "," +
-                    " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
-                    " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
-                    " payment_account_from_id = "+request.getPayment_account_from_id()+"," +// id расч счёта
-                    " paymentout_id = " +   request.getPaymentout_id()+"," +        // id исходящего платежа, из которого поступили средства
-                    " orderout_id = " +     request.getOrderout_id()+"," +          // id расходного ордера, из которого поступили средства
-                    " status_id = " + request.getStatus_id() +
-                    " where " +
-                    " id= "+request.getId();
+                " changer_id = " + myId + ", "+
+                " date_time_changed= now()," +
+                " description = :description, " +
+                " cagent_id = " +request.getCagent_id() +"," +
+                " nds = "+request.getNds()+"," +// НДС
+                " summ = " + request.getSumm() + "," + // сумма платежа
+                " income_number = :income_number," +// входящий номер
+                " internal = " + request.getInternal() + "," +//внутренний платеж (перемещение денег внутри предприятия)
+                " payment_account_id = " + request.getPayment_account_id()+"," + //банковский счет
+                ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
+                " is_completed = " + request.getIs_completed() + "," +
+                " moving_type = :moving_type," +// тип перевода (источник): касса ККМ (kassa), касса предприятия (boxoffice), расч. счёт (account)
+                " boxoffice_from_id = "+request.getBoxoffice_from_id()+"," +// id кассы предприятия - источника
+                " payment_account_from_id = "+request.getPayment_account_from_id()+"," +// id расч счёта
+                " paymentout_id = " +   request.getPaymentout_id()+"," +        // id исходящего платежа, из которого поступили средства
+                " orderout_id = " +     request.getOrderout_id()+"," +          // id расходного ордера, из которого поступили средства
+                " status_id = " + request.getStatus_id() +
+                " where " +
+                " master_id= " + myMasterId +
+                " and id= "+request.getId();
             try
             {
-//                Date dateNow = new Date();
+                // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentin"))
+                    throw new DocumentAlreadyCompletedException();
+                if(Objects.isNull(request.getSumm()))
+                    throw new Exception("Ошибка определения суммы в исходящем платеже");
+                if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+                if(request.getInternal()&&Objects.isNull(outgoingPaymentMovingType))
+                    throw new Exception("Ошибка определения типа перемещения в исходящем платеже");
+                if(request.getInternal()&&!outgoingPaymentMovingType.equals("account"))
+                    throw new Exception("Тип перемещения в принимающем платеже не соответствует типу перемещения в исходящем платеже. Исходящий - " +outgoingPaymentMovingType+", принимающий - \"account\"");
+
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -606,27 +647,50 @@ public class PaymentinRepositoryJPA {
                 query.executeUpdate();
                 // если проводим документ
                 if((request.getIs_completed()==null?false:request.getIs_completed())){
+
                     // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
                     if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                     if(!request.getInternal()){// если это не внутренний платёж -
                         // записываем контрагенту положительную сумму, увеличивая наш долг ему
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin","paymentin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                     } else { // если платеж внутренний -
-                    // отмечаем исходящий внутренний платеж как доставленный
+
+                    // отмечаем исходящий внутренний платеж как доставленный, заодно перед этим проверяя,
+                    // всё ли еще данный исходящий платеж для нашего внутреннего входящего платежа проведён?
+                    // Теоретически, пока открыт входящий платеж, исходящий могли снять с проведения, и после этого
+                    // деньги в итоге проведения обоих платежей задвоятся
+
                         switch (request.getMoving_type()) {
-                            case "account":
+                            case "account":{ // если деньги поступили из документа "Исходящий платёж"
+                                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getPaymentout_id(),"paymentout"))
+                                    throw new OutcomingPaymentIsDecompletedException();
                                 commonUtilites.setDelivered("paymentout", request.getPaymentout_id());
                                 break;
-                            case "boxoffice":
+                            }
+                            case "boxoffice":{// если деньги поступили из документа "Расходный ордер"
+                                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getOrderout_id(),"orderout"))
+                                    throw new OutcomingPaymentIsDecompletedException();
                                 commonUtilites.setDelivered("orderout", request.getOrderout_id());
                                 break;
+                            }
+                            default: throw new Exception("Исходящий документ не определён");
+
                         }
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
                     commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
-
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/updatePaymentin.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
+            } catch (OutcomingPaymentIsDecompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/updatePaymentin.", e);
+                e.printStackTrace();
+                return -31; // см. _ErrorCodes
             } catch (CantSetHistoryCauseNegativeSumException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("CantSetHistoryCauseNegativeSumException in method PaymentinRepository/updatePaymentin.", e);
@@ -655,7 +719,68 @@ public class PaymentinRepositoryJPA {
         } else return -1; //недостаточно прав
     }
 
-    //сохраняет настройки документа "Розничные продажи"
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setPaymentinAsDecompleted(PaymentinForm request){
+        // Есть ли права на проведение
+        if((securityRepositoryJPA.userHasPermissions_OR(33L,"473") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentin",request.getId().toString())) ||
+                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(33L,"474") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentin",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update paymentin set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentin"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
+                if (!request.getInternal()) {// если это не внутренний платёж -
+                    // меняем в истории контрагента проведенность, увеличивая его долг нашему предприятию (т.к. при отмене входящего платежа деньги возвращаются контрагенту)
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentin","paymentin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
+                } else { // если это внутренний платеж
+
+                    // Необходимо установить у исходящего документа is_delivered=false
+                    if (request.getMoving_type().equals("account"))
+                        commonUtilites.setUndelivered("paymentout", request.getPaymentout_id());
+                    else if (request.getMoving_type().equals("boxoffice"))
+                        commonUtilites.setUndelivered("orderout", request.getOrderout_id());
+                    else throw new Exception("Исходящий документ не определён");
+                }
+                // меняем проведенность в истории р. счёта, тем самым отнимая у него переводимую сумму
+                commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
+                return 1;
+
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/setPaymentinAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/setPaymentinAsDecompleted.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentinRepository/setPaymentinAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
+
+
+    //сохраняет настройки документа
     @SuppressWarnings("Duplicates")
     @Transactional
     public Boolean saveSettingsPaymentin(SettingsPaymentinForm row) {

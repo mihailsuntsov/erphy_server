@@ -23,10 +23,7 @@ import com.dokio.message.response.additional.ExpenditureItemsListForm;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -469,13 +466,25 @@ public class CorrectionRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class ,CantSetHistoryCauseNegativeSumException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer updateCorrection(CorrectionForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(41L,"546") && securityRepositoryJPA.isItAllMyMastersDocuments("correction",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(41L,"547") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("correction",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                        !(
+                                (securityRepositoryJPA.userHasPermissions_OR(41L,"548") && securityRepositoryJPA.isItAllMyMastersDocuments("correction",request.getId().toString())) ||
+                                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(41L,"549") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("correction",request.getId().toString()))
+                        )
+                ) return -1;
+            }
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
             String stringQuery;
@@ -494,6 +503,9 @@ public class CorrectionRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "correction"))
+                    throw new DocumentAlreadyCompletedException();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("type",request.getType());
                 query.setParameter("description",request.getDescription());
@@ -517,6 +529,11 @@ public class CorrectionRepositoryJPA {
                 logger.error("Exception in method CorrectionRepository/updateCorrection.", e);
                 e.printStackTrace();
                 return -30; // см. _ErrorCodes
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CorrectionRepository/updateCorrection.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method CorrectionRepository/updateCorrection. SQL query:"+stringQuery, e);
@@ -524,6 +541,63 @@ public class CorrectionRepositoryJPA {
                 return null;
             }
         } else return -1; //недостаточно прав
+    }
+
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
+    public Integer setCorrectionAsDecompleted(CorrectionForm request){
+        // Есть ли права на проведение
+        if((securityRepositoryJPA.userHasPermissions_OR(41L,"548") && securityRepositoryJPA.isItAllMyMastersDocuments("correction",request.getId().toString())) ||
+            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(41L,"549") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("correction",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update correction set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "correction"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+
+
+                // определим тип корректировки. boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
+                if(request.getType().equals("boxoffice"))// если коррекция кассы предприятия -
+                    commonUtilites.addDocumentHistory("boxoffice",          request.getCompany_id(), request.getBoxoffice_id(),         "correction","correction", request.getId(), (request.getSumm().compareTo(new BigDecimal(0))>0?request.getSumm():new BigDecimal(0)),(request.getSumm().compareTo(new BigDecimal(0))>0?new BigDecimal(0):request.getSumm().abs()),false,request.getDoc_number(),request.getStatus_id());
+                if(request.getType().equals("cagent"))// если коррекция баланса с контрагентом -
+                    commonUtilites.addDocumentHistory("cagent",             request.getCompany_id(), request.getCagent_id(),            "correction","correction", request.getId(), (request.getSumm().compareTo(new BigDecimal(0))>0?request.getSumm():new BigDecimal(0)),(request.getSumm().compareTo(new BigDecimal(0))>0?new BigDecimal(0):request.getSumm().abs()),false,request.getDoc_number(),request.getStatus_id());
+                if(request.getType().equals("account"))// если коррекция расч. счёта предприятия -
+                    commonUtilites.addDocumentHistory("payment_account",    request.getCompany_id(), request.getPayment_account_id(),   "correction","correction", request.getId(), (request.getSumm().compareTo(new BigDecimal(0))>0?request.getSumm():new BigDecimal(0)),(request.getSumm().compareTo(new BigDecimal(0))>0?new BigDecimal(0):request.getSumm().abs()),false,request.getDoc_number(),request.getStatus_id());
+
+
+
+                return 1;
+
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CorrectionRepository/setCorrectionAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CorrectionRepository/setCorrectionAsDecompleted.", e);
+                e.printStackTrace();
+                return -30; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CorrectionRepository/setCorrectionAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
 
     //сохраняет настройки документа "Розничные продажи"

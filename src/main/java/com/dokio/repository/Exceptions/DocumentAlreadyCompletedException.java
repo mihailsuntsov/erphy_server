@@ -12,9 +12,10 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 */
 package com.dokio.repository.Exceptions;
 
-public class CantInsertProductRowCauseErrorException extends Exception {
+// При попытке проведения уже проведённого документа
+public class DocumentAlreadyCompletedException extends Exception {
     @Override
     public void printStackTrace() {
-        System.err.println("Can't insert products table row - operation error");
+        System.err.println("Can't do operation because document is already completed");
     }
 }

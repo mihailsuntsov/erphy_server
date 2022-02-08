@@ -83,6 +83,19 @@ class FinanceController {
             return new ResponseEntity<>("Ошибка запроса баланса кассы ККМ", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @RequestMapping(
+            value = "/api/auth/getAccountBalance",
+            params = {"companyId","typeId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getAccountBalance(
+            @RequestParam("companyId") Long companyId,
+            @RequestParam("typeId") Long accountId){
+        logger.info("Processing get request for path /api/auth/getAccountBalance with parameters: " + "companyId: " + companyId+", accountId: "+accountId);
+        try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("payment_account",companyId,accountId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller getAccountBalance error", e);
+            return new ResponseEntity<>("Ошибка запроса баланса расчётного счёта", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     @PostMapping("/api/auth/getBalancesOnDate")
     public ResponseEntity<?> getBalancesOnDate(@RequestBody ProfitLossForm request){
         logger.info("Processing post request for path /api/auth/getProfitLoss: " + request.toString());

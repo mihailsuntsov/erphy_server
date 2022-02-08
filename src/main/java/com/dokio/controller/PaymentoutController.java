@@ -253,18 +253,26 @@ class PaymentoutController {
     public ResponseEntity<?> addFilesToPaymentout(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path api/auth/addFilesToPaymentout: " + request.toString());
         try{return new ResponseEntity<>(paymentoutRepository.addFilesToPaymentout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка добавления фай``лов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 
     @RequestMapping(
             value = "/api/auth/getPaymentoutList",
-            params = {"account_id"},
+            params = {"account_id","recipient_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getPaymentoutList(
-            @RequestParam("account_id") Long id){
-        logger.info("Processing get request for path /api/auth/getPaymentoutList with parameters: " + "account_id: " + id);
-        try {return new ResponseEntity<>(paymentoutRepository.getPaymentoutList(id), HttpStatus.OK);}
+            @RequestParam("account_id") Long id,
+            @RequestParam("recipient_id") Long recipient_id){
+        logger.info("Processing get request for path /api/auth/getPaymentoutList with parameters: " + "account_id: " + id +", recipient_id: " + recipient_id);
+        try {return new ResponseEntity<>(paymentoutRepository.getPaymentoutList(id,recipient_id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка платежей", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/setPaymentoutAsDecompleted")
+    public ResponseEntity<?> setPaymentoutAsDecompleted(@RequestBody PaymentoutForm request){
+        logger.info("Processing post request for path /api/auth/setPaymentoutAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(paymentoutRepository.setPaymentoutAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setPaymentoutAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

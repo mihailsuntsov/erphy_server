@@ -109,6 +109,30 @@ public class CommonUtilites {
         }
     }
 
+    @SuppressWarnings("Duplicates") // проверка на проведённость документа
+    public Boolean isDocumentCompleted(Long company_id, Long doc_id, String docTableName) throws Exception {
+        String stringQuery;
+        stringQuery =
+                " select id from " + docTableName + " where " +
+                " company_id = "+company_id+
+                " and id = "+doc_id+
+                " and is_completed = true";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (query.getResultList().size()>0); // >0 - true, документ с таким id проведён
+        }
+        catch (NoResultException nre) {
+            return false;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isDocumentNumberUnical. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+//            return null;
+            throw new Exception();
+        }
+    }
+
     //превращает сет Long в строку с заданным делимитером, началом и концом. Например (1,2,3,4,5)
     public String SetOfLongToString(Set<Long> longList, String delimitter, String prefix, String suffix) {
         String result = longList.stream()
@@ -278,7 +302,7 @@ public class CommonUtilites {
 
 
 
-// вожвращает сумму разности входящих и исходящих поступлений по исторической таблице
+// воpвращает сумму разности входящих и исходящих поступлений по исторической таблице
     public BigDecimal getSummFromHistory(String objectName, Long companyId, Long objectId) {
         if(VALID_TABLE_NAMES.contains(objectName)) {
             String stringQuery =
@@ -303,11 +327,33 @@ public class CommonUtilites {
         = Collections.unmodifiableSet((Set<? extends String>) Stream.of("paymentout","orderout","withdrawal").collect(Collectors.toCollection(HashSet::new)));
 //    private static final Set VALID_INCOME_PAYMENTS_TABLE_NAMES
 //            = Collections.unmodifiableSet((Set<? extends String>) Stream.of("paymentout","orderout","withdrawal").collect(Collectors.toCollection(HashSet::new)));
+    @SuppressWarnings("Duplicates")
     // устанавливает доставлено=true для исходящего внутреннего платежа (например Выемки, либо внутреннего Исходящего платежа, или внутреннего Расходного ордера)
     public boolean setDelivered(String tableName, Long id) throws Exception {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery = "Update "+tableName+" p" +
                 " set is_delivered=true " +
+                " where p.id = " + id + " and p.master_id=" + myMasterId;
+        if (!VALID_OUTCOME_PAYMENTS_TABLE_NAMES.contains(tableName))
+            throw new IllegalArgumentException("Недопустимые параметры запроса. Таблицы нет в списке разрешённых: "+tableName); // отмена всей транзакции из вызывающего метода
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method setDelivered. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(); // отмена всей транзакции из вызывающего метода
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    // устанавливает доставлено=false для исходящего внутреннего платежа (например Выемки, либо внутреннего Исходящего платежа, или внутреннего Расходного ордера)
+    // используется при отмене проведения входящего внутреннего платежа
+    public boolean setUndelivered(String tableName, Long id) throws Exception {
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery = "Update "+tableName+" p" +
+                " set is_delivered=false " +
                 " where p.id = " + id + " and p.master_id=" + myMasterId;
         if (!VALID_OUTCOME_PAYMENTS_TABLE_NAMES.contains(tableName))
             throw new IllegalArgumentException("Недопустимые параметры запроса. Таблицы нет в списке разрешённых: "+tableName); // отмена всей транзакции из вызывающего метода
@@ -370,6 +416,21 @@ public class CommonUtilites {
                 pageList.add(i);  //создаются дополнительные номера пагинации, но не более 5 в сумме
             }}
         return pageList;
+    }
+
+    public Object getFieldValueFromTableById(String tableName, String columnName, Long masterId, Long id) {
+            String stringQuery =
+            " select " + columnName + " from " + tableName + " where master_id = " + masterId + " and id = " + id;
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                return query.getSingleResult();
+            } catch (NoResultException nre) {
+                return null;
+            } catch (Exception e) {
+                logger.error("Exception in method getFieldValueFromTableById. SQL: " + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
     }
 
     public boolean isDateValid(String s) {

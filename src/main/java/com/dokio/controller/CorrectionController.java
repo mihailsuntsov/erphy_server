@@ -236,4 +236,12 @@ class CorrectionController {
         return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @PostMapping("/api/auth/setCorrectionAsDecompleted")
+    public ResponseEntity<?> setCorrectionAsDecompleted(@RequestBody CorrectionForm request){
+        logger.info("Processing post request for path /api/auth/setCorrectionAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(correctionRepository.setCorrectionAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setCorrectionAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

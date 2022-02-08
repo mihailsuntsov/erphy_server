@@ -24,12 +24,10 @@ import com.dokio.message.response.additional.ExpenditureItemsListForm;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.FinanceUtilites;
 import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +73,8 @@ public class PaymentoutRepositoryJPA {
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
     private SpravExpenditureRepositoryJPA spravExpenditureRepository;
+    @Autowired
+    private FinanceUtilites financeUtilites;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -122,6 +122,11 @@ public class PaymentoutRepositoryJPA {
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
                     "           sei.name as expenditure," +
+
+
+                    "           coalesce(p.is_delivered,false) as is_delivered," +
+                    "           p.moving_type as moving_type, " +
+                    "           sei.type as expenditure_type," +
 
                     "           p.income_number_date as income_number_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -202,6 +207,9 @@ public class PaymentoutRepositoryJPA {
                     doc.setIncome_number_date((String)            obj[21]);
                     doc.setPayment_account_id(obj[22]!=null?Long.parseLong(obj[22].toString()):null);
                     doc.setExpenditure((String)                   obj[23]);
+                    doc.setIs_delivered((Boolean)                 obj[24]);
+                    doc.setMoving_type((String)                   obj[25]);
+                    doc.setExpenditure_type((String)              obj[26]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -535,8 +543,19 @@ public class PaymentoutRepositoryJPA {
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(34L,"514") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentout",request.getId().toString())))
         {
-            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                        !(
+                                (securityRepositoryJPA.userHasPermissions_OR(34L,"515") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentout",request.getId().toString())) ||
+                                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(34L,"516") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentout",request.getId().toString()))
+                        )
+                ) return -1;
+            }
 
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery =   " update paymentout set " +
                     " changer_id = " + myId + ", "+
@@ -558,6 +577,10 @@ public class PaymentoutRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                //  проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentout"))
+                    throw new DocumentAlreadyCompletedException();
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description",request.getDescription());
                 query.setParameter("moving_type",request.getMoving_type());
@@ -575,6 +598,11 @@ public class PaymentoutRepositoryJPA {
                     commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout","paymentout", request.getId(), new BigDecimal(0), request.getSumm(),true,request.getDoc_number(),request.getStatus_id());
                 }
                 return 1;
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentoutRepository/updatePaymentout.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             } catch (CantSetHistoryCauseNegativeSumException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method PaymentoutRepository/updatePaymentout.", e);
@@ -587,6 +615,80 @@ public class PaymentoutRepositoryJPA {
                 return null;
             }
         } else return -1; //недостаточно прав
+    }
+
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class,IncomingPaymentIsCompletedException.class})
+    public Integer setPaymentoutAsDecompleted(PaymentoutForm request){
+        // Есть ли права на проведение
+        if((securityRepositoryJPA.userHasPermissions_OR(34L,"515") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentout",request.getId().toString())) ||
+            //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(34L,"516") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentout",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update paymentout set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentout"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+
+                // определим тип платежа - внутренний или контрагенту (внутренний имеет тип moving)
+                String expType = spravExpenditureRepository.getExpTypeByExpId(request.getExpenditure_id());
+                if (!expType.equals("moving")) {// если это не внутренний платёж -
+                    // меняем в истории контрагента проведенность, уменьшая его долг нашему предприятию
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "paymentout","paymentout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
+                } else { // если это внутренний платёж
+                    // При отмене проведения исходящих платежей (Исходящий платеж, Расходный ордер, Выемка) необходимо проверить,
+                    // проведён ли входящий платёж.
+                    // Если да - сначала нужно отменить проведение входящего платежа (Входящий плтаёж, Приходный ордер, Внесение),
+                    // а затем уже отменять проведение исходящего
+                    Boolean isRecipientCompleted = false;
+                    if (request.getMoving_type().equals("account")) {
+                        isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId, request.getId(), "paymentin","paymentout_id");
+                        if(Objects.isNull(isRecipientCompleted))
+                            throw new Exception("Ошибка определения наличия проведённого входящего платежа для данного исходящего платежа");
+                        if(isRecipientCompleted)
+                            throw new IncomingPaymentIsCompletedException();
+                    }else if (request.getMoving_type().equals("boxoffice")) {
+                        isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId,  request.getId(), "orderin", "paymentout_id");
+                        if(Objects.isNull(isRecipientCompleted))
+                            throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
+                        if(isRecipientCompleted)
+                            throw new IncomingPaymentIsCompletedException();
+                    }else throw new Exception("Исходящий документ не определён");
+                }
+                // меняем проведенность в истории р. счёта нашего предприятия, тем самым добавляя к нему переводимую сумму
+                commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout","paymentout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
+
+                return 1;
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentoutRepository/setPaymentoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (IncomingPaymentIsCompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentoutRepository/setPaymentoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -32; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method PaymentoutRepository/setPaymentoutAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
 
     //сохраняет настройки документа "Розничные продажи"
@@ -924,25 +1026,29 @@ public class PaymentoutRepositoryJPA {
     }
     // отдает список внутренних безналичных платежей по р. счёту, деньги из которых еще не были доставлены в кассу предприятия или на расч. счёт (т.е. нет проведения приходного ордера или входящего платежа по этим деньгам)
     @SuppressWarnings("Duplicates")
-    public List<PaymentoutJSON> getPaymentoutList(Long account_id) {
+    public List<PaymentoutJSON> getPaymentoutList(Long account_id,Long recipient_id) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         stringQuery = "select  p.id as id, " +
-                "           '№'||p.doc_number||', '||to_char(p.summ, '9990.99')||' руб.' as account, " +// наименование р. счета
+                "           '№'||p.doc_number||', '||to_char(p.summ, '999999999990.99')||' руб.' as account, " +// наименование р. счета
                 "           p.doc_number as doc_number, " +
                 "           coalesce(p.summ,0) as summ " +
 
                 "           from paymentout p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN companies_payment_accounts ap ON p.payment_account_id=ap.id " +
+                "           INNER JOIN sprav_expenditure_items exp on p.expenditure_id=exp.id" +
                 "           where  p.master_id=" + myMasterId +
                 "           and p.payment_account_id = " + account_id +
                 "           and coalesce(p.is_completed,false) = true" +
                 "           and coalesce(p.is_deleted,false) = false" +
+                "           and ((p.moving_type='boxoffice' and p.boxoffice_id=:recipient_id) or (p.moving_type='account' and p.payment_account_to_id=:recipient_id))" +
+                "           and exp.type = 'moving'" +                  // moving - внутреннее перевод
                 "           and coalesce(p.is_delivered,false) = false";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("recipient_id",recipient_id);
             List<Object[]> queryList = query.getResultList();
             List<PaymentoutJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){
