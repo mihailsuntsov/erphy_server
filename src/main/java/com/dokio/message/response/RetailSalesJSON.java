@@ -41,6 +41,7 @@ public class RetailSalesJSON
     private boolean nds;
     private boolean nds_included;
 
+
     private String name;//наименование сделки
     private String status_name;
     private String status_color;

@@ -11,6 +11,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
 package com.dokio.util;
+import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
@@ -300,7 +301,34 @@ public class CommonUtilites {
     }
 
 
+    // возвращает настройки предприятия
+    public CompanySettingsJSON getCompanySettings(Long company_id) throws Exception {
+        String stringQuery;
+        stringQuery =   " select "+
+                        " st_prefix_barcode_pieced  as st_prefix_barcode_pieced,   "+
+                        " st_prefix_barcode_packed  as st_prefix_barcode_packed,"+
+                        " st_netcost_policy         as st_netcost_policy "+
+                        " from companies where id="+company_id;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
 
+            CompanySettingsJSON returnObj=new CompanySettingsJSON();
+                for (Object[] obj : queryList) {
+                    returnObj.setSt_prefix_barcode_pieced((Integer) obj[0]);
+                    returnObj.setSt_prefix_barcode_packed((Integer) obj[1]);
+                    returnObj.setNetcost_policy((String)            obj[2]);
+                }
+
+            return returnObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getCompanySettings. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception("Exception in method getCompanySettings. SQL query:"+stringQuery);
+        }
+    }
 
 // воpвращает сумму разности входящих и исходящих поступлений по исторической таблице
     public BigDecimal getSummFromHistory(String objectName, Long companyId, Long objectId) {

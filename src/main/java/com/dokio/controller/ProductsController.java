@@ -876,20 +876,20 @@ public class ProductsController {
 
     }
 
-    @PostMapping("/api/auth/syncQuantityProducts")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> syncQuantityProducts(@RequestBody UniversalForm request) { //синхронизирует кол-во товаров в products_history и в product_quantity
-        logger.info("Processing post request for path /api/auth/syncQuantityProducts: " + request.toString());
-
-        try {
-            Boolean ret = productsRepositoryJPA.syncQuantityProducts(request);
-            return new ResponseEntity<>(ret, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @PostMapping("/api/auth/syncQuantityProducts")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> syncQuantityProducts(@RequestBody UniversalForm request) { //синхронизирует кол-во товаров в products_history и в product_quantity
+//        logger.info("Processing post request for path /api/auth/syncQuantityProducts: " + request.toString());
+//
+//        try {
+//            Boolean ret = productsRepositoryJPA.syncQuantityProducts(request);
+//            return new ResponseEntity<>(ret, HttpStatus.OK);
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
     //загружает список товаров по их id или id их категорий
     @PostMapping("/api/auth/getProductsInfoListByIds")

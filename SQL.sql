@@ -2852,6 +2852,64 @@ alter table history_kassa_summ            drop column summ_change;
 
 
 
+alter table product_quantity add column avg_netcost_price numeric(15,2);
+-- alter table products_history add column is_completed boolean;
+
+
+create table product_history(
+                              id bigserial primary key not null,
+                              master_id  bigint not null,
+                              company_id bigint not null,
+                              department_id bigint not null,
+                              date_time_created timestamp with time zone not null,
+                              doc_type_id int not null,
+                              doc_id bigint not null,
+                              product_id bigint not null,
+                              change numeric(19,3) not null,
+                              price numeric(18,2) not null,
+                              netcost numeric(18,2) not null,
+                              is_completed boolean not null,
+                              foreign key (master_id) references users(id),
+                              foreign key (product_id) references products(id),
+                              foreign key (doc_type_id) references documents(id),
+                              foreign key (company_id) references companies(id),
+                              foreign key (department_id) references departments(id)
+);
+ALTER TABLE product_history ADD CONSTRAINT product_history_uq UNIQUE (doc_type_id, doc_id, product_id);
+
+insert into product_history
+(master_id,company_id,department_id,date_time_created,doc_type_id,doc_id,product_id,change,price,netcost,is_completed)
+select master_id,company_id,department_id,date_time_created,doc_type_id,doc_id,product_id,change,last_operation_price,avg_netcost_price,true
+from products_history;
+
+-- delete from products_history  where doc_type_id=30 and doc_id=19 and product_id=49 and id !=
+-- (select id from products_history where doc_type_id=30 and doc_id=17 and product_id=49 order by id desc limit 1)
+
+ALTER TABLE companies add column st_netcost_policy varchar(4); -- политика учета себестоимости. all - по всеу предприятию, each - по каждому отделению в отдельности
+update companies set st_netcost_policy = 'each' where id>0;
+ALTER TABLE companies alter st_netcost_policy set not null;
+
+alter table product_quantity add column date_time_created  timestamp with time zone;
+update product_quantity set date_time_created = now();
+ALTER TABLE product_quantity alter date_time_created set not null;
+
+insert into permissions (id,name,description,document_name,document_id) values
+(611,'Проведение документов по всем предприятиям','Проведение документов "Приёмка" по всем предприятиям','Приёмка',15),
+(612,'Проведение документов своего предприятия','Проведение документов "Приёмка" своего предприятия','Приёмка',15),
+(613,'Проведение документов своих отделений','Проведение документов "Приёмка" по своим отделениям','Приёмка',15),
+(614,'Проведение документов созданных собой','Проведение документов "Приёмка" созданных собой','Приёмка',15);
+
+
+CREATE INDEX product_history_master_id ON product_history USING btree (master_id);
+CREATE INDEX product_history_company_id ON product_history USING btree (company_id);
+CREATE INDEX product_history_product_id ON product_history USING btree (product_id);
+
+
+insert into permissions (id,name,description,document_name,document_id) values
+(615,'Проведение документов по всем предприятиям','Проведение документов "Возврат поставщику" по всем предприятиям','Возврат поставщику',29),
+(616,'Проведение документов своего предприятия','Проведение документов "Возврат поставщику" своего предприятия','Возврат поставщику',29),
+(617,'Проведение документов своих отделений','Проведение документов "Возврат поставщику" по своим отделениям','Возврат поставщику',29),
+(618,'Проведение документов созданных собой','Проведение документов "Возврат поставщику" созданных собой','Возврат поставщику',29);
 
 
 
@@ -2867,23 +2925,7 @@ alter table history_kassa_summ            drop column summ_change;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-WITH
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

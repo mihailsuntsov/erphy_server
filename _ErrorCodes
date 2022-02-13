@@ -8,3 +8,5 @@ null                            Ошибка выполнения
 -40                             Дублирование исходящего платежного документа (нарушения в paymentin_paymentout_unique_index, paymentin_orderout_unique_index, orderin_orderout_unique_index, orderin_paymentout_unique_index, orderin_withdrawal_unique_index, depositing_orderout_unique_index)
 -50                             Документ уже проведён
 -60                             Документ уже снят с проведения
+-70                             Отрицательное кол-во товара в истории движения товара (CalculateNetcostNegativeSumException)
+-80                             Отрицательное кол-во товара на складе (CantInsertProductRowCauseOversellException, CantSetHistoryCauseNegativeSumException)

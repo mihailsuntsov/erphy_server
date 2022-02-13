@@ -27,8 +27,34 @@ public class ProductHistoryJSON {
     private String      date_time_created;
     private BigDecimal  last_purchase_price;
     private BigDecimal  avg_purchase_price;
-    private BigDecimal  avg_netcost_price;
+    private BigDecimal  avg_netcost_price; // средняя себестоимость единицы товара при его продаже
     private BigDecimal  last_operation_price;
+    private BigDecimal  price; // то же самое что и last_operation_price, для переделки products_history -> product_history
+//    private BigDecimal  price;      // цена за 1 ед товара в операции
+    private BigDecimal  netcost;    // себест. за 1 ед товара в операции
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public BigDecimal getNetcost() {
+        return netcost;
+    }
+
+    public void setNetcost(BigDecimal netcost) {
+        this.netcost = netcost;
+    }
+    //    public BigDecimal getPrice() {
+//        return price;
+//    }
+//
+//    public void setPrice(BigDecimal price) {
+//        this.price = price;
+//    }
 
     public String getDepartment() {
         return department;

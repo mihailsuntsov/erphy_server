@@ -20,6 +20,8 @@ import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.Sprav.SpravSysMarkableGroup;
 import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
+import com.dokio.repository.Exceptions.CalculateNetcostNegativeSumException;
+import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -64,7 +66,7 @@ public class ProductsRepositoryJPA {
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("docName","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .of("docName","price","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -668,14 +670,14 @@ public class ProductsRepositoryJPA {
                     "           doc.name as docName," +
                     "           p.doc_id as docId," +
                     "           p.doc_type_id as docTypeId," +
-                    "           p.quantity as quantity," +
+                    "           (select sum(change) from product_history where master_id=" + myMasterId + " and  department_id = p.department_id and is_completed = true and product_id=" + productId +"  and date_time_created<=p.date_time_created) as quantity," +
                     "           p.change as change," +
-                    "           p.last_purchase_price as last_purchase_price," +
-                    "           p.avg_purchase_price as avg_purchase_price," +
-                    "           p.avg_netcost_price as avg_netcost_price," +
-                    "           p.last_operation_price as last_operation_price," +
-                    "           p.date_time_created as date_time_created_sort " +
-                    "           from products_history p " +
+                    "           p.price as  price," +   // цена единицы в операции
+                    "           p.netcost as netcost," + // себестоимость единицы в операции
+                    "           0.00 as avg_netcost_price, " +
+                    "           p.date_time_created as date_time_created_sort, " +
+                    "           dep.id as department_id "+
+                    "           from product_history p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN departments dep ON p.department_id=dep.id " +
                     "           INNER JOIN documents doc ON p.doc_type_id=doc.id " +
@@ -683,6 +685,7 @@ public class ProductsRepositoryJPA {
                     "           and  p.doc_type_id in ("+commonUtilites.ListOfLongToString(docTypesIds,",","","")+")" +
                     (departmentId!=0?(" and  p.department_id = "+departmentId):"") +
                     "           and  p.product_id = " + productId +
+                    "           and is_completed = true "  +
                     "           and p.date_time_created at time zone '" + myTimeZone + "' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')" +
                     "           and p.date_time_created at time zone '" + myTimeZone + "' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
@@ -704,8 +707,18 @@ public class ProductsRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
                 List<ProductHistoryJSON> returnList = new ArrayList<>();
+
+                BigDecimal quantity;
+                BigDecimal change;
+                BigDecimal price;
+                BigDecimal netcost;
                 for (Object[] obj : queryList) {
                     ProductHistoryJSON doc = new ProductHistoryJSON();
+
+                    quantity=(BigDecimal) obj[6];
+                    change  =(BigDecimal) obj[7];
+                    price   =(BigDecimal) obj[8];
+                    netcost =(BigDecimal) obj[9];
 
                     doc.setId(Long.parseLong(obj[0].toString()));
                     doc.setDepartment((String) obj[1]);
@@ -713,12 +726,11 @@ public class ProductsRepositoryJPA {
                     doc.setDocName((String) obj[3]);
                     doc.setDocId(Long.parseLong(obj[4].toString()));
                     doc.setDocTypeId((Integer) obj[5]);
-                    doc.setQuantity((BigDecimal) obj[6]);
-                    doc.setChange((BigDecimal) obj[7]);
-                    doc.setLast_purchase_price((BigDecimal) obj[8]);
-                    doc.setAvg_purchase_price((BigDecimal) obj[9]);
-                    doc.setAvg_netcost_price((BigDecimal) obj[10]);
-                    doc.setLast_operation_price((BigDecimal) obj[11]);
+                    doc.setQuantity(quantity);
+                    doc.setChange(change);
+                    doc.setPrice(price);
+                    doc.setNetcost(netcost);
+                    doc.setAvg_netcost_price(recountProductNetcost(companyId, Long.parseLong(obj[12].toString()), productId, (Timestamp) obj[11]));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -1024,11 +1036,11 @@ public class ProductsRepositoryJPA {
                 // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
                 "   coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // средняя себестоимость
-                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                "           (select ph.avg_netcost_price   from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
                 // средняя закупочная цена
                 "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
                 // последняя закупочная цена
-                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice " +
+                "           (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice " +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -2567,43 +2579,44 @@ public class ProductsRepositoryJPA {
 
 
     //синхронизирует кол-во товаров в products_history и в product_quantity по предприятию
-    //данная операция для работы Докио не нужна, проводилась 1 раз, при введении таблицы product_quantity, необходимой для быстрой отдачи кол-ва товара
-    @Transactional
-    public boolean syncQuantityProducts(UniversalForm request) {
-        Long companyId = request.getId();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery = "select id from departments where company_id=" + companyId;
-
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Integer> queryList = query.getResultList();
-
-            for (Integer obj : queryList) { //цикл по id отделений предприятия
-                Long departmentId = Long.parseLong(obj.toString());
-
-                stringQuery = "select id from products where company_id=" + companyId;
-                query = entityManager.createNativeQuery(stringQuery);
-                List<Integer> queryList2 = query.getResultList();
-                for (Integer obj2 : queryList2) {//цикл по всем товарам предприятия
-                    Long productId = Long.parseLong(obj2.toString());
-                    BigDecimal quantity = getLastProductHistoryQuantity(productId,departmentId);//получили кол-во товара в текущем предприятии в таблице по истории изменения количества товара
-
-                    if (!setProductQuantity(myMasterId, productId, departmentId, quantity)) {// запись о количестве товара в отделении в отдельной таблице
-                        break;
-                    }
-                }
-            }
-            return true;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method syncQuantityProducts. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
+    //данная операция для работы Докио не нужна, проводилась 1 раз, при введении таблицы product_quantity,
+    // необходимой для быстрой отдачи кол-ва товара и его средней себестоимости
+//    @Transactional
+//    public boolean syncQuantityProducts(UniversalForm request) {
+//        Long companyId = request.getId();
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String stringQuery = "select id from departments where company_id=" + companyId;
+//
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Integer> queryList = query.getResultList();
+//
+//            for (Integer obj : queryList) { //цикл по id отделений предприятия
+//                Long departmentId = Long.parseLong(obj.toString());
+//
+//                stringQuery = "select id from products where company_id=" + companyId;
+//                query = entityManager.createNativeQuery(stringQuery);
+//                List<Integer> queryList2 = query.getResultList();
+//                for (Integer obj2 : queryList2) {//цикл по всем товарам предприятия
+//                    Long productId = Long.parseLong(obj2.toString());
+//                    BigDecimal quantity = getLastProductHistoryQuantity(productId,departmentId);//получили кол-во товара в текущем предприятии в таблице по истории изменения количества товара
+//
+//                    if (!setProductQuantity(myMasterId, productId, departmentId, quantity)) {// запись о количестве товара в отделении в отдельной таблице
+//                        break;
+//                    }
+//                }
+//            }
+//            return true;
+//        }
+//        catch (Exception e) {
+//            logger.error("Exception in method syncQuantityProducts. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
 
     // определяет, материален ли товар, по его признаку предмета расчёта
-    public Boolean isProductMaterial(Long prodId){
+    public Boolean isProductMaterial(Long prodId) throws Exception {
         String stringQuery="";
         try {
             stringQuery =
@@ -2615,13 +2628,13 @@ public class ProductsRepositoryJPA {
         catch (Exception e) {
             logger.error("Exception in method isProductMaterial. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception("Exception in method ProductsRepositoryJpa/isProductMaterial");
         }
     }
 
     @SuppressWarnings("Duplicates")
     //product_quantity - таблица, в которой хранится актуальное количество товара (при условии что товар материален, т.е. isProductMaterial возвращает true).
-    private Boolean setProductQuantity(Long masterId, Long product_id, Long department_id, BigDecimal quantity) {
+    public Boolean setProductQuantity(Long masterId, Long product_id, Long department_id, BigDecimal quantity, BigDecimal avg_netcost_price) throws CantSaveProductQuantityException {
         String stringQuery="";
         try {
             stringQuery =
@@ -2629,18 +2642,26 @@ public class ProductsRepositoryJPA {
                             " master_id," +
                             " department_id," +
                             " product_id," +
-                            " quantity" +
+                            " quantity," +
+                            " date_time_created, " +
+                            " avg_netcost_price" +
                             ") values ("+
                             masterId + ","+
                             department_id + ","+
                             product_id + ","+
-                            quantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+                            quantity + ","+
+                            "now()," +
+                            avg_netcost_price +
+                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert" - unique: product_id, department_id
                             " DO update set " +
-                            " department_id = " + department_id + ","+
-                            " product_id = " + product_id + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ quantity;
+//                            " department_id = " + department_id + ","+
+//                            " product_id = " + product_id + ","+
+//                            " master_id = "+ masterId + "," +
+                            " quantity = "+ quantity + "," +
+                            " date_time_created = now(), " +
+                            " avg_netcost_price = "+ avg_netcost_price;
+
+
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -2648,30 +2669,95 @@ public class ProductsRepositoryJPA {
         catch (Exception e) {
             logger.error("Exception in method setProductQuantity. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new CantSaveProductQuantityException();
         }
     }
+    @SuppressWarnings("Duplicates")
+    //products_history - таблица, в которой хранится история операций с товаром в отделении: вид операции (doc_type_id), сколько (change) и по какой цене (price)
+    public Boolean setProductHistory(
+            Long masterId,
+            Long company_id,
+            Long department_id,
+            int  doc_type_id,
+            Long doc_id,
+            Long product_id,
+            BigDecimal change,
+            BigDecimal price,
+            BigDecimal netcost,
+            Timestamp date_time_created,
+            boolean is_completed
+            ) throws CantSaveProductHistoryException {
+        String stringQuery =
+            " insert into product_history (" +
+            " master_id," +
+            " company_id," +
+            " department_id," +     // отделение в котором проводится операция
+            " doc_type_id," +       // id типа документа (id из таблицы documents)
+            " doc_id," +            // id документа
+            " product_id," +        // id товара
+            " change," +            // изменение кол-ва товара в операции
+            " price," +             // цена единицы товара в данной операции
+            " netcost," +           // себестоимость единицы товара (т.е. цена единицы товара + часть распределенной по всем товарам себестоимости операции)
+            " date_time_created," + // время создания документа, к которому относится данная строка таблицы
+            " is_completed "+       // проведён ли документ, к которому относится данная строка таблицы
+            ") values ("+
+            masterId +","+
+            company_id +","+
+            department_id + ","+
+            doc_type_id +","+
+            doc_id + ","+
+            product_id + ","+
+            change+","+
+            price+","+
+            netcost+","+
+            "'" + date_time_created + "',"+
+            is_completed+
+            ")" + // при отмене проведения или повторном проведении срабатывает ключ уникальности записи в БД по doc_type_id, doc_id, product_id
+            " ON CONFLICT ON CONSTRAINT product_history_uq" +// "upsert"
+            " DO update set " +
+            (is_completed?(" change = " + change +", "):" ") + // только если проводим
+            (is_completed?(" price = " + price +", "):" ") + // только если проводим
+            (is_completed?(" netcost = " + netcost +", "):" ") + // только если проводим
+            " is_completed = " + is_completed; // единственный апдейт при отмене проведения
+        try {
+            // проверки что по API прислали id-шники от своего master_id (что в таблице есть совпадение таких masterId и id-шников )
+            if( Objects.isNull(commonUtilites.getFieldValueFromTableById("companies","id", masterId, company_id)) ||
+                Objects.isNull(commonUtilites.getFieldValueFromTableById("products","id", masterId, product_id)) )
+                throw new Exception("id объектов не принадлежат к их master_id. master_id="+masterId+", company_id="+company_id+", product_id="+product_id);
 
-    //*****************************************************************************************************************************************************
+
+
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method ProductsRepository/setProductHistory. SQL-"+stringQuery, e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+//*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
-    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-    public ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
+    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара в отделении (если department_id = null то не зависимо от отделения)
+    public ProductHistoryJSON  getLastProductHistoryRecord(Long product_id, Long department_id)
     {
         String stringQuery;
         stringQuery =
                 " select                                        "+
-                        " coalesce(last_purchase_price,0)   as last_purchase_price, "+
-                        " coalesce(avg_purchase_price,0)    as avg_purchase_price,  "+
-                        " coalesce(avg_netcost_price,0)     as avg_netcost_price,   "+
-                        " coalesce(last_operation_price,0)  as last_operation_price,"+
-                        " coalesce(quantity,0)              as quantity,            "+
-                        " coalesce(change,0)                as change               "+
-                        "          from products_history                "+
+//                        " coalesce(last_purchase_price,0)   as last_purchase_price, "+
+//                        " coalesce(avg_purchase_price,0)    as avg_purchase_price,  "+
+                        " coalesce((select avg_netcost_price from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as avg_netcost_price,   "+
+                        " coalesce(price,0)  as price,"+
+                        " coalesce((select quantity from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as quantity,   "+                       " coalesce(change,0)                as change               "+
+                        "          from product_history                "+
                         "          where                                "+
-                        "          product_id="+product_id+" and        "+
-                        "          department_id="+department_id         +
-                        "          order by id desc limit 1             ";
+                        "          product_id="+product_id;
+                        if(!Objects.isNull(department_id))
+                            stringQuery = stringQuery+"          and department_id="+department_id;
+                        stringQuery = stringQuery+ "          order by id desc limit 1             ";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -2679,18 +2765,20 @@ public class ProductsRepositoryJPA {
 
             ProductHistoryJSON returnObj=new ProductHistoryJSON();
             if(queryList.size()==0){//если записей истории по данному товару ещё нет
-                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
+//                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
+//                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
                 returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-                returnObj.setLast_operation_price(      (new BigDecimal(0)));
+                returnObj.setPrice(                     (new BigDecimal(0)));
                 returnObj.setQuantity(                  (new BigDecimal(0)));
+                returnObj.setChange(                    (new BigDecimal(0)));
             }else {
                 for (Object[] obj : queryList) {
-                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                    returnObj.setQuantity((BigDecimal)              obj[4]);
+//                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
+//                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
+                    returnObj.setAvg_netcost_price((BigDecimal)     obj[0]);
+                    returnObj.setPrice((BigDecimal)                 obj[1]);
+                    returnObj.setQuantity((BigDecimal)              obj[2]);
+                    returnObj.setChange((BigDecimal)                obj[3]);
                 }
             }
             return returnObj;
@@ -2702,21 +2790,78 @@ public class ProductsRepositoryJPA {
         }
     }
 
-
-
-
-    @SuppressWarnings("Duplicates")  // возвращает кол-во из последней строки истории изменений товара
-    private BigDecimal getLastProductHistoryQuantity(Long product_id, Long department_id)
-    {
+    @SuppressWarnings("Duplicates")
+    // возвращает значения количества и себестоимости товара (если department_id = null то не зависимо от
+    // отделения - т.е. всё кол-во товара на предприятии и последнее вычисленное изменение)
+    public ProductHistoryJSON  getProductQuantityAndNetcost(Long masterId, Long companyId, Long productId, Long departmentId) throws Exception {
         String stringQuery;
         stringQuery =
-                " select                                        "+
-                        " quantity              as quantity             "+
-                        "          from products_history                "+
-                        "          where                                "+
-                        "          product_id="+product_id+" and        "+
-                        "          department_id="+department_id         +
-                        "          order by id desc limit 1             ";
+                " select sum(change) from product_history where "+
+                        "   master_id = " + masterId +
+                        "   and company_id = " + companyId +
+                        (Objects.isNull(departmentId)?" ":" and department_id=" + departmentId) +
+                        "   and product_id=" + productId +
+                        "   and is_completed = true ";
+
+
+
+                      /*  " coalesce((select avg_netcost_price from product_quantity where ";
+                        if(!Objects.isNull(department_id))
+                            stringQuery = stringQuery+"department_id="+department_id+" and ";
+                        stringQuery = stringQuery+" product_id="+product_id;
+                        if(Objects.isNull(department_id))
+                            stringQuery = stringQuery+" order by date_time_created desc limit 1";
+                        stringQuery = stringQuery+"),0)     as avg_netcost_price,   "; // если отделение не задано - средняя себестоимость берется из последней записи по товару не зависимо от отделения
+                        if(!Objects.isNull(department_id))
+                            stringQuery = stringQuery+" coalesce((select quantity from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as quantity   ";
+                        else
+                            stringQuery = stringQuery+" coalesce((select sum(quantity) from product_quantity where product_id="+product_id+"),0)     as quantity   ";
+
+                        */
+
+
+
+
+                        try
+        {
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            Object queryList = query.getSingleResult();
+
+            ProductHistoryJSON returnObj=new ProductHistoryJSON();
+            if(Objects.isNull(queryList)){//если записей истории по данному товару ещё нет
+                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
+                returnObj.setQuantity(                  (new BigDecimal(0)));
+            }else {
+                returnObj.setAvg_netcost_price(recountProductNetcost(companyId, departmentId, productId));
+                returnObj.setQuantity((BigDecimal) queryList);
+//                for (Object[] obj : queryList) {
+//                    returnObj.setAvg_netcost_price(recountProductNetcost(companyId, departmentId, productId));
+//                    returnObj.setQuantity((BigDecimal)              obj[0]);
+//                }
+            }
+            return returnObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getProductQuantityAndNetcost. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")  // возвращает кол-во товара в отделении (или во всех отделениях предприятия, если departmentId == null )
+    public BigDecimal getProductQuantity(Long masterId, Long companyId, Long productId, Long departmentId) throws Exception {
+        String stringQuery;
+        stringQuery =
+
+                " select sum(change) from product_history where "+
+                        "   master_id = " + masterId +
+                        "   and company_id = " + companyId +
+                        (Objects.isNull(departmentId)?"":("   and department_id=" + departmentId)) +
+                        "   and product_id=" + productId +
+                        "   and is_completed = true ";
+
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -2733,11 +2878,125 @@ public class ProductsRepositoryJPA {
             return returnObj.getQuantity();
         }
         catch (Exception e) {
-            logger.error("Exception in method getLastProductHistoryQuantity. SQL query:"+stringQuery, e);
+            logger.error("Exception in method geProductQuantity. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return null;
+            throw new Exception();
         }
     }
+    // Считает себестоимость товара по проведенным операциям
+    @SuppressWarnings("Duplicates")
+    BigDecimal recountProductNetcost(Long companyId, Long departmentId, Long productId) throws Exception {
+
+        String stringQuery =
+                                "   select " +
+                                "   change as change, " +
+                                "   netcost as netcost, " +
+                                "   doc_type_id as doc_type_id" +
+                                "   from product_history                "+
+                                "   where                                "+
+                                "   company_id = " + companyId +
+                                (Objects.isNull(departmentId)?" ":"  and department_id=" + departmentId) +
+                                "   and is_completed = true " +
+                                "   and product_id=" + productId +
+                                "   order by date_time_created asc";
+        try{
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            BigDecimal lastAvgNetcostPrice = new BigDecimal(0); // себестоимость
+            BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
+
+            if(queryList.size()>0)
+                for (Object[] obj : queryList) {
+                    BigDecimal change = (BigDecimal)obj[0];
+                    BigDecimal netcost  = (BigDecimal)obj[1];
+
+                    if(availableQuantity.compareTo(new BigDecimal(0))>=0) {
+
+
+                        if (change.compareTo(new BigDecimal(0)) > 0) // пересчитываем себестоимость только для документов поступления (Приёмка, Оприходование, Возврат покупателя)
+                            // новая средняя себестоимость = ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
+                            lastAvgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(change.multiply(netcost))).divide(availableQuantity.add(change), 2, BigDecimal.ROUND_HALF_UP);
+
+
+                    } else throw new CalculateNetcostNegativeSumException();
+
+                    availableQuantity=availableQuantity.add(change);
+                }
+
+            return lastAvgNetcostPrice;
+        }
+        catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        }
+            catch (Exception e) {
+            logger.error("Exception in method recountProductNetcost. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    // Считает себестоимость товара по проведенным операциям на время timeBefore
+    @SuppressWarnings("Duplicates")
+    private BigDecimal recountProductNetcost(Long companyId, Long departmentId, Long productId, Timestamp timeBefore) throws Exception {
+
+        String stringQuery =
+                "   select " +
+                        "   change as change, " +
+                        "   netcost as netcost, " +
+                        "   doc_type_id as doc_type_id" +
+                        "   from product_history                "+
+                        "   where                                "+
+                        "   company_id = " + companyId +
+                        (Objects.isNull(departmentId)?" ":"  and department_id=" + departmentId) +
+                        "   and is_completed = true " +
+                        "   and product_id=" + productId +
+                        "   and date_time_created <= '" + timeBefore + "'" +
+                        "   order by date_time_created asc";
+        try{
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            BigDecimal lastAvgNetcostPrice = new BigDecimal(0); // себестоимость
+            BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
+
+            if(queryList.size()>0)
+                for (Object[] obj : queryList) {
+                    BigDecimal change = (BigDecimal)obj[0];
+                    BigDecimal netcost  = (BigDecimal)obj[1];
+
+                    if(availableQuantity.compareTo(new BigDecimal(0))>=0) {
+
+
+                        if (change.compareTo(new BigDecimal(0)) > 0) // пересчитываем себестоимость только для документов поступления (Приёмка, Оприходование, Возврат покупателя)
+                            // новая средняя себестоимость = ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
+                            lastAvgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(change.multiply(netcost))).divide(availableQuantity.add(change), 2, BigDecimal.ROUND_HALF_UP);
+
+
+                    } else throw new CalculateNetcostNegativeSumException();
+
+                    availableQuantity=availableQuantity.add(change);
+                }
+
+            return lastAvgNetcostPrice;
+        }
+        catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        }
+        catch (Exception e) {
+            logger.error("Exception in method recountProductNetcost. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds, Boolean save) {

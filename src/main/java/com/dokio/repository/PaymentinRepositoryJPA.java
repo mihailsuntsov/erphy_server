@@ -571,7 +571,7 @@ public class PaymentinRepositoryJPA {
                 if(
                         !(
                                 (securityRepositoryJPA.userHasPermissions_OR(33L,"473") && securityRepositoryJPA.isItAllMyMastersDocuments("paymentin",request.getId().toString())) ||
-                                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
                                 (securityRepositoryJPA.userHasPermissions_OR(33L,"474") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("paymentin",request.getId().toString()))
                         )
                 ) return -1;

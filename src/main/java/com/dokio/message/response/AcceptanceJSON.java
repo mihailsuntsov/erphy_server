@@ -42,7 +42,16 @@ public class AcceptanceJSON {
     private Long        product_count;
     private Integer overhead_netcost_method;//0 - нет, 1 - по весу цены в поставке
     private Long        status_id;
+    private BigDecimal sum_price;
     private String uid;
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
+    }
 
     public String getUid() {
         return uid;

@@ -384,7 +384,13 @@ public class ReturnsupController {
             return responseEntity;
         }
     }
-
+    @PostMapping("/api/auth/setReturnsupAsDecompleted")
+    public ResponseEntity<?> setReturnsupAsDecompleted(@RequestBody ReturnsupForm request){
+        logger.info("Processing post request for path /api/auth/setReturnsupAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(returnsupRepository.setReturnsupAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setReturnsupAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     // печать документов
     @SuppressWarnings("Duplicates")
     @RequestMapping(
