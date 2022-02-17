@@ -18,9 +18,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsShipmentJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -716,7 +714,7 @@ public class ShipmentRepositoryJPA {
         //сохранение таблицы
         if (!Objects.isNull(request.getShipmentProductTable()) && request.getShipmentProductTable().size() != 0) {
             for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
-                row.setShipment_id(docId);// чтобы через API сюда нельзя было подсунуть рандомный id
+                row.setShipment_id(docId);// чтобы через API сюда нельзя было подсунуть рандомный id? да и при создании Отгрузки его id еще не известен
                 insertProductRowResult = saveShipmentProductTable(row, request.getCompany_id(), request.isIs_completed(), request.getCustomers_orders_id(), myMasterId);  //сохранение строки таблицы товаров
                 if (insertProductRowResult==null || !insertProductRowResult) {
                     if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveShipmentProductTable
@@ -744,6 +742,23 @@ public class ShipmentRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(21L,"267") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.isIs_completed()!=null && request.isIs_completed())){
+                if(
+                        !(      //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(21L,"396") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",request.getId().toString())) ||
+                                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(21L,"397") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",request.getId().toString()))||
+                                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                                (securityRepositoryJPA.userHasPermissions_OR(21L,"398") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",request.getId().toString()))||
+                                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                                (securityRepositoryJPA.userHasPermissions_OR(21L,"399") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",request.getId().toString()))
+                        )
+                ) return -1;
+            }
+
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всей отгрузке
@@ -781,9 +796,6 @@ public class ShipmentRepositoryJPA {
                         if(customersOrdersId>0L) {
                             customersOrdersProductTable = customersOrdersRepository.getCustomersOrdersProductTable(customersOrdersId);
                         }
-
-
-
                         // бежим по товарам в Отгрузке
                         for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
                             docProductsSum=docProductsSum.add(row.getProduct_sumprice());
@@ -816,18 +828,24 @@ public class ShipmentRepositoryJPA {
                                     }
                                 }
                             }
-                            if (!addShipmentProductHistory(row, request, myMasterId)) {//      запись в историю товара
-                                break;
-                            } else {
-                                if (row.getIs_material()) { //если товар материален, т.е. это не услуга, работа и т.п.
-                                    if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-                                        break;
-                                    }
-                                }
-                            }
+
+
+//
+//                            if (!addShipmentProductHistory(row, request, myMasterId)) {//      запись в историю товара
+//                                break;
+//                            } else {
+//                                if (row.getIs_material()) { //если товар материален, т.е. это не услуга, работа и т.п.
+//                                    if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
+//                                        break;
+//                                    }
+//                                }
+//                            }
+
+                            addProductHistory(row, request, myMasterId);
+
                         }
                         // обновляем баланс с контрагентом
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), new BigDecimal(0), docProductsSum,true,request.getDoc_number(),request.getStatus_id());//negate т.к. при отгрузке баланс с контрагентом должен смещаться в отрицательную сторону, т.е. в долг контрагента
+                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), new BigDecimal(0), docProductsSum,true,request.getDoc_number(),request.getStatus_id());
                     }
                     return 1;
                 } else return null;
@@ -847,11 +865,26 @@ public class ShipmentRepositoryJPA {
                 logger.error("Exception in method ShipmentRepository/setShipmentQuantity on updating shipment_product cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/updateShipment.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
+            }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("CalculateNetcostNegativeSumException in method ShipmentRepository/updateShipment.", e);
+                e.printStackTrace();
+                return -70; // см. _ErrorCodes
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method ShipmentRepository/addShipmentProductHistory on inserting into products_history cause oversell.", e);
                 e.printStackTrace();
-                return 0;// недостаточно товара на складе
+                return -80;// недостаточно товара на складе
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/setShipmentAsDecompleted.", e);
+                e.printStackTrace();
+                return -80; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method ShipmentRepository/updateShipment. SQL query:"+stringQuery, e);
@@ -860,7 +893,157 @@ public class ShipmentRepositoryJPA {
             }
         } else return -1; //недостаточно прав
     }
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CalculateNetcostNegativeSumException.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setShipmentAsDecompleted(ShipmentForm request) throws Exception {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(21L,"396") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",request.getId().toString())) ||
+                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(21L,"397") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",request.getId().toString()))||
+                        //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                        (securityRepositoryJPA.userHasPermissions_OR(21L,"398") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",request.getId().toString()))||
+                        //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                        (securityRepositoryJPA.userHasPermissions_OR(21L,"399") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",request.getId().toString()))
+        )
+        {
+            if(request.getShipmentProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update shipment set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
 
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "shipment"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+
+                //сохранение истории движения товара
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+                request.setIs_completed(false);
+                BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всем товарам документа
+
+                for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
+                    docProductsSum=docProductsSum.add(row.getProduct_sumprice());
+                    addProductHistory(row, request, myMasterId);
+                }
+                // обновляем баланс с контрагентом
+                commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), docProductsSum,new BigDecimal(0),false, request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
+                return 1;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/addProductHistory on inserting into product_history cause oversell.", e);
+                e.printStackTrace();
+                return -80;
+            }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (setShipmentAsDecompleted).", e);
+                e.printStackTrace();
+                return -70; // см. _ErrorCodes
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/setShipmentAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/setShipmentAsDecompleted.", e);
+                e.printStackTrace();
+                return -80; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ShipmentRepository/setShipmentAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
+    @SuppressWarnings("Duplicates")
+    private Boolean addProductHistory(ShipmentProductTableForm row, ShipmentForm request , Long masterId) throws Exception {
+        try {
+            // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
+            if (productsRepository.isProductMaterial(row.getProduct_id())) {
+                // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
+                String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
+                // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
+                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
+                // актуальное количество товара В ОТДЕЛЕНИИ
+                // Используется для записи нового кол-ва товара в отделении путем вычитания row.getProduct_count() из lastQuantity
+                // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
+                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
+                // средняя себестоимость уже имеющегося товара
+                BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
+
+                // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
+                // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
+                if(request.isIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
+                    logger.error("Для возврата поставщику с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к возврату больше количества товара на складе");
+                    throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+                }
+
+                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("shipment", "date_time_created", masterId, request.getId())).getTime());
+
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        21,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count().negate(),
+                        row.getProduct_price(),
+                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        timestamp,
+                        request.isIs_completed()
+                );
+
+                if (request.isIs_completed())   // Если проводим
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.subtract(row.getProduct_count()),
+                            lastAvgNetcostPrice
+                    );
+                else                            // Если снимаем с проведения
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.add(row.getProduct_count()),
+                            lastAvgNetcostPrice
+                    );
+            }
+
+            return true;
+
+        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateShipment
+            e.printStackTrace();
+            logger.error("Exception in method ShipmentRepository/addProductHistory (CantInsertProductRowCauseOversellException). ", e);
+            throw new CantInsertProductRowCauseOversellException();
+        }catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (addProductHistory).", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductQuantityException e) {
+            logger.error("Exception in method ShipmentRepository/addProductHistory on inserting into product_quantity cause error.", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductHistoryException e) {
+            logger.error("Exception in method ShipmentRepository/addProductHistory on inserting into product_history.", e);
+            e.printStackTrace();
+            throw new CantSaveProductHistoryException();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method ShipmentRepository/addProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
     //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
     //если не превышает - пишется строка с товаром в БД
     //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка

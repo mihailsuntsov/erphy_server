@@ -654,6 +654,7 @@ public class AcceptanceRepository {
                     e.printStackTrace();
                     return -50; // см. _ErrorCodes
                 }catch (CalculateNetcostNegativeSumException e) {
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost.", e);
                     e.printStackTrace();
                     return -70; // см. _ErrorCodes
@@ -869,6 +870,7 @@ public class AcceptanceRepository {
             return false;
         }
     }
+
     @SuppressWarnings("Duplicates")
     private Boolean addProductHistory(AcceptanceProductForm row, AcceptanceForm request , Long masterId) throws Exception {
         try {
@@ -946,6 +948,10 @@ public class AcceptanceRepository {
             logger.error("Exception in method addAcceptanceProductHistory on inserting into product_quantity cause error.", e);
             e.printStackTrace();
             throw new CalculateNetcostNegativeSumException();
+        } catch (CantInsertProductRowCauseOversellException e) {
+            logger.error("Exception in method addAcceptanceProductHistory on inserting into product_quantity cause error - Not enough product count.", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseOversellException();
         } catch (CantSaveProductHistoryException e) {
             logger.error("Exception in method addAcceptanceProductHistory on inserting into product_history.", e);
             e.printStackTrace();
@@ -956,41 +962,7 @@ public class AcceptanceRepository {
             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
-//
-//
-//    @SuppressWarnings("Duplicates")
-//    private Boolean setProductQuantity(AcceptanceProductForm row, AcceptanceForm request , Long masterId) throws CantSaveProductQuantityException {
-//        String stringQuery;
-//        try {
-//            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-//            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-//            stringQuery =
-//                    " insert into product_quantity (" +
-//                            " master_id," +
-//                            " department_id," +
-//                            " product_id," +
-//                            " quantity" +
-//                            ") values ("+
-//                            masterId + ","+
-//                            request.getDepartment_id() + ","+
-//                            row.getProduct_id() + ","+
-//                            lastQuantity +
-//                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-//                            " DO update set " +
-//                            " department_id = " + request.getDepartment_id() + ","+
-//                            " product_id = " + row.getProduct_id() + ","+
-//                            " master_id = "+ masterId + "," +
-//                            " quantity = "+ lastQuantity;
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            query.executeUpdate();
-//            return true;
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            logger.error("Exception in method AcceptanceRepository/setProductQuantity. ", e);
-//            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
-//        }
-//    }
+
     @SuppressWarnings("Duplicates")
     public List<LinkedDocsJSON> getAcceptanceLinkedDocsList(Long docId, String docName) {
         String stringQuery;

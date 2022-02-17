@@ -287,6 +287,15 @@ public class ShipmentController {
         return new ResponseEntity<>(shipmentRepository.undeleteShipment(checked), HttpStatus.OK);
     }
 
+
+    @PostMapping("/api/auth/setShipmentAsDecompleted")
+    public ResponseEntity<?> setShipmentAsDecompleted(@RequestBody ShipmentForm request){
+        logger.info("Processing post request for path /api/auth/setShipmentAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(shipmentRepository.setShipmentAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Contrloller setShipmentAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     // печать документов
     @SuppressWarnings("Duplicates")
     @RequestMapping(

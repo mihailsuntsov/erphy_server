@@ -530,6 +530,7 @@ public class ReturnsupRepository {
                 e.printStackTrace();
                 return -50; // см. _ErrorCodes
             }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("CalculateNetcostNegativeSumException in method ReturnsupRepository/updateReturnsup.", e);
                 e.printStackTrace();
                 return -70; // см. _ErrorCodes
@@ -636,7 +637,6 @@ public class ReturnsupRepository {
     @SuppressWarnings("Duplicates")
     private Boolean addProductHistory(ReturnsupProductTableForm row, ReturnsupForm request , Long masterId) throws Exception {
         try {
-
             // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
             if (productsRepository.isProductMaterial(row.getProduct_id())) {
                 // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
@@ -647,12 +647,8 @@ public class ReturnsupRepository {
                 // Используется для записи нового кол-ва товара в отделении путем вычитания row.getProduct_count() из lastQuantity
                 // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
                 BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
-                // имеющееся количество (если учёт себестоимости по отделениям - то В ОТДЕЛЕНИИ, если по всему предприятию - то кол-во ВО ВСЕХ ОТДЕЛЕНИЯХ.)
-                // Используется для расчёта себестоимости - т.к. данная операция не влияет на среднюю себестоимость товара - здессь ее не пересчитываем
-//                BigDecimal availableQuantity = netcostPolicy.equals("each") ? lastQuantity : productInfo.getQuantity();
                 // средняя себестоимость уже имеющегося товара
                 BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
-
 
                 // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
                 // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
@@ -660,7 +656,6 @@ public class ReturnsupRepository {
                     logger.error("Для возврата поставщику с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к возврату больше количества товара на складе");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
-
 
                 Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("returnsup", "date_time_created", masterId, request.getId())).getTime());
 
@@ -677,15 +672,6 @@ public class ReturnsupRepository {
                         timestamp,
                         request.getIs_completed()
                 );
-
-                // новая средняя себестоимость - для операции "не поступления" как эта, берется уже имеющаяся ср. себестоимость, т.к. данная операция не влияет на среднюю себестоимость товара
-                /*BigDecimal avgNetcostPrice;
-                if (request.getIs_completed())   // Если проводим, то считаем по формуле
-                    // ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
-                    avgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(availableQuantity.add(row.getProduct_count()), 2, BigDecimal.ROUND_HALF_UP);
-                else // Если снимаем с проведения, то пересчитываем на основании прежних движений товара
-                    avgNetcostPrice = productsRepository.recountProductNetcost(request.getCompany_id(), request.getDepartment_id(), row.getProduct_id());
-                */
 
                 if (request.getIs_completed())   // Если проводим
                     productsRepository.setProductQuantity(
@@ -725,107 +711,6 @@ public class ReturnsupRepository {
             e.printStackTrace();
             logger.error("Exception in method ReturnsupRepository/addProductHistory. ", e);
             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
-    @SuppressWarnings("Duplicates")
-    private Boolean addReturnsupProductHistory(ReturnsupProductTableForm row, ReturnsupForm request , Long masterId) throws CantSaveProductHistoryException, CantInsertProductRowCauseOversellException {
-        String stringQuery;
-        try {
-            //материален ли товар
-            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
-            //берем последнюю запись об истории товара в данном отделении
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-            //последнее количество товара (прибавим его в запросе к тому количеству, которое возвращают, но только если товар материален)
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            //средняя цена закупа - оставляем прежней
-            BigDecimal avgPurchasePrice =lastProductHistoryRecord.getAvg_purchase_price();
-            //последняя цена покупки
-            BigDecimal lastPurchasePrice =lastProductHistoryRecord.getLast_purchase_price();
-            //средняя себестоимость - оставляем прежней
-            BigDecimal avgNetcostPrice =  lastProductHistoryRecord.getAvg_netcost_price();
-            //Цена операции - пока единственный показатель, который меняется у товара в его истории в связи с данным возвратом товара
-            BigDecimal lastOperationPrice=row.getProduct_price();// за цену операции берем цену возврата товара поставщику
-
-            if((lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                logger.error("Для возврата поставщику с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к возврату больше количества товара на складе");
-                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
-            }
-
-            stringQuery = " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +
-                    " change," +
-                    " avg_purchase_price," +
-                    " avg_netcost_price," +
-                    " last_purchase_price," +
-                    " last_operation_price," +
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_id() + ","+
-                    29 +","+
-                    row.getReturnsup_id() + ","+
-                    row.getProduct_id() + ","+
-                    (isMaterial?lastQuantity.subtract(row.getProduct_count()):(new BigDecimal(0)))+","+//если товар материален - записываем его кол-во, равное разности прежнего и возвращаемого, иначе 0
-                    row.getProduct_count().negate() +","+// т.к. товар выбывает, пишем его орицательное кол-во
-                    avgPurchasePrice +","+
-                    avgNetcostPrice +","+
-                    lastPurchasePrice+","+
-                    lastOperationPrice+","+
-                    " now())";
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateReturnsup
-            e.printStackTrace();
-            logger.error("Exception in method ReturnsupRepository/addReturnsupProductHistory (CantInsertProductRowCauseOversellException). ", e);
-            throw new CantInsertProductRowCauseOversellException();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method ReturnsupRepository/addReturnsupProductHistory. ", e);
-            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    private Boolean setReturnsupQuantity(ReturnsupProductTableForm row, ReturnsupForm request , Long masterId) throws CantSaveProductQuantityException {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-        stringQuery =
-                " insert into product_quantity (" +
-                        " master_id," +
-                        " department_id," +
-                        " product_id," +
-                        " quantity" +
-                        ") values ("+
-                        masterId + ","+
-                        request.getDepartment_id() + ","+
-                        row.getProduct_id() + ","+
-                        lastQuantity +
-                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                        " DO update set " +
-                        " department_id = " + request.getDepartment_id() + ","+
-                        " product_id = " + row.getProduct_id() + ","+
-                        " master_id = "+ masterId + "," +
-                        " quantity = "+ lastQuantity;
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method ReturnsupRepository/setProductQuantity. SQL query:"+stringQuery, e);
-            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 

@@ -13,6 +13,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.message.response;
 
 
+import java.math.BigDecimal;
+
 public class PostingJSON {
     private Long id;
     private String master;
@@ -36,7 +38,16 @@ public class PostingJSON {
     private String      status_description;
     private Long        product_count;
     private Long        status_id;
+    private BigDecimal sum_price;
     private String uid;
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
+    }
 
     public String getUid() {
         return uid;

@@ -19,8 +19,7 @@ import com.dokio.message.response.Settings.SettingsReturnJSON;
 import com.dokio.message.response.additional.FilesReturnJSON;
 import com.dokio.message.response.additional.ReturnProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -459,6 +458,22 @@ public class ReturnRepository {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(28L,"359") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                        !(      //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(28L,"619") && securityRepositoryJPA.isItAllMyMastersDocuments("return",request.getId().toString())) ||
+                                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(28L,"620") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",request.getId().toString()))||
+                                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                                (securityRepositoryJPA.userHasPermissions_OR(28L,"621") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",request.getId().toString()))||
+                                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                                (securityRepositoryJPA.userHasPermissions_OR(28L,"622") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",request.getId().toString()))
+                        )
+                ) return -1;
+            }
+
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
@@ -484,26 +499,22 @@ public class ReturnRepository {
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
 
                 query.executeUpdate();
-                if(insertReturnProducts(request, request.getId(), myMasterId)){//если сохранение товаров прошло успешно
-                    if(request.getIs_completed()){//если завершается возврат - запись в историю товара
-                        for (ReturnProductTableForm row : request.getReturnProductTable()) {
-                            docProductsSum=docProductsSum.add(row.getProduct_sumprice());
-                            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
-                            if (!addReturnProductHistory(row, request, myMasterId)) {//      запись в историю товара
-                                break;
-                            } else {
-                                if (isMaterial) { //если товар материален, т.е. это не услуга, работа и т.п.
-                                    if (!setReturnQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        // обновляем баланс с контрагентом
-                        commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return","return", request.getId(), docProductsSum, new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());//при возврате покупателя баланс с ним должен смещаться в положительную сторону, т.е. в наш долг покупателю
+
+                //сохранение товаров
+                insertReturnProducts(request, request.getId(), myMasterId);
+
+                //если возврат ПРОВОДИТСЯ - запись в историю товара
+                if(request.getIs_completed()){
+                    for (ReturnProductTableForm row : request.getReturnProductTable()) {
+                        docProductsSum=docProductsSum.add(row.getProduct_sumprice());
+
+                        addProductHistory(row, request, myMasterId);
+
                     }
-                    return 1;
-                } else return null;
+                    // обновляем баланс с контрагентом
+                    commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return","return", request.getId(), docProductsSum, new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());//при возврате покупателя баланс с ним должен смещаться в положительную сторону, т.е. в наш долг покупателю
+                }
+                return 1;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -529,96 +540,168 @@ public class ReturnRepository {
         } else return -1;
     }
 
+    // смена проведености документа с "Проведён" на "Не проведён"
     @SuppressWarnings("Duplicates")
-    private Boolean addReturnProductHistory(ReturnProductTableForm row, ReturnForm request , Long masterId) throws CantSaveProductHistoryException {
-        String stringQuery;
-        try {
-            //материален ли товар
-            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
-            //берем последнюю запись об истории товара в данном отделении
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-            //последнее количество товара (прибавим его в запросе к тому количеству, которое возвращают, но только если товар материален)
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            //средняя цена закупа - оставляем прежней
-            BigDecimal avgPurchasePrice =lastProductHistoryRecord.getAvg_purchase_price();
-            //последняя цена покупки
-            BigDecimal lastPurchasePrice =lastProductHistoryRecord.getLast_purchase_price();
-            //средняя себестоимость - оставляем прежней
-            BigDecimal avgNetcostPrice =  lastProductHistoryRecord.getAvg_netcost_price();
-            //Цена операции - пока единственный показатель, который меняется у товара в его истории в связи с данным возвратом товара
-            BigDecimal lastOperationPrice=lastProductHistoryRecord.getLast_operation_price();
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CalculateNetcostNegativeSumException.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setReturnAsDecompleted(ReturnForm request) throws Exception {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"619") && securityRepositoryJPA.isItAllMyMastersDocuments("return",request.getId().toString())) ||
+                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"620") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("return",request.getId().toString()))||
+                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"621") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("return",request.getId().toString()))||
+                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(28L,"622") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("return",request.getId().toString()))
+        )
+        {
+            if(request.getReturnProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update return set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
 
-            stringQuery = " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +
-                    " change," +
-                    " avg_purchase_price," +
-                    " avg_netcost_price," +
-                    " last_purchase_price," +
-                    " last_operation_price," +
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_id() + ","+
-                    28 +","+
-                    row.getReturn_id() + ","+
-                    row.getProduct_id() + ","+
-                    (isMaterial?lastQuantity.add(row.getProduct_count()):(new BigDecimal(0)))+","+//если товар материален - записываем его кол-во, равное сумме прежнего и возвращаемого, иначе 0
-                    row.getProduct_count() +","+
-                    avgPurchasePrice +","+
-                    avgNetcostPrice +","+
-                    lastPurchasePrice+","+
-                    lastOperationPrice+","+
-                    " now())";
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "return"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
 
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method ReturnRepository/addReturnProductHistory. ", e);
-            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
+
+
+                //сохранение истории движения товара
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+                request.setIs_completed(false);
+                BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всем товарам документа
+                for (ReturnProductTableForm row : request.getReturnProductTable()) {
+                    docProductsSum=docProductsSum.add(row.getProduct_sumprice());
+                    addProductHistory(row, request, myMasterId);
+                }
+                // обновляем баланс с контрагентом
+                commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "return","return", request.getId(), docProductsSum,new BigDecimal(0),false, request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
+                return 1;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                e.printStackTrace();
+                return -80;
+            }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (setReturnAsDecompleted).", e);
+                e.printStackTrace();
+                return -70; // см. _ErrorCodes
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/setReturnAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/setReturnAsDecompleted.", e);
+                e.printStackTrace();
+                return -80; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method ReturnRepository/setReturnAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
-
     @SuppressWarnings("Duplicates")
-    private Boolean setReturnQuantity(ReturnProductTableForm row, ReturnForm request , Long masterId) throws CantSaveProductQuantityException {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-        stringQuery =
-                " insert into product_quantity (" +
-                        " master_id," +
-                        " department_id," +
-                        " product_id," +
-                        " quantity" +
-                        ") values ("+
-                        masterId + ","+
-                        request.getDepartment_id() + ","+
-                        row.getProduct_id() + ","+
-                        lastQuantity +
-                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                        " DO update set " +
-                        " department_id = " + request.getDepartment_id() + ","+
-                        " product_id = " + row.getProduct_id() + ","+
-                        " master_id = "+ masterId + "," +
-                        " quantity = "+ lastQuantity;
+    private Boolean addProductHistory(ReturnProductTableForm row, ReturnForm request , Long masterId) throws Exception {
         try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
+
+            // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
+            if (productsRepository.isProductMaterial(row.getProduct_id())) {
+                // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
+                String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
+                // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
+                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
+                // актуальное количество товара В ОТДЕЛЕНИИ
+                // Используется для записи нового кол-ва товара в отделении путем сложения lastQuantity и row.getProduct_count()
+                // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
+                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
+                // имеющееся количество (если учёт себестоимости по отделениям - то В ОТДЕЛЕНИИ, если по всему предприятию - то кол-во ВО ВСЕХ ОТДЕЛЕНИЯХ.)
+                // Используется для расчёта себестоимости
+                BigDecimal availableQuantity = netcostPolicy.equals("each") ? lastQuantity : productInfo.getQuantity();
+                // средняя себестоимость уже имеющегося товара
+                BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
+
+                // т.к. это  операция поступления, при отмене её проведения необходимо проверить,
+                // сколько товара останется после этого, и если это кол-во <0 то не допустить этого
+                if(!request.getIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
+                    logger.error("Для отмены приёмки с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к выбытию со склада больше количества товара на складе");
+                    throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+                }
+
+                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("return", "date_time_created", masterId, request.getId())).getTime());
+
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        28,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count(),
+                        row.getProduct_price(),
+                        row.getProduct_netcost(),
+                        timestamp,
+                        request.getIs_completed()
+                );
+
+                // новая средняя себестоимость
+                BigDecimal avgNetcostPrice;
+                if (request.getIs_completed())   // Если проводим, то считаем по формуле
+                    // ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
+                    avgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(availableQuantity.add(row.getProduct_count()), 2, BigDecimal.ROUND_HALF_UP);
+                else // Если снимаем с проведения, то пересчитываем на основании прежних движений товара
+                    avgNetcostPrice = productsRepository.recountProductNetcost(request.getCompany_id(), request.getDepartment_id(), row.getProduct_id());
+
+                if (request.getIs_completed())   // Если проводим
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.add(row.getProduct_count()),
+                            avgNetcostPrice
+                    );
+                else                            // Если снимаем с проведения
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.subtract(row.getProduct_count()),
+                            avgNetcostPrice
+                    );
+            }
+
             return true;
-        }
-        catch (Exception e) {
+
+        }catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (addProductHistory).", e);
             e.printStackTrace();
-            logger.error("Exception in method ReturnRepository/setProductQuantity. SQL query:"+stringQuery, e);
-            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductQuantityException e) {
+            logger.error("Exception in method addProductHistory on inserting into product_quantity cause error.", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantInsertProductRowCauseOversellException e) {
+            logger.error("Exception in method addProductHistory on inserting into product_quantity cause error - Not enough product count.", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseOversellException();
+        } catch (CantSaveProductHistoryException e) {
+            logger.error("Exception in method addProductHistory on inserting into product_history.", e);
+            e.printStackTrace();
+            throw new CantSaveProductHistoryException();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method addProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 
@@ -697,21 +780,22 @@ public class ReturnRepository {
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                if(insertReturnProducts(request, newDocId, myMasterId)){
+                // сохраняем товарные позции
+                insertReturnProducts(request, newDocId, myMasterId);
 
-                    //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
-                    if (request.getLinked_doc_id() != null) {
-                        linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "return", request.getUid(), request.getCompany_id(), myMasterId);
-                    }
+                //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
+                if (request.getLinked_doc_id() != null) {
+                    linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "return", request.getUid(), request.getCompany_id(), myMasterId);
+                }
 
                     return newDocId;
-                } else return null;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertReturn on inserting into return_products cause error.", e);
                 e.printStackTrace();
                 return null;
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertReturn on inserting into return. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
@@ -724,7 +808,7 @@ public class ReturnRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertReturnProducts(ReturnForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertReturnProducts(ReturnForm request, Long newDocId, Long myMasterId) throws Exception {
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         String productIds = "";
         //сохранение таблицы

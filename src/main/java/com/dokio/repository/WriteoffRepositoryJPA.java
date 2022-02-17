@@ -55,7 +55,7 @@ public class WriteoffRepositoryJPA {
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
-    private ProductsRepositoryJPA productsRepositoryJPA;
+    private ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
 
@@ -63,7 +63,7 @@ public class WriteoffRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","writeoff_date_sort","company","department","creator","date_time_created_sort","description","status_name","product_count","is_completed")
+            .of("sum_price","doc_number","writeoff_date_sort","company","department","creator","date_time_created_sort","description","status_name","product_count","is_completed")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -106,7 +106,8 @@ public class WriteoffRepositoryJPA {
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           (select count(*) from writeoff_product ip where coalesce(ip.writeoff_id,0)=p.id) as product_count" + //подсчет кол-ва позиций товара
+                    "           (select count(*) from writeoff_product ip where coalesce(ip.writeoff_id,0)=p.id) as product_count," + //подсчет кол-ва позиций товара
+                    "           coalesce((select sum(coalesce(product_sumprice,0)) from writeoff_product where writeoff_id=p.id),0) as sum_price " +
                     "           from writeoff p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -186,6 +187,7 @@ public class WriteoffRepositoryJPA {
                     doc.setStatus_name((String)                   obj[21]);
                     doc.setStatus_color((String)                  obj[22]);
                     doc.setProduct_count(Long.parseLong(          obj[23].toString()));
+                    doc.setSum_price((BigDecimal)                 obj[24]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -570,53 +572,228 @@ public class WriteoffRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого редактируют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(17L,"230") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.isIs_completed())){
+                if(
+                        !(      //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(17L,"623") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff",request.getId().toString())) ||
+                                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                                (securityRepositoryJPA.userHasPermissions_OR(17L,"624") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("writeoff",request.getId().toString()))||
+                                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                                (securityRepositoryJPA.userHasPermissions_OR(17L,"625") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("writeoff",request.getId().toString()))||
+                                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                                (securityRepositoryJPA.userHasPermissions_OR(17L,"626") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff",request.getId().toString()))
+                        )
+                ) return -1;
+            }
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-                try {//сохранение таблицы товаров
-                    updateWriteoffWithoutTable(request);
-                    insertWriteoffProducts(request,request.getId(),myMasterId);
-                    //если завершается списание - запись в историю товара
-                    if(request.isIs_completed()){
-                        for (WriteoffProductForm row : request.getWriteoffProductTable()) {
-                            if (!addWriteoffProductHistory(row, request, myMasterId)) {//         //метод 3
-                                break;
-                            } else {//если запись в историю изменений товара прошла успешно
-                                if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    return 1;
+            try {
+                // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "writeoff"))
+                    throw new DocumentAlreadyCompletedException();
 
-                } catch (CantSaveProductQuantityException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateWriteoff on inserting into product_quantity cause error.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantInsertProductRowCauseErrorException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateWriteoff on inserting into writeoff_products cause error.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantSaveProductHistoryException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateWriteoff on inserting into products_history.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantInsertProductRowCauseOversellException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateWriteoff on inserting into products_history cause oversell.", e);
-                    e.printStackTrace();
-                    return 0;
-                } catch (Exception e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method WriteoffRepository/updateWriteoff. ", e);
-                    e.printStackTrace();
-                    return null;
+                //сохранение таблицы товаров
+                updateWriteoffWithoutTable(request);
+                insertWriteoffProducts(request,request.getId(),myMasterId);
+                //если завершается списание - запись в историю товара
+                if(request.isIs_completed()){
+                    for (WriteoffProductForm row : request.getWriteoffProductTable()) {
+                        addProductHistory(row, request, myMasterId);
+                    }
                 }
+                return 1;
+
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/updateWriteoff.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
+            }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("CalculateNetcostNegativeSumException in method WriteoffRepository/updateWriteoff.", e);
+                e.printStackTrace();
+                return -70; // см. _ErrorCodes
+            } catch (CantSaveProductQuantityException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateWriteoff on inserting into product_quantity cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateWriteoff on inserting into writeoff_products cause error.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantSaveProductHistoryException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateWriteoff on inserting into products_history.", e);
+                e.printStackTrace();
+                return null;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateWriteoff on inserting into products_history cause oversell.", e);
+                e.printStackTrace();
+                return -80;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/updateWriteoff. ", e);
+                e.printStackTrace();
+                return null;
+            }
         } else return -1;//недостаточно прав
     }
 
+
+
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CalculateNetcostNegativeSumException.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    public Integer setWriteoffAsDecompleted(WriteoffForm request) throws Exception {
+        // Есть ли права на проведение
+        if(     //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(17L,"623") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff",request.getId().toString())) ||
+                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(17L,"624") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("writeoff",request.getId().toString()))||
+                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(17L,"625") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("writeoff",request.getId().toString()))||
+                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(17L,"626") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("writeoff",request.getId().toString()))
+        )
+        {
+            if(request.getWriteoffProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update writeoff set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "writeoff"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+
+                //сохранение истории движения товара
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+                request.setIs_completed(false);
+
+                for (WriteoffProductForm row : request.getWriteoffProductTable()) {
+                    addProductHistory(row, request, myMasterId);
+                }return 1;
+            } catch (CantInsertProductRowCauseOversellException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                e.printStackTrace();
+                return -80;
+            }catch (CalculateNetcostNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (setWriteoffAsDecompleted).", e);
+                e.printStackTrace();
+                return -70; // см. _ErrorCodes
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/setWriteoffAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantSetHistoryCauseNegativeSumException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/setWriteoffAsDecompleted.", e);
+                e.printStackTrace();
+                return -80; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method WriteoffRepository/setWriteoffAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
+
+
+
+    @SuppressWarnings("Duplicates")
+    private Boolean addProductHistory(WriteoffProductForm row, WriteoffForm request , Long masterId) throws Exception {
+        try {
+            // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
+            if (productsRepository.isProductMaterial(row.getProduct_id())) {
+                // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
+                String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
+                // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
+                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
+                // актуальное количество товара В ОТДЕЛЕНИИ
+                // Используется для записи нового кол-ва товара в отделении путем вычитания row.getProduct_count() из lastQuantity
+                // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
+                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
+                // средняя себестоимость уже имеющегося товара
+                BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
+
+                // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
+                // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
+                if(request.isIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
+                    logger.error("Для списания с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к списанию больше количества товара на складе");
+                    throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
+                }
+
+                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("writeoff", "date_time_created", masterId, request.getId())).getTime());
+
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        17,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count().negate(),
+                        row.getProduct_price(),
+                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        timestamp,
+                        request.isIs_completed()
+                );
+
+                if (request.isIs_completed())   // Если проводим
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.subtract(row.getProduct_count()),
+                            lastAvgNetcostPrice
+                    );
+                else                            // Если снимаем с проведения
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.add(row.getProduct_count()),
+                            lastAvgNetcostPrice
+                    );
+            }
+
+            return true;
+
+        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateWriteoff
+            e.printStackTrace();
+            logger.error("Exception in method WriteoffRepository/addProductHistory (CantInsertProductRowCauseOversellException). ", e);
+            throw new CantInsertProductRowCauseOversellException();
+        }catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (addProductHistory).", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductQuantityException e) {
+            logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into product_quantity cause error.", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductHistoryException e) {
+            logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into product_history.", e);
+            e.printStackTrace();
+            throw new CantSaveProductHistoryException();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method WriteoffRepository/addProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
     @SuppressWarnings("Duplicates")
     private Boolean updateWriteoffWithoutTable(WriteoffForm request) throws Exception {
 
@@ -651,9 +828,9 @@ public class WriteoffRepositoryJPA {
 
     private Boolean saveWriteoffProductTable(WriteoffProductForm row, Long myMasterId){
         try {
-                    String stringQuery;
+            String stringQuery;
 
-                    stringQuery = " insert into writeoff_product (" +
+            stringQuery =   " insert into writeoff_product (" +
                             "product_id," +
                             "writeoff_id," +
                             "product_count," +
@@ -678,16 +855,15 @@ public class WriteoffRepositoryJPA {
                             " product_sumprice = " + row.getProduct_sumprice() + "," +
                             " reason_id = "  + row.getReason_id() + "," +
                             " additional = :additional";
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.setParameter("additional", (row.getAdditional() == null ? "" : row.getAdditional()));
-                    query.executeUpdate();
-                    return true;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Exception in method WriteoffRepository/saveWriteoffProductTable. ", e);
-                return false;
-            }
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("additional", (row.getAdditional() == null ? "" : row.getAdditional()));
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method WriteoffRepository/saveWriteoffProductTable. ", e);
+            return false;
+        }
     }
 
     private Boolean deleteWriteoffProductTableExcessRows(String productIds, Long writeoff_id) {
@@ -704,101 +880,6 @@ public class WriteoffRepositoryJPA {
             logger.error("Exception in method WriteoffRepository/deleteWriteoffProductTableExcessRows. SQL - "+stringQuery, e);
             e.printStackTrace();
             return false;
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    private Boolean addWriteoffProductHistory(WriteoffProductForm row, WriteoffForm request , Long masterId) throws CantSaveProductHistoryException, CantInsertProductRowCauseOversellException {
-        String stringQuery;
-
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepositoryJPA.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-            BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-            BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
-            //необходимо проверить, что списываем количество товара не более доступного количества.
-            //вообще, в БД установлено ограничение на кол-во товара >=0, и отмену транзакции мог бы сделать CantSaveProductHistoryException в блоке catch,
-            //но данным исключением мы уточним, от чего именно произошла отмена транзакции:
-            if((lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                logger.error("Для Списания с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к списанию больше количества товара на складе");
-                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
-            }
-
-            stringQuery =
-                    " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +
-                    " change," +
-                    " avg_purchase_price," +
-                    " avg_netcost_price," +
-                    " last_purchase_price," +
-                    " last_operation_price," +
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_id() + ","+
-                    17 +","+
-                    row.getWriteoff_id() + ","+
-                    row.getProduct_id() + ","+
-                    lastQuantity.subtract(row.getProduct_count())+","+
-                    row.getProduct_count().multiply(new BigDecimal(-1)) +","+
-                    lastAvgPurchasePrice +","+
-                    lastAvgNetcostPrice +","+
-                    lastPurchasePrice+","+
-                    row.getProduct_price()+","+
-                    " now())";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method WriteoffRepository/addWriteoffProductHistory. SQL-"+stringQuery, e);
-            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
-
-
-    @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(WriteoffProductForm row, WriteoffForm request , Long masterId) throws CantSaveProductQuantityException {
-        String stringQuery;
-        try {
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepositoryJPA.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-
-
-            stringQuery =
-                    " insert into product_quantity (" +
-                            " master_id," +
-                            " department_id," +
-                            " product_id," +
-                            " quantity" +
-                            ") values ("+
-                            masterId + ","+
-                            request.getDepartment_id() + ","+
-                            row.getProduct_id() + ","+
-                            lastQuantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                            " DO update set " +
-                            " department_id = " + request.getDepartment_id() + ","+
-                            " product_id = " + row.getProduct_id() + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ lastQuantity;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method WriteoffRepository/setProductQuantity. ", e);
-            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 
