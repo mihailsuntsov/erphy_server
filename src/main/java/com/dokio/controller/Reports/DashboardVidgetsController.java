@@ -72,7 +72,7 @@ public class DashboardVidgetsController {
             @RequestParam("company_id") Long company_id){
         logger.info("Processing get request for path /api/auth/getIndicatorsData with parameters: " + "company_id: " + company_id);
         try {return new ResponseEntity<>(indicatorsRepository.getIndicatorsData(company_id), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getIndicatorsData error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getIndicatorsData error", e);
             return new ResponseEntity<>("Ошибка загрузки данных для индикаторов стартовой страницы", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

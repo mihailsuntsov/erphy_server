@@ -354,4 +354,11 @@ public class OrdersupController {
             os.close();
         }
     }
+    @PostMapping("/api/auth/setOrdersupAsDecompleted")
+    public ResponseEntity<?> setOrdersupAsDecompleted(@RequestBody OrdersupForm request){
+        logger.info("Processing post request for path /api/auth/setOrdersupAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(ordersupRepository.setOrdersupAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setOrdersupAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

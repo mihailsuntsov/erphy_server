@@ -241,7 +241,7 @@ public class PaymentinController {
     public ResponseEntity<?> setPaymentinAsDecompleted(@RequestBody PaymentinForm request){
         logger.info("Processing post request for path /api/auth/setPaymentinAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(paymentinRepository.setPaymentinAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setPaymentinAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setPaymentinAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

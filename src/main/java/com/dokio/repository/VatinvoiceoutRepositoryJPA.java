@@ -22,9 +22,7 @@ import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -497,6 +495,17 @@ public class VatinvoiceoutRepositoryJPA {
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(37L,"494") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("vatinvoiceout",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                    !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(37L,"495") && securityRepositoryJPA.isItAllMyMastersDocuments("vatinvoiceout",request.getId().toString())) ||
+                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(37L,"496") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("vatinvoiceout",request.getId().toString()))
+                    )
+                ) return -1;
+            }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -512,10 +521,14 @@ public class VatinvoiceoutRepositoryJPA {
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId();
+                    " id= "+request.getId()+" and master_id="+myMasterId;
             try
             {
-                Date dateNow = new Date();
+                // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "vatinvoiceout"))
+                    throw new DocumentAlreadyCompletedException();
+
+//                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -528,6 +541,11 @@ public class VatinvoiceoutRepositoryJPA {
 
                 return 1;
 
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateVatinvoiceout.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method VatinvoiceoutRepository/updateVatinvoiceout. SQL query:"+stringQuery, e);
@@ -535,6 +553,49 @@ public class VatinvoiceoutRepositoryJPA {
                 return null;
             }
         } else return -1; //недостаточно прав
+    }
+
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, NotEnoughPermissionsException.class})
+    public Integer setVatinvoiceoutAsDecompleted(VatinvoiceoutForm request) {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(37L,"495") && securityRepositoryJPA.isItAllMyMastersDocuments("vatinvoiceout",request.getId().toString())) ||
+            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(37L,"496") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("vatinvoiceout",request.getId().toString()))
+        )
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update vatinvoiceout set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id() ,request.getId(),"vatinvoiceout"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                // сохранение истории движения товара не делаем, т.к. в данный документ не содержит товаров
+                // по той же причине не делаем коррекцию баланса с контрагентом
+                return 1;
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method VatinvoiceoutRepository/setVatinvoiceoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method VatinvoiceoutRepository/setVatinvoiceoutAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
 
     //сохраняет настройки документа "Розничные продажи"

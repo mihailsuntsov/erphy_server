@@ -21,6 +21,9 @@ import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
+import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
+import com.dokio.repository.Exceptions.DocumentAlreadyDecompletedException;
+import com.dokio.repository.Exceptions.NotEnoughPermissionsException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -744,7 +747,7 @@ public class CustomersOrdersRepositoryJPA {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
-    public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request) {
+    public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request) throws Exception {
         CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет об апдейте
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
@@ -755,8 +758,33 @@ public class CustomersOrdersRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+
+                if(
+                    !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(23L,"400") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
+                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(23L,"401") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",request.getId().toString()))||
+                        //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                        (securityRepositoryJPA.userHasPermissions_OR(23L,"402") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",request.getId().toString()))||
+                        //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                        (securityRepositoryJPA.userHasPermissions_OR(23L,"403") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",request.getId().toString()))
+                    )
+                ) {
+                    updateResults.setSuccess(false);
+                    updateResults.setErrorCode(0);          // Недостаточно прав
+                    return updateResults;
+                }
+            }
             try
             {
+                // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "customers_orders"))
+                    throw new DocumentAlreadyCompletedException();
+                if(request.getIs_completed()!=null && request.getIs_completed() && request.getCustomersOrdersProductTable().size()==0) throw new CantInsertProductRowCauseErrorException();
+
                 Long myMasterId = userRepositoryJPA.getMyMasterId();
 
                 // сохранение всего кроме таблицы товаров
@@ -769,6 +797,13 @@ public class CustomersOrdersRepositoryJPA {
                 updateResults.setSuccess(true);
                 return updateResults;
 
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateCustomersOrders.", e);
+                e.printStackTrace();
+                updateResults.setSuccess(false);
+                updateResults.setErrorCode(-50);      // Документ уже проведён
+                return updateResults;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method updateCustomersOrders on updating of customers_orders_products cause error.", e);
@@ -791,6 +826,58 @@ public class CustomersOrdersRepositoryJPA {
         }
     }
 
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, NotEnoughPermissionsException.class})
+    public Integer setCustomersOrdersAsDecompleted(CustomersOrdersForm request) throws Exception {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"400") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
+            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"401") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",request.getId().toString()))||
+            //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"402") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",request.getId().toString()))||
+            //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"403") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",request.getId().toString()))
+        )
+        {
+            if(request.getCustomersOrdersProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update customers_orders set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "customers_orders"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                // сохранение истории движения товара не делаем, т.к. в данный документ не влияет на движение товаров
+                // по той же причине не делаем коррекцию баланса с контрагентом
+                return 1;
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CustomersOrdersRepository/setCustomersOrdersAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CustomersOrdersRepository/setCustomersOrdersAsDecompleted.", e);
+                e.printStackTrace();
+                return null;
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method CustomersOrdersRepository/setCustomersOrdersAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
     private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {

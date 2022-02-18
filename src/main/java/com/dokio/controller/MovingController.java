@@ -359,7 +359,7 @@ public class MovingController {
     public ResponseEntity<?> setMovingAsDecompleted(@RequestBody MovingForm request){
         logger.info("Processing post request for path /api/auth/setMovingAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(movingRepositoryJPA.setMovingAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setMovingAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setMovingAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

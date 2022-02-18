@@ -272,7 +272,7 @@ class PaymentoutController {
     public ResponseEntity<?> setPaymentoutAsDecompleted(@RequestBody PaymentoutForm request){
         logger.info("Processing post request for path /api/auth/setPaymentoutAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(paymentoutRepository.setPaymentoutAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setPaymentoutAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setPaymentoutAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

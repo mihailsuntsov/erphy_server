@@ -18,9 +18,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInvoiceoutJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -699,6 +697,21 @@ public class InvoiceoutRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(31L,"419") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoiceout",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                    !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(31L,"420") && securityRepositoryJPA.isItAllMyMastersDocuments("invoiceout",request.getId().toString())) ||
+                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                        (securityRepositoryJPA.userHasPermissions_OR(31L,"421") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoiceout",request.getId().toString()))||
+                        //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                        (securityRepositoryJPA.userHasPermissions_OR(31L,"422") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoiceout",request.getId().toString()))||
+                        //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                        (securityRepositoryJPA.userHasPermissions_OR(31L,"423") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoiceout",request.getId().toString()))
+                    )
+                ) return -1;
+            }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -716,6 +729,12 @@ public class InvoiceoutRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "invoiceout"))
+                    throw new DocumentAlreadyCompletedException();
+
+                if(request.getIs_completed()!=null && request.getIs_completed() && request.getInvoiceoutProductTable().size()==0) throw new Exception("There is no products in product list");
+
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
@@ -728,26 +747,16 @@ public class InvoiceoutRepositoryJPA {
                     return 1;
                 } else return null;
 
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateInvoiceout.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method InvoiceoutRepository/updateInvoiceout on updating invoiceout_product cause error.", e);
                 e.printStackTrace();
                 return null;
-            } catch (CantSaveProductHistoryException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceoutRepository/addInvoiceoutProductHistory on updating invoiceout_product cause error.", e);
-                e.printStackTrace();
-                return null;
-            } catch (CantSaveProductQuantityException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceoutRepository/setInvoiceoutQuantity on updating invoiceout_product cause error.", e);
-                e.printStackTrace();
-                return null;
-            } catch (CantInsertProductRowCauseOversellException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceoutRepository/addInvoiceoutProductHistory on inserting into products_history cause oversell.", e);
-                e.printStackTrace();
-                return 0;// недостаточно товара на складе
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method InvoiceoutRepository/updateInvoiceout. SQL query:"+stringQuery, e);
@@ -757,6 +766,58 @@ public class InvoiceoutRepositoryJPA {
         } else return -1; //недостаточно прав
     }
 
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, NotEnoughPermissionsException.class})
+    public Integer setInvoiceoutAsDecompleted(InvoiceoutForm request) throws Exception {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(31L,"420") && securityRepositoryJPA.isItAllMyMastersDocuments("invoiceout",request.getId().toString())) ||
+            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(31L,"421") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoiceout",request.getId().toString()))||
+            //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(31L,"422") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoiceout",request.getId().toString()))||
+            //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(31L,"423") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoiceout",request.getId().toString()))
+        )
+        {
+            if(request.getInvoiceoutProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update invoiceout set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
+
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "invoiceout"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                // сохранение истории движения товара не делаем, т.к. в данный документ не влияет на движение товаров
+                // по той же причине не делаем коррекцию баланса с контрагентом
+                return 1;
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceoutRepository/setInvoiceoutAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceoutRepository/setInvoiceoutAsDecompleted.", e);
+                e.printStackTrace();
+                return null;
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceoutRepository/setInvoiceoutAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
     //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
     //если не превышает - пишется строка с товаром в БД
     //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка

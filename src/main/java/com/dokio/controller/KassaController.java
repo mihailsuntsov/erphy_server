@@ -408,7 +408,7 @@ public class KassaController {
         try {
             return new ResponseEntity<>(kassaRepository.getKassaListByDepId(id), HttpStatus.OK);
         } catch (Exception e){
-            logger.error("Contrloller getKassaListByDepId error", e);
+            logger.error("Controller getKassaListByDepId error", e);
             return new ResponseEntity<>("Ошибка запроса на список касс, доступных для пользователя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -423,7 +423,7 @@ public class KassaController {
         logger.info("Processing get request for path /api/auth/getKassaListByBoxofficeId with parameters: id: " + id.toString());
         try {return new ResponseEntity<>(kassaRepository.getKassaListByBoxofficeId(id), HttpStatus.OK);
         } catch (Exception e){
-            logger.error("Contrloller getKassaListByBoxofficeId error", e);
+            logger.error("Controller getKassaListByBoxofficeId error", e);
             return new ResponseEntity<>("Ошибка запроса на список касс, доступных для пользователя", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

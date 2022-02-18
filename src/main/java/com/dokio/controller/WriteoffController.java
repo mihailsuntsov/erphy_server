@@ -326,7 +326,7 @@ public class WriteoffController {
     public ResponseEntity<?> setWriteoffAsDecompleted(@RequestBody WriteoffForm request){
         logger.info("Processing post request for path /api/auth/setWriteoffAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(writeoffRepositoryJPA.setWriteoffAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setWriteoffAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setWriteoffAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

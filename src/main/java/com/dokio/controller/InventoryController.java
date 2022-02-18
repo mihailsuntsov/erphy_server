@@ -380,6 +380,15 @@ public class InventoryController {
             return responseEntity;
         }
     }
+
+    @PostMapping("/api/auth/setInventoryAsDecompleted")
+    public ResponseEntity<?> setInventoryAsDecompleted(@RequestBody InventoryForm request){
+        logger.info("Processing post request for path /api/auth/setInventoryAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(inventoryRepository.setInventoryAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setInventoryAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }
 
 

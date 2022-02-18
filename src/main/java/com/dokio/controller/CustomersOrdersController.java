@@ -223,9 +223,11 @@ public class CustomersOrdersController {
 
     @PostMapping("/api/auth/updateCustomersOrders")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request){
+    public ResponseEntity<?> updateCustomersOrders(@RequestBody CustomersOrdersForm request) throws Exception {
         logger.info("Processing post request for path /api/auth/updateCustomersOrders: " + request.toString());
-        return new ResponseEntity<>(customersOrdersRepositoryJPA.updateCustomersOrders(request), HttpStatus.OK);
+        try { return new ResponseEntity<>(customersOrdersRepositoryJPA.updateCustomersOrders(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller updateCustomersOrders error", e);
+            return new ResponseEntity<>("Ошибка запроса на сохранение или проведение", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsCustomersOrders")
@@ -455,5 +457,12 @@ public class CustomersOrdersController {
     }
 
 
+    @PostMapping("/api/auth/setCustomersOrdersAsDecompleted")
+    public ResponseEntity<?> setCustomersOrdersAsDecompleted(@RequestBody CustomersOrdersForm request){
+        logger.info("Processing post request for path /api/auth/setCustomersOrdersAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(customersOrdersRepositoryJPA.setCustomersOrdersAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setCustomersOrdersAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
 }

@@ -359,7 +359,7 @@ public class ReturnController {
     public ResponseEntity<?> setReturnAsDecompleted(@RequestBody ReturnForm request){
         logger.info("Processing post request for path /api/auth/setReturnAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(returnRepository.setReturnAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setReturnAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setReturnAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

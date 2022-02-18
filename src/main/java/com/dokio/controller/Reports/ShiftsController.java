@@ -67,7 +67,7 @@ public class ShiftsController {
             @RequestParam("department_id") Long department_id){
         logger.info("Processing get request for path /api/auth/getShiftsKassa with parameters: " + "company_id: " + company_id + ", department_id = "+ department_id + ", docName = "+ docName);
         try {return new ResponseEntity<>(shiftsRepository.getShiftsKassa(company_id, department_id, docName), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getShiftsKassa error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getShiftsKassa error", e);
             return new ResponseEntity<>("Ошибка загрузки списка касс ККМ", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     // Возвращает список всех пользователей, работавших с кассой под своей учеткой
@@ -81,7 +81,7 @@ public class ShiftsController {
             @RequestParam("department_id") Long department_id){
         logger.info("Processing get request for path /api/auth/getShiftsCashiers with parameters: " + "company_id: " + company_id + ", department_id = "+ department_id+ ", docName = "+ docName);
         try {return new ResponseEntity<>(shiftsRepository.getShiftsCashiers(company_id, department_id, docName), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getShiftsCashiersList error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getShiftsCashiersList error", e);
             return new ResponseEntity<>("Ошибка загрузки списка кассиров", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

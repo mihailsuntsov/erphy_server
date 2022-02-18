@@ -353,4 +353,12 @@ public class InvoiceinController {
             os.close();
         }
     }
+
+    @PostMapping("/api/auth/setInvoiceinAsDecompleted")
+    public ResponseEntity<?> setInvoiceinAsDecompleted(@RequestBody InvoiceinForm request){
+        logger.info("Processing post request for path /api/auth/setInvoiceinAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(invoiceinRepository.setInvoiceinAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setInvoiceinAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

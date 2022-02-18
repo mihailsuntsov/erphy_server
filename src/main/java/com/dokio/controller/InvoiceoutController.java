@@ -331,5 +331,12 @@ public class InvoiceoutController {
         }
     }
 
+    @PostMapping("/api/auth/setInvoiceoutAsDecompleted")
+    public ResponseEntity<?> setInvoiceoutAsDecompleted(@RequestBody InvoiceoutForm request){
+        logger.info("Processing post request for path /api/auth/setInvoiceoutAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(invoiceoutRepository.setInvoiceoutAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setInvoiceoutAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
 }

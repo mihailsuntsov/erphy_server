@@ -37,7 +37,7 @@ public class TemplatesController {
     public ResponseEntity<?> getTemplateTypesList(){
         logger.info("Processing get request for path /api/auth/getTemplateTypesList");
         try {return new ResponseEntity<>(templateRepository.getTemplateTypesList(), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getTemplateTypesList error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getTemplateTypesList error", e);
             return new ResponseEntity<>("Ошибка загрузки списка типов шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -51,7 +51,7 @@ public class TemplatesController {
             @RequestParam("is_show")boolean is_show){
         logger.info("Processing get request for path /api/auth/getTemplatesList with parameters: " + "company_id: " + company_id +", document_id: "+document_id+", is_show: "+is_show);
         try {return new ResponseEntity<>(templateRepository.getTemplatesList(company_id, document_id, is_show), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getTemplatesList error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getTemplatesList error", e);
             return new ResponseEntity<>("Ошибка загрузки списка шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

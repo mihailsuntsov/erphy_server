@@ -240,4 +240,12 @@ public class VatinvoiceoutController {
         try{return new ResponseEntity<>(vatinvoiceoutRepository.addFilesToVatinvoiceout(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Ошибка добавления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @PostMapping("/api/auth/setVatinvoiceoutAsDecompleted")
+    public ResponseEntity<?> setVatinvoiceoutAsDecompleted(@RequestBody VatinvoiceoutForm request){
+        logger.info("Processing post request for path /api/auth/setVatinvoiceoutAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(vatinvoiceoutRepository.setVatinvoiceoutAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setVatinvoiceoutAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

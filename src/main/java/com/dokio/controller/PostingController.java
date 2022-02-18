@@ -334,7 +334,7 @@ public class PostingController {
     public ResponseEntity<?> setPostingAsDecompleted(@RequestBody PostingForm request){
         logger.info("Processing post request for path /api/auth/setPostingAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(postingRepositoryJPA.setPostingAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setPostingAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setPostingAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

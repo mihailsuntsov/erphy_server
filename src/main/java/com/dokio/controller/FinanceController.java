@@ -40,7 +40,7 @@ class FinanceController {
             @RequestParam("typeId") Long cagentId){
         logger.info("Processing get request for path /api/auth/getCagentBalance with parameters: " + "companyId: " + companyId+", cagentId: "+cagentId);
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("cagent",companyId,cagentId), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getCagentBalance error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getCagentBalance error", e);
         return new ResponseEntity<>("Ошибка запроса баланса контрагента", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -53,7 +53,7 @@ class FinanceController {
             @RequestParam("typeId") Long accountId){
         logger.info("Processing get request for path /api/auth/getPaymentAccountBalance with parameters: " + "companyId: " + companyId+", accountId: "+accountId);
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("payment_account",companyId,accountId), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getPaymentAccountBalance error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getPaymentAccountBalance error", e);
         return new ResponseEntity<>("Ошибка запроса баланса расчётного счёта", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -66,7 +66,7 @@ class FinanceController {
             @RequestParam("typeId") Long boxofficeId){
         logger.info("Processing get request for path /api/auth/getBoxofficeBalance with parameters: " + "companyId: " + companyId+", boxofficeId: "+boxofficeId);
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("boxoffice",companyId,boxofficeId), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getBoxofficeBalance error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getBoxofficeBalance error", e);
             return new ResponseEntity<>("Ошибка запроса баланса кассы предприятия", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -79,7 +79,7 @@ class FinanceController {
             @RequestParam("typeId") Long kassaId){
         logger.info("Processing get request for path /api/auth/getKassaBalance with parameters: " + "companyId: " + companyId+", kassaId: "+kassaId);
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("kassa",companyId,kassaId), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getKassaBalance error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getKassaBalance error", e);
             return new ResponseEntity<>("Ошибка запроса баланса кассы ККМ", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -92,7 +92,7 @@ class FinanceController {
             @RequestParam("typeId") Long accountId){
         logger.info("Processing get request for path /api/auth/getAccountBalance with parameters: " + "companyId: " + companyId+", accountId: "+accountId);
         try {return new ResponseEntity<>(commonUtilites.getSummFromHistory("payment_account",companyId,accountId), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller getAccountBalance error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getAccountBalance error", e);
             return new ResponseEntity<>("Ошибка запроса баланса расчётного счёта", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

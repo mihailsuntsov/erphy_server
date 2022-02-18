@@ -18,9 +18,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInvoiceinJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -497,7 +495,7 @@ public class InvoiceinRepositoryJPA {
     // Возвращаем 0 если невозможно создать товарные позиции
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class})
     public Long insertInvoicein(InvoiceinForm request) {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "invoicein")){
             EntityManager emgr = emf.createEntityManager();
@@ -632,25 +630,9 @@ public class InvoiceinRepositoryJPA {
                         return newDocId;
                     } else return null;
 
-
-                } catch (CantSaveProductQuantityException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertInvoicein on inserting into product_quantity cause error.", e);
-                    e.printStackTrace();
-                    return null;
                 } catch (CantInsertProductRowCauseErrorException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method insertInvoicein on inserting into invoicein_products cause error.", e);
-                    e.printStackTrace();
-                    return null;
-                } catch (CantInsertProductRowCauseOversellException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertInvoicein on inserting into invoicein_products cause oversell.", e);
-                    e.printStackTrace();
-                    return 0L;
-                } catch (CantSaveProductHistoryException e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertInvoicein on inserting into products_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
@@ -669,22 +651,16 @@ public class InvoiceinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertInvoiceinProducts(InvoiceinForm request, Long docId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
+    private boolean insertInvoiceinProducts(InvoiceinForm request, Long docId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> productIds=new HashSet<>();
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
-        int size = request.getInvoiceinProductTable().size();
         //сохранение таблицы
         if (!Objects.isNull(request.getInvoiceinProductTable()) && request.getInvoiceinProductTable().size() != 0) {
             for (InvoiceinProductTableForm row : request.getInvoiceinProductTable()) {
                 row.setInvoicein_id(docId);// чтобы через API сюда нельзя было подсунуть рандомный id
-                insertProductRowResult = saveInvoiceinProductTable(row, request.getCompany_id(), request.getIs_completed(), 0L,request.getDepartment_id(),  myMasterId);  //сохранение строки таблицы товаров
-                if (insertProductRowResult==null || !insertProductRowResult) {
-                    if (insertProductRowResult==null){// - т.е. произошла ошибка в методе saveInvoiceinProductTable
-                        throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
-                    }else{ // insertProductRowResult==false - товар материален, и его наличия не хватает для продажи
-                        throw new CantInsertProductRowCauseOversellException();//кидаем исключение 'оверселл', чтобы произошла отмена транзакции
-                    }
-                }
+                insertProductRowResult = saveInvoiceinProductTable(row, request.getCompany_id(),  myMasterId);  //сохранение строки таблицы товаров
+                if (insertProductRowResult==null)// - т.е. произошла ошибка в методе saveInvoiceinProductTable
+                    throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции
                 productIds.add(row.getProduct_id());
             }
         }if (!deleteInvoiceinProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", docId)){
@@ -693,7 +669,7 @@ public class InvoiceinRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class ,CantInsertProductRowCauseErrorException.class})
     public Integer updateInvoicein(InvoiceinForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(32L,"456") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",request.getId().toString())) ||
@@ -704,6 +680,21 @@ public class InvoiceinRepositoryJPA {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
                 (securityRepositoryJPA.userHasPermissions_OR(32L,"459") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",request.getId().toString())))
         {
+            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+            // проверим права на проведение
+            if((request.getIs_completed()!=null && request.getIs_completed())){
+                if(
+                    !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                    (securityRepositoryJPA.userHasPermissions_OR(32L,"460") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",request.getId().toString())) ||
+                    //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                    (securityRepositoryJPA.userHasPermissions_OR(32L,"461") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",request.getId().toString()))||
+                    //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                    (securityRepositoryJPA.userHasPermissions_OR(32L,"462") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",request.getId().toString()))||
+                    //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                    (securityRepositoryJPA.userHasPermissions_OR(32L,"463") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",request.getId().toString()))
+                    )
+                ) return -1;
+            }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -721,10 +712,15 @@ public class InvoiceinRepositoryJPA {
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId();
+                    " id= "+request.getId()+" and master_id="+myMasterId;
             try
             {
-//                Date dateNow = new Date();
+                // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
+                if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "invoicein"))
+                    throw new DocumentAlreadyCompletedException();
+
+                if(request.getIs_completed()!=null && request.getIs_completed() && request.getInvoiceinProductTable().size()==0) throw new Exception("There is no products in product list");
+
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -742,26 +738,16 @@ public class InvoiceinRepositoryJPA {
                     return 1;
                 } else return null;
 
+            } catch (DocumentAlreadyCompletedException e) { //
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateInvoicein.", e);
+                e.printStackTrace();
+                return -50; // см. _ErrorCodes
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method InvoiceinRepository/updateInvoicein on updating invoicein_product cause error.", e);
                 e.printStackTrace();
                 return null;
-            } catch (CantSaveProductHistoryException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceinRepository/addInvoiceinProductHistory on updating invoicein_product cause error.", e);
-                e.printStackTrace();
-                return null;
-            } catch (CantSaveProductQuantityException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceinRepository/setInvoiceinQuantity on updating invoicein_product cause error.", e);
-                e.printStackTrace();
-                return null;
-            } catch (CantInsertProductRowCauseOversellException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method InvoiceinRepository/addInvoiceinProductHistory on inserting into products_history cause oversell.", e);
-                e.printStackTrace();
-                return 0;// недостаточно товара на складе
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method InvoiceinRepository/updateInvoicein. SQL query:"+stringQuery, e);
@@ -770,27 +756,69 @@ public class InvoiceinRepositoryJPA {
             }
         } else return -1; //недостаточно прав
     }
+    // смена проведености документа с "Проведён" на "Не проведён"
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, NotEnoughPermissionsException.class})
+    public Integer setInvoiceinAsDecompleted(InvoiceinForm request) throws Exception {
+        // Есть ли права на проведение
+        if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"460") && securityRepositoryJPA.isItAllMyMastersDocuments("invoicein",request.getId().toString())) ||
+            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"461") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("invoicein",request.getId().toString()))||
+            //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"462") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("invoicein",request.getId().toString()))||
+            //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(32L,"463") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("invoicein",request.getId().toString()))
+        )
+        {
+            if(request.getInvoiceinProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String stringQuery =
+                    " update invoicein set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " is_completed = false" +
+                            " where " +
+                            " id= " + request.getId();
 
+            try {
+                // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
+                if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "invoicein"))
+                    throw new DocumentAlreadyDecompletedException();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                // сохранение истории движения товара не делаем, т.к. в данный документ не влияет на движение товаров
+                // по той же причине не делаем коррекцию баланса с контрагентом
+                return 1;
+            } catch (DocumentAlreadyDecompletedException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceinRepository/setInvoiceinAsDecompleted.", e);
+                e.printStackTrace();
+                return -60; // см. _ErrorCodes
+            } catch (CantInsertProductRowCauseErrorException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceinRepository/setInvoiceinAsDecompleted.", e);
+                e.printStackTrace();
+                return null;
+            }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method InvoiceinRepository/setInvoiceinAsDecompleted. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // Нет прав на проведение либо отмену проведения документа
+    }
     //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
     //если не превышает - пишется строка с товаром в БД
     //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
     @SuppressWarnings("Duplicates")
-    private Boolean saveInvoiceinProductTable(InvoiceinProductTableForm row, Long company_id, Boolean is_completed, Long customersOrdersId, Long department_id, Long master_id) {
+    private Boolean saveInvoiceinProductTable(InvoiceinProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
-        customersOrdersId = customersOrdersId==null?0L:customersOrdersId;//  на случай если у отгрузки нет родительского Заказа покупателя
-        BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
         try {
-//            if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
-            //вычисляем доступное количество товара на складе
-//                available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), department_id, customersOrdersId);
-//            else available= BigDecimal.valueOf(0L);
-            //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.) или если документ не проводится
 
-            // НА ДАННЫЙ МОМЕНТ ТАКУЮ ПРОВЕРКУ НЕ ДЕЛАЕМ, Т.К. ДЛЯ ЗАКАЗА ПОСТАВЩИКУ ЭТО НЕ ВАЖНО
+            // ПРОВЕРКИ НА КОЛИЧЕСТВО ТОВАРА НЕ ДЕЛАЕМ, Т.К. ДЛЯ ДАННОГО ДОКУМЕНТА ОНО НЕ ВАЖНО.
             // ЗАКАЗ ПОСТАВЩИКУ НЕ ВЛИЯЕТ НА КОЛИЧЕСТВО ТОВАРА НА СКЛАДЕ, И НЕ УЧАСТВУЕТ В РЕЗЕРВИРОВАНИИ ТОВАРА
 
-//          if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material() || !is_completed)
-//          {
             stringQuery =
                     " insert into invoicein_product (" +
                             "master_id, " +
@@ -822,7 +850,6 @@ public class InvoiceinRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
-//            } else return false;
         }
         catch (Exception e) {
             logger.error("Exception in method saveInvoiceinProductTable. SQL query:"+stringQuery, e);

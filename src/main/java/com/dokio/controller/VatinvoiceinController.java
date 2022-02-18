@@ -392,4 +392,12 @@ public class VatinvoiceinController {
             os.close();
         }
     }
+
+    @PostMapping("/api/auth/setVatinvoiceinAsDecompleted")
+    public ResponseEntity<?> setVatinvoiceinAsDecompleted(@RequestBody VatinvoiceinForm request){
+        logger.info("Processing post request for path /api/auth/setVatinvoiceinAsDecompleted: " + request.toString());
+        try {return new ResponseEntity<>(vatinvoiceinRepository.setVatinvoiceinAsDecompleted(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setVatinvoiceinAsDecompleted error", e);
+            return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

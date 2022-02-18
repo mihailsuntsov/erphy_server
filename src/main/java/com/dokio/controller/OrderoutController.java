@@ -258,7 +258,7 @@ public class OrderoutController {
     public ResponseEntity<?> setOrderoutAsDecompleted(@RequestBody OrderoutForm request){
         logger.info("Processing post request for path /api/auth/setOrderoutAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(orderoutRepository.setOrderoutAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setOrderoutAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setOrderoutAsDecompleted error", e);
         return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

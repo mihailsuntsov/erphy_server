@@ -365,7 +365,7 @@ public class AcceptanceController {
     public ResponseEntity<?> setAcceptanceAsDecompleted(@RequestBody AcceptanceForm request){
         logger.info("Processing post request for path /api/auth/setAcceptanceAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(acceptanceRepositoryJPA.setAcceptanceAsDecompleted(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Contrloller setAcceptanceAsDecompleted error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller setAcceptanceAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     // печать документов
