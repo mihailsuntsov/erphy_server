@@ -707,6 +707,8 @@ public class ProductsRepositoryJPA {
 
                 List<Object[]> queryList = query.getResultList();
                 List<ProductHistoryJSON> returnList = new ArrayList<>();
+                // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
+                String netcostPolicy = commonUtilites.getCompanySettings(companyId).getNetcost_policy();
 
                 BigDecimal quantity;
                 BigDecimal change;
@@ -730,7 +732,7 @@ public class ProductsRepositoryJPA {
                     doc.setChange(change);
                     doc.setPrice(price);
                     doc.setNetcost(netcost);
-                    doc.setAvg_netcost_price(recountProductNetcost(companyId, Long.parseLong(obj[12].toString()), productId, (Timestamp) obj[11]));
+                    doc.setAvg_netcost_price(recountProductNetcost(companyId, netcostPolicy.equals("each") ? Long.parseLong(obj[12].toString()) : null, productId, (Timestamp) obj[11]));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -2872,7 +2874,7 @@ public class ProductsRepositoryJPA {
                 returnObj.setQuantity(                  (new BigDecimal(0)));
             }else {
                 for (BigDecimal obj : queryList) {
-                    returnObj.setQuantity(obj);
+                    returnObj.setQuantity(Objects.isNull(obj)?new BigDecimal(0):obj);
                 }
             }
             return returnObj.getQuantity();
@@ -2984,11 +2986,11 @@ public class ProductsRepositoryJPA {
 
             return lastAvgNetcostPrice;
         }
-        catch (CalculateNetcostNegativeSumException e) {
-            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new CalculateNetcostNegativeSumException();
-        }
+//        catch (CalculateNetcostNegativeSumException e) {
+//            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new CalculateNetcostNegativeSumException();
+//        }
         catch (Exception e) {
             logger.error("Exception in method recountProductNetcost. SQL query:"+stringQuery, e);
             e.printStackTrace();

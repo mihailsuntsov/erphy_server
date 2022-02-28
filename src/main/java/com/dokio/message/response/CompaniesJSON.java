@@ -88,6 +88,34 @@ public class CompaniesJSON {
     private String stamp_filename;
     private String card_template_original_filename;
     private String card_template_filename;
+    // Settings
+    private Integer st_prefix_barcode_pieced;   // prefix of barcode for pieced product
+    private Integer st_prefix_barcode_packed;   // prefix of barcode for packed product
+    private String  st_netcost_policy;          // policy of netcost calculation for all company or for each department separately
+
+    public Integer getSt_prefix_barcode_pieced() {
+        return st_prefix_barcode_pieced;
+    }
+
+    public void setSt_prefix_barcode_pieced(Integer st_prefix_barcode_pieced) {
+        this.st_prefix_barcode_pieced = st_prefix_barcode_pieced;
+    }
+
+    public Integer getSt_prefix_barcode_packed() {
+        return st_prefix_barcode_packed;
+    }
+
+    public void setSt_prefix_barcode_packed(Integer st_prefix_barcode_packed) {
+        this.st_prefix_barcode_packed = st_prefix_barcode_packed;
+    }
+
+    public String getSt_netcost_policy() {
+        return st_netcost_policy;
+    }
+
+    public void setSt_netcost_policy(String st_netcost_policy) {
+        this.st_netcost_policy = st_netcost_policy;
+    }
 
     public Long getId() {
         return id;

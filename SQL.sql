@@ -2844,17 +2844,8 @@ alter table history_payment_account_summ  drop column summ_change;
 alter table history_boxoffice_summ        drop column summ_change;
 alter table history_kassa_summ            drop column summ_change;
 
-
-
-
-
-
-
-
-
 alter table product_quantity add column avg_netcost_price numeric(15,2);
 -- alter table products_history add column is_completed boolean;
-
 
 create table product_history(
                               id bigserial primary key not null,
@@ -2937,15 +2928,83 @@ insert into permissions (id,name,description,document_name,document_id) values
 (634,'Проведение документов созданных собой','Проведение документов "Инвентаризация" созданных собой','Инвентаризация',27);
 
 
+-- Справочник "Налоги"
+create table sprav_taxes(
+                          id bigserial primary key not null,
+                          master_id  bigint not null,
+                          company_id bigint not null,
+                          creator_id bigint,
+                          changer_id bigint,
+                          date_time_created timestamp with time zone not null,
+                          date_time_changed timestamp with time zone,
+                          name varchar(30) not null,
+                          description varchar(130) not null,
+                          is_active boolean not null,
+                          value int not null,
+                          multiplier numeric(3,2),
+                          output_order int not null,
+                          is_deleted boolean,
+                          name_api_atol varchar(10),
+                          foreign key (master_id)  references users(id),
+                          foreign key (creator_id) references users(id),
+                          foreign key (changer_id) references users(id),
+                          foreign key (company_id) references companies(id)
+);
 
+alter table documents add column doc_name_en varchar (40);
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (50,'Налоги','taxes',1,'sprav_taxes','Налоги','Taxes');
+insert into permissions (id,name,description,document_name,document_id) values
+(635,'Боковая панель - отображать в списке документов','Показывать документ в списке документов на боковой панели','Налоги',50),
+(636,'Создание документов по всем предприятиям','Возможность создавать новые документы "Налоги" по всем предприятиям','Налоги',50),
+(637,'Создание документов своего предприятия','Возможность создавать новые документы "Налоги" своего предприятия','Налоги',50),
+(638,'Удаление документов по всем предприятиям','Возможность удалить документ "Налоги" в архив по всем предприятиям','Налоги',50),
+(639,'Удаление документов своего предприятия','Возможность удалить документ "Налоги" своего предприятия в архив','Налоги',50),
+(640,'Просмотр документов по всем предприятиям','Прсмотр информации в документах "Налоги" по всем предприятиям','Налоги',50),
+(641,'Просмотр документов своего предприятия','Прсмотр информации в документах "Налоги" своего предприятия','Налоги',50),
+(642,'Редактирование документов по всем предприятиям','Редактирование документов "Налоги" по всем предприятиям','Налоги',50),
+(643,'Редактирование документов своего предприятия','Редактирование документов "Налоги" своего предприятия','Налоги',50);
 
+alter table retail_sales_product drop constraint retail_sales_product_nds_id_fkey;
+update retail_sales_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table retail_sales_product add constraint retail_sales_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table return_product drop constraint return_product_nds_id_fkey;
+update return_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table return_product add constraint return_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table returnsup_product drop constraint returnsup_product_nds_id_fkey;
+update returnsup_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table returnsup_product add constraint returnsup_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table shipment_product drop constraint shipment_product_nds_id_fkey;
+update shipment_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table shipment_product add constraint shipment_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table invoiceout_product drop constraint invoiceout_product_nds_id_fkey;
+update invoiceout_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table invoiceout_product add constraint invoiceout_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table ordersup_product drop constraint ordersup_product_nds_id_fkey;
+update ordersup_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table ordersup_product add constraint ordersup_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table invoicein_product drop constraint invoicein_product_nds_id_fkey;
+update invoicein_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table invoicein_product add constraint invoicein_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
 
+alter table acceptance_product drop constraint acceptance_nds_id_fkey;
+update acceptance_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=(select company_id from products where id=t.product_id) and st.name='Без НДС');
+alter table acceptance_product add constraint acceptance_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
+
+alter table customers_orders_product drop constraint customers_orders_product_nds_id_fkey;
+update customers_orders_product t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table customers_orders_product add constraint customers_orders_product_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
+
+alter table products drop constraint nds_id_fkey;
+update products t set nds_id=(select st.id from sprav_taxes st where st.company_id=t.company_id and st.name='Без НДС');
+alter table products add constraint products_tax_id_fkey foreign key (nds_id) references sprav_taxes (id);
+
+drop table sprav_sys_nds;
 
 
 

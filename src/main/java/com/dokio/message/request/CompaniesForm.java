@@ -22,7 +22,6 @@ public class CompaniesForm {
     private Integer currency_id;
     private Integer opf_id;
     private String checked;//для удаления
-    // Апдейт Предприятия:
     private String name;
     private String code;
     private String telephone;
@@ -65,6 +64,34 @@ public class CompaniesForm {
     private Long glavbuh_signature_id;
     private Long stamp_id;
     private Long card_template_id;
+    // Settings
+    private Integer st_prefix_barcode_pieced;   // prefix of barcode for pieced product
+    private Integer st_prefix_barcode_packed;   // prefix of barcode for packed product
+    private String  st_netcost_policy;          // policy of netcost calculation by all company or by each department separately
+
+    public Integer getSt_prefix_barcode_pieced() {
+        return st_prefix_barcode_pieced;
+    }
+
+    public void setSt_prefix_barcode_pieced(Integer st_prefix_barcode_pieced) {
+        this.st_prefix_barcode_pieced = st_prefix_barcode_pieced;
+    }
+
+    public Integer getSt_prefix_barcode_packed() {
+        return st_prefix_barcode_packed;
+    }
+
+    public void setSt_prefix_barcode_packed(Integer st_prefix_barcode_packed) {
+        this.st_prefix_barcode_packed = st_prefix_barcode_packed;
+    }
+
+    public String getSt_netcost_policy() {
+        return st_netcost_policy;
+    }
+
+    public void setSt_netcost_policy(String st_netcost_policy) {
+        this.st_netcost_policy = st_netcost_policy;
+    }
 
     public Long getCard_template_id() {
         return card_template_id;

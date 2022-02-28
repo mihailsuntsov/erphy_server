@@ -10,31 +10,44 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-//Класс для связи отделений с типами цен, относящихся к отделению
-//Например, для отделения А могут быть привязаны типы цен "Оффлайн-цена для отделения А" и "Скидочная цена для всех отделений"
+package com.dokio.message.response.Sprav;
 
-package com.dokio.model.Sprav;
-import com.dokio.model.Departments;
+import java.math.BigDecimal;
 
-import javax.persistence.*;
+public class SpravTaxesListJSON {
 
-@Entity
-@Table(name="department_typeprice")
-public class DepartmentTypeprice {
+    private Long        id;
+    private String      name;
+    private String      description;
+    private int         value;
+    private BigDecimal  multiplier;
+    private String      name_api_atol;
+    private boolean     is_active;
+    private boolean     calculated;
 
-    @Id
-    @Column(name="id")
-    @SequenceGenerator(name="department_typeprice_id_seq", sequenceName="department_typeprice_id_seq", allocationSize=1)
-    @GeneratedValue(generator="department_typeprice_id_seq")
-    private Long id;
+    public boolean isCalculated() {
+        return calculated;
+    }
 
-    @ManyToOne
-    @JoinColumn(name = "department_id", nullable = false)
-    private Departments department;
+    public void setCalculated(boolean calculated) {
+        this.calculated = calculated;
+    }
 
-    @ManyToOne
-    @JoinColumn(name = "typeprice_id", nullable = false)
-    private SpravTypePrices spravTypePrices;
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
+
+    public BigDecimal getMultiplier() {
+        return multiplier;
+    }
+
+    public void setMultiplier(BigDecimal multiplier) {
+        this.multiplier = multiplier;
+    }
 
     public Long getId() {
         return id;
@@ -44,19 +57,35 @@ public class DepartmentTypeprice {
         this.id = id;
     }
 
-    public Departments getDepartment() {
-        return department;
+    public String getName() {
+        return name;
     }
 
-    public void setDepartment(Departments department) {
-        this.department = department;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public SpravTypePrices getSpravTypePrices() {
-        return spravTypePrices;
+    public String getDescription() {
+        return description;
     }
 
-    public void setSpravTypePrices(SpravTypePrices spravTypePrices) {
-        this.spravTypePrices = spravTypePrices;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getName_api_atol() {
+        return name_api_atol;
+    }
+
+    public void setName_api_atol(String name_api_atol) {
+        this.name_api_atol = name_api_atol;
+    }
+
+    public boolean isIs_active() {
+        return is_active;
+    }
+
+    public void setIs_active(boolean is_active) {
+        this.is_active = is_active;
     }
 }

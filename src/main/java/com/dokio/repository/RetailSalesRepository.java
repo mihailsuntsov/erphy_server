@@ -301,7 +301,7 @@ public class RetailSalesRepository {
                     " p.name as name," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " ap.nds_id," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = ap.nds_id) as nds," +
+                    " (select nds.name from sprav_taxes nds where nds.id = ap.nds_id) as nds," +
                     " ap.price_type_id," +
                     " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)

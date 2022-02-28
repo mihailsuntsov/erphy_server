@@ -304,7 +304,7 @@ public class AcceptanceRepository {
                     " ap.nds_id," +
                     " p.edizm_id," +
                     " p.name as name," +
-                    " (select nds.name from sprav_sys_nds nds where nds.id = p.nds_id) as nds," +
+                    " (select nds.name from sprav_taxes nds where nds.id = p.nds_id) as nds," +
                     " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = p.edizm_id) as edizm," +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total, "+ //всего на складе (т.е остаток)
@@ -313,7 +313,7 @@ public class AcceptanceRepository {
                     " acceptance_product ap " +
                     " INNER JOIN acceptance a ON ap.acceptance_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
-                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
+                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.acceptance_id = " + docId;
 
@@ -883,7 +883,7 @@ public class AcceptanceRepository {
                 ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
                 // актуальное количество товара В ОТДЕЛЕНИИ
                 // Используется для записи нового кол-ва товара в отделении путем сложения lastQuantity и row.getProduct_count()
-                // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
+                // если политика подсчета себестоимости ПО КАЖДОМУ отделению (each) - то lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
                 BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
                 // имеющееся количество (если учёт себестоимости по отделениям - то В ОТДЕЛЕНИИ, если по всему предприятию - то кол-во ВО ВСЕХ ОТДЕЛЕНИЯХ.)
                 // Используется для расчёта себестоимости

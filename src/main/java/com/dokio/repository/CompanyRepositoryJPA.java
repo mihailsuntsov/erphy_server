@@ -371,7 +371,10 @@ public class CompanyRepositoryJPA {
                     "           (select f.original_name from files f where f.id=p.stamp_id) as stamp_filename, " +
                     "           p.card_template_id as card_template_id, " +
                     "           (select f.original_name from files f where f.id=p.card_template_id) as card_template_original_filename, " +
-                    "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename " +
+                    "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename, " +
+                    "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
+                    "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
+                    "           p.st_netcost_policy as st_netcost_policy " +
 
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -413,7 +416,7 @@ public class CompanyRepositoryJPA {
             doc.setOpf_id((Integer)                                         queryList.get(0)[12]);
             doc.setCode(queryList.get(0)[13]!=null?                 (String)queryList.get(0)[13]:"");
             doc.setTelephone(queryList.get(0)[14]!=null?            (String)queryList.get(0)[14]:"");
-            doc.setSite(queryList.get(0)[15]!=null?                  (String)queryList.get(0)[15]:"");
+            doc.setSite(queryList.get(0)[15]!=null?                 (String)queryList.get(0)[15]:"");
             doc.setEmail(queryList.get(0)[16]!=null?                (String)queryList.get(0)[16]:"");
             doc.setZip_code(queryList.get(0)[17]!=null?             (String)queryList.get(0)[17]:"");
             doc.setCountry_id((Integer)                                     queryList.get(0)[18]);
@@ -467,6 +470,9 @@ public class CompanyRepositoryJPA {
             doc.setCard_template_id(queryList.get(0)[66]!=null?Long.parseLong(queryList.get(0)[66].toString()):null);
             doc.setCard_template_original_filename(queryList.get(0)[67]!=null?(String)queryList.get(0)[67]:"");
             doc.setCard_template_filename(queryList.get(0)[68]!=null?(String)queryList.get(0)[68]:"");
+            doc.setSt_prefix_barcode_pieced((Integer)                       queryList.get(0)[69]);
+            doc.setSt_prefix_barcode_packed((Integer)                       queryList.get(0)[70]);
+            doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
 
             return doc;
         } else return null;
@@ -572,10 +578,16 @@ public class CompanyRepositoryJPA {
                     " director_signature_id = " + request.getDirector_signature_id() + ", " +//подпись директора (id из таблицы Files)
                     " glavbuh_signature_id = " + request.getGlavbuh_signature_id() + ", " + ////подпись главбуха (id из таблицы Files)
                     " stamp_id = " + request.getStamp_id() + ", " + ////печать предприятия (id из таблицы Files)
-                    " card_template_id = " + request.getCard_template_id() + ////шаблон карточки предприятия (id из таблицы Files)
+                    " card_template_id = " + request.getCard_template_id() + ", " +////шаблон карточки предприятия (id из таблицы Files)
+                    // Settings
+                    " st_prefix_barcode_pieced = "  + request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
+                    " st_prefix_barcode_packed = "  + request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
+                    " st_netcost_policy = :st_netcost_policy " +   // policy of netcost calculation by all company or by each department separately
+
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -743,7 +755,10 @@ public class CompanyRepositoryJPA {
                 " nds_payer,"+//является ли плательщиком НДС
                 " fio_director,"+//ФИО управляющего
                 " director_position,"+//должность управляющего
-                " fio_glavbuh"+//ФИО главбуха
+                " fio_glavbuh,"+//ФИО главбуха
+                " st_prefix_barcode_pieced, "  + request.getSt_prefix_barcode_pieced() + ", " + // prefix of barcode for pieced product
+                " st_prefix_barcode_packed, "  + request.getSt_prefix_barcode_packed() + ", " + // prefix of barcode for packed product
+                " st_netcost_policy " +   // policy of netcost calculation by all company or by each department separately
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -789,10 +804,14 @@ public class CompanyRepositoryJPA {
                 request.getNds_payer() + ", " +//является ли плательщиком НДС
                 "'" + (request.getFio_director() == null ? "": request.getFio_director()) + "', " +//ФИО управляющего
                 "'" + (request.getDirector_position() == null ? "": request.getDirector_position()) + "', " +//должность управляющего
-                "'" + (request.getFio_glavbuh() == null ? "": request.getFio_glavbuh()) + "' " +//ФИО главбуха
+                "'" + (request.getFio_glavbuh() == null ? "": request.getFio_glavbuh()) + "', " +//ФИО главбуха
+                request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
+                request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
+                ":st_netcost_policy" +  // policy of netcost calculation by all company or by each department separately
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
             query.executeUpdate();
             stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);

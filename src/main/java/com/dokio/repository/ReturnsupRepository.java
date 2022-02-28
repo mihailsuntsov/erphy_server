@@ -292,7 +292,7 @@ public class ReturnsupRepository {
                     " returnsup_product ip " +
                     " INNER JOIN products p ON ip.product_id=p.id " +
                     " INNER JOIN returnsup i ON ip.returnsup_id=i.id " +
-                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ip.nds_id" +
+                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ip.nds_id" +
                     " where ip.master_id = " + myMasterId +
                     " and ip.returnsup_id = " + docId;
 

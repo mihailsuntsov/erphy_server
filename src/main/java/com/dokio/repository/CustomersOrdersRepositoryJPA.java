@@ -368,7 +368,7 @@ public class CustomersOrdersRepositoryJPA {
                     " INNER JOIN customers_orders a ON ap.customers_orders_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
-                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
+                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ap.nds_id" +
 //                    " INNER JOIN sprav_sys_nds nds ON p.nds_id=nds.id " +
                     " where a.master_id = " + myMasterId +
                     " and ap.customers_orders_id = " + docId;

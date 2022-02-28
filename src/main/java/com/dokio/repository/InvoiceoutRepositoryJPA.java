@@ -323,7 +323,7 @@ public class InvoiceoutRepositoryJPA {
                     " INNER JOIN invoiceout a ON ap.invoiceout_id=a.id " +
                     " INNER JOIN products p ON ap.product_id=p.id " +
                     " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
-                    " LEFT OUTER JOIN sprav_sys_nds nds ON nds.id = ap.nds_id" +
+                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ap.nds_id" +
                     " where a.master_id = " + myMasterId +
                     " and ap.invoiceout_id = " + docId;
 
