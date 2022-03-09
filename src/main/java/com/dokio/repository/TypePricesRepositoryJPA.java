@@ -23,6 +23,7 @@ import com.dokio.model.Sprav.SpravTypePrices;
 import com.dokio.model.Sprav.SpravTypePricesJSON;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class TypePricesRepositoryJPA {
@@ -54,12 +56,15 @@ public class TypePricesRepositoryJPA {
     UserRepository userService;
 
 
+    Logger logger = Logger.getLogger("TypePricesRepositoryJPA");
+
     @SuppressWarnings("Duplicates")
-    public List<TypePricesTableJSON> getTypePricesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(9L, "91,92"))//типы цен (см. файл Permissions Id)
+    public List<TypePricesTableJSON> getTypePricesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(9L, "95,96"))//типы цен (см. файл Permissions Id)
              {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -87,11 +92,11 @@ public class TypePricesRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_sys_pricerole pr ON p.pricerole_id=pr.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "91")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "95")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
             {
-                //остается только на своё предприятие (92)
+                //остается только на своё предприятие (96)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
@@ -110,11 +115,12 @@ public class TypePricesRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    public int getTypePricesSize(String searchString, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(9L, "91,92"))//типы цен (см. файл Permissions Id)
+    public int getTypePricesSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(9L, "95,96"))//типы цен (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -136,13 +142,13 @@ public class TypePricesRepositoryJPA {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
 
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "91")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "95")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
             {
-                //остается только на своё предприятие (92)
+                //остается только на своё предприятие (96)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
@@ -159,7 +165,7 @@ public class TypePricesRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public SpravTypePricesJSON getTypePricesValuesById (int id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(9L, "95,96,97,98"))//Типы цен: см. _Permissions Id.txt
+        if (securityRepositoryJPA.userHasPermissions_OR(9L, "95,96"))//Типы цен: см. _Permissions Id.txt
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -187,10 +193,9 @@ public class TypePricesRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_sys_pricerole pr ON p.pricerole_id=pr.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and p.id= " + id+
-                    "           and coalesce(p.is_archive,false) !=true";
+                    "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "95,97")) //Если нет прав на просм или редакт. по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(9L, "95")) //Если нет прав на просм или редакт. по всем предприятиям
             {
                 //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -206,7 +211,7 @@ public class TypePricesRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public boolean updateTypePrices(TypePricesForm request) {
+    public Integer updateTypePrices(TypePricesForm request) {
         boolean perm_AllCompaniesUpdate=securityRepositoryJPA.userHasPermissions_OR(9L, "97"); // Типы цен:"Редактирование документов по всем предприятиям" (в пределах родительского аккаунта)
         boolean perm_MyCompanyUpdate=securityRepositoryJPA.userHasPermissions_OR(9L, "98"); // Типы цен:"Редактирование документов своего предприятия"
 
@@ -220,6 +225,8 @@ public class TypePricesRepositoryJPA {
                         )
                         && itIsDocumentOfMyMasters                                      //+документ под юрисдикцией главного (родительского) аккаунта
         ){
+            try
+            {
             EntityManager emgr = emf.createEntityManager();
             emgr.getTransaction().begin();
             Long id=Long.valueOf(request.getId());
@@ -243,8 +250,13 @@ public class TypePricesRepositoryJPA {
 
             emgr.getTransaction().commit();
             emgr.close();
-            return true;
-        } else return false;
+            return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method updateTypePrices.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
@@ -253,51 +265,100 @@ public class TypePricesRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(9L,"93"))//  Типы цен : "Создание"
         {
             SpravTypePrices newDocument = new SpravTypePrices();
-            //создатель
-            User creator = userRepository.getUserByUsername(userRepository.getUserName());
-            newDocument.setCreator(creator);//создателя
-            //владелец
-            User master = userRepository.getUserByUsername(
-                    userRepositoryJPA.getUsernameById(
-                            userRepositoryJPA.getUserMasterIdByUsername(
-                                    userRepository.getUserName() )));
-            newDocument.setMaster(master);
-            //дата и время создания
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            newDocument.setDate_time_created(timestamp);//
-            //предприятие
-            newDocument.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));
-            //Наименование
-            newDocument.setName (request.getName() == null ? "": request.getName());
-            //Роль цены
-            EntityManager em = emf.createEntityManager();
-            SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
-            newDocument.setPricerole(priceRole);
-            //дополнительная информация
-            newDocument.setDescription(request.getDescription());
-            entityManager.persist(newDocument);
-            entityManager.flush();
-            return newDocument.getId();
-        } else return null;
+            try
+            {
+                //создатель
+                User creator = userRepository.getUserByUsername(userRepository.getUserName());
+                newDocument.setCreator(creator);//создателя
+                //владелец
+                User master = userRepository.getUserByUsername(
+                        userRepositoryJPA.getUsernameById(
+                                userRepositoryJPA.getUserMasterIdByUsername(
+                                        userRepository.getUserName() )));
+                newDocument.setMaster(master);
+                //дата и время создания
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                newDocument.setDate_time_created(timestamp);//
+                //предприятие
+                newDocument.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));
+                //Наименование
+                newDocument.setName (request.getName() == null ? "": request.getName());
+                //Роль цены
+                EntityManager em = emf.createEntityManager();
+                SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
+                newDocument.setPricerole(priceRole);
+                //дополнительная информация
+                newDocument.setDescription(request.getDescription());
+                entityManager.persist(newDocument);
+                entityManager.flush();
+                return newDocument.getId();
+            } catch (Exception e) {
+                logger.error("Exception in method insertTypePrices.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1L;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteTypePricesById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(9L,"94")&& //Типы цен: "Удаление"
-                securityRepositoryJPA.isItAllMyMastersTypePrices(delNumbers))  //все ли Типы цен принадлежат текущему родительскому аккаунту
+    public Integer deleteTypePrices(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(9L, "94") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_type_prices", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(9L, "94") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_type_prices", delNumbers)))
         {
-            String stringQuery;
-            stringQuery="Update sprav_type_prices p" +
-                    " set is_archive=true "+
-                    " where p.id in ("+ delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(!stringQuery.isEmpty() && stringQuery.trim().length() > 0){
-                int count = query.executeUpdate();
-                return true;
-            }else return false;
-        }else return false;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery = "update sprav_type_prices p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteTypePrices. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteTypePrices(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(9L,"94") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_type_prices",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(9L,"94") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_type_prices",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update sprav_type_prices p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteTypePrices. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+
 
     @SuppressWarnings("Duplicates")
     public List<PriceTypesListJSON> getPriceTypesList(int companyId) {

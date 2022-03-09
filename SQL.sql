@@ -3006,9 +3006,9 @@ alter table products add constraint products_tax_id_fkey foreign key (nds_id) re
 
 drop table sprav_sys_nds;
 
-
-
-
+alter table product_groups add column is_deleted boolean;
+alter table sprav_sys_edizm add column is_deleted boolean;
+alter table sprav_type_prices add column is_deleted boolean;
 
 
 

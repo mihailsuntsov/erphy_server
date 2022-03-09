@@ -198,7 +198,7 @@ public class KassaController {
             }
         }else{
             logger.info("Ошибка создания кассы. Касса не уникальна по заводскому номеру в данном предприятии.");
-            return new ResponseEntity<>("[\n" + "    0\n" +  "]", HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
+            return new ResponseEntity<>(0, HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
         }
     }
 
@@ -208,14 +208,10 @@ public class KassaController {
         logger.info("Processing post request for path /api/auth/updateKassa: " + request.toString());
         //перед сохранением кассы проверка на ее уникальность.
         if (kassaRepository.isKassaUnique(request.getZn_kkt(), request.getCompany_id(), request.getId())){
-            if(kassaRepository.updateKassa(request)){
-                return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            return new ResponseEntity<>(kassaRepository.updateKassa(request), HttpStatus.OK);
         }else{
             logger.info("Ошибка сохранения кассы. Касса не уникальна по заводскому номеру в данном предприятии.");
-            return new ResponseEntity<>("[\n" + "    0\n" +  "]", HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
+            return new ResponseEntity<>(0, HttpStatus.OK); //если фронтэнд получает 0 - он понимает, что касса не уникальна, и сообщает об этом пользователю
         }
 
     }

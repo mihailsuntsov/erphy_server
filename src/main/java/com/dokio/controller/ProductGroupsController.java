@@ -52,7 +52,6 @@ public class ProductGroupsController {
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
@@ -81,7 +80,7 @@ public class ProductGroupsController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = productGroupRepositoryJPA.getProductGroupsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = productGroupRepositoryJPA.getProductGroupsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -127,10 +126,8 @@ public class ProductGroupsController {
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать документы/ 0 - по всем
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -141,8 +138,7 @@ public class ProductGroupsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = productGroupRepositoryJPA.getProductGroupsSize(searchString,companyId);//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = productGroupRepositoryJPA.getProductGroupsSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -200,49 +196,36 @@ public class ProductGroupsController {
     }
 
     @PostMapping("/api/auth/insertProductGroups")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertProductGroups(@RequestBody ProductGroupsForm request) throws ParseException {
+    public  ResponseEntity<?> insertProductGroups(@RequestBody ProductGroupsForm request) {
         logger.info("Processing post request for path /api/auth/insertProductGroups: " + request.toString());
-
-        Long newDocument = productGroupRepositoryJPA.insertProductGroups(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productGroupRepositoryJPA.insertProductGroups(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertProductGroups error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/updateProductGroups")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateProductGroups(@RequestBody ProductGroupsForm request) throws ParseException{
-        logger.info("Processing post request for path /api/auth/updateProductGroups: " + request.toString());
 
-        if(productGroupRepositoryJPA.updateProductGroups(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+    @PostMapping("/api/auth/updateProductGroups")
+    public  ResponseEntity<?> updateProductGroups(@RequestBody ProductGroupsForm request) {
+        logger.info("Processing post request for path /api/auth/updateProductGroups: " + request.toString());
+        try {return new ResponseEntity<>(productGroupRepositoryJPA.updateProductGroups(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateProductGroups error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteProductGroups")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteProductGroups(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteProductGroups(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteProductGroups: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-
-        if(productGroupRepositoryJPA.deleteProductGroupsById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productGroupRepositoryJPA.deleteProductGroupsById(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteProductGroups error", e);
+        return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/undeleteProductGroups")
+    public  ResponseEntity<?> undeleteProductGroups(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteProductGroups: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(productGroupRepositoryJPA.undeleteProductGroups(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteProductGroups error", e);
+            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/copyProductGroups")
@@ -254,7 +237,7 @@ public class ProductGroupsController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }

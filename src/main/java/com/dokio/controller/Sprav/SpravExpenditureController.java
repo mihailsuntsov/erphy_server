@@ -152,12 +152,6 @@ class SpravExpenditureController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertExpenditure")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertExpenditure(@RequestBody SpravExpenditureForm request){
-        logger.info("Processing post request for path /api/auth/insertExpenditure: " + request.toString());
-        return new ResponseEntity<>(expendituresRepository.insertExpenditure(request), HttpStatus.OK);
-    }
 
     @RequestMapping(
             value = "/api/auth/getExpenditureValuesById",
@@ -167,14 +161,25 @@ class SpravExpenditureController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getExpenditureValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(expendituresRepository.getExpenditureValues(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller getExpenditureValuesById error", e);
+        return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/insertExpenditure")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> insertExpenditure(@RequestBody SpravExpenditureForm request){
+        logger.info("Processing post request for path /api/auth/insertExpenditure: " + request.toString());
+        try {return new ResponseEntity<>(expendituresRepository.insertExpenditure(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertExpenditure error", e);
+            return new ResponseEntity<>("Error creating the document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateExpenditure")
     public ResponseEntity<?> updateExpenditure(@RequestBody SpravExpenditureForm request){
         logger.info("Processing post request for path /api/auth/updateExpenditure: " + request.toString());
         try {return new ResponseEntity<>(expendituresRepository.updateExpenditure(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller updateExpenditure error", e);
+        return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteExpenditure")
@@ -183,7 +188,8 @@ class SpravExpenditureController {
         logger.info("Processing post request for path /api/auth/deleteExpenditure: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(expendituresRepository.deleteExpenditure(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller deleteExpenditure error", e);
+        return new ResponseEntity<>("Error deleting the document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteExpenditure")
@@ -192,6 +198,7 @@ class SpravExpenditureController {
         logger.info("Processing post request for path /api/auth/undeleteExpenditure: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(expendituresRepository.undeleteExpenditure(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller undeleteExpenditure error", e);
+        return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

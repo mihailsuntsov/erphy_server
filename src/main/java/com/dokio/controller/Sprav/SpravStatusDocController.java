@@ -162,21 +162,6 @@ public class SpravStatusDocController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertSpravStatusDocs")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertSpravStatusDocs(@RequestBody SpravStatusDocForm request){
-        logger.info("Processing post request for path /api/auth/insertSpravStatusDocs: " + request.toString());
-
-        Long newDocument = repository.insertStatusDocs(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
-    }
-
     @PostMapping("/api/auth/setDefaultStatusDoc")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> setDefaultStatusDoc(@RequestBody UniversalForm request){
@@ -189,53 +174,37 @@ public class SpravStatusDocController {
         }
     }
 
-    @PostMapping("/api/auth/updateSpravStatusDocs")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateSpravStatusDocs(@RequestBody SpravStatusDocForm request){
-        logger.info("Processing post request for path /api/auth/updateSpravStatusDocs: " + request.toString());
+    @PostMapping("/api/auth/insertSpravStatusDocs")
+    public  ResponseEntity<?> insertSpravStatusDocs(@RequestBody SpravStatusDocForm request) {
+        logger.info("Processing post request for path /api/auth/insertSpravStatusDocs: " + request.toString());
+        try {return new ResponseEntity<>(repository.insertStatusDocs(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertSpravStatusDocs error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
-        if(repository.updateStatusDocs(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @PostMapping("/api/auth/updateSpravStatusDocs")
+    public  ResponseEntity<?> updateSpravStatusDocs(@RequestBody SpravStatusDocForm request) {
+        logger.info("Processing post request for path /api/auth/updateSpravStatusDocs: " + request.toString());
+        try {return new ResponseEntity<>(repository.updateStatusDocs(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateSpravStatusDocs error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteSpravStatusDocs")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteSpravStatusDocs(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> deleteSpravStatusDocs(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteSpravStatusDocs: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-//        checked=checked.replace("[","");
-//        checked=checked.replace("]","");
-
-        if(repository.deleteStatusDocs(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(repository.deleteStatusDocs(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteSpravStatusDocs error", e);
+            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/undeleteSpravStatusDocs")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteSpravStatusDocs(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteSpravStatusDocs(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteSpravStatusDocs: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-//        checked=checked.replace("[","");
-//        checked=checked.replace("]","");
-
-        if(repository.undeleteStatusDocs(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(repository.undeleteStatusDocs(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteSpravStatusDocs error", e);
+            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/getStatusList")//отдает список статусов документа по его id (таблица documents) и id предприятия
     @SuppressWarnings("Duplicates")

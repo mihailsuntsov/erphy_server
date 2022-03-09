@@ -21,6 +21,7 @@ import com.dokio.message.response.Sprav.SpravSysEdizmTableJSON;
 import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +30,13 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class SpravSysEdizmJPA {
 
+
+    Logger logger = Logger.getLogger("SpravSysEdizmJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -54,11 +58,12 @@ public class SpravSysEdizmJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<SpravSysEdizmTableJSON> getSpravSysEdizmTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(11L, "118,119"))//типы цен (см. файл Permissions Id)
+    public List<SpravSysEdizmTableJSON> getSpravSysEdizmTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//типы цен (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -69,15 +74,18 @@ public class SpravSysEdizmJPA {
                     "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
                     "           p.name as name, " +
-                    "           p.short_name as short_name " +
+                    "           p.short_name as short_name, " +
+                    "           p.date_time_created as date_time_created_sort, " +
+                    "           p.date_time_changed as date_time_changed_sort " +
                     "           from sprav_sys_edizm p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           where  p.master_id=" + myMasterId ;
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "118")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "122")) //Если нет прав на по всем предприятиям"
             {
                 //остается только на своё предприятие (119)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -99,21 +107,23 @@ public class SpravSysEdizmJPA {
     }
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getSpravSysEdizmSize(String searchString, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(11L, "118,119"))//типы цен (см. файл Permissions Id)
+    public int getSpravSysEdizmSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//типы цен (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
                     "           p.short_name as short_name " +
                     "           from sprav_sys_edizm p " +
-                    "           where  p.master_id=" + myMasterId ;
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "118")) //Если нет прав на "Меню - таблица - Типы цен по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "122")) //Если нет прав на по всем предприятиям"
             {
                 //остается только на своё предприятие (119)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -133,7 +143,7 @@ public class SpravSysEdizmJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public SpravSysEdizmJSON getSpravSysEdizmValuesById (int id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(11L, "122,123,124,125"))//Типы цен: см. _Permissions Id.txt
+        if (securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//Типы цен: см. _Permissions Id.txt
         {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -163,7 +173,7 @@ public class SpravSysEdizmJPA {
                 "           where  p.master_id=" + myMasterId +
                 "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "122,124")) //Если нет прав на просм или редакт. по всем предприятиям
+            if (!securityRepositoryJPA.userHasPermissions_OR(11L, "122")) //Если нет прав на просм или редакт. по всем предприятиям
             {
          //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -266,21 +276,61 @@ public class SpravSysEdizmJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteSpravSysEdizmById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(11L,"121")&& //Типы цен: "Удаление"
-                securityRepositoryJPA.isItAllMyMastersSpravSysEdizm(delNumbers))  //все ли Типы цен принадлежат текущему родительскому аккаунту
+    public Integer deleteEdizmById(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(11L, "121") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_sys_edizm", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(11L, "121") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_sys_edizm", delNumbers)))
         {
-            String stringQuery;
-            stringQuery="delete from sprav_type_prices p" +
-                    " where p.id in ("+ delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(!stringQuery.isEmpty() && stringQuery.trim().length() > 0){
-                int count = query.executeUpdate();
-                return true;
-            }else return false;
-        }else return false;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery = "update sprav_sys_edizm p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteTaxes on updating deleteEdizmById. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteEdizm(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(11L,"121") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_sys_edizm",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(11L,"121") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_sys_edizm",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update sprav_sys_edizm p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteEdizm. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
     @SuppressWarnings("Duplicates")
     public List<SpravSysEdizmTableJSON> getSpravSysEdizm(UniversalForm request) {
 //        if(securityRepositoryJPA.userHasPermissions_OR(11L, "118,119"))//типы цен (см. файл Permissions Id)

@@ -62,7 +62,6 @@ public class SpravTypePricesController {
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
@@ -91,7 +90,7 @@ public class SpravTypePricesController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = typePricesRepositoryJPA.getTypePricesTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = typePricesRepositoryJPA.getTypePricesTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -104,10 +103,8 @@ public class SpravTypePricesController {
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать документы/ 0 - по всем
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -118,8 +115,7 @@ public class SpravTypePricesController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = typePricesRepositoryJPA.getTypePricesSize(searchString,companyId);//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = typePricesRepositoryJPA.getTypePricesSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -169,57 +165,45 @@ public class SpravTypePricesController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTypePricesValuesById(@RequestBody SearchForm request) {
         logger.info("Processing post request for path api/auth/getTypePricesValuesById: " + request.toString());
-
         SpravTypePricesJSON response;
         int id = request.getId();
         response=typePricesRepositoryJPA.getTypePricesValuesById(id);//результат запроса помещается в экземпляр класса
         ResponseEntity<SpravTypePricesJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
         return responseEntity;
     }
+
     @PostMapping("/api/auth/insertTypePrices")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertTypePrices(@RequestBody TypePricesForm request){
-        logger.info("Processing post request for path api/auth/insertTypePrices: " + request.toString());
-
-        Long newDocument = typePricesRepositoryJPA.insertTypePrices(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    public  ResponseEntity<?> insertTypePrices(@RequestBody TypePricesForm request) {
+        logger.info("Processing post request for path /api/auth/insertTypePrices: " + request.toString());
+        try {return new ResponseEntity<>(typePricesRepositoryJPA.insertTypePrices(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertTypePrices error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/updateTypePrices")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateTypePrices(@RequestBody TypePricesForm request){
-        logger.info("Processing post request for path api/auth/updateTypePrices: " + request.toString());
 
-        if(typePricesRepositoryJPA.updateTypePrices(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @PostMapping("/api/auth/updateTypePrices")
+    public  ResponseEntity<?> updateTypePrices(@RequestBody TypePricesForm request) {
+        logger.info("Processing post request for path /api/auth/updateTypePrices: " + request.toString());
+        try {return new ResponseEntity<>(typePricesRepositoryJPA.updateTypePrices(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateTypePrices error", e);
+            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteTypePrices")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteTypePrices(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path api/auth/deleteTypePrices: " + request.toString());
-
+    public  ResponseEntity<?> deleteTypePrices(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteTypePrices: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
+        try {return new ResponseEntity<>(typePricesRepositoryJPA.deleteTypePrices(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteTypePrices error", e);
+            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
-        if(typePricesRepositoryJPA.deleteTypePricesById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @PostMapping("/api/auth/undeleteTypePrices")
+    public  ResponseEntity<?> undeleteTypePrices(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteTypePrices: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(typePricesRepositoryJPA.undeleteTypePrices(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteTypePrices error", e);
+            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 

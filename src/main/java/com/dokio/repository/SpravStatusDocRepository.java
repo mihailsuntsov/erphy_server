@@ -23,6 +23,7 @@ import com.dokio.model.Documents;
 import com.dokio.model.Sprav.SpravStatusDocs;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,8 @@ import java.util.Set;
 
 @Repository
 public class SpravStatusDocRepository {
+
+    Logger logger = Logger.getLogger("SpravStatusDocRepository");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -260,7 +263,7 @@ public class SpravStatusDocRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public boolean updateStatusDocs(SpravStatusDocForm request) {
+    public Integer updateStatusDocs(SpravStatusDocForm request) {
         EntityManager emgr = emf.createEntityManager();
         SpravStatusDocs document = emgr.find(SpravStatusDocs.class, request.getId());//сохраняемый документ
         boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(22L, "278"); // "Редактирование док-тов своего предприятия"
@@ -290,7 +293,8 @@ public class SpravStatusDocRepository {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    return false;
+                    logger.error("Exception in method updateStatusDocs on saving orders. SQL query:", e);
+                    return null;
                 }//сохранение полей документа
                 String stringQuery;
                 stringQuery =   " update sprav_status_dock set " +
@@ -304,12 +308,13 @@ public class SpravStatusDocRepository {
                         " id= "+request.getId();
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             } catch (Exception e) {
+                logger.error("Exception in method updateStatusDocs.", e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
@@ -361,15 +366,16 @@ public class SpravStatusDocRepository {
                     return newDocument.getId();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    logger.error("Exception in method insertStatusDocs.", e);
                     return null;
                 }
             }
-        } else return null;
+        } else return -1L;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteStatusDocs(String delNumbers) {
+    public Integer deleteStatusDocs(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -383,13 +389,47 @@ public class SpravStatusDocRepository {
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
                     " and p.id in (" + delNumbers + ")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                int count = query.executeUpdate();
-                return true;
-            } else return false;
-        } else return false;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteStatusDocs on updating sprav_status_dock. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteStatusDocs(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(22L, "274") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_status_dock", delNumbers))) {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update sprav_status_dock p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method undeleteStatusDocs on updating sprav_status_dock. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
     @SuppressWarnings("Duplicates")
     @Transactional
     public boolean setDefaultStatusDoc(UniversalForm request) {// id : предприятие, id2 : документ в реестре всех док-тов системы, id3 : статус
@@ -421,29 +461,6 @@ public class SpravStatusDocRepository {
                 e.printStackTrace();
                 return false;
             }
-        } else return false;
-    }
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public boolean undeleteStatusDocs(String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(22L, "273") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_status_dock", delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(22L, "274") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_status_dock", delNumbers))) {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myId = userRepositoryJPA.getMyId();
-            String stringQuery;
-            stringQuery = "Update sprav_status_dock p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now(), " +//дату и время изменения
-                    " is_deleted=false " +
-                    " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                int count = query.executeUpdate();
-                return true;
-            } else return false;
         } else return false;
     }
     //*****************************************************************************************************************************************************

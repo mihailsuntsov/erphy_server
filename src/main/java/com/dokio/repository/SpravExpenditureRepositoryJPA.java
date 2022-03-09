@@ -353,11 +353,11 @@ public class SpravExpenditureRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean deleteExpenditure(String delNumbers) {
+    public Integer deleteExpenditure(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(40L, "500") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_expenditure_items", delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(40L, "501") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_expenditure_items", delNumbers))) {
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(40L, "501") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_expenditure_items", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
@@ -371,19 +371,19 @@ public class SpravExpenditureRepositoryJPA {
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             } catch (Exception e) {
                 logger.error("Exception in method deleteExpenditure. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
 
-        } else return false;
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteExpenditure(String delNumbers) {
+    public Integer undeleteExpenditure(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(40L, "500") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_expenditure_items", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
@@ -401,13 +401,13 @@ public class SpravExpenditureRepositoryJPA {
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             } catch (Exception e) {
                 logger.error("Exception in method undeleteExpenditure. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 
     // позволяет поределить, какого типа расход (moving, taxes, purchases, other_opex и др) выбран по его id

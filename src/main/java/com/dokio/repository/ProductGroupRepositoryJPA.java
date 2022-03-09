@@ -21,6 +21,7 @@ import com.dokio.model.ProductGroupFields;
 import com.dokio.model.ProductGroups;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class ProductGroupRepositoryJPA {
@@ -49,13 +51,16 @@ public class ProductGroupRepositoryJPA {
     @Autowired
     UserRepository userService;
 
+    Logger logger = Logger.getLogger("ProductGroupRepositoryJPA");
+
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<ProductGroupsTableJSON> getProductGroupsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(10L, "109,110"))//"Группы товаров" (см. файл Permissions Id)
+    public List<ProductGroupsTableJSON> getProductGroupsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(10L, "113,114"))//"Группы товаров" (см. файл Permissions Id)
         {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
         stringQuery = "select  p.id as id, " +
                 "           u.name as master, " +
@@ -77,11 +82,12 @@ public class ProductGroupRepositoryJPA {
                 "           INNER JOIN users u ON p.master_id=u.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId;
+                "           where  p.master_id=" + myMasterId +
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(10L, "109")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
+        if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113")) //Если нет прав на просмотр по всем предприятиям"
         {
-            //остается только на своё предприятие (110)
+            //остается только на своё предприятие (114)
             stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
         }
         if (searchString != null && !searchString.isEmpty()) {
@@ -98,6 +104,53 @@ public class ProductGroupRepositoryJPA {
 
         return query.getResultList();
         } else return null;
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public int getProductGroupsSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(10L, "113,114"))//"Группы товаров" (см. файл Permissions Id)
+        {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+
+            stringQuery = "select " +
+                    "           p.id as id, " +
+                    "           u.name as master, " +
+                    "           us.name as creator, " +
+                    "           uc.name as changer, " +
+                    "           p.master_id as master_id, " +
+                    "           p.creator_id as creator_id, " +
+                    "           p.changer_id as changer_id, " +
+                    "           p.company_id as company_id, " +
+                    "           cmp.name as company, " +
+                    "           p.name as name, " +
+                    "           p.description as description " +
+                    "           from product_groups p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
+
+            if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113")) //Если нет прав на просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие (114)
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            if (searchString != null && !searchString.isEmpty()) {
+                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+            }
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and p.company_id=" + companyId;
+            }
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            return query.getResultList().size();
+        } else return 0;
     }
 
     @Transactional// тут не надо прописывать права, т.к. это сервисный запрос
@@ -146,56 +199,11 @@ public class ProductGroupRepositoryJPA {
         return result;
     }
 
-    @SuppressWarnings("Duplicates")
-    @Transactional
-    public int getProductGroupsSize(String searchString, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(10L, "109,110"))//"Группы товаров" (см. файл Permissions Id)
-        {
-        String stringQuery;
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-        stringQuery = "select " +
-                "           p.id as id, " +
-                "           u.name as master, " +
-                "           us.name as creator, " +
-                "           uc.name as changer, " +
-                "           p.master_id as master_id, " +
-                "           p.creator_id as creator_id, " +
-                "           p.changer_id as changer_id, " +
-                "           p.company_id as company_id, " +
-                "           cmp.name as company, " +
-                "           p.name as name, " +
-                "           p.description as description " +
-                "           from product_groups p " +
-                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                "           INNER JOIN users u ON p.master_id=u.id " +
-                "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
-                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId;
-
-
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(10L, "109")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
-            {
-                //остается только на своё предприятие (110)
-                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-            }
-        if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
-        }
-        if (companyId > 0) {
-            stringQuery = stringQuery + " and p.company_id=" + companyId;
-        }
-        Query query = entityManager.createNativeQuery(stringQuery);
-
-        return query.getResultList().size();
-        } else return 0;
-    }
 
     @SuppressWarnings("Duplicates")
     @Transactional
     public ProductGroupsJSON getProductGroupValuesById (Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(10L, "113,114,115,116"))//"Группы товаров": см. _Permissions Id.txt
+        if (securityRepositoryJPA.userHasPermissions_OR(10L, "113,114"))//"Группы товаров": см. _Permissions Id.txt
         {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -222,7 +230,7 @@ public class ProductGroupRepositoryJPA {
                 "           where  p.master_id=" + myMasterId +
                 "           and p.id= " + id;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113,115")) //Если нет прав на просм или редакт. по всем предприятиям
+        if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113")) //Если нет прав на просм или редакт. по всем предприятиям
         {
             //остается только на своё предприятие
             stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -242,34 +250,40 @@ public class ProductGroupRepositoryJPA {
     public Long insertProductGroups(ProductGroupsForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(10L,"111"))//  Группы товаров : "Создание"
         {
-        ProductGroups newDocument = new ProductGroups();
-
-        //создатель
-        User creator = userRepository.getUserByUsername(userRepository.getUserName());
-        newDocument.setCreator(creator);//создателя
-        //владелец
-        User master = userRepository.getUserByUsername(
-                userRepositoryJPA.getUsernameById(
-                        userRepositoryJPA.getUserMasterIdByUsername(
-                                userRepository.getUserName() )));
-        newDocument.setMaster(master);
-        //дата и время создания
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        newDocument.setDate_time_created(timestamp);//
-        //предприятие
-        newDocument.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));
-        //Наименование
-        newDocument.setName (request.getName() == null ? "": request.getName());
-        //дополнительная информация
-        newDocument.setDescription(request.getDescription());
-        entityManager.persist(newDocument);
-        entityManager.flush();
-        return newDocument.getId();
-        } else return null;
+            ProductGroups newDocument = new ProductGroups();
+            try
+            {
+                //создатель
+                User creator = userRepository.getUserByUsername(userRepository.getUserName());
+                newDocument.setCreator(creator);//создателя
+                //владелец
+                User master = userRepository.getUserByUsername(
+                        userRepositoryJPA.getUsernameById(
+                                userRepositoryJPA.getUserMasterIdByUsername(
+                                        userRepository.getUserName() )));
+                newDocument.setMaster(master);
+                //дата и время создания
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                newDocument.setDate_time_created(timestamp);//
+                //предприятие
+                newDocument.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));
+                //Наименование
+                newDocument.setName (request.getName() == null ? "": request.getName());
+                //дополнительная информация
+                newDocument.setDescription(request.getDescription());
+                entityManager.persist(newDocument);
+                entityManager.flush();
+                return newDocument.getId();
+            } catch (Exception e) {
+                logger.error("Exception in method insertProductGroups.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1L;
     }
 
     @SuppressWarnings("Duplicates")
-    public boolean updateProductGroups(ProductGroupsForm request) {
+    public Integer updateProductGroups(ProductGroupsForm request) {
         boolean perm_AllCompaniesUpdate=securityRepositoryJPA.userHasPermissions_OR(10L, "115"); // "Группы товаров":"Редактирование документов по всем предприятиям" (в пределах родительского аккаунта)
         boolean perm_MyCompanyUpdate=securityRepositoryJPA.userHasPermissions_OR(10L, "116"); // "Группы товаров":"Редактирование документов своего предприятия"
 
@@ -283,44 +297,90 @@ public class ProductGroupRepositoryJPA {
                 )
                         && itIsDocumentOfMyMasters                                      //+документ под юрисдикцией главного (родительского) аккаунта
         ){
-        EntityManager emgr = emf.createEntityManager();
-        emgr.getTransaction().begin();
-        Long id=Long.valueOf(request.getId());
-        ProductGroups updateDocument = emgr.find(ProductGroups.class, id);
-        //id
-        updateDocument.setId(id);
-        //кто изменил
-        User changer = userRepository.getUserByUsername(userRepository.getUserName());
-        updateDocument.setChanger(changer);
-        //дату изменения
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        updateDocument.setDate_time_changed(timestamp);
-        //Наименование
-        updateDocument.setName (request.getName() == null ? "": request.getName());
-        //дополнительная информация
-        updateDocument.setDescription (request.getDescription() == null ? "": request.getDescription());
-        emgr.getTransaction().commit();
-        emgr.close();
-        return true;
-        } else return false;
+            try{
+                EntityManager emgr = emf.createEntityManager();
+                emgr.getTransaction().begin();
+                Long id=Long.valueOf(request.getId());
+                ProductGroups updateDocument = emgr.find(ProductGroups.class, id);
+                //id
+                updateDocument.setId(id);
+                //кто изменил
+                User changer = userRepository.getUserByUsername(userRepository.getUserName());
+                updateDocument.setChanger(changer);
+                //дату изменения
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                updateDocument.setDate_time_changed(timestamp);
+                //Наименование
+                updateDocument.setName (request.getName() == null ? "": request.getName());
+                //дополнительная информация
+                updateDocument.setDescription (request.getDescription() == null ? "": request.getDescription());
+                emgr.getTransaction().commit();
+                emgr.close();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method updateProductGroups.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
-
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteProductGroupsById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(10L,"112")&& //"Группы товаров": "Удаление"
-                securityRepositoryJPA.isItAllMyMastersProductGroups(delNumbers))  //все ли "Группы товаров" принадлежат текущему родительскому аккаунту
+    public Integer deleteProductGroupsById(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(10L, "112") && securityRepositoryJPA.isItAllMyMastersDocuments("product_groups", delNumbers)) ||
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(10L, "112") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_groups", delNumbers)))
         {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery = "update product_groups p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteProductGroupsById on updating product_groups. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteProductGroups(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(10L,"112") && securityRepositoryJPA.isItAllMyMastersDocuments("product_groups",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(10L,"112") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_groups",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery="delete from product_groups p" +
-                    " where p.id in ("+ delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(!stringQuery.isEmpty() && stringQuery.trim().length() > 0){
-                int count = query.executeUpdate();
-                return true;
-            }else return false;
-        }else return false;
+            stringQuery = "Update product_groups p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteProductGroups. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
@@ -431,10 +491,12 @@ public class ProductGroupRepositoryJPA {
                 }
                 catch (Exception e) {
                     e.printStackTrace();
+                    logger.error("Exception in method copyProductGroups. SQL query:"+stringQuery, e);
                     return false;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("Exception in method copyProductGroups.", e);
                 return false;
             }
         } else return false;

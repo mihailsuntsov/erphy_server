@@ -88,7 +88,7 @@ public class SpravSysEdizmController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = spravSysEdizmRepositoryJPA.getSpravSysEdizmTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = spravSysEdizmRepositoryJPA.getSpravSysEdizmTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -115,7 +115,7 @@ public class SpravSysEdizmController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = spravSysEdizmRepositoryJPA.getSpravSysEdizmSize(searchString,companyId);//  - общее количество записей выборки
+        int size = spravSysEdizmRepositoryJPA.getSpravSysEdizmSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
@@ -201,24 +201,21 @@ public class SpravSysEdizmController {
         }
     }
 
-    @PostMapping("/api/auth/deleteSpravSysEdizm")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteSpravSysEdizm(@RequestBody SignUpForm request) throws ParseException{
-        logger.info("Processing post request for path /api/auth/deleteSpravSysEdizm: " + request.toString());
-
+    @PostMapping("/api/auth/deleteEdizm")
+    public  ResponseEntity<?> deleteEdizm(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteEdizm: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-
-        if(spravSysEdizmRepositoryJPA.deleteSpravSysEdizmById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(spravSysEdizmRepositoryJPA.deleteEdizmById(checked), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @PostMapping("/api/auth/undeleteEdizm")
+    public  ResponseEntity<?> undeleteEdizm(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteEdizm: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(spravSysEdizmRepositoryJPA.undeleteEdizm(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteEdizm error", e);
+            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/getSpravSysEdizm")
     public ResponseEntity<?> getSpravSysEdizm(@RequestBody UniversalForm request){

@@ -491,44 +491,54 @@ public class KassaRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean updateKassa(KassaForm request) {
-        Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-
-        String stringQuery;
-        stringQuery =   " update kassa set " +
-                " changer_id = " + myId + ", "+ //кто изменяет
-                " date_time_changed= now()," + //время изменения
-                " department_id = " + request.getDepartment_id() + ", "+//отделение
-                " name = '" + request.getName() + "', " +//наименование
-                " server_type ='" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
-                " sno1_id =" + request.getSno1_id() + ", " +// id системы налогообложения
-                " billing_address ='" + request.getBilling_address() + "', " +// место расчетов
-                " device_server_uid ='" + request.getDevice_server_uid() + "', " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
-                " additional ='" + request.getAdditional() + "', " +// дополнительная информация
-                " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
-                " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
-                " zn_kkt = '" + request.getZn_kkt() + "', " +
-                " is_virtual = false, " +// виртуальная касса
-                " allow_acquiring = " + request.getAllow_acquiring() + ", " +// прием безнала на данной кассе
-                " acquiring_bank_id = " + request.getAcquiring_bank_id() + ", " + // id банк-эквайер
-                " acquiring_precent = " + request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
-                " acquiring_service_id = " + request.getAcquiring_service_id() + ", " + // id услуги банка-эквайера
-                " payment_account_id = " + request.getPayment_account_id() + ", " + //id расчетного счета
-                " expenditure_id = " + request.getExpenditure_id() + ", " + //id статьи расходов
-
-                " is_deleted =" + request.getIs_deleted() + //  касса удалена
-                " where " +
-                " id= "+request.getId();
-        try
+    public Integer updateKassa(KassaForm request) {
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(24L,"305") && securityRepositoryJPA.isItAllMyMastersDocuments("kassa",request.getId().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(24L,"306") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("kassa",request.getId().toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(24L,"307") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("kassa",request.getId().toString())))
         {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }catch (Exception e) {
-            logger.error("Exception in method updateKassa. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
+
+
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+
+            String stringQuery;
+            stringQuery =   " update kassa set " +
+                    " changer_id = " + myId + ", "+ //кто изменяет
+                    " date_time_changed= now()," + //время изменения
+                    " department_id = " + request.getDepartment_id() + ", "+//отделение
+                    " name = '" + request.getName() + "', " +//наименование
+                    " server_type ='" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
+                    " sno1_id =" + request.getSno1_id() + ", " +// id системы налогообложения
+                    " billing_address ='" + request.getBilling_address() + "', " +// место расчетов
+                    " device_server_uid ='" + request.getDevice_server_uid() + "', " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
+                    " additional ='" + request.getAdditional() + "', " +// дополнительная информация
+                    " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
+                    " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
+                    " zn_kkt = '" + request.getZn_kkt() + "', " +
+                    " is_virtual = false, " +// виртуальная касса
+                    " allow_acquiring = " + request.getAllow_acquiring() + ", " +// прием безнала на данной кассе
+                    " acquiring_bank_id = " + request.getAcquiring_bank_id() + ", " + // id банк-эквайер
+                    " acquiring_precent = " + request.getAcquiring_precent() + ", " + // процент банку за услугу эквайринга
+                    " acquiring_service_id = " + request.getAcquiring_service_id() + ", " + // id услуги банка-эквайера
+                    " payment_account_id = " + request.getPayment_account_id() + ", " + //id расчетного счета
+                    " expenditure_id = " + request.getExpenditure_id() + ", " + //id статьи расходов
+
+                    " is_deleted =" + request.getIs_deleted() + //  касса удалена
+                    " where " +
+                    " id= "+request.getId();
+            try
+            {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            }catch (Exception e) {
+                logger.error("Exception in method updateKassa. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; //недостаточно прав
     }
 
     @Transactional
