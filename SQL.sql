@@ -3010,12 +3010,18 @@ alter table product_groups add column is_deleted boolean;
 alter table sprav_sys_edizm add column is_deleted boolean;
 alter table sprav_type_prices add column is_deleted boolean;
 
+update permissions set name='Просмотр документов по всем предприятиям' where id=29;
+update permissions set name='Просмотр документов своего предприятия' where id=30;
+update permissions set description='Просмотр документов по всем предприятиям' where id=29;
+update permissions set description='Просмотр документов своего предприятия' where id=30;
+update permissions set name='Редактирование документов по всем предприятиям' where id=34;
+update permissions set name='Редактирование документов своего предприятия' where id=33;
+update permissions set description='Редактирование документов по всем предприятиям' where id=34;
+update permissions set description='Редактирование документов своего предприятия' where id=33;
 
-
-
-
-
-
+alter table users add column is_deleted boolean;
+alter table usergroup add column is_deleted boolean;
+update documents set name='Роли', doc_name_ru='Роли' where id=6;
 
 
 

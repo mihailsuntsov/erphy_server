@@ -108,7 +108,7 @@ public class UserGroupController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = userGroupRepositoryJPA.getUserGroupTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = userGroupRepositoryJPA.getUserGroupTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -136,7 +136,7 @@ public class UserGroupController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = userGroupRepositoryJPA.getUserGroupSize(searchString,companyId);//  - общее количество записей выборки
+        int size = userGroupRepositoryJPA.getUserGroupSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
@@ -197,21 +197,14 @@ public class UserGroupController {
         }
     }
 
+
     @PostMapping("/api/auth/insertUserGroup")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertUserGroup(@RequestBody UserGroupForm request) throws ParseException{
-        logger.info("Processing post request for path api/auth/insertUserGroup: " + request.toString());
-
-        Long newUserGroup = userGroupRepositoryJPA.insertUserGroup(request);
-        if(newUserGroup!=null && newUserGroup>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newUserGroup)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+    public  ResponseEntity<?> insertUserGroup(@RequestBody UserGroupForm request) {
+        logger.info("Processing post request for path /api/auth/insertUserGroup: " + request.toString());
+        try {return new ResponseEntity<>(userGroupRepositoryJPA.insertUserGroup(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertUserGroup error", e);
+            return new ResponseEntity<>("Error of creating", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
 
     @PostMapping("/api/auth/getUserGroupValuesById")
     @SuppressWarnings("Duplicates")
@@ -245,20 +238,19 @@ public class UserGroupController {
         return responseEntity;
     }
     @PostMapping("/api/auth/deleteUserGroups")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path api/auth/deleteUserGroups: " + request.toString());
-
+    public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteUserGroups: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-
-        if(userGroupRepositoryJPA.deleteUserGroupsById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(userGroupRepositoryJPA.deleteUserGroups(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteUserGroups error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/undeleteUserGroups")
+    public  ResponseEntity<?> undeleteUserGroups(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteUserGroups: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(userGroupRepositoryJPA.undeleteUserGroups(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteUserGroups error", e);
+            return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

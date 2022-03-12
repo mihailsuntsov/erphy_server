@@ -350,7 +350,7 @@ public class UserRepositoryJPA {
     @Transactional
     @SuppressWarnings("Duplicates")
     public UsersJSON getUserValuesById(int id) {
-        if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25,26,27")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
+        if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
         {
             Long myId = userDetailService.getUserId();
             String stringQuery = "select p.id as id, " +
@@ -379,16 +379,10 @@ public class UserRepositoryJPA {
                     "           from users p" +
                     " where p.id= " + id;
             stringQuery = stringQuery + " and p.master_id="+getMyMasterId();//принадлежит к предприятиям моего родителя
-            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25,27")) {//если нет прав на Предприятия: "Просмотр всех", "Редактирование всех"
-                if(myId != Long.valueOf(id)){//значит остаются на "Просмотр своего", "Редактирование своего", НО если запрашиваем id не своего документа:
-                    return null;
-                }
-            }
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "24,26")) {//если нет прав на Предприятия: "Просмотр своего", "Редактирование своего"
-                if(myId == Long.valueOf(id)){//значит остаются на "Просмотр всех", "Редактирование всех", НО если запрашиваем id  своего документа:
-                    return null;
-                }
+            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 24
+                stringQuery = stringQuery + " and p.company_id=" + getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             Query query = entityManager.createNativeQuery(stringQuery, UsersJSON.class);
             try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
@@ -439,34 +433,43 @@ public class UserRepositoryJPA {
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public int getUsersSize(String searchString, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(5L, "20,21"))// Пользователи: "Меню - таблица - все пользователи","Меню - таблица - только свой документ"
+    public int getUsersSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(5L, "25,24"))// Пользователи: "Меню - таблица - все пользователи","Меню - таблица - только свой документ"
         {
             String stringQuery;
             Long documentOwnerId = getUserMasterIdByUsername(userDetailService.getUserName());
-            stringQuery="from User p where p.master="+documentOwnerId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "20")) {//если нет прав на "Меню - все пользователи"
-                stringQuery = stringQuery + " and p.id=" + userDetailService.getUserId();
+            int myCompanyId=getMyCompanyId();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+
+            stringQuery="select p.id from users p where p.master_id="+documentOwnerId +
+                    "           and  p.status_account < 4" +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
+            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 24
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             if(searchString!= null && !searchString.isEmpty()){
                 stringQuery = stringQuery+" and upper(p.name) like upper('%"+searchString+"%')";
             }
             if(companyId > 0){
-                stringQuery = stringQuery+" and company="+companyId;
+                stringQuery = stringQuery+" and p.company_id="+companyId;
             }
-            stringQuery = stringQuery+" and status_account <4";
-            Query query =  entityManager.createQuery(stringQuery,User.class);
+//            stringQuery = stringQuery+" and status_account <4";
+            Query query =  entityManager.createNativeQuery(stringQuery);
             return query.getResultList().size();
         }else return 0;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<UsersTableJSON> getUsersTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(5L, "20,69,21"))// Пользователи: "Меню - таблица - пользователи всех предприятий","Меню - таблица - пользователи только своего предприятия","Меню - таблица - только свой документ"
+    public List<UsersTableJSON> getUsersTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(5L, "25,24"))// Пользователи: "Меню - таблица - пользователи всех предприятий","Меню - таблица - пользователи только своего предприятия","Меню - таблица - только свой документ"
         {
             String stringQuery;
             Long documentOwnerId = getUserMasterIdByUsername(userDetailService.getUserName());
+            int myCompanyId=getMyCompanyId();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
@@ -493,16 +496,14 @@ public class UserRepositoryJPA {
                     "           p.status_account as status_account, " +
                     "           (select name from sprav_sys_status_account where id=p.status_account) as status_account_name " +
                     "           from users p" +
-                    "           where  p.status_account <4" +
-                    "           and p.master_id=" + documentOwnerId;
+                    "           where p.master_id=" + documentOwnerId +
+                    "           and  p.status_account < 4" +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "20")) {//если нет прав на "Меню - таблица - пользователи всех предприятий"
-                //остаются Своего предприятия и Только свои
-                if (!securityRepositoryJPA.userHasPermissions_OR(5L, "69")) {//если нет прав на "Меню - таблица - пользователи только своего предприятия"
-                    //остаются Только свои
-                    stringQuery = stringQuery + " and p.id=" + userDetailService.getUserId();
-                }else //иначе остаются Своего предприятия и Только свои
-                    stringQuery = stringQuery + " and (p.id=" + userDetailService.getUserId()+" or p.id in(select id from users where company_id="+ getMyCompanyId()+"))";
+            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 24
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
 
             if (searchString != null && !searchString.isEmpty()) {
@@ -521,19 +522,59 @@ public class UserRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteUsersById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(5L,"23")&& //Пользователи : "Удаление"
-                securityRepositoryJPA.isItAllMyMastersUsers(delNumbers))  //все ли пользователи принадлежат текущему хозяину
+    public Integer deleteUsers(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(5L, "23") && securityRepositoryJPA.isItAllMyMastersDocuments("users", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(5L, "23") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("users", delNumbers)))
         {
+            Long myMasterId = getUserMasterIdByUsername(userDetailService.getUserName());
+            Long myId = getMyId();
+            String stringQuery = "update users p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteUsers. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteUsers(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(5L,"23") && securityRepositoryJPA.isItAllMyMastersDocuments("users",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(5L,"23") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("users",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = getMyId();
             String stringQuery;
-            stringQuery="Update users p" +
-                    " set status_account=4 "+
-                    " where p.id in ("+ delNumbers+") ";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(!stringQuery.isEmpty() && stringQuery.trim().length() > 0){
-                int count = query.executeUpdate();
-                return true;
-            }else return false;
-        } else return false;
+            stringQuery = "Update users p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteUsers. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 }

@@ -81,6 +81,8 @@ public class UserGroup {
     @Column(name = "is_archive")
     private Boolean is_archive;
 
+    @Column(name = "is_deleted")
+    private Boolean is_deleted;
 
     public UserGroup() {}
 

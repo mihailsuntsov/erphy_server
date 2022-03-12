@@ -73,70 +73,64 @@ public class UsersController {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "22"))// Пользователи:"Создание"
         {
             if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-                return new ResponseEntity<>(new ResponseMessage("Такой логин уже зарегистрирован"),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(-10, HttpStatus.OK); //login like this is already exists
             }
             if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-                return new ResponseEntity<>(new ResponseMessage("Такой Email уже зарегистрирован"),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(-11, HttpStatus.OK); //e-mail like this is already exists
             }
+            try{
+                // Если такого логина и емайла нет
+                // Создание аккаунта для нового пользователя
+                User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
+                        encoder.encode(signUpRequest.getPassword()));
 
-            // Если такого логина и емайла нет
-            // Создание аккаунта для нового пользователя
-            User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
-                    encoder.encode(signUpRequest.getPassword()));
-
-            Set<Role> roles = new HashSet<>();
-            Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
-            roles.add(userRole);
-            user.setRoles(roles);//добавили юзеру роль ROLE_USER
-
-            user.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(signUpRequest.getCompany_id()))));//предприятие
-
-            Set<Long> departments = signUpRequest.getSelectedUserDepartments();
-            Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
-            user.setDepartments(setDepartmentsOfUser);//сет отделений предприятия
-
-            Set<Long> userGroups = signUpRequest.getUserGroupList();
-            Set<UserGroup> setUserGroupsOfUser = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
-            user.setUsergroup(setUserGroupsOfUser);//сет групп пользователей
-
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-            String dateBirth = (signUpRequest.getDate_birthday() == null ? "" : signUpRequest.getDate_birthday());
-            try {
-                user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
-            } catch (ParseException e) {
+                Set<Role> roles = new HashSet<>();
+                Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
+                roles.add(userRole);
+                user.setRoles(roles);//добавили юзеру роль ROLE_USER
+                user.setCompany(companyRepositoryJPA.getCompanyById((long) Integer.parseInt(signUpRequest.getCompany_id())));//предприятие
+                Set<Long> departments = signUpRequest.getSelectedUserDepartments();
+                Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
+                user.setDepartments(setDepartmentsOfUser);//сет отделений предприятия
+                Set<Long> userGroups = signUpRequest.getUserGroupList();
+                Set<UserGroup> setUserGroupsOfUser = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
+                user.setUsergroup(setUserGroupsOfUser);//сет групп пользователей
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                String dateBirth = (signUpRequest.getDate_birthday() == null ? "" : signUpRequest.getDate_birthday());
+                try {
+                    user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
+                user.setCreator(creator);//создателя
+                User master = userDetailService.getUserByUsername(
+                        userRepositoryJPA.getUsernameById(
+                                userRepositoryJPA.getUserMasterIdByUsername(
+                                        userDetailService.getUserName())));
+                user.setMaster(master);//владельца
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                user.setDate_time_created(timestamp);//дату создания
+                user.setFio_family(signUpRequest.getFio_family());
+                user.setFio_name(signUpRequest.getFio_name());
+                user.setFio_otchestvo(signUpRequest.getFio_otchestvo());
+                user.setName(signUpRequest.getName());
+                user.setStatus_account(Integer.parseInt(signUpRequest.getStatus_account()));
+                user.setSex(signUpRequest.getSex());
+                user.setAdditional(signUpRequest.getAdditional());
+                user.setTime_zone_id(signUpRequest.getTime_zone_id());
+                Long createdUserId = userRepository.save(user).getId();//и сохранили его
+                //ответ сервера при удачном создании юзера
+                ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
+                return responseEntity;
+            } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("Exception in method UserController/addUser.", e);
+                return null;
             }
-
-            User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
-            user.setCreator(creator);//создателя
-
-            User master = userDetailService.getUserByUsername(
-                    userRepositoryJPA.getUsernameById(
-                            userRepositoryJPA.getUserMasterIdByUsername(
-                                    userDetailService.getUserName())));
-            user.setMaster(master);//владельца
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            user.setDate_time_created(timestamp);//дату создания
-
-            user.setFio_family(signUpRequest.getFio_family());
-            user.setFio_name(signUpRequest.getFio_name());
-            user.setFio_otchestvo(signUpRequest.getFio_otchestvo());
-            user.setName(signUpRequest.getName());
-            user.setStatus_account(Integer.parseInt(signUpRequest.getStatus_account()));
-            user.setSex(signUpRequest.getSex());
-            user.setAdditional(signUpRequest.getAdditional());
-
-            Long createdUserId = userRepository.save(user).getId();//и сохранили его
-            //ответ сервера при удачном создании юзера
-            ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
-            return responseEntity;
         }else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("You haven't permissions for this operation", HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS);
-            return responseEntity;
+            return new ResponseEntity<>(-1, HttpStatus.OK);// not enough permissions
         }
 
     }
@@ -173,7 +167,6 @@ public class UsersController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserDepartments(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path api/auth/getUserDepartments: " + request.toString());
-
         int id = request.getId();
         List<Integer> depList =userRepositoryJPA.getUserDepartmentsId(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
@@ -184,7 +177,6 @@ public class UsersController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateUser(@RequestBody SignUpForm request) throws ParseException{
         logger.info("Processing post request for path api/auth/updateUser: " + request.toString());
-
         if(userRepositoryJPA.updateUser(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
@@ -198,15 +190,12 @@ public class UsersController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersTable(@RequestBody SearchForm searchRequest) {
         logger.info("Processing post request for path api/auth/getUsersTable: " + searchRequest.toString());
-
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать отделения/ 0 - по всем
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        //String masterId;
         List<UsersTableJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
@@ -231,7 +220,7 @@ public class UsersController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = userRepositoryJPA.getUsersTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = userRepositoryJPA.getUsersTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -245,11 +234,8 @@ public class UsersController {
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать отделения/ 0 - по всем
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
-
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
         } else {
@@ -259,9 +245,7 @@ public class UsersController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        //disabledLINK=pagenum;
-        int size = userRepositoryJPA.getUsersSize(searchString,companyId);//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = userRepositoryJPA.getUsersSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -307,23 +291,22 @@ public class UsersController {
         return responseEntity;
     }
     @PostMapping("/api/auth/deleteUsers")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteUsers(@RequestBody SignUpForm request) throws ParseException{
-        logger.info("Processing post request for path api/auth/deleteUsers: " + request.toString());
-
+    public  ResponseEntity<?> deleteUsers(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteUsers: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        ArrayList<Long> decArray = new ArrayList<Long>();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-
-        if(userRepositoryJPA.deleteUsersById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(userRepositoryJPA.deleteUsers(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteUsers error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @PostMapping("/api/auth/undeleteUsers")
+    public  ResponseEntity<?> undeleteUsers(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteUsers: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(userRepositoryJPA.undeleteUsers(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteUsers error", e);
+            return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     //Id и Name пользователей в отделении
     @PostMapping("/api/auth/getUsersListByDepartmentId")
     @SuppressWarnings("Duplicates")

@@ -756,8 +756,8 @@ public class CompanyRepositoryJPA {
                 " fio_director,"+//ФИО управляющего
                 " director_position,"+//должность управляющего
                 " fio_glavbuh,"+//ФИО главбуха
-                " st_prefix_barcode_pieced, "  + request.getSt_prefix_barcode_pieced() + ", " + // prefix of barcode for pieced product
-                " st_prefix_barcode_packed, "  + request.getSt_prefix_barcode_packed() + ", " + // prefix of barcode for packed product
+                " st_prefix_barcode_pieced, "  + // prefix of barcode for pieced product
+                " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
                 " st_netcost_policy " +   // policy of netcost calculation by all company or by each department separately
                 ") values (" +
                 myMasterId + ", "+
@@ -818,6 +818,7 @@ public class CompanyRepositoryJPA {
             newDocId=Long.valueOf(query2.getSingleResult().toString());
             return newDocId;
         } catch (Exception e) {
+            logger.error("Exception in method insertCompanyBaseFields. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

@@ -100,7 +100,7 @@ public class DepartmentsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = departmentService.getDepartmentsSize(searchString,companyId);//  - общее количество записей выборки
+        int size = departmentService.getDepartmentsSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -202,22 +202,21 @@ public class DepartmentsController {
     }
 
 
-
     @PostMapping("/api/auth/deleteDepartments")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteDepartments(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> deleteDepartments(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteDepartments: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        checked=checked.replace("[","");
-        checked=checked.replace("]","");
-        if(departmentRepositoryJPA.deleteDepartmentsById(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(departmentService.deleteDepartments(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteDepartments error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/undeleteDepartments")
+    public  ResponseEntity<?> undeleteDepartments(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteDepartments: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(departmentService.undeleteDepartments(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteDepartments error", e);
+            return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/getDeptChildrens")

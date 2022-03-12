@@ -200,7 +200,7 @@ public class ProductGroupsController {
         logger.info("Processing post request for path /api/auth/insertProductGroups: " + request.toString());
         try {return new ResponseEntity<>(productGroupRepositoryJPA.insertProductGroups(request), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller insertProductGroups error", e);
-            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateProductGroups")
@@ -208,7 +208,7 @@ public class ProductGroupsController {
         logger.info("Processing post request for path /api/auth/updateProductGroups: " + request.toString());
         try {return new ResponseEntity<>(productGroupRepositoryJPA.updateProductGroups(request), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller updateProductGroups error", e);
-            return new ResponseEntity<>("Ошибка", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteProductGroups")
@@ -217,7 +217,7 @@ public class ProductGroupsController {
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(productGroupRepositoryJPA.deleteProductGroupsById(checked), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller deleteProductGroups error", e);
-        return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/undeleteProductGroups")
     public  ResponseEntity<?> undeleteProductGroups(@RequestBody SignUpForm request) {
@@ -225,7 +225,7 @@ public class ProductGroupsController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(productGroupRepositoryJPA.undeleteProductGroups(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteProductGroups error", e);
-            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/copyProductGroups")

@@ -32,6 +32,7 @@ public class UserGroupJSON {
     private String name;
     private String description;
     private String company_id;
+    private String company;
     private String master;
     private String master_id;
     private String creator;
@@ -46,6 +47,14 @@ public class UserGroupJSON {
     private Timestamp date_time_changed;
     @ElementCollection(fetch = FetchType.LAZY)
     private List<Integer> userGroupPermissionsId;
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
 
     public Long getId() {
         return id;

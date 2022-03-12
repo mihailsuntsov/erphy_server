@@ -128,13 +128,18 @@ public class User{
 //    2 Активный
 //    3 Забанен
     private Integer status_account;
-
+//
+//    @Column(name = "company_id")
+//    private Long company_id;
 
     @Column(name = "time_zone_id")
     private Long time_zone_id;
 
     @Column(name = "vatin")
     private String vatin;
+
+    @Column(name = "is_deleted")
+    private Boolean is_deleted;
 
     public User() {}
 
@@ -143,6 +148,22 @@ public class User{
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+//
+//    public Long getCompany_id() {
+//        return company_id;
+//    }
+//
+//    public void setCompany_id(Long company_id) {
+//        this.company_id = company_id;
+//    }
+
+    public Boolean getIs_deleted() {
+        return is_deleted;
+    }
+
+    public void setIs_deleted(Boolean is_deleted) {
+        this.is_deleted = is_deleted;
     }
 
     public Long getId() {

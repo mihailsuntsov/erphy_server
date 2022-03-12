@@ -27,12 +27,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.persistence.*;
+
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 @Repository("UserGroupRepositoryJPA")
 public class UserGroupRepositoryJPA {
+
+    Logger logger = Logger.getLogger("UserGroupRepositoryJPA");
+
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -57,28 +63,42 @@ public class UserGroupRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getUserGroupSize(String searchString, int companyId) {
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-        String stringQuery = "from UserGroup p where p.master=" + myMasterId;
-        stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true";
-        if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
-        }
+    public int getUserGroupSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
+        {
+            Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+            int myCompanyId=userRepositoryJPA.getMyCompanyId();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String stringQuery = "from UserGroup p where p.master=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (companyId > 0) {
-            stringQuery = stringQuery + " and company=" + companyId;
-        }
+            stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true";
+            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 30
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
+            if (searchString != null && !searchString.isEmpty()) {
+                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+            }
 
-        Query query = entityManager.createQuery(stringQuery, UserGroup.class);
-        return query.getResultList().size();
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and company=" + companyId;
+            }
+
+            Query query = entityManager.createQuery(stringQuery, UserGroup.class);
+            return query.getResultList().size();
+        } else return 0;
     }
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public List<UserGroupTableJSON> getUserGroupTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId) {
+    public List<UserGroupTableJSON> getUserGroupTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
         {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+            int myCompanyId=userRepositoryJPA.getMyCompanyId();
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             String stringQuery = "select            " +
                     "p.id as id,            " +
                     "p.name as name,            " +
@@ -97,13 +117,14 @@ public class UserGroupRepositoryJPA {
                     "p.description as description            " +
                     "from usergroup p           " +
                     "where            " +
-                    " p.master_id=" + myMasterId+
-                    " and coalesce(p.is_archive,false) !=true";
+                    " p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if(!securityRepositoryJPA.userHasPermissions_OR(6L, "29"))// Группы пользователей: "Меню - все Группы пользователей"
-            {stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();}
-            if(!securityRepositoryJPA.userHasPermissions_OR(6L, "30"))// Группы пользователей: "Меню - только свого предприятия"
-            {stringQuery = stringQuery + " and p.company_id!=" + userRepositoryJPA.getMyCompanyId();}//хоть это и алогично, но кто-то ж захочет
+            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 30
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
@@ -130,8 +151,9 @@ public class UserGroupRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public UserGroupJSON getUserGroupValuesById (int id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(6L, "33,34"))//Группы пользователей: "Редактирование только документов своего предприятия","Редактирование документов всех предприятий"
+        if (securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))//Группы пользователей: "Редактирование только документов своего предприятия","Редактирование документов всех предприятий"
         {
+            int myCompanyId=userRepositoryJPA.getMyCompanyId();
             String stringQuery = "select p.id as id, " +
                         "           p.name as name, " +
                         "           p.master_id as master_id, " +
@@ -144,15 +166,17 @@ public class UserGroupRepositoryJPA {
                         "           p.date_time_changed as date_time_changed, " +
                         "           coalesce(p.company_id,'0') as company_id, " +
 
-                        "           p.description as description " +
+                        "           p.description as description, " +
+                        "           (select name from companies where id=p.company_id) as company " +
                         "           from usergroup p" +
                         " where p.id= " + id;
             stringQuery = stringQuery + " and p.master_id="+userRepositoryJPA.getMyMasterId();//принадлежит к документам моего родителя
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "34"))//Группы пользователей: "Редактирование документов всех предприятий"
-            stringQuery = stringQuery + " and coalesce(p.company_id,'0')="+userRepositoryJPA.getMyCompanyId();
-            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "33"))//Группы пользователей: "Редактирование только документов своего предприятия"
-            stringQuery = stringQuery + " and coalesce(p.company_id,'0')!="+userRepositoryJPA.getMyCompanyId();
+            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 30
+                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
 
             Query query = entityManager.createNativeQuery(stringQuery, UserGroupJSON.class);
             try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
@@ -167,28 +191,35 @@ public class UserGroupRepositoryJPA {
     public Long insertUserGroup(UserGroupForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(6L,"31"))//  Группы пользователей : "Создание"
         {
+            try{
+                UserGroup userGroup = new UserGroup(request.getName(), request.getDescription());
 
-            UserGroup userGroup = new UserGroup(request.getName(), request.getDescription());
+                userGroup.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));//предприятие
 
-            userGroup.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));//предприятие
+                User creator = userService.getUserByUsername(userService.getUserName());
+                userGroup.setCreator(creator);//создателя
 
-            User creator = userService.getUserByUsername(userService.getUserName());
-            userGroup.setCreator(creator);//создателя
+                User master = userRepository2.getUserByUsername(
+                        userRepositoryJPA.getUsernameById(
+                                userRepositoryJPA.getUserMasterIdByUsername(
+                                        userRepository2.getUserName() )));
+                userGroup.setMaster(master);//владельца
 
-            User master = userRepository2.getUserByUsername(
-                    userRepositoryJPA.getUsernameById(
-                            userRepositoryJPA.getUserMasterIdByUsername(
-                                    userRepository2.getUserName() )));
-            userGroup.setMaster(master);//владельца
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                userGroup.setDate_time_created(timestamp);//дату создания
 
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            userGroup.setDate_time_created(timestamp);//дату создания
+                entityManager.persist(userGroup);
+                entityManager.flush();
 
-            entityManager.persist(userGroup);
-            entityManager.flush();
+                return userGroup.getId();
 
-            return userGroup.getId();
-        } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method insertUserGroup.", e);
+                e.printStackTrace();
+                return null;
+            }
+
+        } else return -1L;
     }
 
     @SuppressWarnings("Duplicates")
@@ -208,14 +239,12 @@ public class UserGroupRepositoryJPA {
     public List<UserGroupListJSON> getUserGroupListByCompanyId(int company_id) {
         String stringQuery;
 
-       // Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
         stringQuery="select " +
                 "           p.id as id, " +
                 "           p.description as description, " +
                 "           p.name as name " +
                 "           from usergroup p " +
-                "           where coalesce(p.is_archive,false) !=true and p.company_id="+company_id;
+                "           where coalesce(p.is_deleted,false) !=true and p.company_id="+company_id;
 
 
         stringQuery = stringQuery+" order by p.name asc";
@@ -226,43 +255,46 @@ public class UserGroupRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public boolean updateUserGroup(UserGroupForm request) {
-        boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(6L, "33"); // Группы пользователей:"Редактирование док-тов своего предприятия"
-        boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(6L, "34"); // Группы пользователей:"Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
-        boolean myCompanyId_Equal_CompanyIdInRequest=(userRepositoryJPA.getMyCompanyId()==Integer.parseInt(request.getCompany_id()));//сохраняется документ моего предприятия
-        boolean isItMyMastersUserGroup=securityRepositoryJPA.isItMyMastersUserGroup(Long.valueOf(request.getId()));
-
-        if(((myCompanyId_Equal_CompanyIdInRequest && userHasPermissions_OwnUpdate)//(если я сохраняю документ своего предприятия и у меня есть на это права
-                ||(!myCompanyId_Equal_CompanyIdInRequest && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
-                && isItMyMastersUserGroup) //и сохраняемый документ под юрисдикцией главного аккаунта
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(6L,"34") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",String.valueOf(request.getId()))) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(6L,"33") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup",String.valueOf(request.getId()))))
         {
             EntityManager emgr = emf.createEntityManager();
 
             emgr.getTransaction().begin();
 
             Long id=Long.valueOf(request.getId());
+            try {
+                UserGroup userGroup = emgr.find(UserGroup.class, id);
 
-            UserGroup userGroup = emgr.find(UserGroup.class, id);
+                userGroup.setId(id);
+                userGroup.setName           (request.getName() == null ? "": request.getName());
+                userGroup.setDescription       (request.getDescription() == null ? "": request.getDescription());
+                Set<Long> permissions = request.getSelectedUserGroupPermissions();
+                if (!permissions.isEmpty()) {//если есть выбранные чекбоксы
+                Set<Permissions> setPermissionsOfUserGroup= getPermissionsSetBySetOfPermissionsId(permissions);
+                userGroup.setPermissions(setPermissionsOfUserGroup);
+                } else { // если ни один чекбокс не выбран
+                    userGroup.setPermissions(null);
+                }
 
-            userGroup.setId(id);
-            userGroup.setName           (request.getName() == null ? "": request.getName());
-            userGroup.setDescription       (request.getDescription() == null ? "": request.getDescription());
-            Set<Long> permissions = request.getSelectedUserGroupPermissions();
-            if (!permissions.isEmpty()) {//если есть выбранные чекбоксы
-            Set<Permissions> setPermissionsOfUserGroup= getPermissionsSetBySetOfPermissionsId(permissions);
-            userGroup.setPermissions(setPermissionsOfUserGroup);
-            } else { // если ни один чекбокс не выбран
-                userGroup.setPermissions(null);
+                User changer = userService.getUserByUsername(userService.getUserName());
+                userGroup.setChanger(changer);//кто изменил
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                userGroup.setDate_time_changed(timestamp);//дату изменения
+
+                emgr.getTransaction().commit();
+                emgr.close();
+                return true;
+
+            } catch (Exception e){
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method updateUserGroup.", e);
+                e.printStackTrace();
+                return false;
             }
-
-            User changer = userService.getUserByUsername(userService.getUserName());
-            userGroup.setChanger(changer);//кто изменил
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            userGroup.setDate_time_changed(timestamp);//дату изменения
-
-            emgr.getTransaction().commit();
-            emgr.close();
-            return true;
         } else return false;
     }
 
@@ -280,19 +312,59 @@ public class UserGroupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteUserGroupsById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(6L,"32")&& //Группы пользователей : "Удаление"
-           securityRepositoryJPA.isItAllMyMastersUserGroups(delNumbers))  //все ли Группы пользователей принадлежат текущему родительскому аккаунту
+    public Integer deleteUserGroups(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(6L, "32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(6L, "32") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup", delNumbers)))
         {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery = "update usergroup p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteUserGroups. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteUserGroups(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(6L,"32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(6L,"32") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery="Update usergroup p" +
-                    " set is_archive=true "+
-                    " where p.id in ("+ delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if(!stringQuery.isEmpty() && stringQuery.trim().length() > 0){
-                int count = query.executeUpdate();
-                return true;
-            }else return false;
-        }else return false;
+            stringQuery = "Update usergroup p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteUserGroups. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 }

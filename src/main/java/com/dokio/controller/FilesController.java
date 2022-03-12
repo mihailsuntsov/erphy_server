@@ -63,7 +63,6 @@ public class FilesController {
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем (подставляется ниже, а так то прередаётся "" если по всем)
         int categoryId;//по какой категории товаров показывать / 0 - по всем (--//--//--//--//--//--//--)
         String searchString = searchRequest.getSearchString();
@@ -124,10 +123,8 @@ public class FilesController {
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать документы/ 0 - по всем
         int categoryId;//по какой категории товаров показывать / 0 - по всем (--//--//--//--//--//--//--)
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
         if (searchRequest.getCategoryId() != null && !searchRequest.getCategoryId().isEmpty() && searchRequest.getCategoryId().trim().length() > 0) {
             categoryId = Integer.parseInt(searchRequest.getCategoryId());
         } else {
@@ -148,7 +145,6 @@ public class FilesController {
                 searchRequest.isAny_boolean(),
                 searchRequest.isAny_boolean2()
         );//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -227,79 +223,56 @@ public class FilesController {
 //            return responseEntity;
 //        }
 //    }
-    @PostMapping("/api/auth/updateFiles")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateFiles(@RequestBody FilesForm request) throws ParseException{
-        logger.info("Processing post request for path /api/auth/updateFiles: " + request.toString());
 
-        if(filesRepositoryJPA.updateFiles(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+
+
+
+    @PostMapping("/api/auth/updateFiles")
+    public  ResponseEntity<?> updateFiles(@RequestBody FilesForm request) {
+        logger.info("Processing post request for path /api/auth/updateFiles: " + request.toString());
+        try {return new ResponseEntity<>(filesRepositoryJPA.updateFiles(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateFiles error", e);
+            return new ResponseEntity<>("Error update files from trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteFiles")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteFiles(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteFiles(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteFiles: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(filesRepositoryJPA.deleteFiles(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.deleteFiles(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteFiles error", e);
+            return new ResponseEntity<>("Error deleting files to trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/recoverFilesFromTrash")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> recoverFilesFromTrash(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> recoverFilesFromTrash(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/recoverFilesFromTrash: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(filesRepositoryJPA.recoverFilesFromTrash(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when repairing", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.recoverFilesFromTrash(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller recoverFilesFromTrash error", e);
+            return new ResponseEntity<>("Error recovering files from trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteFilesFromTrash")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteFilesFromTrash(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteFilesFromTrash(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteFilesFromTrash: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(filesRepositoryJPA.deleteFilesFromTrash(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.deleteFilesFromTrash(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteFilesFromTrash error", e);
+            return new ResponseEntity<>("Error deleting files from trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/clearTrash")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> clearTrash(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> clearTrash(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/clearTrash: " + request.toString());
-
-        Integer companyId = Integer.parseInt(request.getCompany_id());
-        if(filesRepositoryJPA.clearTrash(companyId)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.clearTrash(Long.parseLong(request.getCompany_id())), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller clearTrash error", e);
+            return new ResponseEntity<>("Error cleaning trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+
+
 
     @SuppressWarnings("Duplicates")
     @GetMapping("/Fapi/public/getFile/{filename:.+}")
@@ -430,7 +403,7 @@ public class FilesController {
     }
     @PostMapping("/api/auth/insertFileCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertFileCategory(@RequestBody FileCategoriesForm request) throws ParseException {
+    public ResponseEntity<?> insertFileCategory(@RequestBody FileCategoriesForm request) {
         logger.info("Processing post request for path /api/auth/insertFileCategory: " + request.toString());
 
         try {
@@ -447,7 +420,7 @@ public class FilesController {
 
     @PostMapping("/api/auth/updateFileCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateFileCategory(@RequestBody FileCategoriesForm request) throws ParseException{
+    public ResponseEntity<?> updateFileCategory(@RequestBody FileCategoriesForm request){
         logger.info("Processing post request for path /api/auth/updateFileCategory: " + request.toString());
 
         if(filesRepositoryJPA.updateFileCategory(request)){
@@ -460,7 +433,7 @@ public class FilesController {
     }
 
     @PostMapping("/api/auth/deleteFileCategory")
-    public ResponseEntity<?> deleteFileCategory(@RequestBody FileCategoriesForm request) throws ParseException{
+    public ResponseEntity<?> deleteFileCategory(@RequestBody FileCategoriesForm request){
         logger.info("Processing post request for path /api/auth/deleteFileCategory: " + request.toString());
 
         if(filesRepositoryJPA.deleteFileCategory(request)){
@@ -474,7 +447,7 @@ public class FilesController {
 
     @PostMapping("/api/auth/saveChangeFileCategoriesOrder")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> saveChangeFileCategoriesOrder(@RequestBody List<FileCategoriesForm> request) throws ParseException {
+    public ResponseEntity<?> saveChangeFileCategoriesOrder(@RequestBody List<FileCategoriesForm> request){
         logger.info("Processing post request for path /api/auth/saveChangeFileCategoriesOrder: [" + request.stream().
                 map(FileCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
 

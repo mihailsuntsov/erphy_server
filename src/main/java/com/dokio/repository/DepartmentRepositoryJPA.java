@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -70,6 +69,7 @@ public class DepartmentRepositoryJPA {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 //            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -89,8 +89,8 @@ public class DepartmentRepositoryJPA {
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           where  p.master_id=" + myMasterId;
-//                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на "Просмотр по всем предприятиям"
             {
@@ -151,15 +151,16 @@ public class DepartmentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public int getDepartmentsSize(String searchString, int companyId) {
+    public int getDepartmentsSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds= false;
         Long departmentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
         stringQuery = "select " +
                 "           p.id as id " +
                 "           from departments p " +
                 "           where  p.master_id=" + departmentOwnerId +
-                "           and coalesce(p.is_deleted,false) !=true";
+                "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на "Просмотр по всем предприятиям"
         {
@@ -520,20 +521,60 @@ public class DepartmentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteDepartmentsById(String delNumbers) {
-        if(securityRepositoryJPA.userHasPermissions_OR(4L,"12")&& //Отделение : "Удаление"
-           securityRepositoryJPA.isItAllMyMastersDepartments(delNumbers))  //все ли отделения принадлежат текущему хозяину
+    public Integer deleteDepartments(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if ((securityRepositoryJPA.userHasPermissions_OR(4L, "12") && securityRepositoryJPA.isItAllMyMastersDocuments("departments", delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(4L, "12") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments", delNumbers)))
         {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery = "update departments p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.master_id=" + myMasterId +
+                    " and p.id in (" + delNumbers + ")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteDepartments. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteDepartments(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(4L,"12") && securityRepositoryJPA.isItAllMyMastersDocuments("departments",delNumbers)) ||
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(4L,"12") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update departments p" +
-                    " set is_deleted=true " +
+                    " set changer_id="+ myId + ", " + // кто изменил (восстановил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " + //не удалена
                     " where p.id in (" + delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                query.executeUpdate();
-                return true;
-            } else return false;
-        } else return false;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteDepartments. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     //true если id отделения принадлежит предприятию.

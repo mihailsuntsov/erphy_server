@@ -24,6 +24,7 @@ import com.dokio.model.Files;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,7 @@ public class FileRepositoryJPA {
     private StorageService storageService;
 
 
+    Logger logger = Logger.getLogger("FileRepositoryJPA");
 
 //    @Transactional
     @SuppressWarnings("Duplicates")
@@ -213,7 +215,7 @@ public class FileRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public boolean updateFiles (FilesForm request) {
+    public Integer updateFiles (FilesForm request) {
 
         EntityManager emgr = emf.createEntityManager();
         Files file = emgr.find(Files.class, request.getId());//сохраняемый документ
@@ -253,13 +255,13 @@ public class FileRepositoryJPA {
 
                 emgr.getTransaction().commit();
                 emgr.close();
-                return true;
-            }catch (Exception e) {
+                return 1;
+            }catch (Exception e){
+                logger.error("Exception in method updateFiles.", e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        }
-        else return false;
+        } else return -1;
     }
 
     @Transactional
@@ -327,7 +329,9 @@ public class FileRepositoryJPA {
                     entityManager.flush();
                     //            return newDocument.getId();
                     return true;
-                } catch (Exception e) {
+                }catch (Exception e){
+                    logger.error("Exception in method storeFileToDB.", e);
+                    e.printStackTrace();
                     return false;
                 }
             }
@@ -336,11 +340,11 @@ public class FileRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteFiles(String delNumbers) {
+    public Integer deleteFiles(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(13L,"148") && securityRepositoryJPA.isItAllMyMastersDocuments("files",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(13L,"149") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("files",delNumbers)))
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(13L,"149") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("files",delNumbers)))
         {
             try
             {
@@ -353,19 +357,22 @@ public class FileRepositoryJPA {
                         " where master_id=" + myMasterId +
                         " and id in (" + delNumbers + ")";
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e)
-            {return false;}
-        } else return false;
+                return 1;
+            }catch (Exception e){
+                logger.error("Exception in method deleteFiles.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean recoverFilesFromTrash(String delNumbers) {
+    public Integer recoverFilesFromTrash(String delNumbers) {
         //Если есть право на "Корзина - Восстановление файлов по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(13L,"177") && securityRepositoryJPA.isItAllMyMastersDocuments("files",delNumbers)) ||
-                //Если есть право на "Корзина - Восстановление файлов своего предприятия" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(13L,"178") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("files",delNumbers)))
+        //Если есть право на "Корзина - Восстановление файлов своего предприятия" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(13L,"178") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("files",delNumbers)))
         {
             try
             {
@@ -378,15 +385,18 @@ public class FileRepositoryJPA {
                         " where master_id=" + myMasterId +
                         " and id in (" + delNumbers + ")";
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e)
-            {return false;}
-        } else return false;
+                return 1;
+            }catch (Exception e){
+                logger.error("Exception in method recoverFilesFromTrash.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteFilesFromTrash(String delNumbers) {
+    public Integer deleteFilesFromTrash(String delNumbers) {
         //Если есть право на "Корзина - Удаление из корзины файлов по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(13L,"179") && securityRepositoryJPA.isItAllMyMastersDocuments("files",delNumbers)) ||
                 //Если есть право на "Корзина - Удаление из корзины файлов своего предприятия" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -404,20 +414,23 @@ public class FileRepositoryJPA {
                 if (query.executeUpdate()>0)
                 {
                     storageService.deleteFiles(filesToBeDeleted);//удаление файлов с диска
-                    return true;
-                } else return false;
-            }catch (Exception e)
-            {return false;}
-        } else return false;
+                    return 1;
+                } else return null;
+            }catch (Exception e){
+                logger.error("Exception in method deleteFilesFromTrash.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean clearTrash(Integer CompanyId) {
+    public Integer clearTrash(Long CompanyId) {
         //Если есть право на "Корзина - Очистка корзины по всем предприятиям" , ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(13L,"181")) ||
-                //Если есть право на "Корзина - Очистка корзины своего предприятия"
-                (securityRepositoryJPA.userHasPermissions_OR(13L,"182")))
+        //Если есть право на "Корзина - Очистка корзины своего предприятия"
+        (securityRepositoryJPA.userHasPermissions_OR(13L,"182")))
         {
             try
             {
@@ -436,14 +449,16 @@ public class FileRepositoryJPA {
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     if(query.executeUpdate()>0){
                         storageService.deleteFiles(filesToBeDeleted);//удаление файлов с диска
-                        return true;
+                        return 1;
                     }
-                    return true;
-                } else return false;
-            }catch (Exception e)
-            {return false;}
-
-        } else return false;
+                    return 1;
+                } else return null;
+            }catch (Exception e){
+                logger.error("Exception in method clearTrash.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права или если он открыт на общий доступ
@@ -516,7 +531,7 @@ public class FileRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")// права не нужны, т.к. не вызывается по API
-    private List<String> getPathsInTrash(Integer CompanyId){
+    private List<String> getPathsInTrash(Long CompanyId){
         String stringQuery;
         stringQuery =
                 " select f.path||'//'||f.name as path from files f where company_id="+CompanyId+" and trash=true" +
