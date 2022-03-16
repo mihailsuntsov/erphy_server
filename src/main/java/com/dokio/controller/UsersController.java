@@ -306,13 +306,20 @@ public class UsersController {
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteUsers error", e);
             return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @RequestMapping(value = "/api/auth/getMySettings",
+        method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public  ResponseEntity<?> getMySettings(){
+        logger.info("Processing post request for path /api/auth/getMySettings");
+        try {return new ResponseEntity<>(userRepositoryJPA.getMySettings(), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getMySettings error", e);
+            return new ResponseEntity<>("Error of getting user's settings", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
     //Id и Name пользователей в отделении
     @PostMapping("/api/auth/getUsersListByDepartmentId")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersListByDepartmentId(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path api/auth/getUsersListByDepartmentId: " + request.toString());
-
         int id = request.getId();
         List<UsersListJSON> usersList =userRepositoryJPA.getUsersListByDepartmentId(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(usersList, HttpStatus.OK);

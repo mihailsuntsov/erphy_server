@@ -15,6 +15,8 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
@@ -576,5 +578,51 @@ public class UserRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+
+    public String getUserSuffix(Long userId){
+            String stringQuery = "select u.suffix from user_settings u where u.id= " + userId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((String) query.getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserSuffix. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public UserSettingsJSON getMySettings() {
+        String stringQuery;
+        Long myId = userDetailService.getUserId();
+        stringQuery = "select " +
+                "   p.time_zone_id as time_zone_id, " +
+                "   p.language_id as language_id, " +
+                "   p.locale_id as locale_id, " +
+                "   sslc.code as locale, " +
+                "   sslg.suffix as suffix " +
+                "   from    user_settings p, " +
+                "           sprav_sys_languages sslg, " +
+                "           sprav_sys_locales sslc " +
+                "   where   p.user_id=" + myId +
+                "   and     p.language_id=sslg.id" +
+                "   and     p.locale_id=sslc.id";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserSettingsJSON doc = new UserSettingsJSON();
+            if(queryList.size()>0) {
+                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
+                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
+                doc.setLocale_id((Integer)      queryList.get(0)[2]);
+                doc.setLocale((String)          queryList.get(0)[3]);
+                doc.setSuffix((String)          queryList.get(0)[4]);
+            }
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 }

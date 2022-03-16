@@ -3024,12 +3024,59 @@ alter table usergroup add column is_deleted boolean;
 update documents set name='Роли', doc_name_ru='Роли' where id=6;
 
 
+create table sprav_sys_locales(
+  id                int not null,
+  name              varchar(64) not null,
+  code              varchar(8) not null
+);
+
+insert into sprav_sys_locales (id, name, code) values
+(1,'English (Australia)','en-au'),
+(2,'English (Canada)','en-ca'),
+(3,'English (United States)','en-us'),
+(4,'English (United Kingdom)','en-gb'),
+(5,'English (Ireland)','en-ie'),
+(6,'English (Israel)','en-il'),
+(7,'English (India)','en-in'),
+(8,'English (New Zealand)','en-nz'),
+(9,'English (Singapore)','en-sg'),
+(10,'Russian','ru');
+
+alter table sprav_sys_locales add constraint sprav_sys_locales_id_uq unique (id);
+
+create table sprav_sys_languages
+(
+  id                int         not null,
+  name              varchar(64) not null,
+  suffix            varchar(2)  not null,
+  default_locale_id int         not null,
+  foreign key (default_locale_id) references sprav_sys_locales (id)
+);
+
+insert into sprav_sys_languages (id, name, suffix, default_locale_id) values
+(1,'English','en',4),
+(2,'Русский','ru',10);
+
+alter table sprav_sys_languages add constraint sprav_sys_languages_id_uq unique (id);
 
 
+create table user_settings(
+                            id bigserial primary key not null,
+                            master_id  bigint not null,
+                            user_id  bigint not null,
+                            time_zone_id int not null,
+                            language_id int not null,
+                            locale_id int not null,
+                            foreign key (master_id)  references users(id),
+                            foreign key (time_zone_id) references sprav_sys_timezones(id),
+                            foreign key (language_id) references sprav_sys_languages(id),
+                            foreign key (locale_id) references sprav_sys_locales(id),
+                            foreign key (user_id) references users(id)
+);
 
-
-
-
+ALTER TABLE sprav_sys_timezones RENAME COLUMN name_rus TO name_ru;
+ALTER TABLE sprav_sys_timezones ADD COLUMN name_en varchar(128);
+update sprav_sys_timezones set name_en=canonical_id;
 
 
 

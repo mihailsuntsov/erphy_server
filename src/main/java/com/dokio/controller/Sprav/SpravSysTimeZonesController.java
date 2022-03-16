@@ -20,11 +20,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Controller
 @Repository
 public class SpravSysTimeZonesController {
@@ -32,29 +38,52 @@ public class SpravSysTimeZonesController {
 
     @PersistenceContext
     private EntityManager entityManager;
-    @PostMapping("/api/auth/getSpravSysTimeZones")
+
+
+    private static final Set VALID_SUFFIXES
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("ru","en","es","it","fr","uk","kz","pt")
+            .collect(Collectors.toCollection(HashSet::new)));
+
+    @RequestMapping(value = "/api/auth/getSpravSysTimeZones",
+            params = {"suffix"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getSpravSysTimeZones() {
-        logger.info("Processing post request for path /api/auth/getSpravSysTimeZones");
+    public ResponseEntity<?> getSpravSysTimeZones(@RequestParam("suffix") String suffix) {
+
+        logger.info("Processing get request for path /api/auth/getSpravSysTimeZones with params: suffix="+suffix);
 
         String stringQuery=
                         "select " +
                         " p.id as id, " +
                         " p.time_offset  as time_offset, " +
                         " p.canonical_id as canonical_id, " +
-                        " p.name_rus  as name_rus " +
+                        " p.name_"+suffix+"  as name " +
                         " from sprav_sys_timezones p order by output_order asc";
-        Query query =  entityManager.createNativeQuery(stringQuery);
-        List<Object[]> queryList = query.getResultList();
-        List<SpravSysTimeZonesJSON> returnList = new ArrayList<>();
-        for(Object[] obj:queryList) {
-            SpravSysTimeZonesJSON doc=new SpravSysTimeZonesJSON();
-            doc.setId(Long.parseLong(obj[0].toString()));
-            doc.setTime_offset((String) obj[1]);
-            doc.setCanonical_id((String) obj[2]);
-            doc.setName_rus((String) obj[3]);
-            returnList.add(doc);
+        try {
+
+            if (!VALID_SUFFIXES.contains(suffix)) {
+                throw new IllegalArgumentException("Bad query parameters");
+            }
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            List<SpravSysTimeZonesJSON> returnList = new ArrayList<>();
+
+            for (Object[] obj : queryList) {
+                SpravSysTimeZonesJSON doc = new SpravSysTimeZonesJSON();
+                doc.setId(Long.parseLong(obj[0].toString()));
+                doc.setTime_offset((String) obj[1]);
+                doc.setCanonical_id((String) obj[2]);
+                doc.setName_rus((String) obj[3]);
+                returnList.add(doc);
+            }
+            return new ResponseEntity<List>(returnList, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getSpravSysTimeZones. SQL query:" + stringQuery, e);
+            return null;
         }
-        return new ResponseEntity<List>(returnList, HttpStatus.OK);
     }
 }
