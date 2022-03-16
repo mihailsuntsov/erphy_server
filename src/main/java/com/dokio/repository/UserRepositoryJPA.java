@@ -1,19 +1,18 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.repository;
 
+import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
@@ -622,6 +621,44 @@ public class UserRepositoryJPA {
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean saveUserSettings(UserSettingsForm settings) {
+        Long myId = getMyId();
+        Long myMasterId = getMyMasterId();
+        String stringQuery;
+        stringQuery =
+                "insert into user_settings (" +
+                " user_id, " +
+                " master_id, " +
+                " time_zone_id," +
+                " language_id," +
+                " locale_id" +
+                ") " +
+                "values " +
+                "(" +
+                myId + ", " +
+                myMasterId + ", " +
+                settings.getTimeZoneId() + ", " +
+                settings.getLanguageId() + ", " +
+                settings.getLocaleId() +
+                ")"+
+                " ON CONFLICT ON CONSTRAINT user_uq " +
+                " DO update set " +
+                " time_zone_id="+ settings.getTimeZoneId() + ", " +
+                " language_id="+ settings.getLanguageId() + ", " +
+                " locale_id="+ settings.getLocaleId();
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }catch (Exception e) {
+            logger.error("Exception in method saveUserSettings. SQL query:"+stringQuery, e);
+            e.printStackTrace();
             return null;
         }
     }

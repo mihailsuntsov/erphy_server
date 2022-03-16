@@ -14,11 +14,13 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.message.response.Sprav;
 
-public class SpravSysTimeZonesJSON {
+public class SpravSysLanguagesJSON {
+
     private Long id;
-    private String time_offset;
-    private String canonical_id;
     private String name;
+    private String suffix;
+    private int defaultLocaleId;
+    private String defaultLocale;
 
     public Long getId() {
         return id;
@@ -28,27 +30,35 @@ public class SpravSysTimeZonesJSON {
         this.id = id;
     }
 
-    public String getTime_offset() {
-        return time_offset;
-    }
-
-    public void setTime_offset(String time_offset) {
-        this.time_offset = time_offset;
-    }
-
-    public String getCanonical_id() {
-        return canonical_id;
-    }
-
-    public void setCanonical_id(String Canonical_id) {
-        this.canonical_id = canonical_id;
-    }
-
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getSuffix() {
+        return suffix;
+    }
+
+    public void setSuffix(String suffix) {
+        this.suffix = suffix;
+    }
+
+    public int getDefaultLocaleId() {
+        return defaultLocaleId;
+    }
+
+    public void setDefaultLocaleId(int defaultLocaleId) {
+        this.defaultLocaleId = defaultLocaleId;
+    }
+
+    public String getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    public void setDefaultLocale(String defaultLocale) {
+        this.defaultLocale = defaultLocale;
     }
 }

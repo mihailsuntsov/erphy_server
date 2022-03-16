@@ -3078,7 +3078,7 @@ ALTER TABLE sprav_sys_timezones RENAME COLUMN name_rus TO name_ru;
 ALTER TABLE sprav_sys_timezones ADD COLUMN name_en varchar(128);
 update sprav_sys_timezones set name_en=canonical_id;
 
-
+alter table user_settings add constraint user_uq UNIQUE (user_id);
 
 
 

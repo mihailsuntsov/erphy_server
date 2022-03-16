@@ -1,20 +1,19 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
 Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
 Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
+соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
+опубликованной Фондом свободного программного обеспечения;
+Эта программа распространяется в расчёте на то, что она окажется полезной, но
 БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
 ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
 лицензией GNU для получения более подробной информации.
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+*/
 package com.dokio.controller;
 
 import com.dokio.message.request.SearchForm;
+import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.response.ResponseMessage;
 import com.dokio.message.response.UsersJSON;
@@ -309,10 +308,17 @@ public class UsersController {
     @RequestMapping(value = "/api/auth/getMySettings",
         method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public  ResponseEntity<?> getMySettings(){
-        logger.info("Processing post request for path /api/auth/getMySettings");
+        logger.info("Processing get request for path /api/auth/getMySettings");
         try {return new ResponseEntity<>(userRepositoryJPA.getMySettings(), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller getMySettings error", e);
             return new ResponseEntity<>("Error of getting user's settings", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/saveUserSettings")
+    public  ResponseEntity<?> saveUserSettings(@RequestBody UserSettingsForm request) {
+        logger.info("Processing post request for path /api/auth/saveUserSettings: " + request.toString());
+        try {return new ResponseEntity<>(userRepositoryJPA.saveUserSettings(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller saveUserSettings error", e);
+            return new ResponseEntity<>("Error of saving user settings", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     //Id и Name пользователей в отделении
