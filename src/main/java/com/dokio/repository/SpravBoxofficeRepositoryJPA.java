@@ -357,7 +357,7 @@ public class SpravBoxofficeRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean deleteBoxoffice(String delNumbers) {
+    public Integer deleteBoxoffice(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(42L, "553") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_boxoffice", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -375,19 +375,19 @@ public class SpravBoxofficeRepositoryJPA {
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             } catch (Exception e) {
                 logger.error("Exception in method deleteBoxoffice. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
 
-        } else return false;
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteBoxoffice(String delNumbers) {
+    public Integer undeleteBoxoffice(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(42L, "553") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_boxoffice", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
@@ -405,12 +405,12 @@ public class SpravBoxofficeRepositoryJPA {
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             } catch (Exception e) {
                 logger.error("Exception in method undeleteBoxoffice. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 }

@@ -824,7 +824,7 @@ public class OrderoutRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteOrderout(String delNumbers) {
+    public Integer undeleteOrderout(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(36L,"520") && securityRepositoryJPA.isItAllMyMastersDocuments("orderout",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -842,14 +842,14 @@ public class OrderoutRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     query.executeUpdate();
-                    return true;
-                } else return false;
+                    return 1;
+                } else return null;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteOrderout. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
 //*****************************************************************************************************************************************************

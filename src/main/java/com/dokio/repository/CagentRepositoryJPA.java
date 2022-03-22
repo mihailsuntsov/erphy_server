@@ -521,7 +521,7 @@ public class CagentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean updateCagents(CagentsForm request) {
+    public Integer updateCagents(CagentsForm request) {
 
         EntityManager emgr = emf.createEntityManager();
         Cagents document = emgr.find(Cagents.class, request.getId());//сохраняемый документ
@@ -536,7 +536,8 @@ public class CagentRepositoryJPA {
                 && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             if(updateCagentBaseFields(request)){//Сначала сохраняем документ без контактных лиц и банковских счетов
-                try {//если сохранился...
+                try
+                {   //если сохранился...
                     //Сохраняем контактные лица
                     //удаление лишних контактных лиц(которые удалили в фронтэнде)
                     String ids = "";
@@ -584,13 +585,14 @@ public class CagentRepositoryJPA {
                         addSetOfCagentCategories(request.getId(),categories);
                     }
 
-                    return true;
+                    return 1;
                 } catch (Exception e){
+                    logger.error("Error of updateCagents", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 }
-            } else return false;
-        } else return false;
+            } else return null;
+        } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
@@ -606,6 +608,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of deleteCagentPaymentAccountsExcessRows", e);
             e.printStackTrace();
             return false;
         }
@@ -624,6 +627,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of deleteCagentContactsExcessRows", e);
             e.printStackTrace();
             return false;
         }
@@ -660,6 +664,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of insertCagentContacts", e);
             e.printStackTrace();
             return false;
         }
@@ -689,6 +694,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of updateCagentContacts", e);
             e.printStackTrace();
             return false;
         }
@@ -725,6 +731,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of insertCagentPaymentAccounts", e);
             e.printStackTrace();
             return false;
         }
@@ -754,6 +761,7 @@ public class CagentRepositoryJPA {
             return true;
         }
         catch (Exception e) {
+            logger.error("Error of updateCagentPaymentAccounts", e);
             e.printStackTrace();
             return false;
         }
@@ -818,6 +826,7 @@ public class CagentRepositoryJPA {
             query.executeUpdate();
             return true;
         }catch (Exception e) {
+            logger.error("Error of updateCagentBaseFields", e);
             e.printStackTrace();
             return false;
         }
@@ -865,16 +874,18 @@ public class CagentRepositoryJPA {
                             }
                             return createdCagentId;
                         } catch (Exception e){
+                            logger.error("Error of insertCagent", e);
                             e.printStackTrace();
                             return null;
                         }
                     } else return null;
                 } catch (Exception e) {
+                    logger.error("Error of insertCagent", e);
                     e.printStackTrace();
                     return null;
                 }
             }
-        } else return null;
+        } else return -1L;
     }
 
     @SuppressWarnings("Duplicates")
@@ -982,6 +993,7 @@ public class CagentRepositoryJPA {
             newDocId=Long.valueOf(query2.getSingleResult().toString());
             return newDocId;
         } catch (Exception e) {
+            logger.error("Error of insertCagentBaseFields", e);
             e.printStackTrace();
             return null;
         }
@@ -989,7 +1001,7 @@ public class CagentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteCagents(String delNumbers) {
+    public Integer deleteCagents(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(12L,"131") && securityRepositoryJPA.isItAllMyMastersDocuments("cagents",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1003,16 +1015,23 @@ public class CagentRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.id in (" + delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                query.executeUpdate();
-                return true;
-            } else return false;
-        } else return false;
+
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method deleteCagents. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteCagents(String delNumbers) {
+    public Integer undeleteCagents(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(12L,"131") && securityRepositoryJPA.isItAllMyMastersDocuments("cagents",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
@@ -1026,12 +1045,18 @@ public class CagentRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
                     " where p.id in (" + delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                query.executeUpdate();
-                return true;
-            } else return false;
-        } else return false;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteCagents. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
     //отдает список наименований контрагентов по поисковой подстроке и предприятию
     // тут не надо прописывать права, т.к. это сервисный запрос

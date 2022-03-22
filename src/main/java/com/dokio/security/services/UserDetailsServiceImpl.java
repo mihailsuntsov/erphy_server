@@ -108,7 +108,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 				" from " +
 				" sprav_sys_timezones s" +
 				" where s.id=(" +
-				" select u.time_zone_id from users u where u.id=" + getUserId() +
+				" select u.time_zone_id from user_settings u where u.user_id=" + getUserId() +
 				")";
 		Query query = entityManager.createNativeQuery(stringQuery);
 		return query.getSingleResult().toString();

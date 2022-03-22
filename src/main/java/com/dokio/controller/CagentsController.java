@@ -162,80 +162,48 @@ public class CagentsController {
 
     @PostMapping("/api/auth/getCagentValues")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getCagentValuesById(@RequestBody UniversalForm request) {
-        logger.info("Processing post request for path /api/auth/getCagentValues: " + request.toString());
-
-        CagentsJSON response;
-        Long id = request.getId();
-        response=cagentsRepositoryJPA.getCagentValues(id);
-        try
-        {
-            List<Integer> valuesListId =cagentsRepositoryJPA.getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
-            response.setCagent_categories_id(valuesListId);
-
-            ResponseEntity<CagentsJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
-            return responseEntity;
-        }
-        catch(NullPointerException npe){return null;}
+    public ResponseEntity<?> getCagentValues(@RequestBody UniversalForm request) {
+        logger.info("Processing post request for path api/auth/getCagentValues: " + request.toString());
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.getCagentValues(request.getId()), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getCagentValues error", e);
+            return new ResponseEntity<>("Error of getting values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/insertCagent")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertCagent(@RequestBody CagentsForm request){
+    public  ResponseEntity<?> insertCagent(@RequestBody CagentsForm request) {
         logger.info("Processing post request for path /api/auth/insertCagent: " + request.toString());
-
-        Long newDocument = cagentsRepositoryJPA.insertCagent(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка создания", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.insertCagent(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertCagent error", e);
+            return new ResponseEntity<>("Error of inserting counterparty", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateCagents")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateCagents(@RequestBody CagentsForm request){
+    public  ResponseEntity<?> updateCagents(@RequestBody CagentsForm request) {
         logger.info("Processing post request for path /api/auth/updateCagents: " + request.toString());
-
-        if(cagentsRepositoryJPA.updateCagents(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка сохранения", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.updateCagents(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateCagents error", e);
+            return new ResponseEntity<>("Error of updating counterparty", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
 
     @PostMapping("/api/auth/deleteCagents")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteCagents(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> deleteCagents(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteCagents: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(cagentsRepositoryJPA.deleteCagents(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.deleteCagents(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteCagents error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     @PostMapping("/api/auth/undeleteCagents")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteCagents(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteCagents(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteCagents: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(cagentsRepositoryJPA.undeleteCagents(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.undeleteCagents(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteCagents error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     @PostMapping("/api/auth/getCagentsList")//заполнение Autocomplete
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCagentsList(@RequestBody SearchForm searchRequest) {

@@ -72,7 +72,7 @@ public class ProfitLossRepositoryJPA {
                 List<ProfitLossSerie> operational=getProfitLossOpex(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone);
                 // списания в операционных расходах считаются отдельно:
                 ProfitLossSerie writeoffs = new ProfitLossSerie();
-                writeoffs.setName("Списания");
+                writeoffs.setName("writeoffs");
                 writeoffs.setValue(getProfitLossWriteoffs(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone));
                 operational.add(writeoffs);
                 doc.setOperational(operational);
