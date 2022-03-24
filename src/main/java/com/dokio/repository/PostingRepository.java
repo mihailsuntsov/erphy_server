@@ -927,7 +927,7 @@ public class PostingRepository {
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeletePosting (String delNumbers) {
+    public Integer undeletePosting (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"203") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -945,14 +945,15 @@ public class PostingRepository {
                     " date_time_changed = now() " +//дату и время изменения
                     " where p.id in ("+delNumbers+")";
             try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
             }catch (Exception e) {
                 logger.error("Exception in method undeletePosting. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 
 

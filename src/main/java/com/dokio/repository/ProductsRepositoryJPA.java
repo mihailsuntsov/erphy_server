@@ -70,13 +70,13 @@ public class ProductsRepositoryJPA {
             .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId) {
+    public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//Меню - таблица
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           p.name as name, " +
@@ -116,7 +116,7 @@ public class ProductsRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (categoryId != 0 ? " and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id=" + categoryId + ") " : "");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
@@ -147,18 +147,18 @@ public class ProductsRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getProductsSize(String searchString, int companyId, int categoryId) {
+    public int getProductsSize(String searchString, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//"Группы товаров" (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id, " +
                     "           pg.name as productgroup " +
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (categoryId != 0 ? " and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id=" + categoryId + ") " : "");
 
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Меню - таблица - "Группы товаров" по всем предприятиям"
@@ -638,20 +638,62 @@ public class ProductsRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteProducts(String delNumbers) {
+    public Integer deleteProducts(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(14L, "165") && securityRepositoryJPA.isItAllMyMastersDocuments("products", delNumbers)) ||
+        if((securityRepositoryJPA.userHasPermissions_OR(14L,"165") && securityRepositoryJPA.isItAllMyMastersDocuments("products",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(14L, "166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", delNumbers))) {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+                (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
             stringQuery = "Update products p" +
-                    " set is_archive=true " +
-                    " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
-        } else return false;
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=true " +
+                    " where p.id in (" + delNumbers+")";
+
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method deleteProducts. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Integer undeleteProducts(String delNumbers) {
+        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
+        if((securityRepositoryJPA.userHasPermissions_OR(14L,"165") && securityRepositoryJPA.isItAllMyMastersDocuments("products",delNumbers)) ||
+                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
+        {
+            // на MasterId не проверяю , т.к. выше уже проверено
+            Long myId = userRepositoryJPA.getMyId();
+            String stringQuery;
+            stringQuery = "Update products p" +
+                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                    " date_time_changed = now(), " +//дату и время изменения
+                    " is_deleted=false " +
+                    " where p.id in (" + delNumbers+")";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteProducts. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
 
@@ -1048,7 +1090,7 @@ public class ProductsRepositoryJPA {
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
-                " and coalesce(p.is_archive,false) !=true ";
+                " and coalesce(p.is_deleted,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper('%" + searchString + "%') or " +
@@ -1104,14 +1146,14 @@ public class ProductsRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String stringQuery =
                 "       select " +
-                "           price_value as price" +
-                "       from " +
-                "           product_prices " +
-                "       where " +
-                "               product_id = "+product_id +
-                "           and price_type_id = "+price_type_id +
-                "           and company_id=" + company_id +
-                "           and master_id=" + myMasterId;
+                        "           price_value as price" +
+                        "       from " +
+                        "           product_prices " +
+                        "       where " +
+                        "               product_id = "+product_id +
+                        "           and price_type_id = "+price_type_id +
+                        "           and company_id=" + company_id +
+                        "           and master_id=" + myMasterId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return (BigDecimal) query.getSingleResult();
@@ -1215,23 +1257,23 @@ public class ProductsRepositoryJPA {
         Long myCompanyId= userRepositoryJPA.getMyCompanyId_();
         String stringQuery;
         stringQuery=
-                        "select "+
+                "select "+
                         " p.id                                  as price_type_id, " +
                         " p.name                                as price_name, " +
                         " p.description                         as price_description, " +
 
                         " coalesce(" +
-                            "(select coalesce(price_value,0) " +
-                            "from product_prices " +
-                            "where " +
-                            "product_id="+productId+" and " +
-                            "price_type_id=p.id) " +
-                            ",0)                                as price_value " +
+                        "(select coalesce(price_value,0) " +
+                        "from product_prices " +
+                        "where " +
+                        "product_id="+productId+" and " +
+                        "price_type_id=p.id) " +
+                        ",0)                                as price_value " +
 
                         " from " +
                         " sprav_type_prices p " +
                         " where " +
-                        " coalesce(p.is_archive,false) = false " +
+                        " coalesce(p.is_deleted,false) = false " +
                         " and company_id = " + myCompanyId +
                         " and p.master_id = " + myMasterId +
                         " order by p.name asc ";
@@ -1319,7 +1361,7 @@ public class ProductsRepositoryJPA {
 
 
 
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -1839,18 +1881,18 @@ public class ProductsRepositoryJPA {
 
 
 
-                if (request.getReportOn().equals("products"))
-                    stringQuery = stringQuery + " and p.id in (" + ids + ")";
-                if (request.getReportOn().equals("categories")) {
-                    //  необходимо запросить все айдишники подкатегорий у присланных id родительских категорий
-                    Set<Long> childCategories = getProductCategoriesChildIds(request.getReportOnIds());
-                    String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
-                    stringQuery = stringQuery + " and p.id in (select ppc.product_id from product_productcategories ppc where ppc.category_id in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
-                }
+        if (request.getReportOn().equals("products"))
+            stringQuery = stringQuery + " and p.id in (" + ids + ")";
+        if (request.getReportOn().equals("categories")) {
+            //  необходимо запросить все айдишники подкатегорий у присланных id родительских категорий
+            Set<Long> childCategories = getProductCategoriesChildIds(request.getReportOnIds());
+            String childIds = commonUtilites.SetOfLongToString(childCategories, ",", "", "");
+            stringQuery = stringQuery + " and p.id in (select ppc.product_id from product_productcategories ppc where ppc.category_id in (" + ids + (childIds.length()>0?",":"") + childIds + "))";
+        }
 
         stringQuery = stringQuery + (priceTypeId>0?(" and pp.price_type_id = " + priceTypeId):"");//если тип цены запрашивается
 
-        stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true ";
+        stringQuery = stringQuery + " and coalesce(p.is_deleted,false) !=true ";
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
@@ -2222,8 +2264,8 @@ public class ProductsRepositoryJPA {
         Long prouctId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id товара принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", prouctId.toString())) ||
-            //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
-            (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", prouctId.toString()))) {
+                //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", prouctId.toString()))) {
             String stringQuery="";
             try {
 
@@ -2405,13 +2447,13 @@ public class ProductsRepositoryJPA {
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", getProductIdByBarcodeId(request.getId1())))) {
 
-                Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                String stringQuery;
-                stringQuery = "Update product_barcodes p" +
-                        " set  value= '" + (request.getString1() != null ? request.getString1() : "") + "'" +
-                        "    , description= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
-                        " where p.id=" + request.getId1() +
-                        " and (select master_id from products where id=p.product_id)=" + myMasterId; //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery;
+            stringQuery = "Update product_barcodes p" +
+                    " set  value= '" + (request.getString1() != null ? request.getString1() : "") + "'" +
+                    "    , description= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
+                    " where p.id=" + request.getId1() +
+                    " and (select master_id from products where id=p.product_id)=" + myMasterId; //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
             try {     entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             } catch (Exception e) {
@@ -2558,12 +2600,12 @@ public class ProductsRepositoryJPA {
     boolean addBarcodeToProduct(ProductBarcodesJSON request, Long newProductId) {
         String stringQuery =
                 "insert into product_barcodes " +
-                "(product_id, barcode_id, value, description) " +
-                "values " +
-                "(" + newProductId + ", " +
-                request.getBarcode_id() + ", '" +
-                request.getValue() + "', '" +
-                request.getDescription() + "')";
+                        "(product_id, barcode_id, value, description) " +
+                        "values " +
+                        "(" + newProductId + ", " +
+                        request.getBarcode_id() + ", '" +
+                        request.getValue() + "', '" +
+                        request.getDescription() + "')";
         try {
             entityManager.createNativeQuery(stringQuery).executeUpdate();
             entityManager.close();
@@ -2623,7 +2665,7 @@ public class ProductsRepositoryJPA {
         try {
             stringQuery =
                     " select is_material from sprav_sys_ppr where id= (" +
-                    " select ppr_id from products where id=" + prodId +")";
+                            " select ppr_id from products where id=" + prodId +")";
             Query query = entityManager.createNativeQuery(stringQuery);
             return (Boolean) query.getSingleResult();
         }
@@ -2688,43 +2730,43 @@ public class ProductsRepositoryJPA {
             BigDecimal netcost,
             Timestamp date_time_created,
             boolean is_completed
-            ) throws CantSaveProductHistoryException {
+    ) throws CantSaveProductHistoryException {
         String stringQuery =
-            " insert into product_history (" +
-            " master_id," +
-            " company_id," +
-            " department_id," +     // отделение в котором проводится операция
-            " doc_type_id," +       // id типа документа (id из таблицы documents)
-            " doc_id," +            // id документа
-            " product_id," +        // id товара
-            " change," +            // изменение кол-ва товара в операции
-            " price," +             // цена единицы товара в данной операции
-            " netcost," +           // себестоимость единицы товара (т.е. цена единицы товара + часть распределенной по всем товарам себестоимости операции)
-            " date_time_created," + // время создания документа, к которому относится данная строка таблицы
-            " is_completed "+       // проведён ли документ, к которому относится данная строка таблицы
-            ") values ("+
-            masterId +","+
-            company_id +","+
-            department_id + ","+
-            doc_type_id +","+
-            doc_id + ","+
-            product_id + ","+
-            change+","+
-            price+","+
-            netcost+","+
-            "'" + date_time_created + "',"+
-            is_completed+
-            ")" + // при отмене проведения или повторном проведении срабатывает ключ уникальности записи в БД по doc_type_id, doc_id, product_id
-            " ON CONFLICT ON CONSTRAINT product_history_uq" +// "upsert"
-            " DO update set " +
-            (is_completed?(" change = " + change +", "):" ") + // только если проводим
-            (is_completed?(" price = " + price +", "):" ") + // только если проводим
-            (is_completed?(" netcost = " + netcost +", "):" ") + // только если проводим
-            " is_completed = " + is_completed; // единственный апдейт при отмене проведения
+                " insert into product_history (" +
+                        " master_id," +
+                        " company_id," +
+                        " department_id," +     // отделение в котором проводится операция
+                        " doc_type_id," +       // id типа документа (id из таблицы documents)
+                        " doc_id," +            // id документа
+                        " product_id," +        // id товара
+                        " change," +            // изменение кол-ва товара в операции
+                        " price," +             // цена единицы товара в данной операции
+                        " netcost," +           // себестоимость единицы товара (т.е. цена единицы товара + часть распределенной по всем товарам себестоимости операции)
+                        " date_time_created," + // время создания документа, к которому относится данная строка таблицы
+                        " is_completed "+       // проведён ли документ, к которому относится данная строка таблицы
+                        ") values ("+
+                        masterId +","+
+                        company_id +","+
+                        department_id + ","+
+                        doc_type_id +","+
+                        doc_id + ","+
+                        product_id + ","+
+                        change+","+
+                        price+","+
+                        netcost+","+
+                        "'" + date_time_created + "',"+
+                        is_completed+
+                        ")" + // при отмене проведения или повторном проведении срабатывает ключ уникальности записи в БД по doc_type_id, doc_id, product_id
+                        " ON CONFLICT ON CONSTRAINT product_history_uq" +// "upsert"
+                        " DO update set " +
+                        (is_completed?(" change = " + change +", "):" ") + // только если проводим
+                        (is_completed?(" price = " + price +", "):" ") + // только если проводим
+                        (is_completed?(" netcost = " + netcost +", "):" ") + // только если проводим
+                        " is_completed = " + is_completed; // единственный апдейт при отмене проведения
         try {
             // проверки что по API прислали id-шники от своего master_id (что в таблице есть совпадение таких masterId и id-шников )
             if( Objects.isNull(commonUtilites.getFieldValueFromTableById("companies","id", masterId, company_id)) ||
-                Objects.isNull(commonUtilites.getFieldValueFromTableById("products","id", masterId, product_id)) )
+                    Objects.isNull(commonUtilites.getFieldValueFromTableById("products","id", masterId, product_id)) )
                 throw new Exception("id объектов не принадлежат к их master_id. master_id="+masterId+", company_id="+company_id+", product_id="+product_id);
 
 
@@ -2740,7 +2782,7 @@ public class ProductsRepositoryJPA {
             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
-//*****************************************************************************************************************************************************
+    //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара в отделении (если department_id = null то не зависимо от отделения)
@@ -2757,9 +2799,9 @@ public class ProductsRepositoryJPA {
                         "          from product_history                "+
                         "          where                                "+
                         "          product_id="+product_id;
-                        if(!Objects.isNull(department_id))
-                            stringQuery = stringQuery+"          and department_id="+department_id;
-                        stringQuery = stringQuery+ "          order by id desc limit 1             ";
+        if(!Objects.isNull(department_id))
+            stringQuery = stringQuery+"          and department_id="+department_id;
+        stringQuery = stringQuery+ "          order by id desc limit 1             ";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -2824,7 +2866,7 @@ public class ProductsRepositoryJPA {
 
 
 
-                        try
+        try
         {
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -2890,17 +2932,17 @@ public class ProductsRepositoryJPA {
     BigDecimal recountProductNetcost(Long companyId, Long departmentId, Long productId) throws Exception {
 
         String stringQuery =
-                                "   select " +
-                                "   change as change, " +
-                                "   netcost as netcost, " +
-                                "   doc_type_id as doc_type_id" +
-                                "   from product_history                "+
-                                "   where                                "+
-                                "   company_id = " + companyId +
-                                (Objects.isNull(departmentId)?" ":"  and department_id=" + departmentId) +
-                                "   and is_completed = true " +
-                                "   and product_id=" + productId +
-                                "   order by date_time_created asc";
+                "   select " +
+                        "   change as change, " +
+                        "   netcost as netcost, " +
+                        "   doc_type_id as doc_type_id" +
+                        "   from product_history                "+
+                        "   where                                "+
+                        "   company_id = " + companyId +
+                        (Objects.isNull(departmentId)?" ":"  and department_id=" + departmentId) +
+                        "   and is_completed = true " +
+                        "   and product_id=" + productId +
+                        "   order by date_time_created asc";
         try{
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -2934,7 +2976,7 @@ public class ProductsRepositoryJPA {
             e.printStackTrace();
             throw new CalculateNetcostNegativeSumException();
         }
-            catch (Exception e) {
+        catch (Exception e) {
             logger.error("Exception in method recountProductNetcost. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();

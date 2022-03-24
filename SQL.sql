@@ -3080,6 +3080,8 @@ update sprav_sys_timezones set name_en=canonical_id;
 
 alter table user_settings add constraint user_uq UNIQUE (user_id);
 
+alter table products add column is_deleted boolean;
+alter table products drop column is_archive;
 
 
 
@@ -3107,8 +3109,7 @@ alter table user_settings add constraint user_uq UNIQUE (user_id);
 
 
 
-
-WITH
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

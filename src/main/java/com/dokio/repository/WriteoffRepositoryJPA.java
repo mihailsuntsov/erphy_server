@@ -940,7 +940,7 @@ public class WriteoffRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteWriteoff (String delNumbers) {
+    public Integer undeleteWriteoff (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if     ((securityRepositoryJPA.userHasPermissions_OR(17L, "219") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -958,14 +958,15 @@ public class WriteoffRepositoryJPA {
                     " date_time_changed = now() " +//дату и время изменения
                     " where p.id in ("+delNumbers+")";
             try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteWriteoff. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 
 //*****************************************************************************************************************************************************

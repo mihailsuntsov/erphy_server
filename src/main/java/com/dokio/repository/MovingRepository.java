@@ -1170,7 +1170,7 @@ public class MovingRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean deleteMoving (String delNumbers) {
+    public Integer deleteMoving (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(30L,"380") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1189,19 +1189,20 @@ public class MovingRepository {
                     " where p.id in ("+delNumbers+")" +
                     " and coalesce(p.is_completed,false) !=true";
             try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
             }catch (Exception e) {
                 logger.error("Exception in method deleteMoving. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteMoving (String delNumbers) {
+    public Integer undeleteMoving (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(30L,"380") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1219,14 +1220,15 @@ public class MovingRepository {
                     " date_time_changed = now() " +//дату и время изменения
                     " where p.id in ("+delNumbers+")";
             try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
             }catch (Exception e) {
-                logger.error("Exception in method undeleteMoving. SQL query:"+stringQuery, e);
+                logger.error("Exception in method undeletePosting. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************

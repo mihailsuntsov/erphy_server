@@ -99,7 +99,7 @@ public class ProductsController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = productsRepositoryJPA.getProductsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,categoryId);//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = productsRepositoryJPA.getProductsTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,categoryId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -130,7 +130,7 @@ public class ProductsController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = productsRepositoryJPA.getProductsSize(searchString,companyId,categoryId);//  - общее количество записей выборки
+        int size = productsRepositoryJPA.getProductsSize(searchString,companyId,categoryId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
@@ -244,22 +244,23 @@ public class ProductsController {
         }
     }
 
-
     @PostMapping("/api/auth/deleteProducts")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteProducts(@RequestBody SignUpForm request) throws ParseException{
+    public  ResponseEntity<?> deleteProducts(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteProducts: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(productsRepositoryJPA.deleteProducts(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when deleting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productsRepositoryJPA.deleteProducts(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteProducts error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @PostMapping("/api/auth/undeleteProducts")
+    public  ResponseEntity<?> undeleteProducts(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteProducts: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(productsRepositoryJPA.undeleteProducts(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteProducts error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/getProductPrices",

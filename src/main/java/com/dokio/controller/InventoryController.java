@@ -285,18 +285,12 @@ public class InventoryController {
     }
 
     @PostMapping("/api/auth/undeleteInventory")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteInventory(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteInventory(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteInventory: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(inventoryRepository.undeleteInventory(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления документов", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(inventoryRepository.undeleteInventory(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteInventory error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
