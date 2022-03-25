@@ -363,33 +363,23 @@ public class KassaController {
 //            return new ResponseEntity<>("Ошибка запроса getShiftNum", HttpStatus.INTERNAL_SERVER_ERROR);
 //        }
 //    }
+
     @PostMapping("/api/auth/deleteKassa")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> deleteKassa(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/deleteKassa with id's: " + request.getChecked());
-
+    public  ResponseEntity<?> deleteKassa(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deleteKassa: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(kassaRepository.deleteKassa(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка удаления кассы", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(kassaRepository.deleteKassa(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteKassa error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/undeleteKassa")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteKassa(@RequestBody SignUpForm request){
-        logger.info("Processing post request for path /api/auth/undeleteKassa: " + request.toString());
 
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(kassaRepository.undeleteKassa(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления кассы", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @PostMapping("/api/auth/undeleteKassa")
+    public  ResponseEntity<?> undeleteKassa(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeleteKassa: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(kassaRepository.undeleteKassa(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteKassa error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     //отдаёт список касс для кассира по id отделения
     @RequestMapping(

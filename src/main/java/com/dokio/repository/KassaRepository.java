@@ -543,7 +543,7 @@ public class KassaRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteKassa (String delNumbers) {
+    public Integer deleteKassa (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(24L,"299") && securityRepositoryJPA.isItAllMyMastersDocuments("kassa",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -558,13 +558,22 @@ public class KassaRepository {
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
                     " where p.id in ("+delNumbers+")";
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-            return true;
-        } else return false;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method deleteKassa. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteKassa(String delNumbers) {
+    public Integer undeleteKassa(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(24L,"299") && securityRepositoryJPA.isItAllMyMastersDocuments("kassa",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -580,12 +589,18 @@ public class KassaRepository {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
                     " where p.id in (" + delNumbers+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                query.executeUpdate();
-                return true;
-            } else return false;
-        } else return false;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
+            }catch (Exception e) {
+                logger.error("Exception in method undeleteKassa. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 //отдает список касс (не удаленных) по id отделения
     @SuppressWarnings("Duplicates")
