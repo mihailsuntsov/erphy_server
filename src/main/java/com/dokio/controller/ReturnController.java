@@ -261,32 +261,21 @@ public class ReturnController {
     }
 
     @PostMapping("/api/auth/deleteReturn")
-    @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteReturn(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteReturn: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        Boolean result=returnRepository.deleteReturn(checked);
-        if(!Objects.isNull(result)){//вернет true - ок, false - недостаточно прав,  null - ошибка
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        try {return new ResponseEntity<>(returnRepository.deleteReturn(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteReturn error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteReturn")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteReturn(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteReturn(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteReturn: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(returnRepository.undeleteReturn(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления документов", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(returnRepository.undeleteReturn(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteReturn error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(

@@ -273,31 +273,23 @@ public class CustomersOrdersController {
     }
 
     @PostMapping("/api/auth/deleteCustomersOrders")
-    @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCustomersOrders(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteCustomersOrders: " + request.toString());
-
         String checked = request.getChecked() == null ? "": request.getChecked();
-        if(customersOrdersRepositoryJPA.deleteCustomersOrders(checked)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        try {return new ResponseEntity<>(customersOrdersRepositoryJPA.deleteCustomersOrders(checked), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller deleteCustomersOrders error", e);
+            return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     @PostMapping("/api/auth/undeleteCustomersOrders")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteCustomersOrders(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteCustomersOrders(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteCustomersOrders: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-        if(customersOrdersRepositoryJPA.undeleteCustomersOrders(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(customersOrdersRepositoryJPA.undeleteCustomersOrders(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteCustomersOrders error", e);
+            return new ResponseEntity<>("Error of restoring", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     //отдает таблицу Заказов покупателя с неотгруженными резервами по товару в требуемом отделении (или department_id=0 - во всех), за исключением документа document_id,  из которого выполняется запрос (document_id=0 - во всех документах)
     @SuppressWarnings("Duplicates")
     @RequestMapping(

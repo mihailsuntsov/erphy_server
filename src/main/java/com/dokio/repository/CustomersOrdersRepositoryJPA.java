@@ -26,6 +26,7 @@ import com.dokio.repository.Exceptions.DocumentAlreadyDecompletedException;
 import com.dokio.repository.Exceptions.NotEnoughPermissionsException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -63,7 +64,8 @@ public class CustomersOrdersRepositoryJPA {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
-
+    @Autowired
+    private LinkedDocsUtilites linkedDocsUtilites;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -1426,7 +1428,8 @@ public class CustomersOrdersRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteCustomersOrders (String delNumbers) {
+    public DeleteDocsReport deleteCustomersOrders (String delNumbers) {
+        DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(23L,"283") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1436,35 +1439,58 @@ public class CustomersOrdersRepositoryJPA {
                 //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(23L,"286") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",delNumbers)))
         {
-            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-            Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update customers_orders p" +
-                    " set is_deleted=true, " + //удален
-                    " changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")";
-//                    " and coalesce(p.is_completed,false) !=true";
-            try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e) {
-                logger.error("Exception in method deleteCustomersOrders. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return false;
+            // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
+            List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "customers_orders");
+
+            if(!Objects.isNull(checkChilds)) { //если нет ошибки
+
+                if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
+                    String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
+                    Long myId = userRepositoryJPA.getMyId();
+                    stringQuery = "Update customers_orders p" +
+                            " set is_deleted=true, " + //удален
+                            " changer_id="+ myId + ", " + // кто изменил (удалил)
+                            " date_time_changed = now() " +//дату и время изменения
+                            " where p.id in ("+delNumbers+")" +
+                            " and coalesce(p.is_completed,false) !=true";
+                    try {
+                        entityManager.createNativeQuery(stringQuery).executeUpdate();
+                        //удалим документы из группы связанных документов
+                        if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "customers_orders")) throw new Exception ();
+                        delResult.setResult(0);// 0 - Всё ок
+                        return delResult;
+                    } catch (Exception e) {
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        logger.error("Exception in method deleteCustomersOrders. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        delResult.setResult(1);// 1 - ошибка выполнения операции
+                        return delResult;
+                    }
+                } else { //один или несколько документов имеют связь с дочерними документами
+                    delResult.setResult(3);// 3 -  связи с дочерними документами
+                    delResult.setDocs(checkChilds);
+                    return delResult;
+                }
+            } else { //ошибка проверки на связь с дочерними документами
+                delResult.setResult(1);// 1 - ошибка выполнения операции
+                return delResult;
             }
-        } else return false;
+        } else {
+            delResult.setResult(2);// 2 - нет прав
+            return delResult;
+        }
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteCustomersOrders(String delNumbers) {
+    public Integer undeleteCustomersOrders(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(23L,"283") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"284") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"285") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",delNumbers))||
-                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"286") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",delNumbers)))
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"284") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",delNumbers))||
+            //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"285") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",delNumbers))||
+            //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(23L,"286") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",delNumbers)))
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
@@ -1478,14 +1504,14 @@ public class CustomersOrdersRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     query.executeUpdate();
-                    return true;
-                } else return false;
+                    return 1;
+                } else return null;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteCustomersOrders. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
 //*****************************************************************************************************************************************************

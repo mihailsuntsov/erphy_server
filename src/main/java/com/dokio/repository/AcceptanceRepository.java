@@ -20,6 +20,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.AcceptanceJSON;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
+import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesAcceptanceJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
@@ -1003,38 +1004,62 @@ public class AcceptanceRepository {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean deleteAcceptance (String delNumbers) {
+    public DeleteDocsReport deleteAcceptance (String delNumbers) {
+        DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"187") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"193") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",delNumbers))||
-                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"187") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("acceptance",delNumbers))||
+            //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"193") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("acceptance",delNumbers))||
+            //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(15L,"194") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("acceptance",delNumbers)))
         {
-            String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
-            Long myId = userRepositoryJPA.getMyId();
-            stringQuery = "Update acceptance p" +
-                    " set is_deleted=true, " + //удален
-                    " changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")" +
-                    " and coalesce(p.is_completed,false) !=true";
-            try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
-            }catch (Exception e) {
-                logger.error("Exception in method deleteAcceptance. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return null;
+            // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
+            List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "acceptance");
+
+            if(!Objects.isNull(checkChilds)) { //если нет ошибки
+
+                if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
+                    String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
+                    Long myId = userRepositoryJPA.getMyId();
+                    stringQuery = "Update acceptance p" +
+                            " set is_deleted=true, " + //удален
+                            " changer_id="+ myId + ", " + // кто изменил (удалил)
+                            " date_time_changed = now() " +//дату и время изменения
+                            " where p.id in ("+delNumbers+")" +
+                            " and coalesce(p.is_completed,false) !=true";
+                    try {
+                        entityManager.createNativeQuery(stringQuery).executeUpdate();
+                        //удалим документы из группы связанных документов
+                        if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "acceptance")) throw new Exception ();
+                        delResult.setResult(0);// 0 - Всё ок
+                        return delResult;
+                    } catch (Exception e) {
+                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                        logger.error("Exception in method deleteAcceptance. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        delResult.setResult(1);// 1 - ошибка выполнения операции
+                        return delResult;
+                    }
+                } else { //один или несколько документов имеют связь с дочерними документами
+                    delResult.setResult(3);// 3 -  связи с дочерними документами
+                    delResult.setDocs(checkChilds);
+                    return delResult;
+                }
+            } else { //ошибка проверки на связь с дочерними документами
+                delResult.setResult(1);// 1 - ошибка выполнения операции
+                return delResult;
             }
-        } else return false;
+        } else {
+            delResult.setResult(2);// 2 - нет прав
+            return delResult;
+        }
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean undeleteAcceptance (String delNumbers) {
+        public Integer undeleteAcceptance (String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(15L,"186") && securityRepositoryJPA.isItAllMyMastersDocuments("acceptance",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1052,14 +1077,17 @@ public class AcceptanceRepository {
                     " date_time_changed = now() " +//дату и время изменения
                     " where p.id in ("+delNumbers+")";
             try{
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
+                    query.executeUpdate();
+                    return 1;
+                } else return null;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteAcceptance. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
-        } else return false;
+        } else return -1;
     }
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************

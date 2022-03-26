@@ -1510,15 +1510,15 @@ public class ShipmentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteShipment(String delNumbers) {
+    public Integer undeleteShipment(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(21L,"256") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(21L,"257") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(21L,"258") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",delNumbers)) ||
-                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(21L, "259") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment", delNumbers)))
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(21L,"257") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",delNumbers))||
+            //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(21L,"258") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",delNumbers)) ||
+            //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(21L, "259") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment", delNumbers)))
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
@@ -1532,13 +1532,13 @@ public class ShipmentRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     query.executeUpdate();
-                    return true;
-                } else return false;
+                    return 1;
+                } else return null;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteShipment. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 }

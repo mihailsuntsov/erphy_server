@@ -962,12 +962,12 @@ public class OrdersupRepositoryJPA {
         DeleteDocsReport delResult = new DeleteDocsReport();
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(39L,"428") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"429") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",delNumbers))||
-                //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(39L,"430") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",delNumbers)) ||
-                //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(39L, "431") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup", delNumbers)))
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(39L,"429") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("ordersup",delNumbers))||
+            //Если есть право на "Удаление по своим отделениям " и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+            (securityRepositoryJPA.userHasPermissions_OR(39L,"430") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("ordersup",delNumbers)) ||
+            //Если есть право на "Удаление своих документов" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+            (securityRepositoryJPA.userHasPermissions_OR(39L, "431") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("ordersup", delNumbers)))
         {
             // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
             List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "ordersup");
@@ -1013,7 +1013,7 @@ public class OrdersupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteOrdersup(String delNumbers) {
+    public Integer undeleteOrdersup(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(39L,"428") && securityRepositoryJPA.isItAllMyMastersDocuments("ordersup",delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
@@ -1035,14 +1035,14 @@ public class OrdersupRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     query.executeUpdate();
-                    return true;
-                } else return false;
+                    return 1;
+                } else return null;
             }catch (Exception e) {
                 logger.error("Exception in method undeleteOrdersup. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
 //*****************************************************************************************************************************************************
