@@ -3083,6 +3083,76 @@ alter table user_settings add constraint user_uq UNIQUE (user_id);
 alter table products add column is_deleted boolean;
 alter table products drop column is_archive;
 
+create table _dictionary
+(
+  key               varchar(32)  PRIMARY KEY not null,
+  tr_en             text,
+  tr_ru             text
+);
+insert into _dictionary (key, tr_ru, tr_en) values
+('yes',          'Да','Yes'),
+('no',           'Нет','No'),
+('completed',    'Проведён','Completed'),
+('number',       '№', 'No'),
+('role',         'Роль','Role'),
+('user',         'Пользователь','User'),
+('department',   'Отделение','Department'),
+('company',      'Предприятие','Company'),
+('file',         'Файл','File'),
+('productgroup', 'Группа товаров','Product group'),
+('unit',         'Единица измерения', 'Unit'),
+('boxoffice',    'Касса предприятия','Cash room'),
+('cparty',       'Контрагент','Counterparty'),
+('tax',          'Налог','Tax'),
+('status',       'Статус документа','Document status'),
+('expenditure',  'Статья расходов','Expenditure'),
+('pricetype',    'Тип цены','Price type'),
+('paymentin',    'Входящий платёж','Payment in'),
+('paymentout',   'Исходящий платёж','Payment out'),
+('orderin',      'Приходный ордер','Order in'),
+('orderout',     'Расходный ордер','Order out'),
+('correction',   'Корректировка','Correction'),
+('profitloss',   'Прибыли и убытки','P&L report'),
+('mut_payments', 'Взаиморасчёты','Mutual payments'),
+('moneyflow',    'Движение денежных средств','Moneyflow'),
+('inventory',    'Инвентаризация','Inventory'),
+('writeoff',     'Списание','Writeoff'),
+('posting',      'Оприходование','Posting'),
+('moving',       'Перемещение','Moving'),
+('retailsale',   'Розничная продажа','Retail sale'),
+('shift',        'Кассовая смена','Cashier''s shift'),
+('receipt',      'Кассовый чек','Cashier''s check'),
+('kassa',        'Касса онлайн','Sales register'),
+('withdrawal',   'Выемка','Withdrawal'),
+('depositing',   'Внесение','Depositing'),
+('tr',           'Итог смены','Trade result'),
+('return',       'Возврат покупателя','Buyers'' return'),
+('c_order',      'Заказ покупателя','Customer''s order'),
+('shipment',     'Отгрузка','Shipment'),
+('invoiceout',   'Счёт покупателю','Invoice to customer'),
+('v_invoiceout', 'Счёт-фактура выданный','Issued VAT invoice'),
+('returnsup',    'Возврат поставщику','Return to supplier'),
+('ordersup',     'Заказ поставщику','Order to supplier'),
+('acceptance',   'Приёмка','Acceptance'),
+('invoicein',    'Счёт поставщика','Suppliers'' invoice'),
+('v_invoicein',  'Счёт-фактура полученный','Received VAT invoice'),
+('retailsales',  'Розничная продажа','Retail sale'),
+('customersorders','Заказ покупателя','Customer''s order'),
+('vatinvoiceout','Счёт-фактура выданный','Issued VAT invoice'),
+('vatinvoicein', 'Счёт-фактура полученный','Received VAT invoice');
+
+insert into _dictionary (key, tr_ru, tr_en) values ('open_in_new_window', 'Открыть документ в новом окне', 'Open document in new window');
+
+
+
+
+
+
+
+
+
+
+
 
 
 

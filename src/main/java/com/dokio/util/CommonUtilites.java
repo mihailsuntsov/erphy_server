@@ -466,4 +466,26 @@ public class CommonUtilites {
         sdf.setLenient(false);
         return sdf.parse(s, new ParsePosition(0)) != null;
     }
+
+    // returns map of user's language translated words by their keys in format "key - word"
+    public Map<String, String> translateForMe(String[] keys){
+        String suffix = userRepositoryJPA.getMySuffix();
+        String stringQuery =            "select key, tr_"+suffix+" from _dictionary ";
+        if(keys.length>0)
+            stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            Map<String, String> map = new HashMap<>();
+            for(Object[] obj:queryList){
+                map.put((String)obj[0], (String)obj[1]);
+            }
+            return map;
+        } catch (Exception e) {
+            logger.error("Exception in method translateMe. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

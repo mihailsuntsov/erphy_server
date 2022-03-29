@@ -590,7 +590,53 @@ public class UserRepositoryJPA {
             return null;
         }
     }
+    public String getMySuffix(){
+        Long myId = userDetailService.getUserId();
+        String stringQuery = "select l.suffix from sprav_sys_languages l where l.id=(select u.language_id from user_settings u where u.user_id= " + myId +")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((String) query.getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMySuffix. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    public UserSettingsJSON getUserSettings(Long userId) {
+        String stringQuery;
+        stringQuery = "select " +
+                "   p.time_zone_id as time_zone_id, " +
+                "   p.language_id as language_id, " +
+                "   p.locale_id as locale_id, " +
+                "   sslc.code as locale, " +
+                "   sslg.suffix as suffix " +
+                "   from    user_settings p, " +
+                "           sprav_sys_languages sslg, " +
+                "           sprav_sys_locales sslc " +
+                "   where   p.user_id=" + userId +
+                "   and     p.language_id=sslg.id" +
+                "   and     p.locale_id=sslc.id";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserSettingsJSON doc = new UserSettingsJSON();
+            if(queryList.size()>0) {
+                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
+                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
+                doc.setLocale_id((Integer)      queryList.get(0)[2]);
+                doc.setLocale((String)          queryList.get(0)[3]);
+                doc.setSuffix((String)          queryList.get(0)[4]);
+            }
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
+    @SuppressWarnings("Duplicates")
     public UserSettingsJSON getMySettings() {
         String stringQuery;
         Long myId = userDetailService.getUserId();
@@ -620,7 +666,7 @@ public class UserRepositoryJPA {
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getMySettings. SQL query:" + stringQuery, e);
             return null;
         }
     }

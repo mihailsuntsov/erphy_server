@@ -38,6 +38,9 @@ public class LinkedDocsUtilites {
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userRepository;
+    @Autowired
+    private CommonUtilites cu;
+
 
     private static final Set VALID_TABLENAMES
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -346,7 +349,7 @@ public class LinkedDocsUtilites {
                 List<LinkedDocsJSON> returnList = getFullInfoOfLinkedDocs(baseList);
                 List<LinkedDocsLinksJSON> linksList = getLinks(groupId);
                 if (!Objects.isNull(returnList) && !Objects.isNull(linksList)) {
-
+                    Map<String, String> map = cu.translateForMe(new String[]{});
                     LinkedDocsSchemeJSON sheme = new LinkedDocsSchemeJSON();
 
                     shemeText = "digraph {" +
@@ -371,11 +374,11 @@ public class LinkedDocsUtilites {
                         shemeText = shemeText + "URL=\"ui/" + linkedDoc.getPagename() + "doc/" + linkedDoc.getId() + "\";";
                         if (uid.equals(linkedDoc.getUid()))
                             shemeText = shemeText + " fillcolor=\"#acee00\";"; // если это node документа, из которого запрашивали схему - окрасим ноду в другой цвет
-                        shemeText = shemeText + "label=\"{" + linkedDoc.getName() + "|№" + linkedDoc.getDoc_number() + "\\n" + linkedDoc.getDate_time_created() + "\\n";
+                        shemeText = shemeText + "label=\"{" + map.get(linkedDoc.getPagename()) + "|№" + linkedDoc.getDoc_number() + "\\n" + linkedDoc.getDate_time_created() + "\\n";
                         if (!Objects.isNull(linkedDoc.getSumprice()))
                             shemeText = shemeText + linkedDoc.getSumprice() + "\\n";
-                        shemeText = shemeText + "Проведено: " + (linkedDoc.isIs_completed() ? "Да" : "Нет") + "\\n" + linkedDoc.getStatus() + "}\";";
-                        shemeText = shemeText + "tooltip=\"Открыть документ в новом окне\";";
+                        shemeText = shemeText + map.get("completed")+": " + (linkedDoc.isIs_completed() ? map.get("yes") : map.get("no")) + "\\n" + linkedDoc.getStatus() + "}\";";
+                        shemeText = shemeText + "tooltip=\""+map.get("open_in_new_window")+"\";";
                         shemeText = shemeText + "] ";
 
                         count++;
