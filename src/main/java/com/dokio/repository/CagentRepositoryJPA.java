@@ -472,7 +472,7 @@ public class CagentRepositoryJPA {
             doc.setDescription((String)                                     queryList.get(0)[14]);
             doc.setCode((String)                                            queryList.get(0)[15]);
             doc.setTelephone((String)                                       queryList.get(0)[16]);
-            doc.setSite((String)                                             queryList.get(0)[17]);
+            doc.setSite((String)                                            queryList.get(0)[17]);
             doc.setEmail((String)                                           queryList.get(0)[18]);
             doc.setZip_code((String)                                        queryList.get(0)[19]);
             doc.setCountry_id((Integer)                                     queryList.get(0)[20]);
@@ -515,6 +515,9 @@ public class CagentRepositoryJPA {
             doc.setJr_city((String)                                         queryList.get(0)[57]);
             doc.setArea((String)                                            queryList.get(0)[58]);
             doc.setJr_area((String)                                         queryList.get(0)[59]);
+            //adding categories
+            List<Integer> valuesListId =getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
+            doc.setCagent_categories_id(valuesListId);
             return doc;
         } else return null;
     }
