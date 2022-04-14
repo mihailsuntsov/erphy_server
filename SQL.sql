@@ -3143,13 +3143,25 @@ insert into _dictionary (key, tr_ru, tr_en) values
 
 insert into _dictionary (key, tr_ru, tr_en) values ('open_in_new_window', 'Открыть документ в новом окне', 'Open document in new window');
 
+update sprav_sys_barcode set name = 'QR-code' where id=5;
+update sprav_sys_barcode set description = 'modules.tip.bar_ean13' where id=1;
+update sprav_sys_barcode set description = 'modules.tip.bar_ean8' where id=2;
+update sprav_sys_barcode set description = 'modules.tip.bar_code128' where id=3;
+update sprav_sys_barcode set description = 'modules.tip.bar_pdf417' where id=4;
+update sprav_sys_barcode set description = 'modules.tip.bar_qr' where id=5;
 
+alter table sprav_sys_writeoff rename column name to name_ru;
+alter table sprav_sys_writeoff rename column description to description_ru;
+alter table sprav_sys_writeoff add column name_en varchar(128);
+alter table sprav_sys_writeoff add column description_en varchar(256);
 
-
-
-
-
-
+update sprav_sys_writeoff set name_en='General running costs',description_en='For example, paper for office equipment was issued to an accountant' where id=1;
+update sprav_sys_writeoff set name_en='Selling costs',description_en='For example, a container was issued for packaging finished products' where id=2;
+update sprav_sys_writeoff set name_en='Shortfalls and losses from damage to valuables',description_en='For example, writing off missing materials' where id=3;
+update sprav_sys_writeoff set name_en='Overhead costs',description_en='For example, rags and gloves were released to the cleaner serving the workshop' where id=4;
+update sprav_sys_writeoff set name_en='Primary production',description_en='For example, raw materials for the production of products are released' where id=5;
+update sprav_sys_writeoff set name_en='Auxiliary production',description_en='For example, materials are released to the repair shop' where id=6;
+update sprav_sys_writeoff set name_en='Other expenses',description_en='For example, writing off worn-out tools or equipment' where id=7;
 
 
 

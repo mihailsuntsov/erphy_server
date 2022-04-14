@@ -266,6 +266,7 @@ public class WriteoffRepositoryJPA {
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            String suffix = userRepositoryJPA.getMySuffix();
             stringQuery =   " select " +
                     " ap.product_id," +
                     " ap.writeoff_id," +
@@ -276,7 +277,7 @@ public class WriteoffRepositoryJPA {
                     " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm,"+
                     " ap.reason_id," +
                     " coalesce(ap.additional,'')," +
-                    " (select rasons.name from sprav_sys_writeoff rasons where rasons.id = ap.reason_id) as reason," +
+                    " (select rasons.name_"+suffix+" from sprav_sys_writeoff rasons where rasons.id = ap.reason_id) as reason," +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = a.department_id),0) as total "+ //всего на складе (т.е остаток)
                     " from " +

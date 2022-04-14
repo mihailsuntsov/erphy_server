@@ -14,17 +14,22 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.message.response.Sprav.SpravSysWriteoffJSON;
+import com.dokio.repository.UserRepositoryJPA;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
+
+
 @Controller
 @Repository
 public class SpravSysWriteoffController {
@@ -32,17 +37,20 @@ public class SpravSysWriteoffController {
 
     @PersistenceContext
     private EntityManager entityManager;
-    @PostMapping("/api/auth/getSpravSysWriteoff")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getSpravSysWriteoff() {
-        logger.info("Processing post request for path /api/auth/getSpravSysWriteoff");
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
 
+    @RequestMapping(value = "/api/auth/getSpravSysWriteoff",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSpravSysWriteoff() {
+        logger.info("Processing post request for path /api/auth/getSpravSysWriteoff with no params");
+        String suffix = userRepositoryJPA.getMySuffix(); //language requesting
         String stringQuery=
                 "select " +
                         " p.id as id, " +
-                        " p.name  as name, " +
+                        " p.name_"+suffix+"  as name, " +
                         " p.debet as debet, " +
-                        " p.description  as description " +
+                        " p.description_"+suffix+"  as description " +
                         " from sprav_sys_writeoff p order by p.id asc";
         Query query =  entityManager.createNativeQuery(stringQuery);
         List<Object[]> queryList = query.getResultList();

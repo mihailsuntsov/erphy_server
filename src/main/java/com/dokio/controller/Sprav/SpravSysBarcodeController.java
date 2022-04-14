@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -31,10 +33,10 @@ public class SpravSysBarcodeController {
 
     @PersistenceContext
     private EntityManager entityManager;
-    @PostMapping("/api/auth/getSpravSysBarcode")
+    @RequestMapping("/api/auth/getSpravSysBarcode")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysBarcode() {
-        logger.info("Processing post request for path /api/auth/getSpravSysBarcode");
+        logger.info("Processing get request for path /api/auth/getSpravSysBarcode");
 
         List<SpravSysBarcodeJSON> resultList;
         String stringQuery=
