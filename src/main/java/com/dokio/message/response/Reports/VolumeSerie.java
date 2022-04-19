@@ -13,12 +13,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.message.response.Reports;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 //класс для составления массива объектов series, необходим для построения графиков
 public class VolumeSerie {
 
     private String name;
     private BigDecimal value;
+    private Map extra;
 
     public String getName() {
         return name;
@@ -34,5 +36,13 @@ public class VolumeSerie {
 
     public void setValue(BigDecimal value) {
         this.value = value;
+    }
+
+    public Map getExtra() {
+        return extra;
+    }
+
+    public void setExtra(Map extra) {
+        this.extra = extra;
     }
 }

@@ -18,6 +18,7 @@ import com.dokio.message.response.Reports.VolumeSerie;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import com.dokio.util.FinanceUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,8 @@ public class IndicatorsRepository {
     FinanceUtilites financeUtilites;
     @Autowired
     SecurityRepositoryJPA securityRepository;
+    @Autowired
+    private CommonUtilites cu;
 
     @SuppressWarnings("Duplicates")
     public List<VolumeSerie> getIndicatorsData(Long companyId) {
@@ -54,7 +57,7 @@ public class IndicatorsRepository {
         List<Integer> myPermissions = securityRepository.giveMeMyPermissions(26L);
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myTimeZone = userRepository.getUserTimeZone();
-        Date dateNow = new Date();
+//        Date dateNow = new Date();
 
         Calendar calendar = Calendar.getInstance();// get a calendar instance, which defaults to "now"
         calendar.add(Calendar.DAY_OF_YEAR, 1);// add one day to the date/calendar
@@ -62,31 +65,44 @@ public class IndicatorsRepository {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
         dateFormat.setTimeZone(TimeZone.getTimeZone(myTimeZone));
         List<VolumeSerie> retList = new ArrayList<>();
+        Map<String, String> map = cu.translateForMe(new String[]{"'overdue_invcs'","'overdue_ordrs'","'new_orders'","'money'","'your_debt'","'you_owed'"});
 
         if(myPermissions.contains(604) || (myPermissions.contains(605) && myCompanyId.equals(companyId))) {
-            VolumeSerie serie1 = new VolumeSerie();
-            serie1.setName("Просроченные счета");
+            VolumeSerie serie1 = new VolumeSerie(); // Просроченные счета / Overdue invoices
+            Map<String, String> extra_overdue_invcs = new HashMap<>();
+            extra_overdue_invcs.put("code", "overdue_invcs");
+            serie1.setExtra(extra_overdue_invcs);
+            serie1.setName(map.get("overdue_invcs"));
             serie1.setValue(BigDecimal.valueOf(getOverdueBills(companyId, myMasterId)));
             retList.add(serie1);
         }
 
         if(myPermissions.contains(602) || (myPermissions.contains(603) && myCompanyId.equals(companyId))) {
-            VolumeSerie serie2 = new VolumeSerie();
-            serie2.setName("Просроченные заказы");
+            VolumeSerie serie2 = new VolumeSerie(); // Просроченные заказы / Overdue orders
+            Map<String, String> extra_overdue_ordrs = new HashMap<>();
+            extra_overdue_ordrs.put("code", "overdue_ordrs");
+            serie2.setExtra(extra_overdue_ordrs);
+            serie2.setName(map.get("overdue_ordrs"));
             serie2.setValue(BigDecimal.valueOf(getOverdueOrders(companyId, myMasterId)));
             retList.add(serie2);
         }
 
         if(myPermissions.contains(600) || (myPermissions.contains(601) && myCompanyId.equals(companyId))) {
-            VolumeSerie serie3 = new VolumeSerie();
-            serie3.setName("Новые заказы");
+            VolumeSerie serie3 = new VolumeSerie(); // Новые заказы / New orders
+            Map<String, String> extra_new_orders = new HashMap<>();
+            extra_new_orders.put("code", "new_orders");
+            serie3.setExtra(extra_new_orders);
+            serie3.setName(map.get("new_orders"));
             serie3.setValue(BigDecimal.valueOf(getNewOrders(companyId, myMasterId)));
             retList.add(serie3);
         }
 
         if(myPermissions.contains(594) || (myPermissions.contains(595) && myCompanyId.equals(companyId))) {
-            VolumeSerie serie5 = new VolumeSerie();
-            serie5.setName("Деньги");
+            VolumeSerie serie5 = new VolumeSerie(); // Деньги / Money
+            Map<String, String> extra_money = new HashMap<>();
+            extra_money.put("code", "money");
+            serie5.setExtra(extra_money);
+            serie5.setName(map.get("money"));
             serie5.setValue(financeUtilites.getBalancesOnDate(companyId, dateFormat.format(tomorrow)));
             retList.add(serie5);
         }
@@ -95,8 +111,8 @@ public class IndicatorsRepository {
             VolumeSerie serie6_1 = new VolumeSerie();
             VolumeSerie serie6_2 = new VolumeSerie();
             List<BigDecimal> cagentsBalances = getCagentsBalances(companyId, myMasterId);
-            BigDecimal weDebt = new BigDecimal(0);// мы должны
-            BigDecimal usDebt = new BigDecimal(0);// нам должны
+            BigDecimal weDebt = new BigDecimal(0);
+            BigDecimal usDebt = new BigDecimal(0);
             if (!Objects.isNull(cagentsBalances))
                 for (BigDecimal m : cagentsBalances) {
                     if (m.compareTo(new BigDecimal(0)) < 0)
@@ -105,12 +121,18 @@ public class IndicatorsRepository {
                         weDebt = weDebt.add(m);
                 }
             if(myPermissions.contains(596) || (myPermissions.contains(597) && myCompanyId.equals(companyId))) {
-                serie6_1.setName("Мы должны");
+                Map<String, String> extra_your_debt = new HashMap<>();
+                extra_your_debt.put("code", "your_debt");
+                serie6_1.setExtra(extra_your_debt);
+                serie6_1.setName(map.get("your_debt")); // Вы должны / Your debt
                 serie6_1.setValue(weDebt);
                 retList.add(serie6_1);
             }
             if(myPermissions.contains(598) || (myPermissions.contains(599) && myCompanyId.equals(companyId))) {
-                serie6_2.setName("Нам должны");
+                Map<String, String> extra_you_owed = new HashMap<>();
+                extra_you_owed.put("code", "you_owed");
+                serie6_2.setExtra(extra_you_owed);
+                serie6_2.setName(map.get("you_owed"));  // Вам должны / You are owed
                 serie6_2.setValue(usDebt.abs());
                 retList.add(serie6_2);
             }

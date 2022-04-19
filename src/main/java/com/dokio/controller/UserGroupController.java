@@ -65,11 +65,9 @@ public class UserGroupController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getDocumentsWithPermissionList(@RequestBody SearchForm searchRequest) {
         logger.info("Processing post request for path api/auth/getDocumentsWithPermissionList: " + searchRequest.toString());
-
         String searchString = searchRequest.getSearchString();
-        List<Documents> returnList=documentsRepositoryJPA.getDocumentsWithPermissionList(searchString);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-        return responseEntity;
+        try {return new ResponseEntity<>(documentsRepositoryJPA.getDocumentsWithPermissionList(searchString), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Error documents and permissions requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/getUserGroupTable")

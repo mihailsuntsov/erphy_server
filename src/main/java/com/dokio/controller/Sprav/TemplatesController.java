@@ -31,15 +31,15 @@ public class TemplatesController {
 
     Logger logger = Logger.getLogger("TemplatesController");
 
-    @RequestMapping(
-            value = "/api/auth/getTemplateTypesList",
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getTemplateTypesList(){
-        logger.info("Processing get request for path /api/auth/getTemplateTypesList");
-        try {return new ResponseEntity<>(templateRepository.getTemplateTypesList(), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Controller getTemplateTypesList error", e);
-            return new ResponseEntity<>("Ошибка загрузки списка типов шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
+//    @RequestMapping(
+//            value = "/api/auth/getTemplateTypesList",
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getTemplateTypesList(){
+//        logger.info("Processing get request for path /api/auth/getTemplateTypesList");
+//        try {return new ResponseEntity<>(templateRepository.getTemplateTypesList(), HttpStatus.OK);}
+//        catch (Exception e){e.printStackTrace();logger.error("Controller getTemplateTypesList error", e);
+//            return new ResponseEntity<>("Ошибка загрузки списка типов шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
+//    }
 
     @RequestMapping(
             value = "/api/auth/getTemplatesList",

@@ -3163,6 +3163,314 @@ update sprav_sys_writeoff set name_en='Primary production',description_en='For e
 update sprav_sys_writeoff set name_en='Auxiliary production',description_en='For example, materials are released to the repair shop' where id=6;
 update sprav_sys_writeoff set name_en='Other expenses',description_en='For example, writing off worn-out tools or equipment' where id=7;
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('income',          'Приход','Income'),
+('expense',         'Расход','Expense');
+
+insert into _dictionary (key, tr_ru, tr_en) values
+('selected',    'Выбранные','Selected'),
+('all',         'Все','All');
+
+
+insert into _dictionary (key, tr_ru, tr_en) values
+('overdue_invcs',     'Просроченные счета', 'Overdue invoices'),
+('overdue_ordrs',     'Просроченные заказы','Overdue orders'),
+('new_orders',        'Новые заказы',       'New orders'),
+('money',             'Деньги',             'Money'),
+('your_debt',         'Вы должны',          'Your debt'),
+('you_owed',          'Вам должны',         'You are owed');
+
+ALTER TABLE template_docs drop CONSTRAINT company_document_template_uq;
+ALTER TABLE template_docs drop column template_type_id;
+ALTER TABLE template_docs add column name varchar(200);
+
+
+ALTER TABLE template_docs alter column name set not null ;
+ALTER TABLE template_docs add column user_id bigint not null;
+ALTER TABLE template_docs add constraint user_id_fkey foreign key (user_id) references users (id);
+
+
+ALTER TABLE permissions drop column document_name;
+ALTER TABLE permissions drop column description;
+ALTER TABLE permissions add column name_ru  varchar(250);
+ALTER TABLE permissions add column name_en  varchar(250);
+update permissions set name_ru = name;
+ALTER TABLE permissions add column output_order int;
+delete from usergroup_permissions where permission_id in (select id from permissions where name like 'Меню - %');
+delete from permissions where name like 'Меню - %';
+delete from usergroup_permissions where permission_id in (select id from permissions where name like 'Информация по%');
+delete from permissions where name like 'Информация по%';
+delete from usergroup_permissions where permission_id in (select id from permissions where document_id = 7);
+delete from permissions where document_id = 7;
+delete from usergroup_permissions where permission_id in (select id from permissions where document_id = 8);
+delete from permissions where document_id = 8;
+delete from documents where id in(7,8);
+ALTER TABLE permissions drop column name;
+delete from usergroup_permissions where permission_id = 35;
+delete from permissions where id = 35;
+
+update permissions set name_ru = 'Редактирование своего предприятия' where document_id = 3 and name_ru = 'Редактирование своего';
+update permissions set name_ru = 'Редактирование всех предприятий' where document_id = 3 and name_ru = 'Редактирование всех';
+update permissions set name_ru = 'Просмотр своего предприятия' where document_id = 3 and name_ru = 'Просмотр своего';
+update permissions set name_ru = 'Просмотр всех предприятий' where document_id = 3 and name_ru = 'Просмотр всех';
+
+update permissions set name_ru = 'Редактирование документов своего предприятия' where id=15;
+update permissions set name_ru = 'Редактирование документов всех предприятий' where id=16;
+update permissions set name_ru = 'Просмотр документов своего предприятия' where id=13;
+update permissions set name_ru = 'Просмотр документов всех предприятий' where id=14;
+
+update permissions set name_ru = 'Редактирование документов своего предприятия' where id=26;
+update permissions set name_ru = 'Редактирование документов всех предприятий' where id=27;
+update permissions set name_ru = 'Просмотр документов своего предприятия' where id=24;
+update permissions set name_ru = 'Просмотр документов всех предприятий' where id=25;
+
+update permissions set name_ru = 'Просмотр документов всех предприятий' where name_ru='Просмотр документов по всем предприятиям';
+update permissions set name_ru = 'Редактирование документов всех предприятий' where name_ru='Редактирование документов по всем предприятиям';
+update permissions set name_ru = 'Удаление документов всех предприятий' where name_ru='Удаление документов по всем предприятиям';
+update permissions set name_ru = 'Проведение документов всех предприятий' where name_ru='Проведение документов по всем предприятиям';
+
+update permissions set name_ru = 'Создание документов по всем предприятиям' where name_ru='Создание';
+update permissions set name_ru = 'Удаление документов всех предприятий' where name_ru='Удаление';
+update permissions set name_ru = 'Отображать в списке документов на боковой панели' where name_ru='Боковая панель - отображать в списке документов';
+update permissions set output_order = 1000;
+
+update permissions set output_order = 10  where name_ru = 'Отображать в списке документов на боковой панели';
+
+update permissions set output_order = 20  where name_ru = 'Создание документов по всем предприятиям';
+update permissions set output_order = 30  where name_ru = 'Создание документов своего предприятия';
+update permissions set output_order = 40  where name_ru = 'Создание документов своих отделений';
+
+update permissions set output_order = 50  where name_ru = 'Просмотр документов всех предприятий';
+update permissions set output_order = 60  where name_ru = 'Просмотр документов своего предприятия';
+update permissions set output_order = 70  where name_ru = 'Просмотр документов своих отделений';
+update permissions set output_order = 80  where name_ru = 'Просмотр документов созданных собой';
+
+update permissions set output_order = 90  where name_ru = 'Редактирование документов всех предприятий';
+update permissions set output_order = 100 where name_ru = 'Редактирование документов своего предприятия';
+update permissions set output_order = 110 where name_ru = 'Редактирование документов своих отделений';
+update permissions set output_order = 120 where name_ru = 'Редактирование документов созданных собой';
+
+update permissions set output_order = 130 where name_ru = 'Удаление документов всех предприятий';
+update permissions set output_order = 140 where name_ru = 'Удаление документов своего предприятия';
+update permissions set output_order = 150 where name_ru = 'Удаление документов своих отделений';
+update permissions set output_order = 160 where name_ru = 'Удаление документов созданных собой';
+
+update permissions set output_order = 170 where name_ru = 'Проведение документов всех предприятий';
+update permissions set output_order = 180 where name_ru = 'Проведение документов своего предприятия';
+update permissions set output_order = 190 where name_ru = 'Проведение документов своих отделений';
+update permissions set output_order = 200 where name_ru = 'Проведение документов созданных собой';
+
+update permissions set output_order = 11  where name_ru = 'Отображать';
+
+update permissions set output_order = 50  where name_ru = 'Просмотр всех предприятий';
+update permissions set output_order = 60  where name_ru = 'Просмотр своего предприятия';
+update permissions set output_order = 70  where name_ru = 'Редактирование всех предприятий';
+update permissions set output_order = 80  where name_ru = 'Редактирование своего предприятия';
+
+update permissions set output_order = 210 where name_ru = 'Просмотр цен по всем предприятиям';
+update permissions set output_order = 220 where name_ru = 'Просмотр цен своего предприятия';
+update permissions set output_order = 230 where name_ru = 'Установка цен по всем предприятиям';
+update permissions set output_order = 240 where name_ru = 'Установка цен своего предприятия';
+
+update permissions set output_order = 250 where name_ru = 'Корзина - Восстановление файлов по всем предприятиям';
+update permissions set output_order = 260 where name_ru = 'Корзина - Восстановление файлов своего предприятия';
+update permissions set output_order = 270 where name_ru = 'Корзина - Очистка корзины по всем предприятиям';
+update permissions set output_order = 280 where name_ru = 'Корзина - Очистка корзины своего предприятия';
+update permissions set output_order = 290 where name_ru = 'Корзина - Удаление из корзины файлов по всем предприятиям';
+update permissions set output_order = 300 where name_ru = 'Корзина - Удаление из корзины файлов своего предприятия';
+
+update permissions set output_order = 310 where name_ru = 'Просмотр остатков по всем предприятиям';
+update permissions set output_order = 320 where name_ru = 'Просмотр остатков своего предприятия';
+update permissions set output_order = 330 where name_ru = 'Просмотр остатков своих отделений';
+update permissions set output_order = 340 where name_ru = 'Установка остатков по всем предприятиям';
+update permissions set output_order = 350 where name_ru = 'Установка остатков своего предприятия';
+update permissions set output_order = 360 where name_ru = 'Установка остатков своих отделений';
+
+update permissions set output_order = 400 where name_ru = 'Отчёт "Просроченные заказы" - просмотр по всем предприятиям';
+update permissions set output_order = 410 where name_ru = 'Отчёт "Просроченные заказы" - просмотр по своему предприятию';
+update permissions set output_order = 420 where name_ru = 'Отчёт "Просроченные счета" - просмотр по всем предприятиям';
+update permissions set output_order = 430 where name_ru = 'Отчёт "Просроченные счета" - просмотр по своему предприятию';
+update permissions set output_order = 440 where name_ru = 'Отчёт "Новые заказы" - просмотр по всем предприятиям';
+update permissions set output_order = 450 where name_ru = 'Отчёт "Новые заказы" - просмотр по своему предприятию';
+update permissions set output_order = 460 where name_ru = 'Отчёт "Деньги" - просмотр по всем предприятиям';
+update permissions set output_order = 470 where name_ru = 'Отчёт "Деньги" - просмотр по своему предприятию';
+update permissions set output_order = 480 where name_ru = 'Отчёт "Мы должны" - просмотр по всем предприятиям';
+update permissions set output_order = 490 where name_ru = 'Отчёт "Мы должны" - просмотр по своему предприятию';
+update permissions set output_order = 500 where name_ru = 'Отчёт "Нам должны" - просмотр по всем предприятиям';
+update permissions set output_order = 510 where name_ru = 'Отчёт "Нам должны" - просмотр по своему предприятию';
+update permissions set output_order = 520 where name_ru = 'Отчёт "Объёмы" - просмотр по всем предприятиям';
+update permissions set output_order = 530 where name_ru = 'Отчёт "Объёмы" - просмотр по своему предприятию';
+update permissions set output_order = 540 where name_ru = 'Отчёт "Объёмы" - просмотр по своим отделениям';
+update permissions set output_order = 548 where name_ru = 'Отчёт "Приход и расход" - просмотр по всем предприятиям';
+update permissions set output_order = 550 where name_ru = 'Отчёт "Приход и расход" - просмотр по своему предприятию';
+update permissions set output_order = 560 where name_ru = 'Отчёт "Товарные остатки" - просмотр по всем предприятиям';
+update permissions set output_order = 570 where name_ru = 'Отчёт "Товарные остатки" - просмотр по своему предприятию';
+update permissions set output_order = 580 where name_ru = 'Отчёт "Товарные остатки" - просмотр по своим отделениям';
+update permissions set output_order = 590 where name_ru = 'Отчёт "Операционные расходы" - просмотр по всем предприятиям';
+update permissions set output_order = 600 where name_ru = 'Отчёт "Операционные расходы" - просмотр по своему предприятию';
+
+update permissions set output_order = 650 where name_ru = 'Категории - Создание для всех предприятий';
+update permissions set output_order = 660 where name_ru = 'Категории - Создание для своего предприятия';
+update permissions set output_order = 670 where name_ru = 'Категории - Редактирование у всех предприятий';
+update permissions set output_order = 680 where name_ru = 'Категории - Редактирование у своего предприятия';
+update permissions set output_order = 690 where name_ru = 'Категории - Удаление у всех предприятий';
+update permissions set output_order = 700 where name_ru = 'Категории - Удаление у своего предприятия';
+
+delete from permissions where document_id=1;
+delete from documents_menu where document_id=1;
+delete from documents where id = 1;
+
+delete from permissions where document_id=2;
+delete from documents_menu where document_id=2;
+delete from documents where id = 2;
+
+update documents set doc_name_en = 'Mutual payments' where doc_name_ru = 'Взаиморасчёты';
+update documents set doc_name_en = 'Depositings' where doc_name_ru = 'Внесение';
+update documents set doc_name_en = 'Customers returns' where doc_name_ru = 'Возврат покупателя';
+update documents set doc_name_en = 'Returns to suppliers' where doc_name_ru = 'Возврат поставщику';
+update documents set doc_name_en = 'Incoming payments' where doc_name_ru = 'Входящий платеж';
+update documents set doc_name_en = 'Withdrawals' where doc_name_ru = 'Выемка';
+update documents set doc_name_en = 'Products groups' where doc_name_ru = 'Группы товаров';
+update documents set doc_name_en = 'Money flows' where doc_name_ru = 'Движение денежных средств';
+update documents set doc_name_en = 'Units of measure' where doc_name_ru = 'Единицы измерения';
+update documents set doc_name_en = 'Customers orders' where doc_name_ru = 'Заказ покупателя';
+update documents set doc_name_en = 'Orders to suppliers' where doc_name_ru = 'Заказ поставщику';
+update documents set doc_name_en = 'Inventories' where doc_name_ru = 'Инвентаризация';
+update documents set doc_name_en = 'Outgoing payments' where doc_name_ru = 'Исходящий платеж';
+update documents set doc_name_en = 'Cashier''s shifts' where doc_name_ru = 'Кассовые смены';
+update documents set doc_name_en = 'Сashier''s checks' where doc_name_ru = 'Кассовые чеки';
+update documents set doc_name_en = 'Sales registers' where doc_name_ru = 'Кассы онлайн';
+update documents set doc_name_en = 'Сash rooms' where doc_name_ru = 'Кассы предприятия';
+update documents set doc_name_en = 'Counterparties' where doc_name_ru = 'Контрагенты';
+update documents set doc_name_en = 'Corrections' where doc_name_ru = 'Корректировка';
+update documents set doc_name_en = 'Taxes' where doc_name_ru = 'Налоги';
+update documents set doc_name_en = 'Postings' where doc_name_ru = 'Оприходование';
+update documents set doc_name_en = 'Shipments' where doc_name_ru = 'Отгрузка';
+update documents set doc_name_en = 'Departments' where doc_name_ru = 'Отделения';
+update documents set doc_name_en = 'Movings' where doc_name_ru = 'Перемещение';
+update documents set doc_name_en = 'Users' where doc_name_ru = 'Пользователи';
+update documents set doc_name_en = 'Companies' where doc_name_ru = 'Предприятия';
+update documents set doc_name_en = 'P&L report' where doc_name_ru = 'Прибыли и убытки';
+update documents set doc_name_en = 'Acceptances' where doc_name_ru = 'Приёмка';
+update documents set doc_name_en = 'Credit slips' where doc_name_ru = 'Приходный ордер';
+update documents set doc_name_en = 'Debit slips' where doc_name_ru = 'Расходный ордер';
+update documents set doc_name_en = 'Retail sales' where doc_name_ru = 'Розничная продажа';
+update documents set doc_name_en = 'Roles' where doc_name_ru = 'Роли';
+update documents set doc_name_en = 'Sites' where doc_name_ru = 'Сайты';
+update documents set doc_name_en = 'Writeoffs' where doc_name_ru = 'Списание';
+update documents set doc_name_en = 'Dashboard' where doc_name_ru = 'Стартовая страница';
+update documents set doc_name_en = 'Document statuses' where doc_name_ru = 'Статусы документов';
+update documents set doc_name_en = 'Expenditures' where doc_name_ru = 'Статьи расходов';
+update documents set doc_name_en = 'Issued VAT invoices' where doc_name_ru = 'Счет-фактура выданный';
+update documents set doc_name_en = 'Received VAT invoices' where doc_name_ru = 'Счет-фактура полученный';
+update documents set doc_name_en = 'Invoices to customers' where doc_name_ru = 'Счет покупателю';
+update documents set doc_name_en = 'Suppliers'' invoices' where doc_name_ru = 'Счет поставщика';
+update documents set doc_name_en = 'Price types' where doc_name_ru = 'Типы цен';
+update documents set doc_name_en = 'In-stock balance' where doc_name_ru = 'Товарные остатки';
+update documents set doc_name_en = 'Products' where doc_name_ru = 'Товары и услуги';
+update documents set doc_name_en = 'Files' where doc_name_ru = 'Файлы';
+update documents set doc_name_en = 'Prices' where doc_name_ru = 'Цены';
+
+update permissions set name_en = 'Display in the list of documents in the sidebar' where name_ru = 'Отображать в списке документов на боковой панели';
+
+update permissions set name_en = 'Creation of documents for all companies' where name_ru = 'Создание документов по всем предприятиям';
+update permissions set name_en = 'Create your company documents' where name_ru = 'Создание документов своего предприятия';
+update permissions set name_en = 'Create documents of your departments' where name_ru = 'Создание документов своих отделений';
+
+update permissions set name_en = 'View documents of all companies' where name_ru = 'Просмотр документов всех предприятий';
+update permissions set name_en = 'View your company documents' where name_ru = 'Просмотр документов своего предприятия';
+update permissions set name_en = 'View documents of your departments' where name_ru = 'Просмотр документов своих отделений';
+update permissions set name_en = 'View documents created by yourself' where name_ru = 'Просмотр документов созданных собой';
+
+update permissions set name_en = 'Editing documents of all companies' where name_ru = 'Редактирование документов всех предприятий';
+update permissions set name_en = 'Editing your company documents' where name_ru = 'Редактирование документов своего предприятия';
+update permissions set name_en = 'Editing documents of your departments' where name_ru = 'Редактирование документов своих отделений';
+update permissions set name_en = 'Editing documents created by yourself' where name_ru = 'Редактирование документов созданных собой';
+
+update permissions set name_en = 'Deleting documents of all companies' where name_ru = 'Удаление документов всех предприятий';
+update permissions set name_en = 'Deleting your company documents' where name_ru = 'Удаление документов своего предприятия';
+update permissions set name_en = 'Deleting documents of your departments' where name_ru = 'Удаление документов своих отделений';
+update permissions set name_en = 'Deleting documents created by yourself' where name_ru = 'Удаление документов созданных собой';
+
+update permissions set name_en = 'Completion documents of all companies' where name_ru = 'Проведение документов всех предприятий';
+update permissions set name_en = 'Completion your company documents' where name_ru = 'Проведение документов своего предприятия';
+update permissions set name_en = 'Completion documents of your departments' where name_ru = 'Проведение документов своих отделений';
+update permissions set name_en = 'Completion documents created by yourself' where name_ru = 'Проведение документов созданных собой';
+
+update permissions set name_en = 'Display' where name_ru = 'Отображать';
+
+update permissions set name_en = 'View all companies' where name_ru = 'Просмотр всех предприятий';
+update permissions set name_en = 'View your company' where name_ru = 'Просмотр своего предприятия';
+update permissions set name_en = 'Editing all companies' where name_ru = 'Редактирование всех предприятий';
+update permissions set name_en = 'Editing your company' where name_ru = 'Редактирование своего предприятия';
+
+update permissions set name_en = 'View prices for all companies' where name_ru = 'Просмотр цен по всем предприятиям';
+update permissions set name_en = 'View your company prices' where name_ru = 'Просмотр цен своего предприятия';
+update permissions set name_en = 'Setting prices for all companies' where name_ru = 'Установка цен по всем предприятиям';
+update permissions set name_en = 'Setting your company prices' where name_ru = 'Установка цен своего предприятия';
+
+update permissions set name_en = 'Recycle Bin - File recovery of all companies' where name_ru = 'Корзина - Восстановление файлов по всем предприятиям';
+update permissions set name_en = 'Recycle Bin - File recovery of your company' where name_ru = 'Корзина - Восстановление файлов своего предприятия';
+update permissions set name_en = 'Recycle Bin - Empty of all companies' where name_ru = 'Корзина - Очистка корзины по всем предприятиям';
+update permissions set name_en = 'Recycle Bin - Empty of your company' where name_ru = 'Корзина - Очистка корзины своего предприятия';
+update permissions set name_en = 'Recycle Bin - Deletion of all companies' where name_ru = 'Корзина - Удаление из корзины файлов по всем предприятиям';
+update permissions set name_en = 'Recycle Bin - Deletion of your company' where name_ru = 'Корзина - Удаление из корзины файлов своего предприятия';
+
+update permissions set name_en = 'View in-stock balances of all companies' where name_ru = 'Просмотр остатков по всем предприятиям';
+update permissions set name_en = 'View in-stock balances of your company' where name_ru = 'Просмотр остатков своего предприятия';
+update permissions set name_en = 'View in-stock balances of your departments' where name_ru = 'Просмотр остатков своих отделений';
+update permissions set name_en = 'Setting in-stock balances of all companies' where name_ru = 'Установка остатков по всем предприятиям';
+update permissions set name_en = 'Setting in-stock balances of your company' where name_ru = 'Установка остатков своего предприятия';
+update permissions set name_en = 'Setting in-stock balances of your departments' where name_ru = 'Установка остатков своих отделений';
+
+update permissions set name_en = 'Report "Overdue orders" - view of all companies' where name_ru = 'Отчёт "Просроченные заказы" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Overdue orders" - view of your company' where name_ru = 'Отчёт "Просроченные заказы" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "Overdue invoices" - view of all companies' where name_ru = 'Отчёт "Просроченные счета" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Overdue invoices" - view of your company' where name_ru = 'Отчёт "Просроченные счета" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "New orders" - view of all companies' where name_ru = 'Отчёт "Новые заказы" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "New orders" - view of your company' where name_ru = 'Отчёт "Новые заказы" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "Money" - view of all companies' where name_ru = 'Отчёт "Деньги" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Money" - view of your company' where name_ru = 'Отчёт "Деньги" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "Your debt" - view of all companies' where name_ru = 'Отчёт "Мы должны" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Your debt" - view of your company' where name_ru = 'Отчёт "Мы должны" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "You are owed" - view of all companies' where name_ru = 'Отчёт "Нам должны" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "You are owed" - view of your company' where name_ru = 'Отчёт "Нам должны" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "Sales volumes" - view of all companies' where name_ru = 'Отчёт "Объёмы" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Sales volumes" - view of your company' where name_ru = 'Отчёт "Объёмы" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "Sales volumes" - view of your departments' where name_ru = 'Отчёт "Объёмы" - просмотр по своим отделениям';
+update permissions set name_en = 'Report "Income and expense" - view of all companies' where name_ru = 'Отчёт "Приход и расход" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Income and expense" - view of your company' where name_ru = 'Отчёт "Приход и расход" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "In-stock balance" - view of all companies' where name_ru = 'Отчёт "Товарные остатки" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "In-stock balance" - view of your company' where name_ru = 'Отчёт "Товарные остатки" - просмотр по своему предприятию';
+update permissions set name_en = 'Report "In-stock balance" - view of your departments' where name_ru = 'Отчёт "Товарные остатки" - просмотр по своим отделениям';
+update permissions set name_en = 'Report "Operating expenses" - view of all companies' where name_ru = 'Отчёт "Операционные расходы" - просмотр по всем предприятиям';
+update permissions set name_en = 'Report "Operating expenses" - view of your company' where name_ru = 'Отчёт "Операционные расходы" - просмотр по своему предприятию';
+
+update permissions set name_en = 'Categories - Creation for all companies' where name_ru = 'Категории - Создание для всех предприятий';
+update permissions set name_en = 'Categories - Creation for your company' where name_ru = 'Категории - Создание для своего предприятия';
+update permissions set name_en = 'Categories - Editing for all companies' where name_ru = 'Категории - Редактирование у всех предприятий';
+update permissions set name_en = 'Categories - Editing for your company' where name_ru = 'Категории - Редактирование у своего предприятия';
+update permissions set name_en = 'Categories - Deleting for all companies' where name_ru = 'Категории - Удаление у всех предприятий';
+update permissions set name_en = 'Categories - Deleting for your company' where name_ru = 'Категории - Удаление у своего предприятия';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -17,9 +17,7 @@ public class TemplatesForm {
     private Long    id;
     private Long    company_id;
     private int     document_id;
-    private int     template_type_id;
-    private String  template_type;
-    private String  template_type_name;
+    private String  name;
     private Long    file_id;
     private String  file_name;
     private String  file_original_name;
@@ -34,13 +32,6 @@ public class TemplatesForm {
         this.id = id;
     }
 
-    public String getTemplate_type_name() {
-        return template_type_name;
-    }
-
-    public void setTemplate_type_name(String template_type_name) {
-        this.template_type_name = template_type_name;
-    }
 
     public String getFile_original_name() {
         return file_original_name;
@@ -58,28 +49,12 @@ public class TemplatesForm {
         this.file_id = file_id;
     }
 
-    public String getTemplate_type() {
-        return template_type;
-    }
-
-    public void setTemplate_type(String template_type) {
-        this.template_type = template_type;
-    }
-
     public Long getCompany_id() {
         return company_id;
     }
 
     public void setCompany_id(Long company_id) {
         this.company_id = company_id;
-    }
-
-    public int getTemplate_type_id() {
-        return template_type_id;
-    }
-
-    public void setTemplate_type_id(int template_type_id) {
-        this.template_type_id = template_type_id;
     }
 
     public String getFile_name() {
@@ -112,5 +87,13 @@ public class TemplatesForm {
 
     public void setOutput_order(Integer output_order) {
         this.output_order = output_order;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

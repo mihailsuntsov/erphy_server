@@ -28,10 +28,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class VolumesRepository {
@@ -48,6 +45,8 @@ public class VolumesRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    private CommonUtilites cu;
 
     // Отдает данные по виджету "Объемы"
     @SuppressWarnings("Duplicates")
@@ -133,11 +132,7 @@ public class VolumesRepository {
 
 
         } else { // все остальные случаи
-
-
-
-
-
+            Map<String, String> map = cu.translateForMe(new String[]{"'all'","'selected'"});
             stringQuery =
                     " select  " +
                     " z.name, " +
@@ -153,9 +148,9 @@ public class VolumesRepository {
 
                 stringQuery += " select ";
                 if (notAll) {
-                    stringQuery += " 'Выбранные' as name,";
+                    stringQuery += " '" + map.get("selected") + "' as name,";
                 } else {
-                    stringQuery += "'Все' as name,";
+                    stringQuery += " '" + map.get("all") + "' as name,";
                 }
                 stringQuery += getVolumesReportTimeInterval(request, false) + ", "; // as time_interval
                 stringQuery += "           sum(ABS(rsp.product_count*rsp.product_price)) as summ";

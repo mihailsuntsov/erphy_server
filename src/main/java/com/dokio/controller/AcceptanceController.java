@@ -372,12 +372,11 @@ public class AcceptanceController {
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/acceptancePrint",
-            params = {"file_name", "tt_id", "doc_id"},
+            params = {"file_name", "doc_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public void acceptancePrint (HttpServletResponse response,
                  @RequestParam("file_name") String filename,
-                 @RequestParam("doc_id") Long doc_id,
-                 @RequestParam("tt_id")int templateTypeId) throws Exception {
+                 @RequestParam("doc_id") Long doc_id) throws Exception {
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
         InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
         OutputStream os = response.getOutputStream();

@@ -28,10 +28,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class IncomeOutcomeRepository {
@@ -44,6 +41,8 @@ public class IncomeOutcomeRepository {
     private UserDetailsServiceImpl userRepository;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    private CommonUtilites cu;
 
     // Отдает данные по виджету "Объемы"
     @SuppressWarnings("Duplicates")
@@ -52,6 +51,9 @@ public class IncomeOutcomeRepository {
         String current_time_interval = ""; //текущий временной интервал (ВИ) (поле NAME у объекта VolumesReportJSON). При смене данного интервала VolumesReportJSON добавляется в сет, и формируется новый VolumesReportJSON
         List<VolumeSerie> seriesList = new ArrayList<>();//список значений за один ВИ (от 1 до n здначений на ВИ)
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Map<String, String> map = cu.translateForMe(new String[]{"'income'","'expense'"});
+
+
         String stringQuery;
 
             stringQuery =
@@ -65,7 +67,7 @@ public class IncomeOutcomeRepository {
             // нужно сконструировать 2 запроса, объединенные union, один по розничным продажам (retail_sales), второй по отгрузкам (shipment)
 
             stringQuery = stringQuery+"select   " +
-                    " 'Приход' as name, " +
+                    " '" + map.get("income") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +
@@ -75,7 +77,7 @@ public class IncomeOutcomeRepository {
                     " and p.master_id="+myMasterId+" and  p.company_id="+request.getCompanyId()+" and coalesce(p.internal,false)=false and coalesce(p.is_deleted,false)=false and coalesce(p.is_completed,false)=true group by time_interval, time_interval_sort " +
         " union all " +
                     " select " +
-                    " 'Приход' as name, " +
+                    " '" + map.get("income") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +
@@ -85,7 +87,7 @@ public class IncomeOutcomeRepository {
                     " and p.master_id="+myMasterId+" and  p.company_id="+request.getCompanyId()+" and coalesce(p.internal,false)=false and coalesce(p.is_deleted,false)=false and coalesce(p.is_completed,false)=true group by time_interval, time_interval_sort " +
         " union all " +
                     " select " +
-                    " 'Приход' as name, " +
+                    " '" + map.get("income") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +
@@ -97,7 +99,7 @@ public class IncomeOutcomeRepository {
         " union all " +
 
                     " select " +
-                    " 'Расход' as name, " +
+                    " '" + map.get("expense") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +
@@ -109,7 +111,7 @@ public class IncomeOutcomeRepository {
                     " and p.master_id="+myMasterId+" and  p.company_id="+request.getCompanyId()+" and coalesce(p.is_deleted,false)=false and coalesce(p.is_completed,false)=true group by time_interval, time_interval_sort " +
         " union all " +
                     " select " +
-                    " 'Расход' as name, " +
+                    " '" + map.get("expense") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +
@@ -121,7 +123,7 @@ public class IncomeOutcomeRepository {
                     " and p.master_id="+myMasterId+" and  p.company_id="+request.getCompanyId()+" and coalesce(p.is_deleted,false)=false and coalesce(p.is_completed,false)=true group by time_interval, time_interval_sort " +
         " union all " +
                     " select " +
-                    " 'Расход' as name, " +
+                    " '" + map.get("expense") + "' as name, " +
                     " to_char(p.date_time_created, 'MM.YYYY') as time_interval, " +
                     " SUM(ABS(p.summ)) as summ, " +
                     " to_char(p.date_time_created, 'YYYYMM') as time_interval_sort " +

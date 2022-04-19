@@ -468,6 +468,10 @@ public class CommonUtilites {
     }
 
     // returns map of user's language translated words by their keys in format "key - word"
+    // example of using:
+    // Map<String, String> map = commonUtilites.translateForMe(new String[]{"'all'","'selected'"});
+    // map.get("all");
+
     public Map<String, String> translateForMe(String[] keys){
         String suffix = userRepositoryJPA.getMySuffix();
         String stringQuery =            "select key, tr_"+suffix+" from _dictionary ";

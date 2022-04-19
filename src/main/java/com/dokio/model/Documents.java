@@ -33,12 +33,12 @@ public class Documents {
 
   @Column(name = "name")
   private String name;
-
-  @Column(name = "page_name")
-  private String pageName;
-
-  @Column(name = "icon_style")
-  private String iconStyle;
+//
+//  @Column(name = "page_name")
+//  private String pageName;
+//
+//  @Column(name = "icon_style")
+//  private String iconStyle;
 
   @Column(name = "show")
   private Integer show;
@@ -47,7 +47,7 @@ public class Documents {
   @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
   private Set<DocumentsMenu> documentsMenu = new HashSet<DocumentsMenu>();
 
-  @OrderBy("name ASC")
+  @OrderBy("output_order ASC")
   @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @JsonManagedReference //antagonist - @JsonBackReference in Permissions
   private Set<Permissions> permissions = new HashSet<Permissions>();
@@ -71,22 +71,22 @@ public class Documents {
   }
 
 
-  public String getPageName() {
-    return pageName;
-  }
+//  public String getPageName() {
+//    return pageName;
+//  }
+//
+//  public void setPageName(String pageName) {
+//    this.pageName = pageName;
+//  }
 
-  public void setPageName(String pageName) {
-    this.pageName = pageName;
-  }
-
-
-  public String getIconStyle() {
-    return iconStyle;
-  }
-
-  public void setIconStyle(String iconStyle) {
-    this.iconStyle = iconStyle;
-  }
+//
+//  public String getIconStyle() {
+//    return iconStyle;
+//  }
+//
+//  public void setIconStyle(String iconStyle) {
+//    this.iconStyle = iconStyle;
+//  }
 
   public Set<DocumentsMenu> getDocumentsMenu() {
     return documentsMenu;
