@@ -26,6 +26,7 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
@@ -417,4 +418,25 @@ public class TypePricesRepositoryJPA {
             }
         } else return false;
     }
+
+    // inserting base set of types of prices for new user
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertPriceTypesFast(Long mId, Long cId) {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into sprav_type_prices ( master_id,creator_id,company_id,date_time_created,name,is_default,is_deleted) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Basic price',true, false)";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            stringQuery="select id from sprav_type_prices where date_time_created=(to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+mId;
+            Query query2 = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query2.getSingleResult().toString());
+        } catch (Exception e) {
+            logger.error("Exception in method insertPriceTypesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

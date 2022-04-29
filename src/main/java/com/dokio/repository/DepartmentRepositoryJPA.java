@@ -585,4 +585,43 @@ public class DepartmentRepositoryJPA {
     }
 
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertDepartmentFast(DepartmentForm request,Long companyId, Long myMasterId) {
+//        EntityManager emgr = emf.createEntityManager();
+        String stringQuery;
+        Long newDocId;
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into departments (" +
+                " master_id," + //мастер-аккаунт
+                " creator_id," + //создатель
+                " company_id," + //предприятие, для которого создается документ
+                " date_time_created," + //дата и время создания
+                " price_id, " +
+                " boxoffice_id, " +
+                " name" +
+                ") values ("+
+                myMasterId + ", "+//мастер-аккаунт
+                myMasterId + ", "+ //создатель
+                companyId + ", "+//предприятие, для которого создается документ
+                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                request.getPrice_id()+ ", "+ // тип цены
+                request.getBoxoffice_id()+ ", "+ // касса предприятия
+                ":name" +
+                ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",request.getName());
+            query.executeUpdate();
+            stringQuery="select id from departments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myMasterId;
+            Query query2 = entityManager.createNativeQuery(stringQuery);
+            newDocId=Long.valueOf(query2.getSingleResult().toString());
+            return newDocId;
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method insertDepartmentFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

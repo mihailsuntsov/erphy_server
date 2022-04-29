@@ -14,6 +14,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.repository;
 
+import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.request.UserGroupForm;
 import com.dokio.message.response.UserGroupJSON;
 import com.dokio.message.response.UserGroupTableJSON;
@@ -23,14 +24,13 @@ import com.dokio.model.User;
 import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import javax.persistence.*;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
@@ -366,5 +366,65 @@ public class UserGroupRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+    @SuppressWarnings("Duplicates")
+    public boolean setPermissionsToUserGroup(Set<Long> permissions, Long usergroupId) {
+        EntityManager emgr = emf.createEntityManager();
+        emgr.getTransaction().begin();
+        try {
+            UserGroup userGroup = emgr.find(UserGroup.class, usergroupId);
+            userGroup.setId(usergroupId);
+            Set<Permissions> setPermissionsOfUserGroup= getPermissionsSetBySetOfPermissionsId(permissions);
+            userGroup.setPermissions(setPermissionsOfUserGroup);
+            emgr.getTransaction().commit();
+            emgr.close();
+            return true;
+
+        } catch (Exception e){
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method setPermissionsToUser.", e);
+            e.printStackTrace();
+            return false;
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertUsergroupFast(String name, Long companyId, Long myMasterId) {
+        String stringQuery;
+        Long newDocId;
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into usergroup (" +
+                " master_id," + //мастер-аккаунт
+                " creator_id," + //создатель
+                " company_id," + //предприятие, для которого создается документ
+                " date_time_created," + //дата и время создания
+                " is_deleted," +
+                " name" +
+                ") values ("+
+                myMasterId + ", "+//мастер-аккаунт
+                myMasterId + ", "+ //создатель
+                companyId + ", "+//предприятие, для которого создается документ
+                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                "false," +
+                ":name" +
+                ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",name);
+            query.executeUpdate();
+            stringQuery="select id from usergroup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myMasterId;
+            Query query2 = entityManager.createNativeQuery(stringQuery);
+            newDocId=Long.valueOf(query2.getSingleResult().toString());
+            stringQuery="insert into user_usergroup (user_id, usergroup_id) values ("+myMasterId+", "+newDocId+")";
+            Query query3 = entityManager.createNativeQuery(stringQuery);
+            query3.executeUpdate();
+
+            return newDocId;
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method insertUsergroupFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
     }
 }

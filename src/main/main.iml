@@ -24,5 +24,7 @@
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="Maven: org.jxls:jxls:2.11.0" level="project" />
     <orderEntry type="library" name="Maven: com.github.javadev:moneytostr:1.19" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-context-support:4.3.18.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: javax.mail:javax.mail-api:1.5.5" level="project" />
   </component>
 </module>

@@ -118,8 +118,9 @@ public class UsersController {
                 user.setStatus_account(Integer.parseInt(signUpRequest.getStatus_account()));
                 user.setSex(signUpRequest.getSex());
                 user.setAdditional(signUpRequest.getAdditional());
-                user.setTime_zone_id(signUpRequest.getTime_zone_id());
+//                user.setTime_zone_id(signUpRequest.getTimeZoneId());
                 Long createdUserId = userRepository.save(user).getId();//и сохранили его
+                userRepositoryJPA.setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId());
                 //ответ сервера при удачном создании юзера
                 ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
                 return responseEntity;
@@ -173,16 +174,12 @@ public class UsersController {
     }
 
     @PostMapping("/api/auth/updateUser")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateUser(@RequestBody SignUpForm request) throws ParseException{
-        logger.info("Processing post request for path api/auth/updateUser: " + request.toString());
-        if(userRepositoryJPA.updateUser(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+    public ResponseEntity<?> updateUser(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/updateUser: " + request.toString());
+        try {return new ResponseEntity<>(userRepositoryJPA.updateUser(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Exception in method updateUser. " + request.toString(), e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/getUsersTable")

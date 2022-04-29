@@ -109,5 +109,9 @@
     <orderEntry type="library" name="Maven: com.thedeanda:lorem:2.1" level="project" />
     <orderEntry type="library" name="Maven: com.j256.simplemagic:simplemagic:1.6" level="project" />
     <orderEntry type="library" name="Maven: com.github.javadev:moneytostr:1.19" level="project" />
+    <orderEntry type="library" name="Maven: javax.mail:javax.mail-api:1.5.5" level="project" />
+    <orderEntry type="library" name="Maven: javax.mail:mail:1.4.7" level="project" />
+    <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-context-support:4.3.18.RELEASE" level="project" />
   </component>
 </module>

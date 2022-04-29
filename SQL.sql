@@ -2938,7 +2938,7 @@ create table sprav_taxes(
                           date_time_created timestamp with time zone not null,
                           date_time_changed timestamp with time zone,
                           name varchar(30) not null,
-                          description varchar(130) not null,
+                          description varchar(130),
                           is_active boolean not null,
                           value int not null,
                           multiplier numeric(3,2),
@@ -3454,12 +3454,44 @@ update permissions set name_en = 'Categories - Deleting for all companies' where
 update permissions set name_en = 'Categories - Deleting for your company' where name_ru = 'Категории - Удаление у своего предприятия';
 
 
+-- Справочник "Валюты"
+create table sprav_currencies(
+                                      id bigserial primary key not null,
+                                      master_id  bigint not null,
+                                      company_id bigint not null,
+                                      creator_id bigint not null,
+                                      changer_id bigint,
+                                      date_time_created timestamp with time zone not null,
+                                      date_time_changed timestamp with time zone,
+                                      name_short varchar(6) not null,
+                                      name_full  varchar(200) not null,
+                                      code_lit   varchar(3) not null,
+                                      code_num   varchar(3) not null,
+                                      is_deleted boolean,
+                                      is_default boolean,
+                                      foreign key (master_id) references users(id),
+                                      foreign key (creator_id) references users(id),
+                                      foreign key (changer_id) references users(id),
+                                      foreign key (company_id) references companies(id)
+);
 
 
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (51,'Валюты','currencies',1,'sprav_currencies','Валюты', 'Currencies');
+
+insert into permissions (id,name_ru,name_en,document_id,output_order) values
+(644,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',51,10),
+(645,'Создание документов по всем предприятиям','Creation of documents for all companies',51,20),
+(646,'Создание документов своего предприятия','Create your company documents',51,30),
+(647,'Удаление документов всех предприятий','Deleting documents of all companies',51,130),
+(648,'Удаление документов своего предприятия','Deleting your company documents',51,140),
+(649,'Просмотр документов всех предприятий','View documents of all companies',51,50),
+(650,'Просмотр документов своего предприятия','View your company documents',51,60),
+(651,'Редактирование документов всех предприятий','Editing documents of all companies',51,90),
+(652,'Редактирование документов своего предприятия','Editing your company documents',51,100);
 
 
-
-
+alter table users add column activation_code varchar(36);
+alter table users add column repair_pass_code varchar(36);
 
 
 

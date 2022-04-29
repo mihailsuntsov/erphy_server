@@ -56,6 +56,12 @@ public class User{
     @Size(max = 50)
     private String email;
 
+    @Column(name = "activation_code")
+    private String activationCode;
+
+    @Column(name = "repair_pass_code")
+    private String repairPassCode;
+
     @JsonIgnore
     @Size(min=6, max = 100)
     private String password;
@@ -133,7 +139,7 @@ public class User{
 //    private Long company_id;
 
     @Column(name = "time_zone_id")
-    private Long time_zone_id;
+    private Integer time_zone_id;
 
     @Column(name = "vatin")
     private String vatin;
@@ -149,14 +155,22 @@ public class User{
         this.email = email;
         this.password = password;
     }
-//
-//    public Long getCompany_id() {
-//        return company_id;
-//    }
-//
-//    public void setCompany_id(Long company_id) {
-//        this.company_id = company_id;
-//    }
+
+    public String getRepairPassCode() {
+        return repairPassCode;
+    }
+
+    public void setRepairPassCode(String repairPassCode) {
+        this.repairPassCode = repairPassCode;
+    }
+
+    public String getActivationCode() {
+        return activationCode;
+    }
+
+    public void setActivationCode(String activationCode) {
+        this.activationCode = activationCode;
+    }
 
     public Boolean getIs_deleted() {
         return is_deleted;
@@ -186,11 +200,11 @@ public class User{
         return name;
     }
 
-    public Long getTime_zone_id() {
+    public Integer getTime_zone_id() {
         return time_zone_id;
     }
 
-    public void setTime_zone_id(Long time_zone_id) {
+    public void setTime_zone_id(Integer time_zone_id) {
         this.time_zone_id = time_zone_id;
     }
 

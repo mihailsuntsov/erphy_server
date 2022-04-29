@@ -96,9 +96,10 @@ public class UserRepositoryJPA {
     public boolean checkIfValidOldPassword(final User user, final String oldPassword) {
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
+
     //@Transactional
     @SuppressWarnings("Duplicates")
-    public boolean updateUser(SignUpForm request) {
+    public Integer updateUser(SignUpForm request) {
         boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
         boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "27"); // Пользователи:"Редактирование всех"
         boolean requestUserIdEqualMyUserId=(userDetailService.getUserId()==Long.valueOf(request.getId()));
@@ -145,14 +146,14 @@ public class UserRepositoryJPA {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             user.setDate_time_changed(timestamp);//дату изменения
 
-            user.setTime_zone_id(request.getTime_zone_id());
+//            user.setTime_zone_id(request.getTime_zone_id());
 
             user.setVatin(request.getVatin());
 
             em.getTransaction().commit();
             em.close();
-            return true;
-        }else return false;
+            return 1;
+        }else return -1;
     }
 
     //Находит родительский аккаунт у текущего пользователя.
@@ -167,6 +168,13 @@ public class UserRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return  Long.valueOf((Integer) query.getSingleResult());
     }
+    public Long getUserMasterIdByUserId(Long userId) {
+        String stringQuery;
+        stringQuery="select u.master_id from users u where u.id = "+userId;
+        Query query = entityManager.createNativeQuery(stringQuery);
+        return  Long.parseLong(query.getSingleResult().toString());
+    }
+
     public Long getMyId() {
         return userDetailService.getUserIdByUsername(userDetailService.getUserName());
     }
@@ -706,6 +714,70 @@ public class UserRepositoryJPA {
             logger.error("Exception in method saveUserSettings. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
+        }
+    }
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public Boolean setUserSettings(Long userId, int timeZoneId, int langId, int localeId) {
+        Long myMasterId = getUserMasterIdByUserId(userId);
+        String stringQuery;
+        stringQuery =
+                "insert into user_settings (" +
+                        " user_id, " +
+                        " master_id, " +
+                        " time_zone_id," +
+                        " language_id," +
+                        " locale_id" +
+                        ") " +
+                        "values " +
+                        "(" +
+                        userId + ", " +
+                        myMasterId + ", " +
+                        timeZoneId + ", " +
+                        langId + ", " +
+                        localeId +
+                        ")"+
+                        " ON CONFLICT ON CONSTRAINT user_uq " +
+                        " DO update set " +
+                        " time_zone_id="+ timeZoneId + ", " +
+                        " language_id="+ langId + ", " +
+                        " locale_id="+ localeId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }catch (Exception e) {
+            logger.error("Exception in method setUserSettings. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Integer activateUser(String code) {
+        try{
+            User user = userRepository.findByActivationCode(code);
+            if(user==null){return -102;}
+            user.setActivationCode(null);
+            user.setStatus_account(2); // 2 = active account
+            userRepository.save(user);
+            return 1;
+        }catch (Exception e) {
+            logger.error("Exception in method activateUser. code = " + code, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public int getLangIdBySuffix(String suffix){
+        String stringQuery = "select l.id from sprav_sys_languages l where l.suffix=:suffix";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("suffix",suffix);
+            return ((Integer) query.getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getLangIdBySuffix. SQL query:" + stringQuery, e);
+            return 1;
         }
     }
 }

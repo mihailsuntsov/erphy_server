@@ -26,14 +26,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-
-/*
-@Configuration — собственно эта аннотация и говорит о том, что данный класс является Java Configuration;
-@EnableWebMvc — эта аннотация разрешает нашему проекту использовать MVC;
-@ComponentScan(«com.dokio») — аналогично тому component-scan который был в mvc-dispatcher-servlet.xml, говорит, где искать компоненты проекта.
-@Bean — указывает на то что это инициализация бина, и он будет создан с помощью DI.
-*/
-
 @Configuration
 @ComponentScan(basePackages = {"com.dokio"})
 @EnableWebMvc
@@ -63,7 +55,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         return resolver;
     }
 
-    //Бин для загрузки файлов
+    // Bean for upload files
     // Bean name must be "multipartResolver", by default Spring uses method name as bean name.
     @Bean
     public MultipartResolver multipartResolver() {

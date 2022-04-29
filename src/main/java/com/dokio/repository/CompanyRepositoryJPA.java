@@ -42,7 +42,7 @@ import java.util.*;
 @Repository("CompanyRepositoryJPA")
 public class CompanyRepositoryJPA {
 
-    Logger logger = Logger.getLogger("PaymentoutRepositoryJPA");
+    Logger logger = Logger.getLogger("CompanyRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -704,8 +704,8 @@ public class CompanyRepositoryJPA {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")
-    private Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId){
+
+    public Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId){
         String stringQuery;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         Long myId = userRepository.getUserId();
@@ -1292,6 +1292,38 @@ public class CompanyRepositoryJPA {
             } else return null;
         } catch (MalformedURLException e) {
             throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+outputDocument+"'");
+        }
+    }
+
+    @Transactional
+    public Long insertCompanyFast(CompaniesForm request,Long myMasterId){
+        String stringQuery;
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        Long companyId;
+        stringQuery =   "insert into companies (" +
+                " master_id," + //мастер-аккаунт
+                " creator_id," + //создатель
+                " date_time_created," + //дата и время создания
+                " st_netcost_policy," +
+                " name" + //наименование
+                ") values (" +
+                myMasterId + ", "+
+                myMasterId + ", "+
+                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                "'all', " +
+                "'" + (request.getName() == null ? "Company": request.getName()) + "'" +//наименование
+                ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myMasterId;
+            Query query2 = entityManager.createNativeQuery(stringQuery);
+            companyId=Long.valueOf(query2.getSingleResult().toString());
+            return companyId;
+        } catch (Exception e) {
+            logger.error("Exception in method insertCompanyFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
         }
     }
 }

@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Controller
 public class SitesController {
-
+/*
     Logger logger = Logger.getLogger("SitesController");
 
     @Autowired
@@ -225,4 +225,6 @@ public class SitesController {
                 ", siteId=" + siteId + ", lvl1" + lvl1 + ", lvl2" + lvl2 + ", lvl3" + lvl3 + ", lvl4" + lvl4 + ", filePathAndName=" + filePathAndName);
         Resource file = storageService.loadSiteFile(masterId+"//"+companyId+"//sites//"+siteId+"//"+lvl1+"//"+lvl2+"//"+lvl3+"//"+lvl4+"//"+filePathAndName);
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);}
+
+        */
 }

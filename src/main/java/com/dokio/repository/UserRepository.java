@@ -36,12 +36,14 @@ import com.dokio.model.User;
 // не предоставит реализацию для нашего репозитория (обязательно).
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    // Имплементация не требуется. При инициализации контекста приложения Spring Data
+// Имплементация не требуется. При инициализации контекста приложения Spring Data
 // найдёт данный интерфейс и самостоятельно сгенерирует компонент (bean),
 // реализующий данный интерфейс.
 
     Optional<User> findByUsername(String username);
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
-
+    User findByActivationCode(String code);
+    User findByRepairPassCode(String code);
+    User findByEmail(String email);
 }

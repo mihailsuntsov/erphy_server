@@ -183,7 +183,7 @@ public class UserGroupController {
 
     @PostMapping("/api/auth/updateUserGroup")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateUserGroup(@RequestBody UserGroupForm request) throws ParseException{
+    public ResponseEntity<?> updateUserGroup(@RequestBody UserGroupForm request){
         logger.info("Processing post request for path api/auth/updateUserGroup: " + request.toString());
 
         if(userGroupRepositoryJPA.updateUserGroup(request)){

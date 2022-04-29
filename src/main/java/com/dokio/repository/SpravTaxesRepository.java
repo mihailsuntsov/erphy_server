@@ -20,6 +20,7 @@ import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
@@ -511,6 +512,25 @@ public class SpravTaxesRepository {
             return returnList;
         } catch (Exception e) {
             logger.error("Exception in method getTaxesList. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    // inserting base set taxes of new user
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean insertTaxesFast(Long mId, Long cId) {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into sprav_taxes ( master_id,creator_id,company_id,date_time_created,name,is_active,value,multiplier,output_order,is_deleted) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'No taxes',true,0, 1,  1,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Vat 10%', true,10,1.1,2,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Vat 20%', true,20,1.2,3,false)";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method insertTaxesFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

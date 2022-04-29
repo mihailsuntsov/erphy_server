@@ -1,30 +1,16 @@
-/*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
 package com.dokio.repository;
 
-import com.dokio.message.request.Sprav.SpravExpenditureForm;
-import com.dokio.message.response.Sprav.SpravExpenditureJSON;
+import com.dokio.message.request.Sprav.SpravCurrenciesForm;
+import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.Sprav.SpravCurrenciesJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.*;
@@ -32,14 +18,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
-public class SpravExpenditureRepositoryJPA {
+public class SpravCurrenciesRepository {
 
-    Logger logger = Logger.getLogger("SpravExpenditureRepositoryJPA");
-
-    @PersistenceContext
-    private EntityManager entityManager;
     @Autowired
     private EntityManagerFactory emf;
+    @PersistenceContext
+    private EntityManager entityManager;
     @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
@@ -49,45 +33,46 @@ public class SpravExpenditureRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    DepartmentRepositoryJPA departmentRepositoryJPA;
-    @Autowired
-    UserDetailsServiceImpl userService;
+    CommonUtilites commonUtilites;
+
+    private Logger logger = Logger.getLogger("SpravCurrencies");
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","type","cagent","company","creator","date_time_created_sort","is_completed")
+            .of("name_short","company","name_full","creator","date_time_created_sort","code_lit","date_created","code_num","is_default")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    @Transactional
+
     @SuppressWarnings("Duplicates")
-    public List<SpravExpenditureJSON> getExpenditureTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int documentId, Set<Integer> filterOptionsIds) {
-        if (securityRepositoryJPA.userHasPermissions_OR(40L, "502,503"))//"Статусы документов" (см. файл Permissions Id)
+    public List<SpravCurrenciesJSON> getCurrenciesTable (int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(51L, "649,650"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            stringQuery = "select  p.id as id, " +
-                    "           u.name as master, " +
+            if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))//если есть право только на своё предприятие, но запрашиваем не своё
+                throw new IllegalArgumentException("Недопустимые параметры запроса");
+
+            stringQuery =       "select " +
+                    "           p.id as id," +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
-                    "           p.master_id as master_id, " +
-                    "           p.creator_id as creator_id, " +
-                    "           p.changer_id as changer_id, " +
-                    "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
-                    "           p.name as name, " +
-                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
-                    "           p.is_completed as is_completed, " +
+                    "           p.name_short as name_short, " +
+                    "           p.name_full as name_full, " +
+                    "           p.code_lit as code_lit, " +
+                    "           p.code_num as code_num, " +
+                    "           p.is_default as is_default, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort  " +
-                    "           from sprav_expenditure_items p " +
+                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           from sprav_currencies p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -95,7 +80,7 @@ public class SpravExpenditureRepositoryJPA {
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(40L, "502")) //Если нет прав на "Просмотр "Статусы документов" по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(51L, "649")) //Если нет прав на "Просмотр по всем предприятиям"
             {
                 //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -107,15 +92,8 @@ public class SpravExpenditureRepositoryJPA {
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-
-            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
-                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
-            }
-
-            try{
-
+            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            try {
                 Query query = entityManager.createNativeQuery(stringQuery)
                         .setFirstResult(offsetreal)
                         .setMaxResults(result);
@@ -124,66 +102,61 @@ public class SpravExpenditureRepositoryJPA {
                 {query.setParameter("sg", searchString);}
 
                 List<Object[]> queryList = query.getResultList();
-                List<SpravExpenditureJSON> returnList = new ArrayList<>();
+                List<SpravCurrenciesJSON> returnList = new ArrayList<>();
                 for (Object[] obj : queryList) {
-                    SpravExpenditureJSON doc = new SpravExpenditureJSON();
-
-                    doc.setId(Long.parseLong(obj[0].toString()));
-                    doc.setMaster((String) obj[1]);
-                    doc.setCreator((String) obj[2]);
-                    doc.setChanger((String) obj[3]);
-                    doc.setMaster_id(Long.parseLong(obj[4].toString()));
-                    doc.setCreator_id(Long.parseLong(obj[5].toString()));
-                    doc.setChanger_id(obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
-                    doc.setCompany_id(Long.parseLong(obj[7].toString()));
-                    doc.setCompany((String) obj[8]);
-                    doc.setDate_time_created((String) obj[9]);
-                    doc.setDate_time_changed((String) obj[10]);
-                    doc.setName((String) obj[11]);
-                    doc.setType((String) obj[12]);
-                    doc.setIs_completed((Boolean) obj[13]);
+                    SpravCurrenciesJSON doc = new SpravCurrenciesJSON();
+                    doc.setId(Long.parseLong(           obj[0].toString()));
+                    doc.setCreator((String)             obj[1]);
+                    doc.setChanger((String)             obj[2]);
+                    doc.setCompany((String)             obj[3]);
+                    doc.setDate_time_created((String)   obj[4]);
+                    doc.setDate_time_changed((String)   obj[5]);
+                    doc.setName_short((String)          obj[6]);
+                    doc.setName_full((String)           obj[7]);
+                    doc.setCode_lit((String)            obj[8]);
+                    doc.setCode_num((String)            obj[9]);
+                    doc.setIs_default((Boolean)         obj[10]);
                     returnList.add(doc);
                 }
                 return returnList;
 
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getExpenditureTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getCurrenciesTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
     }
-
     @SuppressWarnings("Duplicates")
-    @Transactional
-    public int getExpenditureSize(String searchString, int companyId, int documentId, Set<Integer> filterOptionsIds) {
-        if (securityRepositoryJPA.userHasPermissions_OR(40L, "502,503"))//"Статусы документов" (см. файл Permissions Id)
-        {
+    public Integer getCurrenciesSize(String searchString, Long companyId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(51L, "649,650")){//(см. файл Permissions Id)
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            stringQuery = "select  p.id as id " +
-                    "           from sprav_expenditure_items p " +
+            stringQuery =       "select " +
+                    "           p.id as id " +
+                    "           from sprav_currencies p " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(40L, "502")) //Если нет прав на "Меню - таблица - "Статусы документов" по всем предприятиям"
-            {
-                //остается только на своё предприятие
+            if (!securityRepositoryJPA.userHasPermissions_OR(51L, "649")){ //Если нет прав на "Просмотр по всем предприятиям" - остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " upper(p.name)   like upper(CONCAT('%',:sg,'%'))"+ ")";
+                " upper(p.name)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            return query.getResultList().size();
-        } else return 0;
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                return query.getResultList().size();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getCurrenciesSize. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
     }
 
 //*****************************************************************************************************************************************************
@@ -192,14 +165,14 @@ public class SpravExpenditureRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public SpravExpenditureJSON getExpenditureValues(Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(40L, "502,503"))//"Статусы документов" (см. файл Permissions Id)
+    public SpravCurrenciesJSON getCurrenciesValues(Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(51L, "649,650"))// (см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-            stringQuery = "select  p.id as id, " +
+            stringQuery = "     select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
@@ -210,10 +183,12 @@ public class SpravExpenditureRepositoryJPA {
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
-                    "           p.name as name, " +
-                    "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
-                    "           p.is_completed as is_completed " +
-                    "           from sprav_expenditure_items p " +
+                    "           p.name_short as name_short, " +
+                    "           p.name_full as name_full, " +
+                    "           p.code_lit as code_lit, " +
+                    "           p.code_num as code_num, " +
+                    "           p.is_default as is_default " +
+                    "           from sprav_currencies p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -221,77 +196,73 @@ public class SpravExpenditureRepositoryJPA {
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(40L, "502")) //Если нет прав на "Просмотр документов по всем предприятиям"
-            {
-                //остается только на своё предприятие (503)
+            if (!securityRepositoryJPA.userHasPermissions_OR(51L, "649")){ //Если нет прав на "Просмотр документов по всем предприятиям"
+                //остается только на своё предприятие (650)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-
-            SpravExpenditureJSON doc = new SpravExpenditureJSON();
-
+            SpravCurrenciesJSON doc = new SpravCurrenciesJSON();
             for (Object[] obj : queryList) {
-
-                doc.setId(Long.parseLong(obj[0].toString()));
-                doc.setMaster((String) obj[1]);
-                doc.setCreator((String) obj[2]);
-                doc.setChanger((String) obj[3]);
-                doc.setMaster_id(Long.parseLong(obj[4].toString()));
-                doc.setCreator_id(Long.parseLong(obj[5].toString()));
-                doc.setChanger_id(obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
-                doc.setCompany_id(Long.parseLong(obj[7].toString()));
-                doc.setCompany((String) obj[8]);
-                doc.setDate_time_created((String) obj[9]);
-                doc.setDate_time_changed((String) obj[10]);
-                doc.setName((String) obj[11]);
-                doc.setType((String) obj[12]);
-                doc.setIs_completed((Boolean) obj[13]);
+                doc.setId(Long.parseLong(           obj[0].toString()));
+                doc.setMaster((String)              obj[1]);
+                doc.setCreator((String)             obj[2]);
+                doc.setChanger((String)             obj[3]);
+                doc.setMaster_id(Long.parseLong(    obj[4].toString()));
+                doc.setCreator_id(Long.parseLong(   obj[5].toString()));
+                doc.setChanger_id(                  obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
+                doc.setCompany_id(Long.parseLong(   obj[7].toString()));
+                doc.setCompany((String)             obj[8]);
+                doc.setDate_time_created((String)   obj[9]);
+                doc.setDate_time_changed((String)   obj[10]);
+                doc.setName_short((String)          obj[11]);
+                doc.setName_full((String)           obj[12]);
+                doc.setCode_lit((String)            obj[13]);
+                doc.setCode_num((String)            obj[14]);
+                doc.setIs_default((Boolean)         obj[15]);
             }
             return doc;
         } else return null;
-
     }
-
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Integer updateExpenditure(SpravExpenditureForm request) {
+    public Integer updateCurrencies(SpravCurrenciesForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(40L,"504") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_expenditure_items",request.getId().toString())) ||
+        if(     (securityRepositoryJPA.userHasPermissions_OR(51L,"651") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_currencies",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(40L,"505") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_expenditure_items",request.getId().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(51L,"652") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_currencies",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             String stringQuery;
-            stringQuery =   " update sprav_expenditure_items set " +
+            stringQuery =   " update sprav_currencies set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
-                    " name = :name, " +
-                    " type = :type " +
+                    " name_short = :name_short, " +
+                    " name_full = :name_full, " +
+                    " code_lit = :code_lit, " +
+                    " code_num = :code_num " +
+
                     " where " +
                     " id= "+request.getId()+
                     " and master_id="+myMasterId;
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("name",request.getName());
-                query.setParameter("type",request.getType());
+                query.setParameter("name_short",request.getName_short());
+                query.setParameter("name_full",request.getName_full());
+                query.setParameter("code_lit",request.getCode_lit());
+                query.setParameter("code_num",request.getCode_num());
                 query.executeUpdate();
-
                 return 1;
-
             }catch (Exception e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateExpenditure. SQL query:"+stringQuery, e);
+                logger.error("Exception in method updateCurrencies. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
         } else return -1; //недостаточно прав
-
     }
 
     // Возвращаем id в случае успешного создания
@@ -299,52 +270,56 @@ public class SpravExpenditureRepositoryJPA {
     // Возвращаем -1 в случае отсутствия прав
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertExpenditure(SpravExpenditureForm request) {
+    public Long insertCurrencies(SpravCurrenciesForm request) {
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
         Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
         Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
         if ((   //если есть право на создание по всем предприятиям, или
-                (securityRepositoryJPA.userHasPermissions_OR(40L, "498")) ||
-                        //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                        (securityRepositoryJPA.userHasPermissions_OR(40L, "499") && myCompanyId.equals(request.getCompany_id()))) &&
+                (securityRepositoryJPA.userHasPermissions_OR(51L, "645")) ||
+                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, и
+                (securityRepositoryJPA.userHasPermissions_OR(51L, "646") && myCompanyId.equals(request.getCompany_id()))) &&
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {
             String stringQuery;
             Long myId = userRepository.getUserId();
-
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery = "insert into sprav_expenditure_items (" +
+            stringQuery = "insert into sprav_currencies (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
                     " date_time_created," + //дата и время создания
-                    " name," +//наименование
-                    " is_completed, " +
-                    " type" +// тип
+                    " name_short," +//наименование
+                    " name_full," +//наименование
+                    " code_lit," +//наименование
+                    " code_num," +//наименование
+                    " is_default," +
+                    " is_deleted" +
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
                     request.getCompany_id() + ", "+//предприятие, для которого создается документ
                     " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                    " :name, " +
+                    " :name_short, " +
+                    " :name_full, " +
+                    " :code_lit, " +
+                    " :code_num, " +
                     " false, " +
-                    " :type)";
+                    " false)";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("name",request.getName());
-                query.setParameter("type",request.getType());
+                query.setParameter("name_short",request.getName_short());
+                query.setParameter("name_full",request.getName_full());
+                query.setParameter("code_lit",request.getCode_lit());
+                query.setParameter("code_num",request.getCode_num());
                 query.executeUpdate();
-                stringQuery="select id from sprav_expenditure_items where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                stringQuery="select id from sprav_currencies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-
                 return Long.valueOf(query2.getSingleResult().toString());
             } catch (Exception e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertExpenditure on inserting into sprav_expenditure_items. SQL query:"+stringQuery, e);
+                logger.error("Exception in method insertCurrencies on inserting into sprav_currencies. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -355,15 +330,15 @@ public class SpravExpenditureRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Integer deleteExpenditure(String delNumbers) {
+    public Integer deleteCurrencies(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(40L, "500") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_expenditure_items", delNumbers)) ||
+        if ((securityRepositoryJPA.userHasPermissions_OR(51L, "647") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_currencies", delNumbers)) ||
             //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-            (securityRepositoryJPA.userHasPermissions_OR(40L, "501") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_expenditure_items", delNumbers))) {
+            (securityRepositoryJPA.userHasPermissions_OR(51L, "648") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_currencies", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update sprav_expenditure_items p" +
+            stringQuery = "Update sprav_currencies p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
@@ -375,7 +350,7 @@ public class SpravExpenditureRepositoryJPA {
                 query.executeUpdate();
                 return 1;
             } catch (Exception e) {
-                logger.error("Exception in method deleteExpenditure. SQL query:"+stringQuery, e);
+                logger.error("Exception in method deleteCurrencies. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -385,15 +360,15 @@ public class SpravExpenditureRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Integer undeleteExpenditure(String delNumbers) {
+    public Integer undeleteCurrencies(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(40L, "500") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_expenditure_items", delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(40L, "501") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_expenditure_items", delNumbers))) {
+        if ((securityRepositoryJPA.userHasPermissions_OR(51L, "647") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_currencies", delNumbers)) ||
+            //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(51L, "648") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_currencies", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update sprav_expenditure_items p" +
+            stringQuery = "Update sprav_currencies p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
@@ -405,51 +380,71 @@ public class SpravExpenditureRepositoryJPA {
                 query.executeUpdate();
                 return 1;
             } catch (Exception e) {
-                logger.error("Exception in method undeleteExpenditure. SQL query:"+stringQuery, e);
+                logger.error("Exception in method undeleteCurrencies. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
         } else return -1;
     }
 
-    // позволяет поределить, какого типа расход (moving, taxes, purchases, other_opex и др) выбран по его id
-    public String getExpTypeByExpId(Long expId) throws Exception {
-        String stringQuery =
-                " select type from sprav_expenditure_items where " +
-                        " id= " + expId;
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return (String) query.getSingleResult();
-        } catch (NoResultException nre) {
-            return "";
-        } catch (Exception e) {
-            logger.error("Exception in method getExpTypeByExpId. SQL: " + stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();// чтобы отменилась транзакция в вызвавшем его документе
-        }
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer setDefaultCurrency(UniversalForm request) {// id : предприятие, id3 : id документа
+        EntityManager emgr = emf.createEntityManager();
+        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getId());//предприятие для создаваемого документа
+        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        if ((   //если есть право на редактирование по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(51L, "651")) ||
+                //если есть право на редактирование по всем отделениям своего предприятия, и предприятие документа своё, и
+                (securityRepositoryJPA.userHasPermissions_OR(51L, "652") && myCompanyId.equals(request.getId()))) &&
+                //редактируется документ предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                DocumentMasterId.equals(myMasterId))
+        {
+            try
+            {
+                String stringQuery;
+                stringQuery =   " update sprav_currencies set is_default=(" +
+                        " case when (id="+request.getId3()+") then true else false end) " +
+                        " where " +
+                        " company_id= "+request.getId();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
-    // inserting base set of expenditures for new user
+
+    // inserting base set of currencies on register of new user
+    @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertExpendituresFast(Long mId, Long cId) {
+    public Boolean insertCurrenciesFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
-        stringQuery = "insert into sprav_expenditure_items ( master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false);";
+        stringQuery = "insert into sprav_currencies ( master_id,creator_id,company_id,date_time_created,name_short,name_full,code_lit,code_num,is_default,is_deleted) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','US Dollar',            'USD','840',true, false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'€',  'Euro',                 'EUR','978',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'C$', 'Canadian Dollar',      'CAD','124',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'A$', 'Australian Dollar',    'AUD','036',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','New Zealand Dollar',   'NZD','554',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'£',  'Pound Sterling',       'GBP','826',false,false);";
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
         } catch (Exception e) {
-            logger.error("Exception in method insertExpendituresFast. SQL query:"+stringQuery, e);
+            logger.error("Exception in method insertCurrenciesFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
+
+
 
 }

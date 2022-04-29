@@ -12,3 +12,6 @@ null                            Ошибка выполнения
 -60                             Документ уже снят с проведения
 -70                             Отрицательное кол-во товара в истории движения товара (CalculateNetcostNegativeSumException)
 -80                             Отрицательное кол-во товара на складе (CantInsertProductRowCauseOversellException, CantSetHistoryCauseNegativeSumException)
+-100                            Пользователь не найден
+-101                            Код восстановления недействителен
+-102                            Код активации недействителен

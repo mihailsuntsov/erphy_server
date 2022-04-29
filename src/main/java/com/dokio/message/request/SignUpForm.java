@@ -35,8 +35,35 @@ public class SignUpForm {
     private String company_id;
     private String checked;
     private String password;
-    private Long time_zone_id;
+    private Integer timeZoneId;
     private String vatin;
+    private Integer localeId;
+    private Integer languageId;
+    private String language;
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public Integer getLocaleId() {
+        return localeId;
+    }
+
+    public void setLocaleId(Integer localeId) {
+        this.localeId = localeId;
+    }
+
+    public Integer getLanguageId() {
+        return languageId;
+    }
+
+    public void setLanguageId(Integer languageId) {
+        this.languageId = languageId;
+    }
 
     public String getVatin() {
         return vatin;
@@ -62,12 +89,12 @@ public class SignUpForm {
         return fio_family;
     }
 
-    public Long getTime_zone_id() {
-        return time_zone_id;
+    public Integer getTimeZoneId() {
+        return timeZoneId;
     }
 
-    public void setTime_zone_id(Long time_zone_id) {
-        this.time_zone_id = time_zone_id;
+    public void setTimeZoneId(Integer timeZoneId) {
+        this.timeZoneId = timeZoneId;
     }
 
     public void setFio_family(String fio_family) {

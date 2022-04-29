@@ -84,12 +84,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		return user;
 	}
 
-	public boolean isUserNotBlocked(LoginForm loginRequest){
-		String stringQuery;
-		stringQuery=" select count(*) from users where username='"+loginRequest.getUsername()+"' and status_account=2 ";//1-не верифицирован 2-активный 3-заблокирован 4-удалён
-		Query query = entityManager.createNativeQuery(stringQuery);
-		return (query.getSingleResult()).toString().equals("1");
-	}
+//	public boolean isUserNotBlocked(LoginForm loginRequest){
+//		String stringQuery;
+//		stringQuery=" select count(*) from users where username='"+loginRequest.getUsername()+"' and status_account=2 ";//1-не активирован 2-активный 3-заблокирован 4-удалён
+//		Query query = entityManager.createNativeQuery(stringQuery);
+//		return (query.getSingleResult()).toString().equals("1");
+//	}
+//	public int getUserStatus(String){
+//		String stringQuery;
+//		stringQuery=" select status_account from users where username='"+userName+"'";//1-не активирован 2-активный 3-заблокирован 4-удалён
+//		Query query = entityManager.createNativeQuery(stringQuery);
+//		return ((Integer) query.getSingleResult());
+//	}
 	public boolean isUserNotBlocked_byUsername(String username){
 		String stringQuery;
 		stringQuery=" select count(*) from users where username='"+username+"' and status_account=2 ";//1-не верифицирован 2-активный 3-заблокирован 4-удалён

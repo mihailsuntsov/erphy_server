@@ -413,4 +413,25 @@ public class SpravBoxofficeRepositoryJPA {
             }
         } else return -1;
     }
+
+    // inserting base set of cash room for new user
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertBoxofficesFast(Long mId, Long cId) {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into sprav_boxoffice ( master_id,creator_id,company_id,date_time_created,name,is_deleted) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Main cash room',false)";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            stringQuery="select id from sprav_boxoffice where date_time_created=(to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+mId;
+            Query query2 = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query2.getSingleResult().toString());
+        } catch (Exception e) {
+            logger.error("Exception in method insertBoxofficesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }
