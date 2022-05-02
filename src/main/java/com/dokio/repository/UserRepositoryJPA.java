@@ -653,23 +653,36 @@ public class UserRepositoryJPA {
                 "   p.language_id as language_id, " +
                 "   p.locale_id as locale_id, " +
                 "   sslc.code as locale, " +
-                "   sslg.suffix as suffix " +
+                "   sslg.suffix as suffix, " +
+                "   c.jr_country_id as country_id," +    // id of user's company country of jurisdiction
+                "   ssc.organization," +                    // organization of country of jurisdiction(e.g. EU)
+                "   cur.name_short" +                       // short name of Accounting currency of user's company (e.g. $ or EUR)
                 "   from    user_settings p, " +
                 "           sprav_sys_languages sslg, " +
-                "           sprav_sys_locales sslc " +
+                "           sprav_sys_locales sslc, " +
+                "           users u, " +
+                "           companies c" +
+                "           LEFT OUTER JOIN sprav_sys_countries ssc ON ssc.id=c.jr_country_id " +
+                "           LEFT OUTER JOIN sprav_currencies cur ON cur.company_id=c.id " +
                 "   where   p.user_id=" + myId +
                 "   and     p.language_id=sslg.id" +
-                "   and     p.locale_id=sslc.id";
+                "   and     p.locale_id=sslc.id" +
+                "   and     p.user_id=u.id " +
+                "   and     cur.is_default = true " +
+                "   and     u.company_id = c.id";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserSettingsJSON doc = new UserSettingsJSON();
             if(queryList.size()>0) {
-                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
-                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
-                doc.setLocale_id((Integer)      queryList.get(0)[2]);
-                doc.setLocale((String)          queryList.get(0)[3]);
-                doc.setSuffix((String)          queryList.get(0)[4]);
+                doc.setTime_zone_id((Integer)       queryList.get(0)[0]);
+                doc.setLanguage_id((Integer)        queryList.get(0)[1]);
+                doc.setLocale_id((Integer)          queryList.get(0)[2]);
+                doc.setLocale((String)              queryList.get(0)[3]);
+                doc.setSuffix((String)              queryList.get(0)[4]);
+                doc.setCountry_id((Integer)         queryList.get(0)[5]);
+                doc.setOrganization((String)        queryList.get(0)[6]);
+                doc.setAccounting_currency((String) queryList.get(0)[7]);
             }
             return doc;
         } catch (Exception e) {

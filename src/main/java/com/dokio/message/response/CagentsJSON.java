@@ -88,6 +88,7 @@ public class CagentsJSON {
     private String jr_city;
     private String jr_area;
 
+
     public Long getId() {
         return id;
     }

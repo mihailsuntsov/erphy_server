@@ -52,6 +52,44 @@ public class CustomersOrdersForm {
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
 
+    private String region;
+    private String city;
+    private String jr_region;
+    private String jr_city;
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getJr_region() {
+        return jr_region;
+    }
+
+    public void setJr_region(String jr_region) {
+        this.jr_region = jr_region;
+    }
+
+    public String getJr_city() {
+        return jr_city;
+    }
+
+    public void setJr_city(String jr_city) {
+        this.jr_city = jr_city;
+    }
+
+
     public Long getLinked_doc_id() {
         return linked_doc_id;
     }

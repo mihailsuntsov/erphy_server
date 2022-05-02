@@ -69,6 +69,44 @@ public class CompaniesForm {
     private Integer st_prefix_barcode_packed;   // prefix of barcode for packed product
     private String  st_netcost_policy;          // policy of netcost calculation by all company or by each department separately
 
+    private String region;
+    private String city;
+    private String jr_region;
+    private String jr_city;
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getJr_region() {
+        return jr_region;
+    }
+
+    public void setJr_region(String jr_region) {
+        this.jr_region = jr_region;
+    }
+
+    public String getJr_city() {
+        return jr_city;
+    }
+
+    public void setJr_city(String jr_city) {
+        this.jr_city = jr_city;
+    }
+
+
     public Integer getSt_prefix_barcode_pieced() {
         return st_prefix_barcode_pieced;
     }

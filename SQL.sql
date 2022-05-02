@@ -3493,6 +3493,50 @@ insert into permissions (id,name_ru,name_en,document_id,output_order) values
 alter table users add column activation_code varchar(36);
 alter table users add column repair_pass_code varchar(36);
 
+alter table cagents add column region varchar(120);
+alter table cagents add column city varchar(120);
+alter table cagents add column jr_region varchar(120);
+alter table cagents add column jr_city varchar(120);
+
+alter table companies add column region varchar(120);
+alter table companies add column city varchar(120);
+alter table companies add column jr_region varchar(120);
+alter table companies add column jr_city varchar(120);
+
+alter table customers_orders add column region varchar(120);
+alter table customers_orders add column city varchar(120);
+
+alter table sprav_sys_countries add column name_es varchar(128);
+alter table sprav_sys_countries add column name_pt varchar(128);
+alter table sprav_sys_countries add column name_fr varchar(128);
+alter table sprav_sys_countries add column name_it varchar(128);
+alter table sprav_sys_countries add column organization varchar(128);
+
+update sprav_sys_countries set organization = 'world';
+
+alter table companies drop column currency_id;
+
+alter table companies add column type varchar(10);        -- entity or individual
+alter table companies add column reg_country_id int;      -- country of registration
+alter table companies add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+alter table companies add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+alter table cagents add column type varchar(10);        -- entity or individual
+alter table cagents add column reg_country_id int;      -- country of registration
+alter table cagents add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+alter table cagents add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

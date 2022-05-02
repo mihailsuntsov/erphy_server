@@ -21,6 +21,33 @@ public class UserSettingsJSON {
     private String  language;
     private String  locale;
     private String  suffix;
+    private Integer country_id;             // id of user's company country of jurisdiction
+    private String  organization;           // organization of country of jurisdiction(e.g. EU)
+    private String  accounting_currency;    // short name of Accounting currency of user's company (e.g. $ or EUR)
+
+    public Integer getCountry_id() {
+        return country_id;
+    }
+
+    public void setCountry_id(Integer country_id) {
+        this.country_id = country_id;
+    }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    public String getAccounting_currency() {
+        return accounting_currency;
+    }
+
+    public void setAccounting_currency(String accounting_currency) {
+        this.accounting_currency = accounting_currency;
+    }
 
     public String getSuffix() {
         return suffix;

@@ -422,12 +422,18 @@ public class CagentRepositoryJPA {
                     "           stat.description as status_description, " +
                     "           ctr.name_ru as country, " +
                     "           jr_ctr.name_ru as jr_country, " +
-                    "           reg.name_ru as region, " +
-                    "           jr_reg.name_ru as jr_region, " +
-                    "           cty.name_ru as city, " +
-                    "           jr_cty.name_ru as jr_city, " +
-                    "           coalesce(cty.area_ru,'') as area, " +
-                    "           coalesce(jr_cty.area_ru,'') as jr_area " +
+//                    "           reg.name_ru as region, " +
+                    "           coalesce(p.region,'') as region, " +
+//                    "           jr_reg.name_ru as jr_region, " +
+                    "           coalesce(p.jr_region,'') as jr_region, " +
+//                    "           cty.name_ru as city, " +
+                    "           coalesce(p.city,'') as city, " +
+//                    "           jr_cty.name_ru as jr_city, " +
+                    "           coalesce(p.jr_city,'') as jr_city, " +
+//                    "           coalesce(cty.area_ru,'') as area, " +
+//                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
+                    "           '' as area, " +
+                    "           '' as jr_area" +
 
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -437,11 +443,11 @@ public class CagentRepositoryJPA {
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
-                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
-                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
-                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
                     "           where p.id= " + id +
                     "           and  p.master_id=" + myMasterId;
 
@@ -791,8 +797,10 @@ public class CagentRepositoryJPA {
                     //фактический адрес
                     " zip_code = '" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +// почтовый индекс
                     " country_id = " + request.getCountry_id() + ", " +//страна
-                    " region_id = " + request.getRegion_id() + ", " +//область
-                    " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
+//                    " region_id = " + request.getRegion_id() + ", " +//область
+//                    " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
+                    " region = '" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
+                    " city = '" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
                     " street = '" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
                     " home = '" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
                     " flat = '" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
@@ -807,8 +815,10 @@ public class CagentRepositoryJPA {
                     //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                     " jr_zip_code = '" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +// почтовый индекс
                     " jr_country_id = " + request.getJr_country_id() + ", " +//страна
-                    " jr_region_id = " + request.getJr_region_id() + ", " +//область
-                    " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
+//                    " jr_region_id = " + request.getJr_region_id() + ", " +//область
+//                    " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
+                    " jr_region = '" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +//область
+                    " jr_city = '" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +//город/нас.пункт
                     " jr_street = '" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
                     " jr_home = '" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                     " jr_flat = '" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
@@ -912,8 +922,10 @@ public class CagentRepositoryJPA {
                 //фактический адрес
                 " zip_code,"+// почтовый индекс
                 " country_id,"+//страна
-                " region_id,"+//область
-                " city_id,"+//город/нас.пункт
+//                " region_id,"+//область
+//                " city_id,"+//город/нас.пункт
+                " region,"+//область
+                " city,"+//город/нас.пункт
                 " street,"+//улица
                 " home,"+//дом
                 " flat,"+//квартира
@@ -928,8 +940,10 @@ public class CagentRepositoryJPA {
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                 " jr_zip_code,"+// почтовый индекс
                 " jr_country_id,"+//страна
-                " jr_region_id,"+//область
-                " jr_city_id,"+//город/нас.пункт
+//                " jr_region_id,"+//область
+//                " jr_city_id,"+//город/нас.пункт
+                " jr_region,"+//область
+                " jr_city,"+//город/нас.пункт
                 " jr_street,"+//улица
                 " jr_home,"+//дом
                 " jr_flat,"+//квартира
@@ -957,8 +971,10 @@ public class CagentRepositoryJPA {
                 //фактический адрес
                 "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
                 request.getCountry_id() + ", " +//страна
-                request.getRegion_id() + ", " +//область
-                request.getCity_id() + ", " +//город/нас.пункт
+//                request.getRegion_id() + ", " +//область
+//                request.getCity_id() + ", " +//город/нас.пункт
+                "'" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
+                "'" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
                 "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
                 "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
                 "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
@@ -973,8 +989,10 @@ public class CagentRepositoryJPA {
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                 "'" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +//почтовый индекс
                 request.getJr_country_id() + ", " +//страна
-                request.getJr_region_id() + ", " +//область
-                request.getJr_city_id() + ", " +//город/нас.пункт
+//                request.getJr_region_id() + ", " +//область
+//                request.getJr_city_id() + ", " +//город/нас.пункт
+                "'" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +//область
+                "'" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +//город/нас.пункт
                 "'" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
                 "'" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                 "'" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира

@@ -80,7 +80,7 @@ public class CompanyRepositoryJPA {
                     "           u.name as master, " +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
-                    "           p.currency_id as currency_id, " +
+                    "           null as currency_id, " +// not use now
                     "           sso.name as opf, "+
                     "           p.opf_id as opf_id, " +
                     // Апдейт Предприятий
@@ -164,7 +164,7 @@ public class CompanyRepositoryJPA {
                 doc.setMaster((String)                              obj[7]);
                 doc.setCreator((String)                             obj[8]);
                 doc.setChanger((String)                             obj[9]);
-                doc.setCurrency_id((Integer)                        obj[10]);
+                doc.setCurrency_id(null);                           // not use now
                 doc.setOpf((String)                                 obj[11]);
                 doc.setOpf_id((Integer)                             obj[12]);
                 doc.setCode((String)                                obj[13]);
@@ -301,6 +301,7 @@ public class CompanyRepositoryJPA {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
+            String suffix = userRepositoryJPA.getMySuffix();
 
             stringQuery = "select  p.id as id, " +
                     "           p.master_id as master_id, " +
@@ -312,7 +313,7 @@ public class CompanyRepositoryJPA {
                     "           u.name as master, " +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
-                    "           p.currency_id as currency_id, " +
+                    "           null as currency_id, " + // not use now
                     "           sso.name as opf, "+
                     "           p.opf_id as opf_id, " +
                     // Апдейт Предприятий
@@ -357,14 +358,20 @@ public class CompanyRepositoryJPA {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           ctr.name_ru as country, " +
-                    "           jr_ctr.name_ru as jr_country, " +
-                    "           reg.name_ru as region, " +
-                    "           jr_reg.name_ru as jr_region, " +
-                    "           cty.name_ru as city, " +
-                    "           jr_cty.name_ru as jr_city, " +
-                    "           coalesce(cty.area_ru,'') as area, " +
-                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
+                    "           ctr.name_"+suffix+" as country, " +
+                    "           jr_ctr.name_"+suffix+" as jr_country, " +
+//                    "           reg.name_ru as region, " +
+                    "           coalesce(p.region,'') as region, " +
+//                    "           jr_reg.name_ru as jr_region, " +
+                    "           coalesce(p.jr_region,'') as jr_region, " +
+//                    "           cty.name_ru as city, " +
+                    "           coalesce(p.city,'') as city, " +
+//                    "           jr_cty.name_ru as jr_city, " +
+                    "           coalesce(p.jr_city,'') as jr_city, " +
+//                    "           coalesce(cty.area_ru,'') as area, " +
+//                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
+                    "           '' as area, " +
+                    "           '' as jr_area," +
                     "           p.stamp_id as stamp_id, " +
                     "           (select f.original_name from files f where f.id=p.director_signature_id) as director_signature_filename, " +
                     "           (select f.original_name from files f where f.id=p.glavbuh_signature_id) as glavbuh_signature_filename, " +
@@ -383,11 +390,11 @@ public class CompanyRepositoryJPA {
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
-                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
-                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
-                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
                     "           where p.id= " + id +
                     "           and  p.master_id=" + myMasterId;
 
@@ -411,7 +418,7 @@ public class CompanyRepositoryJPA {
             doc.setMaster((String)                                          queryList.get(0)[7]);
             doc.setCreator((String)                                         queryList.get(0)[8]);
             doc.setChanger(queryList.get(0)[9]!=null?               (String)queryList.get(0)[9]:"");
-            doc.setCurrency_id((Integer)                                    queryList.get(0)[10]);
+            doc.setCurrency_id((Integer)                                  null);        // not use now
             doc.setOpf(queryList.get(0)[11]!=null?                  (String)queryList.get(0)[11]:"");
             doc.setOpf_id((Integer)                                         queryList.get(0)[12]);
             doc.setCode(queryList.get(0)[13]!=null?                 (String)queryList.get(0)[13]:"");
@@ -536,15 +543,17 @@ public class CompanyRepositoryJPA {
                     " changer_id = " + myId + ", " +// кто изменил
                     " date_time_changed = now() " + ", " +//дату изменения
                     " code = '" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
-                    " currency_id = " + request.getCurrency_id() + ", " +//основная валюта
+//                    " currency_id = " + request.getCurrency_id() + ", " +//основная валюта
                     " telephone = '" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
                     " site = '" + (request.getSite() == null ? "": request.getSite()) +"', " +//сайт
                     " email = '" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
                     //фактический адрес
                     " zip_code = '" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +// почтовый индекс
                     " country_id = " + request.getCountry_id() + ", " +//страна
-                    " region_id = " + request.getRegion_id() + ", " +//область
-                    " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
+//                    " region_id = " + request.getRegion_id() + ", " +//область
+//                    " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
+                    " region  = '" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
+                    " city  = '" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
                     " street = '" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
                     " home = '" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
                     " flat = '" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
@@ -557,8 +566,10 @@ public class CompanyRepositoryJPA {
                     //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                     " jr_zip_code = '" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +// почтовый индекс
                     " jr_country_id = " + request.getJr_country_id() + ", " +//страна
-                    " jr_region_id = " + request.getJr_region_id() + ", " +//область
-                    " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
+//                    " jr_region_id = " + request.getJr_region_id() + ", " +//область
+//                    " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
+                    " jr_region  = '" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +//область
+                    " jr_city  = '" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +//город/нас.пункт
                     " jr_street = '" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
                     " jr_home = '" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                     " jr_flat = '" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
@@ -720,13 +731,15 @@ public class CompanyRepositoryJPA {
                 " telephone,"+//телефон
                 " site,"+//сайт
                 " email,"+//емейл
-                " currency_id,"+//валюта предприятия
+//                " currency_id,"+//валюта предприятия
                 " status_id,"+//статус предприятия
                 //фактический адрес
                 " zip_code,"+// почтовый индекс
                 " country_id,"+//страна
-                " region_id,"+//область
-                " city_id,"+//город/нас.пункт
+//                " region_id,"+//область
+//                " city_id,"+//город/нас.пункт
+                " region,"+//область
+                " city,"+//город/нас.пункт
                 " street,"+//улица
                 " home,"+//дом
                 " flat,"+//квартира
@@ -738,8 +751,10 @@ public class CompanyRepositoryJPA {
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                 " jr_zip_code,"+// почтовый индекс
                 " jr_country_id,"+//страна
-                " jr_region_id,"+//область
-                " jr_city_id,"+//город/нас.пункт
+//                " jr_region_id,"+//область
+//                " jr_city_id,"+//город/нас.пункт
+                " jr_region,"+//область
+                " jr_city,"+//город/нас.пункт
                 " jr_street,"+//улица
                 " jr_home,"+//дом
                 " jr_flat,"+//квартира
@@ -769,13 +784,15 @@ public class CompanyRepositoryJPA {
                 "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
                 "'" + (request.getSite() == null ? "": request.getSite()) +"', " +//сайт
                 "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
-                request.getCurrency_id() + ", " +//валюта
+//                request.getCurrency_id() + ", " +//валюта
                 request.getStatus_id() + ", " +//статус документа
                 //фактический адрес
                 "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
                 request.getCountry_id() + ", " +//страна
-                request.getRegion_id() + ", " +//область
-                request.getCity_id() + ", " +//город/нас.пункт
+//                request.getRegion_id() + ", " +//область
+//                request.getCity_id() + ", " +//город/нас.пункт
+                "'" + (request.getRegion() == null ? "": request.getRegion()) +"', " +
+                "'" + (request.getCity() == null ? "": request.getCity()) +"', " +
                 "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
                 "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
                 "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
@@ -787,8 +804,10 @@ public class CompanyRepositoryJPA {
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
                 "'" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +//почтовый индекс
                 request.getJr_country_id() + ", " +//страна
-                request.getJr_region_id() + ", " +//область
-                request.getJr_city_id() + ", " +//город/нас.пункт
+//                request.getJr_region_id() + ", " +//область
+//                request.getJr_city_id() + ", " +//город/нас.пункт
+                "'" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +
+                "'" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +
                 "'" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
                 "'" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
                 "'" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира

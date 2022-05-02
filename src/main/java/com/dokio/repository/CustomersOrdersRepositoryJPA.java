@@ -484,9 +484,12 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.home as home, " +
                     "           p.flat as flat, " +
                     "           coalesce(ctr.name_ru,'') as country, " +
-                    "           coalesce(reg.name_ru,'') as region, " +
-                    "           coalesce(cty.name_ru,'') as city, " +
-                    "           coalesce(cty.area_ru,'') as area, " +
+//                    "           coalesce(reg.name_ru,'') as region, " +
+                    "           coalesce(p.region,'') as region, " +
+//                    "           coalesce(cty.name_ru,'') as city, " +
+                    "           coalesce(p.city,'') as city, " +
+//                    "           coalesce(cty.area_ru,'') as area, " +
+                    "           '' as area, " +
                     "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
                     "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
                     "           p.uid as uid " +
@@ -500,8 +503,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
-                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
+//                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
@@ -576,8 +579,6 @@ public class CustomersOrdersRepositoryJPA {
             return returnObj;
         } else return null;
     }
-
-
 
 
     @SuppressWarnings("Duplicates")
@@ -664,8 +665,10 @@ public class CustomersOrdersRepositoryJPA {
                     " email,"+//емейл
                     " zip_code,"+// почтовый индекс
                     " country_id,"+//страна
-                    " region_id,"+//область
-                    " city_id,"+//город/нас.пункт
+//                    " region_id,"+//область
+//                    " city_id,"+//город/нас.пункт
+                    " region,"+//область
+                    " city,"+//город/нас.пункт
                     " street,"+//улица
                     " home,"+//дом
                     " flat,"+//квартира
@@ -690,8 +693,10 @@ public class CustomersOrdersRepositoryJPA {
                     "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
                     "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
                     request.getCountry_id() + ", " +//страна
-                    request.getRegion_id() + ", " +//область
-                    request.getCity_id() + ", " +//город/нас.пункт
+//                    request.getRegion_id() + ", " +//область
+//                    request.getCity_id() + ", " +//город/нас.пункт
+                    "'" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
+                    "'" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
                     "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
                     "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
                     "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
@@ -1002,8 +1007,10 @@ public class CustomersOrdersRepositoryJPA {
                     " telephone = '" + (request.getTelephone() == null ? "" : request.getTelephone()) + "', " +
                     " zip_code = '" + (request.getZip_code() == null ? "" : request.getZip_code()) + "', " +
                     " country_id  = " + request.getCountry_id() + ", " +
-                    " region_id  = " + request.getRegion_id() + ", " +
-                    " city_id  = " + request.getCity_id() + ", " +
+//                    " region_id  = " + request.getRegion_id() + ", " +
+//                    " city_id  = " + request.getCity_id() + ", " +
+                    " region = '" + (request.getRegion() == null ? "" : request.getRegion()) + "', " +
+                    " city = '" + (request.getCity() == null ? "" : request.getCity()) + "', " +
                     " street = '" + (request.getStreet() == null ? "" : request.getStreet()) + "', " +
                     " home = '" + (request.getHome() == null ? "" : request.getHome()) + "', " +
                     " flat = '" + (request.getFlat() == null ? "" : request.getFlat()) + "', " +

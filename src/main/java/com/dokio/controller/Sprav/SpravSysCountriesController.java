@@ -17,7 +17,9 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.response.CagentsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.Sprav.SpravSysCountriesJSON;
+import com.dokio.repository.UserRepositoryJPA;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,10 +32,14 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
+
 @Controller
 @Repository
 public class SpravSysCountriesController {
     Logger logger = Logger.getLogger("SpravSysCountriesController");
+
+    @Autowired
+    UserRepositoryJPA userRepositoryJPA;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -41,12 +47,12 @@ public class SpravSysCountriesController {
     @SuppressWarnings("Duplicates")
     private ResponseEntity<?> getSpravSysCountries() {
         logger.info("Processing post request for path /api/auth/getSpravSysCountries");
-
+        String suffix = userRepositoryJPA.getMySuffix();
         String stringQuery=
                 "select " +
                         " p.id as id, " +
-                        " p.name_ru  as name_ru " +
-                        " from sprav_sys_countries p where name_ru='Россия' or name_ru = 'Беларусь'  or name_ru = 'Украина' order by p.name_ru asc";
+                        " p.name_" + suffix +"  as name_" + suffix +
+                        " from sprav_sys_countries p order by p.name_" + suffix +" asc";
         Query query =  entityManager.createNativeQuery(stringQuery);
         List<Object[]> queryList = query.getResultList();
         List<SpravSysCountriesJSON> returnList = new ArrayList<>();
