@@ -381,7 +381,11 @@ public class CompanyRepositoryJPA {
                     "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename, " +
                     "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
-                    "           p.st_netcost_policy as st_netcost_policy " +
+                    "           p.st_netcost_policy as st_netcost_policy, " +
+                    "           p.type as type " +// entity or individual
+//                    "           p.reg_country_id as reg_country_id, " + // country of registration
+//                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -480,6 +484,10 @@ public class CompanyRepositoryJPA {
             doc.setSt_prefix_barcode_pieced((Integer)                       queryList.get(0)[69]);
             doc.setSt_prefix_barcode_packed((Integer)                       queryList.get(0)[70]);
             doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
+            doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
+//            doc.setReg_country_id((Integer)                                 queryList.get(0)[73]);
+//            doc.setTax_number(queryList.get(0)[74]!=null?           (String)queryList.get(0)[74]:"");
+//            doc.setReg_number(queryList.get(0)[75]!=null?           (String)queryList.get(0)[75]:"");
 
             return doc;
         } else return null;
@@ -593,12 +601,20 @@ public class CompanyRepositoryJPA {
                     // Settings
                     " st_prefix_barcode_pieced = "  + request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
                     " st_prefix_barcode_packed = "  + request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
-                    " st_netcost_policy = :st_netcost_policy " +   // policy of netcost calculation by all company or by each department separately
+                    " st_netcost_policy = :st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
+
+                    " type =            :type" +// entity or individual
+//                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
+//                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
+            query.setParameter("type",request.getType());
+//            query.setParameter("tax_number",request.getTax_number());
+//            query.setParameter("reg_number",request.getReg_number());
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -773,7 +789,12 @@ public class CompanyRepositoryJPA {
                 " fio_glavbuh,"+//ФИО главбуха
                 " st_prefix_barcode_pieced, "  + // prefix of barcode for pieced product
                 " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
-                " st_netcost_policy " +   // policy of netcost calculation by all company or by each department separately
+                " st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
+                " type " +// entity or individual
+//                " reg_country_id, " + // country of registration
+//                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -826,11 +847,18 @@ public class CompanyRepositoryJPA {
                 "'" + (request.getFio_glavbuh() == null ? "": request.getFio_glavbuh()) + "', " +//ФИО главбуха
                 request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
                 request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
-                ":st_netcost_policy" +  // policy of netcost calculation by all company or by each department separately
+                ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
+                ":type " +
+//                request.getReg_country_id() + "," +
+//                ":tax_number," +
+//                ":reg_number" +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
+            query.setParameter("type",request.getType());
+//            query.setParameter("tax_number",request.getTax_number());
+//            query.setParameter("reg_number",request.getReg_number());
             query.executeUpdate();
             stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);

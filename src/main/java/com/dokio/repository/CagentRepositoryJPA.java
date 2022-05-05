@@ -433,7 +433,13 @@ public class CagentRepositoryJPA {
 //                    "           coalesce(cty.area_ru,'') as area, " +
 //                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
                     "           '' as area, " +
-                    "           '' as jr_area" +
+                    "           '' as jr_area," +
+
+                    "           p.type as type " +// entity or individual
+//                    "           p.reg_country_id as reg_country_id, " + // country of registration
+//                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
 
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -521,6 +527,10 @@ public class CagentRepositoryJPA {
             doc.setJr_city((String)                                         queryList.get(0)[57]);
             doc.setArea((String)                                            queryList.get(0)[58]);
             doc.setJr_area((String)                                         queryList.get(0)[59]);
+            doc.setType(queryList.get(0)[60]!=null?                 (String)queryList.get(0)[60]:"");
+//            doc.setReg_country_id((Integer)                                 queryList.get(0)[61]);
+//            doc.setTax_number(queryList.get(0)[62]!=null?           (String)queryList.get(0)[62]:"");
+//            doc.setReg_number(queryList.get(0)[63]!=null?           (String)queryList.get(0)[63]:"");
             //adding categories
             List<Integer> valuesListId =getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
             doc.setCagent_categories_id(valuesListId);
@@ -831,11 +841,20 @@ public class CagentRepositoryJPA {
                     " jr_ip_ogrnip = '" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) +"', " +//ОГРНИП (для ИП)
                     " jr_ip_svid_num = '" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
 
-                    " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
+                    " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')," +
+
+                    " type =            :type " +// entity or individual
+//                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
+//                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
                     " where " +
                     " id = " + request.getId();
 //                            " and master_id = " + myMasterId;// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("type",request.getType());
+//            query.setParameter("tax_number",request.getTax_number());
+//            query.setParameter("reg_number",request.getReg_number());
+
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -955,7 +974,11 @@ public class CagentRepositoryJPA {
                 " jr_fio_otchestvo,"+//Отчество
                 " jr_ip_ogrnip,"+//ОГРНИП (для ИП)
                 " jr_ip_svid_num,"+//номер свидетельства (для ИП)
-                " jr_ip_reg_date" + //дата регистрации (для ИП)
+                " jr_ip_reg_date," + //дата регистрации (для ИП)
+                " type " +// entity or individual
+//                " reg_country_id, " + // country of registration
+//                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -1004,10 +1027,17 @@ public class CagentRepositoryJPA {
                 "'" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество
                 "'" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) + "', " + //ОГРНИП (для ИП)
                 "'" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
-                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')" +
+                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')," +
+                ":type " +
+//                request.getReg_country_id() + "," +
+//                ":tax_number," +
+//                ":reg_number" +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("type",request.getType());
+//            query.setParameter("tax_number",request.getTax_number());
+//            query.setParameter("reg_number",request.getReg_number());
             query.executeUpdate();
             stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);

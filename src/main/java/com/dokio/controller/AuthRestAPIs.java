@@ -121,13 +121,13 @@ public class AuthRestAPIs {
 		logger.info("Processing post request for path /signup: " + signUpRequest.toString());
         EntityManager emgr = emf.createEntityManager();
 		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-			return new ResponseEntity<>(new ResponseMessage("Такой логин уже зарегистрирован"),
-					HttpStatus.OK);
+			return new ResponseEntity<>(new ResponseMessage("login_registered"),
+					HttpStatus.NOT_ACCEPTABLE);
 		}
 
 		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-			return new ResponseEntity<>(new ResponseMessage("Такой Email уже зарегистрирован"),
-					HttpStatus.OK);
+			return new ResponseEntity<>(new ResponseMessage("email_registered"),
+					HttpStatus.NOT_ACCEPTABLE);
 		}
 		// Если такого логина и емайла нет
 		// Создание аккаунта для нового пользователя

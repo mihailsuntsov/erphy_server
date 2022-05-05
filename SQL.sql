@@ -3517,20 +3517,18 @@ update sprav_sys_countries set organization = 'world';
 alter table companies drop column currency_id;
 
 alter table companies add column type varchar(10);        -- entity or individual
-alter table companies add column reg_country_id int;      -- country of registration
-alter table companies add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
-alter table companies add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+-- alter table companies add column reg_country_id int;      -- country of registration
+-- alter table companies add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+-- alter table companies add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
 alter table cagents add column type varchar(10);        -- entity or individual
-alter table cagents add column reg_country_id int;      -- country of registration
-alter table cagents add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
-alter table cagents add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+-- alter table cagents add column reg_country_id int;      -- country of registration
+-- alter table cagents add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+-- alter table cagents add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-
-
-
-
-
+alter table cagents alter column opf_id drop not null;
+update cagents set type='entity';
+update companies set type='entity';
 
 
 

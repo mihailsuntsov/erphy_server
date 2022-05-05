@@ -92,6 +92,42 @@ public class CompaniesJSON {
     private Integer st_prefix_barcode_pieced;   // prefix of barcode for pieced product
     private Integer st_prefix_barcode_packed;   // prefix of barcode for packed product
     private String  st_netcost_policy;          // policy of netcost calculation for all company or for each department separately
+    private String type;                        // entity or individual
+//    private Integer reg_country_id;             // country of registration
+//    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+//    public Integer getReg_country_id() {
+//        return reg_country_id;
+//    }
+//
+//    public void setReg_country_id(Integer reg_country_id) {
+//        this.reg_country_id = reg_country_id;
+//    }
+//
+//    public String getTax_number() {
+//        return tax_number;
+//    }
+//
+//    public void setTax_number(String tax_number) {
+//        this.tax_number = tax_number;
+//    }
+//
+//    public String getReg_number() {
+//        return reg_number;
+//    }
+//
+//    public void setReg_number(String reg_number) {
+//        this.reg_number = reg_number;
+//    }
 
     public Integer getSt_prefix_barcode_pieced() {
         return st_prefix_barcode_pieced;
