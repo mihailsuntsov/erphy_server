@@ -88,6 +88,7 @@ public class InvoiceoutRepositoryJPA {
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -101,15 +102,15 @@ public class InvoiceoutRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from invoiceout_product where invoiceout_id=p.id),0) as sum_price, " +
-                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoiceout_date, " +
+                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoiceout_date, " +
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from invoiceout_product ip where coalesce(ip.invoiceout_id,0)=p.id) as product_count," + //подсчет кол-ва товаров
@@ -396,6 +397,7 @@ public class InvoiceoutRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -409,15 +411,15 @@ public class InvoiceoutRepositoryJPA {
                     "           dp.name ||' '||dp.address  as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(dp.price_id,0) as department_type_price_id, " +
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
-                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoiceout_date, " +
+                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoiceout_date, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +

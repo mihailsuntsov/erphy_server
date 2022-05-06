@@ -70,7 +70,7 @@ public class DepartmentRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-//            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
@@ -81,8 +81,8 @@ public class DepartmentRepositoryJPA {
                     "           (select name from companies where id=p.company_id) as company, " +
                     "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
                     "           (select name from departments where id=p.parent_id) as parent, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from departments p " +

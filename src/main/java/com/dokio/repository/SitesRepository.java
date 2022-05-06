@@ -213,6 +213,7 @@ public class SitesRepository {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -228,8 +229,8 @@ public class SitesRepository {
                     "           coalesce(p.stopped,false ) as stopped, " +
                     "           coalesce(p.domain_associated,false ) as domain_associated, " +
 //                    "           p._______ as __________, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.name as name " +
                     "           from sites p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +

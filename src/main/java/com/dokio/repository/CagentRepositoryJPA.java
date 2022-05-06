@@ -77,6 +77,7 @@ public class CagentRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -90,8 +91,8 @@ public class CagentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           sso.name as opf, "+
                     "           sso.id as opf_id, "+
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     // Апдейт Контрагентов
                     "           p.code as code, " +
@@ -366,6 +367,7 @@ public class CagentRepositoryJPA {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -379,8 +381,8 @@ public class CagentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           sso.name as opf, "+
                     "           sso.id as opf_id, "+
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     // Апдейт Контрагентов
                     "           p.code as code, " +
@@ -1166,7 +1168,7 @@ public class CagentRepositoryJPA {
                     "           us.name as creator, " +
                     "           cg.name as cagent," +
 
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
 
                     "           d.doc_name_ru as doc_name, " +
                     "           d.page_name as pagename, " +
@@ -1252,7 +1254,7 @@ public List<HistoryCagentBalanceJSON> getHistoryCagentBalanceTable(int result, i
 
     stringQuery =   "           select  " +
 
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
                     "           cmp.name as company, " +
                     "           cg.name as cagent," +
 
@@ -1407,11 +1409,12 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
             throw new IllegalArgumentException("Недопустимые параметры запроса");
+        String dateFormat=userRepositoryJPA.getMyDateFormat();
 
         stringQuery =   " select " +
                         " d.doc_name_ru as doc_name, " +
                         " p.doc_number as doc_number, " +
-                        " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                        " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
                         " p.summ_in as summ_in, " +
                         " p.summ_out as summ_out, " +
                         " st.name as status, " +

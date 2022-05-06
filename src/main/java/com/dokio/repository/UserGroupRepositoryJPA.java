@@ -99,6 +99,7 @@ public class UserGroupRepositoryJPA {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
             int myCompanyId=userRepositoryJPA.getMyCompanyId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             String stringQuery = "select            " +
                     "p.id as id,            " +
                     "p.name as name,            " +
@@ -108,8 +109,8 @@ public class UserGroupRepositoryJPA {
                     "(select name from users where id=p.master_id) as master,            " +
                     "(select name from users where id=p.creator_id) as creator,            " +
                     "(select name from users where id=p.changer_id) as changer,            " +
-                    "to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created,            " +
-                    "to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed,            " +
+                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "coalesce(p.company_id,'0') as company_id,            " +

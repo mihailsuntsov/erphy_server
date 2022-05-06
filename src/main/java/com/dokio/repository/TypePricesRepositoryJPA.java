@@ -66,6 +66,7 @@ public class TypePricesRepositoryJPA {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -79,8 +80,8 @@ public class TypePricesRepositoryJPA {
                     "           p.company_id as company_id, " +
                     "           p.pricerole_id as pricerole_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed, " +
+                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +
@@ -133,8 +134,6 @@ public class TypePricesRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.description as description " +
                     "           from sprav_type_prices p " +

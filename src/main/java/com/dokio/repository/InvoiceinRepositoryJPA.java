@@ -88,6 +88,7 @@ public class InvoiceinRepositoryJPA {
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -101,21 +102,21 @@ public class InvoiceinRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from invoicein_product where invoicein_id=p.id),0) as sum_price, " +
-                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoicein_date, " +
+                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoicein_date, " +
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from invoicein_product ip where coalesce(ip.invoicein_id,0)=p.id) as product_count," + //подсчет кол-ва товаров\
                     "           p.name as name," +
                     "           p.income_number as income_number," +
-                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as income_number_date, " +
 
                     "           p.invoicein_date as invoicein_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -383,6 +384,7 @@ public class InvoiceinRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -396,15 +398,15 @@ public class InvoiceinRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(dp.price_id,0) as department_type_price_id, " +
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
-                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoicein_date, " +
+                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoicein_date, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -415,7 +417,7 @@ public class InvoiceinRepositoryJPA {
                     "           p.is_completed as is_completed, " +
                     "           coalesce(p.name,'') as name," +
                     "           coalesce(p.income_number,'') as income_number," +
-                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date " +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as income_number_date " +
 
                     "           from invoicein p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +

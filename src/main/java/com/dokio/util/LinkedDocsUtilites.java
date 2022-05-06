@@ -444,12 +444,12 @@ public class LinkedDocsUtilites {
     private List<LinkedDocsJSON> getFullInfoOfLinkedDocs(List<LinkedDocsJSON> linkedDocs) {
         try {
             List<LinkedDocsJSON> returnList = new ArrayList<>();
-
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
             LinkedDocsJSON doc;
 
             for (LinkedDocsJSON linkedDoc : linkedDocs) {
 
-                doc = getFullInfoOfLinkedDoc(linkedDoc.getTablename(), linkedDoc.getId());
+                doc = getFullInfoOfLinkedDoc(linkedDoc.getTablename(), linkedDoc.getId(),dateFormat);
 
                 doc.setId(linkedDoc.getId());
                 doc.setTablename(linkedDoc.getTablename());
@@ -465,7 +465,7 @@ public class LinkedDocsUtilites {
         }
     }
 
-    private LinkedDocsJSON getFullInfoOfLinkedDoc(String tablename, Long id) {
+    private LinkedDocsJSON getFullInfoOfLinkedDoc(String tablename, Long id, String dateFormat) {
 
         String myTimeZone = userRepository.getUserTimeZone();
         String tableWithSumm="";
@@ -482,7 +482,7 @@ public class LinkedDocsUtilites {
 
         String stringQuery = "select " +
                 "   d.doc_number as doc_number, " +
-                "   to_char(d.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                "   to_char(d.date_time_created at time zone '" + myTimeZone + "', '"+dateFormat+" HH24:MI') as date_time_created, " +
                 "   (select ds.doc_name_ru from documents ds where ds.table_name = '" + tablename + "') as doc_name," +
                 "   coalesce(ssd.name,'-') as status_name," +
                 (DOCS_WITH_PRODUCT_SUMPRICE.contains(tablename) ?

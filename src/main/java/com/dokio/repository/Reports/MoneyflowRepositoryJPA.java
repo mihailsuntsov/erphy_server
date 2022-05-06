@@ -66,6 +66,8 @@ public class MoneyflowRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
+
             if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) ||
                     !VALID_COLUMNS_FOR_ASC.contains(sortAsc) ||
                     !commonUtilites.isDateValid(dateFrom) ||
@@ -73,7 +75,7 @@ public class MoneyflowRepositoryJPA {
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
                 throw new IllegalArgumentException("Недопустимые параметры запроса");
             stringQuery = "select " +
-                    " to_char(dc, 'DD.MM.YYYY') as date_created,   " +
+                    " to_char(dc, '"+dateFormat+"') as date_created,   " +
                     " (summ_in_pa + summ_corr_in_pa) as summ_in_pa_,   " +
                     " (summ_out_pa + ABS(summ_corr_out_pa)) as summ_out_pa_,   " +
                     " (summ_result_in_pa-summ_result_out_pa+summ_result_corr_pa) as summ_result_pa,   " +
@@ -294,22 +296,23 @@ public class MoneyflowRepositoryJPA {
         } else return null;
     }
 
-    private String getMoneyflowDetailedSQL(String searchString, Long companyId, String dateFrom, String dateTo){
+    private String getMoneyflowDetailedSQL(String searchString, Long companyId){
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-
+        String sx = userRepositoryJPA.getMySuffix();
+        Map<String, String> map = commonUtilites.translateForMe(new String[]{"'acc_short'","'cash_room'"});
+        String dateFormat=userRepositoryJPA.getMyDateFormat();
         stringQuery = " select  " +
-                " d.doc_name_ru as doc_name, " + // Входящий платеж
+                " d.doc_name_"+sx+" as doc_name, " + // Входящий платеж
                 " p.doc_number as doc_number,  " +
-                " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created,  " +
+                " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
                 " p.summ as summ_in,  " +
                 " 0.00 as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
-                " 'р/с '||obj.payment_account||' в '||obj.name as obj_name,  " +
+                "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort  " +
                 " from paymentin p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
@@ -322,20 +325,20 @@ public class MoneyflowRepositoryJPA {
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')  " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (upper(d.doc_name_ru) like upper(CONCAT('%',:sg,'%')) or upper('р/с '||obj.payment_account||' в '||obj.name) like upper(CONCAT('%',:sg,'%')))";
+            stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+") like upper(CONCAT('%',:sg,'%')) or upper(obj.payment_account||' '||obj.name) like upper(CONCAT('%',:sg,'%')))";
         }
 
         stringQuery = stringQuery +  " UNION ALL" +
                 " select  " +
-                " d.doc_name_ru as doc_name, " +  // Исходящий платеж
+                " d.doc_name_"+sx+" as doc_name, " +  // Исходящий платеж
                 " p.doc_number as doc_number,  " +
-                " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created,  " +
+                " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
                 " 0.00 as summ_in,  " +
                 " p.summ as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
-                " 'р/с '||obj.payment_account||' в '||obj.name as obj_name,  " +
+                "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort  " +
                 " from paymentout p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
@@ -348,19 +351,19 @@ public class MoneyflowRepositoryJPA {
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (upper(d.doc_name_ru) like upper(CONCAT('%',:sg,'%')) or upper('р/с '||obj.payment_account||' в '||obj.name) like upper(CONCAT('%',:sg,'%')))";
+            stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+") like upper(CONCAT('%',:sg,'%')) or upper('р/с '||obj.payment_account||' в '||obj.name) like upper(CONCAT('%',:sg,'%')))";
         }
         stringQuery = stringQuery + " UNION ALL" +
                 " select  " +
-                " d.doc_name_ru as doc_name, " +  // Приходный ордер
+                " d.doc_name_"+sx+" as doc_name, " +  // Приходный ордер
                 " p.doc_number as doc_number,  " +
-                " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created,  " +
+                " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
                 " p.summ as summ_in,  " +
                 " 0.00 as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
-                " 'Касса '||obj.name as obj_name,  " +
+                "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort  " +
                 " from orderin p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
@@ -373,19 +376,19 @@ public class MoneyflowRepositoryJPA {
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')" +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') ";
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%')) or upper('Касса \"'||obj.name||'\"') like upper(CONCAT('%',:sg,'%')))";
+            stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+")  like upper(CONCAT('%',:sg,'%')) or upper(obj.name) like upper(CONCAT('%',:sg,'%')))";
         }
         stringQuery = stringQuery + " UNION ALL" +
                 " select  " +
-                " d.doc_name_ru as doc_name, " +  // Расходный ордер
+                " d.doc_name_"+sx+" as doc_name, " +  // Расходный ордер
                 " p.doc_number as doc_number,  " +
-                " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created,  " +
+                " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
                 " p.summ as summ_in,  " +
                 " 0.00 as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
-                " 'Касса '||obj.name as obj_name,  " +
+                "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort  " +
                 " from orderout p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
@@ -398,19 +401,19 @@ public class MoneyflowRepositoryJPA {
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%')) or upper('Касса \"'||obj.name||'\"') like upper(CONCAT('%',:sg,'%')))";
+            stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+")  like upper(CONCAT('%',:sg,'%')) or upper(obj.name) like upper(CONCAT('%',:sg,'%')))";
         }
         stringQuery = stringQuery + " UNION ALL" +
                 " select  " +
-                " d.doc_name_ru as doc_name, " +  // Корректировка
+                " d.doc_name_"+sx+" as doc_name, " +  // Корректировка
                 " p.doc_number as doc_number,  " +
-                " to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created,  " +
+                " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
                 " (CASE WHEN p.summ>0 THEN  p.summ ELSE 0.00 END) as summ_in,  " +
                 " (CASE WHEN p.summ<0 THEN  p.summ ELSE 0.00 END) as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
-                " (CASE WHEN p.boxoffice_id is null THEN  ('р/с '||obj2.payment_account||' в '||obj2.name) ELSE ('Касса '||obj1.name) END) as obj_name,  " +
+                " (CASE WHEN p.boxoffice_id is null THEN  ('"+map.get("acc_short")+" "+"'||obj2.payment_account||', '||obj2.name) ELSE ('"+map.get("cash_room")+" "+"'||obj1.name) END) as obj_name,  " +
                 " p.date_time_created as date_time_created_sort  " +
                 " from correction p  " +
                 " INNER JOIN documents d ON d.id = 41 " +
@@ -426,6 +429,11 @@ public class MoneyflowRepositoryJPA {
                 " and type in ('account','boxoffice')" +
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
+        if (searchString != null && !searchString.isEmpty()) {
+            stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+") like upper(CONCAT('%',:sg,'%')) or upper(" +
+                    "(CASE WHEN p.boxoffice_id is null THEN  (obj2.payment_account||' '||obj2.name) ELSE (obj1.name) END)" +
+                    ") like upper(CONCAT('%',:sg,'%')))";
+        }
 //        Query query = entityManager.createNativeQuery(stringQuery);
         return stringQuery;
     }
@@ -434,7 +442,7 @@ public class MoneyflowRepositoryJPA {
     public List<MoneyflowTableJSON> getMoneyflowDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
             throw new IllegalArgumentException("Недопустимые параметры запроса");
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId, dateFrom, dateTo);
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId);
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -470,7 +478,7 @@ public class MoneyflowRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public Integer getMoneyflowDetailedSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo) {
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId, dateFrom, dateTo);
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId);
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             if (searchString != null && !searchString.isEmpty())

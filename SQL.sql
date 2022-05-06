@@ -3517,19 +3517,28 @@ update sprav_sys_countries set organization = 'world';
 alter table companies drop column currency_id;
 
 alter table companies add column type varchar(10);        -- entity or individual
--- alter table companies add column reg_country_id int;      -- country of registration
--- alter table companies add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
--- alter table companies add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-
 alter table cagents add column type varchar(10);        -- entity or individual
--- alter table cagents add column reg_country_id int;      -- country of registration
--- alter table cagents add column tax_number varchar(100); -- tax number assigned to the taxpayer in the country of registration (like INN in Russia)
--- alter table cagents add column reg_number varchar(100); -- registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
 alter table cagents alter column opf_id drop not null;
 update cagents set type='entity';
 update companies set type='entity';
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('acc_short',   'р/с',                'acc'),
+('cash_room',   'Касса',              'Сash room');
+
+alter table sprav_sys_locales add column date_format varchar(10);
+
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=1;
+update sprav_sys_locales set date_format='YYYY-MM-DD' where id=2;
+update sprav_sys_locales set date_format='MM/DD/YYYY' where id=3;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=4;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=5;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=6;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=7;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=8;
+update sprav_sys_locales set date_format='DD/MM/YYYY' where id=9;
+update sprav_sys_locales set date_format='DD.MM.YYYY' where id=10;
 
 
 
@@ -3568,12 +3577,7 @@ update companies set type='entity';
 
 
 
-
-
-
-
-
-  WITH
+WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

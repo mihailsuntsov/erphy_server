@@ -61,6 +61,7 @@ public class TradeResultsRepositoryJPA {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -76,8 +77,8 @@ public class TradeResultsRepositoryJPA {
                     "           p.department_id as department_id, " +
                     "           cmp.name as company, " +
                     "           ds.name||' '||ds.address as department, " +
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed, " +
+                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.additional as additional, " +
@@ -427,6 +428,7 @@ public class TradeResultsRepositoryJPA {
             List<Integer>param=userRepositoryJPA.getMyDepartmentsId();
             String dIds="";
             for (int i:param){dIds=dIds+i+",";}dIds=dIds+"0";//0 чтобы хоть чтото было, иначе будет and p.department_id in() и ошибка
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -442,8 +444,8 @@ public class TradeResultsRepositoryJPA {
                     "           p.department_id as department_id, " +
                     "           cmp.name as company, " +
                     "           ds.name||' '||ds.address as department, " +
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed, " +
+                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
                     "           p.additional as additional, " +
                     "           p.trade_date as trade_date, " +
                     "           to_char(p.trade_date,'DD.MM.YYYY') as trade_date_char, " +

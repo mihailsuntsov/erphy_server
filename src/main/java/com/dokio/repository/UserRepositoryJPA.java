@@ -610,6 +610,18 @@ public class UserRepositoryJPA {
             return null;
         }
     }
+    public String getMyDateFormat(){
+        Long myId = userDetailService.getUserId();
+        String stringQuery = "select l.date_format from sprav_sys_locales l where l.id=(select u.locale_id from user_settings u where u.user_id= " + myId +")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((String) query.getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMyDateFormat. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
     @SuppressWarnings("Duplicates")
     public UserSettingsJSON getUserSettings(Long userId) {
         String stringQuery;

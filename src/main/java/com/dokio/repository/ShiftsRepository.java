@@ -66,6 +66,7 @@ public class ShiftsRepository {
             boolean needToSetParameter_MyDepthsIds = false;
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
 
             stringQuery = "select  p.id as id, " +
@@ -80,7 +81,7 @@ public class ShiftsRepository {
                     "           dp.name as department, " +
                     "           p.shift_number as shift_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
                     "           to_char(p.date_time_closed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_closed, " +
 
                     "           p.kassa_id as kassa_id, " +// id KKM

@@ -65,6 +65,7 @@ public class ReceiptsRepository {
             boolean needToSetParameter_MyDepthsIds = false;
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
 
             stringQuery = "select  p.id as id, " +
@@ -79,7 +80,7 @@ public class ReceiptsRepository {
                     "           dp.name as department, " +
                     "           sh.shift_number as shift_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
                     "           p.shift_id as shift_id," +
                     "           p.kassa_id as kassa_id, " +// id KKM
                     "           ka.name as kassa, " +
