@@ -76,7 +76,7 @@ public class ProductsRepositoryJPA {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            boolean showDeleted = Objects.isNull(filterOptionsIds)?false:filterOptionsIds.contains(1);// Показывать только удаленные
             String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -153,7 +153,7 @@ public class ProductsRepositoryJPA {
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            boolean showDeleted = Objects.isNull(filterOptionsIds)?false:filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id, " +
                     "           pg.name as productgroup " +
                     "           from products p " +
@@ -1746,7 +1746,6 @@ public class ProductsRepositoryJPA {
     public ProductsPriceAndRemainsJSON getProductsPriceAndRemains(Long department_id, Long product_id, Long price_type_id, Long document_id) {
 
         Long myMasterId = userRepositoryJPA.getMyMasterId();
-//        String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
         //себестоимость
         ProductHistoryJSON lastProductHistoryRecord = getLastProductHistoryRecord(product_id,department_id);
 

@@ -666,9 +666,10 @@ public class UserRepositoryJPA {
                 "   p.locale_id as locale_id, " +
                 "   sslc.code as locale, " +
                 "   sslg.suffix as suffix, " +
-                "   c.jr_country_id as country_id," +    // id of user's company country of jurisdiction
+                "   c.jr_country_id as country_id," +       // id of user's company country of jurisdiction
                 "   ssc.organization," +                    // organization of country of jurisdiction(e.g. EU)
-                "   cur.name_short" +                       // short name of Accounting currency of user's company (e.g. $ or EUR)
+                "   cur.name_short," +                      // short name of Accounting currency of user's company (e.g. $ or EUR)
+                "   sslc.date_format" +                     // date format of the user, like DD/MM/YYYY, YYYY-MM-DD e.t.c
                 "   from    user_settings p, " +
                 "           sprav_sys_languages sslg, " +
                 "           sprav_sys_locales sslc, " +
@@ -695,6 +696,7 @@ public class UserRepositoryJPA {
                 doc.setCountry_id((Integer)         queryList.get(0)[5]);
                 doc.setOrganization((String)        queryList.get(0)[6]);
                 doc.setAccounting_currency((String) queryList.get(0)[7]);
+                doc.setDateFormat((String)          queryList.get(0)[8]);
             }
             return doc;
         } catch (Exception e) {

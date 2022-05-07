@@ -39,6 +39,24 @@ public class OrderoutForm {
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
     private Long boxoffice_to_id; // касса предприятия куда пермещаем ден. ср-ва
     private Long kassa_to_id;             // id кассы ККМ - назначения платежа (куда производится внесение)
+    private Boolean internal;               // внутренний перевод
+    private Long department_id;             // отделение, из которого создают приходный ордер. Нужно для определения кассы, привязанной к отделению
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
+
+    public Long getDepartment_id() {
+        return department_id;
+    }
+
+    public void setDepartment_id(Long department_id) {
+        this.department_id = department_id;
+    }
 
     public Long getKassa_department_id() {
         return kassa_department_id;

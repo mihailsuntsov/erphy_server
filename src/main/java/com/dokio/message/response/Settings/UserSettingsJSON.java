@@ -24,6 +24,15 @@ public class UserSettingsJSON {
     private Integer country_id;             // id of user's company country of jurisdiction
     private String  organization;           // organization of country of jurisdiction(e.g. EU)
     private String  accounting_currency;    // short name of Accounting currency of user's company (e.g. $ or EUR)
+    private String  dateFormat;
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
 
     public Integer getCountry_id() {
         return country_id;

@@ -75,6 +75,8 @@ public class PaymentoutRepositoryJPA {
     private SpravExpenditureRepositoryJPA spravExpenditureRepository;
     @Autowired
     private FinanceUtilites financeUtilites;
+    @Autowired
+    private SpravExpenditureRepositoryJPA expenditureRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -414,7 +416,7 @@ public class PaymentoutRepositoryJPA {
                 Long myId = userRepository.getUserId();
                 Long newDocId;
                 Long doc_number;//номер документа( = номер заказа)
-
+                Long expenditureId;
                 //генерируем номер документа, если его (номера) нет
                 if (request.getDoc_number() != null && !request.getDoc_number().isEmpty() && request.getDoc_number().trim().length() > 0) {
                     doc_number=Long.valueOf(request.getDoc_number());
@@ -430,8 +432,27 @@ public class PaymentoutRepositoryJPA {
                     //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
                     linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
                     if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
-                }
 
+                    //если расч счет неизвестен
+                    if(Objects.isNull(request.getPayment_account_id())) {
+                        // но известно отделение -
+                        if (!Objects.isNull(request.getDepartment_id())) {
+                            //пытаемся получть расч. счёт из привязки к отделению
+                            request.setPayment_account_id(companyRepositoryJPA.getPaymentAccountIdByDepartment(request.getDepartment_id()));
+                        }
+                    }
+                    //если расч счет неизвестен или если не получилось получить его из привязки к отделению(например в карточке отделения нет привязки к расч счету
+                    if(Objects.isNull(request.getPayment_account_id()) || request.getPayment_account_id()==0L){
+                        // пытаемся получить главный расч. счёт (верхний) из списка счетов предприятия
+                        request.setPayment_account_id(companyRepositoryJPA.getMainPaymentAccountIdOfCompany(request.getCompany_id()));
+                        //Если опять не получилось (в карточке предприятия не заведены расчётные счета)
+                        if(Objects.isNull(request.getPayment_account_id()) || request.getPayment_account_id()==0L)
+                            return -20L;//расчётный счёт не определен (см. файл _ErrorCodes)
+                    }
+                }
+                if(Objects.isNull(request.getExpenditure_id()))
+                    expenditureId = expenditureRepository.getDefaultExpenditure(request.getCompany_id());
+                else expenditureId = request.getExpenditure_id();
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
 //                if(request.getCagent_id()==null){
@@ -498,7 +519,7 @@ public class PaymentoutRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         request.getSumm()+"," + //наименование заказа поставщику
                         request.getPayment_account_id()+"," + //банковский счет
-                        request.getExpenditure_id()+"," + // расхода вид
+                        expenditureId + "," + // расхода вид
                         ":moving_type," +
                         request.getBoxoffice_id()+"," +
                         request.getPayment_account_to_id()+"," +

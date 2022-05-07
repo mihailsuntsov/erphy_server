@@ -39,6 +39,24 @@ public class PaymentoutForm {
     private String moving_type; // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт предприятия
     private Long boxoffice_id; // касса предприятия (не путать с ККМ!)
     private Long payment_account_to_id;  //  банковский счёт препдриятия, куда перемещаем денежные средства
+    private Long department_id; //отделение, из которого создают входящий платеж. Нужно для определения расчетного счета, привязанного к отделению
+    private Boolean internal; // внутренний платеж
+
+    public Boolean getInternal() {
+        return internal;
+    }
+
+    public void setInternal(Boolean internal) {
+        this.internal = internal;
+    }
+
+    public Long getDepartment_id() {
+        return department_id;
+    }
+
+    public void setDepartment_id(Long department_id) {
+        this.department_id = department_id;
+    }
 
     public String getMoving_type() {
         return moving_type;

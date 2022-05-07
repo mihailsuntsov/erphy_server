@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravExpenditureForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Sprav.SpravExpenditureJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,7 +57,7 @@ public class SpravExpenditureRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","type","cagent","company","creator","date_time_created_sort","is_completed")
+            .of("name","type","cagent","company","creator","date_time_created_sort","is_completed","is_default")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -86,8 +88,9 @@ public class SpravExpenditureRepositoryJPA {
                     "           p.name as name, " +
                     "           p.type as type, " +//тип расхода: return (возврат),  purchases (закупки товаров), taxes (налоги и сборы), moving (перемещение меж. своими счетами или кассами), other_opex (другие операционные)
                     "           p.is_completed as is_completed, " +
+                    "           coalesce(p.is_default, false) as is_default, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort  " +
+                    "           p.date_time_changed as date_time_changed_sort " +
                     "           from sprav_expenditure_items p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -143,6 +146,7 @@ public class SpravExpenditureRepositoryJPA {
                     doc.setName((String) obj[11]);
                     doc.setType((String) obj[12]);
                     doc.setIs_completed((Boolean) obj[13]);
+                    doc.setIs_default((Boolean) obj[14]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -436,13 +440,13 @@ public class SpravExpenditureRepositoryJPA {
     public Boolean insertExpendituresFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
-        stringQuery = "insert into sprav_expenditure_items ( master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false);";
+        stringQuery = "insert into sprav_expenditure_items (master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed,is_default) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false,true),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -454,4 +458,50 @@ public class SpravExpenditureRepositoryJPA {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer setDefaultExpenditure(UniversalForm request) {// id : предприятие, id3 : id расхода
+        EntityManager emgr = emf.createEntityManager();
+        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getId());//предприятие для создаваемого документа
+        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        if ((   //если есть право на редактирование по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(40L, "504")) ||
+                //если есть право на редактирование по всем отделениям своего предприятия, и предприятие документа своё, и
+                (securityRepositoryJPA.userHasPermissions_OR(40L, "505") && myCompanyId.equals(request.getId()))) &&
+                //редактируется документ предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                DocumentMasterId.equals(myMasterId))
+        {
+            try
+            {
+                String stringQuery;
+                stringQuery =   " update sprav_expenditure_items set is_default=(" +
+                        " case when (id="+request.getId3()+") then true else false end) " +
+                        " where " +
+                        " company_id= "+request.getId();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    public Long getDefaultExpenditure(Long companyId) {
+        String stringQuery =
+                " select id from sprav_expenditure_items where company_id= " + companyId + " and is_default = true";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).longValue();
+        } catch (NoResultException nre) {
+            return null;
+        } catch (Exception e) {
+            logger.error("Exception in method getDefaultExpenditure. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

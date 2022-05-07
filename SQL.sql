@@ -3541,7 +3541,7 @@ update sprav_sys_locales set date_format='DD/MM/YYYY' where id=9;
 update sprav_sys_locales set date_format='DD.MM.YYYY' where id=10;
 
 
-
+alter table sprav_expenditure_items add column is_default boolean;
 
 
 

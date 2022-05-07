@@ -74,6 +74,8 @@ public class OrderoutRepositoryJPA {
     private SpravExpenditureRepositoryJPA spravExpenditureRepository;
     @Autowired
     private FinanceUtilites financeUtilites;
+    @Autowired
+    private SpravExpenditureRepositoryJPA expenditureRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -390,6 +392,7 @@ public class OrderoutRepositoryJPA {
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long linkedDocsGroupId=null;
+            Long expenditureId;
 
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
@@ -420,7 +423,28 @@ public class OrderoutRepositoryJPA {
                     //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
                     linkedDocsGroupId=linkedDocsUtilites.getOrCreateAndGetGroupId(request.getLinked_doc_id(),request.getLinked_doc_name(),request.getCompany_id(),myMasterId);
                     if (Objects.isNull(linkedDocsGroupId)) return null; // ошибка при запросе id группы связанных документов, либо её создании
+
+                    //если касса неизвестна
+                    if(Objects.isNull(request.getBoxoffice_id())) {
+                        // но известно отделение -
+                        if (!Objects.isNull(request.getDepartment_id())) {
+                            //пытаемся получть кассу из привязки к отделению
+                            request.setBoxoffice_id(companyRepositoryJPA.getBoxofficeIdByDepartment(request.getDepartment_id()));
+                        }
+                    }
+                    //касса неизвестна или если не получилось получить её из привязки к отделению(например в карточке отделения нет привязки к расч счёту
+                    if(Objects.isNull(request.getBoxoffice_id()) || request.getBoxoffice_id()==0L){
+                        // пытаемся получить первую созданную неудаленную кассу предприятия в качетстве главной кассы
+                        request.setBoxoffice_id(companyRepositoryJPA.getMainBoxofficeIdOfCompany(request.getCompany_id()));
+                        //Если опять не получилось (в справочнике касс предприятия ничего нет)
+                        if(Objects.isNull(request.getBoxoffice_id()) || request.getBoxoffice_id()==0L)
+                            return -21L;//касса не определена (см. файл _ErrorCodes)
+                    }
+
                 }
+                if(Objects.isNull(request.getExpenditure_id()))
+                    expenditureId = expenditureRepository.getDefaultExpenditure(request.getCompany_id());
+                else expenditureId = request.getExpenditure_id();
 
                 //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
                 //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
@@ -485,7 +509,7 @@ public class OrderoutRepositoryJPA {
                         request.getStatus_id()  + ", "+//статус
                         linkedDocsGroupId+"," + // id группы связанных документов
                         request.getSumm()+"," + //наименование заказа поставщику
-                        request.getExpenditure_id()+"," + // расхода вид
+                        expenditureId+"," + // расхода вид
                         ":moving_type," +
                         request.getBoxoffice_id()+"," +
                         request.getBoxoffice_to_id()+"," +

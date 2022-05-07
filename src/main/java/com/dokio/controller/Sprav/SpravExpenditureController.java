@@ -15,6 +15,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.Sprav.SpravExpenditureForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Sprav.SpravExpenditureJSON;
 import com.dokio.repository.SpravExpenditureRepositoryJPA;
 import org.apache.log4j.Logger;
@@ -200,5 +201,13 @@ class SpravExpenditureController {
         try {return new ResponseEntity<>(expendituresRepository.undeleteExpenditure(checked), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller undeleteExpenditure error", e);
         return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/setDefaultExpenditure")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setDefaultExpenditure(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/setDefaultExpenditure: " + request.toString());
+        try {return new ResponseEntity<>(expendituresRepository.setDefaultExpenditure(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller setDefaultExpenditure error", e);
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

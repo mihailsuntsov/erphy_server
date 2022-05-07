@@ -28,6 +28,15 @@ public class SpravExpenditureJSON {
     private Boolean is_completed;
     private String date_time_created;
     private String date_time_changed;
+    private boolean is_default;
+
+    public boolean isIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(boolean is_default) {
+        this.is_default = is_default;
+    }
 
     public Long getId() {
         return id;
