@@ -13,16 +13,15 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 <http://www.gnu.org/licenses/>
  */
 package com.dokio.repository;
-import com.dokio.message.request.CompaniesForm;
-import com.dokio.message.request.CompaniesPaymentAccountsForm;
-import com.dokio.message.request.SearchForm;
-import com.dokio.message.request.UniversalForm;
+import com.dokio.controller.AuthRestAPIs;
+import com.dokio.message.request.*;
 import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
+import com.dokio.model.Departments;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
 import org.apache.log4j.Logger;
@@ -54,6 +53,28 @@ public class CompanyRepositoryJPA {
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+    @Autowired
+    DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    UserGroupRepositoryJPA userGroupRepository;
+    @Autowired
+    SpravCurrenciesRepository currenciesRepository;
+    @Autowired
+    CagentRepositoryJPA cagentRepository;
+    @Autowired
+    SpravSysEdizmJPA spravSysEdizm;
+    @Autowired
+    SpravBoxofficeRepositoryJPA boxofficeRepository;
+    @Autowired
+    SpravExpenditureRepositoryJPA expenditureRepository;
+    @Autowired
+    TypePricesRepositoryJPA typePricesRepository;
+    @Autowired
+    SpravTaxesRepository taxesRepository;
+    @Autowired
+    AuthRestAPIs authRestAPIs;
+    @Autowired
+    SpravStatusDocRepository statusDocRepository;
 
     public Companies getCompanyById(Long id){
         EntityManager em = emf.createEntityManager();
@@ -714,7 +735,7 @@ public class CompanyRepositoryJPA {
             {   //Сначала создаём документ без банковских счетов
                 createdCompanyId = insertCompanyBaseFields(request,myMasterId);
                 if(createdCompanyId!=null){
-                    try {//если создался...
+                    try {//если создалась..
                         //Сохраняем банковские реквизиты
                         for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
                             insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
@@ -873,6 +894,36 @@ public class CompanyRepositoryJPA {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    public void setCompanyAdditionals(Long companyId){
+        Long myId = userRepositoryJPA.getMyId();
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        // типы цен
+        Long price = typePricesRepository.insertPriceTypesFast(myId,companyId);
+        // кассы предприятия (денежные комнаты)
+        Long bo = boxofficeRepository.insertBoxofficesFast(myId,companyId);
+        // отделение
+        DepartmentForm department = new DepartmentForm();
+        department.setName("My department");
+        department.setPrice_id(price);
+        department.setBoxoffice_id(bo);
+        departmentRepositoryJPA.insertDepartmentFast(department,companyId,myId);
+        Long usergroupId = userGroupRepository.insertUsergroupFast("Administrators",companyId,myId);
+        Set<Long> permissions = authRestAPIs.getAdminPermissions();
+        userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
+        // набор валют
+        currenciesRepository.insertCurrenciesFast(myId,companyId);
+        // базовые категоии контрагентов
+        cagentRepository.insertCagentCategoriesFast(myId,companyId);
+        // единицы имерения
+        spravSysEdizm.insertEdizmFast(myId,companyId);
+        // налоги
+        taxesRepository.insertTaxesFast(myId,companyId);
+        // расходы
+        expenditureRepository.insertExpendituresFast(myId,companyId);
+        // статусы документов
+        statusDocRepository.insertStatusesFast(myMasterId,myId,companyId);
+    }
 
     @SuppressWarnings("Duplicates")// отдаёт список касс предприятия
     public List<BoxofficeListJSON> getBoxofficesList(Long companyId) {

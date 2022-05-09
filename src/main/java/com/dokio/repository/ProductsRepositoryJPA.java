@@ -1256,7 +1256,7 @@ public class ProductsRepositoryJPA {
     public List<ProductPricesJSON> getProductPrices(Long productId){
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        Long myCompanyId= userRepositoryJPA.getMyCompanyId_();
+//        Long myCompanyId= userRepositoryJPA.getMyCompanyId_();
         String stringQuery;
         stringQuery=
                 "select "+
@@ -1273,11 +1273,13 @@ public class ProductsRepositoryJPA {
                         ",0)                                as price_value " +
 
                         " from " +
-                        " sprav_type_prices p " +
+                        " sprav_type_prices p, products prod " +
                         " where " +
-                        " coalesce(p.is_deleted,false) = false " +
-                        " and company_id = " + myCompanyId +
-                        " and p.master_id = " + myMasterId +
+
+                        " p.master_id = " + myMasterId +
+                        " and prod.id="+productId+
+                        " and p.company_id=prod.company_id"+
+                        " and coalesce(p.is_deleted,false) = false " +
                         " order by p.name asc ";
 
         try{

@@ -471,9 +471,30 @@ public class CommonUtilites {
     // example of using:
     // Map<String, String> map = commonUtilites.translateForMe(new String[]{"'all'","'selected'"});
     // map.get("all");
-
+    @SuppressWarnings("Duplicates")
     public Map<String, String> translateForMe(String[] keys){
         String suffix = userRepositoryJPA.getMySuffix();
+        String stringQuery =            "select key, tr_"+suffix+" from _dictionary ";
+        if(keys.length>0)
+            stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            Map<String, String> map = new HashMap<>();
+            for(Object[] obj:queryList){
+                map.put((String)obj[0], (String)obj[1]);
+            }
+            return map;
+        } catch (Exception e) {
+            logger.error("Exception in method translateMe. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    public Map<String, String> translateForUser(Long userId, String[] keys){
+        String suffix = userRepositoryJPA.getUserSuffix(userId);
         String stringQuery =            "select key, tr_"+suffix+" from _dictionary ";
         if(keys.length>0)
             stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";

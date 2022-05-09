@@ -242,9 +242,9 @@ public class TypePricesRepositoryJPA {
             //Наименование
             updateDocument.setName (request.getName() == null ? "": request.getName());
             //Роль цены
-            EntityManager em = emf.createEntityManager();
-            SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
-            updateDocument.setPricerole(priceRole);
+//            EntityManager em = emf.createEntityManager();
+//            SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
+//            updateDocument.setPricerole(priceRole);
             //дополнительная информация
             updateDocument.setDescription (request.getDescription() == null ? "": request.getDescription());
 
@@ -284,9 +284,9 @@ public class TypePricesRepositoryJPA {
                 //Наименование
                 newDocument.setName (request.getName() == null ? "": request.getName());
                 //Роль цены
-                EntityManager em = emf.createEntityManager();
-                SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
-                newDocument.setPricerole(priceRole);
+//                EntityManager em = emf.createEntityManager();
+//                SpravSysPriceRole priceRole = em.find(SpravSysPriceRole.class, (Long.valueOf(Integer.parseInt(request.getPricerole_id()))));
+//                newDocument.setPricerole(priceRole);
                 //дополнительная информация
                 newDocument.setDescription(request.getDescription());
                 entityManager.persist(newDocument);

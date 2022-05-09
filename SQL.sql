@@ -3544,7 +3544,30 @@ update sprav_sys_locales set date_format='DD.MM.YYYY' where id=10;
 alter table sprav_expenditure_items add column is_default boolean;
 
 
-
+insert into _dictionary (key, tr_ru, tr_en) values
+('st_new',              'Новый документ',         'New document'),
+('st_cancel',           'Отмена',                 'Cancelled'),
+('st_send',             'Товары отправлены',      'Shipped'),
+('st_ret_compl',        'Возврат произведён',     'Refund made'),
+('st_assembly',         'Сборка',                 'Order-picking'),
+('st_wait_pay',         'Ожидание оплаты',        'Waiting for payment'),
+('st_wait_receive',     'Ожидание поступления',   'Waiting for receiving'),
+('st_paym_made',        'Платёж произведён',      'Payment made'),
+('st_new_order',        'Новый заказ',            'New order'),
+('st_assembl_ord',      'Сборка заказа',          'Order-picking'),
+('st_await_iss',        'Ждёт выдачи',            'Awaiting issuance'),
+('st_issd_buyer',       'Выдан покупателю',       'Given to the buyer'),
+('st_wait_prices',      'Ожидание цен',           'Waiting for pricing'),
+('st_wait_invoice',     'Ожидание счёта',         'Waiting for the invoice'),
+('st_ord_delvrd',       'Заказ доставлен',        'Order delivered'),
+('st_in_process',       'В процессе',             'In process'),
+('st_completed',        'Завершено',              'Completed'),
+('st_payment_send',     'Отправлен',              'Sent'),
+('st_money_accptd',     'Деньги приняты',         'Cash accepted'),
+('st_money_issued',     'Деньги выданы',          'Given out'),
+('st_invc_issued',      'Счёт выставлен',         'Invoice issued'),
+('st_invc_paid',        'Счёт оплачен',           'Invoice paid'),
+('st_printed',          'Напечатан',              'Printed');
 
 
 

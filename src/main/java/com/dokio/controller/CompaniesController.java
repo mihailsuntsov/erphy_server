@@ -104,6 +104,8 @@ public class CompaniesController {
 
         Long newDocument = companyRepositoryJPA.insertCompany(request);
         if(newDocument!=null && newDocument>0){
+            // добавим базовые "плюшки" (Отделение, Роль + права, справочники и т.д., т.е. как при новом аккаунте)
+            companyRepositoryJPA.setCompanyAdditionals(newDocument);
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {

@@ -23,15 +23,18 @@ import com.dokio.model.Documents;
 import com.dokio.model.Sprav.SpravStatusDocs;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Repository
@@ -55,6 +58,8 @@ public class SpravStatusDocRepository {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserDetailsServiceImpl userService;
+    @Autowired
+    CommonUtilites commonUtilites;
 
 
     @Transactional
@@ -534,5 +539,134 @@ public class SpravStatusDocRepository {
         }
         return returnList;
     }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean insertStatusesFast(Long masterId, Long mId, Long cId) {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
+                "'st_new'","'st_cancel'","'st_send'","'st_ret_compl'","'st_assembly'","'st_wait_pay'","'st_wait_receive'","'st_paym_made'","'st_new_order'",
+                "'st_assembl_ord'","'st_await_iss'","'st_issd_buyer'","'st_wait_prices'","'st_wait_invoice'","'st_ord_delvrd'","'st_in_process'","'st_completed'",
+                "'st_payment_send'","'st_money_accptd'","'st_money_issued'","'st_invc_issued'","'st_invc_paid'","'st_printed'"});
+        stringQuery = "insert into sprav_status_dock ( master_id,creator_id,company_id,date_time_created,name,dock_id,status_type,color,output_order,is_deleted,is_default) values "+
+                // Возврат покупателя
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',28,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_send")+"',28,1,'#008ad2',2,false,false),"+          //Товары отправлены
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_ret_compl")+"',28,2,'#0cb149',3,false,false),"+     //Возврат произведён
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',28,3,'#000000',4,false,false),"+        //Отмена
+                // Возврат поставщику
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',29,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_assembly")+"',29,1,'#6461a8',2,false,false),"+      //Сборка
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_send")+"',29,1,'#008ad2',3,false,false),"+          //Товары отправлены
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_pay")+"',29,1,'#fbb80f',4,false,false),"+      //Ожидание оплаты
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_ret_compl")+"',29,2,'#0cb149',5,false,false),"+     //Возврат произведён
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',29,3,'#000000',6,false,false),"+        //Отмена
+                // Входящий платёж
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',33,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_pay")+"',33,1,'#fbb80f',2,false,false),"+      //Ожидание оплаты
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_receive")+"',33,1,'#008ad2',3,false,false),"+  //Ожидание поступления
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_paym_made")+"',33,2,'#0cb149',4,false,false),"+     //Платёж произведён
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',33,3,'#000000',5,false,false),"+        //Отмена
+                // Заказ покупателя
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new_order")+"',23,1,'#cccccc',1,false,true),"+      //Новый заказ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_pay")+"',23,1,'#fbb80f',2,false,false),"+      //Ожидание оплаты
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_assembly")+"',23,1,'#6461a8',3,false,false),"+      //Сборка заказа
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_send")+"',23,1,'#008ad2',4,false,false),"+          //Товары отправлены
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_await_iss")+"',23,1,'#cf004d',5,false,false),"+     //Ждёт выдачи
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_issd_buyer")+"',23,2,'#0cb149',6,false,false),"+    //Выдан покупателю
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',23,3,'#000000',7,false,false),"+        //Отмена
+                // Заказ поставщику
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new_order")+"',39,1,'#cccccc',1,false,true),"+      //Новый заказ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_prices")+"',39,1,'#fbb80f',2,false,false),"+   //Ожидание цен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_wait_invoice")+"',39,1,'#6362a6',3,false,false),"+  //Ожидание счёта
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_paym_made")+"',39,1,'#008ad2',4,false,false),"+     //Платёж произведён
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_send")+"',39,1,'#008ad2',5,false,false),"+          //Товары отправлены
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_ord_delvrd")+"',39,2,'#0cb149',6,false,false),"+    //Заказ доставлен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',39,3,'#000000',7,false,false),"+        //Отмена
+                // Инвентаризация
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',27,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_in_process")+"',27,1,'#008ad2',2,false,false),"+    //В процессе
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',27,2,'#0cb149',3,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',27,3,'#000000',4,false,false),"+        //Отмена
+                // Исходящий платёж
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',34,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_payment_send")+"',34,2,'#0cb149',2,false,false),"+  //Отправлен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',34,3,'#000000',3,false,false),"+        //Отмена
+                // Корректировка
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',41,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',41,2,'#0cb149',2,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',41,3,'#000000',3,false,false),"+        //Отмена
+                // Оприходование
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',16,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_in_process")+"',16,1,'#008ad2',2,false,false),"+    //В процессе
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',16,2,'#0cb149',3,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',16,3,'#000000',4,false,false),"+        //Отмена
+                // Отгрузка
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',21,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',21,2,'#0cb149',2,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',21,3,'#000000',3,false,false),"+        //Отмена
+                // Перемещение
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',30,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_assembly")+"',30,1,'#6461a8',2,false,false),"+      //Сборка
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_send")+"',30,1,'#008ad2',3,false,false),"+          //Товары отправлены
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',30,2,'#0cb149',4,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',30,3,'#000000',5,false,false),"+        //Отмена
+                // Приёмка
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',15,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_in_process")+"',15,1,'#008ad2',2,false,false),"+    //В процессе
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',15,2,'#0cb149',3,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',15,3,'#000000',4,false,false),"+        //Отмена
+                // Приходный ордер
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',35,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_money_accptd")+"',35,2,'#0cb149',2,false,false),"+  //Деньги приняты
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',35,3,'#000000',3,false,false),"+        //Отмена
+                // Расходный ордер
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',36,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_money_issued")+"',36,2,'#0cb149',2,false,false),"+  //Деньги выданы
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',36,3,'#000000',3,false,false),"+        //Отмена
+                // Розничная продажа
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',25,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',25,2,'#0cb149',2,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',25,3,'#000000',3,false,false),"+        //Отмена
+                // Списание
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',17,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_in_process")+"',17,1,'#008ad2',2,false,false),"+    //В процессе
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',17,2,'#0cb149',3,false,false),"+     //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',17,3,'#000000',4,false,false),"+        //Отмена
+                // Счёт покупателю
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',31,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_invc_issued")+"',31,1,'#008ad2',2,false,false),"+   //Счёт выставлен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_invc_paid")+"',31,2,'#0cb149',3,false,false),"+     //Счёт оплачен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',31,3,'#000000',4,false,false),"+        //Отмена
+                // Счёт поставщика
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',32,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_invc_issued")+"',32,1,'#008ad2',2,false,false),"+   //Счёт выставлен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_invc_paid")+"',32,2,'#0cb149',3,false,false),"+     //Счёт оплачен
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',32,3,'#000000',4,false,false),"+        //Отмена
+                // Счёт-фактура выданный
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',37,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_printed")+"',37,2,'#0cb149',2,false,false),"+       //Напечатан
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',37,3,'#000000',3,false,false),"+        //Отмена
+                // Счёт-фактура полученный
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',38,1,'#cccccc',1,false,true),"+            //Новый документ
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_printed")+"',38,2,'#0cb149',2,false,false),"+       //Напечатан
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',38,3,'#000000',3,false,false)";         //Отмена
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method insertStatusesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
+
 
 }

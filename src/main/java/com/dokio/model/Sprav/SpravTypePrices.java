@@ -50,9 +50,9 @@ public class SpravTypePrices {
     @JoinColumn(name = "changer_id")
     private User changer;
 
-    @ManyToOne
-    @JoinColumn(name = "pricerole_id")
-    private SpravSysPriceRole pricerole;
+//    @ManyToOne
+//    @JoinColumn(name = "pricerole_id")
+//    private SpravSysPriceRole pricerole;
 
     @Column(name="date_time_created", nullable = false)
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
@@ -151,11 +151,11 @@ public class SpravTypePrices {
         this.is_archive = is_archive;
     }
 
-    public SpravSysPriceRole getPricerole() {
-        return pricerole;
-    }
-
-    public void setPricerole(SpravSysPriceRole pricerole) {
-        this.pricerole = pricerole;
-    }
+//    public SpravSysPriceRole getPricerole() {
+//        return pricerole;
+//    }
+//
+//    public void setPricerole(SpravSysPriceRole pricerole) {
+//        this.pricerole = pricerole;
+//    }
 }

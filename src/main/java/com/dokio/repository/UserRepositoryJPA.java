@@ -588,7 +588,7 @@ public class UserRepositoryJPA {
     }
 
     public String getUserSuffix(Long userId){
-            String stringQuery = "select u.suffix from user_settings u where u.id= " + userId;
+        String stringQuery = "select l.suffix from sprav_sys_languages l where l.id=(select u.language_id from user_settings u where u.user_id= " + userId +")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             return ((String) query.getSingleResult());
