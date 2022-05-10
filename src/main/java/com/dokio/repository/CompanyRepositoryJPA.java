@@ -868,8 +868,8 @@ public class CompanyRepositoryJPA {
                 "'" + (request.getFio_director() == null ? "": request.getFio_director()) + "', " +//ФИО управляющего
                 "'" + (request.getDirector_position() == null ? "": request.getDirector_position()) + "', " +//должность управляющего
                 "'" + (request.getFio_glavbuh() == null ? "": request.getFio_glavbuh()) + "', " +//ФИО главбуха
-                request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
-                request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
+                (Objects.isNull(request.getSt_prefix_barcode_pieced())?21:request.getSt_prefix_barcode_pieced()) + ", " +// prefix of barcode for pieced product
+                (Objects.isNull(request.getSt_prefix_barcode_packed())?20:request.getSt_prefix_barcode_packed()) + ", " +// prefix of barcode for packed product
                 ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
                 ":type " +
 //                request.getReg_country_id() + "," +
@@ -1405,12 +1405,16 @@ public class CompanyRepositoryJPA {
                 " creator_id," + //создатель
                 " date_time_created," + //дата и время создания
                 " st_netcost_policy," +
+                " st_prefix_barcode_pieced," +
+                " st_prefix_barcode_packed," +
                 " name" + //наименование
                 ") values (" +
                 myMasterId + ", "+
                 myMasterId + ", "+
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
                 "'all', " +
+                request.getSt_prefix_barcode_pieced()+", "+
+                request.getSt_prefix_barcode_packed()+", "+
                 "'" + (request.getName() == null ? "Company": request.getName()) + "'" +//наименование
                 ")";
         try{

@@ -14,7 +14,9 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
  */
 package com.dokio.controller.Sprav;
 import com.dokio.message.response.Sprav.SpravSysPPRJSON;
+import com.dokio.repository.UserRepositoryJPA;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -34,6 +36,8 @@ public class SpravSysPPRController {
 
     @PersistenceContext
     private EntityManager entityManager;
+    @Autowired
+    UserRepositoryJPA userRepositoryJPA;
 
     @SuppressWarnings("Duplicates")
     @RequestMapping(
@@ -42,15 +46,15 @@ public class SpravSysPPRController {
     public ResponseEntity<?> getSpravSysPPR()
     {
         logger.info("Processing get request for path /api/auth/getSpravSysPPR");
-
+        String suffix=userRepositoryJPA.getMySuffix();
         String stringQuery=
                 "select  p.id as id, " +
-                        "p.name as name, " +
+                        "p.name_"+suffix+" as name, " +
                         "p.abbreviation as abbreviation," +
                         "p.description as description," +
                         "p.id_api_atol as id_api_atol," +
                         "p.name_api_atol as name_api_atol " +
-                        " from sprav_sys_ppr p ";
+                        " from sprav_sys_ppr p where id in(1,4)";
 
         Query query =  entityManager.createNativeQuery(stringQuery);
 

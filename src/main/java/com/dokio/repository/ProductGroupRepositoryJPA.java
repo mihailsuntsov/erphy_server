@@ -408,7 +408,7 @@ public class ProductGroupRepositoryJPA {
                 //предприятие
                 newDocument.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(response.getCompany_id()))));
                 //Наименование
-                newDocument.setName(response.getName() == null ? "" : response.getName()+" (копия)");
+                newDocument.setName(response.getName() == null ? "" : response.getName()+" (copy)");
                 //дополнительная информация
                 newDocument.setDescription(response.getDescription());
                 entityManager.persist(newDocument);

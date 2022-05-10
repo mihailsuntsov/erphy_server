@@ -1406,13 +1406,14 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     public List<HistoryCagentBalanceJSON> getMutualpaymentDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long cagentId, String dateFrom, String dateTo) {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
+        String suffix = userRepositoryJPA.getMySuffix();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
-            throw new IllegalArgumentException("Недопустимые параметры запроса");
+            throw new IllegalArgumentException("Invalid query parameters");
         String dateFormat=userRepositoryJPA.getMyDateFormat();
 
         stringQuery =   " select " +
-                        " d.doc_name_ru as doc_name, " +
+                        " d.doc_name_"+suffix+" as doc_name, " +
                         " p.doc_number as doc_number, " +
                         " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
                         " p.summ_in as summ_in, " +
@@ -1432,7 +1433,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                         " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                         " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')";
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (" + " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
+            stringQuery = stringQuery + " and (" + " upper(d.doc_name_"+suffix+")  like upper(CONCAT('%',:sg,'%'))"+")";
         }
 
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;

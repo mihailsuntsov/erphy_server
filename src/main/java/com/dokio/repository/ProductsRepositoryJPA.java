@@ -885,7 +885,7 @@ public class ProductsRepositoryJPA {
             //предприятие
             newDocument.setCompany(response.getCompany());
             //Наименование
-            newDocument.setName(response.getName() == null ? "" : response.getName() + " (копия " + countCopy + ")");
+            newDocument.setName(response.getName() == null ? "" : response.getName() + " (copy " + countCopy + ")");
             //дополнительная информация
             newDocument.setDescription(response.getDescription());
             //признак предмета расчёта

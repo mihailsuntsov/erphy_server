@@ -154,6 +154,8 @@ public class AuthRestAPIs {
 		// создадим пользователю предприятие
 		CompaniesForm company = new CompaniesForm();
 		company.setName("My company");
+		company.setSt_prefix_barcode_packed(20);
+		company.setSt_prefix_barcode_pieced(21);
 		Long companyId = companyRepositoryJPA.insertCompanyFast(company,createdUserId);
         // типы цен
         Long price = typePricesRepository.insertPriceTypesFast(createdUserId,companyId);

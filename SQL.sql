@@ -3570,10 +3570,11 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('st_printed',          'Напечатан',              'Printed');
 
 
+alter table sprav_sys_ppr rename column name to name_ru;
+alter table sprav_sys_ppr add column name_en varchar(128);
 
-
-
-
+update sprav_sys_ppr set name_en = 'Commodity' where id = 1;
+update sprav_sys_ppr set name_en = 'Service' where id = 4;
 
 
 
