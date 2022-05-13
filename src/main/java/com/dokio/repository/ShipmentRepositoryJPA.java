@@ -830,19 +830,6 @@ public class ShipmentRepositoryJPA {
                                     }
                                 }
                             }
-
-
-//
-//                            if (!addShipmentProductHistory(row, request, myMasterId)) {//      запись в историю товара
-//                                break;
-//                            } else {
-//                                if (row.getIs_material()) { //если товар материален, т.е. это не услуга, работа и т.п.
-//                                    if (!setProductQuantity(row, request, myMasterId)) {// запись о количестве товара в отделении в отдельной таблице
-//                                        break;
-//                                    }
-//                                }
-//                            }
-
                             addProductHistory(row, request, myMasterId);
 
                         }
@@ -924,6 +911,7 @@ public class ShipmentRepositoryJPA {
                 // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
                 if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "shipment"))
                     throw new DocumentAlreadyDecompletedException();
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
 
@@ -986,11 +974,11 @@ public class ShipmentRepositoryJPA {
                 // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
                 // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
                 if(request.isIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для возврата поставщику с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к возврату больше количества товара на складе");
+                    logger.error("Shipment with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
-                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("shipment", "date_time_created", masterId, request.getId())).getTime());
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("shipment", "date_time_created", masterId, request.getId())).getTime());
 
                 productsRepository.setProductHistory(
                         masterId,
@@ -1002,7 +990,6 @@ public class ShipmentRepositoryJPA {
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
                         row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
-                        timestamp,
                         request.isIs_completed()
                 );
 

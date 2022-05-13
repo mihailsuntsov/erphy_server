@@ -456,7 +456,7 @@ public class ReturnsupRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class, CantInsertProductRowCauseOversellException.class,Exception.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class,CantInsertProductRowCauseErrorException.class, CantInsertProductRowCauseOversellException.class})
     public Integer updateReturnsup(ReturnsupForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(29L,"372") && securityRepositoryJPA.isItAllMyMastersDocuments("returnsup",request.getId().toString())) ||
@@ -558,6 +558,7 @@ public class ReturnsupRepository {
                 e.printStackTrace();
                 return -80;
             }catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method ReturnsupRepository/updateReturnsup. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
@@ -656,11 +657,11 @@ public class ReturnsupRepository {
                 // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
                 // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
                 if(request.getIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для возврата поставщику с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к возврату больше количества товара на складе");
+                    logger.error("Return to the supplier with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
-                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("returnsup", "date_time_created", masterId, request.getId())).getTime());
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("returnsup", "date_time_created", masterId, request.getId())).getTime());
 
                 productsRepository.setProductHistory(
                         masterId,
@@ -672,7 +673,7 @@ public class ReturnsupRepository {
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
                         row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
-                        timestamp,
+//                        timestamp,
                         request.getIs_completed()
                 );
 

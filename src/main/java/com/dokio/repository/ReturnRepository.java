@@ -639,11 +639,11 @@ public class ReturnRepository {
                 // т.к. это  операция поступления, при отмене её проведения необходимо проверить,
                 // сколько товара останется после этого, и если это кол-во <0 то не допустить этого
                 if(!request.getIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для отмены приёмки с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к выбытию со склада больше количества товара на складе");
+                    logger.error("Customer's return with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
-                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("return", "date_time_created", masterId, request.getId())).getTime());
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("return", "date_time_created", masterId, request.getId())).getTime());
 
                 productsRepository.setProductHistory(
                         masterId,
@@ -655,7 +655,7 @@ public class ReturnRepository {
                         row.getProduct_count(),
                         row.getProduct_price(),
                         row.getProduct_netcost(),
-                        timestamp,
+//                        timestamp,
                         request.getIs_completed()
                 );
 

@@ -18,9 +18,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseOversellException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -557,10 +555,10 @@ public class RetailSalesRepository {
     // Такая проверка происходит и на фронтэнде, но за время от добавления товара в таблицу и отправки розничной продажи на создание доступное количество товара
     // вследствие деятельности других продавцов предприятия может уменьшится, либо резервы вырасти. Поэтому эта проверка происходит еще и на бэкэнде
     // Возвращаем id Розничной продажи в случае ее успешного создания
-    // Возвращаем 0 если невозможно по вышеизложенным причинам создать товарные позиции для Розничной продажи
+    // Возвращаем соответствующий код ошибки, если невозможно по вышеизложенным причинам создать товарные позиции для Розничной продажи
     // Возвращаем null в случае ошибки
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseOversellException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class, CantInsertProductRowCauseOversellException.class ,CantInsertProductRowCauseErrorException.class,CantInsertProductRowCauseOversellException.class,CantSaveProductQuantityException.class})
     public Long insertRetailSales(RetailSalesForm request) {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "retail_sales")){
             EntityManager emgr = emf.createEntityManager();
@@ -682,8 +680,11 @@ public class RetailSalesRepository {
                     Query query2 = entityManager.createNativeQuery(stringQuery);
                     newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                    BigDecimal summ=insertRetailSalesProducts(request, newDocId, myMasterId);
+                    if(newDocId.equals(0L))
+                       throw new Exception ("Cant get id of created document");
 
+                    request.setId(newDocId);
+                    BigDecimal summ=insertRetailSalesProducts(request, newDocId, myMasterId);
                     // корректируем резервы в родительском "Заказе покупателя" (если он есть и если резервы проставлены)
                     // берем id Заказа покупателя (или 0 если его нет)
                     Long customersOrdersId = request.getCustomers_orders_id()==null?0L:request.getCustomers_orders_id();
@@ -750,7 +751,6 @@ public class RetailSalesRepository {
                     logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause error.", e);
                     e.printStackTrace();
                     return null;
-
                 } catch (CantInsertProductRowCauseOversellException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                     logger.error("Exception in method insertRetailSales on inserting into retail_sales_products cause oversell.", e);
@@ -777,12 +777,14 @@ public class RetailSalesRepository {
     }
 
     // записывает товар в таблицу товаров, а заодно считает сумму и возвращает её
-    private BigDecimal insertRetailSalesProducts(RetailSalesForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
+    private BigDecimal insertRetailSalesProducts(RetailSalesForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CalculateNetcostNegativeSumException {
 
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         BigDecimal summ=new BigDecimal(0);
         //сохранение таблицы
-        if (request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0) {
+        if (!(request.getRetailSalesProductTable()!=null && request.getRetailSalesProductTable().size() > 0))
+            throw new CantInsertProductRowCauseErrorException();
+        try{
             for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
                 row.setRetail_sales_id(newDocId);
                 insertProductRowResult = saveRetailSalesProductTable(row, request.getCompany_id(), request.getCustomers_orders_id(), myMasterId);  //сохранение таблицы товаров
@@ -795,201 +797,294 @@ public class RetailSalesRepository {
                 } else { // если сохранили удачно - значит нужно сделать запись в историю изменения данного товара
                     //создание записи в истории изменения товара
                     if(row.getIs_material()) { // но только если товар материален (т.е. это не услуга, работа и т.п.)
-                        if (!addRetailSalesProductHistory(newDocId, row.getProduct_id(), row.getProduct_count(), row.getProduct_price(), request, myMasterId, row.getIs_material())) {
-                            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-                        } else {//создание записи актуального количества товара на складе (таблица product_quantity)
-                            if (!setProductQuantity(row.getProduct_id(), request.getDepartment_id(), myMasterId)) {
-                                throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
-                            }
-                        }
+
+                            addProductHistory(row, request, myMasterId);
+
                     }
                 }
                 summ=summ.add(row.getProduct_sumprice());
             }
             return summ;
-        } else {
-            throw new CantInsertProductRowCauseErrorException();
+        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateShipment
+            e.printStackTrace();
+            logger.error("Exception in method RetailSalesRepository/addProductHistory (CantInsertProductRowCauseOversellException). ", e);
+            throw new CantInsertProductRowCauseOversellException();
+        }catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (addProductHistory).", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseOversellException();
+        } catch (CantSaveProductQuantityException e) {
+            logger.error("Exception in method RetailSalesRepository/addProductHistory on inserting into product_quantity cause error.", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseOversellException();
+        } catch (CantSaveProductHistoryException e) {
+            logger.error("Exception in method RetailSalesRepository/addProductHistory on inserting into product_history.", e);
+            e.printStackTrace();
+            throw new CantSaveProductHistoryException();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method insertRetailSalesProducts. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
 
-        @Transactional
-        public Boolean updateRetailSales(RetailSalesForm request){
-            //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-            if(     (securityRepositoryJPA.userHasPermissions_OR(25L,"320") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",request.getId().toString())) ||
-                    //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                    (securityRepositoryJPA.userHasPermissions_OR(25L,"321") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",request.getId().toString()))||
-                    //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
-                    (securityRepositoryJPA.userHasPermissions_OR(25L,"322") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",request.getId().toString()))||
-                    //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
-                    (securityRepositoryJPA.userHasPermissions_OR(25L,"323") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("retail_sales",request.getId().toString())))
-            {
-                Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+    @SuppressWarnings("Duplicates")
+    private Boolean addProductHistory(RetailSalesProductTableForm row, RetailSalesForm request , Long masterId) throws Exception {
+        try {
+            // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
+            if (productsRepository.isProductMaterial(row.getProduct_id())) {
+                // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
+                String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
+                // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
+                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
+                // актуальное количество товара В ОТДЕЛЕНИИ
+                // Используется для записи нового кол-ва товара в отделении путем вычитания row.getProduct_count() из lastQuantity
+                // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
+                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
+                // средняя себестоимость уже имеющегося товара
+                BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
 
-                String stringQuery;
-                stringQuery =   " update retail_sales set " +
-                        " changer_id = " + myId + ", "+
-                        " date_time_changed= now()," +
-                        " description = :description, " +
-                        " name = :name, " +
-                        " status_id = " + request.getStatus_id() +
-                        " where " +
-                        " id= "+request.getId();
-                try
-                {
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.setParameter("name",request.getName());
-                    query.setParameter("description",request.getDescription());
-                    query.executeUpdate();
-                    return true;
-                }catch (Exception e) {
-                    logger.error("Exception in method updateRetailSales. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    return false;
+                // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
+                // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
+                if(/*request.isIs_completed() &&*/ (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
+                    logger.error("Retail sale with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
+                    throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
-            } else return null;
-        }
 
-        //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
-        //если не превышает - пишется строка с товаром в БД
-        //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
-        @SuppressWarnings("Duplicates")
-        private Boolean saveRetailSalesProductTable(RetailSalesProductTableForm row, Long company_id, Long customersOrdersId, Long master_id) {
-            String stringQuery="";
-//            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
-            BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
-            try {
-                if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
-                    //вычисляем доступное количество товара на складе. customersOrdersId нужен, чтобы не учитывать резервы родительского Закза покупателя
-                    available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), (Objects.isNull(customersOrdersId)?0L:customersOrdersId));
-                else available= BigDecimal.valueOf(0L);
-                if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material()) //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.)
-                {
-                        stringQuery =
-                        " insert into retail_sales_product (" +
-                        "master_id, " +
-                        "company_id, " +
-                        "product_id, " +
-                        "retail_sales_id, " +
-                        "product_count, " +
-                        "product_price, " +
-                        "product_sumprice, " +
-                        "price_type_id, " +
-                        "nds_id, " +
-                        "department_id, " +
-                        "product_price_of_type_price " +
-                        ") values (" +
-                        master_id + "," +
-                        company_id + "," +
-                        row.getProduct_id() + "," +
-                        row.getRetail_sales_id() + "," +
-                        row.getProduct_count() + "," +
-                        row.getProduct_price() + "," +
-                        row.getProduct_sumprice() + "," +
-                        row.getPrice_type_id() + "," +
-                        row.getNds_id() + ", " +
-                        row.getDepartment_id() + ", " +
-                        row.getProduct_price_of_type_price() +
-                        " ) " +
-                        "ON CONFLICT ON CONSTRAINT retail_sales_product_uq " +// "upsert"
-                        " DO update set " +
-                        " product_id = " + row.getProduct_id() + "," +
-                        " retail_sales_id = " + row.getRetail_sales_id() + "," +
-                        " product_count = " + row.getProduct_count() + "," +
-                        " product_price = " + row.getProduct_price() + "," +
-                        " product_sumprice = " + row.getProduct_sumprice() + "," +
-                        " price_type_id = " + row.getPrice_type_id() + "," +
-                        " nds_id = " + row.getNds_id() + "," +
-                        " department_id = " + row.getDepartment_id() + "," +
-                        " product_price_of_type_price = " + row.getProduct_price_of_type_price();
-                        Query query = entityManager.createNativeQuery(stringQuery);
-                        query.executeUpdate();
-                        return true;
-                } else return false;
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("shipment", "date_time_created", masterId, request.getId())).getTime());
+
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        25,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count().negate(),
+                        row.getProduct_price(),
+                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        true
+                );
+
+//                if (request.isIs_completed())   // Если проводим
+                    productsRepository.setProductQuantity(
+                            masterId, row.getProduct_id(),
+                            request.getDepartment_id(),
+                            lastQuantity.subtract(row.getProduct_count()),
+                            lastAvgNetcostPrice
+                    );
+//                else                            // Если снимаем с проведения
+//                productsRepository.setProductQuantity(
+//                        masterId, row.getProduct_id(),
+//                        request.getDepartment_id(),
+//                        lastQuantity.add(row.getProduct_count()),
+//                        lastAvgNetcostPrice
+//                );
             }
-            catch (Exception e) {
-                logger.error("Exception in method saveRetailSalesProductTable. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return null;
-            }
+
+            return true;
+
+        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateShipment
+            e.printStackTrace();
+            logger.error("Exception in method RetailSalesRepository/addProductHistory (CantInsertProductRowCauseOversellException). ", e);
+            throw new CantInsertProductRowCauseOversellException();
+        }catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost (addProductHistory).", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductQuantityException e) {
+            logger.error("Exception in method RetailSalesRepository/addProductHistory on inserting into product_quantity cause error.", e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        } catch (CantSaveProductHistoryException e) {
+            logger.error("Exception in method RetailSalesRepository/addProductHistory on inserting into product_history.", e);
+            e.printStackTrace();
+            throw new CantSaveProductHistoryException();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method RetailSalesRepository/addProductHistory. ", e);
+            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
+    }
 
+    @Transactional
+    public Boolean updateRetailSales(RetailSalesForm request){
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(25L,"320") && securityRepositoryJPA.isItAllMyMastersDocuments("retail_sales",request.getId().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(25L,"321") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("retail_sales",request.getId().toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(25L,"322") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("retail_sales",request.getId().toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
+                (securityRepositoryJPA.userHasPermissions_OR(25L,"323") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("retail_sales",request.getId().toString())))
+        {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
-        //сохраняет настройки документа "Розничные продажи"
-        @SuppressWarnings("Duplicates")
-        @Transactional
-        public Boolean saveSettingsRetailSales(SettingsRetailSalesForm row) {
-            String stringQuery="";
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myId=userRepository.getUserId();
-            try {
-                stringQuery =
-                        " insert into settings_retail_sales (" +
-                                "master_id, " +
-                                "company_id, " +
-                                "user_id, " +
-                                "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
-                                "price_type_id, " +     //тип цены из справочника Типы цен
-                                "change_price, " +      //наценка/скидка в цифре (например, 50)
-                                "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
-                                "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
-                                "hide_tenths, " +       //убирать десятые (копейки) - boolean
-                                "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
-                                "department_id, " +     //отделение по умолчанию
-                                "customer_id, "+        //покупатель по умолчанию
-                                "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-                                "name, "+               //наименование заказа
-                                "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
-                                "show_kkm, "+               //показывать блок ККМ
-                                "status_id_on_autocreate_on_cheque,"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
-                                "auto_add"+                 // автодобавление товара из формы поиска в таблицу
-                                ") values (" +
-                                myMasterId + "," +
-                                row.getCompanyId() + "," +
-                                myId + ",'" +
-                                row.getPricingType() + "'," +
-                                row.getPriceTypeId() + "," +
-                                row.getChangePrice() + ",'" +
-                                row.getPlusMinus() + "','" +
-                                row.getChangePriceType() + "'," +
-                                row.getHideTenths() + "," +
-                                row.getSaveSettings() + "," +
-                                row.getDepartmentId() + "," +
-                                row.getCustomerId() + ",'"+
-                                row.getPriorityTypePriceSide() + "',"+
-                                "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                                row.getAutocreateOnCheque() +", " +
-                                row.getShowKkm() + "," +
-                                row.getStatusIdOnAutocreateOnCheque()+ "," +
-                                row.getAutoAdd() +
-                                ") " +
-                                "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
-                                " DO update set " +
-                                " pricing_type = '" + row.getPricingType() + "',"+
-                                " price_type_id = " + row.getPriceTypeId() + ","+
-                                " change_price = " + row.getChangePrice() + ","+
-                                " plus_minus = '" + row.getPlusMinus() + "',"+
-                                " change_price_type = '" + row.getChangePriceType() + "',"+
-                                " hide_tenths = " + row.getHideTenths() + ","+
-                                " save_settings = " + row.getSaveSettings() +
-                                ", department_id = "+row.getDepartmentId()+
-                                ", company_id = "+row.getCompanyId()+
-                                ", customer_id = "+row.getCustomerId()+
-                                ", name = '"+row.getName()+"'"+
-                                ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
-                                ", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()+
-                                ", show_kkm = "+row.getShowKkm()+
-                                ", autocreate_on_cheque = "+row.getAutocreateOnCheque()+
-                                ", auto_add = "+row.getAutoAdd();
+            String stringQuery;
+            stringQuery =   " update retail_sales set " +
+                    " changer_id = " + myId + ", "+
+                    " date_time_changed= now()," +
+                    " description = :description, " +
+                    " name = :name, " +
+                    " status_id = " + request.getStatus_id() +
+                    " where " +
+                    " id= "+request.getId();
+            try
+            {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
+                query.setParameter("description",request.getDescription());
                 query.executeUpdate();
                 return true;
-            }
-            catch (Exception e) {
-                logger.error("Exception in method saveSettingsRetailSales. SQL query:"+stringQuery, e);
+            }catch (Exception e) {
+                logger.error("Exception in method updateRetailSales. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return null;
+                return false;
             }
+        } else return null;
+    }
+
+    //проверяет, не превышает ли продаваемое количество товара доступное количество, имеющееся на складе
+    //если не превышает - пишется строка с товаром в БД
+    //возвращает: true если все ок, false если превышает и записать нельзя, null если ошибка
+    @SuppressWarnings("Duplicates")
+    private Boolean saveRetailSalesProductTable(RetailSalesProductTableForm row, Long company_id, Long customersOrdersId, Long master_id) {
+        String stringQuery="";
+//            Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
+        BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
+        try {
+            if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
+                //вычисляем доступное количество товара на складе. customersOrdersId нужен, чтобы не учитывать резервы родительского Закза покупателя
+                available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), (Objects.isNull(customersOrdersId)?0L:customersOrdersId));
+            else available= BigDecimal.valueOf(0L);
+            if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material()) //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.)
+            {
+                    stringQuery =
+                    " insert into retail_sales_product (" +
+                    "master_id, " +
+                    "company_id, " +
+                    "product_id, " +
+                    "retail_sales_id, " +
+                    "product_count, " +
+                    "product_price, " +
+                    "product_sumprice, " +
+                    "price_type_id, " +
+                    "nds_id, " +
+                    "department_id, " +
+                    "product_price_of_type_price " +
+                    ") values (" +
+                    master_id + "," +
+                    company_id + "," +
+                    row.getProduct_id() + "," +
+                    row.getRetail_sales_id() + "," +
+                    row.getProduct_count() + "," +
+                    row.getProduct_price() + "," +
+                    row.getProduct_sumprice() + "," +
+                    row.getPrice_type_id() + "," +
+                    row.getNds_id() + ", " +
+                    row.getDepartment_id() + ", " +
+                    row.getProduct_price_of_type_price() +
+                    " ) " +
+                    "ON CONFLICT ON CONSTRAINT retail_sales_product_uq " +// "upsert"
+                    " DO update set " +
+                    " product_id = " + row.getProduct_id() + "," +
+                    " retail_sales_id = " + row.getRetail_sales_id() + "," +
+                    " product_count = " + row.getProduct_count() + "," +
+                    " product_price = " + row.getProduct_price() + "," +
+                    " product_sumprice = " + row.getProduct_sumprice() + "," +
+                    " price_type_id = " + row.getPrice_type_id() + "," +
+                    " nds_id = " + row.getNds_id() + "," +
+                    " department_id = " + row.getDepartment_id() + "," +
+                    " product_price_of_type_price = " + row.getProduct_price_of_type_price();
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    query.executeUpdate();
+                    return true;
+            } else return false;
         }
+        catch (Exception e) {
+            logger.error("Exception in method saveRetailSalesProductTable. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    //сохраняет настройки документа "Розничные продажи"
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean saveSettingsRetailSales(SettingsRetailSalesForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+            stringQuery =
+                    " insert into settings_retail_sales (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                            "price_type_id, " +     //тип цены из справочника Типы цен
+                            "change_price, " +      //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                            "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                            "department_id, " +     //отделение по умолчанию
+                            "customer_id, "+        //покупатель по умолчанию
+                            "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
+                            "name, "+               //наименование заказа
+                            "autocreate_on_cheque, "+//автосоздание нового документа, если в текущем успешно напечатан чек
+                            "show_kkm, "+               //показывать блок ККМ
+                            "status_id_on_autocreate_on_cheque,"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+                            "auto_add"+                 // автодобавление товара из формы поиска в таблицу
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + ",'" +
+                            row.getPricingType() + "'," +
+                            row.getPriceTypeId() + "," +
+                            row.getChangePrice() + ",'" +
+                            row.getPlusMinus() + "','" +
+                            row.getChangePriceType() + "'," +
+                            row.getHideTenths() + "," +
+                            row.getSaveSettings() + "," +
+                            row.getDepartmentId() + "," +
+                            row.getCustomerId() + ",'"+
+                            row.getPriorityTypePriceSide() + "',"+
+                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
+                            row.getAutocreateOnCheque() +", " +
+                            row.getShowKkm() + "," +
+                            row.getStatusIdOnAutocreateOnCheque()+ "," +
+                            row.getAutoAdd() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
+                            " DO update set " +
+                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = '" + row.getPlusMinus() + "',"+
+                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " save_settings = " + row.getSaveSettings() +
+                            ", department_id = "+row.getDepartmentId()+
+                            ", company_id = "+row.getCompanyId()+
+                            ", customer_id = "+row.getCustomerId()+
+                            ", name = '"+row.getName()+"'"+
+                            ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
+                            ", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()+
+                            ", show_kkm = "+row.getShowKkm()+
+                            ", autocreate_on_cheque = "+row.getAutocreateOnCheque()+
+                            ", auto_add = "+row.getAutoAdd();
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method saveSettingsRetailSales. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     //сохраняет настройки РАСЦЕНКИ документа "Розничные продажи"
     @SuppressWarnings("Duplicates")
@@ -1131,101 +1226,6 @@ public class RetailSalesRepository {
         }
 
 
-
-
-        //записывает историю изменения кол-ва товара
-        //на данный момент нематериальная номенклатура тоже записывается в products_history, для ее отображения в карточке номенклатуры в разделе Операции, чтобы там можно было видеть Розничные продажи и Возвраты покупателей
-        private Boolean addRetailSalesProductHistory(Long retailSalesId, Long product_id, BigDecimal product_count, BigDecimal product_price, RetailSalesForm request , Long masterId, boolean isMaterial) throws CantInsertProductRowCauseOversellException, CantSaveProductHistoryException {
-            String stringQuery;
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,request.getDepartment_id());
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-            BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-            BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
-
-            //необходимо проверить, что списываем количество товара не более доступного количества.
-            //вообще, в БД установлено ограничение на кол-во товара >=0, и отмену транзакции мог бы сделать CantSaveProductHistoryException в блоке catch,
-            //но данным исключением мы уточним, от чего именно произошла отмена транзакции:
-            if((lastQuantity.subtract(product_count)).compareTo(new BigDecimal("0")) < 0) {
-                logger.error("Для Розничной продажи с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара для продажи больше доступного количества товара на складе");
-                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
-            }
-
-            stringQuery =
-                    " insert into products_history (" +
-                            " master_id," +
-                            " company_id," +
-                            " department_id," +
-                            " doc_type_id," +
-                            " doc_id," +
-                            " product_id," +
-                            " quantity," +
-                            " change," +
-                            " avg_purchase_price," +
-                            " avg_netcost_price," +
-                            " last_purchase_price," +
-                            " last_operation_price," +
-                            " date_time_created"+
-                            ") values ("+
-                            masterId +","+
-                            request.getCompany_id() +","+
-                            request.getDepartment_id() + ","+
-                            25 +","+
-                            retailSalesId + ","+
-                            product_id + ","+
-                            (isMaterial?(lastQuantity.subtract(product_count)):(new BigDecimal(0)))+","+//если номенклатура не материальна - количество = 0
-                            product_count.multiply(new BigDecimal(-1)) +","+
-                            lastAvgPurchasePrice +","+
-                            lastAvgNetcostPrice +","+
-                            lastPurchasePrice+","+
-                            product_price+","+
-                            " now())";
-            try {
-                Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                return true;
-            }
-            catch (Exception e) {
-                logger.error("Exception in method addRetailSalesProductHistory. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-            }
-        }
-
-
-    @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(Long product_id, Long department_id , Long masterId) {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(product_id,department_id);
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-
-        try {
-            stringQuery =
-                    " insert into product_quantity (" +
-                            " master_id," +
-                            " department_id," +
-                            " product_id," +
-                            " quantity" +
-                            ") values ("+
-                            masterId + ","+
-                            department_id + ","+
-                            product_id + ","+
-                            lastQuantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                            " DO update set " +
-                            " department_id = " + department_id + ","+
-                            " product_id = " + product_id + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ lastQuantity;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
 // **************************************************** СМЕНЫ ********************************************************//
 

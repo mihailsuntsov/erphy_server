@@ -720,11 +720,11 @@ public class MovingRepository {
                 // т.к. это  операция и поступления,и выбытия, то и при проведении, и при отмене её проведения необходимо проверить,
                 // сколько товара останется после этого, и если это кол-во <0 то не допустить этого
                 if(request.isIs_completed() && (lastQuantityFrom.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для проведения перемещения с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к перемещению со склада больше количества товара на складе");
+                    logger.error("Moving with id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к перемещению со склада больше количества товара на складе");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
                 if(!request.isIs_completed() && (lastQuantityTo.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для отмены перемещения с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к отмене перемещения больше количества товара на складе, на который товар был перемещён");
+                    logger.error("Cancelling of Moving completion with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
@@ -740,7 +740,7 @@ public class MovingRepository {
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
                         row.getProduct_price(),// в отделении ИЗ которого отправляем - за цену себестоимости берем цену товара
-                        timestamp,
+//                        timestamp,
                         request.isIs_completed()
                 );
                 productsRepository.setProductHistory(
@@ -753,7 +753,7 @@ public class MovingRepository {
                         row.getProduct_count(),
                         row.getProduct_price(),
                         row.getProduct_netcost(),// в отделении В которое отправляем - за цену себестоимости берем себестоимость товара
-                        timestamp,
+//                        timestamp,
                         request.isIs_completed()
                 );
 

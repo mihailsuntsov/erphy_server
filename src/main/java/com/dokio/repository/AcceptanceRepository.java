@@ -558,7 +558,6 @@ public class AcceptanceRepository {
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-                //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
                 query.setParameter("uid",request.getUid());
                 query.executeUpdate();
@@ -897,11 +896,11 @@ public class AcceptanceRepository {
                 // т.к. это  операция поступления, при отмене её проведения необходимо проверить,
                 // сколько товара останется после этого, и если это кол-во <0 то не допустить этого
                 if(!request.getIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для отмены приёмки с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к выбытию со склада больше количества товара на складе");
+                    logger.error("Acceptance with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
-                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("acceptance", "date_time_created", masterId, request.getId())).getTime());
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("acceptance", "date_time_created", masterId, request.getId())).getTime());
 
                 productsRepository.setProductHistory(
                         masterId,
@@ -912,8 +911,8 @@ public class AcceptanceRepository {
                         row.getProduct_id(),
                         row.getProduct_count(),
                         row.getProduct_price(),
-                        row.getProduct_netcost(),
-                        timestamp,
+                        row.getProduct_netcost(), // себестоимость товара в операции
+//                        timestamp,
                         request.getIs_completed()
                 );
 

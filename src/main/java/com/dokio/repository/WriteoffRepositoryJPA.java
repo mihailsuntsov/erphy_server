@@ -738,11 +738,11 @@ public class WriteoffRepositoryJPA {
                 // т.к. это  операция "не поступления" (а убытия), при ее проведении необходимо проверить,
                 // сколько товара останется после ее проведения, и если это кол-во <0 то не допустить этого
                 if(request.isIs_completed() && (lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-                    logger.error("Для списания с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к списанию больше количества товара на складе");
+                    logger.error("Writeoff with id = "+request.getId()+", doc number "+request.getDoc_number()+": the quantity of product to be disposed of from the department is greater than the quantity of product in the department");
                     throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
                 }
 
-                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("writeoff", "date_time_created", masterId, request.getId())).getTime());
+//                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("writeoff", "date_time_created", masterId, request.getId())).getTime());
 
                 productsRepository.setProductHistory(
                         masterId,
@@ -754,7 +754,7 @@ public class WriteoffRepositoryJPA {
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
                         row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
-                        timestamp,
+//                        timestamp,
                         request.isIs_completed()
                 );
 

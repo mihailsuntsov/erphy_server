@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -706,12 +707,12 @@ public class ProductsRepositoryJPA {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+            String suffix = userRepositoryJPA.getMySuffix();
             stringQuery = "select  " +
                     "           p.id as id, " +
                     "           dep.name as department," +
                     "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           doc.name as docName," +
+                    "           doc.doc_name_"+suffix+" as docName," +
                     "           p.doc_id as docId," +
                     "           p.doc_type_id as docTypeId," +
                     "           (select sum(change) from product_history where master_id=" + myMasterId + " and  department_id = p.department_id and is_completed = true and product_id=" + productId +"  and date_time_created<=p.date_time_created) as quantity," +
@@ -720,7 +721,8 @@ public class ProductsRepositoryJPA {
                     "           p.netcost as netcost," + // себестоимость единицы в операции
                     "           0.00 as avg_netcost_price, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           dep.id as department_id "+
+                    "           dep.id as department_id, "+
+                    "           doc.page_name as page_name " +
                     "           from product_history p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN departments dep ON p.department_id=dep.id " +
@@ -737,7 +739,9 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
-                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+                stringQuery = stringQuery + " order by date_time_created_sort " + sortAsc;
+//                stringQuery = stringQuery + " order by p.id desc";
+
             } else {
                 throw new IllegalArgumentException("Недопустимые параметры запроса");
             }
@@ -772,6 +776,7 @@ public class ProductsRepositoryJPA {
                     doc.setDocName((String) obj[3]);
                     doc.setDocId(Long.parseLong(obj[4].toString()));
                     doc.setDocTypeId((Integer) obj[5]);
+                    doc.setPage_name((String) obj[13]);
                     doc.setQuantity(quantity);
                     doc.setChange(change);
                     doc.setPrice(price);
@@ -2731,7 +2736,7 @@ public class ProductsRepositoryJPA {
             BigDecimal change,
             BigDecimal price,
             BigDecimal netcost,
-            Timestamp date_time_created,
+//            Timestamp date_time_created,
             boolean is_completed
     ) throws CantSaveProductHistoryException {
         String stringQuery =
@@ -2745,7 +2750,7 @@ public class ProductsRepositoryJPA {
                         " change," +            // изменение кол-ва товара в операции
                         " price," +             // цена единицы товара в данной операции
                         " netcost," +           // себестоимость единицы товара (т.е. цена единицы товара + часть распределенной по всем товарам себестоимости операции)
-                        " date_time_created," + // время создания документа, к которому относится данная строка таблицы
+                        " date_time_created," + // время первого проведения документа, к которому относится данная строка таблицы
                         " is_completed "+       // проведён ли документ, к которому относится данная строка таблицы
                         ") values ("+
                         masterId +","+
@@ -2757,7 +2762,8 @@ public class ProductsRepositoryJPA {
                         change+","+
                         price+","+
                         netcost+","+
-                        "'" + date_time_created + "',"+
+//                        "'" + date_time_created + "',"+
+                        "now(),"+ // В истории изменения товара - ТОЛЬКО дата-время первого проведения документа (не его создания или последующих перепроведений), иначе возможны ситуации с минусовыми остатками и, как следствие - ошибочной средней себестоимостью
                         is_completed+
                         ")" + // при отмене проведения или повторном проведении срабатывает ключ уникальности записи в БД по doc_type_id, doc_id, product_id
                         " ON CONFLICT ON CONSTRAINT product_history_uq" +// "upsert"
@@ -2770,7 +2776,7 @@ public class ProductsRepositoryJPA {
             // проверки что по API прислали id-шники от своего master_id (что в таблице есть совпадение таких masterId и id-шников )
             if( Objects.isNull(commonUtilites.getFieldValueFromTableById("companies","id", masterId, company_id)) ||
                     Objects.isNull(commonUtilites.getFieldValueFromTableById("products","id", masterId, product_id)) )
-                throw new Exception("id объектов не принадлежат к их master_id. master_id="+masterId+", company_id="+company_id+", product_id="+product_id);
+                throw new Exception("id's of the objects don't belong to their master_id. master_id="+masterId+", company_id="+company_id+", product_id="+product_id);
 
 
 
@@ -2989,12 +2995,18 @@ public class ProductsRepositoryJPA {
     // Считает себестоимость товара по проведенным операциям на время timeBefore
     @SuppressWarnings("Duplicates")
     private BigDecimal recountProductNetcost(Long companyId, Long departmentId, Long productId, Timestamp timeBefore) throws Exception {
-
+        BigDecimal lastAvgNetcostPrice = new BigDecimal(0); // себестоимость
+        BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
+        BigDecimal change = new BigDecimal(0) ;
+        BigDecimal netcost;
+        int doc_type_id = 0;
+        Long doc_id = 0L;
         String stringQuery =
                 "   select " +
                         "   change as change, " +
                         "   netcost as netcost, " +
-                        "   doc_type_id as doc_type_id" +
+                        "   doc_type_id as doc_type_id," +
+                        "   doc_id as doc_id " +
                         "   from product_history                "+
                         "   where                                "+
                         "   company_id = " + companyId +
@@ -3002,19 +3014,21 @@ public class ProductsRepositoryJPA {
                         "   and is_completed = true " +
                         "   and product_id=" + productId +
                         "   and date_time_created <= '" + timeBefore + "'" +
-                        "   order by date_time_created asc";
+//                        "   order by date_time_created asc";
+                        "   order by id asc";
         try{
 
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
-            BigDecimal lastAvgNetcostPrice = new BigDecimal(0); // себестоимость
-            BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
+
 
             if(queryList.size()>0)
                 for (Object[] obj : queryList) {
-                    BigDecimal change = (BigDecimal)obj[0];
-                    BigDecimal netcost  = (BigDecimal)obj[1];
+                    change = (BigDecimal)obj[0];
+                    netcost  = (BigDecimal)obj[1];
+                    doc_type_id = (Integer) obj[2];
+                    doc_id = ((BigInteger) obj[3]).longValue();
 
                     if(availableQuantity.compareTo(new BigDecimal(0))>=0) {
 
@@ -3024,7 +3038,9 @@ public class ProductsRepositoryJPA {
                             lastAvgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(change.multiply(netcost))).divide(availableQuantity.add(change), 2, BigDecimal.ROUND_HALF_UP);
 
 
-                    } else throw new CalculateNetcostNegativeSumException();
+                    }
+                    else return new BigDecimal(0);
+//                    else throw new CalculateNetcostNegativeSumException();
 
                     availableQuantity=availableQuantity.add(change);
                 }
@@ -3032,7 +3048,7 @@ public class ProductsRepositoryJPA {
             return lastAvgNetcostPrice;
         }
 //        catch (CalculateNetcostNegativeSumException e) {
-//            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. SQL query:"+stringQuery, e);
+//            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. companyId: "+companyId+", departmentId: "+departmentId+", productId: "+productId+", doc_type_id: "+doc_type_id+", doc_id: "+doc_id+", availableQuantity: "+availableQuantity+", change: "+change+"SQL query:"+stringQuery, e);
 //            e.printStackTrace();
 //            throw new CalculateNetcostNegativeSumException();
 //        }

@@ -871,10 +871,7 @@ public class ProductsController {
         List<Long> docTypesIds = searchRequest.getDocTypesIds();
 
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, docTypesIds, offsetreal);//запрос списка: взять кол-во rezult, начиная с offsetreal
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-        return responseEntity;
-
+        return new ResponseEntity<>(productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, docTypesIds, offsetreal), HttpStatus.OK);//запрос списка: взять кол-во rezult, начиная с offsetreal, HttpStatus.OK);
     }
 
 //    @PostMapping("/api/auth/syncQuantityProducts")
