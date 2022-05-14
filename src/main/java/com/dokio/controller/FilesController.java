@@ -275,7 +275,7 @@ public class FilesController {
 
 
     @SuppressWarnings("Duplicates")
-    @GetMapping("/Fapi/public/getFile/{filename:.+}")
+    @GetMapping("/api/public/getFile/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> getFilePublic(@PathVariable String filename) throws UnsupportedEncodingException {
         logger.info("Processing get request for path /api/public/getFile: filename=" + filename);

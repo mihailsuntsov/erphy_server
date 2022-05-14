@@ -2951,7 +2951,7 @@ public class ProductsRepositoryJPA {
                         (Objects.isNull(departmentId)?" ":"  and department_id=" + departmentId) +
                         "   and is_completed = true " +
                         "   and product_id=" + productId +
-                        "   order by date_time_created asc";
+                        "   order by id asc";
         try{
 
             Query query = entityManager.createNativeQuery(stringQuery);
