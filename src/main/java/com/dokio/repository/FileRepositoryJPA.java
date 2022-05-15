@@ -722,7 +722,7 @@ public class FileRepositoryJPA {
                     return 0L;
                 }
             }
-        } else return 0L;
+        } else return -1L;
     }
 
     @Transactional

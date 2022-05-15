@@ -131,7 +131,8 @@ public class ProfitLossRepositoryJPA {
     private BigDecimal getProfitLossRevenue(Long companyId, String dateFrom, String dateTo, String myTimeZone) {
         String stringQuery;
         stringQuery =
-        " select summ1+summ2-summ3 as summ from " +
+//        " select summ1+summ2-summ3 as summ from " +
+        " select retail_sales+shipment+returnsup as summ from " +
         " coalesce((select " +
         " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
         " from retail_sales_product rsp " +
@@ -139,7 +140,8 @@ public class ProfitLossRepositoryJPA {
         " where " +
         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
-        " and rs.company_id="+companyId+"),0) as summ1, " +
+        " and rs.company_id="+companyId+"),0) as retail_sales, " +
+
         " coalesce((select " +
         " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
         " from shipment_product rsp " +
@@ -147,15 +149,51 @@ public class ProfitLossRepositoryJPA {
         " where " +
         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
-        " and rs.company_id="+companyId+"),0) as summ2, "+
+        " and rs.company_id="+companyId+"),0) as shipment, "+
+
         " coalesce((select " +
         " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
-        " from return_product rsp " +
-        " inner JOIN return rs ON rsp.return_id = rs.id " +
+        " from returnsup_product rsp " +
+        " inner JOIN returnsup rs ON rsp.returnsup_id = rs.id " +
         " where " +
         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
-        " and rs.company_id="+companyId+"),0) as summ3 ";
+        " and rs.company_id="+companyId+"),0) as returnsup ";
+//        " coalesce((select " +
+//        " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
+//        " from return_product rsp " +
+//        " inner JOIN return rs ON rsp.return_id = rs.id " +
+//        " where " +
+//        " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
+//        " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
+//        " and rs.company_id="+companyId+"),0) as summ3 ";
+
+        // Почему я убрал учёт возвратов покупателей:
+        // По-сути любой возврат является выкупом товара за цену продажи, т.е. такой же закупкой, только по цене выше обычной.
+        // Это не может не влиять на себестоимость единицы товара в большую сторону.
+        // А себестоимость уже отражена в графе COST отчёта P&L report
+        // Для наглядности представим ситуацию:
+        //        Есть 100 р
+        //        Купили 1 шт. товара за 100 р
+        //        Себестоимость - 100 р
+        //        Продали 1 шт. за 200 р
+        //
+        //        200 gross
+        //        100 cost
+        //        100 net
+        //
+        //        Customer's return 1 шт for 200 р.
+        //        Себестоимость - 200 р.
+        //        Продал 1 шт. за 200 р.
+        //
+        //        400 gross (2 sells on 200 р.)
+        //        300 cost (100 in first sell and 200 in last sell)
+        //        100 net (100 in the first sell and 0 in the second)
+
+        // т.е. прибыль можно получить только 1 раз, даже если будут возвращать один и тот же товар и мы будем его продавать много раз - т.к.
+        // его себестоимость при каждом возврате будет расти -> уменьшаться чистая прибыль (цена то прежняя)
+        // "... прибыли нет - зато какие обороты!"
+
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -176,12 +214,15 @@ public class ProfitLossRepositoryJPA {
         stringQuery =
         " select cost_price " +
         " from " +
-        " coalesce((select abs(sum(change*avg_netcost_price)) " +
-        " from products_history " +
+//        " coalesce((select abs(sum(change*avg_netcost_price)) " +
+//        " from products_history " +
+        " coalesce((select abs(sum(change*netcost)) " +
+        " from product_history " +
         " where " +
         " master_id="+master_id +
         " and company_id="+companyId +
-        " and doc_type_id in(21,25) " +
+        " and doc_type_id in(21,25,29) " + // Retail sales, Shipments, Return to suppliers
+        " and is_completed = true" +
         " and date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') ),0) as cost_price ";
 
@@ -206,12 +247,13 @@ public class ProfitLossRepositoryJPA {
         stringQuery =
         " select cost_price " +
         " from " +
-        " coalesce((select abs(sum(change*last_operation_price)) " +
-        " from products_history " +
-        " where " +
-        " master_id="+master_id +
-        " and company_id="+companyId +
-        " and doc_type_id =17 " +
+        " coalesce((select abs(sum(change*netcost)) " + // почему netcost а не price? Ведь в списании мы указываем цену товара, по которой списываем его.
+        " from product_history " +                      // потому что если считать по цене списания, то деньги "потеряются", если цена списания будет
+        " where " +                                     // меньше себестоимости. Например, купили яблоко за 2 доллара. Оно сгнило, списали его за 1 доллар.
+        " master_id="+master_id +                       // Остались без долларов (и без яблока). Но было то 2$, а по документам убыток 1$!
+        " and company_id="+companyId +                  // Where is the money (1$), Lebovsky?  Если считаем по себестоимости - то купили 1 яблоко за 2 доллара,
+        " and doc_type_id =17 " +                       // себестоимость 2 доллара. Списали по себестоимости (-2$).
+        " and is_completed = true" +
         " and date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') ),0) as cost_price ";
 

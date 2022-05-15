@@ -438,7 +438,7 @@ public class ShipmentRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           coalesce(sh.shift_number,0) as shift_number, " +
                     "           cmp.name as company, " +
@@ -989,7 +989,7 @@ public class ShipmentRepositoryJPA {
                         row.getProduct_id(),
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
-                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        lastAvgNetcostPrice,// в операциях не поступления товара себестоимость равна актуальной на момент данной операции себестоимости
                         request.isIs_completed()
                 );
 

@@ -360,7 +360,7 @@ public class WriteoffRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.writeoff_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as writeoff_date, " +
                     "           cmp.name as company, " +
@@ -753,7 +753,7 @@ public class WriteoffRepositoryJPA {
                         row.getProduct_id(),
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
-                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        lastAvgNetcostPrice,// в операциях не поступления товара себестоимость равна актуальной на момент данной операции себестоимости
 //                        timestamp,
                         request.isIs_completed()
                 );

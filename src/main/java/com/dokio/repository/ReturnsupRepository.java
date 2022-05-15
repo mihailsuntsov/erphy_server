@@ -672,7 +672,7 @@ public class ReturnsupRepository {
                         row.getProduct_id(),
                         row.getProduct_count().negate(),
                         row.getProduct_price(),
-                        row.getProduct_price(),// в операциях не поступления товара себестоимость равна цене
+                        lastAvgNetcostPrice,// в операциях не поступления товара себестоимость равна актуальной на момент данной операции себестоимости
 //                        timestamp,
                         request.getIs_completed()
                 );

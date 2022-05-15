@@ -408,7 +408,7 @@ public class InvoiceoutRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +

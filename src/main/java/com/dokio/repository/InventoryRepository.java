@@ -630,7 +630,7 @@ public class InventoryRepository {
         } else {
             //null - ошибка, т.е. либо предприятие или отдление не принадлежат мастер-аккаунту, либо друг другу
             //0 - недостаточно прав
-            if(iCan==null) return null; else return 0L;
+            if(iCan==null) return null; else return -1L;
         }
     }
 

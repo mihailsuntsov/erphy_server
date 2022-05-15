@@ -452,7 +452,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           p.department_id as department_id, " +
-                    "           dp.name ||' '||dp.address  as department, " +
+                    "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.shipment_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as shipment_date, " +
                     "           cmp.name as company, " +
@@ -739,7 +739,7 @@ public class CustomersOrdersRepositoryJPA {
                     }
                 } else {
                     updateResults.setSuccess(false);
-                    updateResults.setErrorCode(0);          // Недостаточно прав
+                    updateResults.setErrorCode(-1);          // Недостаточно прав
                     return updateResults;
                 }
             } catch (Exception e) {

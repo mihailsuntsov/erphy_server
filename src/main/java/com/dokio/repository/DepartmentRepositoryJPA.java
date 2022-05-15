@@ -598,7 +598,8 @@ public class DepartmentRepositoryJPA {
                 " date_time_created," + //дата и время создания
                 " price_id, " +
                 " boxoffice_id, " +
-                " name" +
+                " name," +
+                " address" +
                 ") values ("+
                 myMasterId + ", "+//мастер-аккаунт
                 myMasterId + ", "+ //создатель
@@ -606,7 +607,8 @@ public class DepartmentRepositoryJPA {
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                 request.getPrice_id()+ ", "+ // тип цены
                 request.getBoxoffice_id()+ ", "+ // касса предприятия
-                ":name" +
+                ":name," +
+                "''"+
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
