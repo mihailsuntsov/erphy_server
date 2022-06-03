@@ -3581,11 +3581,20 @@ update sprav_sys_ppr set name_en = 'Service' where id = 4;
 
 
 
+create table version(
+    value      varchar(10) not null,
+    date       varchar(10) not null
+);
+insert into version (value, date) values ('1.000-0','02/06/2022');
+create table settings_general(
+    show_registration_link    boolean not null,
+    allow_registration        boolean not null,
+    show_forgot_link          boolean not null,
+    allow_recover_password    boolean not null
+);
+insert into settings_general (show_registration_link, allow_registration, show_forgot_link, allow_recover_password) values (true,true,true,true);
 
-
-
-
-
+alter table settings_general add column show_in_signin text;
 
 
 

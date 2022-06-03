@@ -15,6 +15,7 @@ import com.dokio.message.response.IsItMy_JSON;
 import com.dokio.message.response.IsItMy_Sprav_JSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
@@ -24,7 +25,7 @@ import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
+//import org.apache.commons.lang.StringUtils;
 
 @Repository
 public class SecurityRepositoryJPA {
@@ -161,7 +162,7 @@ public class SecurityRepositoryJPA {
     @SuppressWarnings("Duplicates") //это все мои отделения?
     public boolean isItAllMyDepartments(Set<Long> depIds) {
         Long myId=userRepository.getUserId();
-        String docIds=StringUtils.join(depIds, ',');
+        String docIds= StringUtils.join(depIds, ',');
         String stringQuery = "select ud.department_id from user_department ud where ud.department_id in ("+docIds+") and ud.user_id=" + myId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size()==depIds.size());}
