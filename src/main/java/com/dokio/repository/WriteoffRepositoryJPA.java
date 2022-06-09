@@ -874,7 +874,7 @@ public class WriteoffRepositoryJPA {
         String stringQuery;
         stringQuery =   " delete from writeoff_product " +
                     " where writeoff_id=" + writeoff_id +
-                    " and product_id not in (" + productIds + ")";
+                    " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -912,7 +912,7 @@ public class WriteoffRepositoryJPA {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -960,7 +960,7 @@ public class WriteoffRepositoryJPA {
                     " set is_deleted=false, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();

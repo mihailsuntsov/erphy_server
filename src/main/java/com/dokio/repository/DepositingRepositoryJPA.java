@@ -450,14 +450,6 @@ public class DepositingRepositoryJPA {
                     // обновляем состояние кассы ККМ, добавляя к ней вносимую сумму
                     commonUtilites.addDocumentHistory("kassa", request.getCompany_id(), request.getKassa_id(), "depositing","depositing", newDocId, request.getSumm(), new BigDecimal(0),true, doc_number.toString(),null);
 
-
-
-
-
-
-
-
-
                     return newDocId;
 
                 } catch (OutcomingPaymentIsDecompletedException e) { //

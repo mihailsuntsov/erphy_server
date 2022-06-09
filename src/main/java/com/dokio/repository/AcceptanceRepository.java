@@ -167,7 +167,7 @@ public class AcceptanceRepository {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
@@ -573,9 +573,6 @@ public class AcceptanceRepository {
                     }
                     return newDocId;
                 } else return null;
-                //если есть таблица с товарами - нужно создать их
-//                insertAcceptanceProducts(request, newDocId, myMasterId);
-//                return newDocId;
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -860,7 +857,7 @@ public class AcceptanceRepository {
 
         stringQuery =   " delete from acceptance_product " +
                 " where acceptance_id=" + acceptance_id +
-                " and product_id not in (" + productIds + ")";
+                " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1028,10 +1025,11 @@ public class AcceptanceRepository {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")"+
                             " and coalesce(p.is_completed,false) !=true";
                     try {
-                        entityManager.createNativeQuery(stringQuery).executeUpdate();
+                        Query query = entityManager.createNativeQuery(stringQuery);
+                        query.executeUpdate();
                         //удалим документы из группы связанных документов
                         if (!linkedDocsUtilites.deleteFromLinkedDocs(delNumbers, "acceptance")) throw new Exception ();
                         delResult.setResult(0);// 0 - Всё ок
@@ -1076,7 +1074,7 @@ public class AcceptanceRepository {
                     " set is_deleted=false, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -1296,7 +1294,7 @@ public class AcceptanceRepository {
                 return true;
             }
             catch (Exception e) {
-                logger.error("Exception in method ______________. SQL query:" + stringQuery, e);
+                logger.error("Exception in method deleteAcceptanceFile. SQL query:" + stringQuery, e);
                 e.printStackTrace();
                 return false;
             }

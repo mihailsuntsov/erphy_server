@@ -654,7 +654,7 @@ public class ProductsRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -684,7 +684,7 @@ public class ProductsRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

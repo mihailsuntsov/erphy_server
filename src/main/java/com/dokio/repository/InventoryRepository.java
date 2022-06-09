@@ -155,7 +155,7 @@ public class InventoryRepository {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -662,7 +662,7 @@ public class InventoryRepository {
             stringQuery =   " delete from inventory_product " +
                     " where inventory_id=" + inventory_id +
                     " and master_id=" + myMasterId +
-                    (productIds.length()>0?(" and product_id not in (" + productIds + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+                    (productIds.length()>0?(" and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -761,15 +761,15 @@ public class InventoryRepository {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
-                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
+                            ":name, " +//наименование
                             row.getStatusOnFinishId() + ",'" +
                             row.getDefaultActualBalance() + "'," +
                             row.getOtherActualBalance() + "," +
@@ -777,21 +777,25 @@ public class InventoryRepository {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_inventory_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() +
                             ", department_id = "+row.getDepartmentId()+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
                             ", company_id = "+row.getCompanyId()+
-                            ", name = '"+row.getName()+"'"+
+                            ", name = :name"+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", default_actual_balance = '"+row.getDefaultActualBalance()+"'"+
                             ", other_actual_balance = "+row.getOtherActualBalance()+
                             ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.setParameter("name", (row.getName() == null ? "": row.getName()));
             query.executeUpdate();
             return true;
         }
@@ -875,7 +879,7 @@ public class InventoryRepository {
                         " set is_deleted=true, " + //удален
                         " changer_id="+ myId + ", " + // кто изменил (удалил)
                         " date_time_changed = now() " +//дату и время изменения
-                        " where p.id in ("+delNumbers+")" +
+                        " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                         " and coalesce(p.is_completed,false) !=true";
                         try {
                             entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -922,7 +926,7 @@ public class InventoryRepository {
                         " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                         " date_time_changed = now(), " +//дату и время изменения
                         " is_deleted=false " + //не удалена
-                        " where p.id in (" + delNumbers+")";
+                        " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "")+")";
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

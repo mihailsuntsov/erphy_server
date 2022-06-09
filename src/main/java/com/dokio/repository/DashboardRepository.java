@@ -57,6 +57,7 @@ public class DashboardRepository {
             logger.error("Exception in method saveSettingsDashboard. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
+
         }
     }
 

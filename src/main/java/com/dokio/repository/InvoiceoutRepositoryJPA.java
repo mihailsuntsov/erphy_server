@@ -162,7 +162,7 @@ public class InvoiceoutRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -893,7 +893,7 @@ public class InvoiceoutRepositoryJPA {
         String stringQuery;
         stringQuery =   " delete from invoiceout_product " +
                 " where invoiceout_id=" + invoiceout_id +
-                " and product_id not in (" + productIds + ")";
+                " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -935,39 +935,43 @@ public class InvoiceoutRepositoryJPA {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() + "," +
                             row.getDepartmentId() + "," +
-                            row.getCustomerId() + ",'"+
-                            row.getPriorityTypePriceSide() + "',"+
+                            row.getCustomerId() + ","+
+                            ":priorityTypePriceSide,"+
                             row.getAutocreate() +", " +
                             row.getStatusIdOnComplete()+ "," +
                             row.getAutoAdd() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_id_key " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings() +
                             (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
                             (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
                             ", customer_id = "+row.getCustomerId()+
-                            (row.getPriorityTypePriceSide() == null ? "": (", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"))+
+                            ", priority_type_price_side = :priorityTypePriceSide"+
                             (row.getStatusIdOnComplete() == null ? "": (", status_id_on_complete = "+row.getStatusIdOnComplete()))+
                             (row.getAutocreate() == null ? "": (", autocreate = "+row.getAutocreate()))+
                             (row.getAutoAdd() == null ? "": (", auto_add = "+row.getAutoAdd()));
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.setParameter("priorityTypePriceSide", row.getPriorityTypePriceSide());
             query.executeUpdate();
             return true;
         }
@@ -1063,7 +1067,7 @@ public class InvoiceoutRepositoryJPA {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1112,7 +1116,7 @@ public class InvoiceoutRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

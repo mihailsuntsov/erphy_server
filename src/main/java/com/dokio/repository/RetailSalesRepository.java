@@ -1327,7 +1327,7 @@ public class RetailSalesRepository {
                         " set is_deleted=true, " + //удален
                         " changer_id="+ myId + ", " + // кто изменил (удалил)
                         " date_time_changed = now() " +//дату и время изменения
-                        " where p.id in ("+delNumbers+")";
+                        " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
     //                    " and coalesce(p.is_completed,false) !=true";
                 try{
                     entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1356,7 +1356,7 @@ public class RetailSalesRepository {
                         " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                         " date_time_changed = now(), " +//дату и время изменения
                         " is_deleted=false " + //не удалена
-                        " where p.id in (" + delNumbers+")";
+                        " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

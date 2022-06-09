@@ -322,7 +322,7 @@ public class SitesRepository {
             String stringQuery;// на MasterId не проверяю , т.к. выше уже проверено
             stringQuery = "Update sites p" +
                     " set is_archive=true " +
-                    " where p.id in ("+delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             entityManager.createNativeQuery(stringQuery).executeUpdate();
             return true;
         } else return false;

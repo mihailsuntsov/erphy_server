@@ -62,8 +62,6 @@ public class CorrectionRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private CagentRepositoryJPA cagentRepository;
-    @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
@@ -155,7 +153,7 @@ public class CorrectionRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -691,7 +689,7 @@ public class CorrectionRepositoryJPA {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -736,7 +734,7 @@ public class CorrectionRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -749,43 +747,6 @@ public class CorrectionRepositoryJPA {
                 return null;
             }
         } else return -1;
-    }
-
-
-    @SuppressWarnings("Duplicates")// отдаёт список банковских счетов предприятия
-    public List<ExpenditureItemsListForm> getExpenditureItems(Long companyId) {
-        String stringQuery;
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        stringQuery =   " select " +
-                " ap.id," +
-                " ap.name," +
-                " ap.type" +
-                " from " +
-                " sprav_expenditure_items ap " +
-                " where ap.master_id = " + myMasterId +
-                " and ap.company_id = " + companyId +
-                " and coalesce(ap.is_deleted,false) != true";
-
-        stringQuery = stringQuery + " order by ap.name asc ";
-
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<ExpenditureItemsListForm> returnList = new ArrayList<>();
-
-            for(Object[] obj:queryList){
-                ExpenditureItemsListForm doc=new ExpenditureItemsListForm();
-                doc.setId(Long.parseLong(                               obj[0].toString()));
-                doc.setName((String)                                    obj[1]);
-                doc.setType((String)                                    obj[2]);
-                returnList.add(doc);
-            }
-            return returnList;
-        }catch (Exception e) {
-            logger.error("Exception in method getExpenditureItems. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return null;
-        }
     }
 
 //*****************************************************************************************************************************************************

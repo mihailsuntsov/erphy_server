@@ -339,21 +339,21 @@ public class MovingController {
             return new ResponseEntity<>("Ошибка загрузки настроек", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @RequestMapping(
-            value = "/api/auth/getMovingLinkedDocsList",
-            params = {"id","docName"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getMovingLinkedDocsList(
-            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
-        logger.info("Processing get request for path api/auth/getMovingLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
-        List<LinkedDocsJSON> returnList;
-        returnList = movingRepositoryJPA.getMovingLinkedDocsList(id,docName);
-        if(!Objects.isNull(returnList)){
-            return new ResponseEntity<>(returnList, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @RequestMapping(
+//            value = "/api/auth/getMovingLinkedDocsList",
+//            params = {"id","docName"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getMovingLinkedDocsList(
+//            @RequestParam("id") Long id, @RequestParam("docName") String docName) {//передали сюда id документа и имя таблицы
+//        logger.info("Processing get request for path api/auth/getMovingLinkedDocsList with parameters: " + "id: " + id+ ", docName: "+docName);
+//        List<LinkedDocsJSON> returnList;
+//        returnList = movingRepositoryJPA.getMovingLinkedDocsList(id,docName);
+//        if(!Objects.isNull(returnList)){
+//            return new ResponseEntity<>(returnList, HttpStatus.OK);
+//        } else {
+//            return new ResponseEntity<>("Ошибка при загрузке списка связанных документов", HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
     @PostMapping("/api/auth/setMovingAsDecompleted")
     public ResponseEntity<?> setMovingAsDecompleted(@RequestBody MovingForm request){

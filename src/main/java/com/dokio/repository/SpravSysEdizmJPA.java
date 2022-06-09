@@ -319,7 +319,7 @@ public class SpravSysEdizmJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -376,6 +376,7 @@ public class SpravSysEdizmJPA {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Piece','pcs',1,1),"+
                 "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Uncountable','',1,null),"+
                 "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Kilogramm','kg',2,1),"+
                 "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Gramm','g',2,0.001),"+

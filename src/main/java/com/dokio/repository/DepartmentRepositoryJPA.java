@@ -108,7 +108,7 @@ public class DepartmentRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -169,7 +169,7 @@ public class DepartmentRepositoryJPA {
         }
 
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+            stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -177,6 +177,9 @@ public class DepartmentRepositoryJPA {
         stringQuery = stringQuery + " and p.parent_id is null";
 
         Query query =  entityManager.createNativeQuery(stringQuery);
+
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("sg", searchString);}
 
         if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
         {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsIdWithTheirParents());}
@@ -534,7 +537,7 @@ public class DepartmentRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -562,7 +565,7 @@ public class DepartmentRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

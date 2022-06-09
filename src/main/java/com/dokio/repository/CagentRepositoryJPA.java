@@ -61,7 +61,7 @@ public class CagentRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","company","department","creator","date_time_created_sort","doc_name","cagent","summ","status","summ_in","summ_out","doc_number","summ_on_start","summ_on_end")
+            .of("name","company","creator","date_time_created_sort","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -73,6 +73,9 @@ public class CagentRepositoryJPA {
     public List<CagentsJSON> getCagentsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L, "133,134"))//"Контрагенты" (см. файл Permissions Id)
         {
+            if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
+                throw new IllegalArgumentException("Invalid query parameters");
+
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
@@ -153,8 +156,8 @@ public class CagentRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -162,70 +165,79 @@ public class CagentRepositoryJPA {
 
             stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
 
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery)
+                        .setFirstResult(offsetreal)
+                        .setMaxResults(result);
 
-            Query query = entityManager.createNativeQuery(stringQuery)
-                    .setFirstResult(offsetreal)
-                    .setMaxResults(result);
-            List<Object[]> queryList = query.getResultList();
-            List<CagentsJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                CagentsJSON doc=new CagentsJSON();
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
 
-                doc.setId(Long.parseLong(                           obj[0].toString()));
-                doc.setMaster((String)                              obj[1]);
-                doc.setName((String)                                obj[2]);
-                doc.setCreator((String)                             obj[3]);
-                doc.setChanger((String)                             obj[4]);
-                doc.setMaster_id(Long.parseLong(                    obj[5].toString()));
-                doc.setCreator_id(Long.parseLong(                   obj[6].toString()));
-                doc.setChanger_id(obj[7]!=null?Long.parseLong(      obj[7].toString()):null);
-                doc.setCompany_id(Long.parseLong(                   obj[8].toString()));
-                doc.setCompany((String)                             obj[9]);
-                doc.setOpf((String)                                 obj[10]);
-                doc.setOpf_id((Integer)                             obj[11]);
-                doc.setDate_time_created((String)                   obj[12]);
-                doc.setDate_time_changed((String)                   obj[13]);
-                doc.setDescription((String)                         obj[14]);
-                doc.setCode((String)                                obj[15]);
-                doc.setTelephone((String)                           obj[16]);
-                doc.setSite((String)                                obj[17]);
-                doc.setEmail((String)                               obj[18]);
-                doc.setZip_code((String)                            obj[19]);
-                doc.setCountry_id((Integer)                         obj[20]);
-                doc.setRegion_id((Integer)                          obj[21]);
-                doc.setCity_id((Integer)                            obj[22]);
-                doc.setStreet((String)                              obj[23]);
-                doc.setHome((String)                                obj[24]);
-                doc.setFlat((String)                                obj[25]);
-                doc.setAdditional_address((String)                  obj[26]);
-                doc.setStatus_id(obj[27]!=null?Long.parseLong(      obj[27].toString()):null);
-                doc.setPrice_type_id(obj[28]!=null?Long.parseLong(  obj[28].toString()):null);
-                doc.setDiscount_card((String)                       obj[29]);
-                doc.setJr_jur_full_name((String)                    obj[30]);
-                doc.setJr_jur_kpp((String)                          obj[31]);
-                doc.setJr_jur_ogrn((String)                         obj[32]);
-                doc.setJr_zip_code((String)                         obj[33]);
-                doc.setJr_country_id((Integer)                      obj[34]);
-                doc.setJr_region_id((Integer)                       obj[35]);
-                doc.setJr_city_id((Integer)                         obj[36]);
-                doc.setJr_street((String)                           obj[37]);
-                doc.setJr_home((String)                             obj[38]);
-                doc.setJr_flat((String)                             obj[39]);
-                doc.setJr_additional_address((String)               obj[40]);
-                doc.setJr_inn((String)                              obj[41]);
-                doc.setJr_okpo((String)                             obj[42]);
-                doc.setJr_fio_family((String)                       obj[43]);
-                doc.setJr_fio_name((String)                         obj[44]);
-                doc.setJr_fio_otchestvo((String)                    obj[45]);
-                doc.setJr_ip_ogrnip((String)                        obj[46]);
-                doc.setJr_ip_svid_num((String)                      obj[47]);
-                doc.setJr_ip_reg_date((String)                      obj[48]);
-                doc.setStatus_name((String)                         obj[49]);
-                doc.setStatus_color((String)                        obj[50]);
-                doc.setStatus_description((String)                  obj[51]);
-                returnList.add(doc);
+                List<Object[]> queryList = query.getResultList();
+                List<CagentsJSON> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+                    CagentsJSON doc=new CagentsJSON();
+
+                    doc.setId(Long.parseLong(                           obj[0].toString()));
+                    doc.setMaster((String)                              obj[1]);
+                    doc.setName((String)                                obj[2]);
+                    doc.setCreator((String)                             obj[3]);
+                    doc.setChanger((String)                             obj[4]);
+                    doc.setMaster_id(Long.parseLong(                    obj[5].toString()));
+                    doc.setCreator_id(Long.parseLong(                   obj[6].toString()));
+                    doc.setChanger_id(obj[7]!=null?Long.parseLong(      obj[7].toString()):null);
+                    doc.setCompany_id(Long.parseLong(                   obj[8].toString()));
+                    doc.setCompany((String)                             obj[9]);
+                    doc.setOpf((String)                                 obj[10]);
+                    doc.setOpf_id((Integer)                             obj[11]);
+                    doc.setDate_time_created((String)                   obj[12]);
+                    doc.setDate_time_changed((String)                   obj[13]);
+                    doc.setDescription((String)                         obj[14]);
+                    doc.setCode((String)                                obj[15]);
+                    doc.setTelephone((String)                           obj[16]);
+                    doc.setSite((String)                                obj[17]);
+                    doc.setEmail((String)                               obj[18]);
+                    doc.setZip_code((String)                            obj[19]);
+                    doc.setCountry_id((Integer)                         obj[20]);
+                    doc.setRegion_id((Integer)                          obj[21]);
+                    doc.setCity_id((Integer)                            obj[22]);
+                    doc.setStreet((String)                              obj[23]);
+                    doc.setHome((String)                                obj[24]);
+                    doc.setFlat((String)                                obj[25]);
+                    doc.setAdditional_address((String)                  obj[26]);
+                    doc.setStatus_id(obj[27]!=null?Long.parseLong(      obj[27].toString()):null);
+                    doc.setPrice_type_id(obj[28]!=null?Long.parseLong(  obj[28].toString()):null);
+                    doc.setDiscount_card((String)                       obj[29]);
+                    doc.setJr_jur_full_name((String)                    obj[30]);
+                    doc.setJr_jur_kpp((String)                          obj[31]);
+                    doc.setJr_jur_ogrn((String)                         obj[32]);
+                    doc.setJr_zip_code((String)                         obj[33]);
+                    doc.setJr_country_id((Integer)                      obj[34]);
+                    doc.setJr_region_id((Integer)                       obj[35]);
+                    doc.setJr_city_id((Integer)                         obj[36]);
+                    doc.setJr_street((String)                           obj[37]);
+                    doc.setJr_home((String)                             obj[38]);
+                    doc.setJr_flat((String)                             obj[39]);
+                    doc.setJr_additional_address((String)               obj[40]);
+                    doc.setJr_inn((String)                              obj[41]);
+                    doc.setJr_okpo((String)                             obj[42]);
+                    doc.setJr_fio_family((String)                       obj[43]);
+                    doc.setJr_fio_name((String)                         obj[44]);
+                    doc.setJr_fio_otchestvo((String)                    obj[45]);
+                    doc.setJr_ip_ogrnip((String)                        obj[46]);
+                    doc.setJr_ip_svid_num((String)                      obj[47]);
+                    doc.setJr_ip_reg_date((String)                      obj[48]);
+                    doc.setStatus_name((String)                         obj[49]);
+                    doc.setStatus_color((String)                        obj[50]);
+                    doc.setStatus_description((String)                  obj[51]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getCagentsTable. SQL query:" + stringQuery, e);
+                return null;
             }
-            return returnList;
         } else return null;
     }
     @SuppressWarnings("Duplicates")
@@ -248,15 +260,25 @@ public class CagentRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-            Query query = entityManager.createNativeQuery(stringQuery);
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-            return query.getResultList().size();
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
+                return query.getResultList().size();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getCagentsSize. SQL query:" + stringQuery, e);
+                return 0;
+            }
         } else return 0;
     }
 
@@ -660,27 +682,35 @@ public class CagentRepositoryJPA {
         String stringQuery;
         try {
             stringQuery =   " insert into cagents_contacts (" +
-                    "master_id," +
-                    "company_id," +
-                    "cagent_id," +
-                    "fio," +
-                    "position," +
-                    "telephone," +
-                    "email," +
-                    "additional," +
-                    "output_order"+
-                    ") values ("
-                    + master_id +", "
-                    + company_id +", "
-                    + cagent_id +", '"
-                    + (row.getFio()!=null?row.getFio():"") + "', '"
-                    + (row.getPosition()!=null?row.getPosition():"") +"', '"
-                    + (row.getTelephone()!=null?row.getTelephone():"") +"', '"
-                    + (row.getEmail()!=null?row.getEmail():"") +"', '"
-                    + (row.getAdditional()!=null?row.getAdditional():"") + "', "
-                    + row.getOutput_order() + ")";
+                            "master_id," +
+                            "company_id," +
+                            "cagent_id," +
+                            "fio," +
+                            "position," +
+                            "telephone," +
+                            "email," +
+                            "additional," +
+                            "output_order"+
+                            ") values ("
+                            + master_id +", "
+                            + company_id +", "
+                            + cagent_id +", "
+                            + ":fio, "
+                            + ":posit, "
+                            + ":telephone, "
+                            + ":email, "
+                            + ":additional, "
+                            + ":output_order)";
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fio",(row.getFio()!=null?row.getFio():""));
+            query.setParameter("posit",(row.getPosition()!=null?row.getPosition():""));
+            query.setParameter("telephone",(row.getTelephone()!=null?row.getTelephone():""));
+            query.setParameter("email",(row.getEmail()!=null?row.getEmail():""));
+            query.setParameter("additional",(row.getAdditional()!=null?row.getAdditional():""));
+            query.setParameter("output_order",row.getOutput_order());
+
+
             query.executeUpdate();
             return true;
         }
@@ -698,12 +728,12 @@ public class CagentRepositoryJPA {
         String stringQuery;
         try {
             stringQuery =   " update cagents_contacts set " +
-                    " fio = '" + row.getFio() + "', " +
-                    " position = '" + row.getPosition() +"', " +
-                    " telephone = '" + row.getTelephone() +"', " +
-                    " email = '" + row.getEmail() +"', " +
-                    " additional = '" + (row.getAdditional()!=null?row.getAdditional():"") + "', " +
-                    " output_order = "+ row.getOutput_order() +
+                    " fio = :fio," +
+                    " position = :posit," +
+                    " telephone = :telephone," +
+                    " email = :email,"+
+                    " additional = :additional," +
+                    " output_order = :output_order" +
                     " where " +
                     " id="+row.getId()+" and "+
                     " master_id="+master_id+" and "+
@@ -711,6 +741,12 @@ public class CagentRepositoryJPA {
                     " cagent_id="+ cagent_id;
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fio",row.getFio());
+            query.setParameter("posit",row.getPosition());
+            query.setParameter("telephone",row.getTelephone());
+            query.setParameter("email",row.getEmail());
+            query.setParameter("additional",(row.getAdditional()!=null?row.getAdditional():""));
+            query.setParameter("output_order",row.getOutput_order());
             query.executeUpdate();
             return true;
         }
@@ -727,28 +763,35 @@ public class CagentRepositoryJPA {
         String stringQuery;
         try {
             stringQuery =   " insert into cagents_payment_accounts (" +
-                    "master_id," +
-                    "company_id," +
-                    "cagent_id," +
-                    "bik," +
-                    "name," +
-                    "address," +
-                    "corr_account," +
-                    "payment_account," +
-                    "output_order"+
-                    ") values ("
-                    + master_id +", "
-                    + company_id +", "
-                    + cagent_id +", "
-                    + "'" + (row.getName()!=null?row.getBik():"") +"', "
-                    + "'" + (row.getName()!=null?row.getName():"") +"', "
-                    + "'" + (row.getAddress()!=null?row.getAddress():"") +"', "
-                    + "'" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', "
-                    + "'" + (row.getPayment_account()!=null?row.getPayment_account():"") + "', "
-                    + row.getOutput_order() + ")";
+                            "master_id," +
+                            "company_id," +
+                            "cagent_id," +
+                            "bik," +
+                            "name," +
+                            "address," +
+                            "corr_account," +
+                            "payment_account," +
+                            "output_order"+
+                            ") values ("
+                            + master_id +", "
+                            + company_id +", "
+                            + cagent_id +", "
+                            + ":bik,"
+                            + ":name,"
+                            + ":address,"
+                            + ":corr_acc,"
+                            + ":paym_acc,"
+                            + row.getOutput_order() + ")";
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
+            query.setParameter("name", (row.getName()!=null?row.getName():""));
+            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
+            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
+            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
+
             query.executeUpdate();
+
             return true;
         }
         catch (Exception e) {
@@ -765,12 +808,12 @@ public class CagentRepositoryJPA {
         String stringQuery;
         try {
             stringQuery =   " update cagents_payment_accounts set " +
-                    " bik = '" + (row.getBik()!=null?row.getBik():"") +"', " +
-                    " name = '" + (row.getName()!=null?row.getName():"") +"', " +
-                    " address = '" + (row.getAddress()!=null?row.getAddress():"") +"', " +
-                    " corr_account = '" + (row.getCorr_account()!=null?row.getCorr_account():"") +"', " +
-                    " payment_account = '" + (row.getPayment_account()!=null?row.getPayment_account():"") + "', " +
-                    " output_order = "+ row.getOutput_order() +
+                    " bik = :bik, " +
+                    " name = :name, " +
+                    " address = :address, " +
+                    " corr_account = :corr_acc, " +
+                    " payment_account = :paym_acc, " +
+                    " output_order = :output_order"+
                     " where " +
                     " id="+row.getId()+" and "+
                     " master_id="+master_id+" and "+
@@ -778,6 +821,12 @@ public class CagentRepositoryJPA {
                     " cagent_id="+ cagent_id;
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
+            query.setParameter("name", (row.getName()!=null?row.getName():""));
+            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
+            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
+            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
+            query.setParameter("output_order",row.getOutput_order());
             query.executeUpdate();
             return true;
         }
@@ -797,55 +846,54 @@ public class CagentRepositoryJPA {
         {
             String stringQuery;
             stringQuery =   " update cagents set " +
-                    " name = '" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                    " description = '" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                    " name = :name, " +//наименование
+                    " description = :description, " +//описание
                     " opf_id = " + request.getOpf_id() + ", " +//организационно-правовая форма предприятия
                     " changer_id = " + myId + ", " +// кто изменил
                     " date_time_changed = now() " + ", " +//дату изменения
-                    " code = '" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
-                    " telephone = '" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                    " site = '" + (request.getSite() == null ? "": request.getSite()) +"', " +//факс
-                    " email = '" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
+                    " code = :code, " +//код
+                    " telephone = :telephone, " +//телефон
+                    " site = :site, " +//факс
+                    " email = :email, " +//емейл
                     //фактический адрес
-                    " zip_code = '" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +// почтовый индекс
+                    " zip_code = :zip_code, " +// почтовый индекс
                     " country_id = " + request.getCountry_id() + ", " +//страна
 //                    " region_id = " + request.getRegion_id() + ", " +//область
 //                    " city_id = " + request.getCity_id() + ", " +//город/нас.пункт
-                    " region = '" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
-                    " city = '" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
-                    " street = '" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
-                    " home = '" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
-                    " flat = '" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
-                    " additional_address = '" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
+                    " region =  :region, " +//область
+                    " city = :city, " +//город/нас.пункт
+                    " street = :street, " +//улица
+                    " home = :home, " +//дом
+                    " flat = :flat, " +//квартира
+                    " additional_address = :additional_address, " +//дополнение к адресу
                     " status_id = " + request.getStatus_id() + ", " +//статус контрагента
                     " price_type_id = " + request.getPrice_type_id() + ", " +//тип цен, назначенный для контрагента
-                    " discount_card = '" + (request.getDiscount_card() == null ? "": request.getDiscount_card()) +"', " +//номер дисконтной карты
+                    " discount_card = :discount_card, " +//номер дисконтной карты
                     //Юридические реквизиты
-                    " jr_jur_full_name = '" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
-                    " jr_jur_kpp = '" + (request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()) +"', " +//кпп (для юрлиц)
-                    " jr_jur_ogrn = '" + (request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()) +"', " +//огрн (для юрлиц)
+                    " jr_jur_full_name = :jr_jur_full_name, " +//полное название (для юрлиц)
+                    " jr_jur_kpp = :jr_jur_kpp, " +//кпп (для юрлиц)
+                    " jr_jur_ogrn = :jr_jur_ogrn, " +//огрн (для юрлиц)
                     //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
-                    " jr_zip_code = '" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +// почтовый индекс
+                    " jr_zip_code = :jr_zip_code, " +// почтовый индекс
                     " jr_country_id = " + request.getJr_country_id() + ", " +//страна
 //                    " jr_region_id = " + request.getJr_region_id() + ", " +//область
 //                    " jr_city_id = " + request.getJr_city_id() + ", " +//город/нас.пункт
-                    " jr_region = '" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +//область
-                    " jr_city = '" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +//город/нас.пункт
-                    " jr_street = '" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
-                    " jr_home = '" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
-                    " jr_flat = '" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
-                    " jr_additional_address = '" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
-                    " jr_inn = '" + (request.getJr_inn() == null ? "": request.getJr_inn()) +"', " +//ИНН
-                    " jr_okpo = '" + (request.getJr_okpo() == null ? "": request.getJr_okpo()) +"', " +//ОКПО
-                    " jr_fio_family = '" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия (для ИП или физлица)
-                    " jr_fio_name = '" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя (для ИП или физлица)
-                    " jr_fio_otchestvo = '" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество (для ИП или физлица)
-                    " jr_ip_ogrnip = '" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) +"', " +//ОГРНИП (для ИП)
-                    " jr_ip_svid_num = '" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
+                    " jr_region = :jr_region, " +//область
+                    " jr_city = :jr_city, " +//город/нас.пункт
+                    " jr_street = :jr_street, " +//улица
+                    " jr_home = :jr_home, " +//дом
+                    " jr_flat = :jr_flat, " +//квартира
+                    " jr_additional_address = :jr_additional_address, " +//дополнение к адресу
+                    " jr_inn = :jr_inn, " +//ИНН
+                    " jr_okpo = :jr_okpo, " +//ОКПО
+                    " jr_fio_family = :jr_fio_family, " +//Фамилия (для ИП или физлица)
+                    " jr_fio_name = :jr_fio_name, " +//Имя (для ИП или физлица)
+                    " jr_fio_otchestvo = :jr_fio_otchestvo, " +//Отчество (для ИП или физлица)
+                    " jr_ip_ogrnip = :jr_ip_ogrnip, " +//ОГРНИП (для ИП)
+                    " jr_ip_svid_num = :jr_ip_svid_num, " +//номер свидетельства (для ИП)
+                    " jr_ip_reg_date = to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
 
-                    " jr_ip_reg_date = to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')," +
-
-                    " type =            :type " +// entity or individual
+                    " type = :type " +// entity or individual
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -854,8 +902,38 @@ public class CagentRepositoryJPA {
 //                            " and master_id = " + myMasterId;// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("type",request.getType());
-//            query.setParameter("tax_number",request.getTax_number());
-//            query.setParameter("reg_number",request.getReg_number());
+            query.setParameter("name", (request.getName()!=null?request.getName():""));
+            query.setParameter("description", (request.getDescription() == null ? "": request.getDescription()));
+            query.setParameter("code",(request.getCode() == null ? "": request.getCode()));
+            query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
+            query.setParameter("site",(request.getSite() == null ? "": request.getSite()));
+            query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+            query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
+            query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
+            query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
+            query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
+            query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
+            query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
+            query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
+            query.setParameter("discount_card",(request.getDiscount_card() == null ? "": request.getDiscount_card()));
+            query.setParameter("jr_jur_full_name",(request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()));
+            query.setParameter("jr_jur_kpp",(request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()));
+            query.setParameter("jr_jur_ogrn",(request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()));
+            query.setParameter("jr_zip_code",(request.getJr_zip_code() == null ? "": request.getJr_zip_code()));
+            query.setParameter("jr_region",(request.getJr_region() == null ? "": request.getJr_region()));
+            query.setParameter("jr_city",(request.getJr_city() == null ? "": request.getJr_city()));
+            query.setParameter("jr_street",(request.getJr_street() == null ? "": request.getJr_street()));
+            query.setParameter("jr_home",(request.getJr_home() == null ? "": request.getJr_home()));
+            query.setParameter("jr_flat",(request.getJr_flat() == null ? "": request.getJr_flat()));
+            query.setParameter("jr_additional_address",(request.getJr_additional_address() == null ? "": request.getJr_additional_address()));
+            query.setParameter("jr_inn",(request.getJr_inn() == null ? "": request.getJr_inn()));
+            query.setParameter("jr_okpo",(request.getJr_okpo() == null ? "": request.getJr_okpo()));
+            query.setParameter("jr_fio_family",(request.getJr_fio_family() == null ? "": request.getJr_fio_family()));
+            query.setParameter("jr_fio_name",(request.getJr_fio_name() == null ? "": request.getJr_fio_name()));
+            query.setParameter("jr_fio_otchestvo",(request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()));
+            query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
+            query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
+            query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
 
             query.executeUpdate();
             return true;
@@ -986,50 +1064,50 @@ public class CagentRepositoryJPA {
                 myId + ", "+
                 request.getCompany_id() + ", "+
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
-                "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
-                "'" + (request.getDescription() == null ? "": request.getDescription()) +  "', " +//описание
+                ":name, " +//наименование
+                ":description, " +//описание
                 request.getOpf_id() + ", " +//организационно-правовая форма предприятия
-                "'" + (request.getCode() == null ? "": request.getCode()) + "', " +//код
-                "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                "'" + (request.getSite() == null ? "": request.getSite()) +"', " +//факс
-                "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
+                ":code, " +//код
+                ":telephone, " +//телефон
+                ":site, " +//факс
+                ":email, " +//емейл
                 //фактический адрес
-                "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
+                ":zip_code, " +//почтовый индекс
                 request.getCountry_id() + ", " +//страна
 //                request.getRegion_id() + ", " +//область
 //                request.getCity_id() + ", " +//город/нас.пункт
-                "'" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
-                "'" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
-                "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
-                "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
-                "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
-                "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
+                ":region, " +//область
+                ":city, " +//город/нас.пункт
+                ":street, " +//улица
+                ":home, " +//дом
+                ":flat, " +//квартира
+                ":additional_address, " +//дополнение к адресу
                 request.getStatus_id() + ", " +//статус контрагента
                 request.getPrice_type_id() + ", " +//тип цен, назначенный для контрагента
-                "'" + (request.getDiscount_card() == null ? "": request.getDiscount_card()) +"', " +//номер дисконтной карты
+                ":discount_card, " +//номер дисконтной карты
                 //Юридические реквизиты
-                "'" + (request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()) +"', " +//полное название (для юрлиц)
-                "'" + (request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()) + "', " +//кпп (для юрлиц)
-                "'" + (request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()) + "', " +//огрн (для юрлиц)
+                ":jr_jur_full_name, " +//полное название (для юрлиц)
+                ":jr_jur_kpp, " +//кпп (для юрлиц)
+                ":jr_jur_ogrn, " +//огрн (для юрлиц)
                 //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
-                "'" + (request.getJr_zip_code() == null ? "": request.getJr_zip_code()) +"', " +//почтовый индекс
+                ":jr_zip_code, " +//почтовый индекс
                 request.getJr_country_id() + ", " +//страна
 //                request.getJr_region_id() + ", " +//область
 //                request.getJr_city_id() + ", " +//город/нас.пункт
-                "'" + (request.getJr_region() == null ? "": request.getJr_region()) +"', " +//область
-                "'" + (request.getJr_city() == null ? "": request.getJr_city()) +"', " +//город/нас.пункт
-                "'" + (request.getJr_street() == null ? "": request.getJr_street()) + "', " +//улица
-                "'" + (request.getJr_home() == null ? "": request.getJr_home()) + "', " +//дом
-                "'" + (request.getJr_flat() == null ? "": request.getJr_flat()) + "', " +//квартира
-                "'" + (request.getJr_additional_address() == null ? "": request.getJr_additional_address()) + "', " +//дополнение к адресу
-                "'" + (request.getJr_inn() == null ? "": request.getJr_inn()) + "', " +//ИНН
-                "'" + (request.getJr_okpo() == null ? "": request.getJr_okpo()) + "', " + //ОКПО
-                "'" + (request.getJr_fio_family() == null ? "": request.getJr_fio_family()) + "', " +//Фамилия
-                "'" + (request.getJr_fio_name() == null ? "": request.getJr_fio_name()) + "', " +//Имя
-                "'" + (request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()) + "', " +//Отчество
-                "'" + (request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()) + "', " + //ОГРНИП (для ИП)
-                "'" + (request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()) + "', " +//номер свидетельства (для ИП)
-                "to_date(" + ((request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? ("'"+request.getJr_ip_reg_date()+"'") : null) + ",'DD.MM.YYYY')," +
+                ":jr_region, " +//область
+                ":jr_city, " +//город/нас.пункт
+                ":jr_street, " +//улица
+                ":jr_home, " +//дом
+                ":jr_flat, " +//квартира
+                ":jr_additional_address, " +//дополнение к адресу
+                ":jr_inn, " +//ИНН
+                ":jr_okpo, " + //ОКПО
+                ":jr_fio_family, " +//Фамилия
+                ":jr_fio_name, " +//Имя
+                ":jr_fio_otchestvo, " +//Отчество
+                ":jr_ip_ogrnip, " + //ОГРНИП (для ИП)
+                ":jr_ip_svid_num, " +//номер свидетельства (для ИП)
+                "to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
                 ":type " +
 //                request.getReg_country_id() + "," +
 //                ":tax_number," +
@@ -1038,8 +1116,39 @@ public class CagentRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("type",request.getType());
-//            query.setParameter("tax_number",request.getTax_number());
-//            query.setParameter("reg_number",request.getReg_number());
+            query.setParameter("name", (request.getName()!=null?request.getName():""));
+            query.setParameter("description", (request.getDescription() == null ? "": request.getDescription()));
+            query.setParameter("code",(request.getCode() == null ? "": request.getCode()));
+            query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
+            query.setParameter("site",(request.getSite() == null ? "": request.getSite()));
+            query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+            query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
+            query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
+            query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
+            query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
+            query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
+            query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
+            query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
+            query.setParameter("discount_card",(request.getDiscount_card() == null ? "": request.getDiscount_card()));
+            query.setParameter("jr_jur_full_name",(request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()));
+            query.setParameter("jr_jur_kpp",(request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()));
+            query.setParameter("jr_jur_ogrn",(request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()));
+            query.setParameter("jr_zip_code",(request.getJr_zip_code() == null ? "": request.getJr_zip_code()));
+            query.setParameter("jr_region",(request.getJr_region() == null ? "": request.getJr_region()));
+            query.setParameter("jr_city",(request.getJr_city() == null ? "": request.getJr_city()));
+            query.setParameter("jr_street",(request.getJr_street() == null ? "": request.getJr_street()));
+            query.setParameter("jr_home",(request.getJr_home() == null ? "": request.getJr_home()));
+            query.setParameter("jr_flat",(request.getJr_flat() == null ? "": request.getJr_flat()));
+            query.setParameter("jr_additional_address",(request.getJr_additional_address() == null ? "": request.getJr_additional_address()));
+            query.setParameter("jr_inn",(request.getJr_inn() == null ? "": request.getJr_inn()));
+            query.setParameter("jr_okpo",(request.getJr_okpo() == null ? "": request.getJr_okpo()));
+            query.setParameter("jr_fio_family",(request.getJr_fio_family() == null ? "": request.getJr_fio_family()));
+            query.setParameter("jr_fio_name",(request.getJr_fio_name() == null ? "": request.getJr_fio_name()));
+            query.setParameter("jr_fio_otchestvo",(request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()));
+            query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
+            query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
+            query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
+
             query.executeUpdate();
             stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1067,10 +1176,11 @@ public class CagentRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
                     query.executeUpdate();
                     return 1;
@@ -1097,7 +1207,7 @@ public class CagentRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -1324,7 +1434,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     String myTimeZone = userRepository.getUserTimeZone();
     Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
     if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
-        throw new IllegalArgumentException("Недопустимые параметры запроса");
+        throw new IllegalArgumentException("Invalid query parameters");
 
     stringQuery =   "select " +
             " cg.id as cagent_id, " +
@@ -1612,13 +1722,14 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                     " parent_id as parent_id," +
                     " output_order as output_order" +
                     " from cagent_categories " +
-                    " where company_id ="+companyId+" and master_id="+ myMasterId+ " and upper(name) like upper('%"+searchString+"%')";
+                    " where company_id ="+companyId+" and master_id="+ myMasterId+ " and upper(name) like upper(CONCAT('%',:sg,'%'))";
             if (!securityRepositoryJPA.userHasPermissions_OR(12L, "133")) //Если нет прав на просмотр доков по всем предприятиям
             {//остается только на своё предприятие
                 Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery, CagentCategoriesTableJSON.class);
+            query.setParameter("sg",searchString);
             return query.getResultList();
         } else return null;
     }
@@ -1721,7 +1832,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                         "company_id," +
                         "date_time_created" +
                         ") values ( " +
-                        "'"+request.getName()+"', "+
+                        ":name, "+
                         myMasterId+","+
                         myId+","+
                         (request.getParentCategoryId()>0?request.getParentCategoryId():null)+", "+
@@ -1730,6 +1841,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 try
                 {
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name",request.getName());
                     if(query.executeUpdate()==1){
 //                        Long id = (Long)query.getSingleResult();
                         stringQuery="" +
@@ -1756,7 +1868,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             Long changer = userRepository.getUserIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "update cagent_categories set " +
-                    " name='" + request.getName()+"', "+
+                    " name=:name, "+
                     " date_time_changed= now()," +
                     " changer_id= " + changer +
                     " where id=" + request.getCategoryId()+
@@ -1770,6 +1882,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
                 int i = query.executeUpdate();
                 return true;
             }

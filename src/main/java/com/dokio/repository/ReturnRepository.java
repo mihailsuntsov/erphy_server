@@ -838,7 +838,7 @@ public class ReturnRepository {
             stringQuery =   " delete from return_product " +
                     " where return_id=" + return_id +
                     " and master_id=" + myMasterId +
-                    (productIds.length()>0?(" and product_id not in (" + productIds + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+                    (productIds.length()>0?(" and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1022,7 +1022,7 @@ public class ReturnRepository {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1071,7 +1071,7 @@ public class ReturnRepository {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

@@ -157,7 +157,7 @@ public class MovingRepository {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
@@ -945,7 +945,7 @@ public class MovingRepository {
 
         stringQuery =   " delete from moving_product " +
                 " where moving_id=" + moving_id +
-                " and product_id not in (" + productIds + ")";
+                " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1132,43 +1132,43 @@ public class MovingRepository {
     }*/
 
 
-    @SuppressWarnings("Duplicates")
-    public List<LinkedDocsJSON> getMovingLinkedDocsList(Long docId, String docName) {
-        String stringQuery;
-        String myTimeZone = userRepository.getUserTimeZone();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-//        String tableName=(docName.equals("return")?"return":"");
-        stringQuery =   " select " +
-                " ap.id," +
-                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
-                " ap.description," +
-                " coalesce(ap.is_completed,false)," +
-                " ap.doc_number" +
-                " from "+docName+" ap" +
-                " where ap.master_id = " + myMasterId +
-                " and coalesce(ap.is_deleted,false)!=true "+
-                " and ap.moving_id = " + docId;
-        stringQuery = stringQuery + " order by ap.date_time_created asc ";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<LinkedDocsJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                LinkedDocsJSON doc=new LinkedDocsJSON();
-                doc.setId(Long.parseLong(                       obj[0].toString()));
-                doc.setDate_time_created((String)               obj[1]);
-                doc.setDescription((String)                     obj[2]);
-                doc.setIs_completed((Boolean)                   obj[3]);
-                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getMovingLinkedDocsList. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    public List<LinkedDocsJSON> getMovingLinkedDocsList(Long docId, String docName) {
+//        String stringQuery;
+//        String myTimeZone = userRepository.getUserTimeZone();
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+////        String tableName=(docName.equals("return")?"return":"");
+//        stringQuery =   " select " +
+//                " ap.id," +
+//                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
+//                " ap.description," +
+//                " coalesce(ap.is_completed,false)," +
+//                " ap.doc_number" +
+//                " from "+docName+" ap" +
+//                " where ap.master_id = " + myMasterId +
+//                " and coalesce(ap.is_deleted,false)!=true "+
+//                " and ap.moving_id = " + docId;
+//        stringQuery = stringQuery + " order by ap.date_time_created asc ";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Object[]> queryList = query.getResultList();
+//            List<LinkedDocsJSON> returnList = new ArrayList<>();
+//            for(Object[] obj:queryList){
+//                LinkedDocsJSON doc=new LinkedDocsJSON();
+//                doc.setId(Long.parseLong(                       obj[0].toString()));
+//                doc.setDate_time_created((String)               obj[1]);
+//                doc.setDescription((String)                     obj[2]);
+//                doc.setIs_completed((Boolean)                   obj[3]);
+//                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
+//                returnList.add(doc);
+//            }
+//            return returnList;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getMovingLinkedDocsList. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -1188,7 +1188,7 @@ public class MovingRepository {
                     " set is_deleted=true, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")" +
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                     " and coalesce(p.is_completed,false) !=true";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -1220,7 +1220,7 @@ public class MovingRepository {
                     " set is_deleted=false, " + //удален
                     " changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now() " +//дату и время изменения
-                    " where p.id in ("+delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -1438,7 +1438,7 @@ public class MovingRepository {
                 return true;
             }
             catch (Exception e) {
-                logger.error("Exception in method ______________. SQL query:" + stringQuery, e);
+                logger.error("Exception in method deleteMovingFile. SQL query:" + stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
@@ -1472,12 +1472,12 @@ public class MovingRepository {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getDepartmentFromId() + "," +
                             row.getDepartmentToId() + "," +
@@ -1486,11 +1486,11 @@ public class MovingRepository {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_moving_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() +
                             ", department_from_id = "+row.getDepartmentFromId()+
                             ", department_to_id = "+row.getDepartmentToId()+
@@ -1499,6 +1499,9 @@ public class MovingRepository {
                             ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
             query.executeUpdate();
             return true;
         }

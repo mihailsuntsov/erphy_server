@@ -46,6 +46,10 @@ public class DocumentsRepositoryJPA {
         stringQuery = stringQuery+" order by p.doc_name_"+suffix;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("searchString", searchString);}
+
             List<Object[]> queryList = query.getResultList();
             List<DocPermissionsJSON> returnList = new ArrayList<>();
             for(Object[] obj:queryList){

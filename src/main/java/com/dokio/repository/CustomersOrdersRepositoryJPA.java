@@ -627,7 +627,7 @@ public class CustomersOrdersRepositoryJPA {
                             cagentForm.setCompany_id(request.getCompany_id());
                             cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
                             cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                            cagentForm.setDescription("Автоматическое создание из Заказа покупателя №"+doc_number.toString());
+                            cagentForm.setDescription(request.getDescription());
                             cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
                             cagentForm.setTelephone(request.getTelephone());
                             cagentForm.setEmail((request.getEmail()));
@@ -686,32 +686,44 @@ public class CustomersOrdersRepositoryJPA {
                     request.getCagent_id() + ", "+//контрагент
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                     doc_number + ", "+//номер заказа
-                    "'" + (request.getName() == null ? "": request.getName()) + "', " +//наименование
+                    ":name, " +//наименование
                     ":description, " +//описание
-                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date()+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
+                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date().replaceAll("[^0-9\\.]", "")+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
                     request.isNds() + ", "+// НДС
                     request.isNds_included() + ", "+// НДС включен в цену
-                    "'" + (request.getTelephone() == null ? "": request.getTelephone()) +"', " +//телефон
-                    "'" + (request.getEmail() == null ? "": request.getEmail()) +"', " +//емейл
-                    "'" + (request.getZip_code() == null ? "": request.getZip_code()) +"', " +//почтовый индекс
+                    ":telephone, " +//телефон
+                    ":email, " +//емейл
+                    ":zip_code, " +//почтовый индекс
                     request.getCountry_id() + ", " +//страна
 //                    request.getRegion_id() + ", " +//область
 //                    request.getCity_id() + ", " +//город/нас.пункт
-                    "'" + (request.getRegion() == null ? "": request.getRegion()) +"', " +//область
-                    "'" + (request.getCity() == null ? "": request.getCity()) +"', " +//город/нас.пункт
-                    "'" + (request.getStreet() == null ? "": request.getStreet()) +"', " +//улица
-                    "'" + (request.getHome() == null ? "": request.getHome()) +"', " +//дом
-                    "'" + (request.getFlat() == null ? "": request.getFlat()) +"', " +//квартира
-                    "'" + (request.getAdditional_address() == null ? "": request.getAdditional_address()) +"', " +//дополнение к адресу
-                    "'" + (request.getTrack_number() == null ? "": request.getTrack_number()) + "', " +//трек-номер отправленного заказа
+                    ":region, " +//область
+                    ":city, " +//город/нас.пункт
+                    ":street, " +//улица
+                    ":home, " +//дом
+                    ":flat, " +//квартира
+                    ":additional_address, " +//дополнение к адресу
+                    ":track_number, " +//трек-номер отправленного заказа
                     request.getStatus_id() + "," +//статус заказа
                     ":uid"+// уникальный идентификатор документа
                     ")";
 
                     try{
                         Query query = entityManager.createNativeQuery(stringQuery);
-                        query.setParameter("description",request.getDescription());
                         query.setParameter("uid",request.getUid());
+
+                        query.setParameter("name", (request.getName()!=null?request.getName():""));
+                        query.setParameter("description",request.getDescription());
+                        query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
+                        query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+                        query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
+                        query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
+                        query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
+                        query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
+                        query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
+                        query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
+                        query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
+                        query.setParameter("track_number",(request.getTrack_number() == null ? "": request.getTrack_number()));
                         query.executeUpdate();
                         stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -998,26 +1010,26 @@ public class CustomersOrdersRepositoryJPA {
             stringQuery =   " update customers_orders set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
-                    " description = '" + (request.getDescription() == null ? "" : request.getDescription()) + "', " +
-                    " shipment_date = to_date('" + (request.getShipment_date() == "" ? null :request.getShipment_date()) + "','DD.MM.YYYY'), " + // иначе дата будет 01-01-0001
+                    " description = :description, " +
+                    " shipment_date = to_date('" + (request.getShipment_date() == "" ? null :request.getShipment_date().replaceAll("[^0-9\\.]", "")) + "','DD.MM.YYYY'), " + // иначе дата будет 01-01-0001
                     " nds  = " + request.isNds() + ", " +
                     " nds_included  = " + request.isNds_included() + ", " +
                     " cagent_id  = " + request.getCagent_id() + ", " +
                     " doc_number = " + request.getDoc_number() + ", " +
-                    " name = '" + (request.getName() == null ? "" : request.getName()) + "', " +
-                    " email = '" + (request.getEmail() == null ? "" : request.getEmail()) + "', " +
-                    " telephone = '" + (request.getTelephone() == null ? "" : request.getTelephone()) + "', " +
-                    " zip_code = '" + (request.getZip_code() == null ? "" : request.getZip_code()) + "', " +
+                    " name = :name, " +
+                    " email = :email, " +
+                    " telephone = :telephone, " +
+                    " zip_code = :zip_code, " +
                     " country_id  = " + request.getCountry_id() + ", " +
 //                    " region_id  = " + request.getRegion_id() + ", " +
 //                    " city_id  = " + request.getCity_id() + ", " +
-                    " region = '" + (request.getRegion() == null ? "" : request.getRegion()) + "', " +
-                    " city = '" + (request.getCity() == null ? "" : request.getCity()) + "', " +
-                    " street = '" + (request.getStreet() == null ? "" : request.getStreet()) + "', " +
-                    " home = '" + (request.getHome() == null ? "" : request.getHome()) + "', " +
-                    " flat = '" + (request.getFlat() == null ? "" : request.getFlat()) + "', " +
-                    " additional_address = '" + (request.getAdditional_address() == null ? "" : request.getAdditional_address()) + "', " +
-                    " track_number = '" + (request.getTrack_number() == null ? "" : request.getTrack_number()) + "', " +
+                    " region = :region, " +
+                    " city = :city, " +
+                    " street = :street, " +
+                    " home = :home, " +
+                    " flat = :flat, " +
+                    " additional_address = :additional_address, " +
+                    " track_number = :track_number, " +
                     " is_completed  = " + request.getIs_completed() + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -1025,6 +1037,19 @@ public class CustomersOrdersRepositoryJPA {
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", (request.getName()!=null?request.getName():""));
+            query.setParameter("description",(request.getDescription() == null ? "" : request.getDescription()));
+            query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
+            query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+            query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
+            query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
+            query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
+            query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
+            query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
+            query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
+            query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
+            query.setParameter("track_number",(request.getTrack_number() == null ? "": request.getTrack_number()));
+
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -1044,60 +1069,63 @@ public class CustomersOrdersRepositoryJPA {
         Long myId=userRepository.getUserId();
         try {
             stringQuery =
-                    " insert into settings_customers_orders (" +
-                            "master_id, " +
-                            "company_id, " +
-                            "user_id, " +
-                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
-//                    "price_type_id, " +     //тип цены из справочника Типы цен
-                            "change_price, " +      //наценка/скидка в цифре (например, 50)
-                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
-                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
-                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
-                            "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
-                            "department_id, " +     //отделение по умолчанию
-                            "customer_id, "+        //покупатель по умолчанию
-                            "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-                            "name, "+               //наименование заказа
-                            "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
-                            "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
-                            ") values (" +
-                            myMasterId + "," +
-                            row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
-//                    row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
-                            row.getHideTenths() + "," +
-                            row.getSaveSettings() + "," +
-                            row.getDepartmentId() + "," +
-                            row.getCustomerId() + ",'"+
-                            row.getPriorityTypePriceSide() + "',"+
-                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                            row.getAutocreateOnStart()+ ", " +
-                            row.getStatusIdOnAutocreateOnCheque() +
-                            ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
-                            " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
-                            " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
-                            " hide_tenths = " + row.getHideTenths() + ","+
-                            " save_settings = " + row.getSaveSettings() +
+            " insert into settings_customers_orders (" +
+                    "master_id, " +
+                    "company_id, " +
+                    "user_id, " +
+                    "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                    "change_price, " +      //наценка/скидка в цифре (например, 50)
+                    "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                    "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                    "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                    "save_settings, " +     //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                    "department_id, " +     //отделение по умолчанию
+                    "customer_id, "+        //покупатель по умолчанию
+                    "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
+                    "name, "+               //наименование заказа
+                    "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
+                    "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+                    ") values (" +
+                    myMasterId + "," +
+                    row.getCompanyId() + "," +
+                    myId + "," +
+                    ":pricing_type," +
+                    row.getChangePrice() + "," +
+                    ":plusMinus," +
+                    ":changePriceType," +
+                    row.getHideTenths() + "," +
+                    row.getSaveSettings() + "," +
+                    row.getDepartmentId() + "," +
+                    row.getCustomerId() + ","+
+                    ":priorityTypePriceSide,"+
+                    ":name, " +//наименование
+                    row.getAutocreateOnStart()+ ", " +
+                    row.getStatusIdOnAutocreateOnCheque() +
+                    ") " +
+                    "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
+                    " DO update set " +
+                    " pricing_type = :pricing_type,"+
+                    " change_price = " + row.getChangePrice() + ","+
+                    " plus_minus = :plusMinus,"+
+                    " change_price_type = :changePriceType,"+
+                    " hide_tenths = " + row.getHideTenths() + ","+
+                    " save_settings = " + row.getSaveSettings() +
 
-                            ", department_id = "+row.getDepartmentId()+
-                            ", company_id = "+row.getCompanyId()+
-                            ", customer_id = "+row.getCustomerId()+
-                            ", name = '"+row.getName()+"'"+
-                            ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
-                            ", autocreate_on_start = "+row.getAutocreateOnStart()+
-                            ", status_id_on_autocreate_on_cheque = " + row.getStatusIdOnAutocreateOnCheque() +
-                            ", autocreate_on_cheque = "+row.getAutocreateOnCheque();
+                    ", department_id = "+row.getDepartmentId()+
+                    ", company_id = "+row.getCompanyId()+
+                    ", customer_id = "+row.getCustomerId()+
+                    ", name = :name"+
+                    ", priority_type_price_side = :priorityTypePriceSide"+
+                    ", autocreate_on_start = "+row.getAutocreateOnStart()+
+                    ", status_id_on_autocreate_on_cheque = " + row.getStatusIdOnAutocreateOnCheque() +
+                    ", autocreate_on_cheque = "+row.getAutocreateOnCheque();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.setParameter("priorityTypePriceSide", row.getPriorityTypePriceSide());
+            query.setParameter("name", (row.getName() == null ? "": row.getName()));
             query.executeUpdate();
             return true;
         }
@@ -1131,26 +1159,29 @@ public class CustomersOrdersRepositoryJPA {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
-                            row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
+                            row.getPriceTypeId() + ", " +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type" +
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus" +
+                            " change_price_type = :changePriceType" +
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
             query.executeUpdate();
             return true;
         }
@@ -1303,7 +1334,7 @@ public class CustomersOrdersRepositoryJPA {
             stringQuery =   " delete from customers_orders_product " +
                     " where customers_orders_id=" + customers_orders_id +
                     " and master_id=" + myMasterId +
-                    (productIds.length()>0?(" and product_id not in (" + productIds + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+                    (productIds.length()>0?(" and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1461,7 +1492,7 @@ public class CustomersOrdersRepositoryJPA {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1509,7 +1540,7 @@ public class CustomersOrdersRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

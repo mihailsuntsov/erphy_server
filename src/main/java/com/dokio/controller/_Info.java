@@ -35,11 +35,11 @@ public class _Info {
     private EntityManager entityManager;
 
     private String getBackendVersion() {
-        return "1.000-0";
+        return "1.000-1";
     }
 
     private String getBackendVersionDate() {
-        return "02/06/2022";
+        return "04/06/2022";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",

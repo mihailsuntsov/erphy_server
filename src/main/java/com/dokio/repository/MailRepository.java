@@ -41,7 +41,6 @@ public class MailRepository {
         }
     }
 
-
     public Integer forgotPass(String email){
         try{
             User user = userRepository.findByEmail(email.trim());

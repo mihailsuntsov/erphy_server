@@ -166,7 +166,7 @@ public class InvoiceinRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -551,7 +551,7 @@ public class InvoiceinRepositoryJPA {
                         cagentForm.setCompany_id(request.getCompany_id());
                         cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
                         cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Счета покупателю №"+doc_number.toString());
+                        cagentForm.setDescription("");
                         cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
                         cagentForm.setTelephone("");
                         cagentForm.setEmail("");
@@ -864,7 +864,7 @@ public class InvoiceinRepositoryJPA {
         String stringQuery;
         stringQuery =   " delete from invoicein_product " +
                 " where invoicein_id=" + invoicein_id +
-                " and product_id not in (" + productIds + ")";
+                " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1005,7 +1005,7 @@ public class InvoiceinRepositoryJPA {
                             " set is_deleted=true, " + //удален
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
-                            " where p.id in ("+delNumbers+")" +
+                            " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
                             " and coalesce(p.is_completed,false) !=true";
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
@@ -1054,7 +1054,7 @@ public class InvoiceinRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers+")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

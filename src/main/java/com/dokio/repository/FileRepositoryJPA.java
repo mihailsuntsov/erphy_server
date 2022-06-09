@@ -109,8 +109,8 @@ public class FileRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.original_name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.original_name) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -125,7 +125,8 @@ public class FileRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery, FilesTableJSON.class)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
-
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
             return query.getResultList();
         } else return null;
     }
@@ -150,8 +151,8 @@ public class FileRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.original_name) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%')"+")";
+                        "upper(p.original_name) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -160,7 +161,8 @@ public class FileRepositoryJPA {
             stringQuery = stringQuery + " and coalesce(p.trash,false) " + (trash?"=true":"=false");//отображение только файлов из корзины, если в запросе trash = true
 
             Query query = entityManager.createNativeQuery(stringQuery);
-
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
             return query.getResultList().size();
         } else return 0;
     }
@@ -356,7 +358,7 @@ public class FileRepositoryJPA {
                 stringQuery = "update files" +
                         " set trash=true, changer_id=" + changer + ", date_time_changed=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) " +
                         " where master_id=" + myMasterId +
-                        " and id in (" + delNumbers + ")";
+                        " and id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return 1;
             }catch (Exception e){
@@ -384,7 +386,7 @@ public class FileRepositoryJPA {
                 stringQuery = "update files" +
                         " set trash=false, changer_id=" + changer + ", date_time_changed=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) " +
                         " where master_id=" + myMasterId +
-                        " and id in (" + delNumbers + ")";
+                        " and id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return 1;
             }catch (Exception e){
@@ -410,7 +412,7 @@ public class FileRepositoryJPA {
                 String stringQuery;
                 stringQuery = "delete from files" +
                         " where master_id=" + myMasterId +
-                        " and trash=true and id in (" + delNumbers + ")";
+                        " and trash=true and id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (query.executeUpdate()>0)
                 {
@@ -524,9 +526,9 @@ public class FileRepositoryJPA {
     private List<String> getPathsByIds(String ids){
         String stringQuery;
         stringQuery =
-                " select f.path||'//'||f.name as path from files f where f.id in (" + ids + ") " +
+                " select f.path||'//'||f.name as path from files f where f.id in (" + ids.replaceAll("[^0-9\\,]", "") + ") " +
                         " UNION " +
-                        " select d.path||'//thumbs//'||d.name as path from files d where d.id in (" + ids + ")";
+                        " select d.path||'//thumbs//'||d.name as path from files d where d.id in (" + ids.replaceAll("[^0-9\\,]", "") + ")";
         Query query = entityManager.createNativeQuery(stringQuery);
         return query.getResultList();
     }
@@ -595,13 +597,14 @@ public class FileRepositoryJPA {
                     " parent_id as parent_id," +
                     " output_order as output_order" +
                     " from file_categories " +
-                    " where company_id ="+companyId+" and master_id="+ myMasterId+ " and upper(name) like upper('%"+searchString+"%')";
+                    " where company_id ="+companyId+" and master_id="+ myMasterId+ " and upper(name) like upper(CONCAT('%',:sg,'%'))";
             if (!securityRepositoryJPA.userHasPermissions_OR(13L, "150")) //Если нет прав на просмотр по всем предприятиям
             {//остается только на своё предприятие
                 Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery, FileCategoriesTableJSON.class);
+            query.setParameter("sg", searchString);
             return query.getResultList();
         } else return null;
     }
@@ -704,7 +707,7 @@ public class FileRepositoryJPA {
                         "company_id," +
                         "date_time_created" +
                         ") values ( " +
-                        "'" + request.getName() + "', " +
+                        ":name, " +
                         myMasterId + "," +
                         myId + "," +
                         (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
@@ -712,6 +715,7 @@ public class FileRepositoryJPA {
                         "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')))";
                 try {
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name",request.getName());
                     if (query.executeUpdate() == 1) {
                         stringQuery = "select id from file_categories where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -736,7 +740,7 @@ public class FileRepositoryJPA {
 
             String stringQuery;
             stringQuery = "update file_categories set " +
-                    " name='" + request.getName()+"', "+
+                    " name=:name, "+
                     " date_time_changed= now()," +
                     " changer_id= " + changer +
                     " where id=" + request.getCategoryId()+
@@ -750,6 +754,7 @@ public class FileRepositoryJPA {
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
                 int i = query.executeUpdate();
                 return true;
             }
