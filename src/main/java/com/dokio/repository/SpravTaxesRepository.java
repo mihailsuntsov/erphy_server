@@ -26,9 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class SpravTaxesRepository {
@@ -52,11 +52,17 @@ public class SpravTaxesRepository {
     @Autowired
     UserDetailsServiceImpl userService;
 
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("name","output_order","description","company","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
     @SuppressWarnings("Duplicates")
-
-
     public List<SpravTaxesJSON> getTaxesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(50L, "640,641"))// (см. файл Permissions Id)
         {
@@ -100,18 +106,25 @@ public class SpravTaxesRepository {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or " +
-                        "upper(p.description) like upper('%" + searchString + "%')" + ")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))" + ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
 
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
 
             Query query = entityManager.createNativeQuery(stringQuery)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             List<Object[]> queryList = query.getResultList();
             List<SpravTaxesJSON> returnList = new ArrayList<>();
@@ -163,13 +176,16 @@ public class SpravTaxesRepository {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or " +
-                        "upper(p.description) like upper('%" + searchString + "%')" + ")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))" + ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList().size();
         } else return 0;
@@ -395,7 +411,7 @@ public class SpravTaxesRepository {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -424,7 +440,7 @@ public class SpravTaxesRepository {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();

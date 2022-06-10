@@ -86,7 +86,7 @@ public class OrderoutRepositoryJPA {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -162,7 +162,7 @@ public class OrderoutRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -680,22 +680,22 @@ public class OrderoutRepositoryJPA {
                     if(request.getMoving_type().equals("account")) {
                         isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId, request.getId(), "paymentin","orderout_id");
                         if(Objects.isNull(isRecipientCompleted))
-                            throw new Exception("Ошибка определения наличия проведённого входящего платежа для данного исходящего платежа");
+                            throw new Exception("Error detecting the presence of a posted incoming payment for this outgoing payment");
                         if(isRecipientCompleted)
                             throw new IncomingPaymentIsCompletedException();
                     }else if(request.getMoving_type().equals("boxoffice")) {
                         isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId,  request.getId(), "orderin", "orderout_id");
                         if(Objects.isNull(isRecipientCompleted))
-                            throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
+                            throw new Exception("Error detecting the presence of a posted incoming order for a given outgoing payment");
                         if(isRecipientCompleted)
                             throw new IncomingPaymentIsCompletedException();
                     }else if(request.getMoving_type().equals("kassa")) {
                         isRecipientCompleted = financeUtilites.isRecipientCompleted(myMasterId,  request.getId(), "depositing", "orderout_id");
                         if(Objects.isNull(isRecipientCompleted))
-                            throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
+                            throw new Exception("Error detecting the presence of a posted incoming order for a given outgoing payment");
                         if(isRecipientCompleted)
                             throw new IncomingPaymentIsCompletedException();
-                    }else throw new Exception("Исходящий документ не определён");
+                    }else throw new Exception("Outgoing document not defined");
                 }
                 // меняем проведенность в истории кассы нашего предприятия, тем самым добавляя к ней переводимую сумму
                 commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderout","orderout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());
@@ -745,8 +745,8 @@ public class OrderoutRepositoryJPA {
                             " ON CONFLICT ON CONSTRAINT settings_orderout_user_id_key " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
-                            "company_id = "+row.getCompanyId()+"," +
-                            "status_id_on_complete = "+row.getStatusIdOnComplete();
+                            " company_id = "+row.getCompanyId()+"," +
+                            " status_id_on_complete = "+row.getStatusIdOnComplete();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

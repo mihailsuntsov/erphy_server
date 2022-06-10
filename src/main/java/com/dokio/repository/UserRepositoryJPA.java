@@ -36,9 +36,9 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Repository("UserRepositoryJPA")
@@ -70,27 +70,36 @@ public class UserRepositoryJPA {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public boolean putUserToCompany(Long userId, Long companyId){
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        User usr = em.find(User.class, userId);
-        Companies company = em.find(Companies.class, companyId);
-        usr.setCompany(company);
-        em.getTransaction().commit();
-        em.close();
-        return true;
-    }
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("name","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
-    public User getUserById(Long userId){
-        EntityManager em = emf.createEntityManager();
-        User usr = em.find(User.class, userId);
-        return usr;
-    }
-    // меняет пароль пользователя
-    public void changeUserPassword(final User user, final String password) {
-        user.setPassword(passwordEncoder.encode(password));
-        userRepository.save(user);
-    }
+//    public boolean putUserToCompany(Long userId, Long companyId){
+//        EntityManager em = emf.createEntityManager();
+//        em.getTransaction().begin();
+//        User usr = em.find(User.class, userId);
+//        Companies company = em.find(Companies.class, companyId);
+//        usr.setCompany(company);
+//        em.getTransaction().commit();
+//        em.close();
+//        return true;
+//    }
+//
+//    public User getUserById(Long userId){
+//        EntityManager em = emf.createEntityManager();
+//        User usr = em.find(User.class, userId);
+//        return usr;
+//    }
+//    // меняет пароль пользователя
+//    public void changeUserPassword(final User user, final String password) {
+//        user.setPassword(passwordEncoder.encode(password));
+//        userRepository.save(user);
+//    }
 
     //сравнивает пароль oldPassword с паролем пользователя
     public boolean checkIfValidOldPassword(final User user, final String oldPassword) {
@@ -343,18 +352,18 @@ public class UserRepositoryJPA {
             return  query.getResultList();
         }else return null;
     }
-    @SuppressWarnings("Duplicates")
-    public List<Long> getMyDepartmentsIdWithTheirParents_Long(){
-        Long userId=userDetailService.getUserId();
-        if(userId!=null) {
-            String stringQuery = "select ud.department_id from user_department ud where ud.user_id="+ userId+
-                    " UNION " +
-                    "select d.parent_id from departments d where d.parent_id is not null and d.id in " +
-                    "(select u.department_id from user_department u where u.user_id="+userId+")";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return  (List<Long>) query.getResultList();
-        }else return null;
-    }
+//    @SuppressWarnings("Duplicates")
+//    public List<Long> getMyDepartmentsIdWithTheirParents_Long(){
+//        Long userId=userDetailService.getUserId();
+//        if(userId!=null) {
+//            String stringQuery = "select ud.department_id from user_department ud where ud.user_id="+ userId+
+//                    " UNION " +
+//                    "select d.parent_id from departments d where d.parent_id is not null and d.id in " +
+//                    "(select u.department_id from user_department u where u.user_id="+userId+")";
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            return  (List<Long>) query.getResultList();
+//        }else return null;
+//    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -459,13 +468,17 @@ public class UserRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             if(searchString!= null && !searchString.isEmpty()){
-                stringQuery = stringQuery+" and upper(p.name) like upper('%"+searchString+"%')";
+                stringQuery = stringQuery+" and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
             if(companyId > 0){
                 stringQuery = stringQuery+" and p.company_id="+companyId;
             }
 //            stringQuery = stringQuery+" and status_account <4";
             Query query =  entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+
             return query.getResultList().size();
         }else return 0;
     }
@@ -516,15 +529,25 @@ public class UserRepositoryJPA {
             }
 
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
+
             Query query = entityManager.createNativeQuery(stringQuery, UsersTableJSON.class)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+
             return query.getResultList();
         }else return null;
     }
@@ -544,7 +567,7 @@ public class UserRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -622,39 +645,39 @@ public class UserRepositoryJPA {
             return null;
         }
     }
-    @SuppressWarnings("Duplicates")
-    public UserSettingsJSON getUserSettings(Long userId) {
-        String stringQuery;
-        stringQuery = "select " +
-                "   p.time_zone_id as time_zone_id, " +
-                "   p.language_id as language_id, " +
-                "   p.locale_id as locale_id, " +
-                "   sslc.code as locale, " +
-                "   sslg.suffix as suffix " +
-                "   from    user_settings p, " +
-                "           sprav_sys_languages sslg, " +
-                "           sprav_sys_locales sslc " +
-                "   where   p.user_id=" + userId +
-                "   and     p.language_id=sslg.id" +
-                "   and     p.locale_id=sslc.id";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            UserSettingsJSON doc = new UserSettingsJSON();
-            if(queryList.size()>0) {
-                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
-                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
-                doc.setLocale_id((Integer)      queryList.get(0)[2]);
-                doc.setLocale((String)          queryList.get(0)[3]);
-                doc.setSuffix((String)          queryList.get(0)[4]);
-            }
-            return doc;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    public UserSettingsJSON getUserSettings(Long userId) {
+//        String stringQuery;
+//        stringQuery = "select " +
+//                "   p.time_zone_id as time_zone_id, " +
+//                "   p.language_id as language_id, " +
+//                "   p.locale_id as locale_id, " +
+//                "   sslc.code as locale, " +
+//                "   sslg.suffix as suffix " +
+//                "   from    user_settings p, " +
+//                "           sprav_sys_languages sslg, " +
+//                "           sprav_sys_locales sslc " +
+//                "   where   p.user_id=" + userId +
+//                "   and     p.language_id=sslg.id" +
+//                "   and     p.locale_id=sslc.id";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Object[]> queryList = query.getResultList();
+//            UserSettingsJSON doc = new UserSettingsJSON();
+//            if(queryList.size()>0) {
+//                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
+//                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
+//                doc.setLocale_id((Integer)      queryList.get(0)[2]);
+//                doc.setLocale((String)          queryList.get(0)[3]);
+//                doc.setSuffix((String)          queryList.get(0)[4]);
+//            }
+//            return doc;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 
     @SuppressWarnings("Duplicates")
     public UserSettingsJSON getMySettings() {

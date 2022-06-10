@@ -170,7 +170,7 @@ public class PaymentoutRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -689,7 +689,7 @@ public class PaymentoutRepositoryJPA {
                             throw new Exception("Ошибка определения наличия проведённого приходного ордера для данного исходящего платежа");
                         if(isRecipientCompleted)
                             throw new IncomingPaymentIsCompletedException();
-                    }else throw new Exception("Исходящий документ не определён");
+                    }else throw new Exception("Outgoing document not defined");
                 }
                 // меняем проведенность в истории р. счёта нашего предприятия, тем самым добавляя к нему переводимую сумму
                 commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentout","paymentout", request.getId(), new BigDecimal(0), request.getSumm(),false,request.getDoc_number(),request.getStatus_id());

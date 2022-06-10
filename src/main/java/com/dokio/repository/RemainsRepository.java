@@ -17,15 +17,31 @@ package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class RemainsRepository {
+
+    // Инициализация логера
+    private static final Logger logger = Logger.getLogger(RemainsRepository.class);
+
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("docName","price","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -64,59 +80,59 @@ public class RemainsRepository {
             Boolean showNotAviable = filterOptionsIds.contains(0);// отображать товары с оценкой остатков "Отсутствует"
             Boolean showLess = filterOptionsIds.contains(1);// отображать товары с оценкой остатков "Мало"
             Boolean showMany = filterOptionsIds.contains(2);// отображать товары с оценкой остатков "Достаточно"
-            Integer depthsCount = departmentsIdsList.split(",").length;
+            Integer depthsCount = departmentsIdsList.replaceAll("[^0-9\\,]", "").split(",").length;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                stringQuery =
+            stringQuery =
                     "select  p.id as id, " +
-                    "           p.name as name, " +
-                    "           p.article as article, " +
-                    "           coalesce(pg.name,'') as productgroup, " +
-                    "           coalesce(p.not_buy,false) as not_buy, " +
-                    "           coalesce(p.not_sell,false) as not_sell, " +
-                    "           p.description as description, " +
-                    " coalesce((select " +
-                    " sum(coalesce(quantity,0)) " +
-                    " from " +
-                    " product_quantity " +
-                    " where " +
-                    " product_id = p.id " +
+                            "           p.name as name, " +
+                            "           p.article as article, " +
+                            "           coalesce(pg.name,'') as productgroup, " +
+                            "           coalesce(p.not_buy,false) as not_buy, " +
+                            "           coalesce(p.not_sell,false) as not_sell, " +
+                            "           p.description as description, " +
+                            " coalesce((select " +
+                            " sum(coalesce(quantity,0)) " +
+                            " from " +
+                            " product_quantity " +
+                            " where " +
+                            " product_id = p.id " +
 
-                    (departmentId > 0L ? " and department_id = " + departmentId : " and department_id in (" + departmentsIdsList + ") ") + "),0) ,";
+                            (departmentId > 0L ? " and department_id = " + departmentId : " and department_id in (" + departmentsIdsList + ") ") + "),0) ,";
 
             if (departmentId > 0L) { // "Разные" -1 / "Не установлено" 0
                 stringQuery = stringQuery +
                         " coalesce((select coalesce(min_quantity,0) from product_remains where product_id = p.id and department_id=" + departmentId + "),0) a ";
             } else {
                 stringQuery = stringQuery +
-                    " CASE WHEN " + // одинаковые значения (т.е. было например 30,30,30, сгруппировали - стало 30 - везде одинаково - можно вывести 30)
-                    "   ((select count (*) from (select coalesce(min_quantity,0) as mq " +
-                    "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
-                    "   group by mq)f) =1 " +
-                    " and " +
-                    "   (select count (*) from (select coalesce(min_quantity,0) as mq " +
-                    "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ")" +
-                    "   )f) =" + depthsCount +
-                    ") " +
-                    " THEN " +
-                    "   coalesce((select coalesce(min_quantity,0) as mq1 " +
-                    "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
-                    "   group by mq1),0)" +
+                        " CASE WHEN " + // одинаковые значения (т.е. было например 30,30,30, сгруппировали - стало 30 - везде одинаково - можно вывести 30)
+                        "   ((select count (*) from (select coalesce(min_quantity,0) as mq " +
+                        "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
+                        "   group by mq)f) =1 " +
+                        " and " +
+                        "   (select count (*) from (select coalesce(min_quantity,0) as mq " +
+                        "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ")" +
+                        "   )f) =" + depthsCount +
+                        ") " +
+                        " THEN " +
+                        "   coalesce((select coalesce(min_quantity,0) as mq1 " +
+                        "   from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
+                        "   group by mq1),0)" +
 
-                    " WHEN " +  // когда в "таблице с записями о мин. кол-ве aka product_remains" по данному товару только один или несколько 0
-                                // или мин. остатков нет вообще ни по одному из отделений (например, товар только что создан)
-                    "(select coalesce(sum(min_quantity),0) from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") "+
-                    ")=0"+
-                    " THEN 0" +
-                    " ELSE -1 " +
-                    " END as min_remains ";
-        }
+                        " WHEN " +  // когда в "таблице с записями о мин. кол-ве aka product_remains" по данному товару только один или несколько 0
+                        // или мин. остатков нет вообще ни по одному из отделений (например, товар только что создан)
+                        "(select coalesce(sum(min_quantity),0) from product_remains where product_id = p.id and department_id in (" + departmentsIdsList + ") " +
+                        ")=0" +
+                        " THEN 0" +
+                        " ELSE -1 " +
+                        " END as min_remains ";
+            }
 
             stringQuery = stringQuery +
                     ", CASE " +
 // кол-во товара задано не для всех отделений (т.е. не для всех отделений есть строка в product_quantity)
                     " WHEN    " +
                     " (select count (*) from product_quantity where product_id = p.id and department_id in (" + (departmentId > 0L ? departmentId : departmentsIdsList) + "))" +
-                    " < " +(departmentId > 0L ? 1 : depthsCount)+
+                    " < " + (departmentId > 0L ? 1 : depthsCount) +
                     " THEN 0  " +
 
                     " WHEN    " +
@@ -184,118 +200,129 @@ public class RemainsRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or " +
-                        "upper(p.article) like upper('%" + searchString + "%') or " +
-                        "upper(p.description) like upper('%" + searchString + "%') or " +
-                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
-                        "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
-                        "upper(pg.name) like upper('%" + searchString + "%')" + ")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%')) or " +
+                        "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
+                        "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             stringQuery = stringQuery + " order by p.name asc";
-            Query query = entityManager.createNativeQuery(stringQuery);
 
-            List<Object[]> queryList = query.getResultList();//получили полный список товаров в лист
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-            List<RemainsTableJSON> returnList = new ArrayList<>();
+                if (searchString != null && !searchString.isEmpty()) {
+                    query.setParameter("sg", searchString);
+                }
 
-            for (Object[] obj : queryList) {
-                RemainsTableJSON doc = new RemainsTableJSON();
+                List<Object[]> queryList = query.getResultList();//получили полный список товаров в лист
 
-                doc.setId(Long.parseLong(obj[0].toString()));
-                doc.setName((String) obj[1]);
-                doc.setArticle((String) obj[2]);
-                doc.setProductgroup((String) obj[3]);
-                doc.setNot_buy((Boolean) obj[4]);
-                doc.setNot_sell((Boolean) obj[5]);
-                doc.setDescription((String) obj[6]);
-                doc.setQuantity((BigDecimal) obj[7]);
-                doc.setMin_quantity((BigDecimal) obj[8]);
-                doc.setEstimate_quantity((Integer) obj[9]);
+                List<RemainsTableJSON> returnList = new ArrayList<>();
 
-                if ((showNotAviable && doc.getEstimate_quantity() == 0) ||
-                        (showLess && doc.getEstimate_quantity() == 1) ||
-                        (showMany && doc.getEstimate_quantity() == 2)) {
-                    returnList.add(doc);
-                }
-            }
-            if (sortColumn.equals("p.name")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_DESC);
-                }
-            }
-            if (sortColumn.equals("description")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_DESC);
-                }
-            }
-            if (sortColumn.equals("p.article")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_DESC);
-                }
-            }
-            if (sortColumn.equals("productgroup")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);
-                }
-            }
-            if (sortColumn.equals("quantity")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_DESC);
-                }
-            }
-            if (sortColumn.equals("min_quantity")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_DESC);
-                }
-            }
-            if (sortColumn.equals("estimate_quantity")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_DESC);
-                }
-            }
-            if (sortColumn.equals("not_buy")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_DESC);
-                }
-            }
-            if (sortColumn.equals("not_sell")) {
-                if (sortAsc.equals("asc")) {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_ASC);
-                } else {
-                    returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_DESC);
-                }
-            }
+                for (Object[] obj : queryList) {
+                    RemainsTableJSON doc = new RemainsTableJSON();
 
-            //вычисление пагинации
-            int returnListSize = returnList.size();
-            pagesList = getPagesList(result, offset, returnListSize);
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setName((String) obj[1]);
+                    doc.setArticle((String) obj[2]);
+                    doc.setProductgroup((String) obj[3]);
+                    doc.setNot_buy((Boolean) obj[4]);
+                    doc.setNot_sell((Boolean) obj[5]);
+                    doc.setDescription((String) obj[6]);
+                    doc.setQuantity((BigDecimal) obj[7]);
+                    doc.setMin_quantity((BigDecimal) obj[8]);
+                    doc.setEstimate_quantity((Integer) obj[9]);
 
-            //обрезаем лишнее
-            returnList = returnList.subList(offsetreal, (offsetreal + result) > returnListSize ? returnListSize : (offsetreal + result));
+                    if ((showNotAviable && doc.getEstimate_quantity() == 0) ||
+                            (showLess && doc.getEstimate_quantity() == 1) ||
+                            (showMany && doc.getEstimate_quantity() == 2)) {
+                        returnList.add(doc);
+                    }
+                }
+                if (sortColumn.equals("p.name")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NAME_DESC);
+                    }
+                }
+                if (sortColumn.equals("description")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_DESCRIPTION_DESC);
+                    }
+                }
+                if (sortColumn.equals("p.article")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_ARTICLE_DESC);
+                    }
+                }
+                if (sortColumn.equals("productgroup")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);
+                    }
+                }
+                if (sortColumn.equals("quantity")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_QUANTITY_DESC);
+                    }
+                }
+                if (sortColumn.equals("min_quantity")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_MINQUANTITY_DESC);
+                    }
+                }
+                if (sortColumn.equals("estimate_quantity")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_ESTIMATEQUANTITY_DESC);
+                    }
+                }
+                if (sortColumn.equals("not_buy")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NOTBUY_DESC);
+                    }
+                }
+                if (sortColumn.equals("not_sell")) {
+                    if (sortAsc.equals("asc")) {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_ASC);
+                    } else {
+                        returnList.sort(RemainsTableJSON.COMPARE_BY_NOTSELL_DESC);
+                    }
+                }
 
-            RemainsJSON remainsTableForm = new RemainsJSON();
-            remainsTableForm.setTable(returnList);//проверка на IndexOutOfBoundsException
-            remainsTableForm.setReceivedPagesList(pagesList);
-            return remainsTableForm;
+                //вычисление пагинации
+                int returnListSize = returnList.size();
+                pagesList = getPagesList(result, offset, returnListSize);
+
+                //обрезаем лишнее
+                returnList = returnList.subList(offsetreal, (offsetreal + result) > returnListSize ? returnListSize : (offsetreal + result));
+
+                RemainsJSON remainsTableForm = new RemainsJSON();
+                remainsTableForm.setTable(returnList);//проверка на IndexOutOfBoundsException
+                remainsTableForm.setReceivedPagesList(pagesList);
+                return remainsTableForm;
+            } catch (Exception e) {
+                logger.error("Exception in method getProductsTable. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
         } else return null;
     }
 
@@ -360,6 +387,7 @@ public class RemainsRepository {
 
         //Если есть право на "Установка остатков по всем предприятиям", ИЛИ
         if (canSetRemainsOfAllTheseDepartments(request, myMasterId)) {
+            try{
                 if (request.getDepartmentId() == 0) //если 0 значит были выбраны все доступные отделения, и нужно установить остатки по всем отделениям во всех товарах.
                 {
                     for (Long dep : request.getDepartmentsIds()) {
@@ -377,6 +405,12 @@ public class RemainsRepository {
                     }
                 }
                 return true;
+            } catch (Exception e) {
+                logger.error("Exception in method saveRemains.", e);
+                e.printStackTrace();
+                return false;
+            }
+
         } else return false;
     }
 
@@ -405,6 +439,7 @@ public class RemainsRepository {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
+            logger.error("Exception in method upsertRemain. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return false;
         }

@@ -143,7 +143,7 @@ public class DepositingRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{

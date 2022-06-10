@@ -151,7 +151,7 @@ public class WriteoffRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
@@ -1208,12 +1208,12 @@ public class WriteoffRepositoryJPA {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
                             row.getStatusOnFinishId() + "," +
@@ -1221,11 +1221,11 @@ public class WriteoffRepositoryJPA {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_writeoff_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() +
                             ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
@@ -1233,6 +1233,9 @@ public class WriteoffRepositoryJPA {
                             ", auto_add = "+row.getAutoAdd();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
             query.executeUpdate();
             return true;
         }

@@ -58,7 +58,7 @@ public class ProfitLossRepositoryJPA {
             if (    !commonUtilites.isDateValid(reqest.getDateFrom()) ||
                     !commonUtilites.isDateValid(reqest.getDateTo()) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(49L, "590") && !myCompanyId.equals(reqest.getCompanyId())))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
 
             try {
                 ProfitLossJSON doc = new ProfitLossJSON();                      // показатели доходов и расходов
@@ -106,7 +106,7 @@ public class ProfitLossRepositoryJPA {
             if (    !commonUtilites.isDateValid(reqest.getDateFrom()) ||
                     !commonUtilites.isDateValid(reqest.getDateTo()) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(26L, "609") && !myCompanyId.equals(reqest.getCompanyId())))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
 
             try {
                 // Операционные расходы

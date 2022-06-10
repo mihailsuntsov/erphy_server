@@ -128,22 +128,33 @@ public class ProductsRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or " +
-                        "upper(p.article) like upper('%" + searchString + "%') or " +
-                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
-                        "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
-                        "upper(pg.name) like upper('%" + searchString + "%')" + ")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
+                        "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
+                        "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
 
             stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            Query query = entityManager.createNativeQuery(stringQuery, ProductsTableJSON.class)
-                    .setFirstResult(offsetreal)
-                    .setMaxResults(result);
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery, ProductsTableJSON.class)
+                        .setFirstResult(offsetreal)
+                        .setMaxResults(result);
 
-            return query.getResultList();
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
+                return query.getResultList();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getProductsTable. SQL query:" + stringQuery, e);
+                return null;
+            }
+
         } else return null;
     }
 
@@ -170,16 +181,19 @@ public class ProductsRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or " +
-                        "upper(p.article) like upper('%" + searchString + "%') or " +
-                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
-                        "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or " +
-                        "upper(pg.name) like upper('%" + searchString + "%')" + ")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
+                        "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
+                        "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList().size();
         } else return 0;
@@ -285,7 +299,7 @@ public class ProductsRepositoryJPA {
                     }
                 }
             } catch (Exception e) {
-                logger.error("Exception in method updateProducts. Этап сохранение порядка поставщиков товара.", e);
+                logger.error("Exception in method updateProducts. The stage of preserving the order of suppliers of goods.", e);
                 e.printStackTrace();
                 return false;
             }
@@ -304,7 +318,7 @@ public class ProductsRepositoryJPA {
                     }
                 }
             } catch (Exception e) {
-                logger.error("Exception in method updateProducts. Этап сохранения порядка картинок товара", e);
+                logger.error("Exception in method updateProducts. The stage of saving the order of product images", e);
                 e.printStackTrace();
                 return false;
             }
@@ -321,7 +335,7 @@ public class ProductsRepositoryJPA {
                     }
                 }
             } catch (Exception e) {
-                logger.error("Exception in method updateProducts. Этап сохранения цен", e);
+                logger.error("Exception in method updateProducts. The stage of saving prices", e);
                 e.printStackTrace();
                 return false;
             }
@@ -743,7 +757,7 @@ public class ProductsRepositoryJPA {
 //                stringQuery = stringQuery + " order by p.id desc";
 
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
@@ -1100,10 +1114,10 @@ public class ProductsRepositoryJPA {
                 " and coalesce(p.is_deleted,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " upper(p.name) like upper('%" + searchString + "%') or " +
-                    " upper(p.article) like upper ('%" + searchString + "%') or " +
-                    " to_char(p.product_code_free,'fm0000000000') = '" + searchString + "' or " +
-                    " pb.value = '" + searchString + "'";
+                    " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                    " upper(p.article) like upper (CONCAT('%',:sg,'%')) or " +
+                    " to_char(p.product_code_free,'fm0000000000') = :sg or " +
+                    " pb.value = :sg";
             stringQuery = stringQuery + ")";
         }
         if (companyId > 0) {
@@ -1112,6 +1126,11 @@ public class ProductsRepositoryJPA {
         stringQuery = stringQuery + " group by p.id,f.name  order by p.name asc";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+
+
             List<Object[]> queryList = query.getResultList();
             List<ProductsListJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
@@ -1487,13 +1506,14 @@ public class ProductsRepositoryJPA {
                     " parent_id as parent_id," +
                     " output_order as output_order" +
                     " from product_categories " +
-                    " where company_id =" + companyId + " and master_id=" + myMasterId + " and upper(name) like upper('%" + searchString + "%')";
+                    " where company_id =" + companyId + " and master_id=" + myMasterId + " and upper(name) like upper(CONCAT('%',:sg,'%'))";
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на просмотр доков по всем предприятиям
             {//остается только на своё предприятие
                 Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery, ProductCategoriesTableJSON.class);
+            query.setParameter("sg", searchString);
             return query.getResultList();
         } else return null;
     }
@@ -1524,7 +1544,7 @@ public class ProductsRepositoryJPA {
                         "company_id," +
                         "date_time_created" +
                         ") values ( " +
-                        "'" + request.getName() + "', " +
+                        ":name, " +
                         myMasterId + "," +
                         myId + "," +
                         (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
@@ -1532,6 +1552,7 @@ public class ProductsRepositoryJPA {
                         "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')))";
                 try {
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name",request.getName());
                     if (query.executeUpdate() == 1) {
                         stringQuery = "select id from product_categories where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1555,7 +1576,7 @@ public class ProductsRepositoryJPA {
             Long changer = userRepository.getUserIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "update product_categories set " +
-                    " name='" + request.getName() + "', " +
+                    " name=:name, " +
                     " date_time_changed= now()," +
                     " changer_id= " + changer +
                     " where id=" + request.getCategoryId() +
@@ -1568,6 +1589,7 @@ public class ProductsRepositoryJPA {
             }
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
                 int i = query.executeUpdate();
                 return true;
             } catch (Exception e) {
@@ -1743,6 +1765,7 @@ public class ProductsRepositoryJPA {
             }
             return returnList;
         } catch (Exception e) {
+            logger.error("Exception in method getProductCount. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -2010,12 +2033,13 @@ public class ProductsRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery;
         stringQuery = "update product_fields set " +
-                " field_value='" + value + "'" +
+                " field_value=:value_ " +
                 " where product_id=" + product_id +
                 " and field_id=" + field_id +
                 " and (select master_id from products where id=" + product_id + ") = " + myMasterId; //для безопасности, чтобы не кидали json на авось у кого-то что-то проапдейтить
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("value_", value);
             int i = query.executeUpdate();
             return true;
         } catch (Exception e) {
@@ -2028,9 +2052,10 @@ public class ProductsRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public boolean createCustomField(Long product_id, Long field_id, String value) {
         String stringQuery;
-        stringQuery = "insert into product_fields (product_id, field_id, field_value) values (" + product_id + "," + field_id + ",'" + value + "')";
+        stringQuery = "insert into product_fields (product_id, field_id, field_value) values (" + product_id + "," + field_id + ", :value_)";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("value_", value);
             if (query.executeUpdate() == 1) {
                 return true;
             } else {
@@ -2142,16 +2167,17 @@ public class ProductsRepositoryJPA {
         //используется при копировании (создании дубликата) документа
     boolean addCagentToProduct(ProductCagentsJSON request, Long newProductId) {
         try {
-            entityManager.createNativeQuery("" +
+            Query query = entityManager.createNativeQuery("" +
                     "insert into product_cagents " +
                     "(product_id, cagent_id, output_order, cagent_article, additional) " +
                     "values " +
                     "(" + newProductId + ", " +
                     request.getCagent_id() +
-                    " , (select coalesce(max(output_order)+1,1) from product_cagents where product_id=" + newProductId + "), '" +
-                    request.getCagent_article() + "', '" + request.getAdditional() + "')")
+                    " , (select coalesce(max(output_order)+1,1) from product_cagents where product_id="+ newProductId + "), :cg_article, :additional)");
 
-                    .executeUpdate();
+            query.setParameter("cg_article",request.getCagent_article());
+            query.setParameter("additional",request.getAdditional());
+            query.executeUpdate();
             entityManager.close();
             return true;
         } catch (Exception e) {
@@ -2210,12 +2236,15 @@ public class ProductsRepositoryJPA {
                 Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
                 stringQuery = "Update product_cagents p" +
-                        " set  cagent_article= '" + (request.getString1() != null ? request.getString1() : "") + "'" +
-                        "    , additional= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
+                        " set   cagent_article= :cg_article, " +
+                        "       additional= :additional" +
                         " where (select master_id from cagents where id=p.cagent_id)=" + myMasterId + //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
                         " and p.cagent_id=" + request.getId1() +
                         " and p.product_id=" + request.getId2();
-                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("cg_article",(request.getString1() != null ? request.getString1() : ""));
+                query.setParameter("additional",(request.getString2() != null ? request.getString2() : ""));
+                query.executeUpdate();
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method updateProductCagentProperties. SQL query:"+stringQuery, e);
@@ -2392,15 +2421,16 @@ public class ProductsRepositoryJPA {
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getId2().toString()))) {
             try {
-                entityManager.createNativeQuery("" +
+                Query query = entityManager.createNativeQuery(
                         "insert into product_barcodes " +
                         "(product_id,barcode_id,value, description) " +
                         "values " +
                         "(" + request.getId2() + " , " +
-                        request.getId3() + " , " +
-                        (request.getString1() != null ? ("'" + request.getString1() + "'") : "''") + " , " +
-                        (request.getString2() != null ? ("'" + request.getString2() + "'") : "''") + ")")
-                        .executeUpdate();
+                        request.getId3() + " , :value_, :description)");
+
+                query.setParameter("value_",(request.getString1() != null ? (request.getString1()) : ""));
+                query.setParameter("description",(request.getString2() != null ? (request.getString2()) : ""));
+                query.executeUpdate();
                 entityManager.close();
                 return true;
             } catch (Exception e) {
@@ -2458,11 +2488,15 @@ public class ProductsRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "Update product_barcodes p" +
-                    " set  value= '" + (request.getString1() != null ? request.getString1() : "") + "'" +
-                    "    , description= '" + (request.getString2() != null ? request.getString2() : "") + "'" +
+                    " set  value= :value_" +
+                    "    , description= :description" +
                     " where p.id=" + request.getId1() +
                     " and (select master_id from products where id=p.product_id)=" + myMasterId; //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
-            try {     entityManager.createNativeQuery(stringQuery).executeUpdate();
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("value_",(request.getString1() != null ? (request.getString1()) : ""));
+                query.setParameter("description",(request.getString2() != null ? (request.getString2()) : ""));
+                query.executeUpdate();
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method updateProductBarcode. SQL query:"+stringQuery, e);
@@ -2611,11 +2645,12 @@ public class ProductsRepositoryJPA {
                         "(product_id, barcode_id, value, description) " +
                         "values " +
                         "(" + newProductId + ", " +
-                        request.getBarcode_id() + ", '" +
-                        request.getValue() + "', '" +
-                        request.getDescription() + "')";
+                        request.getBarcode_id() + ", :value_, :description)";
         try {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("value_",request.getValue());
+            query.setParameter("description",request.getDescription());
+            query.executeUpdate();
             entityManager.close();
             return true;
         } catch (Exception e) {
@@ -3126,7 +3161,7 @@ public class ProductsRepositoryJPA {
     }
 
     private Boolean deleteAllProductsCategories(String products) throws Exception {
-        String stringQuery = "delete from product_productcategories where product_id in("+products+")";
+        String stringQuery = "delete from product_productcategories where product_id in("+products.replaceAll("[^0-9\\,]", "")+")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

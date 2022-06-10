@@ -28,11 +28,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class ProductGroupRepositoryJPA {
+
+    Logger logger = Logger.getLogger(ProductGroupRepositoryJPA.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -51,59 +57,80 @@ public class ProductGroupRepositoryJPA {
     @Autowired
     UserRepository userService;
 
-    Logger logger = Logger.getLogger("ProductGroupRepositoryJPA");
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("doc_number","name","cagent","status_name","sum_price","company","creator","date_time_created_sort","expenditure","description","is_completed","summ")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
     @SuppressWarnings("Duplicates")
     public List<ProductGroupsTableJSON> getProductGroupsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(10L, "113,114"))//"Группы товаров" (см. файл Permissions Id)
         {
-        String stringQuery;
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        String dateFormat=userRepositoryJPA.getMyDateFormat();
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
-        stringQuery = "select  p.id as id, " +
-                "           u.name as master, " +
-                "           p.name as name, " +
-                "           us.name as creator, " +
-                "           uc.name as changer, " +
-                "           p.master_id as master_id, " +
-                "           p.creator_id as creator_id, " +
-                "           p.changer_id as changer_id, " +
-                "           p.company_id as company_id, " +
-                "           cmp.name as company, " +
-                "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI')as date_time_created, " +
-                "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI')as date_time_changed, " +
-                "           p.date_time_created as date_time_created_sort, " +
-                "           p.date_time_changed as date_time_changed_sort, " +
-                "           p.description as description " +
-                "           from product_groups p " +
-                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                "           INNER JOIN users u ON p.master_id=u.id " +
-                "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
-                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_deleted,false) ="+showDeleted;
+            stringQuery = "select  p.id as id, " +
+                    "           u.name as master, " +
+                    "           p.name as name, " +
+                    "           us.name as creator, " +
+                    "           uc.name as changer, " +
+                    "           p.master_id as master_id, " +
+                    "           p.creator_id as creator_id, " +
+                    "           p.changer_id as changer_id, " +
+                    "           p.company_id as company_id, " +
+                    "           cmp.name as company, " +
+                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI')as date_time_created, " +
+                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI')as date_time_changed, " +
+                    "           p.date_time_created as date_time_created_sort, " +
+                    "           p.date_time_changed as date_time_changed_sort, " +
+                    "           p.description as description " +
+                    "           from product_groups p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113")) //Если нет прав на просмотр по всем предприятиям"
-        {
-            //остается только на своё предприятие (114)
-            stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-        }
-        if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
-        }
-        if (companyId > 0) {
-            stringQuery = stringQuery + " and p.company_id=" + companyId;
-        }
+            if (!securityRepositoryJPA.userHasPermissions_OR(10L, "113")) //Если нет прав на просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие (114)
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            if (searchString != null && !searchString.isEmpty()) {
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
+            }
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and p.company_id=" + companyId;
+            }
 
-        stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-        Query query = entityManager.createNativeQuery(stringQuery, ProductGroupsTableJSON.class)
-                .setFirstResult(offsetreal)
-                .setMaxResults(result);
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery, ProductGroupsTableJSON.class)
+                        .setFirstResult(offsetreal)
+                        .setMaxResults(result);
 
-        return query.getResultList();
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
+                return query.getResultList();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getProductGroupsTable. SQL query:" + stringQuery, e);
+                return null;
+            }
         } else return null;
     }
 
@@ -143,12 +170,15 @@ public class ProductGroupRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList().size();
         } else return 0;
@@ -166,7 +196,7 @@ public class ProductGroupRepositoryJPA {
                     "           from product_groups p " +
                     "           where  p.master_id=" + myMasterId;
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -174,6 +204,9 @@ public class ProductGroupRepositoryJPA {
 
             stringQuery = stringQuery + " order by p.name asc";
             Query query = entityManager.createNativeQuery(stringQuery, ProductGroupsListJSON.class);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList();
     }
@@ -192,10 +225,14 @@ public class ProductGroupRepositoryJPA {
         ;
 
         if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and upper(field_value) like upper('%" + searchString + "%')";
+            stringQuery = stringQuery + " and upper(field_value) like upper(CONCAT('%',:sg,'%'))";
         }
         stringQuery = stringQuery + " group by name order by name asc";
         Query query = entityManager.createNativeQuery(stringQuery, ProductFieldValuesListJSON.class);
+
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("sg", searchString);}
+
         List<ProductFieldValuesListJSON> result = query.getResultList();
         return result;
     }
@@ -341,7 +378,7 @@ public class ProductGroupRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -469,8 +506,8 @@ public class ProductGroupRepositoryJPA {
                                     "output_order," +
                                     "field_type" +
                                     ") values ( " +
-                                    "'" + field.getName() + "', " +
-                                    "'" + field.getDescription() + "', " +
+                                    ":name, " +
+                                    ":description, " +
                                     myMasterId + "," +
                                     myId + "," +
                                     newSetId + ", " +
@@ -481,6 +518,8 @@ public class ProductGroupRepositoryJPA {
                                     field.getField_type() + ")";
                             try {
                                 Query query = entityManager.createNativeQuery(stringQuery);
+                                query.setParameter("name", field.getName());
+                                query.setParameter("description", field.getDescription());
                                 query.executeUpdate();
                             } catch (Exception e) {
                                 e.printStackTrace();

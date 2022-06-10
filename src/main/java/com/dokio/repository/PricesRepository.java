@@ -15,7 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
-import com.dokio.message.response.additional.ProductPricesJSON;
+//import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +24,18 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class PricesRepository {
+
+    Logger logger = Logger.getLogger(PricesRepository.class);
+
     @PersistenceContext
     private EntityManager entityManager;
-    @Autowired
-    private EntityManagerFactory emf;
+//    @Autowired
+//    private EntityManagerFactory emf;
     @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
@@ -41,11 +46,20 @@ public class PricesRepository {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
-    @Autowired
-    private UserDetailsServiceImpl userService;
+//    @Autowired
+//    private UserDetailsServiceImpl userService;
 
     // Инициализация логера
     private static final Logger log = Logger.getLogger(PricesRepository.class);
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("p.name","description","p.article","productgroup","price","not_buy","not_sell")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -61,6 +75,7 @@ public class PricesRepository {
                                         Long priceTypeId,
                                         String priceTypesIdsList,
                                         Set<Integer> filterOptionsIds) {
+
         if(securityRepositoryJPA.userHasPermissions_OR(19L, "242,243"))
         {
             String stringQuery;
@@ -70,11 +85,12 @@ public class PricesRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Boolean notBuy = false;
             Boolean notSell = false;
+            priceTypesIdsList=priceTypesIdsList.replaceAll("[^0-9\\,]", "");
             Integer pricesCount = priceTypesIdsList.split(",").length;
             // getProductMinRemains( productId, departmentId, departmentsIdsList, myMasterId)
             stringQuery = "select  p.id as id, " +
                     "           p.name as name, " +
-                    "           p.article as article, " +
+                    "           coalesce(p.article,'') as article, " +
                     "           coalesce(pg.name,'') as productgroup, " +
                     "           coalesce(p.not_buy,false) as not_buy, " +
                     "           coalesce(p.not_sell,false) as not_sell, " +
@@ -135,58 +151,75 @@ public class PricesRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper('%" + searchString + "%') or "+
-                        "upper(p.article) like upper('%" + searchString + "%') or "+
-                        "upper(p.description) like upper('%" + searchString + "%') or "+
-                        "(upper('" + searchString + "') in (select upper(value) from product_barcodes where product_id=p.id))  or " +
-                        "to_char(p.product_code_free,'fm0000000000') like upper('%" + searchString + "%') or "+
-                        "upper(pg.name) like upper('%" + searchString + "%')"+")";
+                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.article) like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(p.description) like upper(CONCAT('%',:sg,'%')) or "+
+                        "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
+                        "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or "+
+                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             stringQuery = stringQuery + " order by p.name asc";
 
-            Query query = entityManager.createNativeQuery(stringQuery);
+            try{
 
-            List<Object[]> queryList = query.getResultList();
-            List<PricesTableJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
+                if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
+                    throw new IllegalArgumentException("Invalid query parameters");
 
-                notBuy  =(Boolean) obj[4] ;
-                notSell =(Boolean) obj[5] ;
-                if(!(hideNotBuyingProducts && notBuy)&&!(hideNotSellingProducts && notSell))
-                {//если не: ( [v] Скрывать не закупаемые товары и товар не закупаемый) и ( [v] Скрывать снятые с продажи и товар или услуга снят с продажи)
-                    PricesTableJSON doc=new PricesTableJSON();
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-                    doc.setId(Long.parseLong (      obj[0].toString()));
-                    doc.setName((String)            obj[1]);
-                    doc.setArticle((String)         obj[2]);
-                    doc.setProductgroup((String)    obj[3]);
-                    doc.setNot_buy((Boolean)        obj[4]);
-                    doc.setNot_sell((Boolean)       obj[5]);
-                    doc.setDescription((String)     obj[6]);
-                    doc.setPpr_id((Integer)         obj[7]);
-                    doc.setPrice((BigDecimal) obj[8]);
-                    //doc.setPrice(getProductPrices(Long.parseLong(obj[0].toString()), priceTypeId, priceTypesIdsList, myMasterId));
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
 
-                    returnList.add(doc);
+                List<Object[]> queryList = query.getResultList();
+                List<PricesTableJSON> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+
+                    notBuy  =(Boolean) obj[4] ;
+                    notSell =(Boolean) obj[5] ;
+                    if(!(hideNotBuyingProducts && notBuy)&&!(hideNotSellingProducts && notSell))
+                    {//если не: ( [v] Скрывать не закупаемые товары и товар не закупаемый) и ( [v] Скрывать снятые с продажи и товар или услуга снят с продажи)
+                        PricesTableJSON doc=new PricesTableJSON();
+
+                        doc.setId(Long.parseLong (      obj[0].toString()));
+                        doc.setName((String)            obj[1]);
+                        doc.setArticle((String)         obj[2]);
+                        doc.setProductgroup((String)    obj[3]);
+                        doc.setNot_buy((Boolean)        obj[4]);
+                        doc.setNot_sell((Boolean)       obj[5]);
+                        doc.setDescription((String)     obj[6]);
+                        doc.setPpr_id((Integer)         obj[7]);
+                        doc.setPrice((BigDecimal) obj[8]);
+                        //doc.setPrice(getProductPrices(Long.parseLong(obj[0].toString()), priceTypeId, priceTypesIdsList, myMasterId));
+
+                        returnList.add(doc);
+                    }
                 }
-    }
 
-            if(sortColumn.equals("p.name")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NAME_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NAME_DESC);}}
-            if(sortColumn.equals("description")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_DESCRIPTION_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_DESCRIPTION_DESC);}}
-            if(sortColumn.equals("p.article")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_DESC);}}
-            if(sortColumn.equals("productgroup")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);}}
-            if(sortColumn.equals("price")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_DESC);}}
-            if(sortColumn.equals("not_buy")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_DESC);}}
-            if(sortColumn.equals("not_sell")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_DESC);}}
-            int returnListSize=returnList.size();
-            pagesList=getPagesList(result,offset, returnListSize);
-            PricesJSON pricesTableJSON=new PricesJSON();
-            pricesTableJSON.setTable(returnList.subList(offsetreal,(offsetreal+result)>returnListSize?returnListSize:(offsetreal+result)));//проверка на IndexOutOfBoundsException
-            pricesTableJSON.setReceivedPagesList(pagesList);
-            return pricesTableJSON;
+                if(sortColumn.equals("p.name")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NAME_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NAME_DESC);}}
+                if(sortColumn.equals("description")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_DESCRIPTION_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_DESCRIPTION_DESC);}}
+                if(sortColumn.equals("p.article")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_ARTICLE_DESC);}}
+                if(sortColumn.equals("productgroup")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRODUCTGROUP_DESC);}}
+                if(sortColumn.equals("price")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_PRICE_DESC);}}
+                if(sortColumn.equals("not_buy")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTBUY_DESC);}}
+                if(sortColumn.equals("not_sell")){if(sortAsc.equals("asc")){returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_ASC);}else{returnList.sort(PricesTableJSON.COMPARE_BY_NOTSELL_DESC);}}
+                int returnListSize=returnList.size();
+                pagesList=getPagesList(result,offset, returnListSize);
+                PricesJSON pricesTableJSON=new PricesJSON();
+                pricesTableJSON.setTable(returnList.subList(offsetreal,(offsetreal+result)>returnListSize?returnListSize:(offsetreal+result)));//проверка на IndexOutOfBoundsException
+                pricesTableJSON.setReceivedPagesList(pagesList);
+                return pricesTableJSON;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getPricesTable. SQL query:" + stringQuery, e);
+                return null;
+            }
+
+
+
         } else return null;
     }
 
@@ -242,17 +275,17 @@ public class PricesRepository {
         return pageList;
     }
 
-    private boolean isElementsOfArrayAreEachEquals(BigDecimal[] array){//равны ли все элементы массива между собой?
-        BigDecimal firstElement=array[0];
-        return Arrays.asList(array).parallelStream().allMatch(t -> (t.compareTo(firstElement)==0));
-    }
+//    private boolean isElementsOfArrayAreEachEquals(BigDecimal[] array){//равны ли все элементы массива между собой?
+//        BigDecimal firstElement=array[0];
+//        return Arrays.asList(array).parallelStream().allMatch(t -> (t.compareTo(firstElement)==0));
+//    }
 
     @SuppressWarnings("Duplicates")
     @Transactional
     public boolean savePrices(PricesForm request) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long userId = userRepository.getUserId();
-        //Если есть право на "Установка остатков по всем предприятиям", ИЛИ
+        //Если есть право на "Установка цен по всем предприятиям", ИЛИ
         if(canSetPricesOfAllTheseDepartments(request, myMasterId))
         {
             if (clearProductPrices(request, myMasterId))
@@ -294,7 +327,7 @@ public class PricesRepository {
                                 " price_type_id in " +
                                 "(select id from sprav_type_prices where master_id="+myMasterId+" and company_id="+request.getCompanyId()+" and coalesce(is_archive, false) is false)"
                         ):(" price_type_id=("+request.getPriceTypeId()+")")) +
-                        "       and product_id in (select id from products where id in ("+request.getProductsIdsList()+") and master_id=" +myMasterId+") "+//Проверки, что никто не шалит, и идёт запись того, чего надо туда, куда надо
+                        "       and product_id in (select id from products where id in ("+request.getProductsIdsList().replaceAll("[^0-9\\,]", "")+") and master_id=" +myMasterId+") "+//Проверки, что никто не шалит, и идёт запись того, чего надо туда, куда надо
                         "       and master_id="+myMasterId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

@@ -170,7 +170,7 @@ public class ShipmentRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
 
@@ -646,7 +646,7 @@ public class ShipmentRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер заказа
-                        ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date()+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
+                        ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date().replaceAll("[^0-9\\.]", "")+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -1146,36 +1146,36 @@ public class ShipmentRepositoryJPA {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() + "," +
                             row.getDepartmentId() + "," +
-                            row.getCustomerId() + ",'"+
-                            row.getPriorityTypePriceSide() + "',"+
-//                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
-                            row.getAutocreate() +", " +
+                            row.getCustomerId() + ","+
+                            ":priorityTypePriceSide,"+
+//                            ":name, " +//наименование
+                            row.getAutocreate() +"," +
                             row.getShowKkm() + "," +
                             row.getStatusIdOnComplete()+ "," +
                             row.getAutoAdd() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_shipment_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings() +
                             ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
                             ", customer_id = "+row.getCustomerId()+
-                            ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
+                            ", priority_type_price_side = :priorityTypePriceSide"+
                             ", status_id_on_complete = "+row.getStatusIdOnComplete()+
                             ", show_kkm = "+row.getShowKkm()+
                             ", autocreate = "+row.getAutocreate()+
@@ -1184,6 +1184,10 @@ public class ShipmentRepositoryJPA {
 
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.setParameter("priorityTypePriceSide", row.getPriorityTypePriceSide());
             query.executeUpdate();
             return true;
         }
@@ -1216,26 +1220,29 @@ public class ShipmentRepositoryJPA {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_shipment_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
-                            " price_type_id = " + row.getPriceTypeId() + ","+
-                            " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
-                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " pricing_type = :pricing_type, " +
+                            " price_type_id = " + row.getPriceTypeId() + "," +
+                            " change_price = " + row.getChangePrice() + "," +
+                            " plus_minus = :plusMinus" + "," +
+                            " change_price_type = :changePriceType" + "," +
+                            " hide_tenths = " + row.getHideTenths() + "," +
                             " save_settings = " + row.getSaveSettings();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
             query.executeUpdate();
             return true;
         }
@@ -1309,27 +1316,27 @@ public class ShipmentRepositoryJPA {
 
     }
 
-    @SuppressWarnings("Duplicates") // проверка на наличие чека необходимой операции (operation id, например sell), определенного документа (например, отгрузки, id в таблице documents = 21) с определенным id
-    public Boolean isReceiptPrinted(Long company_id, int document_id, Long id, String operation_id )
-    {
-        String stringQuery;
-        stringQuery = "" +
-                " select 1 from receipts where " +
-                " company_id="+company_id+
-                " and document_id ="+document_id +
-                " and operation_id = '" + operation_id + "'" +
-                " and shipment_id = " + id;//потом название этой колонки нужно будет определять динамически через отдельный метод, засылая туда operation_id
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return(query.getResultList().size()>0);
-        }
-        catch (Exception e) {
-            logger.error("Exception in method isReceiptPrinted. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return true;
-        }
-    }
+//    @SuppressWarnings("Duplicates") // проверка на наличие чека необходимой операции (operation id, например sell), определенного документа (например, отгрузки, id в таблице documents = 21) с определенным id
+//    public Boolean isReceiptPrinted(Long company_id, int document_id, Long id, String operation_id )
+//    {
+//        String stringQuery;
+//        stringQuery = "" +
+//                " select 1 from receipts where " +
+//                " company_id="+company_id+
+//                " and document_id ="+document_id +
+//                " and operation_id = '" + operation_id + "'" +
+//                " and shipment_id = " + id;//потом название этой колонки нужно будет определять динамически через отдельный метод, засылая туда operation_id
+//        try
+//        {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            return(query.getResultList().size()>0);
+//        }
+//        catch (Exception e) {
+//            logger.error("Exception in method isReceiptPrinted. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            return true;
+//        }
+//    }
 
 
 
@@ -1406,39 +1413,39 @@ public class ShipmentRepositoryJPA {
     }
 
 
-    @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(ShipmentProductTableForm row, ShipmentForm request , Long masterId) throws CantSaveProductQuantityException {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-        stringQuery =
-                " insert into product_quantity (" +
-                        " master_id," +
-                        " department_id," +
-                        " product_id," +
-                        " quantity" +
-                        ") values ("+
-                        masterId + ","+
-                        request.getDepartment_id() + ","+
-                        row.getProduct_id() + ","+
-                        lastQuantity +
-                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                        " DO update set " +
-                        " department_id = " + request.getDepartment_id() + ","+
-                        " product_id = " + row.getProduct_id() + ","+
-                        " master_id = "+ masterId + "," +
-                        " quantity = "+ lastQuantity;
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method ShipmentRepository/setProductQuantity. SQL query:"+stringQuery, e);
-            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    private Boolean setProductQuantity(ShipmentProductTableForm row, ShipmentForm request , Long masterId) throws CantSaveProductQuantityException {
+//        String stringQuery;
+//        ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
+//        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
+//        stringQuery =
+//                " insert into product_quantity (" +
+//                        " master_id," +
+//                        " department_id," +
+//                        " product_id," +
+//                        " quantity" +
+//                        ") values ("+
+//                        masterId + ","+
+//                        request.getDepartment_id() + ","+
+//                        row.getProduct_id() + ","+
+//                        lastQuantity +
+//                        ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
+//                        " DO update set " +
+//                        " department_id = " + request.getDepartment_id() + ","+
+//                        " product_id = " + row.getProduct_id() + ","+
+//                        " master_id = "+ masterId + "," +
+//                        " quantity = "+ lastQuantity;
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.executeUpdate();
+//            return true;
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method ShipmentRepository/setProductQuantity. SQL query:"+stringQuery, e);
+//            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
+//        }
+//    }
 
 
 

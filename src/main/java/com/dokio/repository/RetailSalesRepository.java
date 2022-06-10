@@ -164,7 +164,7 @@ public class RetailSalesRepository {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
 
@@ -612,7 +612,7 @@ public class RetailSalesRepository {
                         cagentForm.setCompany_id(request.getCompany_id());
                         cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
                         cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Розничной продажи №"+doc_number.toString());
+                        cagentForm.setDescription("");
                         cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
                         cagentForm.setTelephone("");
                         cagentForm.setEmail("");
@@ -1040,18 +1040,18 @@ public class RetailSalesRepository {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() + "," +
                             row.getDepartmentId() + "," +
-                            row.getCustomerId() + ",'"+
-                            row.getPriorityTypePriceSide() + "',"+
-                            "'" + (row.getName() == null ? "": row.getName()) + "', " +//наименование
+                            row.getCustomerId() + ","+
+                            ":priorityTypePriceSide,"+
+                            ":name, " +//наименование
                             row.getAutocreateOnCheque() +", " +
                             row.getShowKkm() + "," +
                             row.getStatusIdOnAutocreateOnCheque()+ "," +
@@ -1059,23 +1059,28 @@ public class RetailSalesRepository {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings() +
                             ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
                             ", customer_id = "+row.getCustomerId()+
-                            ", name = '"+row.getName()+"'"+
-                            ", priority_type_price_side = '"+row.getPriorityTypePriceSide()+"'"+
+                            ", name = :name"+
+                            ", priority_type_price_side = :priorityTypePriceSide"+
                             ", status_id_on_autocreate_on_cheque = "+row.getStatusIdOnAutocreateOnCheque()+
                             ", show_kkm = "+row.getShowKkm()+
                             ", autocreate_on_cheque = "+row.getAutocreateOnCheque()+
                             ", auto_add = "+row.getAutoAdd();
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.setParameter("priorityTypePriceSide", row.getPriorityTypePriceSide());
+            query.setParameter("name", (row.getName() == null ? "": row.getName()));
             query.executeUpdate();
             return true;
         }
@@ -1109,26 +1114,29 @@ public class RetailSalesRepository {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId + ",'" +
-                            row.getPricingType() + "'," +
+                            myId + "," +
+                            ":pricing_type," +
                             row.getPriceTypeId() + "," +
-                            row.getChangePrice() + ",'" +
-                            row.getPlusMinus() + "','" +
-                            row.getChangePriceType() + "'," +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
                             row.getHideTenths() + "," +
                             row.getSaveSettings() +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_retail_sales_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = '" + row.getPricingType() + "',"+
+                            " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = '" + row.getPlusMinus() + "',"+
-                            " change_price_type = '" + row.getChangePriceType() + "',"+
+                            " plus_minus = :plusMinus,"+
+                            " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings();
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
             query.executeUpdate();
             return true;
         }
@@ -1211,11 +1219,12 @@ public class RetailSalesRepository {
                     " select 1 from receipts where " +
                     " company_id="+company_id+
                     " and document_id ="+document_id +
-                    " and operation_id = '" + operation_id + "'" +
+                    " and operation_id = :operation_id" +
                     " and retail_sales_id = " + id;//потом название этой колонки нужно будет определять динамически через отдельный метод, засылая туда operation_id
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("operation_id",operation_id);
                 return(query.getResultList().size()>0);
             }
             catch (Exception e) {

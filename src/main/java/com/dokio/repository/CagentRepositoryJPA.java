@@ -61,7 +61,7 @@ public class CagentRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","company","creator","date_time_created_sort","description")
+            .of("p.name","name","company","creator","date_time_created_sort","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -1316,7 +1316,7 @@ public class CagentRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
 
@@ -1395,7 +1395,7 @@ public List<HistoryCagentBalanceJSON> getHistoryCagentBalanceTable(int result, i
     if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
     } else {
-        throw new IllegalArgumentException("Недопустимые параметры запроса");
+        throw new IllegalArgumentException("Invalid query parameters");
     }
     try{
         Query query = entityManager.createNativeQuery(stringQuery);

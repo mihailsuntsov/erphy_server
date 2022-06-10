@@ -363,7 +363,7 @@ public class CommonUtilites {
                 " set is_delivered=true " +
                 " where p.id = " + id + " and p.master_id=" + myMasterId;
         if (!VALID_OUTCOME_PAYMENTS_TABLE_NAMES.contains(tableName))
-            throw new IllegalArgumentException("Недопустимые параметры запроса. Таблицы нет в списке разрешённых: "+tableName); // отмена всей транзакции из вызывающего метода
+            throw new IllegalArgumentException("Invalid query parameters. The table is not in the allowed list: "+tableName); // отмена всей транзакции из вызывающего метода
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -384,7 +384,7 @@ public class CommonUtilites {
                 " set is_delivered=false " +
                 " where p.id = " + id + " and p.master_id=" + myMasterId;
         if (!VALID_OUTCOME_PAYMENTS_TABLE_NAMES.contains(tableName))
-            throw new IllegalArgumentException("Недопустимые параметры запроса. Таблицы нет в списке разрешённых: "+tableName); // отмена всей транзакции из вызывающего метода
+            throw new IllegalArgumentException("Invalid query parameters. The table is not in the allowed list: "+tableName); // отмена всей транзакции из вызывающего метода
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

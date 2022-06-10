@@ -73,7 +73,7 @@ public class MoneyflowRepositoryJPA {
                     !commonUtilites.isDateValid(dateFrom) ||
                     !commonUtilites.isDateValid(dateTo) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             stringQuery = "select " +
                     " to_char(dc, '"+dateFormat+"') as date_created,   " +
                     " (summ_in_pa + summ_corr_in_pa) as summ_in_pa_,   " +
@@ -155,7 +155,7 @@ public class MoneyflowRepositoryJPA {
             if (    !commonUtilites.isDateValid(dateFrom) ||
                     !commonUtilites.isDateValid(dateTo) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             stringQuery =
                     "select " +
                             " (summ_in_pa + summ_corr_in_pa) as summ_in_pa_, " +
@@ -203,7 +203,7 @@ public class MoneyflowRepositoryJPA {
             if (    !commonUtilites.isDateValid(dateFrom) ||
                     !commonUtilites.isDateValid(dateTo) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             stringQuery = " select   " +
                     " to_char(dc, 'DD.MM.YYYY') as date_created,   " +
 
@@ -441,7 +441,7 @@ public class MoneyflowRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public List<MoneyflowTableJSON> getMoneyflowDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
-            throw new IllegalArgumentException("Недопустимые параметры запроса");
+            throw new IllegalArgumentException("Invalid query parameters");
         String stringQuery = getMoneyflowDetailedSQL(searchString, companyId);
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
         try{

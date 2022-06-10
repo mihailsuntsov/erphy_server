@@ -30,8 +30,8 @@ import java.util.List;
 public class ProductGroupFieldsRepositoryJPA {
     @PersistenceContext
     private EntityManager entityManager;
-    @Autowired
-    private EntityManagerFactory emf;
+//    @Autowired
+//    private EntityManagerFactory emf;
     @Autowired
     private UserDetailsServiceImpl userRepository;
     @Autowired
@@ -84,7 +84,7 @@ public class ProductGroupFieldsRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(10L, "115,116"))//"Группы товаров" редактирование своих или чужих предприятий (в пределах род. аккаунта разумеется)
         {
                 Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-                User changer = userRepository.getUserByUsername(userRepository.getUserName());
+//                User changer = userRepository.getUserByUsername(userRepository.getUserName());
                 String stringQuery;
                 int myCompanyId = userRepositoryJPA.getMyCompanyId();
 
@@ -127,8 +127,8 @@ public class ProductGroupFieldsRepositoryJPA {
             String stringQuery;
             stringQuery = "update product_group_fields set " +
 
-                    " name='" + request.getName()+"', "+
-                    " description='" + request.getDescription()+"', "+
+                    " name=:name, "+
+                    " description=:description, "+
                     " parent_set_id=" + request.getParent_set_id() +
                     " where id=" + request.getId()+
                     " and master_id="+myMasterId ;
@@ -140,6 +140,8 @@ public class ProductGroupFieldsRepositoryJPA {
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", request.getName());
+                query.setParameter("description", request.getDescription());
                 int i = query.executeUpdate();
                 return true;
             }
@@ -174,8 +176,8 @@ public class ProductGroupFieldsRepositoryJPA {
 
                     ") values ( " +
 
-                    "'"+request.getName()+"', "+
-                    "'"+(request.getDescription() == null?' ':request.getDescription())+"', "+
+                    ":name, "+
+                    ":description, "+
                     myMasterId+","+
                     myId+","+
                     request.getParent_set_id()+", "+
@@ -187,6 +189,8 @@ public class ProductGroupFieldsRepositoryJPA {
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", request.getName());
+                query.setParameter("description", (request.getDescription() == null?"":request.getDescription()));
                 query.executeUpdate();
                 return true;
             }

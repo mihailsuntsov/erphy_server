@@ -155,7 +155,7 @@ public class ReturnRepository {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -1160,7 +1160,7 @@ public class ReturnRepository {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String tableName=(docName.equals("writeoff")?"writeoff":"");//не могу воткнуть имя таблицы параметром, т.к. the parameters can come from the outside and could take any value, whereas the table and column names are static.
+        String tableName=(docName.equals("writeoff")?"writeoff":"");
         stringQuery =   " select " +
                 " ap.id," +
                 " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +

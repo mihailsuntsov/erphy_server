@@ -150,7 +150,7 @@ public class PaymentinRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -302,8 +302,8 @@ public class PaymentinRepositoryJPA {
                     "           p.paymentout_id as paymentout_id," +
                     "           p.orderout_id as orderout_id," +
 
-                    "           '№'||pto.doc_number||', '||to_char(pto.summ, '9990.99')||' руб.' as paymentout," +
-                    "           '№'||oou.doc_number||', '||to_char(oou.summ, '9990.99')||' руб.' as orderout," +
+                    "           pto.doc_number||', '||to_char(pto.summ, '9990.99') as paymentout," +
+                    "           oou.doc_number||', '||to_char(oou.summ, '9990.99') as orderout," +
 
                     "           sb.name as boxoffice_from, " +
                     "           cpa.payment_account||', '||cpa.name as payment_account_from " +
@@ -631,12 +631,12 @@ public class PaymentinRepositoryJPA {
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentin"))
                     throw new DocumentAlreadyCompletedException();
                 if(Objects.isNull(request.getSumm()))
-                    throw new Exception("Ошибка определения суммы в исходящем платеже");
+                    throw new Exception("Error determining the amount in the outgoing payment");
                 if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                 if(request.getInternal()&&Objects.isNull(outgoingPaymentMovingType))
-                    throw new Exception("Ошибка определения типа перемещения в исходящем платеже");
+                    throw new Exception("Error determining transfer type in outgoing payment");
                 if(request.getInternal()&&!outgoingPaymentMovingType.equals("account"))
-                    throw new Exception("Тип перемещения в принимающем платеже не соответствует типу перемещения в исходящем платеже. Исходящий - " +outgoingPaymentMovingType+", принимающий - \"account\"");
+                    throw new Exception("The transfer type in the receiving payment does not match the transfer type in the outgoing payment. Outgoing - " +outgoingPaymentMovingType+", receiving - \"account\"");
 
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
@@ -675,7 +675,7 @@ public class PaymentinRepositoryJPA {
                                 commonUtilites.setDelivered("orderout", request.getOrderout_id());
                                 break;
                             }
-                            default: throw new Exception("Исходящий документ не определён");
+                            default: throw new Exception("Outgoing document not defined");
 
                         }
                     }
@@ -756,7 +756,7 @@ public class PaymentinRepositoryJPA {
                         commonUtilites.setUndelivered("paymentout", request.getPaymentout_id());
                     else if (request.getMoving_type().equals("boxoffice"))
                         commonUtilites.setUndelivered("orderout", request.getOrderout_id());
-                    else throw new Exception("Исходящий документ не определён");
+                    else throw new Exception("Outgoing document not defined");
                 }
                 // меняем проведенность в истории р. счёта, тем самым отнимая у него переводимую сумму
                 commonUtilites.addDocumentHistory("payment_account", request.getCompany_id(), request.getPayment_account_id(), "paymentin","paymentin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
@@ -807,8 +807,8 @@ public class PaymentinRepositoryJPA {
                             " ON CONFLICT ON CONSTRAINT settings_paymentin_user_id_key " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
-                            "company_id = "+row.getCompanyId()+"," +
-                            "status_id_on_complete = "+row.getStatusIdOnComplete();
+                            " company_id = "+row.getCompanyId()+"," +
+                            " status_id_on_complete = "+row.getStatusIdOnComplete();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

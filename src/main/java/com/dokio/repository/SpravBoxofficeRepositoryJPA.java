@@ -114,7 +114,7 @@ public class SpravBoxofficeRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -184,6 +184,9 @@ public class SpravBoxofficeRepositoryJPA {
             }
 
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList().size();
         } else return 0;
@@ -372,7 +375,7 @@ public class SpravBoxofficeRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -402,7 +405,7 @@ public class SpravBoxofficeRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);

@@ -115,7 +115,7 @@ public class SpravExpenditureRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -186,6 +186,9 @@ public class SpravExpenditureRepositoryJPA {
             }
 
             Query query = entityManager.createNativeQuery(stringQuery);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             return query.getResultList().size();
         } else return 0;
@@ -374,7 +377,7 @@ public class SpravExpenditureRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -404,7 +407,7 @@ public class SpravExpenditureRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -432,30 +435,6 @@ public class SpravExpenditureRepositoryJPA {
             logger.error("Exception in method getExpTypeByExpId. SQL: " + stringQuery, e);
             e.printStackTrace();
             throw new Exception();// чтобы отменилась транзакция в вызвавшем его документе
-        }
-    }
-
-    // inserting base set of expenditures for new user
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertExpendituresFast(Long mId, Long cId) {
-        String stringQuery;
-        String t = new Timestamp(System.currentTimeMillis()).toString();
-        stringQuery = "insert into sprav_expenditure_items (master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed,is_default) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Banking services','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false,true),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false,false);";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        } catch (Exception e) {
-            logger.error("Exception in method insertExpendituresFast. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return null;
         }
     }
 
@@ -501,6 +480,30 @@ public class SpravExpenditureRepositoryJPA {
             return null;
         } catch (Exception e) {
             logger.error("Exception in method getDefaultExpenditure. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // inserting base set of expenditures for new user
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean insertExpendituresFast(Long mId, Long cId) {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into sprav_expenditure_items (master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed,is_default) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Banking services','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false,true),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false,false);";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method insertExpendituresFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

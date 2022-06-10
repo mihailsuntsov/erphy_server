@@ -145,7 +145,7 @@ public class LinkedDocsUtilites {
         String stringQuery = "select linked_docs_group_id from " + docTable + " where id = " + docId + " and master_id=" + masterId;
 
         if (!VALID_TABLENAMES.contains(docTable)) {
-            throw new IllegalArgumentException("Недопустимые параметры запроса в isDocHaveLinkedGroup");
+            throw new IllegalArgumentException("Invalid query parameters in isDocHaveLinkedGroup");
         }
 
         try {
@@ -198,7 +198,7 @@ public class LinkedDocsUtilites {
         String stringQuery = "update " + docTable + " set linked_docs_group_id =" + groupId + " where id = " + docId + " and master_id = " + masterId;
 
         if (!VALID_TABLENAMES.contains(docTable)) {
-            throw new IllegalArgumentException("Недопустимые параметры запроса в setLinkedGroup");
+            throw new IllegalArgumentException("Invalid query parameters in setLinkedGroup");
         }
 
         try {
@@ -240,7 +240,7 @@ public class LinkedDocsUtilites {
         try {
 
             if (!VALID_TABLENAMES.contains(linked_doc_name)) {
-                throw new IllegalArgumentException("Недопустимые параметры запроса в addDocsToGroup");
+                throw new IllegalArgumentException("Invalid query parameters in addDocsToGroup");
             }
 
             String stringQuery = " insert into linked_docs (" +
@@ -585,7 +585,7 @@ public class LinkedDocsUtilites {
     // возвращает List документов, которые не могут быть удалены по причине наличия у них связанных с ними дочерних документов
     public List<LinkedDocsJSON> checkDocHasLinkedChilds(String ids, String docTableName) {
         if (!VALID_TABLENAMES.contains(docTableName)) {
-            throw new IllegalArgumentException("Недопустимые параметры запроса в checkDocHasLinkedChilds");
+            throw new IllegalArgumentException("Invalid query parameters in checkDocHasLinkedChilds");
         }
         List<LinkedDocsJSON> docs = getSetDocUidsByIds(ids, docTableName);
         if (!Objects.isNull(docs) && docs.size() > 0) {
@@ -664,7 +664,7 @@ public class LinkedDocsUtilites {
     @SuppressWarnings("Duplicates")
     public Boolean deleteFromLinkedDocs(String ids, String docTableName) {
         if (!VALID_TABLENAMES.contains(docTableName)) {
-            throw new IllegalArgumentException("Недопустимые параметры запроса в deleteFromLinkedDocs");
+            throw new IllegalArgumentException("Invalid query parameters in deleteFromLinkedDocs");
         }
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов

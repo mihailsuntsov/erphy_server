@@ -25,6 +25,8 @@ import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.persistence.*;
 
 import org.apache.log4j.Logger;
@@ -58,6 +60,15 @@ public class UserGroupRepositoryJPA {
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
 
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("name","company","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
+
     public UserGroupRepositoryJPA() {
     }
 
@@ -79,7 +90,7 @@ public class UserGroupRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
 
             if (companyId > 0) {
@@ -87,6 +98,10 @@ public class UserGroupRepositoryJPA {
             }
 
             Query query = entityManager.createQuery(stringQuery, UserGroup.class);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+
             return query.getResultList().size();
         } else return 0;
     }
@@ -128,16 +143,26 @@ public class UserGroupRepositoryJPA {
             }
 
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and upper(p.name) like upper('%" + searchString + "%')";
+                stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
 
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
 
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
 
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            Query query = this.entityManager.createNativeQuery(stringQuery, UserGroupTableJSON.class).setFirstResult(offsetreal).setMaxResults(result);
+            Query query = this.entityManager.createNativeQuery(stringQuery, UserGroupTableJSON.class)
+                    .setFirstResult(offsetreal)
+                    .setMaxResults(result);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
+
             return query.getResultList();
         } else return null;
     }
@@ -326,7 +351,7 @@ public class UserGroupRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();

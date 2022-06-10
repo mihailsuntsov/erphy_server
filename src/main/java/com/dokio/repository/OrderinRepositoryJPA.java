@@ -65,15 +65,11 @@ public class OrderinRepositoryJPA {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
-    private CagentRepositoryJPA cagentRepository;
-    @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
-    @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -164,7 +160,7 @@ public class OrderinRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -320,9 +316,9 @@ public class OrderinRepositoryJPA {
                     "           p.orderout_id as orderout_id," +
                     "           p.withdrawal_id as withdrawal_id," +
 
-                    "           '№'||pto.doc_number||', '||to_char(pto.summ, '9990.99')||' руб.' as paymentout," +
-                    "           '№'||oou.doc_number||', '||to_char(oou.summ, '9990.99')||' руб.' as orderout," +
-                    "           '№'||wdw.doc_number||', '||to_char(wdw.summ, '9990.99')||' руб.' as withdrawal," +
+                    "           pto.doc_number||', '||to_char(pto.summ, '9990.99') as paymentout," +
+                    "           oou.doc_number||', '||to_char(oou.summ, '9990.99') as orderout," +
+                    "           wdw.doc_number||', '||to_char(wdw.summ, '9990.99') as withdrawal," +
 
                     "           ka.name as kassa_from, " +
                     "           sb.name as boxoffice_from, " +
@@ -660,13 +656,13 @@ public class OrderinRepositoryJPA {
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderin"))
                     throw new DocumentAlreadyCompletedException();
                 if(Objects.isNull(request.getSumm()))
-                    throw new Exception("Ошибка определения суммы в исходящем платеже");
+                    throw new Exception("Error determining the amount in the outgoing payment");
                 if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                 if(request.getInternal()&&Objects.isNull(outgoingPaymentMovingType))
-                    throw new Exception("Ошибка определения типа перемещения в исходящем платеже");
+                    throw new Exception("Error determining transfer type in outgoing payment");
                 if(Objects.isNull(request.getInternal())) request.setInternal(false); // to avoid NullPointerException
                 if(request.getInternal()&&!(outgoingPaymentMovingType.equals("boxoffice")||outgoingPaymentMovingType.equals("kassa")))
-                    throw new Exception("Тип перемещения в принимающем платеже не соответствует типу перемещения в исходящем платеже. Исходящий - " +outgoingPaymentMovingType+", принимающий - boxoffice или kassa");
+                    throw new Exception("The transfer type in the receiving payment does not match the transfer type in the outgoing payment. Outgoing - " +outgoingPaymentMovingType+", receiving - boxoffice or kassa");
 //                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
@@ -786,7 +782,7 @@ public class OrderinRepositoryJPA {
                         commonUtilites.setUndelivered("orderout", request.getOrderout_id());
                     else if (request.getMoving_type().equals("kassa"))
                         commonUtilites.setUndelivered("withdrawal", request.getWithdrawal_id());
-                    else throw new Exception("Исходящий документ не определён");
+                    else throw new Exception("Outgoing document not defined");
                 }
                 // меняем проведенность в истории кассы, тем самым отнимая у неё переводимую сумму
                 commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin","orderin", request.getId(), request.getSumm(), new BigDecimal(0),false,request.getDoc_number(),request.getStatus_id());
@@ -836,8 +832,8 @@ public class OrderinRepositoryJPA {
                             " ON CONFLICT ON CONSTRAINT settings_orderin_user_id_key " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
-                            "company_id = "+row.getCompanyId()+"," +
-                            "status_id_on_complete = "+row.getStatusIdOnComplete();
+                            " company_id = "+row.getCompanyId()+"," +
+                            " status_id_on_complete = "+row.getStatusIdOnComplete();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

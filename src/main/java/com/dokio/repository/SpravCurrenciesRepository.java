@@ -56,7 +56,7 @@ public class SpravCurrenciesRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))//если есть право только на своё предприятие, но запрашиваем не своё
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery =       "select " +
@@ -88,7 +88,10 @@ public class SpravCurrenciesRepository {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " upper(p.name)   like upper(CONCAT('%',:sg,'%'))"+ ")";
+                        " upper(p.name_short) like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.name_full)  like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.code_lit)   like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.code_num)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -144,13 +147,20 @@ public class SpravCurrenciesRepository {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                " upper(p.name)   like upper(CONCAT('%',:sg,'%'))"+ ")";
+                        " upper(p.name_short) like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.name_full)  like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.code_lit)   like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.code_num)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                if (searchString != null && !searchString.isEmpty())
+                {query.setParameter("sg", searchString);}
+
                 return query.getResultList().size();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -345,7 +355,7 @@ public class SpravCurrenciesRepository {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -375,7 +385,7 @@ public class SpravCurrenciesRepository {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
                     " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers + ")";
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);

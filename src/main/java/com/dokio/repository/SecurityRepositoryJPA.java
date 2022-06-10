@@ -61,7 +61,7 @@ public class SecurityRepositoryJPA {
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
                     " coalesce(ugr.is_archive,false) !=true and " +
-                    " p.id in(" + permissions + ")";
+                    " p.id in(" + permissions + ")";// внутрений запрос
             Query query = entityManager.createNativeQuery(stringQuery);
             return (query.getResultList().size() > 0);
         }else return false;

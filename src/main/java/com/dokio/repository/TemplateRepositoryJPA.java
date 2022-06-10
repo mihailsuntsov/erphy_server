@@ -214,7 +214,7 @@ public class TemplateRepositoryJPA {
                 " and company_id=" + companyId +
                 " and user_id = " + myId +
                 " and document_id=" + documentId +
-                " and id not in (" + templatesIds + ")";
+                " and id not in (" + templatesIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

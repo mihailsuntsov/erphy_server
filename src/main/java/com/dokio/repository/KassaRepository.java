@@ -32,6 +32,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Repository
@@ -59,6 +61,15 @@ public class KassaRepository {
     PaymentoutRepositoryJPA paymentoutRepository;
     @Autowired
     CorrectionRepositoryJPA correctionRepository;
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("name","company","department","creator","date_time_created_sort","description")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
 //*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
@@ -140,14 +151,14 @@ public class KassaRepository {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " upper(p.name) like upper('%" + searchString + "%') or "+
-                        " upper(p.device_server_uid) like upper('%" + searchString + "%') or "+
-                        " upper(dp.name) like upper('%" + searchString + "%') or "+
-                        " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                        " upper(us.name) like upper('%" + searchString + "%') or "+
-                        " upper(uc.name) like upper('%" + searchString + "%') or "+
-                        " upper(p.zn_kkt) like upper('%" + searchString + "%') or "+
-                        " upper(p.description) like upper('%" + searchString + "%')"+")";
+                        " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.device_server_uid) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(dp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(us.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(uc.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.zn_kkt) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -155,10 +166,17 @@ public class KassaRepository {
             if (departmentId > 0) {
                 stringQuery = stringQuery + " and p.department_id=" + departmentId;
             }
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
             Query query = entityManager.createNativeQuery(stringQuery)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+
+            if (searchString != null && !searchString.isEmpty())
+            {query.setParameter("sg", searchString);}
 
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId_LONG());}
@@ -243,14 +261,14 @@ public class KassaRepository {
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " upper(p.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.device_server_uid) like upper('%" + searchString + "%') or "+
-                    " upper(dp.name) like upper('%" + searchString + "%') or "+
-                    " upper(cmp.name) like upper('%" + searchString + "%') or "+
-                    " upper(us.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.zn_kkt) like upper('%" + searchString + "%') or "+
-                    " upper(uc.name) like upper('%" + searchString + "%') or "+
-                    " upper(p.description) like upper('%" + searchString + "%')"+")";
+                    " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.device_server_uid) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(dp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(us.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(uc.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.zn_kkt) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -259,6 +277,9 @@ public class KassaRepository {
             stringQuery = stringQuery + " and p.department_id=" + departmentId;
         }
         Query query = entityManager.createNativeQuery(stringQuery);
+
+        if (searchString != null && !searchString.isEmpty())
+        {query.setParameter("sg", searchString);}
 
         if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
         {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -451,15 +472,15 @@ public class KassaRepository {
                         request.getCompany_id() + ", "+//предприятие кассы
                         request.getDepartment_id() + ", "+//отделение
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                        "'" + request.getName() + "', " +//наименование
-                        "'" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
+                        ":name, " +//наименование
+                        ":server_type, " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
                         request.getSno1_id() + ", "+//id системы налогообложения
-                        "'" + request.getDevice_server_uid() + "', " +//идентификатор кассы на сервере касс (atol web server или kkmserver)
-                        "'" + (request.getAdditional() == null ? "": request.getAdditional()) +  "', " +//дополнительная информация
-                        "'" + request.getServer_address() + "', " +//адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
+                        ":device_server_uid, " +//идентификатор кассы на сервере касс (atol web server или kkmserver)
+                        ":additional, " +//дополнительная информация
+                        ":server_address, " +//адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
                         request.getAllow_to_use() + ", " +// разрешено исползовать
-                        "'" + (request.getBilling_address() == null ? "":request.getBilling_address())  + "', " +//место расчетов
-                        "'" + request.getZn_kkt() + "', " +     // заводской номер ККТ
+                        ":billing_address, " +//место расчетов
+                        ":zn_kkt, " +     // заводской номер ККТ
                         false + ", " +                          // виртуальная касса
                         request.getAllow_acquiring() + ", " +   // прием безнала на данной кассе
                         request.getAcquiring_bank_id() + ", " + // id банк-эквайер
@@ -471,6 +492,15 @@ public class KassaRepository {
                         false + ")";                            // касса удалена
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
+                    query.setParameter("name", request.getName());
+                    query.setParameter("server_type", request.getServer_type());
+                    query.setParameter("device_server_uid", request.getDevice_server_uid());
+                    query.setParameter("additional", (request.getAdditional() == null ? "": request.getAdditional()));
+                    query.setParameter("server_address", request.getServer_address());
+                    query.setParameter("billing_address", (request.getBilling_address() == null ? "":request.getBilling_address()));
+                    query.setParameter("zn_kkt", request.getZn_kkt());
+//                    query.setParameter("____", );
+
                     query.executeUpdate();
                     stringQuery="select id from kassa where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -510,15 +540,15 @@ public class KassaRepository {
                     " changer_id = " + myId + ", "+ //кто изменяет
                     " date_time_changed= now()," + //время изменения
                     " department_id = " + request.getDepartment_id() + ", "+//отделение
-                    " name = '" + request.getName() + "', " +//наименование
-                    " server_type ='" + request.getServer_type() + "', " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
+                    " name = :name, " +//наименование
+                    " server_type = :server_type, " +//тип сервера: atol - atol web server, kkmserver - kkmserver.ru
                     " sno1_id =" + request.getSno1_id() + ", " +// id системы налогообложения
-                    " billing_address ='" + request.getBilling_address() + "', " +// место расчетов
-                    " device_server_uid ='" + request.getDevice_server_uid() + "', " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
-                    " additional ='" + request.getAdditional() + "', " +// дополнительная информация
-                    " server_address ='" + request.getServer_address() + "', " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
+                    " billing_address = :billing_address, " +// место расчетов
+                    " device_server_uid = :device_server_uid, " +// идентификатор кассы на сервере касс (atol web server или kkmserver)
+                    " additional = :additional, " +// дополнительная информация
+                    " server_address = :server_address, " +// адрес сервера и порт в локальной сети или интернете вида http://127.0.0.1:16732
                     " allow_to_use =" + request.getAllow_to_use() + ", " +// разрешено исползовать
-                    " zn_kkt = '" + request.getZn_kkt() + "', " +
+                    " zn_kkt = :zn_kkt, " +
                     " is_virtual = false, " +// виртуальная касса
                     " allow_acquiring = " + request.getAllow_acquiring() + ", " +// прием безнала на данной кассе
                     " acquiring_bank_id = " + request.getAcquiring_bank_id() + ", " + // id банк-эквайер
@@ -533,6 +563,14 @@ public class KassaRepository {
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", request.getName());
+                query.setParameter("server_type", request.getServer_type());
+                query.setParameter("device_server_uid", request.getDevice_server_uid());
+                query.setParameter("additional", (request.getAdditional() == null ? "": request.getAdditional()));
+                query.setParameter("server_address", request.getServer_address());
+                query.setParameter("billing_address", (request.getBilling_address() == null ? "":request.getBilling_address()));
+                query.setParameter("zn_kkt", request.getZn_kkt());
+//                query.setParameter("____", );
                 query.executeUpdate();
                 return 1;
             }catch (Exception e) {
@@ -766,7 +804,7 @@ public class KassaRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
         Long myId=userRepository.getUserId();
-        try {
+
             stringQuery =
                     " insert into kassa_user_settings (" +
                             " user_id, " +
@@ -782,27 +820,33 @@ public class KassaRepository {
                             myId + "," +
                             myMasterId + ", " +
                             myCompanyId + ", " +
-                            row.getSelected_kassa_id() + ", '" +
-                            row.getCashier_value_id() + "', '" +
-                            (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio())  + "', '" +
-                            (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin())  + "', '" +
-                            row.getBilling_address() + "', '" +
-                            row.getCustom_billing_address() + "'" +
+                            row.getSelected_kassa_id() + ", " +
+                            ":cashier_value_id," +
+                            ":customCashierFio, " +
+                            ":customCashierVatin, " +
+                            ":billing_address, " +
+                            ":custom_billing_address" +
                             ") " +
                             " ON CONFLICT ON CONSTRAINT kassa_user_settings_pkey " +// "upsert"
                             " DO update set " +
                             " selected_kassa_id = " + row.getSelected_kassa_id() + ","+
-                            " cashier_value_id = '" + row.getCashier_value_id() + "',"+
-                            " customCashierFio = '" + (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio()) + "',"+
-                            " customCashierVatin = '" + (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin()) + "'," +
-                            " billing_address = '" + (row.getBilling_address() == null ? "":row.getBilling_address()) + "', "+
-                            " custom_billing_address = '" + (row.getCustom_billing_address() == null ? "":row.getCustom_billing_address()) + "'";
-
+                            " cashier_value_id = :cashier_value_id,"+
+                            " customCashierFio = :customCashierFio,"+
+                            " customCashierVatin = :customCashierVatin," +
+                            " billing_address = :billing_address, "+
+                            " custom_billing_address = :custom_billing_address";
+        try {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("cashier_value_id", row.getCashier_value_id());
+            query.setParameter("customCashierFio", (row.getCustomCashierFio() == null ? "":row.getCustomCashierFio()));
+            query.setParameter("customCashierVatin", (row.getCustomCashierVatin() == null ? "":row.getCustomCashierVatin()));
+            query.setParameter("billing_address", (row.getBilling_address() == null ? "":row.getBilling_address()));
+            query.setParameter("custom_billing_address", (row.getCustom_billing_address() == null ? "":row.getCustom_billing_address()));
             query.executeUpdate();
             return true;
         }
         catch (Exception e) {
+            logger.error("Exception in method updateCashierSettings. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -814,12 +858,12 @@ public class KassaRepository {
         stringQuery = "" +
                 " select 1 from kassa where " +
                 " company_id="+company_id+
-//                " and id!="+current_kassa_id +
-                " and zn_kkt ='"+zn_kkt + "'";
+                " and zn_kkt = :zn_kkt";
         if(current_kassa_id>0) stringQuery=stringQuery+" and id!="+current_kassa_id;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("zn_kkt", zn_kkt);
             return(query.getResultList().size()==0);
         }catch (Exception e) {
             logger.error("Exception in method isKassaUnique. SQL query:"+stringQuery, e);
@@ -886,12 +930,12 @@ public class KassaRepository {
                             kassaId + ", " +
                             shiftNumber + ", " +
                             shiftNumber + ", " +
-                            false + ", '" +
-                            zn_kkt + "', '" +
-                            UUID.randomUUID().toString() + "', '" +
-                            shiftStatusId + "', '" +
-                            shiftExpiredAt + "', '" +
-                            fnSerial + "'" +
+                            false + ", " +
+                            ":zn_kkt, '" +
+                            UUID.randomUUID().toString() + "', " +
+                            ":shift_status_id, " +
+                            ":shift_expired_at, " +
+                            ":fn_serial" +
                             ") " +
                             " ON CONFLICT ON CONSTRAINT kassaid_shiftnumber_fnserial_uq " +// "upsert"
                             " DO update set " +
@@ -899,7 +943,7 @@ public class KassaRepository {
                             " date_time_closed = " + (!shiftStatusId.equals("closed") ? null : ("to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')")) + ", " + // время закрытия вставляем только если статус смены меняется на closed (может меняться с opened ещё и на expired, а это не зактыта)
                             " department_id = " + kassaDeptId + ", " +//потому что отделение за время сессии может измениться (маловероятно, но всё же)
                             " is_completed = true " + ", " +
-                            " shift_status_id = '" + shiftStatusId + "'";
+                            " shift_status_id = :shift_status_id";
             try {
                 // нам нужно отловить закрытие смены (т.е. что смена закроется в результате запроса в этом методе
                 // для этого она должна подходить под требования констрайнта kassaid_shiftnumber_fnserial_uq
@@ -927,6 +971,12 @@ public class KassaRepository {
 
                 }
                 Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("zn_kkt", zn_kkt);
+                query.setParameter("shift_status_id", shiftStatusId);
+                query.setParameter("shift_expired_at", shiftExpiredAt);
+                query.setParameter("fn_serial", fnSerial);
+//                query.setParameter("____", );
+
                 query.executeUpdate();
                 closeOtherShifts(zn_kkt, shiftNumber, companyId, timestamp); //закрываем другие смены этой ККТ (подробнее - в методе)
                 return true;
@@ -1108,11 +1158,7 @@ public class KassaRepository {
             e.printStackTrace();
             throw new Exception();
         }
-
-
     }
-
-
 
     // возвращает информацию по эквайрингу у кассы   ***
     private AcquiringInfoJSON getAcquiringInfo(Long kassaId){
@@ -1168,10 +1214,11 @@ public class KassaRepository {
                 " select id, uid from shifts where " +
                 " kassa_id="+kassaId+
                 " and shift_number="+shift_number +
-                " and fn_serial ='"+fnSerial + "'";
+                " and fn_serial = :fn_serial";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fn_serial", fnSerial);
             List<Object[]> queryList = query.getResultList();
             ShiftsJSON doc = new ShiftsJSON();
             for(Object[] obj:queryList) {
@@ -1266,10 +1313,10 @@ public class KassaRepository {
                         shiftId + ", " +
                         docId + ", " +
                         id + ", " +
-                        "'"+ operationId + "', " +
+                        ":operation_id, " +
                         sno_id + ", " +
-                        "'" + billing_address + "', " +
-                        "'" + payment_type + "', " +
+                        ":billing_address, " +
+                        ":payment_type, " +
                         cash + ", " +
                         electronically +
                         ") ";
@@ -1277,6 +1324,10 @@ public class KassaRepository {
         try {
 
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("operation_id", operationId);
+            query.setParameter("billing_address", billing_address);
+            query.setParameter("payment_type", payment_type);
+//            query.setParameter("____", );
             query.executeUpdate();
             closeOtherShifts(zn_kkt, shiftNumber, companyId, timestamp); //закрываем другие смены этой ККТ (подробнее - в методе)
             return true;
@@ -1305,10 +1356,11 @@ public class KassaRepository {
                 " company_id=" + companyId + //это берем чтобы БД быстрее искала смены
                 " and shift_number!=" + shiftNumber +
                 " and shift_status_id != 'closed'" +
-                " and zn_kkt ='" + zn_kkt + "'";
+                " and zn_kkt = :zn_kkt";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("zn_kkt", zn_kkt);
             return(query.executeUpdate());
         }catch (Exception e) {
             logger.error("Exception in method closeOtherShifts. SQL query:"+stringQuery, e);
@@ -1342,11 +1394,12 @@ public class KassaRepository {
         stringQuery = "" +
                 " select 1 from shifts where " +
                 " kassa_id="+kassaId+
-                " and fn_serial ='"+fnSerial + "'" +
+                " and fn_serial = :fn_serial" +
                 " and shift_status_id = 'opened'";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fn_serial", fnSerial);
             return(query.getResultList().size()==1);//если находит такую строку в БД - значит есть открытая смена по данной кассе
         }catch (Exception e) {
             logger.error("Exception in method isShiftOpened_DevMode. SQL query:"+stringQuery, e);
@@ -1361,12 +1414,13 @@ public class KassaRepository {
         stringQuery = "" +
                 " select 1 from shifts where " +
                 " kassa_id="+kassaId+
-                " and fn_serial ='"+fnSerial + "'" +
+                " and fn_serial =:fn_serial" +
                 " and shift_status_id = 'opened'" +
                 " and shift_number = " + shiftNumber;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fn_serial", fnSerial);
             return(query.getResultList().size()==1);//если находит такую строку в БД - значит есть открытая смена по данной кассе
         }catch (Exception e) {
             logger.error("Exception in method isShiftOpened. SQL query:"+stringQuery, e);
@@ -1394,10 +1448,11 @@ public class KassaRepository {
                 " select id from shifts where " +
                 " kassa_id="+kassaId+
                 " and shift_number="+shift_number +
-                " and fn_serial ='"+fnSerial + "'";
+                " and fn_serial = :fn_serial";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fn_serial", fnSerial);
             return  Long.valueOf(query.getSingleResult().toString());
         }catch (Exception e) {
             logger.error("Exception in method getShiftIdByUniqueKey. SQL query:"+stringQuery, e);
@@ -1425,11 +1480,12 @@ public class KassaRepository {
                 " select 1 from shifts where " +
                 " kassa_id="+kassaId+
                 " and shift_number="+shift_number +
-                " and fn_serial ='"+fnSerial + "'" +
+                " and fn_serial = :fn_serial" +
                 " and shift_status_id = 'closed'";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("fn_serial", fnSerial);
             return(query.getResultList().size()==1);//если находит такую строку в БД - значит смена есть и она закрыта. В противном случае смены в БД либо нет, либо она открыта, и вызывающий метод будет делать "upsert"
         }catch (Exception e) {
             logger.error("Exception in method isShiftClosed. SQL query:"+stringQuery, e);
@@ -1442,10 +1498,11 @@ public class KassaRepository {
         String stringQuery;
         stringQuery = "" +
                 " select id from sprav_sys_taxation_types where " +
-                column_name + " = '" + name + "'";
+                column_name + " = :name";
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",name);
             return  (Integer) query.getSingleResult();
         }catch (Exception e) {
             logger.error("Exception in method getSnoIdBySnoName. SQL query:"+stringQuery, e);

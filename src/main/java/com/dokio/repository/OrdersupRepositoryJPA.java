@@ -162,7 +162,7 @@ public class OrdersupRepositoryJPA {
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
-                throw new IllegalArgumentException("Недопустимые параметры запроса");
+                throw new IllegalArgumentException("Invalid query parameters");
             }
 
             try{
@@ -540,7 +540,7 @@ public class OrdersupRepositoryJPA {
                         cagentForm.setCompany_id(request.getCompany_id());
                         cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
                         cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-                        cagentForm.setDescription("Автоматическое создание из Счета покупателю №"+doc_number.toString());
+                        cagentForm.setDescription("");
                         cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
                         cagentForm.setTelephone("");
                         cagentForm.setEmail("");
