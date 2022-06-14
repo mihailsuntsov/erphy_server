@@ -206,7 +206,7 @@ public class SpravSysEdizmController {
         logger.info("Processing post request for path /api/auth/deleteEdizm: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(spravSysEdizmRepositoryJPA.deleteEdizmById(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/undeleteEdizm")
     public  ResponseEntity<?> undeleteEdizm(@RequestBody SignUpForm request) {
@@ -214,7 +214,7 @@ public class SpravSysEdizmController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(spravSysEdizmRepositoryJPA.undeleteEdizm(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteEdizm error", e);
-            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/getSpravSysEdizm")

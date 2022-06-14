@@ -267,7 +267,7 @@ public class OrdersupController {
         try {
             return new ResponseEntity<>(ordersupRepository.deleteOrdersupFile(request), HttpStatus.OK);
         } catch (Exception e){
-            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

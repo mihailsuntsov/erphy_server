@@ -475,7 +475,7 @@ public class KassaController {
         if(kassaRepository.deleteKassaFile(kassa_id,file_id)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка удаления файла", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

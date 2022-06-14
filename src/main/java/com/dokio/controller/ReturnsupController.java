@@ -206,7 +206,7 @@ public class ReturnsupController {
         if(newDocument!=null){//вернет id созданного документа либо 0, если недостаточно прав
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
-            return new ResponseEntity<>("Ошибка создания документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -226,7 +226,7 @@ public class ReturnsupController {
         catch (Exception e) {
             logger.error("Exception in method getReturnsupValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Возврат покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -367,7 +367,7 @@ public class ReturnsupController {
         if(returnsupRepository.deleteReturnsupFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

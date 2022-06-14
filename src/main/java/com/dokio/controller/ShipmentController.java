@@ -216,7 +216,7 @@ public class ShipmentController {
         catch (Exception e) {
             logger.error("Exception in method getShipmentValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

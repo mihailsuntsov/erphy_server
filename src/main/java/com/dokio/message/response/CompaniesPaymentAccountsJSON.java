@@ -1,9 +1,11 @@
-package com.dokio.message.request;
+package com.dokio.message.response;
 
-public class CompaniesPaymentAccountsForm {
+public class CompaniesPaymentAccountsJSON {
 
     private Long id;
     private Long master_id;
+    private Long creator_id;
+    private Long changer_id;
     private Long company_id;
     private Integer output_order;
     private String bik;
@@ -15,6 +17,85 @@ public class CompaniesPaymentAccountsForm {
     private String intermediatery;
     private String swift;
     private String iban;
+    private boolean is_main;
+    private String master;
+    private String creator;
+    private String changer;
+    private String company;
+    private String date_time_created;
+    private String date_time_changed;
+
+    public Long getCreator_id() {
+        return creator_id;
+    }
+
+    public void setCreator_id(Long creator_id) {
+        this.creator_id = creator_id;
+    }
+
+    public Long getChanger_id() {
+        return changer_id;
+    }
+
+    public void setChanger_id(Long changer_id) {
+        this.changer_id = changer_id;
+    }
+
+    public boolean isIs_main() {
+        return is_main;
+    }
+
+    public void setIs_main(boolean is_main) {
+        this.is_main = is_main;
+    }
+
+    public String getMaster() {
+        return master;
+    }
+
+    public void setMaster(String master) {
+        this.master = master;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getChanger() {
+        return changer;
+    }
+
+    public void setChanger(String changer) {
+        this.changer = changer;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getDate_time_created() {
+        return date_time_created;
+    }
+
+    public void setDate_time_created(String date_time_created) {
+        this.date_time_created = date_time_created;
+    }
+
+    public String getDate_time_changed() {
+        return date_time_changed;
+    }
+
+    public void setDate_time_changed(String date_time_changed) {
+        this.date_time_changed = date_time_changed;
+    }
 
     public String getDescription() {
         return description;

@@ -194,7 +194,7 @@ public class SpravTypePricesController {
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(typePricesRepositoryJPA.deleteTypePrices(checked), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller deleteTypePrices error", e);
-            return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteTypePrices")
@@ -203,7 +203,7 @@ public class SpravTypePricesController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(typePricesRepositoryJPA.undeleteTypePrices(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteTypePrices error", e);
-            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 

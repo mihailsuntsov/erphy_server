@@ -233,7 +233,7 @@ public class PostingController {
         catch (Exception e) {
             logger.error("Exception in method getPostingValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Оприходование", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

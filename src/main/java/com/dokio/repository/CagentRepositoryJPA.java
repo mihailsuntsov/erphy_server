@@ -61,7 +61,7 @@ public class CagentRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("p.name","name","company","creator","date_time_created_sort","description")
+            .of("p.name","name","company","creator","date_time_created_sort","description","cagent","summ_on_start","summ_in","summ_out","summ_on_end")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -297,7 +297,10 @@ public class CagentRepositoryJPA {
                     " ap.name," +
                     " ap.address," +
                     " ap.payment_account," +
-                    " ap.corr_account" +
+                    " ap.corr_account," +
+                    " ap.intermediatery as intermediatery, " +
+                    " ap.swift as swift, " +
+                    " ap.iban as iban " +
                     " from " +
                     " cagents_payment_accounts ap " +
                     " where ap.master_id = " + myMasterId +
@@ -324,6 +327,9 @@ public class CagentRepositoryJPA {
                 doc.setAddress((String)                                 obj[6]);
                 doc.setPayment_account((String)                         obj[7]);
                 doc.setCorr_account((String)                            obj[8]);
+                doc.setIntermediatery((String)                          obj[9]);
+                doc.setSwift((String)                                   obj[10]);
+                doc.setIban((String)                                    obj[11]);
                 returnList.add(doc);
             }
             return returnList;
@@ -771,6 +777,9 @@ public class CagentRepositoryJPA {
                             "address," +
                             "corr_account," +
                             "payment_account," +
+                            "intermediatery, " +
+                            "swift, " +
+                            "iban, " +
                             "output_order"+
                             ") values ("
                             + master_id +", "
@@ -781,6 +790,9 @@ public class CagentRepositoryJPA {
                             + ":address,"
                             + ":corr_acc,"
                             + ":paym_acc,"
+                            + ":intermediatery, "
+                            + ":swift, "
+                            + ":iban, "
                             + row.getOutput_order() + ")";
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -789,6 +801,10 @@ public class CagentRepositoryJPA {
             query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
             query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
             query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
+            query.setParameter("intermediatery", (row.getIntermediatery()!=null?row.getIntermediatery():""));
+            query.setParameter("swift", (row.getSwift()!=null?row.getSwift():""));
+            query.setParameter("iban", (row.getIban()!=null?row.getIban():""));
+
 
             query.executeUpdate();
 
@@ -813,7 +829,10 @@ public class CagentRepositoryJPA {
                     " address = :address, " +
                     " corr_account = :corr_acc, " +
                     " payment_account = :paym_acc, " +
-                    " output_order = :output_order"+
+                    " output_order = :output_order,"+
+                    " intermediatery = :intermediatery, " +
+                    " swift = :swift, " +
+                    " iban = :iban" +
                     " where " +
                     " id="+row.getId()+" and "+
                     " master_id="+master_id+" and "+
@@ -827,6 +846,9 @@ public class CagentRepositoryJPA {
             query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
             query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
             query.setParameter("output_order",row.getOutput_order());
+            query.setParameter("intermediatery", (row.getIntermediatery()!=null?row.getIntermediatery():""));
+            query.setParameter("swift", (row.getSwift()!=null?row.getSwift():""));
+            query.setParameter("iban", (row.getIban()!=null?row.getIban():""));
             query.executeUpdate();
             return true;
         }

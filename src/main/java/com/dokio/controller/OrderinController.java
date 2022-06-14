@@ -169,14 +169,14 @@ public class OrderinController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getOrderinValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(orderinRepository.getOrderinValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateOrderin")
     public ResponseEntity<?> updateOrderin(@RequestBody OrderinForm request){
         logger.info("Processing post request for path /api/auth/updateOrderin: " + request.toString());
         try {return new ResponseEntity<>(orderinRepository.updateOrderin(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsOrderin")
@@ -203,7 +203,7 @@ public class OrderinController {
         logger.info("Processing post request for path /api/auth/deleteOrderin: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(orderinRepository.deleteOrderin(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteOrderin")
@@ -212,7 +212,7 @@ public class OrderinController {
         logger.info("Processing post request for path /api/auth/undeleteOrderin: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(orderinRepository.undeleteOrderin(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -230,7 +230,7 @@ public class OrderinController {
     public ResponseEntity<?> deleteOrderinFile(@RequestBody SearchForm request) {
         logger.info("Processing post request for path api/auth/deleteOrderinFile: " + request.toString());
         try {return new ResponseEntity<>(orderinRepository.deleteOrderinFile(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")

@@ -170,14 +170,14 @@ public class OrderoutController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getOrderoutValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(orderoutRepository.getOrderoutValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateOrderout")
     public ResponseEntity<?> updateOrderout(@RequestBody OrderoutForm request){
         logger.info("Processing post request for path /api/auth/updateOrderout: " + request.toString());
         try {return new ResponseEntity<>(orderoutRepository.updateOrderout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsOrderout")
@@ -204,7 +204,7 @@ public class OrderoutController {
         logger.info("Processing post request for path /api/auth/deleteOrderout: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(orderoutRepository.deleteOrderout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteOrderout")
@@ -213,7 +213,7 @@ public class OrderoutController {
         logger.info("Processing post request for path /api/auth/undeleteOrderout: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(orderoutRepository.undeleteOrderout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -231,7 +231,7 @@ public class OrderoutController {
     public ResponseEntity<?> deleteOrderoutFile(@RequestBody SearchForm request) {
         logger.info("Processing post request for path api/auth/deleteOrderoutFile: " + request.toString());
         try {return new ResponseEntity<>(orderoutRepository.deleteOrderoutFile(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")

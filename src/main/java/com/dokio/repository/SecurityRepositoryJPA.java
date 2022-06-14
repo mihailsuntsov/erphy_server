@@ -103,7 +103,9 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " coalesce(ugr.is_archive,false) !=true";
+                    " ugr.company_id=u.company_id and " +
+                    " coalesce(ugr.is_deleted,false) = false" +
+                    " group by p.id";
             Query query = entityManager.createNativeQuery(stringQuery);
             return (query.getResultList());
         }else return null;

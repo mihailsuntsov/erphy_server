@@ -148,7 +148,7 @@ class CorrectionController {
         logger.info("Processing post request for path /api/auth/insertCorrection: " + request.toString());
         try {return new ResponseEntity<>(correctionRepository.insertCorrection(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller insertCorrection error", e);
-            return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -160,7 +160,7 @@ class CorrectionController {
         logger.info("Processing get request for path /api/auth/getCorrectionValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(correctionRepository.getCorrectionValues(id), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getCorrectionValuesById error", e);
-        return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateCorrection")
@@ -168,7 +168,7 @@ class CorrectionController {
         logger.info("Processing post request for path /api/auth/updateCorrection: " + request.toString());
         try {return new ResponseEntity<>(correctionRepository.updateCorrection(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller updateCorrection error", e);
-        return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteCorrection")
@@ -186,7 +186,7 @@ class CorrectionController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(correctionRepository.undeleteCorrection(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteCorrection error", e);
-        return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsCorrection")
@@ -224,7 +224,7 @@ class CorrectionController {
         logger.info("Processing post request for path api/auth/deleteCorrectionFile: " + request.toString());
         try {return new ResponseEntity<>(correctionRepository.deleteCorrectionFile(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller deleteCorrectionFile error", e);
-        return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")

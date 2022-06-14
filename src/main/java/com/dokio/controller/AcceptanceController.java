@@ -249,7 +249,7 @@ public class AcceptanceController {
         catch (Exception e) {
             logger.error("Exception in method getAcceptanceValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Приёмка", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -298,7 +298,7 @@ public class AcceptanceController {
         if(acceptanceRepositoryJPA.deleteAcceptanceFile(request)){
             return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка удаления файла", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

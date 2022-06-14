@@ -3596,24 +3596,38 @@ insert into settings_general (show_registration_link, allow_registration, show_f
 
 alter table settings_general add column show_in_signin text;
 
+------------------------------------------------  end of 1.000-0   -----------------------------------------------------
+-----------------------------------------------  begin of 1.001-0   ----------------------------------------------------
+alter table companies_payment_accounts add column creator_id bigint;
+alter table companies_payment_accounts add column changer_id bigint;
+alter table companies_payment_accounts add column date_time_created timestamp with time zone;
+alter table companies_payment_accounts add column date_time_changed timestamp with time zone;
+alter table companies_payment_accounts add column description varchar(2048);
+alter table companies_payment_accounts add column intermediatery varchar(2048);
+alter table companies_payment_accounts add column swift varchar(11);
+alter table companies_payment_accounts add column iban varchar(34);
+alter table companies_payment_accounts add column is_main boolean;
+alter table companies_payment_accounts add column is_deleted boolean;
+alter table companies_payment_accounts add constraint companies_payment_accounts_creator_id_fkey foreign key (creator_id) references users (id);
+alter table companies_payment_accounts add constraint companies_payment_accounts_changer_id_fkey foreign key (changer_id) references users (id);
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (52,'Расчётные счета','accounts',1,'companies_payment_accounts','Расчётные счета', 'Bank accounts');
+insert into permissions (id,name_ru,name_en,document_id,output_order) values
+(653,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',52,10),
+(654,'Создание документов по всем предприятиям','Creation of documents for all companies',52,20),
+(655,'Создание документов своего предприятия','Create your company documents',52,30),
+(656,'Удаление документов всех предприятий','Deleting documents of all companies',52,130),
+(657,'Удаление документов своего предприятия','Deleting your company documents',52,140),
+(658,'Просмотр документов всех предприятий','View documents of all companies',52,50),
+(659,'Просмотр документов своего предприятия','View your company documents',52,60),
+(660,'Редактирование документов всех предприятий','Editing documents of all companies',52,90),
+(661,'Редактирование документов своего предприятия','Editing your company documents',52,100);
+alter table cagents_payment_accounts add column intermediatery varchar(2048);
+alter table cagents_payment_accounts add column swift varchar(11);
+alter table cagents_payment_accounts add column iban varchar(34);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+insert into version (value, date) values ('1.001-0','15/06/2022');
+------------------------------------------------  end of 1.001-0   -----------------------------------------------------
 
 
 

@@ -10,12 +10,14 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
-package com.dokio.controller;
+package com.dokio.controller.Sprav;
 
-import com.dokio.message.request.WithdrawalForm;
 import com.dokio.message.request.SearchForm;
-import com.dokio.message.response.WithdrawalJSON;
-import com.dokio.repository.WithdrawalRepositoryJPA;
+import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.CompaniesPaymentAccountsForm;
+import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.CompaniesPaymentAccountsJSON;
+import com.dokio.repository.CompaniesPaymentAccountsRepositoryJPA;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,17 +29,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class WithdrawalController {
+class SpravPaymentAccountController {
 
-    Logger logger = Logger.getLogger("WithdrawalController");
+    Logger logger = Logger.getLogger("SpravPaymentAccountController");
 
     @Autowired
-    WithdrawalRepositoryJPA withdrawalRepository;
+    CompaniesPaymentAccountsRepositoryJPA paymentAccountRepository;
 
-    @PostMapping("/api/auth/getWithdrawalTable")
+    @PostMapping("/api/auth/getPaymentAccountTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getWithdrawalTable(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getWithdrawalTable: " + searchRequest.toString());
+    public ResponseEntity<?> getPaymentAccountTable(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getPaymentAccountTable: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -46,7 +48,7 @@ public class WithdrawalController {
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
-        List<WithdrawalJSON> returnList;
+        List<CompaniesPaymentAccountsJSON> returnList;
 
         if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
             sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
@@ -75,15 +77,15 @@ public class WithdrawalController {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = withdrawalRepository.getWithdrawalTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = paymentAccountRepository.getPaymentAccountTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId,departmentId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/getWithdrawalPagesList")
+    @PostMapping("/api/auth/getPaymentAccountPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getWithdrawalPagesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getWithdrawalPagesList: " + searchRequest.toString());
+    public ResponseEntity<?> getPaymentAccountPagesList(@RequestBody SearchForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getPaymentAccountPagesList: " + searchRequest.toString());
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
@@ -105,7 +107,7 @@ public class WithdrawalController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = withdrawalRepository.getWithdrawalSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = paymentAccountRepository.getPaymentAccountSize(searchString,companyId,departmentId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -151,34 +153,62 @@ public class WithdrawalController {
         return responseEntity;
     }
 
-    @PostMapping("/api/auth/insertWithdrawal")
-    public ResponseEntity<?> insertWithdrawal(@RequestBody WithdrawalForm request){
-        logger.info("Processing post request for path /api/auth/insertWithdrawal: " + request.toString());
-        try {return new ResponseEntity<>(withdrawalRepository.insertWithdrawal(request), HttpStatus.OK);}
-        catch (Exception e){logger.error("Exception in method insertWithdrawal. " + request.toString(), e);
-            e.printStackTrace();
+    @PostMapping("/api/auth/insertPaymentAccount")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> insertPaymentAccount(@RequestBody CompaniesPaymentAccountsForm request){
+        logger.info("Processing post request for path /api/auth/insertPaymentAccount: " + request.toString());
+        try {return new ResponseEntity<>(paymentAccountRepository.insertPaymentAccount(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller insertPaymentAccount error", e);
             return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
-            value = "/api/auth/getWithdrawalValuesById",
+            value = "/api/auth/getPaymentAccountValuesById",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getWithdrawalValuesById(
+    public ResponseEntity<?> getPaymentAccountValuesById(
             @RequestParam("id") Long id){
-        logger.info("Processing get request for path /api/auth/getWithdrawalValuesById with parameters: " + "id: " + id);
-        try {return new ResponseEntity<>(withdrawalRepository.getWithdrawalValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
+        logger.info("Processing get request for path /api/auth/getPaymentAccountValuesById with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(paymentAccountRepository.getPaymentAccountValues(id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getPaymentAccountValuesById error", e);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @RequestMapping(
-            value = "/api/auth/getWithdrawalList",
-            params = {"kassa_id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getWithdrawalList(
-            @RequestParam("kassa_id") Long id){
-        logger.info("Processing get request for path /api/auth/getWithdrawalList with parameters: " + "kassa_id: " + id);
-        try {return new ResponseEntity<>(withdrawalRepository.getWithdrawalList(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки списка выемок", HttpStatus.INTERNAL_SERVER_ERROR);}
+    @PostMapping("/api/auth/updatePaymentAccount")
+    public ResponseEntity<?> updatePaymentAccount(@RequestBody CompaniesPaymentAccountsForm request){
+        logger.info("Processing post request for path /api/auth/updatePaymentAccount: " + request.toString());
+        try {return new ResponseEntity<>(paymentAccountRepository.updatePaymentAccount(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller updatePaymentAccount error", e);
+            return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @PostMapping("/api/auth/deletePaymentAccount")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> deletePaymentAccount(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/deletePaymentAccount: " + request.toString());
+        String checked = request.getChecked() == null ? "": request.getChecked();
+        try {return new ResponseEntity<>(paymentAccountRepository.deletePaymentAccount(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller deletePaymentAccount error", e);
+            return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/undeletePaymentAccount")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> undeletePaymentAccount(@RequestBody SignUpForm request) {
+        logger.info("Processing post request for path /api/auth/undeletePaymentAccount: " + request.toString());
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(paymentAccountRepository.undeletePaymentAccount(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeletePaymentAccount error", e);
+            return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/setMainPaymentAccount")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setMainPaymentAccount(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/setMainPaymentAccounts: " + request.toString());
+        try {return new ResponseEntity<>(paymentAccountRepository.setMainPaymentAccount(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller setMainPaymentAccount error", e);
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

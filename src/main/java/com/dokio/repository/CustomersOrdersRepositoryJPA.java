@@ -746,7 +746,7 @@ public class CustomersOrdersRepositoryJPA {
                         logger.error("Exception in method insertCustomersOrders on querying of created document id. SQL query:"+stringQuery, e);
                         e.printStackTrace();
                         updateResults.setSuccess(false);
-                        updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                        updateResults.setErrorCode(1);      // Error saving document
                         return updateResults;
                     }
                 } else {
@@ -758,7 +758,7 @@ public class CustomersOrdersRepositoryJPA {
                 logger.error("Exception in method insertCustomersOrders on inserting into customers_orders.", e);
                 e.printStackTrace();
                 updateResults.setSuccess(false);
-                updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                updateResults.setErrorCode(1);      // Error saving document
                 return updateResults;
             }
         } else {
@@ -836,7 +836,7 @@ public class CustomersOrdersRepositoryJPA {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method updateCustomersOrders on updating of customers_orders cause error.", e);
                 updateResults.setSuccess(false);
-                updateResults.setErrorCode(1);      // Ошибка сохранения документа
+                updateResults.setErrorCode(1);      // Error saving document
                 return updateResults;
             }
 

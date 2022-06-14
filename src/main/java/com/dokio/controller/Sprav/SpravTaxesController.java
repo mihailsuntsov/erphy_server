@@ -83,14 +83,14 @@ class SpravTaxesController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getTaxesValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(taxesRepository.getTaxesValues(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateTaxes")
     public ResponseEntity<?> updateTaxes(@RequestBody SpravTaxesForm request){
         logger.info("Processing post request for path /api/auth/updateTaxes: " + request.toString());
         try {return new ResponseEntity<>(taxesRepository.updateTaxes(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteTaxes")
@@ -99,7 +99,7 @@ class SpravTaxesController {
         logger.info("Processing post request for path /api/auth/deleteTaxes: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(taxesRepository.deleteTaxes(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteTaxes")
@@ -108,7 +108,7 @@ class SpravTaxesController {
         logger.info("Processing post request for path /api/auth/undeleteTaxes: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(taxesRepository.undeleteTaxes(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -119,7 +119,7 @@ class SpravTaxesController {
             @RequestParam("company_id") Long company_id){
         logger.info("Processing get request for path /api/auth/getTaxesList with parameters: " + "company_id: " + company_id);
         try {return new ResponseEntity<>(taxesRepository.getTaxesList(company_id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 

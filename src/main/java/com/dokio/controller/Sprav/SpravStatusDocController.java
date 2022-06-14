@@ -204,7 +204,7 @@ public class SpravStatusDocController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(repository.undeleteStatusDocs(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteSpravStatusDocs error", e);
-            return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/getStatusList")//отдает список статусов документа по его id (таблица documents) и id предприятия
     @SuppressWarnings("Duplicates")

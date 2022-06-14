@@ -169,14 +169,14 @@ class PaymentoutController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getPaymentoutValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(paymentoutRepository.getPaymentoutValues(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updatePaymentout")
     public ResponseEntity<?> updatePaymentout(@RequestBody PaymentoutForm request){
         logger.info("Processing post request for path /api/auth/updatePaymentout: " + request.toString());
         try {return new ResponseEntity<>(paymentoutRepository.updatePaymentout(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deletePaymentout")
@@ -185,7 +185,7 @@ class PaymentoutController {
         logger.info("Processing post request for path /api/auth/deletePaymentout: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(paymentoutRepository.deletePaymentout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeletePaymentout")
@@ -194,7 +194,7 @@ class PaymentoutController {
         logger.info("Processing post request for path /api/auth/undeletePaymentout: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(paymentoutRepository.undeletePaymentout(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 
@@ -245,7 +245,7 @@ class PaymentoutController {
     public ResponseEntity<?> deletePaymentoutFile(@RequestBody SearchForm request) {
         logger.info("Processing post request for path api/auth/deletePaymentoutFile: " + request.toString());
         try {return new ResponseEntity<>(paymentoutRepository.deletePaymentoutFile(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")

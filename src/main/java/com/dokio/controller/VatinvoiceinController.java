@@ -199,14 +199,14 @@ public class VatinvoiceinController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getVatinvoiceinValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(vatinvoiceinRepository.getVatinvoiceinValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateVatinvoicein")
     public ResponseEntity<?> updateVatinvoicein(@RequestBody VatinvoiceinForm request){
         logger.info("Processing post request for path /api/auth/updateVatinvoicein: " + request.toString());
         try {return new ResponseEntity<>(vatinvoiceinRepository.updateVatinvoicein(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveSettingsVatinvoicein")
@@ -233,7 +233,7 @@ public class VatinvoiceinController {
         logger.info("Processing post request for path /api/auth/deleteVatinvoicein: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(vatinvoiceinRepository.deleteVatinvoicein(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteVatinvoicein")
@@ -242,7 +242,7 @@ public class VatinvoiceinController {
         logger.info("Processing post request for path /api/auth/undeleteVatinvoicein: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(vatinvoiceinRepository.undeleteVatinvoicein(checked), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -260,7 +260,7 @@ public class VatinvoiceinController {
     public ResponseEntity<?> deleteVatinvoiceinFile(@RequestBody SearchForm request) {
         logger.info("Processing post request for path api/auth/deleteVatinvoiceinFile: " + request.toString());
         try {return new ResponseEntity<>(vatinvoiceinRepository.deleteVatinvoiceinFile(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка удаления файлов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")

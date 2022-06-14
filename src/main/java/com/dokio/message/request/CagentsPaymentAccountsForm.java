@@ -26,6 +26,33 @@ public class CagentsPaymentAccountsForm {
     private String address;
     private String payment_account;
     private String corr_account;
+    private String intermediatery;
+    private String swift;
+    private String iban;
+
+    public String getIntermediatery() {
+        return intermediatery;
+    }
+
+    public void setIntermediatery(String intermediatery) {
+        this.intermediatery = intermediatery;
+    }
+
+    public String getSwift() {
+        return swift;
+    }
+
+    public void setSwift(String swift) {
+        this.swift = swift;
+    }
+
+    public String getIban() {
+        return iban;
+    }
+
+    public void setIban(String iban) {
+        this.iban = iban;
+    }
 
     public Long getId() {
         return id;

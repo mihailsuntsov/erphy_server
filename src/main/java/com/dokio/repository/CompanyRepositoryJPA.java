@@ -15,6 +15,7 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 package com.dokio.repository;
 import com.dokio.controller.AuthRestAPIs;
 import com.dokio.message.request.*;
+import com.dokio.message.response.CompaniesPaymentAccountsJSON;
 import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
@@ -77,6 +78,8 @@ public class CompanyRepositoryJPA {
     AuthRestAPIs authRestAPIs;
     @Autowired
     SpravStatusDocRepository statusDocRepository;
+    @Autowired
+    CompaniesPaymentAccountsRepositoryJPA paymentAccountsRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -298,7 +301,7 @@ public class CompanyRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")// отдаёт список банковских счетов предприятия
-    public List<CompaniesPaymentAccountsForm> getCompanyPaymentAccounts(Long docId) {
+    public List<CompaniesPaymentAccountsJSON> getCompanyPaymentAccounts(Long docId) {
         if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//(см. файл Permissions Id)
         {
             String stringQuery;
@@ -312,11 +315,14 @@ public class CompanyRepositoryJPA {
                     " ap.name," +
                     " ap.address," +
                     " ap.payment_account," +
-                    " ap.corr_account" +
+                    " ap.corr_account," +
+                    " ap.intermediatery as intermediatery, " +
+                    " ap.swift as swift, " +
+                    " ap.iban as iban " +
                     " from " +
                     " companies_payment_accounts ap " +
                     " where ap.master_id = " + myMasterId +
-                    " and ap.company_id = " + docId;
+                    " and ap.company_id = " + docId + " and coalesce(ap.is_deleted, false) = false";
 
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
@@ -328,10 +334,10 @@ public class CompanyRepositoryJPA {
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 List<Object[]> queryList = query.getResultList();
-                List<CompaniesPaymentAccountsForm> returnList = new ArrayList<>();
+                List<CompaniesPaymentAccountsJSON> returnList = new ArrayList<>();
 
                 for(Object[] obj:queryList){
-                    CompaniesPaymentAccountsForm doc=new CompaniesPaymentAccountsForm();
+                    CompaniesPaymentAccountsJSON doc=new CompaniesPaymentAccountsJSON();
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setMaster_id(Long.parseLong(                        obj[1].toString()));
                     doc.setCompany_id(Long.parseLong(                       obj[2].toString()));
@@ -341,6 +347,9 @@ public class CompanyRepositoryJPA {
                     doc.setAddress((String)                                 obj[6]);
                     doc.setPayment_account((String)                         obj[7]);
                     doc.setCorr_account((String)                            obj[8]);
+                    doc.setIntermediatery((String)                          obj[9]);
+                    doc.setSwift((String)                                   obj[10]);
+                    doc.setIban((String)                                    obj[11]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -1024,11 +1033,14 @@ public class CompanyRepositoryJPA {
         Long price = typePricesRepository.insertPriceTypesFast(myId,companyId);
         // кассы предприятия (денежные комнаты)
         Long bo = boxofficeRepository.insertBoxofficesFast(myId,companyId);
+        // расчетный счет предприятия
+        Long ac = paymentAccountsRepository.insertPaymentAccountsFast(myId,companyId);
         // отделение
         DepartmentForm department = new DepartmentForm();
         department.setName("My department");
         department.setPrice_id(price);
         department.setBoxoffice_id(bo);
+        department.setPayment_account_id(ac);
         departmentRepositoryJPA.insertDepartmentFast(department,companyId,myId);
         Long usergroupId = userGroupRepository.insertUsergroupFast("Administrators",companyId,myId);
         Set<Long> permissions = authRestAPIs.getAdminPermissions();
@@ -1433,7 +1445,7 @@ public class CompanyRepositoryJPA {
 
     //Банковские реквизиты (если они есть). Берётся самый верхний банк из списка карточек банковских реквизитов
     public CompaniesPaymentAccountsForm getMainPaymentAccountOfCompany(Long companyId){
-        List<CompaniesPaymentAccountsForm> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
+        List<CompaniesPaymentAccountsJSON> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
         CompaniesPaymentAccountsForm account = new CompaniesPaymentAccountsForm();
         if(companyPaymentAccounts.size()>0){
             account.setName(companyPaymentAccounts.get(0).getName());
@@ -1488,7 +1500,7 @@ public class CompanyRepositoryJPA {
                 break;
         }
         //Банковские реквизиты (если они есть). Берутся самые верхние из списка карточек банковских реквизитов
-        List<CompaniesPaymentAccountsForm> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
+        List<CompaniesPaymentAccountsJSON> companyPaymentAccounts = getCompanyPaymentAccounts(companyId);
         if(companyPaymentAccounts.size()>0){
             mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Банковские реквизиты:",""}));
             mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Наименование", companyPaymentAccounts.get(0).getName()}));

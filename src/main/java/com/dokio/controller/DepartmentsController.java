@@ -158,7 +158,7 @@ public class DepartmentsController {
     public ResponseEntity<?> updateDepartment(@RequestBody DepartmentForm request){
         logger.info("Processing post request for path /api/auth/updateDepartment: " + request.toString());
         try {return new ResponseEntity<>(departmentService.updateDepartment(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 

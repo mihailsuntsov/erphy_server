@@ -158,7 +158,7 @@ class SpravBoxofficeController {
         logger.info("Processing post request for path /api/auth/insertBoxoffice: " + request.toString());
         try {return new ResponseEntity<>(boxofficeRepository.insertBoxoffice(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller insertBoxoffice error", e);
-        return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -170,7 +170,7 @@ class SpravBoxofficeController {
         logger.info("Processing get request for path /api/auth/getBoxofficeValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(boxofficeRepository.getBoxofficeValues(id), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getBoxofficeValuesById error", e);
-        return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateBoxoffice")
@@ -178,7 +178,7 @@ class SpravBoxofficeController {
         logger.info("Processing post request for path /api/auth/updateBoxoffice: " + request.toString());
         try {return new ResponseEntity<>(boxofficeRepository.updateBoxoffice(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller updateBoxoffice error", e);
-        return new ResponseEntity<>("Ошибка сохранения документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteBoxoffice")
@@ -188,7 +188,7 @@ class SpravBoxofficeController {
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(boxofficeRepository.deleteBoxoffice(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller deleteBoxoffice error", e);
-        return new ResponseEntity<>("Ошибка удаления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Deletion error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/undeleteBoxoffice")
@@ -198,6 +198,6 @@ class SpravBoxofficeController {
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(boxofficeRepository.undeleteBoxoffice(checked), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller undeleteBoxoffice error", e);
-        return new ResponseEntity<>("Ошибка восстановления", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

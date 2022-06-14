@@ -217,7 +217,7 @@ public class CustomersOrdersController {
         catch (Exception e) {
             logger.error("Exception in method getCustomersOrdersValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Заказ покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -601,6 +601,7 @@ public class DepartmentRepositoryJPA {
                 " date_time_created," + //дата и время создания
                 " price_id, " +
                 " boxoffice_id, " +
+                " payment_account_id, " +
                 " name," +
                 " address" +
                 ") values ("+
@@ -610,6 +611,7 @@ public class DepartmentRepositoryJPA {
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                 request.getPrice_id()+ ", "+ // тип цены
                 request.getBoxoffice_id()+ ", "+ // касса предприятия
+                request.getPayment_account_id() + ", "+ //
                 ":name," +
                 "''"+
                 ")";

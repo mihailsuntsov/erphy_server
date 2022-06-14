@@ -155,7 +155,7 @@ public class DepositingController {
     public ResponseEntity<?> insertDepositing(@RequestBody DepositingForm request){
         logger.info("Processing post request for path /api/auth/insertDepositing: " + request.toString());
         try {return new ResponseEntity<>(depositingRepository.insertDepositing(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка создания документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -166,6 +166,6 @@ public class DepositingController {
             @RequestParam("id") Long id){
         logger.info("Processing get request for path /api/auth/getDepositingValuesById with parameters: " + "id: " + id);
         try {return new ResponseEntity<>(depositingRepository.getDepositingValuesById(id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка загрузки значений документа", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

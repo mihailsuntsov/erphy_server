@@ -180,7 +180,7 @@ public class RetailSalesController {
         if(newDocument!=null){//если Розничная продажа создалась (>0) или не создалась (0) - (0 обрабатывается на фронте как недостаточно объема склада для операции)
             return new ResponseEntity<>(String.valueOf(newDocument), HttpStatus.OK);
         } else {//если null - значит на одной из стадий сохранения произошла ошибка
-            return new ResponseEntity<>("Ошибка создания документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -252,7 +252,7 @@ public class RetailSalesController {
         catch (Exception e) {
             logger.error("Exception in method getRetailSalesValuesById. id = " + id, e);
             e.printStackTrace();
-            return new ResponseEntity<>("Ошибка загрузки значений документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -263,7 +263,7 @@ public class RetailSalesController {
         if(updateResults){
             return new ResponseEntity<>(updateResults, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка сохранения документа Розничная продажа", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -349,7 +349,7 @@ public class RetailSalesController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка восстановления Заказа покупателя", HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }*/
