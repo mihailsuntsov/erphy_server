@@ -25,9 +25,11 @@ import javax.validation.Valid;
 
 import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -96,6 +98,8 @@ public class AuthRestAPIs {
 	SpravStatusDocRepository statusDocRepository;
 	@Autowired
 	CompaniesPaymentAccountsRepositoryJPA paymentAccountsRepository;
+	@Autowired
+	CommonUtilites cu;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -150,9 +154,9 @@ public class AuthRestAPIs {
 		user.setRoles(roles);
 		user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
         user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
+		SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(); // чтобы узнать тарифный план по умолчанию
+		user.setPlanId(settingsGeneral.getPlanDefaultId());
 		Long createdUserId=userRepository.save(user).getId();// и сохранили его
-
-
 		// создадим пользователю предприятие
 		CompaniesForm company = new CompaniesForm();
 		company.setName("My company");

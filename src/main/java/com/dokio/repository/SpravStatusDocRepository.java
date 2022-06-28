@@ -354,7 +354,7 @@ public class SpravStatusDocRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(22L, "271") &&
-                    Long.valueOf(myCompanyId) != request.getCompany_id()) || DocumentMasterId != myMasterId) {
+                    Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
                 return null;
             } else {
                 try {

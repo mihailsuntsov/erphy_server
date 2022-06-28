@@ -25,6 +25,7 @@ import javax.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.NaturalId;
 
 @Entity
@@ -147,6 +148,9 @@ public class User{
     @Column(name = "is_deleted")
     private Boolean is_deleted;
 
+    @Column(name = "plan_id")
+    private Integer planId;
+
     public User() {}
 
     public User(String name, String username, String email, String password) {
@@ -154,6 +158,14 @@ public class User{
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public Integer getPlanId() {
+        return planId;
+    }
+
+    public void setPlanId(Integer planId) {
+        this.planId = planId;
     }
 
     public String getRepairPassCode() {

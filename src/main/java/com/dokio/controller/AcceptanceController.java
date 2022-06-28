@@ -402,7 +402,7 @@ public class AcceptanceController {
             response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileInfo.getOriginal_name());
             Context context = new Context();
             context.putVar("doc", doc);
-            context.putVar("mc", mc); // предприятие
+            context.putVar("mc", mc.getDirector_position()); // предприятие
             context.putVar("cg", cg); // контрагент
             context.putVar("tservice", tservice); // helper-класс для формирования файла
             context.putVar("productTable", product_table);// таблица с товарами

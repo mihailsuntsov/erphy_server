@@ -14,24 +14,26 @@ package com.dokio.repository;
 
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
-import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
 import com.dokio.message.response.additional.MyShortInfoJSON;
-import com.dokio.model.Companies;
+import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Departments;
 import com.dokio.model.User;
 import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.service.StorageService;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.persistence.*;
-import com.dokio.repository.UserRepository;
+
+import java.io.File;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -50,10 +52,10 @@ public class UserRepositoryJPA {
     private EntityManager entityManager;
 
     @Autowired
-    DepartmentRepositoryJPA departmentRepositoryJPA;
+    private DepartmentRepositoryJPA departmentRepositoryJPA;
 
     @Autowired
-    UserGroupRepositoryJPA userGroupRepositoryJPA;
+    private UserGroupRepositoryJPA userGroupRepositoryJPA;
 
     @Autowired
     private EntityManagerFactory emf;
@@ -65,7 +67,19 @@ public class UserRepositoryJPA {
     private UserRepository userRepository;
 
     @Autowired
-    SecurityRepositoryJPA securityRepositoryJPA;
+    private SecurityRepositoryJPA securityRepositoryJPA;
+
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
+
+    @Autowired
+    private CommonUtilites commonUtilites;
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    @Autowired
+    private StorageService storageService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -588,6 +602,12 @@ public class UserRepositoryJPA {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(5L,"23") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("users",delNumbers)))
         {
+            //plan limit check
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getUsers()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getUsers())
+                    return -120; // number of users is out of bounds of tariff plan
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = getMyId();
             String stringQuery;
@@ -830,4 +850,102 @@ public class UserRepositoryJPA {
             return 1;
         }
     }
+
+    // Counting consumed user resources
+    @SuppressWarnings("Duplicates")
+    public UserResources getMyConsumedResources(){
+        String BASE_FILES_FOLDER;
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        try{
+            if(storageService.isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде (dev mode)
+            } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux (prod mode)
+            String MY_MASTER_ID_FOLDER = myMasterId.toString();
+            File folder = new File(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER);
+            long size = 0L;
+            if(storageService.isPathExists(folder.getPath()))
+                size = storageService.getDirectorySize(folder);
+            String stringQuery =
+                "   select" +
+                "   (select count(*) from companies     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as companies," +
+                "   (select count(*) from departments   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as departments," +
+                "   (select count(*) from users         where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as users," +
+                "   (select count(*) from products      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as products," +
+                "   (select count(*) from cagents       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserResources doc = new UserResources();
+            doc.setCompanies(Long.parseLong(                queryList.get(0)[0].toString()));
+            doc.setDepartments(Long.parseLong(              queryList.get(0)[1].toString()));
+            doc.setUsers(Long.parseLong(                    queryList.get(0)[2].toString()));
+            doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString()));
+            doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
+            doc.setMegabytes(Math.round(size/1024/1024));
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getConsumedUserResources", e);
+            return null;
+        }
+    }
+
+    // Counting maximal allowed user resources
+    @SuppressWarnings("Duplicates")
+    public UserResources getMyMaxAllowedResources(){
+        Long myMasterId=userRepositoryJPA.getMyMasterId();
+        try{
+            int plan_id = getMasterUserPlan(myMasterId);
+            String stringQuery =
+                    "select   sum(companies) as companies, " +
+                            " sum(departments) as departments, " +
+                            " sum(users) as users, " +
+                            " sum(products) as products, " +
+                            " sum(counterparties) as counterparties, " +
+                            " sum(megabytes) as megabytes " +
+                            " from (" +
+                            "(select n_companies as companies, " +
+                            " n_departments as departments, " +
+                            " n_users as users, " +
+                            " n_products as products, " +
+                            " n_counterparties as counterparties, " +
+                            " n_megabytes as megabytes " +
+                            " from plans " +
+                            " where id = "+plan_id+")" +
+                            " UNION " +
+                            " (select n_companies as companies, " +
+                            " n_departments as departments, n_users as users, " +
+                            " n_products as products, " +
+                            " n_counterparties as counterparties, " +
+                            " n_megabytes as megabytes " +
+                            " from plans_add_options " +
+                            " where user_id="+myMasterId+")" +
+                            ") AS result ";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserResources doc = new UserResources();
+            doc.setCompanies(Long.parseLong(                queryList.get(0)[0].toString()));
+            doc.setDepartments(Long.parseLong(              queryList.get(0)[1].toString()));
+            doc.setUsers(Long.parseLong(                    queryList.get(0)[2].toString()));
+            doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString()));
+            doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
+            doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString()));
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMaxAllowedUserResources", e);
+            return null;
+        }
+    }
+
+    public int getMasterUserPlan(Long userId){
+            String stringQuery= "select plan_id from users u where u.id = "+userId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Integer) query.getSingleResult();
+    }
+    public boolean isPlanNoLimits(int planId){
+        String stringQuery = "select * from plans u where u.id = "+planId+" and is_nolimits = true";
+        Query query = entityManager.createNativeQuery(stringQuery);
+        return (query.getResultList().size() > 0);
+    }
+
+
 }

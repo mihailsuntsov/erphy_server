@@ -16,7 +16,9 @@ package com.dokio.controller;
 
 
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
@@ -30,53 +32,27 @@ import java.util.List;
 @Repository
 public class _Info {
     Logger logger = Logger.getLogger(_Info.class);
+    @Autowired
+    CommonUtilites cu;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    private String getBackendVersion() {
-        return "1.000-1";
+    public String getBackendVersion() {
+        return "1.0.1-0";
     }
 
-    private String getBackendVersionDate() {
-        return "04/06/2022";
+    public String getBackendVersionDate() {
+        return "27-06-2022";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getSettingsGeneral() {
         logger.info("Processing get request for path /api/auth/getSettingsGeneral with no params");
-        String stringQuery =
-                "select " +
-                        " p.show_registration_link as show_registration_link, " +
-                        " p.allow_registration as allow_registration, " +
-                        " p.show_forgot_link as show_forgot_link, " +
-                        " p.allow_recover_password as allow_recover_password, " +
-                        " (select value from version) as database_version," +
-                        " (select date from version) as database_date," +
-                        " p.show_in_signin as show_in_signin" +
-                        " from settings_general p";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            SettingsGeneralJSON doc = new SettingsGeneralJSON();
-            if (queryList.size() > 0) {
-                doc.setShowRegistrationLink((Boolean) queryList.get(0)[0]);
-                doc.setAllowRegistration((Boolean) queryList.get(0)[1]);
-                doc.setShowForgotLink((Boolean) queryList.get(0)[2]);
-                doc.setAllowRecoverPassword((Boolean) queryList.get(0)[3]);
-                doc.setDatabaseVersion((String) queryList.get(0)[4]);
-                doc.setDatabaseVersionDate((String) queryList.get(0)[5]);
-                doc.setShowInSignin((String) queryList.get(0)[6]);
-                doc.setBackendVersion(getBackendVersion());
-                doc.setBackendVersionDate(getBackendVersionDate());
-            }
-            return new ResponseEntity<>(doc, HttpStatus.OK);
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getSettingsGeneral. SQL query:" + stringQuery, e);
-            return null;
-        }
+        try {return new ResponseEntity<>(cu.getSettingsGeneral(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getSettingsGeneral error", e);
+            return new ResponseEntity<>("Error query of general settings", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 }

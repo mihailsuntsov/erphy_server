@@ -465,12 +465,12 @@ public class CagentRepositoryJPA {
                     "           '' as area, " +
                     "           '' as jr_area," +
 
-                    "           p.type as type " +// entity or individual
+                    "           p.type as type, " +// entity or individual
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-
+                    "           p.legal_form as legal_form " +// legal form of individual (ie entrepreneur, ...)
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -558,6 +558,7 @@ public class CagentRepositoryJPA {
             doc.setArea((String)                                            queryList.get(0)[58]);
             doc.setJr_area((String)                                         queryList.get(0)[59]);
             doc.setType(queryList.get(0)[60]!=null?                 (String)queryList.get(0)[60]:"");
+            doc.setLegal_form((String)                                      queryList.get(0)[61]);
 //            doc.setReg_country_id((Integer)                                 queryList.get(0)[61]);
 //            doc.setTax_number(queryList.get(0)[62]!=null?           (String)queryList.get(0)[62]:"");
 //            doc.setReg_number(queryList.get(0)[63]!=null?           (String)queryList.get(0)[63]:"");
@@ -915,7 +916,8 @@ public class CagentRepositoryJPA {
                     " jr_ip_svid_num = :jr_ip_svid_num, " +//номер свидетельства (для ИП)
                     " jr_ip_reg_date = to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
 
-                    " type = :type " +// entity or individual
+                    " type = :type, " +// entity or individual
+                    " legal_form = :legal_form"+
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -956,6 +958,7 @@ public class CagentRepositoryJPA {
             query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
             query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
             query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
+            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
 
             query.executeUpdate();
             return true;
@@ -972,17 +975,22 @@ public class CagentRepositoryJPA {
     public Long insertCagent(CagentsForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(12L,"129,130"))//  Контрагенты : "Создание"
         {
+            Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+            //plan limit check
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getCounterparties()>=userRepositoryJPA.getMyMaxAllowedResources().getCounterparties())
+                    return -120L; // number of companies is out of bounds of tariff plan
+
             EntityManager emgr = emf.createEntityManager();
             Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long createdCagentId = null;
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(12L, "129") &&
-                    Long.valueOf(myCompanyId) != request.getCompany_id()) || DocumentMasterId != myMasterId )
+                    Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId) )
             {
-                return null;
+                return -1L;
             }
             else
             {
@@ -1077,7 +1085,8 @@ public class CagentRepositoryJPA {
                 " jr_ip_ogrnip,"+//ОГРНИП (для ИП)
                 " jr_ip_svid_num,"+//номер свидетельства (для ИП)
                 " jr_ip_reg_date," + //дата регистрации (для ИП)
-                " type " +// entity or individual
+                " type, " +// entity or individual
+                " legal_form"+
 //                " reg_country_id, " + // country of registration
 //                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -1130,7 +1139,8 @@ public class CagentRepositoryJPA {
                 ":jr_ip_ogrnip, " + //ОГРНИП (для ИП)
                 ":jr_ip_svid_num, " +//номер свидетельства (для ИП)
                 "to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
-                ":type " +
+                ":type, " +
+                ":legal_form"+
 //                request.getReg_country_id() + "," +
 //                ":tax_number," +
 //                ":reg_number" +
@@ -1170,6 +1180,7 @@ public class CagentRepositoryJPA {
             query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
             query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
             query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
+            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
 
             query.executeUpdate();
             stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
@@ -1219,9 +1230,15 @@ public class CagentRepositoryJPA {
     public Integer undeleteCagents(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(12L,"131") && securityRepositoryJPA.isItAllMyMastersDocuments("cagents",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
+            //plan limit check
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getCounterparties()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getCounterparties())
+                    return -120; // number of users is out of bounds of tariff plan
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
@@ -1837,9 +1854,9 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(12L, "137") &&
-                    Long.valueOf(myCompanyId) != request.getCompanyId()) || DocumentMasterId != myMasterId )
+                    Long.valueOf(myCompanyId) != request.getCompanyId()) || !DocumentMasterId.equals(myMasterId) )
             {
-                return null;
+                return -1L;
             }
             else
             {

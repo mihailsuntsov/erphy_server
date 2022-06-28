@@ -165,7 +165,7 @@ public class CagentsController {
     public ResponseEntity<?> getCagentValues(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path api/auth/getCagentValues: " + request.toString());
         try {return new ResponseEntity<>(cagentsRepositoryJPA.getCagentValues(request.getId()), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller getCagentValues error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller getCagentValues error", e);
             return new ResponseEntity<>("Error of getting values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -173,7 +173,7 @@ public class CagentsController {
     public  ResponseEntity<?> insertCagent(@RequestBody CagentsForm request) {
         logger.info("Processing post request for path /api/auth/insertCagent: " + request.toString());
         try {return new ResponseEntity<>(cagentsRepositoryJPA.insertCagent(request), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller insertCagent error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller insertCagent error", e);
             return new ResponseEntity<>("Error of inserting counterparty", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -181,7 +181,7 @@ public class CagentsController {
     public  ResponseEntity<?> updateCagents(@RequestBody CagentsForm request) {
         logger.info("Processing post request for path /api/auth/updateCagents: " + request.toString());
         try {return new ResponseEntity<>(cagentsRepositoryJPA.updateCagents(request), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller updateCagents error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller updateCagents error", e);
             return new ResponseEntity<>("Error of updating counterparty", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
@@ -191,7 +191,7 @@ public class CagentsController {
         logger.info("Processing post request for path /api/auth/deleteCagents: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(cagentsRepositoryJPA.deleteCagents(checked), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller deleteCagents error", e);
+        catch (Exception e){e.printStackTrace();logger.error("Controller deleteCagents error", e);
             return new ResponseEntity<>("Error of deleting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

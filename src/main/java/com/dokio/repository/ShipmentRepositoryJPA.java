@@ -123,7 +123,7 @@ public class ShipmentRepositoryJPA {
                     "           (select count(*) from receipts rec where coalesce(rec.shipment_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt," + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
                     "           cg.name as cagent, " +
                     "           p.shipment_date as shipment_date_sort, " +
-                    "           p.is_completed as is_completed, " +
+                    "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from shipment_product ip where coalesce(ip.shipment_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
 
                     "           from shipment p " +
@@ -1047,7 +1047,7 @@ public class ShipmentRepositoryJPA {
                 available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), customersOrdersId);
             else available= BigDecimal.valueOf(0L);
             //если доступное количество товара больше или равно количеству к продаже, либо номенклатура не материальна (т.е. это не товар, а услуга или работа или т.п.) или если документ не проводится
-            if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material() || !is_completed)
+            if (available.compareTo(row.getProduct_count()) > -1 || !row.getIs_material() || (Objects.isNull(is_completed) || !is_completed))
             {
                 stringQuery =
                         " insert into shipment_product (" +

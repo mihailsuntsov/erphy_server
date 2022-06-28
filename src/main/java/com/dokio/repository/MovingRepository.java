@@ -899,7 +899,7 @@ public class MovingRepository {
             // либо идет сохранение, и тогда кол-во товара не имеет значения
 
             //если доступное количество товара больше или равно количеству к продаже или если документ не проводится (просто сохраняется)
-            if (available.compareTo(row.getProduct_count()) >= 0 || !is_completed)
+            if (available.compareTo(row.getProduct_count()) >= 0 || (Objects.isNull(is_completed) || !is_completed))
             {
                     stringQuery =   " insert into moving_product (" +
                     "master_id," +

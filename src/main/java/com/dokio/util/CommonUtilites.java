@@ -11,15 +11,20 @@ Copyright © 2020 Сунцов Михаил Александрович. mihail.s
 программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
 */
 package com.dokio.util;
+import com.dokio.controller._Info;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
+import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import javax.persistence.*;
+import java.io.File;
 import java.math.BigDecimal;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -40,6 +45,8 @@ public class CommonUtilites {
     private UserDetailsServiceImpl userRepository;
     @Autowired
     private SecurityRepositoryJPA securityRepository;
+    @Autowired
+    private _Info info;
 
 
     @SuppressWarnings("Duplicates")
@@ -510,6 +517,42 @@ public class CommonUtilites {
         } catch (Exception e) {
             logger.error("Exception in method translateMe. SQL: " + stringQuery, e);
             e.printStackTrace();
+            return null;
+        }
+    }
+
+    public SettingsGeneralJSON getSettingsGeneral() {
+        String stringQuery =
+                "select " +
+                        " p.show_registration_link as show_registration_link, " +
+                        " p.allow_registration as allow_registration, " +
+                        " p.show_forgot_link as show_forgot_link, " +
+                        " p.allow_recover_password as allow_recover_password, " +
+                        " (select value from version) as database_version," +
+                        " (select date from version) as database_date," +
+                        " p.show_in_signin as show_in_signin," +
+                        " p.plan_default_id as plan_default_id" +
+                        " from settings_general p";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            SettingsGeneralJSON doc = new SettingsGeneralJSON();
+            if (queryList.size() > 0) {
+                doc.setShowRegistrationLink((Boolean) queryList.get(0)[0]);
+                doc.setAllowRegistration((Boolean) queryList.get(0)[1]);
+                doc.setShowForgotLink((Boolean) queryList.get(0)[2]);
+                doc.setAllowRecoverPassword((Boolean) queryList.get(0)[3]);
+                doc.setDatabaseVersion((String) queryList.get(0)[4]);
+                doc.setDatabaseVersionDate((String) queryList.get(0)[5]);
+                doc.setShowInSignin((String) queryList.get(0)[6]);
+                doc.setBackendVersion(info.getBackendVersion());
+                doc.setBackendVersionDate(info.getBackendVersionDate());
+                doc.setPlanDefaultId((Integer) queryList.get(0)[7]);
+            }
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getSettingsGeneral. SQL query:" + stringQuery, e);
             return null;
         }
     }

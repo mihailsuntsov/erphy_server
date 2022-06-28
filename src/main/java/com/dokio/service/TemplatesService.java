@@ -1,8 +1,11 @@
 package com.dokio.service;
 
+import com.dokio.message.response.CagentsJSON;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.Sprav.SpravCurrenciesJSON;
 import com.dokio.repository.SecurityRepositoryJPA;
+import com.dokio.repository.SpravCurrenciesRepository;
 import com.dokio.repository.UserRepositoryJPA;
 import com.github.moneytostr.MoneyToStr;
 import org.apache.log4j.Logger;
@@ -13,8 +16,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Service
@@ -23,12 +27,19 @@ public class TemplatesService {
 
     Logger logger = Logger.getLogger("TemplatesService");
 
+    private static final Set COUNTRIES_WITH_SURNAME_FIRST
+            = Collections.unmodifiableSet((Set<? extends Integer>) Stream
+            .of(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
+            .collect(Collectors.toCollection(HashSet::new)));
+
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    SpravCurrenciesRepository currenciesRepository;
 
 
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле по его имени на диске
@@ -98,21 +109,23 @@ public class TemplatesService {
 
     @SuppressWarnings("Duplicates")
     public String getMyCompanyFullName(CompaniesJSON company){
-        String result = "";
+        String result;
         // получим наименование организационно-правовой формы
-        switch (company.getOpf_id()) {
-            case (1):// Индивидуальный предприниматель
-                result = company.getOpf() +" "+ company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+        switch (company.getType()) {
+            case ("individual"):// individual
+                if(!Objects.isNull(company.getJr_country_id()) && COUNTRIES_WITH_SURNAME_FIRST.contains(company.getJr_country_id()))
+                    result = company.getLegal_form()+" "+company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                else
+                    result = company.getLegal_form()+" "+company.getJr_fio_name()+((company.getJr_fio_otchestvo()!=null&&!company.getJr_fio_otchestvo().equals(""))?(" "+company.getJr_fio_otchestvo()):"")+" "+company.getJr_fio_family();
                 break;
-            case (2): // Самозанятый
-                result = company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
-                break;
-            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+            default:  // Entity
                 result = company.getJr_jur_full_name();
                 break;
         }
         return result;
     }
+
+
 
     @SuppressWarnings("Duplicates")
     public String getMyCompanyAddress(CompaniesJSON company){
@@ -132,6 +145,25 @@ public class TemplatesService {
         return result;
     }
 
+
+    @SuppressWarnings("Duplicates")
+    public String getCagentFullName(CagentsJSON company){
+        String result;
+        switch (company.getType()) {
+            case ("individual"):// individual
+                if(!Objects.isNull(company.getJr_country_id()) && COUNTRIES_WITH_SURNAME_FIRST.contains(company.getJr_country_id()))
+                    result = company.getLegal_form()+" "+company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                else
+                    result = company.getLegal_form()+" "+company.getJr_fio_name()+((company.getJr_fio_otchestvo()!=null&&!company.getJr_fio_otchestvo().equals(""))?(" "+company.getJr_fio_otchestvo()):"")+" "+company.getJr_fio_family();
+                break;
+            default:  // Entity
+                result = company.getJr_jur_full_name();
+                break;
+        }
+        return result;
+    }
+
+
     public String getIfElse(Boolean condition, String ifTrue, String ifFalse){
         if(Objects.isNull(condition))
             return ifFalse;
@@ -139,11 +171,20 @@ public class TemplatesService {
             return(condition?ifTrue:ifFalse);
     }
 
-    public String getIfElse(Boolean condition, BigDecimal ifTrue, String ifFalse){
+    public BigDecimal getIfElse(Boolean condition, BigDecimal ifTrue, String ifFalse){
+        if(Objects.isNull(condition))
+            return new BigDecimal(ifFalse);
+        else
+            return(condition?ifTrue: new BigDecimal(ifFalse));
+    }
+    public String getIfElse_string(Boolean condition, BigDecimal ifTrue, String ifFalse){
         if(Objects.isNull(condition))
             return ifFalse;
         else
-            return(condition?ifTrue.toString():ifFalse);
+            return(condition?ifTrue.toString().replace(".",","):ifFalse);
+    }
+    public SpravCurrenciesJSON getCompanyCurrency(CompaniesJSON company){
+        return currenciesRepository.getDefaultCompanyCurrency(company.getId());
     }
 
     // сумма прописью

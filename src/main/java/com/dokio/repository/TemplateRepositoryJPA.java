@@ -137,8 +137,11 @@ public class TemplateRepositoryJPA {
 
             // Сначала удалим темплейты, которые были удалены на фронете.
             // Собираем List из id оставшихся темплейтов, и удаляем все что не входит в этот List
-            for (TemplatesForm template : templatesList) {templateIds.add(template.getId());}
-            deleteTemplatesExcessRows(templatesList.size()>0?(commonUtilites.SetOfLongToString(templateIds,",","","")):"0", myMasterId, companyId, documentId, myId);
+            for (TemplatesForm template : templatesList) {
+                if(!Objects.isNull(template.getId()))
+                    templateIds.add(template.getId());
+            }
+            deleteTemplatesExcessRows(templateIds.size()>0?(commonUtilites.SetOfLongToString(templateIds,",","","")):"0", myMasterId, companyId, documentId, myId);
 
             // Затем в зависимости от того, есть или нет такой темплейт в БД, делаем соответственно update или insert
             for (TemplatesForm template : templatesList) {
@@ -215,6 +218,7 @@ public class TemplateRepositoryJPA {
                 " and user_id = " + myId +
                 " and document_id=" + documentId +
                 " and id not in (" + templatesIds.replaceAll("[^0-9\\,]", "") + ")";
+                ;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

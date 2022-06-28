@@ -537,15 +537,21 @@ public class ProductsRepositoryJPA {
     public Long insertProduct(ProductsForm request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "163,164"))//  "Создание"
         {
+            Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+
+            //plan limit check
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getProducts()>=userRepositoryJPA.getMyMaxAllowedResources().getProducts())
+                    return -120L; // number of products is out of bounds of tariff plan
+
             EntityManager emgr = emf.createEntityManager();
             Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
             Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "163") &&
-                    Long.valueOf(myCompanyId) != request.getCompany_id()) || DocumentMasterId != myMasterId) {
+                    Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
                 return null;
             } else {
                 try {
@@ -688,9 +694,15 @@ public class ProductsRepositoryJPA {
     public Integer undeleteProducts(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(14L,"165") && securityRepositoryJPA.isItAllMyMastersDocuments("products",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
         {
+            //plan limit check
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getProducts()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getProducts())
+                    return -120; // number of users is out of bounds of tariff plan
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
@@ -1530,7 +1542,7 @@ public class ProductsRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "171") &&
-                    Long.valueOf(myCompanyId) != request.getCompanyId()) || DocumentMasterId != myMasterId) {
+                    Long.valueOf(myCompanyId) != request.getCompanyId()) || !DocumentMasterId.equals(myMasterId)) {
                 return null;
             } else {
                 String stringQuery;

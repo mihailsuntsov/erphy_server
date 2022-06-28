@@ -293,7 +293,7 @@ public class FileRepositoryJPA {
 
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
-                    myCompanyId != companyId) || DocumentMasterId != myMasterId )
+                    !myCompanyId.equals(companyId)) || !DocumentMasterId.equals(myMasterId))
             {
                 return false;
             }
@@ -691,7 +691,7 @@ public class FileRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(13L, "154") &&
-                    Long.valueOf(myCompanyId) != request.getCompanyId()) || DocumentMasterId != myMasterId )
+                    !Long.valueOf(myCompanyId).equals(request.getCompanyId())) || !DocumentMasterId.equals(myMasterId))
             {
                 return null;
             }

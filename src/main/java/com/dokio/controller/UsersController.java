@@ -20,6 +20,7 @@ import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
 import com.dokio.message.response.additional.MyShortInfoJSON;
+import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -77,6 +78,13 @@ public class UsersController {
             if (userRepository.existsByEmail(signUpRequest.getEmail())) {
                 return new ResponseEntity<>(-11, HttpStatus.OK); //e-mail like this is already exists
             }
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+
+            //plan limit check
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getUsers()>=userRepositoryJPA.getMyMaxAllowedResources().getUsers())
+                    return new ResponseEntity<>(-120, HttpStatus.OK); // number of users is out of bounds of tariff plan
+
             try{
                 // Если такого логина и емайла нет
                 // Создание аккаунта для нового пользователя
@@ -104,10 +112,7 @@ public class UsersController {
                 }
                 User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
                 user.setCreator(creator);//создателя
-                User master = userDetailService.getUserByUsername(
-                        userRepositoryJPA.getUsernameById(
-                                userRepositoryJPA.getUserMasterIdByUsername(
-                                        userDetailService.getUserName())));
+                User master = userDetailService.getUserById(masterId);
                 user.setMaster(master);//владельца
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 user.setDate_time_created(timestamp);//дату создания

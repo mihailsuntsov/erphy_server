@@ -17,6 +17,7 @@ import com.dokio.controller.AuthRestAPIs;
 import com.dokio.message.request.*;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.Sprav.SpravCurrenciesJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -329,7 +330,7 @@ public class CompanyRepositoryJPA {
                 //остается только на своё предприятие (5)
                 stringQuery = stringQuery + " and ap.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-            stringQuery = stringQuery + " order by ap.output_order asc ";
+            stringQuery = stringQuery + " order by coalesce(ap.is_main, false) desc, ap.output_order asc ";
             logger.info("getCompanyPaymentAccounts SQL = " + stringQuery);
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -455,7 +456,8 @@ public class CompanyRepositoryJPA {
                     "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
                     "           p.st_netcost_policy as st_netcost_policy, " +
-                    "           p.type as type " +// entity or individual
+                    "           p.type as type, " +// entity or individual
+                    "           p.legal_form as legal_form " +// legal form of individual (ie entrepreneur, ...)
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -558,6 +560,7 @@ public class CompanyRepositoryJPA {
             doc.setSt_prefix_barcode_packed((Integer)                       queryList.get(0)[70]);
             doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
             doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
+            doc.setLegal_form((String)                                      queryList.get(0)[73]);
 //            doc.setReg_country_id((Integer)                                 queryList.get(0)[73]);
 //            doc.setTax_number(queryList.get(0)[74]!=null?           (String)queryList.get(0)[74]:"");
 //            doc.setReg_number(queryList.get(0)[75]!=null?           (String)queryList.get(0)[75]:"");
@@ -594,7 +597,7 @@ public class CompanyRepositoryJPA {
                         }
                     }
                     ids=(!ids.equals("")?ids:"0");
-                    if(deleteCompanyPaymentAccountsExcessRows(ids, request.getId())){
+//                    if(deleteCompanyPaymentAccountsExcessRows(ids, request.getId())){
                         //если удаление прошло успешно...
                         for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
                             if(row.getId()!=null){//счет содержит id, значит он есть в БД, и нужно его апдейтить
@@ -603,7 +606,7 @@ public class CompanyRepositoryJPA {
                                 insertCompanyPaymentAccounts(row, myMasterId, request.getId());
                             }
                         }
-                    }
+//                    }
                     return true;
                 } catch (Exception e){
                     e.printStackTrace();
@@ -677,7 +680,8 @@ public class CompanyRepositoryJPA {
                     " st_prefix_barcode_packed = "  + request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
                     " st_netcost_policy = :st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
 
-                    " type =            :type" +// entity or individual
+                    " type =            :type," +// entity or individual
+                    " legal_form = :legal_form"+
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -720,6 +724,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("fio_director",(request.getFio_director()!=null?request.getFio_director():""));
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
+            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -792,11 +797,11 @@ public class CompanyRepositoryJPA {
         String stringQuery;
         try {
             stringQuery =   " update companies_payment_accounts set " +
-                    " bik = :bik, " +
-                    " name = :name, " +
-                    " address = :address, " +
-                    " corr_account = :corr_acc, " +
-                    " payment_account = :paym_acc, " +
+//                    " bik = :bik, " +
+//                    " name = :name, " +
+//                    " address = :address, " +
+//                    " corr_account = :corr_acc, " +
+//                    " payment_account = :paym_acc, " +
                     " output_order = :output_order"+
                     " where " +
                     " id="+row.getId()+" and "+
@@ -804,11 +809,11 @@ public class CompanyRepositoryJPA {
                     " company_id="+company_id;
 
             Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
-            query.setParameter("name", (row.getName()!=null?row.getName():""));
-            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
-            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
-            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
+//            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
+//            query.setParameter("name", (row.getName()!=null?row.getName():""));
+//            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
+//            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
+//            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
             query.setParameter("output_order",row.getOutput_order());
             query.executeUpdate();
             return true;
@@ -826,6 +831,10 @@ public class CompanyRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(3L,"3"))//  Предприятия : "Создание" (см. файл Permissions Id)
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+            //plan limit check
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getCompanies()>=userRepositoryJPA.getMyMaxAllowedResources().getCompanies())
+                    return -120L; // number of companies is out of bounds of tariff plan
             Long createdCompanyId;
             try
             {   //Сначала создаём документ без банковских счетов
@@ -847,7 +856,7 @@ public class CompanyRepositoryJPA {
                 return null;
             }
 
-        } else return null;
+        } else return -1L;
     }
 
 
@@ -909,7 +918,8 @@ public class CompanyRepositoryJPA {
                 " st_prefix_barcode_pieced, "  + // prefix of barcode for pieced product
                 " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
                 " st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
-                " type " +// entity or individual
+                " type, " +
+                " legal_form"+
 //                " reg_country_id, " + // country of registration
 //                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -967,7 +977,8 @@ public class CompanyRepositoryJPA {
                 (Objects.isNull(request.getSt_prefix_barcode_pieced())?21:request.getSt_prefix_barcode_pieced()) + ", " +// prefix of barcode for pieced product
                 (Objects.isNull(request.getSt_prefix_barcode_packed())?20:request.getSt_prefix_barcode_packed()) + ", " +// prefix of barcode for packed product
                 ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
-                ":type " +
+                ":type, " +
+                ":legal_form"+
 //                request.getReg_country_id() + "," +
 //                ":tax_number," +
 //                ":reg_number" +
@@ -1010,6 +1021,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("fio_director",(request.getFio_director()!=null?request.getFio_director():""));
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
+            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
 
 //            query.setParameter("tax_number",request.getTax_number());
 //            query.setParameter("reg_number",request.getReg_number());
@@ -1159,10 +1171,16 @@ public class CompanyRepositoryJPA {
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean undeleteCompanies(String delNumbers) {//восстанавливает документ из удаленных
+    public Integer undeleteCompanies(String delNumbers) {//восстанавливает документ из удаленных
         //Если есть право на "Удаление" и все id для документов принадлежат владельцу мастер-аккаунта
         if(securityRepositoryJPA.userHasPermissions_OR(3L,"4") && securityRepositoryJPA.isItAllMyMastersDocuments("companies",delNumbers))
         {
+            //plan limit check
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getCompanies()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getCompanies())
+                    return -120; // number of users is out of bounds of tariff plan
             String stringQuery;
             Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update companies p set " +
@@ -1170,16 +1188,15 @@ public class CompanyRepositoryJPA {
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //метка об удалении
                     " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
-
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return true;
+                return 1;
             }catch(Exception e){
                 logger.error("Exception in method undeleteCompanies. SQL query:"+stringQuery, e);
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -1453,9 +1470,13 @@ public class CompanyRepositoryJPA {
             account.setAddress(companyPaymentAccounts.get(0).getAddress());
             account.setCorr_account(companyPaymentAccounts.get(0).getCorr_account());
             account.setPayment_account(companyPaymentAccounts.get(0).getPayment_account());
+            account.setIntermediatery(companyPaymentAccounts.get(0).getIntermediatery());
+            account.setSwift(companyPaymentAccounts.get(0).getSwift());
+            account.setIban(companyPaymentAccounts.get(0).getIban());
         }
         return account;
     }
+
 
     @SuppressWarnings("Duplicates")
     public Resource getCompanyCard(FileInfoJSON fileInfo) {

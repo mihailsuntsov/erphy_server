@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.dokio.repository.UserRepositoryJPA;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -40,6 +41,8 @@ public class UploadController {
 
     @Autowired
     StorageService storageService;
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
 
     List<String> files = new ArrayList<String>();
 
@@ -56,8 +59,13 @@ public class UploadController {
 
         String message;
         try {
+            int fileSizeMb = Math.round(file.getSize()/1024/1024);
+            //plan limit check
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getMegabytes()+fileSizeMb>userRepositoryJPA.getMyMaxAllowedResources().getMegabytes())
+                    return ResponseEntity.status(HttpStatus.OK).body("-120"); // if current file will be uploaded, then sum size of all master-user files will out of bounds of tariff plan
             storageService.store(file,companyId,anonyme_access,categoryId,description);
-
             message = "You successfully uploaded " + file.getOriginalFilename() + "!";
             return ResponseEntity.status(HttpStatus.OK).body(message);
         } catch (Exception e) {

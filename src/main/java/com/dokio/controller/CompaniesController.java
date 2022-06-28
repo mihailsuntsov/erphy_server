@@ -96,23 +96,25 @@ public class CompaniesController {
         companiesList = companyRepositoryJPA.getCompaniesList();
         return new ResponseEntity<>(companiesList, HttpStatus.OK);
     }
-
     @PostMapping("/api/auth/insertCompany")
-    @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertCompany(@RequestBody CompaniesForm request){
         logger.info("Processing post request for path /api/auth/insertCompany: " + request.toString());
-
-        Long newDocument = companyRepositoryJPA.insertCompany(request);
-        if(newDocument!=null && newDocument>0){
-            // добавим базовые "плюшки" (Отделение, Роль + права, справочники и т.д., т.е. как при новом аккаунте)
-            companyRepositoryJPA.setCompanyAdditionals(newDocument);
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
+        try {
+            Long newDocument = companyRepositoryJPA.insertCompany(request);
+            if(newDocument!=null && newDocument>0){
+                // добавим базовые "плюшки" (Отделение, Роль + права, справочники и т.д., т.е. как при новом аккаунте)
+                companyRepositoryJPA.setCompanyAdditionals(newDocument);
+                return new ResponseEntity<>(newDocument, HttpStatus.OK);
+            } else {
+                if(newDocument!=null){
+                    return new ResponseEntity<>(newDocument, HttpStatus.OK);
+                } else return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
+        catch (Exception e){e.printStackTrace();logger.error("Controller insertCompany error", e);
+            return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     @PostMapping("/api/auth/deleteCompanies")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteCompanies(@RequestBody SignUpForm request){
@@ -131,19 +133,12 @@ public class CompaniesController {
     }
     @PostMapping("/api/auth/undeleteCompanies")
     @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteCompanies(@RequestBody SignUpForm request){
+    public  ResponseEntity<?> undeleteCompanies(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteCompanies: " + request.toString());
-
-        String checked = request.getChecked() == null ? "": request.getChecked();
-//        checked=checked.replace("[","");
-//        checked=checked.replace("]","");
-        if(companyRepositoryJPA.undeleteCompanies(checked)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCompanies", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        String checked = request.getChecked() == null ? "" : request.getChecked();
+        try {return new ResponseEntity<>(companyRepositoryJPA.undeleteCompanies(checked), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller undeleteCompanies error", e);
+            return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/getCompaniesPagesList")
     @SuppressWarnings("Duplicates")

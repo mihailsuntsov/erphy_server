@@ -193,67 +193,71 @@ public class DepartmentRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Long insertDepartment(DepartmentForm request) {
-            EntityManager emgr = emf.createEntityManager();
-            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
-            Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-            if (    //если есть право на создание
-                    (securityRepositoryJPA.userHasPermissions_OR(4L, "11")) &&
-                    //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-                    DocumentMasterId.equals(myMasterId))
-            {
-                String stringQuery;
-                Long myId = userRepository.getUserId();
-                Long newDocId;
+        EntityManager emgr = emf.createEntityManager();
+        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
+        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+        //plan limit check
+        if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+            if(userRepositoryJPA.getMyConsumedResources().getDepartments()>=userRepositoryJPA.getMyMaxAllowedResources().getDepartments())
+                return -120L; // number of companies is out of bounds of tariff plan
+
+        if (    //если есть право на создание
+                (securityRepositoryJPA.userHasPermissions_OR(4L, "11")) &&
+                //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                DocumentMasterId.equals(myMasterId))
+        {
+            String stringQuery;
+            Long myId = userRepository.getUserId();
+            Long newDocId;
 
 
-                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery = "insert into departments (" +
-                        " master_id," + //мастер-аккаунт
-                        " creator_id," + //создатель
-                        " company_id," + //предприятие, для которого создается документ
-                        " date_time_created," + //дата и время создания
-                        " boxoffice_id," + //id кассы отделения
-                        " payment_account_id, " + // id банковского счета
-                        " name," +
-                        " address," +
-                        " price_id," +
-                        " additional" +//доп. информация по отделению
-                        ") values ("+
-                        myMasterId + ", "+//мастер-аккаунт
-                        myId + ", "+ //создатель
-                        request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                        "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
-                        request.getBoxoffice_id() + ", " +
-                        request.getPayment_account_id() + ", " +
-                        ":name," +
-                        ":address," +
-                        request.getPrice_id() + ", " +
-                        ":additional)";
-                try{
-                    Query query = entityManager.createNativeQuery(stringQuery);
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            stringQuery = "insert into departments (" +
+                    " master_id," + //мастер-аккаунт
+                    " creator_id," + //создатель
+                    " company_id," + //предприятие, для которого создается документ
+                    " date_time_created," + //дата и время создания
+                    " boxoffice_id," + //id кассы отделения
+                    " payment_account_id, " + // id банковского счета
+                    " name," +
+                    " address," +
+                    " price_id," +
+                    " additional" +//доп. информация по отделению
+                    ") values ("+
+                    myMasterId + ", "+//мастер-аккаунт
+                    myId + ", "+ //создатель
+                    request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                    request.getBoxoffice_id() + ", " +
+                    request.getPayment_account_id() + ", " +
+                    ":name," +
+                    ":address," +
+                    request.getPrice_id() + ", " +
+                    ":additional)";
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-                    query.setParameter("name",request.getName());
-                    query.setParameter("address",request.getAddress());
-                    query.setParameter("additional",request.getAdditional());
-                    query.executeUpdate();
-                    stringQuery="select id from departments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
-                    Query query2 = entityManager.createNativeQuery(stringQuery);
-                    newDocId=Long.valueOf(query2.getSingleResult().toString());
+                query.setParameter("name",request.getName());
+                query.setParameter("address",request.getAddress());
+                query.setParameter("additional",request.getAdditional());
+                query.executeUpdate();
+                stringQuery="select id from departments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDocId=Long.valueOf(query2.getSingleResult().toString());
 
-                    return newDocId;
+                return newDocId;
 
-                } catch (Exception e) {
-                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertDepartment on inserting into departments. SQL query:"+stringQuery, e);
-                    e.printStackTrace();
-                    return null;
-                }
-            } else {
-                return -1L;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertDepartment on inserting into departments. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
             }
-
+        } else {
+            return -1L;
+        }
     }
 
 
@@ -558,6 +562,12 @@ public class DepartmentRepositoryJPA {
         //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
         (securityRepositoryJPA.userHasPermissions_OR(4L,"12") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",delNumbers)))
         {
+            //plan limit check
+            Long masterId =  userRepositoryJPA.getMyMasterId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getDepartments()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getDepartments())
+                    return -120; // number of users is out of bounds of tariff plan
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;

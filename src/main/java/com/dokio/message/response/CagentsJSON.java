@@ -89,6 +89,7 @@ public class CagentsJSON {
     private String jr_area;
 
     private String type;                        // entity or individual
+    private String legal_form;
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -124,6 +125,14 @@ public class CagentsJSON {
 //    public void setReg_number(String reg_number) {
 //        this.reg_number = reg_number;
 //    }
+
+    public String getLegal_form() {
+        return legal_form;
+    }
+
+    public void setLegal_form(String legal_form) {
+        this.legal_form = legal_form;
+    }
 
     public Long getId() {
         return id;

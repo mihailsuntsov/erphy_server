@@ -11,6 +11,15 @@ public class SettingsGeneralJSON {
     private String  databaseVersion;
     private String  databaseVersionDate;
     private String  showInSignin;
+    private int     planDefaultId;
+
+    public int getPlanDefaultId() {
+        return planDefaultId;
+    }
+
+    public void setPlanDefaultId(int planDefaultId) {
+        this.planDefaultId = planDefaultId;
+    }
 
     public String getShowInSignin() {
         return showInSignin;

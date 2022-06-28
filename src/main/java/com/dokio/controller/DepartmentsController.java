@@ -151,14 +151,17 @@ public class DepartmentsController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertDepartment(@RequestBody DepartmentForm request){
         logger.info("Processing post request for path /api/auth/insertDepartment: " + request.toString());
-        return new ResponseEntity<>(departmentService.insertDepartment(request), HttpStatus.OK);
+        try{return new ResponseEntity<>(departmentService.insertDepartment(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller insertDepartment error", e);
+            return new ResponseEntity<>("Document creation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/updateDepartment")
     public ResponseEntity<?> updateDepartment(@RequestBody DepartmentForm request){
         logger.info("Processing post request for path /api/auth/updateDepartment: " + request.toString());
         try {return new ResponseEntity<>(departmentService.updateDepartment(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller updateDepartment error", e);
+        return new ResponseEntity<>("Error saving document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 

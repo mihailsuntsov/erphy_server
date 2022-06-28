@@ -2,6 +2,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravCurrenciesForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.SpravCurrenciesJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -431,6 +432,35 @@ public class SpravCurrenciesRepository {
         } else return -1;
     }
 
+    @SuppressWarnings("Duplicates")
+    public SpravCurrenciesJSON getDefaultCompanyCurrency(Long companyId) {
+        String stringQuery;
+        stringQuery = "select " +
+                "   cur.name_full," +                    // full name of Accounting currency of user's company (e.g. US Dollar)
+                "   cur.name_short," +                   // short name of Accounting currency of user's company (e.g. $)
+                "   cur.code_lit," +                     // (e.g. EUR)
+                "   cur.code_num" +                      // (e.g. 978 for Euro)
+                "   from    " +
+                "   sprav_currencies cur" +
+                "   where cur.company_id=" + companyId +
+                "   and cur.is_default = true ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            SpravCurrenciesJSON doc = new SpravCurrenciesJSON();
+            if(queryList.size()>0) {
+                doc.setName_full((String)       queryList.get(0)[0]);
+                doc.setName_short((String)      queryList.get(0)[1]);
+                doc.setCode_lit((String)        queryList.get(0)[2]);
+                doc.setCode_num((String)        queryList.get(0)[3]);
+            }
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDefaultCompanyCurrency. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     // inserting base set of currencies on register of new user
     @SuppressWarnings("Duplicates")

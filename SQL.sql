@@ -3593,11 +3593,11 @@ create table settings_general(
     allow_recover_password    boolean not null
 );
 insert into settings_general (show_registration_link, allow_registration, show_forgot_link, allow_recover_password) values (true,true,true,true);
-
+-- update settings_general set show_registration_link = true, allow_registration = true, show_forgot_link = true, allow_recover_password = true;
 alter table settings_general add column show_in_signin text;
 
-------------------------------------------------  end of 1.000-0   -----------------------------------------------------
------------------------------------------------  begin of 1.001-0   ----------------------------------------------------
+------------------------------------------------  end of 1.0.0-0   -----------------------------------------------------
+-----------------------------------------------  begin of 1.0.1-0   ----------------------------------------------------
 alter table companies_payment_accounts add column creator_id bigint;
 alter table companies_payment_accounts add column changer_id bigint;
 alter table companies_payment_accounts add column date_time_created timestamp with time zone;
@@ -3624,9 +3624,84 @@ insert into permissions (id,name_ru,name_en,document_id,output_order) values
 alter table cagents_payment_accounts add column intermediatery varchar(2048);
 alter table cagents_payment_accounts add column swift varchar(11);
 alter table cagents_payment_accounts add column iban varchar(34);
+alter table template_docs drop constraint template_docs_file_id_fkey;
+alter table template_docs add constraint template_docs_file_id_fkey foreign key (file_id) references files (id) on delete cascade;
 
+alter table companies add column legal_form varchar(240);
+alter table cagents add column legal_form varchar(240);
+update companies set legal_form = '';
+update cagents set legal_form = '';
 
-insert into version (value, date) values ('1.001-0','15/06/2022');
+create table plans(
+                    id                 serial primary key not null,
+                    name_en            varchar(200) not null,
+                    name_ru            varchar(200) not null,
+                    version            int not null,
+                    daily_price        numeric(10,10) not null,
+                    is_default         boolean not null,
+                    is_nolimits        boolean not null, -- used for standalone servers. If 'TRUE' - system will not check the limits
+                    is_archive         boolean not null,
+                    date_time_created  timestamp with time zone not null,
+                    date_time_archived timestamp with time zone,
+                    output_order       int not null,
+                    n_companies        int not null,
+                    n_departments      int not null,
+                    n_users            int not null,
+                    n_products         int not null,
+                    n_counterparties   int not null,
+                    n_megabytes        int not null
+);
+alter table plans add constraint plans_name_en_version_uq unique (name_en, version) ;
+alter table plans add constraint plans_name_ru_version_uq unique (name_ru, version) ;
+
+create table plans_add_options(
+                    id                 bigserial primary key not null,
+                    user_id            bigint not null,
+                    n_companies        int not null,
+                    companies_ppu      numeric(10,10),
+                    n_departments      int not null,
+                    departments_ppu    numeric(10,10),
+                    n_users            int not null,
+                    users_ppu          numeric(10,10),
+                    n_products         int not null,
+                    products_ppu       numeric(10,10),
+                    n_counterparties   int not null,
+                    counterparties_ppu numeric(10,10),
+                    n_megabytes        int not null,
+                    megabytes_ppu      numeric(10,10),
+                    foreign key (user_id) references users(id)
+);
+alter table plans_add_options add constraint user_id_uq unique (user_id) ;
+
+insert into plans (
+                    name_en,
+                    name_ru,
+                    version,
+                    daily_price,
+                    is_default,
+                    is_nolimits,
+                    is_archive,
+                    date_time_created,
+                    output_order,
+                    n_companies,
+                    n_departments,
+                    n_users,
+                    n_products,
+                    n_counterparties,
+                    n_megabytes) values
+                    ('No limits','Безлимитный', 1, 0, true, true,  false, now(), 100, 0, 0, 0, 0, 0, 0),
+                    ('Free',     'Бесплатный',  1, 0, true, false, false, now(), 200, 1, 1, 1, 100, 100, 50);
+
+alter table users add column plan_id int;
+alter table users add constraint plan_id_fkey foreign key (plan_id) references plans (id);
+update users set plan_id = 1 where id = master_id;
+
+alter table settings_general add column plan_default_id int;
+alter table settings_general add constraint plan_default_id_fkey foreign key (plan_default_id) references plans (id);
+update settings_general set plan_default_id = 2;
+alter table settings_general alter plan_default_id set not null;
+
+update version set value = '1.0.1-0', date = '27-06-2022';
 ------------------------------------------------  end of 1.001-0   -----------------------------------------------------
 
 

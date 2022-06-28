@@ -183,38 +183,27 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getTypePricesValuesById(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path /api/auth/getProductValues: " + request.toString());
-
         ProductsJSON response;
         Long id = request.getId();
         response=productsRepositoryJPA.getProductValues(id);//результат запроса помещается в экземпляр класса
-
-
         try
         {
             List<Integer> valuesListId =productsRepositoryJPA.getProductsCategoriesIdsByProductId(Long.valueOf(id));
             response.setProduct_categories_id(valuesListId);
-
             ResponseEntity<ProductsJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
             return responseEntity;
         }
         catch(NullPointerException npe){return null;}
-
     }
 
     @PostMapping("/api/auth/insertProduct")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertProduct(@RequestBody ProductsForm request) throws ParseException {
+    public  ResponseEntity<?> insertProduct(@RequestBody ProductsForm request) {
         logger.info("Processing post request for path /api/auth/insertProduct: " + request.toString());
-
-        Long newDocument = productsRepositoryJPA.insertProduct(request);
-        if(newDocument!=null && newDocument>0){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productsRepositoryJPA.insertProduct(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertProduct error", e);
+            return new ResponseEntity<>("Error of inserting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
     @PostMapping("/api/auth/updateProducts")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProducts(@RequestBody ProductsForm request) throws ParseException{

@@ -84,6 +84,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		return user;
 	}
 
+	public User getUserById(Long userId) {
+		User user = userRepository.findById(userId).orElseThrow(
+				() -> new UsernameNotFoundException("User Not Found with -> id : " + userId.toString()));
+		return user;
+	}
+
 //	public boolean isUserNotBlocked(LoginForm loginRequest){
 //		String stringQuery;
 //		stringQuery=" select count(*) from users where username='"+loginRequest.getUsername()+"' and status_account=2 ";//1-не активирован 2-активный 3-заблокирован 4-удалён

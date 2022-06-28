@@ -77,7 +77,7 @@ public class StorageService {
     private Boolean anonyme_access;     //может ли быть анонимный доступ к файлу (передается из формы) - для картинок сайта, фото товаров интернет-магазина, расшаренных документов
     private Integer categoryId;         //выбранная категория
     private String description;         //описание файла
-        private int THUMBNAIL_WIDTH;    //размер файла предпросмотра картинки
+    private int THUMBNAIL_WIDTH;        //размер файла предпросмотра картинки
     private int MAX_IMG_WIDTH;          //макс размер картинки с общим доступом
     private Long myMasterId;
     private Long myId;
@@ -244,7 +244,7 @@ public class StorageService {
 
 
 
-    boolean isPathExists(String path) {
+    public boolean isPathExists(String path) {
     Path dirPath = Paths.get(path);
     if (Files.exists(dirPath)) {
         return true;
@@ -280,6 +280,22 @@ public class StorageService {
         if      (type==5) return "jpg";
         else if (type==6) return "png";
         else              return "jpg"; // что-то же надо вернуть?))
+    }
+
+    // Calculating Directory Size
+    public long getDirectorySize(File folder) {
+        long length = 0;
+        File[] files = folder.listFiles();
+        int count = files.length;
+        for (int i = 0; i < count; i++) {
+            if (files[i].isFile()) {
+                length += files[i].length();
+            }
+            else {
+                length += getDirectorySize(files[i]);
+            }
+        }
+        return length;
     }
 
 //***************************************************************************
