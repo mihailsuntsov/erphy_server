@@ -1,3 +1,20 @@
+/*
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
 package com.dokio.service;
 
 import com.dokio.message.response.CagentsJSON;
@@ -41,7 +58,6 @@ public class TemplatesService {
     @Autowired
     SpravCurrenciesRepository currenciesRepository;
 
-
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле по его имени на диске
     public FileInfoJSON getFileInfo(String filename) {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -74,6 +90,7 @@ public class TemplatesService {
         }
 
     }
+
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле по его ID
     public FileInfoJSON getFileInfo(Long fileId) {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -106,7 +123,6 @@ public class TemplatesService {
 
     }
 
-
     @SuppressWarnings("Duplicates")
     public String getMyCompanyFullName(CompaniesJSON company){
         String result;
@@ -124,8 +140,6 @@ public class TemplatesService {
         }
         return result;
     }
-
-
 
     @SuppressWarnings("Duplicates")
     public String getMyCompanyAddress(CompaniesJSON company){
@@ -145,7 +159,6 @@ public class TemplatesService {
         return result;
     }
 
-
     @SuppressWarnings("Duplicates")
     public String getCagentFullName(CagentsJSON company){
         String result;
@@ -163,7 +176,6 @@ public class TemplatesService {
         return result;
     }
 
-
     public String getIfElse(Boolean condition, String ifTrue, String ifFalse){
         if(Objects.isNull(condition))
             return ifFalse;
@@ -177,12 +189,14 @@ public class TemplatesService {
         else
             return(condition?ifTrue: new BigDecimal(ifFalse));
     }
+
     public String getIfElse_string(Boolean condition, BigDecimal ifTrue, String ifFalse){
         if(Objects.isNull(condition))
             return ifFalse;
         else
             return(condition?ifTrue.toString().replace(".",","):ifFalse);
     }
+
     public SpravCurrenciesJSON getCompanyCurrency(CompaniesJSON company){
         return currenciesRepository.getDefaultCompanyCurrency(company.getId());
     }

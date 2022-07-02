@@ -1,21 +1,22 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
 package com.dokio.controller;
 
-
-import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.util.List;
 
 @RestController
 @Repository
@@ -39,11 +38,11 @@ public class _Info {
     private EntityManager entityManager;
 
     public String getBackendVersion() {
-        return "1.0.1-0";
+        return "1.0.2";
     }
 
     public String getBackendVersionDate() {
-        return "27-06-2022";
+        return "02-07-2022";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",

@@ -1,3 +1,20 @@
+/*
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravCurrenciesForm;
@@ -468,14 +485,16 @@ public class SpravCurrenciesRepository {
     public Boolean insertCurrenciesFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
+        "'curr_us_dollar'","'curr_euro'","'curr_canadian_dollar'","'curr_australian_dollar'","'curr_new_zealand_dollar'","'curr_russian_rouble'","'curr_pound_sterling'"});
         stringQuery = "insert into sprav_currencies ( master_id,creator_id,company_id,date_time_created,name_short,name_full,code_lit,code_num,is_default,is_deleted) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','US Dollar',            'USD','840',true, false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'€',  'Euro',                 'EUR','978',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'C$', 'Canadian Dollar',      'CAD','124',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'A$', 'Australian Dollar',    'AUD','036',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','New Zealand Dollar',   'NZD','554',false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'£',  'Pound Sterling',       'GBP','826',false,false);";
-
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','"+map.get("curr_us_dollar")+"',            'USD','840',true, false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'€',  '"+map.get("curr_euro")+"',                 'EUR','978',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'C$', '"+map.get("curr_canadian_dollar")+"',      'CAD','124',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'A$', '"+map.get("curr_australian_dollar")+"',    'AUD','036',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','"+map.get("curr_new_zealand_dollar")+"',   'NZD','554',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'р.', '"+map.get("curr_russian_rouble")+"',       'RUB','643',false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'£',  '"+map.get("curr_pound_sterling")+"',       'GBP','826',false,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

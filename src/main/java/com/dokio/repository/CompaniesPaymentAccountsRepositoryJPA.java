@@ -1,3 +1,20 @@
+/*
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
 package com.dokio.repository;
 
 import com.dokio.message.request.CompaniesPaymentAccountsForm;
@@ -5,6 +22,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -40,6 +58,8 @@ public class CompaniesPaymentAccountsRepositoryJPA {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserDetailsServiceImpl userService;
+    @Autowired
+    CommonUtilites cu;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -530,8 +550,9 @@ public class CompaniesPaymentAccountsRepositoryJPA {
     public Long insertPaymentAccountsFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = cu.translateForUser(mId, new String[]{"'main_bank_acc'"});
         stringQuery = "insert into companies_payment_accounts ( master_id,creator_id,company_id,date_time_created,name,is_main,is_deleted,output_order) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Main Bank account',true,false,1)";
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("main_bank_acc")+"',true,false,1)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

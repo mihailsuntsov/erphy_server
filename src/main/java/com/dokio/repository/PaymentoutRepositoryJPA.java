@@ -1,15 +1,21 @@
 /*
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU Affero GPL редакции 3 (GNU AGPLv3),
-опубликованной Фондом свободного программного обеспечения;
-Эта программа распространяется в расчёте на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу: http://www.gnu.org/licenses
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
 */
+
 package com.dokio.repository;
 
 import com.dokio.message.request.CagentsForm;
@@ -314,7 +320,7 @@ public class PaymentoutRepositoryJPA {
                     "           p.uid as uid, " +
                     "           p.is_completed as is_completed, " +
                     "           coalesce(p.income_number,'') as income_number," +
-                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as income_number_date, " +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+ // id банковский счёт препдриятия, откуда перемещаем денежные средства"
                     "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
                     "           p.expenditure_id as expenditure_id,"+ // статья расходов

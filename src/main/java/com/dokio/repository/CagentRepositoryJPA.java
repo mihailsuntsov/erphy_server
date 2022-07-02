@@ -1,17 +1,21 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
+
 package com.dokio.repository;
 
 import com.dokio.message.request.CagentCategoriesForm;
@@ -28,6 +32,7 @@ import com.dokio.model.CagentCategories;
 import com.dokio.model.Cagents;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -56,6 +61,8 @@ public class CagentRepositoryJPA {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     Logger logger = Logger.getLogger("CagentRepositoryJPA");
 
@@ -1694,13 +1701,16 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean insertCagentCategoriesFast(Long mId, Long cId) {
         String stringQuery;
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into cagent_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'Suppliers'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'Customers'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'Employees'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'Banks'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'Tax services');";
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("catg_customers")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("catg_employees")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'"+map.get("catg_banks")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_transport")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_rent")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_tax_srvcs")+"');";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1711,6 +1721,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             return null;
         }
     }
+
 //*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
 //*****************************************************************************************************************************************************

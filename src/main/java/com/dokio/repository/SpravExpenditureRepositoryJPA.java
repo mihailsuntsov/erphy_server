@@ -1,17 +1,21 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
+
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravExpenditureForm;
@@ -19,6 +23,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Sprav.SpravExpenditureJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -54,6 +59,8 @@ public class SpravExpenditureRepositoryJPA {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserDetailsServiceImpl userService;
+    @Autowired
+    CommonUtilites commonUtilites;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -490,14 +497,16 @@ public class SpravExpenditureRepositoryJPA {
     public Boolean insertExpendituresFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
+                "'exp_rent'","'exp_return'","'exp_salary'","'exp_banking_srvcs'","'exp_taxes'","'exp_pay_goods_srvcs'","'exp_pay_wh_company'"});
         stringQuery = "insert into sprav_expenditure_items (master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed,is_default) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Rent','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Return','return',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Salary','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Banking services','other_opex',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Taxes','taxes',false,false,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payment for goods and services','purchases',false,false,true),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Payments within the company','moving',false,false,false);";
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_rent")+"','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_return")+"','return',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_salary")+"','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_banking_srvcs")+"','other_opex',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_taxes")+"','taxes',false,false,false),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_pay_goods_srvcs")+"','purchases',false,false,true),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_pay_wh_company")+"','moving',false,false,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

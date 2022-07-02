@@ -3702,28 +3702,67 @@ update settings_general set plan_default_id = 2;
 alter table settings_general alter plan_default_id set not null;
 
 update version set value = '1.0.1-0', date = '27-06-2022';
-------------------------------------------------  end of 1.001-0   -----------------------------------------------------
+------------------------------------------------  end of 1.0.1   -----------------------------------------------------
+-----------------------------------------------  begin of 1.0.2   ----------------------------------------------------
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('um_uncountable',          'Неисчислимое',               'Uncountable'),
+('um_kilogramm',            'Килограмм',                  'Kilogramm'),
+('um_gramm',                'Грамм',                      'Gramm'),
+('um_ton',                  'Тонна',                      'Ton'),
+('um_meter',                'Метр',                       'Meter'),
+('um_centimeter',           'Сантиметр',                  'Centimeter'),
+('um_litre',                'Литр',                       'Litre'),
+('um_cubic_meter',          'Кубический метр',            'Cubic meter'),
+('um_square_meter',         'Квадратный метр',            'Square meter'),
+('um_kilogramm_s',          'кг',                         'kg'),
+('um_gramm_s',              'г',                          'g'),
+('um_ton_s',                'т',                          't'),
+('um_meter_s',              'м',                          'm'),
+('um_centimeter_s',         'см',                         'cm'),
+('um_litre_s',              'л',                          'L'),
+('um_cubic_meter_s',        'м3',                         'm3'),
+('um_square_meter_s',       'м2',                         'm2'),
 
+('curr_us_dollar',          'Американский доллар',        'US Dollar'),
+('curr_euro',               'Евро',                       'Euro'),
+('curr_canadian_dollar',    'Канадский доллар',           'Canadian Dollar'),
+('curr_australian_dollar',  'Австралийский доллар',       'Australian Dollar'),
+('curr_new_zealand_dollar', 'Новозеландский доллар',      'New Zealand Dollar'),
+('curr_russian_rouble',     'Российский рубль',           'Russian Rouble'),
+('curr_pound_sterling',     'Фунт стерлингов',            'Pound Sterling'),
 
+('tax_no_tax',              'Без НДС',                    'No taxes'),
+('tax_tax',                 'НДС',                        'Vat'),
 
+('main_bank_acc',           'Мой банк',                   'Main Bank account'),
+('main_cash_room',          'Касса предприятия',          'Main Cash room'),
+('my_company',              'Мое предприятие',            'My company'),
+('my_department',           'Мое отделение',              'My department'),
+('role_admins',             'Администраторы',             'Administrators'),
 
+('catg_suppliers',          'Поставщики',                 'Suppliers'),
+('catg_customers',          'Покупатели',                 'Customers'),
+('catg_employees',          'Сотрудники',                 'Employees'),
+('catg_banks',              'Банки',                      'Banks'),
+('catg_transport',          'Транспорт',                  'Transport'),
+('catg_rent',               'Аренда',                     'Rent'),
+('catg_tax_srvcs',          'Налоговые',                  'Tax services'),
 
+('basic_price',             'Базовая цена',               'Basic price'),
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+('exp_rent',                'Аренда',                     'Rent'),
+('exp_return',              'Возвраты',                   'Return'),
+('exp_salary',              'Зарплата',                   'Salary'),
+('exp_banking_srvcs',       'Банк. обслуживание',         'Banking services'),
+('exp_taxes',               'Налоги',                     'Taxes'),
+('exp_pay_goods_srvcs',     'Оплата за товары и услуги',  'Payment for goods and services'),
+('exp_pay_wh_company',      'Внутренние платежи',         'Payments within the company');
+insert into _dictionary (key, tr_ru, tr_en) values
+('um_piece',                'Штука',                      'Piece'),
+('um_piece_s',              'шт',                         'pcs');
+update version set value = '1.0.2', date = '02-07-2022';
+------------------------------------------------  end of 1.0.2  ------------------------------------------------------
 
 
 
@@ -3833,3 +3872,14 @@ select
   (select * from income) as income,
   (select * from outcome) as outcome,
   ((select * from income)-(select * from outcome)+(select * from correction)) as balance;
+
+
+
+
+
+
+delete from user_roles where user_id=141;
+delete from users where id=141;
+
+
+

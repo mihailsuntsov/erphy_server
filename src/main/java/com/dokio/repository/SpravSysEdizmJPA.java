@@ -1,17 +1,21 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- */
+        Dokio CRM - server part. Sales, finance and warehouse management system
+        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
+
+        This program is free software: you can redistribute it and/or modify
+        it under the terms of the GNU Affero General Public License as
+        published by the Free Software Foundation, either version 3 of the
+        License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU Affero General Public License for more details.
+
+        You should have received a copy of the GNU Affero General Public License
+        along with this program.  If not, see <https://www.gnu.org/licenses/>
+*/
+
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravSysEdizmForm;
@@ -21,6 +25,7 @@ import com.dokio.message.response.Sprav.SpravSysEdizmTableJSON;
 import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -30,10 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,6 +61,8 @@ public class SpravSysEdizmJPA {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserRepository userService;
+    @Autowired
+    CommonUtilites cu;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -400,16 +404,21 @@ public class SpravSysEdizmJPA {
     public Boolean insertEdizmFast(Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = cu.translateForUser(mId, new String[]{
+                "'um_piece'","'um_piece_s'","'um_uncountable'","'um_gramm'","'um_ton'","'um_meter'","'um_centimeter'","'um_litre'"
+                ,"'um_cubic_meter'","'um_square_meter'","'um_kilogramm'","'um_kilogramm_s'","'um_gramm_s'","'um_ton_s'","'um_meter_s'"
+                ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'"});
         stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Piece','pcs',1,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Uncountable','',1,null),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Kilogramm','kg',2,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Gramm','g',2,0.001),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Ton','t',2,1000),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Meter','m',3,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Centimeter','cm',3,0.01),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Litre','L',5,0.001),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'Square meter','m2',4,1);";
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_kilogramm")+"','"+map.get("um_kilogramm_s")+"',2,1),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_gramm")+"','"+map.get("um_gramm_s")+"',2,0.001),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_ton")+"','"+map.get("um_ton_s")+"',2,1000),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_meter")+"','"+map.get("um_meter_s")+"',3,1),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
