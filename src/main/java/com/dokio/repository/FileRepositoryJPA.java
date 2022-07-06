@@ -22,6 +22,7 @@ import com.dokio.message.request.FileCategoriesForm;
 import com.dokio.message.request.FilesForm;
 import com.dokio.message.response.FileCategoriesTableJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.additional.FileJSON;
 import com.dokio.message.response.additional.FilesJSON;
 import com.dokio.message.response.additional.FilesTableJSON;
 import com.dokio.model.Companies;
@@ -30,9 +31,12 @@ import com.dokio.model.Files;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
@@ -41,6 +45,10 @@ import java.util.*;
 
 @Repository
 public class FileRepositoryJPA {
+
+    @Value("${start_files_path}")
+    private String start_files_path;
+
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -59,6 +67,8 @@ public class FileRepositoryJPA {
     private UserDetailsServiceImpl userService;
     @Autowired
     private StorageService storageService;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
 
     Logger logger = Logger.getLogger("FileRepositoryJPA");
@@ -275,31 +285,22 @@ public class FileRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean storeFileToDB(
-            Long master_id,
-            int companyId,
-            Long myId,
-            String path,
-            String fileName,
-            String originalFileName,
-            String fileExtention,
-            Long fileSize,
-            String mimeType,
-            String description,
-            Boolean anonyme_access,
-            Integer categoryId)
+    public boolean storeFileToDB(FileJSON fileObj, boolean dontCheckPermissions)
     {
-        if(securityRepositoryJPA.userHasPermissions_OR(13L,"146,147"))//  Файлы : "Создание"
+//        dontCheckPermissions need for store files when registering new account - at this time user isn't registered and userRepository.* will returns nulls
+        if(dontCheckPermissions || securityRepositoryJPA.userHasPermissions_OR(13L,"146,147"))//  Файлы : "Создание"
         {
             EntityManager emgr = emf.createEntityManager();
-            Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
-            Companies companyOfCreatingDoc = emgr.find(Companies.class, Long.valueOf(companyId));//предприятие создаваемого документа
+            Long myCompanyId = dontCheckPermissions?fileObj.getCompanyId():userRepositoryJPA.getMyCompanyId_();// моё предприятие
+            Companies companyOfCreatingDoc = emgr.find(Companies.class, fileObj.getCompanyId());//предприятие создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = dontCheckPermissions?fileObj.getMyMasterId():userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-            if ((!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
-                    !myCompanyId.equals(companyId)) || !DocumentMasterId.equals(myMasterId))
+            if (
+                    !dontCheckPermissions ||
+                    (!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
+                    !myCompanyId.equals(fileObj.getCompanyId())) || !DocumentMasterId.equals(myMasterId))
             {
                 return false;
             }
@@ -309,27 +310,27 @@ public class FileRepositoryJPA {
                 try {
                     Files newDocument = new Files();
 
-                    User creator = emgr.find(User.class, myId);
-                    User master = emgr.find(User.class, master_id);
-                    Companies company = emgr.find(Companies.class, Long.valueOf(companyId));
+                    User creator = emgr.find(User.class, fileObj.getMyId());
+                    User master = emgr.find(User.class, fileObj.getMyMasterId());
+                    Companies company = emgr.find(Companies.class, fileObj.getCompanyId());
                     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
                     newDocument.setCreator(creator);//создателя
                     newDocument.setMaster(master);//владельца
                     newDocument.setCompany(company);//предприятие
                     newDocument.setDate_time_created(timestamp);//
-                    newDocument.setName(fileName);//
-                    newDocument.setOriginal_name(originalFileName);//
-                    newDocument.setPath(path);//
-                    newDocument.setExtention(fileExtention);
-                    newDocument.setFile_size(fileSize);
-                    newDocument.setMime_type(mimeType);
-                    newDocument.setDescription(description);
-                    newDocument.setAnonyme_access(anonyme_access);
+                    newDocument.setName(fileObj.getNewFileName());//
+                    newDocument.setOriginal_name(fileObj.getOriginalFilename());//
+                    newDocument.setPath(fileObj.getUPLOADED_FOLDER().toString());//
+                    newDocument.setExtention(fileObj.getFileExtention());
+                    newDocument.setFile_size(fileObj.getFileSize());
+                    newDocument.setMime_type(fileObj.getMimeType());
+                    newDocument.setDescription(fileObj.getDescription());
+                    newDocument.setAnonyme_access(fileObj.getAnonyme_access());
 
-                    if (categoryId > 0) {
+                    if (fileObj.getCategoryId() > 0L) {
                         Set<FileCategories> fcSet = new HashSet<>();
-                        FileCategories fk = emgr.find(FileCategories.class, Long.valueOf(categoryId));
+                        FileCategories fk = emgr.find(FileCategories.class, fileObj.getCategoryId());
                         fcSet.add(fk);
                         newDocument.setFileCategories(fcSet);
                     }
@@ -702,37 +703,47 @@ public class FileRepositoryJPA {
                 return null;
             }
             else {
-                String stringQuery;
-                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 Long myId = userRepository.getUserId();
-                stringQuery = "insert into file_categories (" +
-                        "name," +
-                        "master_id," +
-                        "creator_id," +
-                        "parent_id," +
-                        "company_id," +
-                        "date_time_created" +
-                        ") values ( " +
-                        ":name, " +
-                        myMasterId + "," +
-                        myId + "," +
-                        (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
-                        request.getCompanyId() + ", " +
-                        "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')))";
-                try {
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.setParameter("name",request.getName());
-                    if (query.executeUpdate() == 1) {
-                        stringQuery = "select id from file_categories where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
-                        Query query2 = entityManager.createNativeQuery(stringQuery);
-                        return Long.valueOf(Integer.parseInt(query2.getSingleResult().toString()));
-                    } else return 0L;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return 0L;
-                }
+                return insertFileCategoryCore(request, myMasterId, myId, 1000);
             }
         } else return -1L;
+    }
+
+    private Long insertFileCategoryCore(FileCategoriesForm request, Long masterId, Long creatorId, Integer outputOrder){
+        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+        String stringQuery = "insert into file_categories (" +
+                "name," +
+                "master_id," +
+                "creator_id," +
+                "parent_id," +
+                "company_id," +
+                "date_time_created," +
+                "output_order" +
+                ") values ( " +
+                ":name, " +
+                masterId + "," +
+                creatorId + "," +
+                (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
+                request.getCompanyId() + ", " +
+                "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))," +
+                outputOrder+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",request.getName());
+            if (query.executeUpdate() == 1) {
+                stringQuery = "select id from file_categories where " +
+                        "date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and " +
+                        "creator_id=" + creatorId + " and " +
+                        "output_order = " + outputOrder;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                String res = query2.getSingleResult().toString();
+                return Long.valueOf(res);
+            } else return 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method insertFileCategoryCore. SQL = "+stringQuery, e);
+            e.printStackTrace();
+            return 0L;
+        }
     }
 
     @Transactional
@@ -765,6 +776,7 @@ public class FileRepositoryJPA {
                 return true;
             }
             catch (Exception e) {
+                logger.error("Exception in method updateFileCategory.", e);
                 e.printStackTrace();
                 return false;
             }
@@ -795,6 +807,7 @@ public class FileRepositoryJPA {
                 return true;
             }
             catch (Exception e) {
+                logger.error("Exception in method deleteFileCategory.", e);
                 e.printStackTrace();
                 return false;
             }
@@ -830,9 +843,55 @@ public class FileRepositoryJPA {
                 return true;
             }
             catch (Exception e) {
+                logger.error("Exception in method saveChangeCategoriesOrder.", e);
                 e.printStackTrace();
                 return false;
             }
         } else return false;
     }
+
+    // inserting base set of categories of new user
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertFileCategoriesFast(Long mId, Long cId) {
+        String stringQuery;
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'f_ctg_images'","'f_ctg_goods'","'f_ctg_docs'","'f_ctg_templates'"});
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into file_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("f_ctg_goods")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("f_ctg_docs")+"'),"+
+                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("f_ctg_images")+"');";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            // "Templates" category must be created separately, because we need its id
+            FileCategoriesForm form = new FileCategoriesForm();
+            form.setCompanyId(cId);
+            form.setParentCategoryId(0L);
+            form.setName(map.get("f_ctg_templates"));
+            return insertFileCategoryCore(form, mId, mId, 4);
+        } catch (Exception e) {
+            logger.error("Exception in method insertFileCategsAndBaseFilesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void insertBaseFilesFast(Long mId, Long cId, Long catgId) {
+
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'"});
+        String suffix = userRepositoryJPA.getUserSuffix(mId);
+        List<String> filePaths = new ArrayList<>();
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls");
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls");
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg");
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png");
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("signature")+"2.png");
+        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png");
+        storageService.copyFilesFromPathToCompany(filePaths,cId,catgId, mId);
+    }
+
+
+
+
 }

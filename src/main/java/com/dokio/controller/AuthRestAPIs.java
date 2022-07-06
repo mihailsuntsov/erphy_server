@@ -100,6 +100,8 @@ public class AuthRestAPIs {
 	CompaniesPaymentAccountsRepositoryJPA paymentAccountsRepository;
 	@Autowired
 	CommonUtilites cu;
+	@Autowired
+	FileRepositoryJPA fileRepository;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -196,6 +198,10 @@ public class AuthRestAPIs {
         currenciesRepository.insertCurrenciesFast(createdUserId,companyId);
         // базовые категоии контрагентов
         cagentRepository.insertCagentCategoriesFast(createdUserId,companyId);
+		// базовые категоии файлов + базовые файлы (шаблоны)
+		Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId,companyId);
+		// now need to put base files into this category in accordance of user language
+		fileRepository.insertBaseFilesFast(createdUserId, companyId, templateCategoryId);
         // единицы имерения
         spravSysEdizm.insertEdizmFast(createdUserId,companyId);
         // налоги

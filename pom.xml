@@ -252,6 +252,13 @@
             <artifactId>simplemagic</artifactId>
             <version>1.6</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-fileupload/commons-fileupload -->
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.4</version>
+        </dependency>
+
         <!--Money to string-->
         <dependency>
             <groupId>com.github.javadev</groupId>

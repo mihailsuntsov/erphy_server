@@ -3763,10 +3763,19 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('um_piece_s',              'шт',                         'pcs');
 update version set value = '1.0.2', date = '02-07-2022';
 ------------------------------------------------  end of 1.0.2  ------------------------------------------------------
-
-
-
-
+-----------------------------------------------  begin of 1.0.3   ----------------------------------------------------
+insert into _dictionary (key, tr_ru, tr_en) values
+('f_ctg_images',                'Картинки',                      'Images'),
+('f_ctg_goods',                 'Товары',                        'Goods'),
+('f_ctg_docs',                  'Документы',                     'Docs'),
+('f_with_stamp_sign',           'с печатью и подписями',         'with stamp and signatures');
+insert into _dictionary (key, tr_ru, tr_en) values
+('signature',                   'Подпись',                       'Signature'),
+('logo',                        'Логотип',                       'Logo');
+insert into _dictionary (key, tr_ru, tr_en) values
+('f_ctg_templates',             'Шаблоны',                       'Templates');
+insert into _dictionary (key, tr_ru, tr_en) values
+('stamp',                       'Печать',                        'Stamp');
 
 
 

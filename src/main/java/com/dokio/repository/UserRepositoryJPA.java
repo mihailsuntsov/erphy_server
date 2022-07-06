@@ -223,7 +223,12 @@ public class UserRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (String) query.getSingleResult();
     }
-
+//    public String getMasterIdByCompanyId(Long companyId) {
+//        String stringQuery;
+//        stringQuery="select u.username from users u where u.id = "+userId;
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        return (String) query.getSingleResult();
+//    }
     public List<String> getUserDepartmentsNames(int id) {
         String stringQuery="select dep.name||' '||dep.address as name " +
                 "from departments dep where dep.id in (select p.department_id from user_department p where p.user_id= "+id+")"+

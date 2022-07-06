@@ -68,8 +68,8 @@ public class VatinvoiceinRepositoryJPA {
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
-    @Autowired
-    private CagentRepositoryJPA cagentRepository;
+//    @Autowired
+//    private CagentRepositoryJPA cagentRepository;
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired

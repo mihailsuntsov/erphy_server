@@ -35,7 +35,7 @@ public class _Info {
     CommonUtilites cu;
 
     @PersistenceContext
-    private EntityManager entityManager;
+    private EntityManager entityManager; // do NOT touch!
 
     public String getBackendVersion() {
         return "1.0.2";

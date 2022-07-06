@@ -53,10 +53,10 @@ public class UploadController {
     @PostMapping("/api/auth/postFile")
     public ResponseEntity<String> postFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("companyId") Integer companyId,
+            @RequestParam("companyId") Long companyId,
             @RequestParam("anonyme_access") Boolean anonyme_access,
             @RequestParam("description") String description,
-            @RequestParam("categoryId") Integer categoryId) {
+            @RequestParam("categoryId") Long categoryId) {
         logger.info("Processing post request for path api/auth/postFile: " + "fileName=" + file.getName()
                 + "companyId=" + companyId  + "categoryId=" + categoryId);
 
@@ -69,7 +69,7 @@ public class UploadController {
             if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
                 if(userRepositoryJPA.getMyConsumedResources().getMegabytes()+fileSizeMb>userRepositoryJPA.getMyMaxAllowedResources().getMegabytes())
                     return ResponseEntity.status(HttpStatus.OK).body("-120"); // if current file will be uploaded, then sum size of all master-user files will out of bounds of tariff plan
-            storageService.store(file,companyId,anonyme_access,categoryId,description);
+            storageService.store(file,companyId,anonyme_access,categoryId,description,userRepositoryJPA.getMyMasterId(),userRepositoryJPA.getMyId(), false);
             message = "You successfully uploaded " + file.getOriginalFilename() + "!";
             return ResponseEntity.status(HttpStatus.OK).body(message);
         } catch (Exception e) {

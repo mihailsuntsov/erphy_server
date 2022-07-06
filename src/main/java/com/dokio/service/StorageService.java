@@ -18,16 +18,23 @@
 
 package com.dokio.service;
 
+import com.dokio.message.response.additional.FileJSON;
 import com.dokio.repository.FileRepositoryJPA;
 //import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItem;
+import org.apache.commons.jexl3.JxltEngine;
+import org.apache.log4j.Logger;
+import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
@@ -36,9 +43,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,6 +55,7 @@ import java.util.List;
 @Service
 @Repository
 public class StorageService {
+    Logger logger = Logger.getLogger(StorageService.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -68,110 +74,82 @@ public class StorageService {
 //***************************** F I L E S ***********************************
 //***************************************************************************
 
-    private MultipartFile file;         //сам файл
-    private Path UPLOADED_FOLDER;       //путь загрузки файла
-    private Path UPLOADED_THUMBS_FOLDER;//путь для превьюшек
-    private String originalFilename;    //оригинальное имя файла
-    private String fileExtention;       //расширение
-    private String generatedFileName;   //сгенерированное имя файла, БЕЗ расширения (нужно для искл-ния дублирования имен файлов, под ним файл сохраняется на диске, а originalFilename записывается в БД)
-    private Long fileSize;              //размер файла в байтах
-    private String mimeType;
-    private String newFileName;         //сгенерированное имя файла и расширение
-    private Integer companyId;          //предприятие (передается из формы)
-    private Boolean anonyme_access;     //может ли быть анонимный доступ к файлу (передается из формы) - для картинок сайта, фото товаров интернет-магазина, расшаренных документов
-    private Integer categoryId;         //выбранная категория
-    private String description;         //описание файла
-    private int THUMBNAIL_WIDTH;        //размер файла предпросмотра картинки
-    private int MAX_IMG_WIDTH;          //макс размер картинки с общим доступом
-    private Long myMasterId;
-    private Long myId;
-
     @SuppressWarnings("Duplicates")
-    private boolean storePreparation(MultipartFile file, Integer companyId, Boolean anonyme_access, Integer categoryId, String description)//подготовка для записи файла
+    private FileJSON storePreparation(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId)//подготовка для записи файла
     {
         try
         {
+            FileJSON fileObj = new FileJSON();
             String BASE_FILES_FOLDER;
             Calendar calendar = Calendar.getInstance();
             String YEAR = calendar.get(Calendar.YEAR) + "//";
-            this.myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            this.myId = userRepository.getUserId();
+            fileObj.setMyMasterId(masterId);
+            fileObj.setMyId(myId);
             if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
             } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux
-            String MY_MASTER_ID_FOLDER = this.myMasterId + "//";
+            String MY_MASTER_ID_FOLDER = fileObj.getMyMasterId() + "//";
             String MY_COMPANY_ID_FOLDER = companyId + "//";
             String THUMBS_FOLDER = "thumbs//";
-            this.UPLOADED_FOLDER= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR);
-            this.UPLOADED_THUMBS_FOLDER= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR + THUMBS_FOLDER);
+            fileObj.setUPLOADED_FOLDER(Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR));
+            fileObj.setUPLOADED_THUMBS_FOLDER(Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + YEAR + THUMBS_FOLDER));
             // в итоге получается путь для файла вида /usr/dokio/files/133/1/2019
             // год нужен чтобы не скапливалось много файлов в одной папке
-            this.file=file;
-            this.originalFilename=file.getOriginalFilename();
-            this.fileExtention=getFileExtension(this.originalFilename);
-            if (this.fileExtention.isEmpty() || this.fileExtention.trim().length() == 0) {
-                    this.fileExtention = "._";
-                } else if (this.fileExtention.length() >=16) {
-                    this.fileExtention = this.fileExtention.substring(0,15);}//т.к. в БД 16 байт под это дело
-            this.generatedFileName=GetGeneratedFileName();
-            this.fileSize=file.getSize();
-            this.mimeType=file.getContentType();
-            this.newFileName=this.generatedFileName+this.fileExtention;
-            this.companyId=companyId;
-            this.description=description;
-            this.anonyme_access=anonyme_access;
-            this.categoryId=categoryId;
-            this.THUMBNAIL_WIDTH=400;
-            this.MAX_IMG_WIDTH=1200;
+            fileObj.setFile(file);
+            fileObj.setOriginalFilename(file.getOriginalFilename());
+            fileObj.setFileExtention(getFileExtension(fileObj.getOriginalFilename()));
+            if (fileObj.getFileExtention().isEmpty() || fileObj.getFileExtention().trim().length() == 0) {
+                fileObj.setFileExtention("._");
+                } else if (fileObj.getFileExtention().length() >=16) {
+                fileObj.setFileExtention(fileObj.getFileExtention().substring(0,15));}//т.к. в БД 16 байт под это дело
+            fileObj.setGeneratedFileName(GetGeneratedFileName());
+            fileObj.setFileSize(file.getSize());
+            fileObj.setMimeType(file.getContentType());
+            fileObj.setNewFileName(fileObj.getGeneratedFileName()+fileObj.getFileExtention());
+            fileObj.setCompanyId(companyId);
+            fileObj.setDescription(description);
+            fileObj.setAnonyme_access(anonyme_access);
+            fileObj.setCategoryId(categoryId);
+            fileObj.setTHUMBNAIL_WIDTH(400);
+            fileObj.setMAX_IMG_WIDTH(1200);
 
-            return true;
+            return fileObj;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
     }
 
-    public boolean store(MultipartFile file, Integer companyId, Boolean anonyme_access, Integer categoryId, String description) {
+    public boolean store(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId, boolean dontCheckPermissions) {
         try
         {
-            if(storePreparation(file,companyId,anonyme_access,categoryId,description)) {
-                createDirectory(this.UPLOADED_FOLDER.toString());
+            FileJSON fileObj = storePreparation(file,companyId,anonyme_access,categoryId,description, masterId, myId);
+            if(!Objects.isNull(fileObj)){
+                createDirectory(fileObj.getUPLOADED_FOLDER().toString());
 
                 if(// если файл - картинка - надо сохранить его с опр. условиями (размер и thumbnail)
-                this.fileExtention.equalsIgnoreCase(".jpg")  ||
-                this.fileExtention.equalsIgnoreCase(".jpeg") ||
-                this.fileExtention.equalsIgnoreCase(".png"))
+                    fileObj.getFileExtention().equalsIgnoreCase(".jpg")  ||
+                    fileObj.getFileExtention().equalsIgnoreCase(".jpeg") ||
+                    fileObj.getFileExtention().equalsIgnoreCase(".png"))
                 {
-                    createDirectory(this.UPLOADED_THUMBS_FOLDER.toString());
+                    createDirectory(fileObj.getUPLOADED_THUMBS_FOLDER().toString());
                     BufferedImage originalImage = ImageIO.read(file.getInputStream());
                     int type = originalImage.getType() == 0 ? BufferedImage.TYPE_INT_ARGB : originalImage.getType();
                     String format = getImageFormatName(type);
-                    if (originalImage.getWidth()>MAX_IMG_WIDTH && anonyme_access) { originalImage = downscaleImageSize(originalImage, type, MAX_IMG_WIDTH);}
-                    BufferedImage thumbImage = downscaleImageSize(originalImage, type, THUMBNAIL_WIDTH);
+                    if (originalImage.getWidth()>fileObj.getMAX_IMG_WIDTH() && anonyme_access) { originalImage = downscaleImageSize(originalImage, type, fileObj.getMAX_IMG_WIDTH());}
+                    BufferedImage thumbImage = downscaleImageSize(originalImage, type, fileObj.getTHUMBNAIL_WIDTH());
                     byte[] thumbInByte = getImageInByte(thumbImage, format);
                     byte[] imageInByte = getImageInByte(originalImage, format);
-                    Path filePath = Paths.get(this.UPLOADED_FOLDER + "//" + this.newFileName);
-                    Path thumbPath = Paths.get(this.UPLOADED_THUMBS_FOLDER + "//" + this.newFileName);
+                    Path filePath = Paths.get(fileObj.getUPLOADED_FOLDER() + "//" + fileObj.getNewFileName());
+                    Path thumbPath = Paths.get(fileObj.getUPLOADED_THUMBS_FOLDER() + "//" + fileObj.getNewFileName());
                     Files.write(filePath, imageInByte);
                     Files.write(thumbPath, thumbInByte);
                 } else
-                    Files.copy(file.getInputStream(), this.UPLOADED_FOLDER.resolve(this.newFileName));
+                    Files.copy(file.getInputStream(), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()));
 
-                if(frj.storeFileToDB( // запись в БД информации о файле
-                        this.myMasterId,
-                        this.companyId,
-                        this.myId,
-                        this.UPLOADED_FOLDER.toString(),
-                        this.newFileName,
-                        this.originalFilename,
-                        this.fileExtention,
-                        this.fileSize,
-                        this.mimeType,
-                        this.description,
-                        this.anonyme_access,
-                        this.categoryId
-                       ))
-                    return true;
-                else return false;
+                // запись в БД информации о файле
+                return frj.storeFileToDB( // запись в БД информации о файле
+                        fileObj, dontCheckPermissions
+                );
             } else return false;
         } catch (Exception e) {
             e.printStackTrace();
@@ -300,6 +278,26 @@ public class StorageService {
             }
         }
         return length;
+    }
+
+    public boolean copyFilesFromPathToCompany(List<String> filePaths, Long companyId, Long categoryId, Long masterId){
+        try{
+            for (String filePath : filePaths){
+                if(isPathExists(filePath)){
+                    File file = new File(filePath);
+                    FileItem fileItem = new DiskFileItem("mainFile", Files.probeContentType(file.toPath()), false, file.getName(), (int) file.length(), file.getParentFile());
+                    IOUtils.copy(new FileInputStream(file), fileItem.getOutputStream());
+                    MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
+                    store(multipartFile, companyId, false, categoryId, "", masterId, masterId, true);
+                } else logger.error("Method: copyFilesFromPathToCompany. Error: There is no file in path = " + filePath);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method copyFilesFromPathToUserAccount", e);
+            return false;
+        }
+        return true;
     }
 
 //***************************************************************************
