@@ -401,7 +401,7 @@ public class SpravSysEdizmJPA {
     // Types oа UoM 1 - object, 2 - mass, 3 - length, 4 - area, 5 - volume
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertEdizmFast(Long mId, Long cId) {
+    public Boolean insertEdizmFast(Long mId, Long uId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = cu.translateForUser(mId, new String[]{
@@ -409,16 +409,16 @@ public class SpravSysEdizmJPA {
                 ,"'um_cubic_meter'","'um_square_meter'","'um_kilogramm'","'um_kilogramm_s'","'um_gramm_s'","'um_ton_s'","'um_meter_s'"
                 ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'"});
         stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_kilogramm")+"','"+map.get("um_kilogramm_s")+"',2,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_gramm")+"','"+map.get("um_gramm_s")+"',2,0.001),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_ton")+"','"+map.get("um_ton_s")+"',2,1000),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_meter")+"','"+map.get("um_meter_s")+"',3,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1);";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_kilogramm")+"','"+map.get("um_kilogramm_s")+"',2,1),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_gramm")+"','"+map.get("um_gramm_s")+"',2,0.001),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_ton")+"','"+map.get("um_ton_s")+"',2,1000),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_meter")+"','"+map.get("um_meter_s")+"',3,1),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

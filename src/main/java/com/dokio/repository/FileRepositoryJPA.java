@@ -22,6 +22,7 @@ import com.dokio.message.request.FileCategoriesForm;
 import com.dokio.message.request.FilesForm;
 import com.dokio.message.response.FileCategoriesTableJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
 import com.dokio.message.response.additional.FilesJSON;
 import com.dokio.message.response.additional.FilesTableJSON;
@@ -285,7 +286,7 @@ public class FileRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean storeFileToDB(FileJSON fileObj, boolean dontCheckPermissions)
+    public Long storeFileToDB(FileJSON fileObj, boolean dontCheckPermissions)
     {
 //        dontCheckPermissions need for store files when registering new account - at this time user isn't registered and userRepository.* will returns nulls
         if(dontCheckPermissions || securityRepositoryJPA.userHasPermissions_OR(13L,"146,147"))//  Файлы : "Создание"
@@ -302,7 +303,7 @@ public class FileRepositoryJPA {
                     (!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
                     !myCompanyId.equals(fileObj.getCompanyId())) || !DocumentMasterId.equals(myMasterId))
             {
-                return false;
+                return -1L;
             }
             else
             {
@@ -337,15 +338,14 @@ public class FileRepositoryJPA {
 
                     entityManager.persist(newDocument);
                     entityManager.flush();
-                    //            return newDocument.getId();
-                    return true;
+                    return newDocument.getId();
                 }catch (Exception e){
                     logger.error("Exception in method storeFileToDB.", e);
                     e.printStackTrace();
-                    return false;
+                    return null;
                 }
             }
-        } else return false;
+        } else return -1L;
     }
 
     @Transactional
@@ -851,16 +851,15 @@ public class FileRepositoryJPA {
     }
 
     // inserting base set of categories of new user
-    @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertFileCategoriesFast(Long mId, Long cId) {
+    public Long insertFileCategoriesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'f_ctg_images'","'f_ctg_goods'","'f_ctg_docs'","'f_ctg_templates'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into file_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("f_ctg_goods")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("f_ctg_docs")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("f_ctg_images")+"');";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("f_ctg_goods")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("f_ctg_docs")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("f_ctg_images")+"');";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -869,7 +868,7 @@ public class FileRepositoryJPA {
             form.setCompanyId(cId);
             form.setParentCategoryId(0L);
             form.setName(map.get("f_ctg_templates"));
-            return insertFileCategoryCore(form, mId, mId, 4);
+            return insertFileCategoryCore(form, mId, uId, 4);
         } catch (Exception e) {
             logger.error("Exception in method insertFileCategsAndBaseFilesFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
@@ -877,20 +876,55 @@ public class FileRepositoryJPA {
         }
     }
 
-    public void insertBaseFilesFast(Long mId, Long cId, Long catgId) {
-
+    @SuppressWarnings("Duplicates")
+    public List<BaseFiles> insertBaseFilesFast(Long mId, Long uId, Long cId, Long catgId) {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
-        List<String> filePaths = new ArrayList<>();
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls");
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls");
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg");
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png");
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("signature")+"2.png");
-        filePaths.add(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png");
-        storageService.copyFilesFromPathToCompany(filePaths,cId,catgId, mId);
+        List<BaseFiles> filePaths = new ArrayList<>();
+//      List of :               [String filePath, String menuName, int docId, Long fileId (null)]
+//      Returned list contains: [String filePath, String menuName, int docId, Long fileId]
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg",map.get("logo")+".jpg","", null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png",map.get("signature")+"1.png","", null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"2.png",map.get("signature")+"2.png","", null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png","",map.get("stamp")+".png", null,null));
+        return storageService.copyFilesFromPathToCompany(filePaths,cId,catgId, mId, uId);
     }
 
+    @SuppressWarnings("Duplicates")
+    public List<BaseFiles> assemblyBaseFilesList(Long mId) {
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'"});
+        String suffix = userRepositoryJPA.getUserSuffix(mId);
+        List<BaseFiles> filePaths = new ArrayList<>();
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null));
+        return filePaths;
+    }
+
+//      Input:  List of         [String filePath, String fileName, String menuName, int docId, Long fileId (null)]
+//      Return: List contains:  [String filePath, String fileName, String menuName, int docId, Long fileId       ]
+    // It gets list of BaseFiles with file names, and returns list of BaseFiles with file id's accorded to their names
+    public List<BaseFiles> getFilesIdsByName(List<BaseFiles>baseFilesList, Long mId, Long cId, String extention){
+        List<BaseFiles> retList = new ArrayList<>();
+        String stringQuery = "select  id, original_name from files where master_id = " + mId + " and company_id = " + cId + (Objects.isNull(extention)?"":" and extention = '." + extention + "'") + " order by id";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            if (queryList.size() > 0)
+                for (BaseFiles baseFile : baseFilesList) {
+                    for (Object[] obj : queryList) {
+                        if (baseFile.getFileName().equals(obj[1]) && (retList.size() == 0 || retList.stream().noneMatch(o -> o.getFileName().equals(obj[1]))))
+                            retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), Long.parseLong(obj[0].toString())));
+                    }
+                }
+            return retList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getFilesIdsByName. SQL = " + stringQuery, e);
+            return retList;
+        }
+    }
 
 
 

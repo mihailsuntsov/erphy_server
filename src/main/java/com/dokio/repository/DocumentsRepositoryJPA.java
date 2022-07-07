@@ -18,10 +18,12 @@
 
 package com.dokio.repository;
 import com.dokio.message.response.DocPermissionsJSON;
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.PermissionsJSON;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -101,6 +103,44 @@ public class DocumentsRepositoryJPA {
             e.printStackTrace();
             logger.error("Exception in method getPermissions. SQL query:" + stringQuery, e);
             return null;
+        }
+    }
+
+//            "master_id"
+//            "company_id"
+//            "file_id"
+//            "document_id"
+//            "is_show"
+//            "output_order"
+//            "name"
+//            "user_id"
+
+    @Transactional
+    public void createPrintMenus(List<BaseFiles> baseFilesList, Long masterId, Long userId, Long companyId){
+        List<String> insertingRows = new ArrayList<>();
+        int i = 0;
+        for (BaseFiles bf : baseFilesList){
+            if(!Objects.isNull(bf.getDocId())){
+                insertingRows.add((i==1?", ":"") + "("+masterId+", "+companyId+", "+bf.getFileId()+", "+bf.getDocId()+", true, "+(i+1)+", '"+bf.getMenuName()+"', "+userId+")");
+            }
+            i++;
+        }
+        if(insertingRows.size()>0){
+            String stringQuery =
+                    " insert into template_docs " +
+                    " (master_id, company_id, file_id, document_id, is_show, output_order, name, user_id)" +
+                    " values ";
+            for(String row : insertingRows){
+                stringQuery = stringQuery + row;
+            }
+
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+            } catch (Exception e){
+                e.printStackTrace();
+                logger.error("Exception in method createPrintMenus. SQL query:" + stringQuery, e);
+            }
         }
     }
 }

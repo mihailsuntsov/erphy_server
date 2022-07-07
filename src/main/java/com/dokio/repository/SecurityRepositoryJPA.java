@@ -53,6 +53,22 @@ public class SecurityRepositoryJPA {
 
         Long userId=userRepository.getUserId();
         if(userId!=null) {
+//            String stringQuery = "select p.id from " +
+//                    " permissions p, " +
+//                    " usergroup_permissions up, " +
+//                    " usergroup ugr, " +
+//                    " user_usergroup uugr, " +
+//                    " users u " +
+//                    " where " +
+//                    " u.id="+userId+" and " +
+//                    " p.document_id=" + docId + " and " +
+//                    " uugr.user_id = u.id and " +
+//                    " up.usergroup_id =ugr.id and " +
+//                    " ugr.id=uugr.usergroup_id and " +
+//                    " up.permission_id=p.id and " +
+//                    " coalesce(ugr.is_archive,false) !=true and " +
+//                    " p.id in(" + permissions + ")";// внутрений запрос
+
             String stringQuery = "select p.id from " +
                     " permissions p, " +
                     " usergroup_permissions up, " +
@@ -66,15 +82,31 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " coalesce(ugr.is_archive,false) !=true and " +
-                    " p.id in(" + permissions + ")";// внутрений запрос
+                    " ugr.company_id=u.company_id and " +
+                    " coalesce(ugr.is_deleted,false) = false and " +
+                    " p.id in(" + permissions + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
             return (query.getResultList().size() > 0);
         }else return false;
     }
-    public List<Integer> giveMeMyPermissions(Long docId){
+    public List<Integer> giveMeMyPermissions(Long docId){ // ---
         Long userId=userRepository.getUserId();
         if(userId!=null) {
+//            String stringQuery = "select p.id from " +
+//                    " permissions p, " +
+//                    " usergroup_permissions up, " +
+//                    " usergroup ugr, " +
+//                    " user_usergroup uugr, " +
+//                    " users u " +
+//                    " where " +
+//                    " u.id="+userId+" and " +
+//                    " p.document_id=" + docId + " and " +
+//                    " uugr.user_id = u.id and " +
+//                    " up.usergroup_id =ugr.id and " +
+//                    " ugr.id=uugr.usergroup_id and " +
+//                    " up.permission_id=p.id and " +
+//                    " coalesce(ugr.is_archive,false) !=true";
+
             String stringQuery = "select p.id from " +
                     " permissions p, " +
                     " usergroup_permissions up, " +
@@ -88,13 +120,16 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " coalesce(ugr.is_archive,false) !=true";
+                    " ugr.company_id=u.company_id and " +
+                    " coalesce(ugr.is_deleted,false) = false" +
+                    " group by p.id";
+
             Query query = entityManager.createNativeQuery(stringQuery);
             return (query.getResultList());
         }else return null;
     }
 
-    public List<Integer> getAllMyPermissions(){
+    public List<Integer> getAllMyPermissions(){ // +++
         Long userId=userRepository.getUserId();
         if(userId!=null) {
             String stringQuery = "select p.id from " +

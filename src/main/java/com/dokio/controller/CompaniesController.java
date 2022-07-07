@@ -94,11 +94,11 @@ public class CompaniesController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getCompaniesList() {
         logger.info("Processing post request for path /api/auth/getCompaniesList");
-
         List<IdAndName> companiesList;
         companiesList = companyRepositoryJPA.getCompaniesList();
         return new ResponseEntity<>(companiesList, HttpStatus.OK);
     }
+
     @PostMapping("/api/auth/insertCompany")
     public ResponseEntity<?> insertCompany(@RequestBody CompaniesForm request){
         logger.info("Processing post request for path /api/auth/insertCompany: " + request.toString());

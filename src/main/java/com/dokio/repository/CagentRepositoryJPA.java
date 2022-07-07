@@ -1699,18 +1699,18 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     // inserting base set of categories of new user
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertCagentCategoriesFast(Long mId, Long cId) {
+    public Boolean insertCagentCategoriesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into cagent_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("catg_customers")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("catg_employees")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'"+map.get("catg_banks")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_transport")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_rent")+"'),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_tax_srvcs")+"');";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("catg_customers")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("catg_employees")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'"+map.get("catg_banks")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_transport")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_rent")+"'),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_tax_srvcs")+"');";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

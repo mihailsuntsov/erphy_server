@@ -18,6 +18,7 @@
 
 package com.dokio.service;
 
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
 import com.dokio.repository.FileRepositoryJPA;
 //import com.dokio.repository.ProductsRepositoryJPA;
@@ -119,7 +120,7 @@ public class StorageService {
         }
     }
 
-    public boolean store(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId, boolean dontCheckPermissions) {
+    public Long store(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId, boolean dontCheckPermissions) {
         try
         {
             FileJSON fileObj = storePreparation(file,companyId,anonyme_access,categoryId,description, masterId, myId);
@@ -147,13 +148,13 @@ public class StorageService {
                     Files.copy(file.getInputStream(), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()));
 
                 // запись в БД информации о файле
-                return frj.storeFileToDB( // запись в БД информации о файле
+                return frj.storeFileToDB( // запись в БД информации о файле (возвращает id файла)
                         fileObj, dontCheckPermissions
                 );
-            } else return false;
+            } else return null;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
     }
 
@@ -280,24 +281,28 @@ public class StorageService {
         return length;
     }
 
-    public boolean copyFilesFromPathToCompany(List<String> filePaths, Long companyId, Long categoryId, Long masterId){
+    public List<BaseFiles> copyFilesFromPathToCompany(List<BaseFiles> baseFilesList, Long companyId, Long categoryId, Long masterId, Long userId){
+        List<BaseFiles> retList = new ArrayList<>();
         try{
-            for (String filePath : filePaths){
-                if(isPathExists(filePath)){
-                    File file = new File(filePath);
+            for (BaseFiles baseFile : baseFilesList){
+                if(isPathExists(baseFile.getFilePath())){
+                    File file = new File(baseFile.getFilePath());
                     FileItem fileItem = new DiskFileItem("mainFile", Files.probeContentType(file.toPath()), false, file.getName(), (int) file.length(), file.getParentFile());
                     IOUtils.copy(new FileInputStream(file), fileItem.getOutputStream());
                     MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
-                    store(multipartFile, companyId, false, categoryId, "", masterId, masterId, true);
-                } else logger.error("Method: copyFilesFromPathToCompany. Error: There is no file in path = " + filePath);
+                    Long fileId = store(multipartFile, companyId, false, categoryId, "", masterId, userId, true);
+                    //Returned list contains: [String filePath, String menuName, int docId, Long fileId]
+                    //Returned list forming only for template files (they have docId, in which type of document's menu they will be used)
+                    if(!Objects.isNull(baseFile.getDocId())) retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), fileId));
+                } else logger.error("Method: copyFilesFromPathToCompany. Error: There is no file in path = " + baseFile.getFilePath());
             }
         }
         catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method copyFilesFromPathToUserAccount", e);
-            return false;
+            return null;
         }
-        return true;
+        return retList;
     }
 
 //***************************************************************************

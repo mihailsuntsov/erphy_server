@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
 import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.Sprav.SpravCurrenciesJSON;
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -88,6 +89,10 @@ public class CompanyRepositoryJPA {
     CompaniesPaymentAccountsRepositoryJPA paymentAccountsRepository;
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    FileRepositoryJPA fileRepository;
+    @Autowired
+    DocumentsRepositoryJPA documentsRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -1066,15 +1071,19 @@ public class CompanyRepositoryJPA {
         Set<Long> permissions = authRestAPIs.getAdminPermissions();
         userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
         // набор валют
-        currenciesRepository.insertCurrenciesFast(myId,companyId);
+        currenciesRepository.insertCurrenciesFast(myMasterId,myId,companyId);
         // базовые категоии контрагентов
-        cagentRepository.insertCagentCategoriesFast(myId,companyId);
+        cagentRepository.insertCagentCategoriesFast(myMasterId, myId,companyId);
+        // базовые категоии файлов + базовые файлы (шаблоны)
+        Long templateCategoryId = fileRepository.insertFileCategoriesFast(myMasterId, myId, companyId);
+        // now need to put base files into this category in accordance of user language
+        fileRepository.insertBaseFilesFast(myMasterId, myId, companyId, templateCategoryId);
         // единицы имерения
-        spravSysEdizm.insertEdizmFast(myId,companyId);
+        spravSysEdizm.insertEdizmFast(myMasterId, myId, companyId);
         // налоги
-        taxesRepository.insertTaxesFast(myId,companyId);
+        taxesRepository.insertTaxesFast(myMasterId, myId,companyId);
         // расходы
-        expenditureRepository.insertExpendituresFast(myId,companyId);
+        expenditureRepository.insertExpendituresFast(myMasterId, myId,companyId);
         // статусы документов
         statusDocRepository.insertStatusesFast(myMasterId,myId,companyId);
     }
@@ -1206,35 +1215,34 @@ public class CompanyRepositoryJPA {
             }
         } else return -1;
     }
-    @Transactional
-    @SuppressWarnings("Duplicates")
+
+
     public List<IdAndName> getCompaniesList() {
-        String stringQuery;
+
 
         // Владелец предприятия (masterId)
-        Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long companyOwnerId = userRepositoryJPA.getMyMasterId();
 
         // Текущий пользователь (он может быть владельцем, а может и не быть).
         // Владельцу (masterId) доступны все предприятия его аккаунта, пользователю - только одно предприятие владельца - то, к которому он привязан
-        Long myId = userRepositoryJPA.getMyId();
+//        Long myId = userRepositoryJPA.getMyId();
 
         //Выясним, является ли пользователь одновременно и владельцем, и доступны ли ему все предприятия аккаунта
-        Boolean isIamMaster = myId==companyOwnerId;
+//        Boolean isIamMaster = myId.equals(companyOwnerId);
 
-        Long myCompanyId=0L;
+//        Long myCompanyId=0L;
+//        if(!isIamMaster) //если пользователь не владелец (не masterId) - найдем id его предприятия, для фильтрации списка предприятий (т.к. он не должен видеть остальные предприятия мастер-аккаунта)
+//            myCompanyId=userRepositoryJPA.getMyCompanyId_();
 
-        if(!isIamMaster) //если пользователь не владелец (не masterId) - найдем id его предприятия, для фильтрации списка предприятий (т.к. он не должен видеть остальные предприятия мастер-аккаунта)
-            myCompanyId=userRepositoryJPA.getMyCompanyId_();
-
-        stringQuery = "select " +
+        String stringQuery = "select " +
                 "           p.id as id, " +
                 "           p.name as name " +
                 "           from companies p " +
                 "           where  p.master_id=" + companyOwnerId +
                 "           and coalesce(p.is_deleted,false)=false ";
 
-        //если пользователь не владелец (не masterId) - оставляем только его предприятие
-        if(!isIamMaster) stringQuery = stringQuery + " and p.id=" + myCompanyId;
+//        //если пользователь не владелец (не masterId) - оставляем только его предприятие
+//        if(!isIamMaster) stringQuery = stringQuery + " and p.id=" + myCompanyId;
 
         stringQuery = stringQuery + " group by p.id order by p.name asc";
         Query query = entityManager.createNativeQuery(stringQuery);

@@ -25,6 +25,7 @@ import com.dokio.message.response.ResponseMessage;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.*;
@@ -70,6 +71,10 @@ public class UsersController {
     PasswordEncoder encoder;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+    @Autowired
+    FileRepositoryJPA fileRepository;
+    @Autowired
+    DocumentsRepositoryJPA documentsRepository;
 
     @PostMapping("/api/auth/addUser")
     @SuppressWarnings("Duplicates")
@@ -96,13 +101,13 @@ public class UsersController {
                 // Создание аккаунта для нового пользователя
                 User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
                         encoder.encode(signUpRequest.getPassword()));
-
+                Long companyId = Long.valueOf(signUpRequest.getCompany_id());
                 Set<Role> roles = new HashSet<>();
                 Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
                         .orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
                 roles.add(userRole);
                 user.setRoles(roles);//добавили юзеру роль ROLE_USER
-                user.setCompany(companyRepositoryJPA.getCompanyById((long) Integer.parseInt(signUpRequest.getCompany_id())));//предприятие
+                user.setCompany(companyRepositoryJPA.getCompanyById(companyId));//предприятие
                 Set<Long> departments = signUpRequest.getSelectedUserDepartments();
                 Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
                 user.setDepartments(setDepartmentsOfUser);//сет отделений предприятия
@@ -131,8 +136,12 @@ public class UsersController {
                 user.setAdditional(signUpRequest.getAdditional());
 //                user.setTime_zone_id(signUpRequest.getTimeZoneId());
                 Long createdUserId = userRepository.save(user).getId();//и сохранили его
+                // create settings (language, locale, time zone)
                 userRepositoryJPA.setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId());
-                //ответ сервера при удачном создании юзера
+                // create print menus for user
+                List<BaseFiles> baseFilesList = fileRepository.getFilesIdsByName(fileRepository.assemblyBaseFilesList(masterId), masterId, companyId, null);
+                if(baseFilesList.size()>0) documentsRepository.createPrintMenus(baseFilesList,masterId, createdUserId, companyId);
+                // ответ сервера при удачном создании юзера
                 ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
                 return responseEntity;
             } catch (Exception e) {

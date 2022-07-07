@@ -69,8 +69,9 @@ public class UploadController {
             if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
                 if(userRepositoryJPA.getMyConsumedResources().getMegabytes()+fileSizeMb>userRepositoryJPA.getMyMaxAllowedResources().getMegabytes())
                     return ResponseEntity.status(HttpStatus.OK).body("-120"); // if current file will be uploaded, then sum size of all master-user files will out of bounds of tariff plan
-            storageService.store(file,companyId,anonyme_access,categoryId,description,userRepositoryJPA.getMyMasterId(),userRepositoryJPA.getMyId(), false);
-            message = "You successfully uploaded " + file.getOriginalFilename() + "!";
+            Long fileId = storageService.store(file,companyId,anonyme_access,categoryId,description,userRepositoryJPA.getMyMasterId(),userRepositoryJPA.getMyId(), false);
+            if (fileId>0L) message = "You successfully uploaded " + file.getOriginalFilename() + "!";
+            else message = fileId.toString(); // it can be -1, that means not enough permissions
             return ResponseEntity.status(HttpStatus.OK).body(message);
         } catch (Exception e) {
             message = "FAIL to upload " + file.getOriginalFilename() + "!";

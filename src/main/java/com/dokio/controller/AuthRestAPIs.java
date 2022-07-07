@@ -26,6 +26,7 @@ import javax.validation.Valid;
 import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
+import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -102,6 +103,8 @@ public class AuthRestAPIs {
 	CommonUtilites cu;
 	@Autowired
 	FileRepositoryJPA fileRepository;
+	@Autowired
+	DocumentsRepositoryJPA documentsRepository;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -195,19 +198,21 @@ public class AuthRestAPIs {
 		Set<Long> permissions = getAdminPermissions();
 		userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
         // зададим пользователю набор валют
-        currenciesRepository.insertCurrenciesFast(createdUserId,companyId);
+        currenciesRepository.insertCurrenciesFast(createdUserId,createdUserId,companyId);
         // базовые категоии контрагентов
-        cagentRepository.insertCagentCategoriesFast(createdUserId,companyId);
+        cagentRepository.insertCagentCategoriesFast(createdUserId,createdUserId,companyId);
 		// базовые категоии файлов + базовые файлы (шаблоны)
-		Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId,companyId);
+		Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId,createdUserId,companyId);
 		// now need to put base files into this category in accordance of user language
-		fileRepository.insertBaseFilesFast(createdUserId, companyId, templateCategoryId);
+		List<BaseFiles> baseFilesList = fileRepository.insertBaseFilesFast(createdUserId, createdUserId, companyId, templateCategoryId);
+		// forming print menu for documents
+		if(!Objects.isNull(baseFilesList)) documentsRepository.createPrintMenus(baseFilesList,createdUserId,createdUserId,companyId);
         // единицы имерения
-        spravSysEdizm.insertEdizmFast(createdUserId,companyId);
+        spravSysEdizm.insertEdizmFast(createdUserId,createdUserId,companyId);
         // налоги
-        taxesRepository.insertTaxesFast(createdUserId,companyId);
+        taxesRepository.insertTaxesFast(createdUserId,createdUserId,companyId);
         // траты
-        expenditureRepository.insertExpendituresFast(createdUserId,companyId);
+        expenditureRepository.insertExpendituresFast(createdUserId,createdUserId,companyId);
         // статусы документов
 		statusDocRepository.insertStatusesFast(createdUserId,createdUserId,companyId);
         // отправили письмо для подтверждения e-mail

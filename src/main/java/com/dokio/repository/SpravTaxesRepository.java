@@ -545,15 +545,15 @@ public class SpravTaxesRepository {
     }
     // inserting base set taxes of new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertTaxesFast(Long mId, Long cId) {
+    public Boolean insertTaxesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = cu.translateForUser(mId, new String[]{"'tax_no_tax'","'tax_tax'"});
         stringQuery = "insert into sprav_taxes ( master_id,creator_id,company_id,date_time_created,name,is_active,value,multiplier,output_order,is_deleted) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_no_tax")+"',true,0, 1,  1,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 0%', true,0, 1,  2,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 10%', true,10,1.1,3,false),"+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 20%', true,20,1.2,4,false)";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_no_tax")+"',true,0, 1,  1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 0%', true,0, 1,  2,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 10%', true,10,1.1,3,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("tax_tax")+" 20%', true,20,1.2,4,false)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
