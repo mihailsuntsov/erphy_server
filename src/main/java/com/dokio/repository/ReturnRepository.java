@@ -1110,7 +1110,9 @@ public class ReturnRepository {
                 // материален ли товар
                 " (select is_material from sprav_sys_ppr where id=p.ppr_id) as is_material, " +
                 // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                " p.indivisible as indivisible" +
+                " p.indivisible as indivisible, " +
+                // средняя себестоимость
+                "(select ph.avg_netcost_price   from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice " +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -1151,6 +1153,7 @@ public class ReturnRepository {
                 product.setNds_id((Integer)                                 obj[5]);
                 product.setIs_material((Boolean)                            obj[6]);
                 product.setIndivisible((Boolean)                            obj[7]);
+                product.setAvgCostPrice(                                    obj[8]==null?BigDecimal.ZERO:(BigDecimal)obj[8]);
                 returnList.add(product);
             }
             return returnList;

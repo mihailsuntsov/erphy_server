@@ -297,11 +297,11 @@ public class FileRepositoryJPA {
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long myMasterId = dontCheckPermissions?fileObj.getMyMasterId():userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-            //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
+            //(если нужно проверять права, и (на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца)
             if (
-                    !dontCheckPermissions ||
-                    (!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
-                    !myCompanyId.equals(fileObj.getCompanyId())) || !DocumentMasterId.equals(myMasterId))
+                    !dontCheckPermissions &&
+                            ((!securityRepositoryJPA.userHasPermissions_OR(13L, "146") &&
+                    !myCompanyId.equals(fileObj.getCompanyId())) || !DocumentMasterId.equals(myMasterId)))
             {
                 return -1L;
             }
@@ -907,7 +907,7 @@ public class FileRepositoryJPA {
     // It gets list of BaseFiles with file names, and returns list of BaseFiles with file id's accorded to their names
     public List<BaseFiles> getFilesIdsByName(List<BaseFiles>baseFilesList, Long mId, Long cId, String extention){
         List<BaseFiles> retList = new ArrayList<>();
-        String stringQuery = "select  id, original_name from files where master_id = " + mId + " and company_id = " + cId + (Objects.isNull(extention)?"":" and extention = '." + extention + "'") + " order by id";
+        String stringQuery = "select  id, original_name from files where master_id = " + mId + " and company_id = " + cId + " and coalesce(trash,false) = false " + (Objects.isNull(extention)?"":" and extention = '." + extention + "'") + " order by id";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

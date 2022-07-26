@@ -137,14 +137,14 @@ public class ProfitLossRepositoryJPA {
     private BigDecimal getProfitLossRevenue(Long companyId, String dateFrom, String dateTo, String myTimeZone) {
         String stringQuery;
         stringQuery =
-//        " select summ1+summ2-summ3 as summ from " +
-        " select retail_sales+shipment+returnsup as summ from " +
+        " select retail_sales+shipment+returnsup-return as summ from " +
         " coalesce((select " +
         " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
         " from retail_sales_product rsp " +
         " inner JOIN retail_sales rs ON rsp.retail_sales_id = rs.id " +
         " where " +
-        " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
+        " coalesce(rs.is_completed, false) = true and " +
+        "rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.company_id="+companyId+"),0) as retail_sales, " +
 
@@ -153,6 +153,7 @@ public class ProfitLossRepositoryJPA {
         " from shipment_product rsp " +
         " inner JOIN shipment rs ON rsp.shipment_id = rs.id " +
         " where " +
+        " coalesce(rs.is_completed, false) = true and " +
         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.company_id="+companyId+"),0) as shipment, "+
@@ -162,17 +163,20 @@ public class ProfitLossRepositoryJPA {
         " from returnsup_product rsp " +
         " inner JOIN returnsup rs ON rsp.returnsup_id = rs.id " +
         " where " +
+        " coalesce(rs.is_completed, false) = true and " +
         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
         " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
-        " and rs.company_id="+companyId+"),0) as returnsup ";
-//        " coalesce((select " +
-//        " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
-//        " from return_product rsp " +
-//        " inner JOIN return rs ON rsp.return_id = rs.id " +
-//        " where " +
-//        " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
-//        " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
-//        " and rs.company_id="+companyId+"),0) as summ3 ";
+        " and rs.company_id="+companyId+"),0) as returnsup, " +
+
+        " coalesce((select " +
+        " sum(ABS(rsp.product_count*rsp.product_price)) as summ " +
+        " from return_product rsp " +
+        " inner JOIN return rs ON rsp.return_id = rs.id " +
+        " where " +
+        " coalesce(rs.is_completed, false) = true and " +
+        " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
+        " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') " +
+        " and rs.company_id="+companyId+"),0) as return ";
 
         // Почему я убрал учёт возвратов покупателей:
         // По-сути любой возврат является выкупом товара за цену продажи, т.е. такой же закупкой, только по цене выше обычной.
@@ -218,19 +222,27 @@ public class ProfitLossRepositoryJPA {
     private BigDecimal getProfitLossCostPrice(Long master_id, Long companyId, String dateFrom, String dateTo, String myTimeZone) {
         String stringQuery;
         stringQuery =
-        " select cost_price " +
-        " from " +
-//        " coalesce((select abs(sum(change*avg_netcost_price)) " +
-//        " from products_history " +
-        " coalesce((select abs(sum(change*netcost)) " +
-        " from product_history " +
-        " where " +
-        " master_id="+master_id +
-        " and company_id="+companyId +
-        " and doc_type_id in(21,25,29) " + // Retail sales, Shipments, Return to suppliers
-        " and is_completed = true" +
-        " and date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
-        " and date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') ),0) as cost_price ";
+        " select abs(sales-returns) from " +
+
+                "(select coalesce(abs(sum(change*netcost)),0) as sales" +
+                " from product_history " +
+                " where " +
+                " master_id="+master_id +
+                " and company_id="+companyId +
+                " and doc_type_id in(21,25,29) " + // Retail sales, Sales (Shipments), Return to suppliers
+                " and is_completed = true" +
+                " and date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
+                " and date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') ) as outt," +
+
+                "(select coalesce(abs(sum(change*netcost)),0) as returns " +
+                " from product_history " +
+                " where " +
+                " master_id="+master_id +
+                " and company_id="+companyId +
+                " and doc_type_id in (28) " + //	Customers returns
+                " and is_completed = true" +
+                " and date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS') " +
+                " and date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS') ) as inn";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

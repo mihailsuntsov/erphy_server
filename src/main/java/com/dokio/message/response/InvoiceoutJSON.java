@@ -36,6 +36,7 @@ public class InvoiceoutJSON {
     private String      department;
     private Long        doc_number;
     private String      invoiceout_date;
+    private String      due_date;
     private String      company;
     private String      date_time_created;
     private String      date_time_changed;
@@ -54,6 +55,13 @@ public class InvoiceoutJSON {
     private Long        cagent_type_price_id;      //тип цены для покупателя в этом документе
     private Long        default_type_price_id;     //тип цены по умолчанию (устанавливается в Типах цен)
 
+    public String getDue_date() {
+        return due_date;
+    }
+
+    public void setDue_date(String due_date) {
+        this.due_date = due_date;
+    }
 
     public Long getId() {
         return id;

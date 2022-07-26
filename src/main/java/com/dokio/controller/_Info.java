@@ -38,11 +38,11 @@ public class _Info {
     private EntityManager entityManager; // do NOT touch!
 
     public String getBackendVersion() {
-        return "1.0.2";
+        return "1.0.3-1";
     }
 
     public String getBackendVersionDate() {
-        return "02-07-2022";
+        return "12-07-2022";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",
@@ -53,6 +53,5 @@ public class _Info {
         catch (Exception e){e.printStackTrace();logger.error("Controller getSettingsGeneral error", e);
             return new ResponseEntity<>("Error query of general settings", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
 }
 

@@ -716,9 +716,15 @@ public class ShipmentRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     private boolean insertShipmentProducts(ShipmentForm request, Long docId, Long myMasterId) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, CantSaveProductHistoryException, CantSaveProductQuantityException {
-        Set<Long> productIds=new HashSet<>();
+        Set<Long> rowIds=new HashSet<>();
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         int size = request.getShipmentProductTable().size();
+        // перед сохранением таблицы товаров удалим все товары, что удалили на фронтэнде. Для этого накопим id неудалённых товаров и удалим все что не входит в эти id
+        for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
+            if(!Objects.isNull(row.getId())) rowIds.add(row.getId());
+        }
+        if (!deleteShipmentProductTableExcessRows((rowIds.size()>0?(commonUtilites.SetOfLongToString(rowIds,",","","")):"0"), request.getId(), myMasterId))
+            throw new CantInsertProductRowCauseErrorException();
         //сохранение таблицы
         if (!Objects.isNull(request.getShipmentProductTable()) && request.getShipmentProductTable().size() != 0) {
             for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
@@ -731,11 +737,9 @@ public class ShipmentRepositoryJPA {
                         throw new CantInsertProductRowCauseOversellException();//кидаем исключение 'оверселл', чтобы произошла отмена транзакции
                     }
                 }
-                productIds.add(row.getProduct_id());
             }
-        }if (!deleteShipmentProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", docId)){
-            throw new CantInsertProductRowCauseErrorException();
-        } else return true;
+        }
+        return true;
     }
 
     @SuppressWarnings("Duplicates")
@@ -969,11 +973,11 @@ public class ShipmentRepositoryJPA {
                 // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
                 String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
                 // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
-                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? request.getDepartment_id() : null);
+                ProductHistoryJSON productInfo = productsRepository.getProductQuantityAndNetcost(masterId, request.getCompany_id(), row.getProduct_id(), netcostPolicy.equals("each") ? row.getDepartment_id() : null);
                 // актуальное количество товара В ОТДЕЛЕНИИ
                 // Используется для записи нового кол-ва товара в отделении путем вычитания row.getProduct_count() из lastQuantity
                 // если политика подсчета себестоимости ПО КАЖДОМУ отделению - lastQuantity отдельно высчитывать не надо - она уже высчитана шагом ранее в productInfo
-                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), request.getDepartment_id());
+                BigDecimal lastQuantity =  netcostPolicy.equals("each") ? productInfo.getQuantity() : productsRepository.getProductQuantity(masterId, request.getCompany_id(), row.getProduct_id(), row.getDepartment_id());
                 // средняя себестоимость уже имеющегося товара
                 BigDecimal lastAvgNetcostPrice = productInfo.getAvg_netcost_price();
 
@@ -989,7 +993,7 @@ public class ShipmentRepositoryJPA {
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
-                        request.getDepartment_id(),
+                        row.getDepartment_id(),
                         21,
                         request.getId(),
                         row.getProduct_id(),
@@ -1002,14 +1006,14 @@ public class ShipmentRepositoryJPA {
                 if (request.isIs_completed())   // Если проводим
                     productsRepository.setProductQuantity(
                             masterId, row.getProduct_id(),
-                            request.getDepartment_id(),
+                            row.getDepartment_id(),
                             lastQuantity.subtract(row.getProduct_count()),
                             lastAvgNetcostPrice
                     );
                 else                            // Если снимаем с проведения
                     productsRepository.setProductQuantity(
                             masterId, row.getProduct_id(),
-                            request.getDepartment_id(),
+                            row.getDepartment_id(),
                             lastQuantity.add(row.getProduct_count()),
                             lastAvgNetcostPrice
                     );
@@ -1104,10 +1108,11 @@ public class ShipmentRepositoryJPA {
         }
     }
 
-    private Boolean deleteShipmentProductTableExcessRows(String productIds, Long shipment_id) {
+    private Boolean deleteShipmentProductTableExcessRows(String productIds, Long shipment_id, Long myMasterId) {
         String stringQuery;
         stringQuery =   " delete from shipment_product " +
                 " where shipment_id=" + shipment_id +
+                " and master_id=" + myMasterId +
                 " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1345,78 +1350,6 @@ public class ShipmentRepositoryJPA {
 //    }
 
 
-
-
-    //записывает историю изменения кол-ва товара
-    @SuppressWarnings("Duplicates")
-    private Boolean addShipmentProductHistory(ShipmentProductTableForm row, ShipmentForm request , Long masterId) throws CantSaveProductHistoryException, CantInsertProductRowCauseOversellException {
-        String stringQuery;
-        try {
-            //материален ли товар
-            Boolean isMaterial=productsRepository.isProductMaterial(row.getProduct_id());
-            //берем последнюю запись об истории товара в данном отделении
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-            //последнее количество товара (прибавим его в запросе к тому количеству, которое возвращают, но только если товар материален)
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            //средняя цена закупа - оставляем прежней
-            BigDecimal avgPurchasePrice =lastProductHistoryRecord.getAvg_purchase_price();
-            //последняя цена покупки
-            BigDecimal lastPurchasePrice =lastProductHistoryRecord.getLast_purchase_price();
-            //средняя себестоимость - оставляем прежней
-            BigDecimal avgNetcostPrice =  lastProductHistoryRecord.getAvg_netcost_price();
-            //Цена операции - пока единственный показатель, который меняется у товара в его истории в связи с данным возвратом товара
-            BigDecimal lastOperationPrice=row.getProduct_price();// за цену операции берем цену продажи
-
-
-            // проверку на доступное кол-во товара не делаем, т.к. она была сделана в методе insertShipmentProducts -> saveShipmentProductTable, и если бы она там не прошла - сюда бы мы не попали
-//            if((lastQuantity.subtract(row.getProduct_count())).compareTo(new BigDecimal("0")) < 0) {
-//                logger.error("Для отгрузки с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к отгрузке больше количества доступного товара на складе");
-//                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
-//            }
-
-            stringQuery = " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +
-                    " change," +
-                    " avg_purchase_price," +
-                    " avg_netcost_price," +
-                    " last_purchase_price," +
-                    " last_operation_price," +
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_id() + ","+
-                    21 +","+// 21 = Отгрузка
-                    row.getShipment_id() + ","+
-                    row.getProduct_id() + ","+
-                    (isMaterial?lastQuantity.subtract(row.getProduct_count()):(new BigDecimal(0)))+","+//если товар материален - записываем его кол-во, равное разности прежнего и возвращаемого, иначе 0
-                    row.getProduct_count().negate() +","+// т.к. товар выбывает, пишем его орицательное кол-во
-                    avgPurchasePrice +","+
-                    avgNetcostPrice +","+
-                    lastPurchasePrice+","+
-                    lastOperationPrice+","+
-                    " now())";
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-//        } catch (CantInsertProductRowCauseOversellException e) { //т.к. весь метод обёрнут в try, данное исключение ловим сначала здесь и перекидываем в родительский метод updateShipment
-//            e.printStackTrace();
-//            logger.error("Exception in method ShipmentRepository/addShipmentProductHistory (CantInsertProductRowCauseOversellException). ", e);
-//            throw new CantInsertProductRowCauseOversellException();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method ShipmentRepository/addShipmentProductHistory. ", e);
-            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
 
 
 //    @SuppressWarnings("Duplicates")

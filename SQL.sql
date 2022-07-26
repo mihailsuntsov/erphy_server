@@ -3776,10 +3776,15 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('f_ctg_templates',             'Шаблоны',                       'Templates');
 insert into _dictionary (key, tr_ru, tr_en) values
 ('stamp',                       'Печать',                        'Stamp');
+update version set value = '1.0.3', date = '08-07-2022';
+------------------------------------------------  end of 1.0.3  ------------------------------------------------------
+-----------------------------------------------  begin of 1.0.4   ----------------------------------------------------
+update documents set doc_name_en = 'Products and Services' where doc_name_ru = 'Товары и услуги';
+update documents set doc_name_en = 'Sales', doc_name_ru = 'Продажа'  where upper(doc_name_ru) like upper('%отгруз%');
+update _dictionary set tr_en = 'Sale', tr_ru = 'Продажа' where key = 'shipment';
 
-
-
-
+update version set value = '1.0.4', date = '18-07-2022';
+------------------------------------------------  end of 1.0.4  ------------------------------------------------------
 
 
 

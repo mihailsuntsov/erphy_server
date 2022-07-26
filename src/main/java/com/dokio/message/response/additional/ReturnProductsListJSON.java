@@ -29,6 +29,15 @@ public class ReturnProductsListJSON {
     private Integer     nds_id;              // НДС
     private Boolean     is_material;         // материален ли товар
     private Boolean     indivisible;         // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+    private BigDecimal  avgCostPrice;        // средняя себестоимость
+
+    public BigDecimal getAvgCostPrice() {
+        return avgCostPrice;
+    }
+
+    public void setAvgCostPrice(BigDecimal avgCostPrice) {
+        this.avgCostPrice = avgCostPrice;
+    }
 
     public Boolean getIndivisible() {
         return indivisible;

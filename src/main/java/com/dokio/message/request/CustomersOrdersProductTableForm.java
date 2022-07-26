@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 
     public class CustomersOrdersProductTableForm {
 
+        private Long id;                                // id в таблице товаров customers_orders_product
         private BigDecimal available;                   // кол-во доступно (на момент формирования документа) (высчитывается не сохраняется)
         private Long customers_orders_id;               // id родиельского документа
         private Long department_id;                     // id отделения (склада) отгрузки
@@ -35,6 +36,14 @@ import java.math.BigDecimal;
         private BigDecimal product_sumprice;            // сумма (цена*кол-во)
         private BigDecimal shipped;                     // отгружено (высчитывается, не сохраняется)
         private BigDecimal reserved_current;            // сколько зарезервировано в данном документе
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
 
         public BigDecimal getAvailable() {
             return available;

@@ -116,7 +116,7 @@ public class InvoiceoutRepositoryJPA {
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from invoiceout_product where invoiceout_id=p.id),0) as sum_price, " +
-                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoiceout_date, " +
+                    "           to_char(p.invoiceout_date, '"+dateFormat+"') as invoiceout_date, " + // in DB invoiceout_date hasn't information about timezone, and do not need to use 'at timezone' - it will returns wrong date
                     "           cg.name as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from invoiceout_product ip where coalesce(ip.invoiceout_id,0)=p.id) as product_count," + //подсчет кол-ва товаров
@@ -425,7 +425,7 @@ public class InvoiceoutRepositoryJPA {
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
-                    "           to_char(p.invoiceout_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoiceout_date, " +
+                    "           to_char(p.invoiceout_date, 'DD.MM.YYYY') as invoiceout_date, " + // the same as due_date but in system format DD.MM.YYYY format
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -433,7 +433,8 @@ public class InvoiceoutRepositoryJPA {
                     "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
                     "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
                     "           p.uid as uid, " +
-                    "           p.is_completed as is_completed " +
+                    "           p.is_completed as is_completed, " +
+                    "           to_char(p.invoiceout_date, '"+dateFormat+"') as due_date " + // the same as invoiceout_date but in user's format (for using in print templates)
 
                     "           from invoiceout p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -496,6 +497,7 @@ public class InvoiceoutRepositoryJPA {
                     returnObj.setDefault_type_price_id(Long.parseLong(      obj[26].toString()));
                     returnObj.setUid((String)                               obj[27]);
                     returnObj.setIs_completed((Boolean)                     obj[28]);
+                    returnObj.setDue_date((String)                          obj[29]);
                 }
                 return returnObj;
             } catch (Exception e) {

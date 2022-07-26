@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 
 public class ShipmentProductTableForm {
 
+    private Long id;
     private Long product_id;
     private Long shipment_id;
     private BigDecimal product_count;
@@ -36,6 +37,14 @@ public class ShipmentProductTableForm {
     private BigDecimal product_price_of_type_price; // цена по типу цены на момент составления документа
     private Long department_id;                     // id отделения (склада) отгрузки
     private Boolean is_material;                    // материален ли данный товар/услуга (если не материален - не проводим проверку на его количество на складе)
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Boolean getIs_material() {
         return is_material;

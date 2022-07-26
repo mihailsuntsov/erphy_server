@@ -469,7 +469,7 @@ public class CompanyRepositoryJPA {
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
                     "           p.st_netcost_policy as st_netcost_policy, " +
                     "           p.type as type, " +// entity or individual
-                    "           p.legal_form as legal_form " +// legal form of individual (ie entrepreneur, ...)
+                    "           coalesce(p.legal_form,'') as legal_form " +// legal form of individual (ie entrepreneur, ...)
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -631,8 +631,7 @@ public class CompanyRepositoryJPA {
     @SuppressWarnings("Duplicates")
     private Boolean updateCompanyBaseFields(CompaniesForm request){//Апдейт документа без банковских счетов
         Long myId = userRepositoryJPA.getMyId();
-        try
-        {
+
             String stringQuery;
             stringQuery =   " update companies set " +
                     " name = :name, " +//наименование
@@ -700,7 +699,9 @@ public class CompanyRepositoryJPA {
 
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
-            Query query = entityManager.createNativeQuery(stringQuery);
+        Query query = entityManager.createNativeQuery(stringQuery);
+        try
+        {
             query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
             query.setParameter("type",request.getType());
             query.setParameter("name", (request.getName()!=null?request.getName():""));
@@ -740,7 +741,7 @@ public class CompanyRepositoryJPA {
             query.executeUpdate();
             return true;
         }catch (Exception e) {
-            logger.error("Error of updateCompanyBaseFields", e);
+            logger.error("Error of updateCompanyBaseFields. SQL:" + stringQuery + ", params: " + query.getParameters().toString(), e);
             e.printStackTrace();
             return false;
         }

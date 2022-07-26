@@ -18,7 +18,6 @@
 
 package com.dokio.repository;
 
-import com.dokio.message.request.CagentsForm;
 import com.dokio.message.request.OrderinForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.SettingsOrderinForm;
@@ -708,6 +707,7 @@ public class OrderinRepositoryJPA {
                     }
                     // обновляем состояние счета нашего предприятия, прибавляя к нему полученную сумму
                     commonUtilites.addDocumentHistory("boxoffice", request.getCompany_id(), request.getBoxoffice_id(), "orderin","orderin", request.getId(), request.getSumm(),new BigDecimal(0),true,request.getDoc_number(),request.getStatus_id());
+
                 }
 
                 return 1;

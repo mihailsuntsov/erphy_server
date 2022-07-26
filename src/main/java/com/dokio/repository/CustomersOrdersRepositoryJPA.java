@@ -906,11 +906,16 @@ public class CustomersOrdersRepositoryJPA {
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
     private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
-        Set<Long> productIds=new HashSet<>();
+        Set<Long> rowIds=new HashSet<>();
         CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о сохранении таблицы товаров
         Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
         updateResults.setFail_to_reserve(0);// иначе NullPointerException, т.к. там сейчас null
-
+        // перед сохранением таблицы товаров удалим все товары, что удалили на фронтэнде. Для этого накопим id неудалённых товаров и удалим все что не входит в эти id
+        for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
+            if(!Objects.isNull(row.getId())) rowIds.add(row.getId());
+        }
+        if (!deleteCustomersOrdersProductTableExcessRows(rowIds.size()>0?(commonUtilites.SetOfLongToString(rowIds,",","","")):"0", request.getId(), myMasterId))
+            throw new CantInsertProductRowCauseErrorException();
         if (request.getCustomersOrdersProductTable()!=null && request.getCustomersOrdersProductTable().size() > 0) {//если есть что сохранять
             for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
                 row.setCustomers_orders_id(parentDocId);// т.к. он может быть неизвестен при создании документа
@@ -920,13 +925,9 @@ public class CustomersOrdersRepositoryJPA {
                 }
                 //если при сохранении позиции товара не удалось сохранить включенным резерв - добавляем этот случай к сумме таких случаев по всем позициям (для отчета о сохранении)
                 updateResults.setFail_to_reserve((updateResults.getFail_to_reserve()+updateProductRowResult));
-                //копим id сохранённых товаров
-                productIds.add(row.getProduct_id());
             }
         }
-        if (!deleteCustomersOrdersProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId(), myMasterId)){
-            throw new CantInsertProductRowCauseErrorException();
-        } else return updateResults;
+        return updateResults;
     }
 
 
@@ -1174,11 +1175,11 @@ public class CustomersOrdersRepositoryJPA {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_customers_orders_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = :pricing_type" +
+                            " pricing_type = :pricing_type"  + ","+
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
-                            " plus_minus = :plusMinus" +
-                            " change_price_type = :changePriceType" +
+                            " plus_minus = :plusMinus"  + ","+
+                            " change_price_type = :changePriceType"  + ","+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings();
 
@@ -1332,13 +1333,13 @@ public class CustomersOrdersRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении заказа (те позиции, которые ранее были в заказе, но потом их удалили)
-    private Boolean deleteCustomersOrdersProductTableExcessRows(String productIds, Long customers_orders_id, Long myMasterId) {
+    private Boolean deleteCustomersOrdersProductTableExcessRows(String rowIds, Long customers_orders_id, Long myMasterId) {
         String stringQuery="";
         try {
             stringQuery =   " delete from customers_orders_product " +
                     " where customers_orders_id=" + customers_orders_id +
                     " and master_id=" + myMasterId +
-                    (productIds.length()>0?(" and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+                    (rowIds.length()>0?(" and id not in (" + rowIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
