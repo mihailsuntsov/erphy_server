@@ -372,7 +372,8 @@ public class PostingRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           p.uid as uid" +
+                    "           p.uid as uid, " +
+                    "           to_char(p.posting_date at time zone '"+myTimeZone+"', 'HH24:MI') as _time " +
                     "           from posting p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -426,6 +427,7 @@ public class PostingRepository {
                     returnObj.setStatus_color((String)                  obj[22]);
                     returnObj.setStatus_description((String)            obj[23]);
                     returnObj.setUid((String)                           obj[24]);
+                    returnObj.setPosting_time((String)                  obj[25]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -441,6 +443,7 @@ public class PostingRepository {
     public Long insertPosting(PostingForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
 
         Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 16L, "200", "201", "202");
         if(iCan==Boolean.TRUE)
@@ -469,7 +472,8 @@ public class PostingRepository {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery =   "insert into posting (" +
+            stringQuery =   "set timezone='UTC'; " +
+                    " insert into posting (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -494,7 +498,8 @@ public class PostingRepository {
                     request.getStatus_id() + ", "+//статус
                     " :uid, " + //uid
                     linkedDocsGroupId+"," + // id группы связанных документов
-                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
+                    "to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"')";// дата оприходования
+//                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
             try {
 
                 Date dateNow = new Date();
@@ -506,6 +511,7 @@ public class PostingRepository {
                 query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("posting_date", ((request.getPosting_date()==null || request.getPosting_date().equals("")) ? dateFormat.format(dateNow) : request.getPosting_date()));
+                query.setParameter("posting_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? "00:00" : request.getPosting_time()));
                 query.executeUpdate();
                 stringQuery = "select id from posting where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -800,23 +806,30 @@ public class PostingRepository {
     private Boolean updatePostingWithoutTable(PostingForm request) throws Exception {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery =   " update posting set " +
+        stringQuery =   "set timezone='UTC';  update posting set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
-                " is_completed = " + request.isIs_completed() + "," +
-                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " + "," +
+//                " is_completed = " + request.isIs_completed() + "," +
+//                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " + "," +
+                " posting_date = to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
                 " and master_id="+myMasterId;
         try
         {
+            Date dateNow = new Date();
+            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-            query.setParameter("posting_date", (request.getPosting_date() == "" ? null :request.getPosting_date()));
+//            query.setParameter("posting_date", (request.getPosting_date() == "" ? null :request.getPosting_date()));
+            query.setParameter("posting_date", ((request.getPosting_date()==null || request.getPosting_date().equals("")) ? dateFormat.format(dateNow) : request.getPosting_date()));
+            query.setParameter("writeoff_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? "00:00" : request.getPosting_time()));
 
             query.executeUpdate();
             return true;

@@ -23,6 +23,16 @@ public class UserSettingsForm {
     private int     timeZoneId;
     private int     languageId;
     private int     localeId;
+    private String  timeFormat;
+
+    public String getTimeFormat() {
+        return timeFormat;
+    }
+
+    public void setTimeFormat(String timeFormat) {
+        this.timeFormat = timeFormat;
+    }
+
 
     public int getTimeZoneId() {
         return timeZoneId;

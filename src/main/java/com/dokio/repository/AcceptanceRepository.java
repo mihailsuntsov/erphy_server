@@ -419,7 +419,8 @@ public class AcceptanceRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           p.uid as uid " +
+                    "           p.uid as uid, " +
+                    "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'HH24:MI') as acceptance_time " +
                     "           from acceptance p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -479,6 +480,7 @@ public class AcceptanceRepository {
                     returnObj.setStatus_color((String)                  obj[28]);
                     returnObj.setStatus_description((String)            obj[29]);
                     returnObj.setUid((String)                           obj[30]);
+                    returnObj.setAcceptance_time((String)               obj[31]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -494,7 +496,7 @@ public class AcceptanceRepository {
     public Long insertAcceptance(AcceptanceForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
+        String myTimeZone = userRepository.getUserTimeZone();
         Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
         if(iCan==Boolean.TRUE)
         {
@@ -522,7 +524,8 @@ public class AcceptanceRepository {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery =   "insert into acceptance (" +
+            stringQuery = "set timezone='UTC';" +
+                    " insert into acceptance (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -553,7 +556,8 @@ public class AcceptanceRepository {
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
                     request.getStatus_id() + ", "+//статус
-                    " to_date(:acceptance_date,'DD.MM.YYYY'), " +
+//                    " to_date(:acceptance_date,'DD.MM.YYYY'), " +
+                    "to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +
                     linkedDocsGroupId+","+
                     ":uid)";
             try {
@@ -565,6 +569,7 @@ public class AcceptanceRepository {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
+                query.setParameter("acceptance_time", ((request.getAcceptance_time()==null || request.getAcceptance_time().equals("")) ? "00:00" : request.getAcceptance_time()));
                 query.setParameter("uid",request.getUid());
                 query.executeUpdate();
                 stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
@@ -764,8 +769,9 @@ public class AcceptanceRepository {
     private Boolean updateAcceptanceWithoutTable(AcceptanceForm request, Long myMasterId) throws Exception {
 
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery =   " update acceptance set " +
+        stringQuery = "set timezone='UTC'; update acceptance set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
@@ -775,8 +781,7 @@ public class AcceptanceRepository {
                 " overhead =" + request.getOverhead() + "," +                               //расходы
                 " overhead_netcost_method =" + request.getOverhead_netcost_method() + "," + //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
                 " is_completed = " + request.getIs_completed() + "," +
-                " acceptance_date = to_date(:acceptance_date,'DD.MM.YYYY'), " +
-
+                " acceptance_date = to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
@@ -786,6 +791,7 @@ public class AcceptanceRepository {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
             query.setParameter("acceptance_date", (request.getAcceptance_date() == "" ? null :request.getAcceptance_date()));
+            query.setParameter("acceptance_time", ((request.getAcceptance_time()==null || request.getAcceptance_time().equals("")) ? "00:00" : request.getAcceptance_time()));
 
             query.executeUpdate();
             return true;

@@ -45,6 +45,15 @@ public class ReturnJSON {
     private String      date_return;
     private Long        product_count;
     private String      uid;
+    private String      return_time;
+
+    public String getReturn_time() {
+        return return_time;
+    }
+
+    public void setReturn_time(String return_time) {
+        this.return_time = return_time;
+    }
 
     public String getUid() {
         return uid;

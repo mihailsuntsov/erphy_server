@@ -41,6 +41,16 @@ public class ShipmentForm {
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
+    private String shipment_time;
+
+    public String getShipment_time() {
+        return shipment_time;
+    }
+
+    public void setShipment_time(String shipment_time) {
+        this.shipment_time = shipment_time;
+    }
+
 
     public Boolean isIs_completed() {
         return is_completed;

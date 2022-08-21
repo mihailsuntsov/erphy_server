@@ -36,6 +36,15 @@ public class WriteoffForm {
     private String linked_doc_name;//имя (таблицы) связанного документа
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+    private String writeoff_time;
+
+    public String getWriteoff_time() {
+        return writeoff_time;
+    }
+
+    public void setWriteoff_time(String writeoff_time) {
+        this.writeoff_time = writeoff_time;
+    }
 
     public String getParent_uid() {
         return parent_uid;

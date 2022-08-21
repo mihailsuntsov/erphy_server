@@ -381,7 +381,8 @@ public class WriteoffRepositoryJPA {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           p.uid as uid" +
+                    "           p.uid as uid, " +
+                    "           to_char(p.writeoff_date at time zone '"+myTimeZone+"', 'HH24:MI') as _time " +
                     "           from writeoff p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -436,7 +437,8 @@ public class WriteoffRepositoryJPA {
                     returnObj.setStatus_name((String)                   obj[21]);
                     returnObj.setStatus_color((String)                  obj[22]);
                     returnObj.setStatus_description((String)            obj[23]);
-                    returnObj.setUid((String)            obj[24]);
+                    returnObj.setUid((String)                           obj[24]);
+                    returnObj.setWriteoff_time((String)                 obj[25]);
                 }
                 return returnObj;
             }
@@ -454,6 +456,7 @@ public class WriteoffRepositoryJPA {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public Long insertWriteoff(WriteoffForm request) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
 
         Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 17L, "216", "217", "218");
         if(iCan==Boolean.TRUE)
@@ -483,7 +486,8 @@ public class WriteoffRepositoryJPA {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery = "insert into writeoff (" +
+            stringQuery = "set timezone='UTC'; " +
+                    " insert into writeoff (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -506,7 +510,8 @@ public class WriteoffRepositoryJPA {
                     " :uid, " + //uid
                     linkedDocsGroupId+"," + // id группы связанных документов
                     request.getStatus_id() + ", "+//статус
-                    " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
+                    "to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"')";// дата списания
+//                    " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
             try {
 
                 Date dateNow = new Date();
@@ -518,6 +523,7 @@ public class WriteoffRepositoryJPA {
                 query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("writeoff_date", ((request.getWriteoff_date()==null || request.getWriteoff_date().equals("")) ? dateFormat.format(dateNow) : request.getWriteoff_date()));
+                query.setParameter("writeoff_time", ((request.getWriteoff_time()==null || request.getWriteoff_time().equals("")) ? "00:00" : request.getWriteoff_time()));
                 query.executeUpdate();
                 stringQuery = "select id from writeoff where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -809,23 +815,30 @@ public class WriteoffRepositoryJPA {
 
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery =   " update writeoff set " +
+        stringQuery =   "set timezone='UTC';  update writeoff set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
                 " is_completed = " + request.isIs_completed() + "," +
                 " status_id = " + request.getStatus_id() + "," +
-                " writeoff_date = to_date(:writeoff_date,'DD.MM.YYYY') " +
+//                " writeoff_date = to_date(:writeoff_date,'DD.MM.YYYY') " +
+                " writeoff_date = to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                 " where " +
                 " id= "+request.getId() +
                 " and master_id="+myMasterId;
         try
         {
+            Date dateNow = new Date();
+            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
-            query.setParameter("writeoff_date", (request.getWriteoff_date() == "" ? null :request.getWriteoff_date()));
+//            query.setParameter("writeoff_date", (request.getWriteoff_date() == "" ? null :request.getWriteoff_date()));
+            query.setParameter("writeoff_date", ((request.getWriteoff_date()==null || request.getWriteoff_date().equals("")) ? dateFormat.format(dateNow) : request.getWriteoff_date()));
+            query.setParameter("writeoff_time", ((request.getWriteoff_time()==null || request.getWriteoff_time().equals("")) ? "00:00" : request.getWriteoff_time()));
 
             query.executeUpdate();
             return true;

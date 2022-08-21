@@ -41,6 +41,15 @@ public class OrdersupForm {
     private String child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
     private String name;
+    private String      ordersup_time;
+
+    public String getOrdersup_time() {
+        return ordersup_time;
+    }
+
+    public void setOrdersup_time(String ordersup_time) {
+        this.ordersup_time = ordersup_time;
+    }
 
     public String getName() {
         return name;

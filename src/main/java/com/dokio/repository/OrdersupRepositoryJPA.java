@@ -414,7 +414,8 @@ public class OrdersupRepositoryJPA {
                     "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
                     "           p.uid as uid, " +
                     "           p.is_completed as is_completed, " +
-                    "           coalesce(p.name,'') as name" +
+                    "           coalesce(p.name,'') as name, " +
+                    "           to_char(p.ordersup_date at time zone '"+myTimeZone+"', 'HH24:MI') as _time " +
 
                     "           from ordersup p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -478,6 +479,7 @@ public class OrdersupRepositoryJPA {
                     returnObj.setUid((String)                               obj[27]);
                     returnObj.setIs_completed((Boolean)                     obj[28]);
                     returnObj.setName((String)                              obj[29]);
+                    returnObj.setOrdersup_time((String)                     obj[30]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -497,6 +499,7 @@ public class OrdersupRepositoryJPA {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "ordersup")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            String myTimeZone = userRepository.getUserTimeZone();
             Long docDepartment=request.getDepartment_id();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
             boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
@@ -568,7 +571,8 @@ public class OrdersupRepositoryJPA {
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "insert into ordersup (" +
+                stringQuery =   "set timezone='UTC';" +
+                        " insert into ordersup (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
                         " company_id," + //предприятие, для которого создается документ
@@ -592,7 +596,8 @@ public class OrdersupRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" to_date(:ordersup_date,'DD.MM.YYYY'),":"")+//план. дата
+                        "to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +// план. дата и время поставки
+//                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" to_date(:ordersup_date,'DD.MM.YYYY'),":"")+//план. дата
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -605,6 +610,8 @@ public class OrdersupRepositoryJPA {
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
                     query.setParameter("name",request.getName());
+                    if(request.getOrdersup_time()!=null&& !request.getOrdersup_time().equals(""))
+                        query.setParameter("ordersup_time", ((request.getOrdersup_time()==null || request.getOrdersup_time().equals("")) ? "00:00" : request.getOrdersup_time()));
                     if(request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))
                         query.setParameter("ordersup_date",request.getOrdersup_date());
                     query.executeUpdate();
@@ -692,16 +699,18 @@ public class OrdersupRepositoryJPA {
             }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   " update ordersup set " +
+            stringQuery =   "set timezone='UTC';  update ordersup set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " nds = "+request.isNds()+"," +// НДС
                     " name=:name," +
                     " nds_included = "+request.isNds_included()+"," +// НДС включен в цену
-                    " ordersup_date = to_date(:ordersup_date,'DD.MM.YYYY'), " +
+//                    " ordersup_date = to_date(:ordersup_date,'DD.MM.YYYY'), " +
+                    " ordersup_date = to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -717,6 +726,7 @@ public class OrdersupRepositoryJPA {
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("ordersup_date", ((request.getOrdersup_date()==null || request.getOrdersup_date().equals("")) ? dateFormat.format(dateNow) : request.getOrdersup_date()));
+                query.setParameter("ordersup_time", ((request.getOrdersup_time()==null || request.getOrdersup_time().equals("")) ? "00:00" : request.getOrdersup_time()));
                 query.setParameter("description",request.getDescription());
                 query.setParameter("name",request.getName());
                 query.executeUpdate();

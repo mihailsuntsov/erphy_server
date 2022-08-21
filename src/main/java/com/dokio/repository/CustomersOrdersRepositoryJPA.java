@@ -41,6 +41,8 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -498,7 +500,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           '' as area, " +
                     "           coalesce(cg.price_type_id,0) as cagent_type_price_id, " +
                     "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
-                    "           p.uid as uid " +
+                    "           p.uid as uid, " +
+                    "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'HH24:MI') as _time " +
 
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -581,6 +584,7 @@ public class CustomersOrdersRepositoryJPA {
                 returnObj.setCagent_type_price_id(Long.parseLong(       obj[46].toString()));
                 returnObj.setDefault_type_price_id(Long.parseLong(      obj[47].toString()));
                 returnObj.setUid((String)                               obj[48]);
+                returnObj.setShipment_time((String)                     obj[49]);
             }
             return returnObj;
         } else return null;
@@ -593,6 +597,7 @@ public class CustomersOrdersRepositoryJPA {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "customers_orders")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            String myTimeZone = userRepository.getUserTimeZone();
             Long docDepartment=request.getDepartment_id();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
             boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
@@ -654,7 +659,8 @@ public class CustomersOrdersRepositoryJPA {
 
                     String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-                    stringQuery =   "insert into customers_orders (" +
+                    stringQuery =   "set timezone='UTC';" +
+                    " insert into customers_orders (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -692,7 +698,7 @@ public class CustomersOrdersRepositoryJPA {
                     doc_number + ", "+//номер заказа
                     ":name, " +//наименование
                     ":description, " +//описание
-                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date().replaceAll("[^0-9\\.]", "")+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
+                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?"to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',":"null,") +// план. дата и время отгрузки
                     request.isNds() + ", "+// НДС
                     request.isNds_included() + ", "+// НДС включен в цену
                     ":telephone, " +//телефон
@@ -728,6 +734,10 @@ public class CustomersOrdersRepositoryJPA {
                         query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
                         query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
                         query.setParameter("track_number",(request.getTrack_number() == null ? "": request.getTrack_number()));
+                        if(request.getShipment_date()!=null&& !request.getShipment_date().equals("")) {
+                            query.setParameter("shipment_date", request.getShipment_date());
+                            query.setParameter("shipment_time", ((request.getShipment_date() == null || request.getShipment_date().equals("")) ? "00:00" : request.getShipment_date()));
+                        }
                         query.executeUpdate();
                         stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1010,13 +1020,15 @@ public class CustomersOrdersRepositoryJPA {
     @SuppressWarnings("Duplicates")
     private Boolean updateCustomersOrdersWithoutTable(CustomersOrdersForm request) throws Exception {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   " update customers_orders set " +
+            stringQuery =   " set timezone='UTC'; update customers_orders set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
-                    " shipment_date = to_date('" + (request.getShipment_date() == "" ? null :request.getShipment_date().replaceAll("[^0-9\\.]", "")) + "','DD.MM.YYYY'), " + // иначе дата будет 01-01-0001
+                    " shipment_date = to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+//                    " shipment_date = to_date('" + (request.getShipment_date() == "" ? null :request.getShipment_date().replaceAll("[^0-9\\.]", "")) + "','DD.MM.YYYY'), " + // иначе дата будет 01-01-0001
                     " nds  = " + request.isNds() + ", " +
                     " nds_included  = " + request.isNds_included() + ", " +
                     " cagent_id  = " + request.getCagent_id() + ", " +
@@ -1041,6 +1053,9 @@ public class CustomersOrdersRepositoryJPA {
                     " id= "+request.getId();
         try
         {
+            Date dateNow = new Date();
+            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name", (request.getName()!=null?request.getName():""));
             query.setParameter("description",(request.getDescription() == null ? "" : request.getDescription()));
@@ -1054,6 +1069,8 @@ public class CustomersOrdersRepositoryJPA {
             query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
             query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
             query.setParameter("track_number",(request.getTrack_number() == null ? "": request.getTrack_number()));
+            query.setParameter("shipment_date", ((request.getShipment_date()==null || request.getShipment_date().equals("")) ? dateFormat.format(dateNow) : request.getShipment_date()));
+            query.setParameter("shipment_time", ((request.getShipment_time()==null || request.getShipment_time().equals("")) ? "00:00" : request.getShipment_time()));
 
             query.executeUpdate();
             return true;

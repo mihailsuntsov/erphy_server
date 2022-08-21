@@ -61,6 +61,17 @@ public class CustomersOrdersForm {
     private String jr_region;
     private String jr_city;
 
+    private String shipment_time;
+
+    public String getShipment_time() {
+        return shipment_time;
+    }
+
+    public void setShipment_time(String shipment_time) {
+        this.shipment_time = shipment_time;
+    }
+
+
     public String getRegion() {
         return region;
     }

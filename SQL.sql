@@ -3783,6 +3783,60 @@ update documents set doc_name_en = 'Products and Services' where doc_name_ru = '
 update documents set doc_name_en = 'Sales', doc_name_ru = 'Продажа'  where upper(doc_name_ru) like upper('%отгруз%');
 update _dictionary set tr_en = 'Sale', tr_ru = 'Продажа' where key = 'shipment';
 
+alter table user_settings add column time_format varchar(2);
+update user_settings set time_format = '12'; -- can be 12 or 24
+alter table user_settings alter time_format set not null;
+
+ALTER TABLE acceptance ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE acceptance SET create_time_holder = acceptance_date::TIMESTAMP;
+ALTER TABLE acceptance ALTER COLUMN acceptance_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE acceptance DROP COLUMN create_time_holder;
+
+ALTER TABLE return ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE return SET create_time_holder = date_return::TIMESTAMP;
+ALTER TABLE return ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE return DROP COLUMN create_time_holder;
+
+ALTER TABLE returnsup ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE returnsup SET create_time_holder = date_return::TIMESTAMP;
+ALTER TABLE returnsup ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE returnsup DROP COLUMN create_time_holder;
+
+ALTER TABLE ordersup ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE ordersup SET create_time_holder = ordersup_date::TIMESTAMP;
+ALTER TABLE ordersup ALTER COLUMN ordersup_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE ordersup DROP COLUMN create_time_holder;
+
+ALTER TABLE invoicein ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE invoicein SET create_time_holder = invoicein_date::TIMESTAMP;
+ALTER TABLE invoicein ALTER COLUMN invoicein_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE invoicein DROP COLUMN create_time_holder;
+
+ALTER TABLE invoiceout ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE invoiceout SET create_time_holder = invoiceout_date::TIMESTAMP;
+ALTER TABLE invoiceout ALTER COLUMN invoiceout_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE invoiceout DROP COLUMN create_time_holder;
+
+ALTER TABLE customers_orders ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE customers_orders SET create_time_holder = shipment_date::TIMESTAMP;
+ALTER TABLE customers_orders ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE customers_orders DROP COLUMN create_time_holder;
+
+ALTER TABLE shipment ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE shipment SET create_time_holder = shipment_date::TIMESTAMP;
+ALTER TABLE shipment ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE shipment DROP COLUMN create_time_holder;
+
+ALTER TABLE writeoff ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE writeoff SET create_time_holder = writeoff_date::TIMESTAMP;
+ALTER TABLE writeoff ALTER COLUMN writeoff_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE writeoff DROP COLUMN create_time_holder;
+
+ALTER TABLE posting ADD COLUMN create_time_holder TIMESTAMP with time zone;
+UPDATE posting SET create_time_holder = posting_date::TIMESTAMP;
+ALTER TABLE posting ALTER COLUMN posting_date TYPE TIMESTAMP with time zone USING create_time_holder;
+ALTER TABLE posting DROP COLUMN create_time_holder;
+
 update version set value = '1.0.4', date = '18-07-2022';
 ------------------------------------------------  end of 1.0.4  ------------------------------------------------------
 

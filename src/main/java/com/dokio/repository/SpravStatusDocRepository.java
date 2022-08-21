@@ -222,7 +222,7 @@ public class SpravStatusDocRepository {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String dateFormat=userRepositoryJPA.getMyDateFormat();
-
+            String suffix = userRepositoryJPA.getUserSuffix(userService.getUserId());
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -238,7 +238,7 @@ public class SpravStatusDocRepository {
                     "           p.dock_id as doc_id, " +
                     "           p.status_type as status_type, " +//тип статуса: 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                     "           p.output_order as output_order, " +
-                    "           dc.name as dock, " +
+                    "           dc.doc_name_"+suffix+" as dock, " +
                     "           p.color as color, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_default, false) as is_default " +

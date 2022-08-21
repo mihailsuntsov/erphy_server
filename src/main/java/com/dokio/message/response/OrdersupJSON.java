@@ -55,6 +55,15 @@ public class OrdersupJSON {
     private Long        cagent_type_price_id;      //тип цены для покупателя в этом документе
     private Long        default_type_price_id;     //тип цены по умолчанию (устанавливается в Типах цен)
     private String      name;
+    private String      ordersup_time;
+
+    public String getOrdersup_time() {
+        return ordersup_time;
+    }
+
+    public void setOrdersup_time(String ordersup_time) {
+        this.ordersup_time = ordersup_time;
+    }
 
     public String getName() {
         return name;

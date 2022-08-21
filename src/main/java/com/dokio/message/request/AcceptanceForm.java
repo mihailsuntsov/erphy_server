@@ -29,6 +29,7 @@ public class AcceptanceForm {
     private Long    cagent_id;
     private Integer doc_number;
     private String  acceptance_date;
+    private String  acceptance_time;
     private boolean nds;
     private boolean nds_included;
     private BigDecimal overhead;
@@ -41,6 +42,14 @@ public class AcceptanceForm {
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
+
+    public String getAcceptance_time() {
+        return acceptance_time;
+    }
+
+    public void setAcceptance_time(String acceptance_time) {
+        this.acceptance_time = acceptance_time;
+    }
 
     public String getParent_uid() {
         return parent_uid;

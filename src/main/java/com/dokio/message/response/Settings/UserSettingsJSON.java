@@ -31,6 +31,15 @@ public class UserSettingsJSON {
     private String  organization;           // organization of country of jurisdiction(e.g. EU)
     private String  accounting_currency;    // short name of Accounting currency of user's company (e.g. $ or EUR)
     private String  dateFormat;
+    private String  timeFormat;
+
+    public String getTimeFormat() {
+        return timeFormat;
+    }
+
+    public void setTimeFormat(String timeFormat) {
+        this.timeFormat = timeFormat;
+    }
 
     public String getDateFormat() {
         return dateFormat;

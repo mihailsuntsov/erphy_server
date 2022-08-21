@@ -54,6 +54,15 @@ public class InvoiceoutJSON {
     private Long        department_type_price_id;  //тип цены для отделения в этом документе
     private Long        cagent_type_price_id;      //тип цены для покупателя в этом документе
     private Long        default_type_price_id;     //тип цены по умолчанию (устанавливается в Типах цен)
+    private String      invoiceout_time;
+
+    public String getInvoiceout_time() {
+        return invoiceout_time;
+    }
+
+    public void setInvoiceout_time(String invoiceout_time) {
+        this.invoiceout_time = invoiceout_time;
+    }
 
     public String getDue_date() {
         return due_date;

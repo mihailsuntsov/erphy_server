@@ -423,7 +423,8 @@ public class InvoiceinRepositoryJPA {
                     "           p.is_completed as is_completed, " +
                     "           coalesce(p.name,'') as name," +
                     "           coalesce(p.income_number,'') as income_number," +
-                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date " +
+                    "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
+                    "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'HH24:MI') as _time " +
 
                     "           from invoicein p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -489,6 +490,7 @@ public class InvoiceinRepositoryJPA {
                     returnObj.setName((String)                              obj[29]);
                     returnObj.setIncome_number((String)                     obj[30]);
                     returnObj.setIncome_number_date((String)                obj[31]);
+                    returnObj.setInvoicein_time((String)                    obj[32]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -508,6 +510,7 @@ public class InvoiceinRepositoryJPA {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "invoicein")){
             EntityManager emgr = emf.createEntityManager();
             Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            String myTimeZone = userRepository.getUserTimeZone();
             Long docDepartment=request.getDepartment_id();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
             boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
@@ -579,7 +582,8 @@ public class InvoiceinRepositoryJPA {
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "insert into invoicein (" +
+                stringQuery =   "set timezone='UTC'; " +
+                        " insert into invoicein (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
                         " company_id," + //предприятие, для которого создается документ
@@ -605,9 +609,10 @@ public class InvoiceinRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" to_date(:invoicein_date,'DD.MM.YYYY'),":"")+//план. дата
+                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?"to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',":"null") +// дата и время
+//                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" to_date(:invoicein_date,'DD.MM.YYYY'),":"")+//план. дата
                         ":income_number,"+
-                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" to_date(:income_number_date,'DD.MM.YYYY'),":"")+// входящая дата счета поставщика
+                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" to_date(:income_number_date,'DD.MM.YYYY'),":"null")+// входящая дата счета поставщика
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -625,6 +630,9 @@ public class InvoiceinRepositoryJPA {
                         query.setParameter("income_number_date",request.getIncome_number_date());
                     if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
                         query.setParameter("invoicein_date",request.getInvoicein_date());
+                    if(request.getInvoicein_time()!=null&& !request.getInvoicein_time().equals(""))
+                        query.setParameter("invoicein_time", ((request.getInvoicein_time()==null || request.getInvoicein_time().equals("")) ? "00:00" : request.getInvoicein_time()));
+
                     query.executeUpdate();
                     stringQuery="select id from invoicein where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -705,16 +713,18 @@ public class InvoiceinRepositoryJPA {
             }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   " update invoicein set " +
+            stringQuery =   "set timezone='UTC';  update invoicein set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
                     " nds = "+request.isNds()+"," +// НДС
                     " name=:name," +
                     " nds_included = "+request.isNds_included()+"," +// НДС включен в цену
-                    ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date = to_date(:invoicein_date,'DD.MM.YYYY'),":"invoicein_date = null,") +
+//                    ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date = to_date(:invoicein_date,'DD.MM.YYYY'),":"invoicein_date = null,") +
+                    " invoicein_date = to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                     " income_number = :income_number," +// входящий номер
                     ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +
@@ -729,6 +739,7 @@ public class InvoiceinRepositoryJPA {
 
                 if(request.getIs_completed()!=null && request.getIs_completed() && request.getInvoiceinProductTable().size()==0) throw new Exception("There is no products in product list");
 
+                Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -738,8 +749,10 @@ public class InvoiceinRepositoryJPA {
                 query.setParameter("income_number",request.getIncome_number());
                 if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                     query.setParameter("income_number_date",request.getIncome_number_date());
-                if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
-                    query.setParameter("invoicein_date",request.getInvoicein_date());
+//                if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
+//                    query.setParameter("invoicein_date",request.getInvoicein_date());
+                query.setParameter("invoicein_date", ((request.getInvoicein_date()==null || request.getInvoicein_date().equals("")) ? dateFormat.format(dateNow) : request.getInvoicein_date()));
+                query.setParameter("invoicein_time", ((request.getInvoicein_time()==null || request.getInvoicein_time().equals("")) ? "00:00" : request.getInvoicein_time()));
                 query.executeUpdate();
                 if(request.getIs_completed()==null)request.setIs_completed(false);
                 if(insertInvoiceinProducts(request, request.getId(), myMasterId)){//если сохранение товаров из таблицы товаров прошло успешно

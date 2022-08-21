@@ -38,6 +38,16 @@ public class PostingForm {
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
 
+    private String posting_time;
+
+    public String getPosting_time() {
+        return posting_time;
+    }
+
+    public void setPosting_time(String posting_time) {
+        this.posting_time = posting_time;
+    }
+
     public String getParent_uid() {
         return parent_uid;
     }

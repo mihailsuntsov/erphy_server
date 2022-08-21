@@ -72,6 +72,15 @@ public class CustomersOrdersJSON
     private String home;
     private String flat;
     private BigDecimal sum_price;
+    private String shipment_time;
+
+    public String getShipment_time() {
+        return shipment_time;
+    }
+
+    public void setShipment_time(String shipment_time) {
+        this.shipment_time = shipment_time;
+    }
 
     public Long getProduct_count() {
         return product_count;

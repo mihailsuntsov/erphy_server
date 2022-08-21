@@ -43,6 +43,16 @@ public class InvoiceinForm {
     private String name;
     private String income_number;
     private String income_number_date;
+    private String invoicein_time;
+
+    public String getInvoicein_time() {
+        return invoicein_time;
+    }
+
+    public void setInvoicein_time(String invoicein_time) {
+        this.invoicein_time = invoicein_time;
+    }
+
 
     public String getIncome_number() {
         return income_number;

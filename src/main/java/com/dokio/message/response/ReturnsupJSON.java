@@ -45,6 +45,15 @@ public class ReturnsupJSON {
     private String      date_return;
     private Long        acceptance_id;
     private String      uid;
+    private String      return_time;
+
+    public String getReturn_time() {
+        return return_time;
+    }
+
+    public void setReturn_time(String return_time) {
+        this.return_time = return_time;
+    }
 
     public String getUid() {
         return uid;

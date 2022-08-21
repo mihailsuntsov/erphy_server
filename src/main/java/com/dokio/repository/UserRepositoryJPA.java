@@ -723,7 +723,8 @@ public class UserRepositoryJPA {
                 "   c.jr_country_id as country_id," +       // id of user's company country of jurisdiction
                 "   ssc.organization," +                    // organization of country of jurisdiction(e.g. EU)
                 "   cur.name_short," +                      // short name of Accounting currency of user's company (e.g. $ or EUR)
-                "   sslc.date_format" +                     // date format of the user, like DD/MM/YYYY, YYYY-MM-DD e.t.c
+                "   sslc.date_format," +                    // date format of the user, like DD/MM/YYYY, YYYY-MM-DD e.t.c
+                "   p.time_format as time_format " +        // 12 or 24
                 "   from    user_settings p, " +
                 "           sprav_sys_languages sslg, " +
                 "           sprav_sys_locales sslc, " +
@@ -751,6 +752,7 @@ public class UserRepositoryJPA {
                 doc.setOrganization((String)        queryList.get(0)[6]);
                 doc.setAccounting_currency((String) queryList.get(0)[7]);
                 doc.setDateFormat((String)          queryList.get(0)[8]);
+                doc.setTimeFormat((String)          queryList.get(0)[9]);
             }
             return doc;
         } catch (Exception e) {
@@ -772,6 +774,7 @@ public class UserRepositoryJPA {
                 " master_id, " +
                 " time_zone_id," +
                 " language_id," +
+                " time_format," +
                 " locale_id" +
                 ") " +
                 "values " +
@@ -780,12 +783,14 @@ public class UserRepositoryJPA {
                 myMasterId + ", " +
                 settings.getTimeZoneId() + ", " +
                 settings.getLanguageId() + ", " +
+                settings.getTimeFormat() + ", " +
                 settings.getLocaleId() +
                 ")"+
                 " ON CONFLICT ON CONSTRAINT user_uq " +
                 " DO update set " +
                 " time_zone_id="+ settings.getTimeZoneId() + ", " +
                 " language_id="+ settings.getLanguageId() + ", " +
+                " time_format="+ settings.getTimeFormat() + ", " +
                 " locale_id="+ settings.getLocaleId();
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

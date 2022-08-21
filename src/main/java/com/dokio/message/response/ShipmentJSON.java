@@ -57,6 +57,16 @@ public class ShipmentJSON {
     private Long department_type_price_id;//тип цены для отделения в этой Отгрузке
     private Long cagent_type_price_id;//тип цены для покупателя в этой Отгрузке
     private Long default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
+    private String shipment_time;
+
+    public String getShipment_time() {
+        return shipment_time;
+    }
+
+    public void setShipment_time(String shipment_time) {
+        this.shipment_time = shipment_time;
+    }
+
 
     public String getStatus_name() {
         return status_name;

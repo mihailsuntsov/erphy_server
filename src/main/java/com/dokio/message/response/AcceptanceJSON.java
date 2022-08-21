@@ -37,6 +37,7 @@ public class AcceptanceJSON {
     private String cagent;
     private Long doc_number;
     private String acceptance_date;
+    private String  acceptance_time;
     private String company;
     private String date_time_created;
     private String date_time_changed;
@@ -50,6 +51,14 @@ public class AcceptanceJSON {
     private Long        status_id;
     private BigDecimal sum_price;
     private String uid;
+
+    public String getAcceptance_time() {
+        return acceptance_time;
+    }
+
+    public void setAcceptance_time(String acceptance_time) {
+        this.acceptance_time = acceptance_time;
+    }
 
     public BigDecimal getSum_price() {
         return sum_price;

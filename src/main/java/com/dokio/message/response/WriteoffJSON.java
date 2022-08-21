@@ -45,6 +45,15 @@ public class WriteoffJSON {
     private Boolean     is_completed; // завершена
     private String uid;
     private BigDecimal sum_price;
+    private String writeoff_time;
+
+    public String getWriteoff_time() {
+        return writeoff_time;
+    }
+
+    public void setWriteoff_time(String writeoff_time) {
+        this.writeoff_time = writeoff_time;
+    }
 
     public BigDecimal getSum_price() {
         return sum_price;

@@ -390,7 +390,8 @@ public class ReturnsupRepository {
                     "           cg.id as cagent_id, " +
                     "           cg.name as cagent, " +
                     "           p.nds as nds, " +
-                    "           p.uid as uid " +
+                    "           p.uid as uid, " +
+                    "           to_char(p.date_return at time zone '"+myTimeZone+"', 'HH24:MI') as return_time " +
 
                     "           from returnsup p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -450,6 +451,7 @@ public class ReturnsupRepository {
                     doc.setCagent((String)                        obj[22]);
                     doc.setNds((Boolean)                          obj[23]);
                     doc.setUid((String)                           obj[24]);
+                    doc.setReturn_time((String)                   obj[25]);
 
                 }
                 return doc;
@@ -490,14 +492,16 @@ public class ReturnsupRepository {
             }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
             String stringQuery;
-            stringQuery =   " update returnsup set " +
+            stringQuery =   "set timezone='UTC';  update returnsup set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, "+
                     " nds = " + request.getNds() + ", " +
-                    " date_return = to_date(:date_return,'DD.MM.YYYY'), " +
+//                    " date_return = to_date(:date_return,'DD.MM.YYYY'), " +
+                    " date_return = to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
                     " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -514,6 +518,7 @@ public class ReturnsupRepository {
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
+                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? "00:00" : request.getReturn_time()));
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
 
                 query.executeUpdate();
@@ -729,6 +734,7 @@ public class ReturnsupRepository {
     public Long insertReturnsup(ReturnsupForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
         Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 29L, "361", "362", "363");
         if(iCan==Boolean.TRUE)
         {
@@ -756,7 +762,8 @@ public class ReturnsupRepository {
             }
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery =   "insert into returnsup (" +
+            stringQuery =   "set timezone='UTC';" +
+                    " insert into returnsup (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -778,7 +785,7 @@ public class ReturnsupRepository {
                     request.getCagent_id() + ", "+//покупатель, возвращающий заказ
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                     doc_number + ", "+//номер заказа
-                    " to_date(:date_return,'DD.MM.YYYY'), "+// дата списания
+                    "to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +// дата и время возврата
                     " :description, " +//описание
                     request.getStatus_id() + ", " + //статус док-та
 //                    request.getAcceptance_id() + ", " + //id родительского документа Розничная продажа, из которого может быть создан возврат
@@ -793,6 +800,7 @@ public class ReturnsupRepository {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
+                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? "00:00" : request.getReturn_time()));
                 query.setParameter("uid",request.getUid());
 
                 query.executeUpdate();

@@ -46,6 +46,15 @@ public class PostingJSON {
     private Long        status_id;
     private BigDecimal sum_price;
     private String uid;
+    private String posting_time;
+
+    public String getPosting_time() {
+        return posting_time;
+    }
+
+    public void setPosting_time(String posting_time) {
+        this.posting_time = posting_time;
+    }
 
     public BigDecimal getSum_price() {
         return sum_price;
