@@ -39,12 +39,14 @@ public class ProductGroupsJSON {
     private String creator_id;
     private String changer;
     private String changer_id;
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Timestamp date_time_created;
-    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-    private Timestamp date_time_changed;
+    private String date_time_created;
+    private String date_time_changed;
+//    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+//    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+//    private Timestamp date_time_created;
+//    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+//    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+//    private Timestamp date_time_changed;
 //    @ElementCollection(fetch = FetchType.LAZY)
 //    private List<ProductGroupFields> productGroupFieldsList;
 
@@ -139,19 +141,35 @@ public class ProductGroupsJSON {
         this.changer_id = changer_id;
     }
 
-    public Timestamp getDate_time_created() {
+    public String getDate_time_created() {
         return date_time_created;
     }
 
-    public void setDate_time_created(Timestamp date_time_created) {
+    public void setDate_time_created(String date_time_created) {
         this.date_time_created = date_time_created;
     }
 
-    public Timestamp getDate_time_changed() {
+    public String getDate_time_changed() {
         return date_time_changed;
     }
 
-    public void setDate_time_changed(Timestamp date_time_changed) {
+    public void setDate_time_changed(String date_time_changed) {
         this.date_time_changed = date_time_changed;
     }
+    //
+//    public Timestamp getDate_time_created() {
+//        return date_time_created;
+//    }
+//
+//    public void setDate_time_created(Timestamp date_time_created) {
+//        this.date_time_created = date_time_created;
+//    }
+//
+//    public Timestamp getDate_time_changed() {
+//        return date_time_changed;
+//    }
+//
+//    public void setDate_time_changed(Timestamp date_time_changed) {
+//        this.date_time_changed = date_time_changed;
+//    }
 }

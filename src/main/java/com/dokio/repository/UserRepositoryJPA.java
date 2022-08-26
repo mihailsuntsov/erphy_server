@@ -395,7 +395,11 @@ public class UserRepositoryJPA {
     public UsersJSON getUserValuesById(int id) {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
         {
-            Long myId = userDetailService.getUserId();
+//            Long myId = userDetailService.getUserId();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             String stringQuery = "select p.id as id, " +
                     "           p.name as name, " +
                     "           p.master_id as master_id, " +
@@ -404,8 +408,8 @@ public class UserRepositoryJPA {
                     "           (select name from users where id=p.master_id) as master, " +
                     "           (select name from users where id=p.creator_id) as creator, " +
                     "           (select name from users where id=p.changer_id) as changer, " +
-                    "           p.date_time_created as date_time_created, " +
-                    "           p.date_time_changed as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           coalesce(p.company_id,'0') as company_id, " +
                     "           (select name from companies where id=p.company_id) as company, " +
                     "           p.fio_family as fio_family, " +
@@ -514,6 +518,10 @@ public class UserRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "25,24"))// Пользователи: "Меню - таблица - пользователи всех предприятий","Меню - таблица - пользователи только своего предприятия","Меню - таблица - только свой документ"
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long documentOwnerId = getUserMasterIdByUsername(userDetailService.getUserName());
             int myCompanyId=getMyCompanyId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
@@ -526,8 +534,8 @@ public class UserRepositoryJPA {
                     "           (select name from users where id=p.master_id) as master, " +
                     "           (select name from users where id=p.creator_id) as creator, " +
                     "           (select name from users where id=p.changer_id) as changer, " +
-                    "           to_char(p.date_time_created, 'DD.MM.YYYY HH24:MI')as date_time_created, " +
-                    "           to_char(p.date_time_changed, 'DD.MM.YYYY HH24:MI')as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           coalesce(p.company_id,'0') as company_id, " +
@@ -724,19 +732,22 @@ public class UserRepositoryJPA {
                 "   ssc.organization," +                    // organization of country of jurisdiction(e.g. EU)
                 "   cur.name_short," +                      // short name of Accounting currency of user's company (e.g. $ or EUR)
                 "   sslc.date_format," +                    // date format of the user, like DD/MM/YYYY, YYYY-MM-DD e.t.c
-                "   p.time_format as time_format " +        // 12 or 24
+                "   p.time_format as time_format, " +       // 12 or 24
+                "   sst.canonical_id as time_zone " +       // time zone name, e.g. 'CET'
                 "   from    user_settings p, " +
                 "           sprav_sys_languages sslg, " +
                 "           sprav_sys_locales sslc, " +
+                "           sprav_sys_timezones sst, " +
                 "           users u, " +
                 "           companies c" +
                 "           LEFT OUTER JOIN sprav_sys_countries ssc ON ssc.id=c.jr_country_id " +
                 "           LEFT OUTER JOIN sprav_currencies cur ON cur.company_id=c.id " +
-                "   where   p.user_id=" + myId +
-                "   and     p.language_id=sslg.id" +
-                "   and     p.locale_id=sslc.id" +
-                "   and     p.user_id=u.id " +
+                "   where   p.user_id =" + myId +
+                "   and     p.language_id = sslg.id" +
+                "   and     p.locale_id = sslc.id" +
+                "   and     p.user_id = u.id " +
                 "   and     cur.is_default = true " +
+                "   and     p.time_zone_id = sst.id " +
                 "   and     u.company_id = c.id";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -753,6 +764,7 @@ public class UserRepositoryJPA {
                 doc.setAccounting_currency((String) queryList.get(0)[7]);
                 doc.setDateFormat((String)          queryList.get(0)[8]);
                 doc.setTimeFormat((String)          queryList.get(0)[9]);
+                doc.setTime_zone((String)           queryList.get(0)[10]);
             }
             return doc;
         } catch (Exception e) {
@@ -804,7 +816,7 @@ public class UserRepositoryJPA {
     }
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Boolean setUserSettings(Long userId, int timeZoneId, int langId, int localeId) {
+    public Boolean setUserSettings(Long userId, int timeZoneId, int langId, int localeId, String timeFormat) {
         Long myMasterId = getUserMasterIdByUserId(userId);
         String stringQuery;
         stringQuery =
@@ -813,7 +825,8 @@ public class UserRepositoryJPA {
                         " master_id, " +
                         " time_zone_id," +
                         " language_id," +
-                        " locale_id" +
+                        " locale_id," +
+                        " time_format" +
                         ") " +
                         "values " +
                         "(" +
@@ -821,15 +834,18 @@ public class UserRepositoryJPA {
                         myMasterId + ", " +
                         timeZoneId + ", " +
                         langId + ", " +
-                        localeId +
+                        localeId + ", " +
+                        ":timeFormat" +
                         ")"+
                         " ON CONFLICT ON CONSTRAINT user_uq " +
                         " DO update set " +
                         " time_zone_id="+ timeZoneId + ", " +
                         " language_id="+ langId + ", " +
+                        " time_format = :timeFormat, " +
                         " locale_id="+ localeId;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("timeFormat", timeFormat);
             query.executeUpdate();
             return true;
         }catch (Exception e) {

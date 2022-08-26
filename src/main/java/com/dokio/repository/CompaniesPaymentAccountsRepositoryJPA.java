@@ -20,6 +20,7 @@ package com.dokio.repository;
 import com.dokio.message.request.CompaniesPaymentAccountsForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
@@ -78,7 +79,10 @@ public class CompaniesPaymentAccountsRepositoryJPA {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -88,8 +92,8 @@ public class CompaniesPaymentAccountsRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_main,false) as is_main, " +
@@ -229,7 +233,10 @@ public class CompaniesPaymentAccountsRepositoryJPA {
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -240,8 +247,8 @@ public class CompaniesPaymentAccountsRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_main,false) as is_main, " +

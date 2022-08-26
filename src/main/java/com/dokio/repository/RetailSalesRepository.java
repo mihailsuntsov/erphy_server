@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsRetailSalesForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsRetailSalesJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
@@ -90,12 +91,14 @@ public class RetailSalesRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(25L, "316,317,318,319"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -110,8 +113,8 @@ public class RetailSalesRepository {
                     "           p.doc_number as doc_number, " +
                     "           p.customers_orders_id as customers_orders_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.shift_id,0) as shift_id, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -412,11 +415,13 @@ public class RetailSalesRepository {
         if (securityRepositoryJPA.userHasPermissions_OR(25L, "316,317,318,319"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                 "           p.id as id, " +
                 "           u.name as master, " +
@@ -431,8 +436,8 @@ public class RetailSalesRepository {
                 "           p.doc_number as doc_number, " +
                 "           coalesce(sh.shift_number,0) as shift_number, " +
                 "           cmp.name as company, " +
-                "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                 "           p.description as description, " +
                 "           p.customers_orders_id as customers_orders_id, " +
                 "           coalesce(dp.price_id,0) as department_type_price_id, " +

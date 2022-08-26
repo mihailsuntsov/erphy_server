@@ -20,6 +20,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravSysEdizmForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.SpravSysEdizmJSON;
 import com.dokio.message.response.Sprav.SpravSysEdizmTableJSON;
 import com.dokio.model.Sprav.SpravSysEdizm;
@@ -80,9 +81,12 @@ public class SpravSysEdizmJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//типы цен (см. файл Permissions Id)
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -90,8 +94,8 @@ public class SpravSysEdizmJPA {
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.short_name as short_name, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -176,6 +180,10 @@ public class SpravSysEdizmJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//Типы цен: см. _Permissions Id.txt
         {
         String stringQuery;
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String myTimeZone = userSettings.getTime_zone();
+        String dateFormat = userSettings.getDateFormat();
+        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select " +
@@ -192,8 +200,8 @@ public class SpravSysEdizmJPA {
                 "           p.changer_id as changer_id, " +
                 "           p.company_id as company_id, " +
                 "           cmp.name as company, " +
-                "           p.date_time_created as date_time_created, " +
-                "           p.date_time_changed as date_time_changed " +
+                "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed " +
                 "           from sprav_sys_edizm p " +
                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                 "           INNER JOIN users u ON p.master_id=u.id " +

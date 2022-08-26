@@ -20,6 +20,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.DepositingForm;
 import com.dokio.message.response.DepositingJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.repository.Exceptions.OutcomingPaymentIsDecompletedException;
@@ -85,11 +86,13 @@ public class DepositingRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(46L, "579,580,581,582"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -103,7 +106,7 @@ public class DepositingRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           p.description as description, " +
                     "           coalesce(p.summ,0) as summ, " +
                     "           p.boxoffice_id as boxoffice_id, " +
@@ -263,11 +266,13 @@ public class DepositingRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(46L, "579,580,581,582"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select   p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -280,7 +285,7 @@ public class DepositingRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           p.description as description, " +
                     "           coalesce(p.summ,0) as summ, " +
                     "           p.boxoffice_id as boxoffice_id, " +

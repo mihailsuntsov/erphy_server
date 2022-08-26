@@ -22,6 +22,7 @@ import com.dokio.message.request.FileCategoriesForm;
 import com.dokio.message.request.FilesForm;
 import com.dokio.message.response.FileCategoriesTableJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
 import com.dokio.message.response.additional.FilesJSON;
@@ -90,8 +91,11 @@ public class FileRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))// Меню - таблица
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -106,8 +110,8 @@ public class FileRepositoryJPA {
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from files p " +
@@ -193,6 +197,10 @@ public class FileRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             stringQuery = "select  p.id as id, " +
@@ -211,8 +219,8 @@ public class FileRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
-                    "           p.date_time_created as date_time_created, " +
-                    "           p.date_time_changed as date_time_changed " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed " +
                     "           from files p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +

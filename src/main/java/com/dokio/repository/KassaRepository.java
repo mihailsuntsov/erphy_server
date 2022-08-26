@@ -23,6 +23,7 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Reports.ReceiptsJSON;
 import com.dokio.message.response.Reports.ShiftsJSON;
 import com.dokio.message.response.Settings.KassaCashierSettingsJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.AcquiringInfoJSON;
 import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.model.Companies;
@@ -87,12 +88,14 @@ public class KassaRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(24L, "302,303,304"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -105,8 +108,8 @@ public class KassaRepository {
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +
@@ -302,10 +305,12 @@ public class KassaRepository {
         if (securityRepositoryJPA.userHasPermissions_OR(24L, "302,303,304"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -317,8 +322,8 @@ public class KassaRepository {
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +

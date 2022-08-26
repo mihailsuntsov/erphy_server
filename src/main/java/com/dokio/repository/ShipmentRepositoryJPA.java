@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsShipmentForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsShipmentJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
@@ -93,12 +94,14 @@ public class ShipmentRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(21L, "260,261,262,263"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -113,8 +116,8 @@ public class ShipmentRepositoryJPA {
                     "           p.doc_number as doc_number, " +
                     "           p.customers_orders_id as customers_orders_id, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.shift_id,0) as shift_id, " +
                     "           p.date_time_created as date_time_created_sort, " +
@@ -429,11 +432,13 @@ public class ShipmentRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(21L, "260,261,262,263"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -448,8 +453,8 @@ public class ShipmentRepositoryJPA {
                     "           p.doc_number as doc_number, " +
                     "           coalesce(sh.shift_number,0) as shift_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.customers_orders_id as customers_orders_id, " +
                     "           coalesce(dp.price_id,0) as department_type_price_id, " +
@@ -630,7 +635,7 @@ public class ShipmentRepositoryJPA {
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "set timezone='UTC'; " +
+                stringQuery =
                         " insert into shipment (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
@@ -656,7 +661,7 @@ public class ShipmentRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер заказа
-                        ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?"to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',":"null,") +// план. дата и время отгрузки
+                        "to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +// план. дата и время отгрузки
 //                        ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?" to_date('"+request.getShipment_date().replaceAll("[^0-9\\.]", "")+"','DD.MM.YYYY'),":"'',")+//план. дата отгрузки
                         ":description," +
                         request.isNds() + ", "+// НДС
@@ -667,13 +672,16 @@ public class ShipmentRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         ":uid)";// уникальный идентификатор документа
                 try{
+                    Date dateNow = new Date();
+                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                    DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                    dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
-                    if(request.getShipment_date()!=null&& !request.getShipment_date().equals("")) {
-                        query.setParameter("shipment_date", request.getShipment_date());
-                        query.setParameter("shipment_time", ((request.getShipment_date() == null || request.getShipment_date().equals("")) ? "00:00" : request.getShipment_date()));
-                    }
+                    query.setParameter("shipment_date", ((request.getShipment_date()==null || request.getShipment_date().equals("")) ? dateFormat.format(dateNow) : request.getShipment_date()));
+                    query.setParameter("shipment_time", ((request.getShipment_time()==null || request.getShipment_time().equals("")) ? timeFormat.format(dateNow) : request.getShipment_time()));
                     query.executeUpdate();
                     stringQuery="select id from shipment where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -785,14 +793,14 @@ public class ShipmentRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всей отгрузке
             String stringQuery;
-            stringQuery =   "set timezone='UTC';  update shipment set " +
+            stringQuery =   "update shipment set " +
                     " changer_id = " + myId + ", "+
                     " nds  = " + request.isNds() + ", " +
                     " nds_included  = " + request.isNds_included() + ", " +
                     " date_time_changed= now()," +
                     " description = :description, " +
 //                    " shipment_date = to_date(:shipment_date,'DD.MM.YYYY'), " +
-                    " shipment_date = to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                    " shipment_date = to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                     " is_completed = " + request.isIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -801,11 +809,12 @@ public class ShipmentRepositoryJPA {
             {
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
                 Query query = entityManager.createNativeQuery(stringQuery);
 //                query.setParameter("shipment_date", ((request.getShipment_date()==null || request.getShipment_date().equals("")) ? dateFormat.format(dateNow) : request.getShipment_date()));
                 query.setParameter("shipment_date", ((request.getShipment_date()==null || request.getShipment_date().equals("")) ? dateFormat.format(dateNow) : request.getShipment_date()));
-                query.setParameter("shipment_time", ((request.getShipment_time()==null || request.getShipment_time().equals("")) ? "00:00" : request.getShipment_time()));
+                query.setParameter("shipment_time", ((request.getShipment_time()==null || request.getShipment_time().equals("")) ? timeFormat.format(dateNow) : request.getShipment_time()));
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
                 if(request.isIs_completed()==null)request.setIs_completed(false);

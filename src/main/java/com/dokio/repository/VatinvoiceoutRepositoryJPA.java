@@ -22,6 +22,7 @@ import com.dokio.message.request.VatinvoiceoutForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.SettingsVatinvoiceoutForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.VatinvoiceoutJSON;
 import com.dokio.message.response.Settings.SettingsVatinvoiceoutJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
@@ -94,11 +95,13 @@ public class VatinvoiceoutRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(37L, "491,492"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -110,8 +113,8 @@ public class VatinvoiceoutRepositoryJPA {
                     "           p.company_id as company_id, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -282,10 +285,12 @@ public class VatinvoiceoutRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(37L, "491,492"))//см. _Permissions Id.txt
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -297,8 +302,8 @@ public class VatinvoiceoutRepositoryJPA {
                     "           p.company_id as company_id, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           CASE " +
                     "               WHEN p.parent_tablename='orderin'" +

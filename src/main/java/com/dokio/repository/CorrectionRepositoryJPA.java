@@ -24,6 +24,7 @@ import com.dokio.message.request.Settings.SettingsCorrectionForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.CorrectionJSON;
 import com.dokio.message.response.Settings.SettingsCorrectionJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.ExpenditureItemsListForm;
 import com.dokio.message.response.additional.FilesUniversalJSON;
@@ -91,11 +92,13 @@ public class CorrectionRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(41L, "544,545"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -107,8 +110,8 @@ public class CorrectionRepositoryJPA {
                     "           p.company_id as company_id, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -272,10 +275,12 @@ public class CorrectionRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(41L, "544,545"))//см. _Permissions Id.txt
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -287,8 +292,8 @@ public class CorrectionRepositoryJPA {
                     "           p.company_id as company_id, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.summ,0) as summ, " +
                     "           p.type as type, "+        // boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта

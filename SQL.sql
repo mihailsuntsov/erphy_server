@@ -3780,8 +3780,11 @@ update version set value = '1.0.3', date = '08-07-2022';
 ------------------------------------------------  end of 1.0.3  ------------------------------------------------------
 -----------------------------------------------  begin of 1.0.4   ----------------------------------------------------
 update documents set doc_name_en = 'Products and Services' where doc_name_ru = 'Товары и услуги';
-update documents set doc_name_en = 'Sales', doc_name_ru = 'Продажа'  where upper(doc_name_ru) like upper('%отгруз%');
-update _dictionary set tr_en = 'Sale', tr_ru = 'Продажа' where key = 'shipment';
+--update documents set doc_name_en = 'Sales', doc_name_ru = 'Продажа'  where upper(doc_name_ru) like upper('%отгруз%');
+--update _dictionary set tr_en = 'Sale', tr_ru = 'Продажа' where key = 'shipment';
+
+--update documents set doc_name_en = 'Shipment', doc_name_ru = 'Отгрузка'  where doc_name_ru = 'Продажа';
+--update _dictionary set tr_en = 'Shipment', tr_ru = 'Отгрузка' where key = 'shipment';
 
 alter table user_settings add column time_format varchar(2);
 update user_settings set time_format = '12'; -- can be 12 or 24

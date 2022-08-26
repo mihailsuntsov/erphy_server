@@ -20,6 +20,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.response.DepartmentsListJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
@@ -73,10 +74,12 @@ public class DepartmentRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(4L, "14,13"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
@@ -87,8 +90,8 @@ public class DepartmentRepositoryJPA {
                     "           (select name from companies where id=p.company_id) as company, " +
                     "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
                     "           (select name from departments where id=p.parent_id) as parent, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from departments p " +
@@ -452,7 +455,10 @@ public class DepartmentRepositoryJPA {
                 securityRepositoryJPA.isItMyMastersDepartment(id))//принадлежит к отделениям моего родителя
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select p.id as id, " +
                     "           us.name as creator, " +
@@ -463,8 +469,8 @@ public class DepartmentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           p.name as name, " +
                     "           p.price_id as price_id, " +
-                    "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', 'DD.MM.YYYY HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '" + myTimeZone + "', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.address as address, " +
                     "           p.additional as additional, " +
                     "           coalesce(p.parent_id,'0') as parent_id, " +

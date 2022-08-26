@@ -25,6 +25,7 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.Settings.SettingsWriteoffJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.WriteoffJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesWriteoffJSON;
@@ -84,12 +85,14 @@ public class WriteoffRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(17L, "223,224,225,226"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -104,8 +107,8 @@ public class WriteoffRepositoryJPA {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.writeoff_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as writeoff_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.writeoff_date as writeoff_date_sort, " +
@@ -351,11 +354,13 @@ public class WriteoffRepositoryJPA {
         {
 
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -370,8 +375,8 @@ public class WriteoffRepositoryJPA {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.writeoff_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as writeoff_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.writeoff_date as writeoff_date_sort, " +
@@ -486,7 +491,7 @@ public class WriteoffRepositoryJPA {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery = "set timezone='UTC'; " +
+            stringQuery =
                     " insert into writeoff (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
@@ -510,12 +515,12 @@ public class WriteoffRepositoryJPA {
                     " :uid, " + //uid
                     linkedDocsGroupId+"," + // id группы связанных документов
                     request.getStatus_id() + ", "+//статус
-                    "to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"')";// дата списания
+                    "to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"')";// дата списания
 //                    " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
             try {
-
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -523,7 +528,7 @@ public class WriteoffRepositoryJPA {
                 query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("writeoff_date", ((request.getWriteoff_date()==null || request.getWriteoff_date().equals("")) ? dateFormat.format(dateNow) : request.getWriteoff_date()));
-                query.setParameter("writeoff_time", ((request.getWriteoff_time()==null || request.getWriteoff_time().equals("")) ? "00:00" : request.getWriteoff_time()));
+                query.setParameter("writeoff_time", ((request.getWriteoff_time()==null || request.getWriteoff_time().equals("")) ? timeFormat.format(dateNow) : request.getWriteoff_time()));
                 query.executeUpdate();
                 stringQuery = "select id from writeoff where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -817,7 +822,7 @@ public class WriteoffRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery =   "set timezone='UTC';  update writeoff set " +
+        stringQuery =   " update writeoff set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
@@ -825,7 +830,7 @@ public class WriteoffRepositoryJPA {
                 " is_completed = " + request.isIs_completed() + "," +
                 " status_id = " + request.getStatus_id() + "," +
 //                " writeoff_date = to_date(:writeoff_date,'DD.MM.YYYY') " +
-                " writeoff_date = to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                " writeoff_date = to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'"+
                 " where " +
                 " id= "+request.getId() +
                 " and master_id="+myMasterId;

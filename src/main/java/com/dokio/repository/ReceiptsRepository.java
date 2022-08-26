@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.response.Reports.ReceiptsJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,11 +68,13 @@ public class ReceiptsRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(44L, "563,564,565"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
 
             stringQuery = "select  p.id as id, " +
@@ -86,7 +89,7 @@ public class ReceiptsRepository {
                     "           dp.name as department, " +
                     "           sh.shift_number as shift_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           p.shift_id as shift_id," +
                     "           p.kassa_id as kassa_id, " +// id KKM
                     "           ka.name as kassa, " +

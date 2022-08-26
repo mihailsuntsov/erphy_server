@@ -26,6 +26,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.AcceptanceJSON;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsAcceptanceJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesAcceptanceJSON;
 import com.dokio.message.response.ProductHistoryJSON;
@@ -90,12 +91,15 @@ public class AcceptanceRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(15L, "188,189,195,196"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
+
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -113,10 +117,10 @@ public class AcceptanceRepository {
                     "           p.cagent_id as cagent_id, " +
                     "           cg.name as cagent, " +
                     "           p.doc_number as doc_number, " +
-                    "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as acceptance_date, " +
+                    "           to_char(p.acceptance_date   at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as acceptance_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.acceptance_date as acceptance_date_sort, " +
@@ -385,9 +389,11 @@ public class AcceptanceRepository {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -407,8 +413,8 @@ public class AcceptanceRepository {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.acceptance_date as acceptance_date_sort, " +
@@ -524,7 +530,7 @@ public class AcceptanceRepository {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery = "set timezone='UTC';" +
+            stringQuery =
                     " insert into acceptance (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
@@ -557,19 +563,20 @@ public class AcceptanceRepository {
                     " :description, " +//описание
                     request.getStatus_id() + ", "+//статус
 //                    " to_date(:acceptance_date,'DD.MM.YYYY'), " +
-                    "to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +
+                    "to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +
                     linkedDocsGroupId+","+
                     ":uid)";
             try {
 
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("acceptance_date", ((request.getAcceptance_date()==null || request.getAcceptance_date().equals("")) ? dateFormat.format(dateNow) : request.getAcceptance_date()));
-                query.setParameter("acceptance_time", ((request.getAcceptance_time()==null || request.getAcceptance_time().equals("")) ? "00:00" : request.getAcceptance_time()));
+                query.setParameter("acceptance_time", ((request.getAcceptance_time()==null || request.getAcceptance_time().equals("")) ? timeFormat.format(dateNow) : request.getAcceptance_time()));
                 query.setParameter("uid",request.getUid());
                 query.executeUpdate();
                 stringQuery = "select id from acceptance where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
@@ -771,7 +778,7 @@ public class AcceptanceRepository {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
         String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery = "set timezone='UTC'; update acceptance set " +
+        stringQuery = " update acceptance set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
@@ -781,7 +788,7 @@ public class AcceptanceRepository {
                 " overhead =" + request.getOverhead() + "," +                               //расходы
                 " overhead_netcost_method =" + request.getOverhead_netcost_method() + "," + //Распределение затрат на себестоимость товаров. 0 - нет, 1 - по весу цены в поставке
                 " is_completed = " + request.getIs_completed() + "," +
-                " acceptance_date = to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                " acceptance_date = to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +

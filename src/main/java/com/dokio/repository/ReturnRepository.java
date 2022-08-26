@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsReturnForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsReturnJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesReturnJSON;
 import com.dokio.message.response.additional.ReturnProductsListJSON;
@@ -86,12 +87,14 @@ public class ReturnRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -105,8 +108,8 @@ public class ReturnRepository {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
@@ -355,11 +358,13 @@ public class ReturnRepository {
         if (securityRepositoryJPA.userHasPermissions_OR(28L, "352,353,354,355"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
                     "           us.name as creator, " +
@@ -372,8 +377,8 @@ public class ReturnRepository {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -490,13 +495,13 @@ public class ReturnRepository {
             String myTimeZone = userRepository.getUserTimeZone();
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
             String stringQuery;
-            stringQuery =   "set timezone='UTC'; update return set " +
+            stringQuery =   " update return set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, "+
                     " nds = " + request.getNds() + ", " +
 //                    " date_return = to_date(:date_return,'DD.MM.YYYY'), " +
-                    " date_return = to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                    " date_return = to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                     " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
@@ -505,10 +510,11 @@ public class ReturnRepository {
             {
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? "00:00" : request.getReturn_time()));
+                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? timeFormat.format(dateNow) : request.getReturn_time()));
                 query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
 
@@ -751,7 +757,7 @@ public class ReturnRepository {
             }
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery =   "set timezone='UTC';" +
+            stringQuery =
                     " insert into return (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
@@ -775,7 +781,7 @@ public class ReturnRepository {
                     request.getCagent_id() + ", "+//покупатель, возвращающий заказ
                     "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                     doc_number + ", "+//номер заказа
-                    "to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +// дата и время возврата
+                    "to_timestamp(CONCAT(:date_return,' ',:time_return),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +// дата и время возврата
                     " :description, " +//описание
                     request.getStatus_id() + ", " + //статус док-та
                     request.getRetail_sales_id() + ", " + //id родительского документа Розничная продажа, из которого может быть создан возврат
@@ -785,12 +791,13 @@ public class ReturnRepository {
             try{
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("date_return", ((request.getDate_return()==null || request.getDate_return().equals("")) ? dateFormat.format(dateNow) : request.getDate_return()));
-                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? "00:00" : request.getReturn_time()));
+                query.setParameter("time_return", ((request.getReturn_time()==null || request.getReturn_time().equals("")) ? timeFormat.format(dateNow) : request.getReturn_time()));
                 query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 query.executeUpdate();
                 stringQuery="select id from return where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;

@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.response.Reports.ShiftsJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
@@ -68,11 +69,13 @@ public class ShiftsRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(43L, "560,561,566"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
 
             stringQuery = "select  p.id as id, " +
@@ -87,8 +90,8 @@ public class ShiftsRepository {
                     "           dp.name as department, " +
                     "           p.shift_number as shift_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_closed at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI') as date_time_closed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_closed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_closed, " +
 
                     "           p.kassa_id as kassa_id, " +// id KKM
                     "           ka.name as kassa, " +

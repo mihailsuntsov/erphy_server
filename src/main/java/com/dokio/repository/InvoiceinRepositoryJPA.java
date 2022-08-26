@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsInvoiceinForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsInvoiceinJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
@@ -81,7 +82,7 @@ public class InvoiceinRepositoryJPA {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      MENU      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -89,12 +90,14 @@ public class InvoiceinRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -108,8 +111,8 @@ public class InvoiceinRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -386,11 +389,13 @@ public class InvoiceinRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(32L, "452,453,454,455"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -404,8 +409,8 @@ public class InvoiceinRepositoryJPA {
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(dp.price_id,0) as department_type_price_id, " +
                     "           coalesce(p.nds,false) as nds, " +
@@ -582,7 +587,7 @@ public class InvoiceinRepositoryJPA {
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "set timezone='UTC'; " +
+                stringQuery =
                         " insert into invoicein (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
@@ -591,9 +596,9 @@ public class InvoiceinRepositoryJPA {
                         " cagent_id," +//контрагент
                         " date_time_created," + //дата и время создания
                         " doc_number," + //номер документа
-                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date,":"") +//план. дата
+                        " invoicein_date, " +//план. дата
                         " income_number," +//входящий внутренний номер поставщика
-                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date,":"") +// входящая дата счета поставщика
+                        " income_number_date," +// входящая дата счета поставщика
                         " description," +//доп. информация по заказу
                         " nds," +// НДС
                         " nds_included," +// НДС включен в цену
@@ -609,10 +614,9 @@ public class InvoiceinRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?"to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',":"null") +// дата и время
-//                        ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" to_date(:invoicein_date,'DD.MM.YYYY'),":"")+//план. дата
+                        "to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +//план. дата и время
                         ":income_number,"+
-                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" to_date(:income_number_date,'DD.MM.YYYY'),":"null")+// входящая дата счета поставщика
+                        ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" to_date(:income_number_date,'DD.MM.YYYY')":"null")+","+// входящая дата счета поставщика
                         ":description," +
                         request.isNds() + ", "+// НДС
                         request.isNds_included() + ", "+// НДС включен в цену
@@ -621,6 +625,11 @@ public class InvoiceinRepositoryJPA {
                         ":name,"+ //наименование заказа поставщику
                         ":uid)";// уникальный идентификатор документа
                 try{
+                    Date dateNow = new Date();
+                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                    DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                    dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -628,10 +637,8 @@ public class InvoiceinRepositoryJPA {
                     query.setParameter("income_number",request.getIncome_number());
                     if(request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))
                         query.setParameter("income_number_date",request.getIncome_number_date());
-                    if(request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))
-                        query.setParameter("invoicein_date",request.getInvoicein_date());
-                    if(request.getInvoicein_time()!=null&& !request.getInvoicein_time().equals(""))
-                        query.setParameter("invoicein_time", ((request.getInvoicein_time()==null || request.getInvoicein_time().equals("")) ? "00:00" : request.getInvoicein_time()));
+                    query.setParameter("invoicein_date", ((request.getInvoicein_date()==null || request.getInvoicein_date().equals("")) ? dateFormat.format(dateNow) : request.getInvoicein_date()));
+                    query.setParameter("invoicein_time", ((request.getInvoicein_time()==null || request.getInvoicein_time().equals("")) ? timeFormat.format(dateNow) : request.getInvoicein_time()));
 
                     query.executeUpdate();
                     stringQuery="select id from invoicein where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
@@ -716,7 +723,7 @@ public class InvoiceinRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   "set timezone='UTC';  update invoicein set " +
+            stringQuery =   "update invoicein set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
@@ -724,7 +731,7 @@ public class InvoiceinRepositoryJPA {
                     " name=:name," +
                     " nds_included = "+request.isNds_included()+"," +// НДС включен в цену
 //                    ((request.getInvoicein_date()!=null&& !request.getInvoicein_date().equals(""))?" invoicein_date = to_date(:invoicein_date,'DD.MM.YYYY'),":"invoicein_date = null,") +
-                    " invoicein_date = to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                    " invoicein_date = to_timestamp(CONCAT(:invoicein_date,' ',:invoicein_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                     " income_number = :income_number," +// входящий номер
                     ((request.getIncome_number_date()!=null&& !request.getIncome_number_date().equals(""))?" income_number_date = to_date(:income_number_date,'DD.MM.YYYY'),":"income_number_date = null,") +//входящая дата
                     " is_completed = " + request.getIs_completed() + "," +

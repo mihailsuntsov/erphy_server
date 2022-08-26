@@ -137,7 +137,7 @@ public class UsersController {
 //                user.setTime_zone_id(signUpRequest.getTimeZoneId());
                 Long createdUserId = userRepository.save(user).getId();//и сохранили его
                 // create settings (language, locale, time zone)
-                userRepositoryJPA.setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId());
+                userRepositoryJPA.setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId(), "24");
                 // create print menus for user
                 List<BaseFiles> baseFilesList = fileRepository.getFilesIdsByName(fileRepository.assemblyBaseFilesList(masterId), masterId, companyId, null);
                 if(baseFilesList.size()>0) documentsRepository.createPrintMenus(baseFilesList,masterId, createdUserId, companyId);

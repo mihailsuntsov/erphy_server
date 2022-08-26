@@ -165,7 +165,7 @@ public class AuthRestAPIs {
 		user.setMaster(userDetailsService.getUserById(createdUserId));// в качестве мастера устанавливаем его же
 		userRepository.save(user);// сохраняем чтобы записался master id
 		// уcтановим пользователю часовой пояс (timeZone), язык и локаль
-		userRepositoryJPA.setUserSettings(createdUserId,24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru")?10:4);
+		userRepositoryJPA.setUserSettings(createdUserId,24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru")?10:4, "24");
 		userRepository.save(user);// сохраняем чтобы применился язык
 		Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'","'my_department'","'role_admins'"});
 		// создадим пользователю предприятие

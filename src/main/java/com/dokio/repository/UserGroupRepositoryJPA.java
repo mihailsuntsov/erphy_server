@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.UserGroupForm;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.UserGroupJSON;
 import com.dokio.message.response.UserGroupTableJSON;
 import com.dokio.message.response.UserGroupListJSON;
@@ -115,29 +116,32 @@ public class UserGroupRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
         {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             int myCompanyId=userRepositoryJPA.getMyCompanyId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             String stringQuery = "select            " +
-                    "p.id as id,            " +
-                    "p.name as name,            " +
-                    "p.master_id as master_id,            " +
-                    "p.creator_id as creator_id,            " +
-                    "p.changer_id as changer_id,            " +
-                    "(select name from users where id=p.master_id) as master,            " +
-                    "(select name from users where id=p.creator_id) as creator,            " +
-                    "(select name from users where id=p.changer_id) as changer,            " +
-                    "           to_char(p.date_time_created, '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed, '"+dateFormat+" HH24:MI') as date_time_changed, " +
-                    "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort, " +
-                    "coalesce(p.company_id,'0') as company_id,            " +
-                    "(select name from companies where id=p.company_id) as company,            " +
-                    "p.description as description            " +
-                    "from usergroup p           " +
-                    "where            " +
-                    " p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_deleted,false) ="+showDeleted;
+                    "   p.id as id,            " +
+                    "   p.name as name,            " +
+                    "   p.master_id as master_id,            " +
+                    "   p.creator_id as creator_id,            " +
+                    "   p.changer_id as changer_id,            " +
+                    "   (select name from users where id=p.master_id) as master,            " +
+                    "   (select name from users where id=p.creator_id) as creator,            " +
+                    "   (select name from users where id=p.changer_id) as changer,            " +
+                    "   to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "   to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
+                    "   p.date_time_created as date_time_created_sort, " +
+                    "   p.date_time_changed as date_time_changed_sort, " +
+                    "   coalesce(p.company_id,'0') as company_id,            " +
+                    "   (select name from companies where id=p.company_id) as company,            " +
+                    "   p.description as description            " +
+                    "   from usergroup p           " +
+                    "   where            " +
+                    "   p.master_id=" + myMasterId +
+                    "   and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
             {
@@ -182,6 +186,10 @@ public class UserGroupRepositoryJPA {
     public UserGroupJSON getUserGroupValuesById (int id) {
         if (securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))//Группы пользователей: "Редактирование только документов своего предприятия","Редактирование документов всех предприятий"
         {
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             int myCompanyId=userRepositoryJPA.getMyCompanyId();
             String stringQuery = "select p.id as id, " +
                         "           p.name as name, " +
@@ -191,8 +199,8 @@ public class UserGroupRepositoryJPA {
                         "           (select name from users where id=p.master_id) as master, " +
                         "           (select name from users where id=p.creator_id) as creator, " +
                         "           (select name from users where id=p.changer_id) as changer, " +
-                        "           p.date_time_created as date_time_created, " +
-                        "           p.date_time_changed as date_time_changed, " +
+                        "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                        "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                         "           coalesce(p.company_id,'0') as company_id, " +
 
                         "           p.description as description, " +

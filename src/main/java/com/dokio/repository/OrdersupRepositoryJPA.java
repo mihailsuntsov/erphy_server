@@ -571,7 +571,7 @@ public class OrdersupRepositoryJPA {
                 }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-                stringQuery =   "set timezone='UTC';" +
+                stringQuery =
                         " insert into ordersup (" +
                         " master_id," + //мастер-аккаунт
                         " creator_id," + //создатель
@@ -580,7 +580,7 @@ public class OrdersupRepositoryJPA {
                         " cagent_id," +//контрагент
                         " date_time_created," + //дата и время создания
                         " doc_number," + //номер документа
-                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" ordersup_date,":"") +//план. дата
+                        " ordersup_date," +//план. дата
                         " description," +//доп. информация по заказу
                         " nds," +// НДС
                         " nds_included," +// НДС включен в цену
@@ -596,7 +596,7 @@ public class OrdersupRepositoryJPA {
                         request.getCagent_id() + ", "+//контрагент
                         "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                         doc_number + ", "+//номер документа
-                        "to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"'," +// план. дата и время поставки
+                        "to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +// план. дата и время поставки
 //                        ((request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))?" to_date(:ordersup_date,'DD.MM.YYYY'),":"")+//план. дата
                         ":description," +
                         request.isNds() + ", "+// НДС
@@ -606,14 +606,18 @@ public class OrdersupRepositoryJPA {
                         ":name,"+ //наименование заказа поставщику
                         ":uid)";// уникальный идентификатор документа
                 try{
+                    Date dateNow = new Date();
+                    DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                    DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                    dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
                     query.setParameter("name",request.getName());
-                    if(request.getOrdersup_time()!=null&& !request.getOrdersup_time().equals(""))
-                        query.setParameter("ordersup_time", ((request.getOrdersup_time()==null || request.getOrdersup_time().equals("")) ? "00:00" : request.getOrdersup_time()));
-                    if(request.getOrdersup_date()!=null&& !request.getOrdersup_date().equals(""))
-                        query.setParameter("ordersup_date",request.getOrdersup_date());
+                    query.setParameter("ordersup_date", ((request.getOrdersup_date()==null || request.getOrdersup_date().equals("")) ? dateFormat.format(dateNow) : request.getOrdersup_date()));
+                    query.setParameter("ordersup_time", ((request.getOrdersup_time()==null || request.getOrdersup_time().equals("")) ? timeFormat.format(dateNow) : request.getOrdersup_time()));
+
                     query.executeUpdate();
                     stringQuery="select id from ordersup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                     Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -702,7 +706,7 @@ public class OrdersupRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   "set timezone='UTC';  update ordersup set " +
+            stringQuery =   " update ordersup set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
@@ -710,7 +714,7 @@ public class OrdersupRepositoryJPA {
                     " name=:name," +
                     " nds_included = "+request.isNds_included()+"," +// НДС включен в цену
 //                    " ordersup_date = to_date(:ordersup_date,'DD.MM.YYYY'), " +
-                    " ordersup_date = to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                    " ordersup_date = to_timestamp(CONCAT(:ordersup_date,' ',:ordersup_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +

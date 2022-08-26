@@ -27,6 +27,7 @@ import com.dokio.message.response.CagentCategoriesTableJSON;
 import com.dokio.message.response.CagentsJSON;
 import com.dokio.message.response.Reports.HistoryCagentBalanceJSON;
 import com.dokio.message.response.Reports.HistoryCagentDocsJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
 import com.dokio.model.Cagents;
@@ -85,9 +86,11 @@ public class CagentRepositoryJPA {
 
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -101,8 +104,8 @@ public class CagentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           sso.name as opf, "+
                     "           sso.id as opf_id, "+
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     // Апдейт Контрагентов
                     "           p.code as code, " +
@@ -401,8 +404,10 @@ public class CagentRepositoryJPA {
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String myTimeZone = userRepository.getUserTimeZone();
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -416,8 +421,8 @@ public class CagentRepositoryJPA {
                     "           cmp.name as company, " +
                     "           sso.name as opf, "+
                     "           sso.id as opf_id, "+
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     // Апдейт Контрагентов
                     "           p.code as code, " +

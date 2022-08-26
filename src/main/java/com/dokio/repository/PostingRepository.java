@@ -25,6 +25,7 @@ import com.dokio.message.request.Settings.SettingsPostingForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.PostingJSON;
 import com.dokio.message.response.Settings.SettingsPostingJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesPostingJSON;
 import com.dokio.message.response.ProductHistoryJSON;
@@ -85,11 +86,13 @@ public class PostingRepository {
         if(securityRepositoryJPA.userHasPermissions_OR(16L, "207,208,209,210"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -104,8 +107,8 @@ public class PostingRepository {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.posting_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as posting_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.posting_date as posting_date_sort, " +
@@ -343,10 +346,12 @@ public class PostingRepository {
         if (securityRepositoryJPA.userHasPermissions_OR(16L, "207,208,209,210"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -361,8 +366,8 @@ public class PostingRepository {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.posting_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as posting_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.posting_date as posting_date_sort, " +
@@ -472,7 +477,7 @@ public class PostingRepository {
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-            stringQuery =   "set timezone='UTC'; " +
+            stringQuery =
                     " insert into posting (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
@@ -498,12 +503,13 @@ public class PostingRepository {
                     request.getStatus_id() + ", "+//статус
                     " :uid, " + //uid
                     linkedDocsGroupId+"," + // id группы связанных документов
-                    "to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"')";// дата оприходования
+                    "to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"')";// дата оприходования
 //                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
             try {
 
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                DateFormat timeFormat = new SimpleDateFormat("HH:mm");
                 dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -511,7 +517,7 @@ public class PostingRepository {
                 query.setParameter("uid", (request.getUid() == null ? "" : request.getUid()));
                 //если дата не пришла (это может быть, если создаем из Инвентаризации) - нужно вставить текукщую
                 query.setParameter("posting_date", ((request.getPosting_date()==null || request.getPosting_date().equals("")) ? dateFormat.format(dateNow) : request.getPosting_date()));
-                query.setParameter("posting_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? "00:00" : request.getPosting_time()));
+                query.setParameter("posting_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? timeFormat.format(dateNow) : request.getPosting_time()));
                 query.executeUpdate();
                 stringQuery = "select id from posting where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -808,14 +814,14 @@ public class PostingRepository {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
         String stringQuery;
-        stringQuery =   "set timezone='UTC';  update posting set " +
+        stringQuery =   " update posting set " +
                 " changer_id = " + myId + ", "+
                 " date_time_changed= now()," +
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
 //                " is_completed = " + request.isIs_completed() + "," +
 //                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " + "," +
-                " posting_date = to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                " posting_date = to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId() +
@@ -824,12 +830,13 @@ public class PostingRepository {
         {
             Date dateNow = new Date();
             DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            DateFormat timeFormat = new SimpleDateFormat("HH:mm");
             dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
 //            query.setParameter("posting_date", (request.getPosting_date() == "" ? null :request.getPosting_date()));
             query.setParameter("posting_date", ((request.getPosting_date()==null || request.getPosting_date().equals("")) ? dateFormat.format(dateNow) : request.getPosting_date()));
-            query.setParameter("writeoff_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? "00:00" : request.getPosting_time()));
+            query.setParameter("posting_time", ((request.getPosting_time()==null || request.getPosting_time().equals("")) ? timeFormat.format(dateNow) : request.getPosting_time()));
 
             query.executeUpdate();
             return true;

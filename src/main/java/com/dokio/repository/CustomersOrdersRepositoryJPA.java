@@ -22,6 +22,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsCustomersOrdersForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsCustomersOrdersJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
@@ -91,11 +92,13 @@ public class CustomersOrdersRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
         {
             String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -108,10 +111,10 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
                     "           p.doc_number as doc_number, " +
-                    "           to_char(p.shipment_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as shipment_date, " +
+                    "           to_char(p.shipment_date     at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as shipment_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.shipment_date as shipment_date_sort, " +
@@ -444,10 +447,13 @@ public class CustomersOrdersRepositoryJPA {
         if (securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//см. _Permissions Id.txt
         {
             String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             boolean needToSetParameter_MyDepthsIds = false;
-            String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            String dateFormat=userRepositoryJPA.getMyDateFormat();
+
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -462,8 +468,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.shipment_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as shipment_date, " +
                     "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_changed, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.description as description, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           coalesce(dp.price_id,0) as department_type_price_id, " +
@@ -659,7 +665,7 @@ public class CustomersOrdersRepositoryJPA {
 
                     String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
-                    stringQuery =   "set timezone='UTC';" +
+                    stringQuery =
                     " insert into customers_orders (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
@@ -698,7 +704,7 @@ public class CustomersOrdersRepositoryJPA {
                     doc_number + ", "+//номер заказа
                     ":name, " +//наименование
                     ":description, " +//описание
-                    ((request.getShipment_date()!=null&& !request.getShipment_date().equals(""))?"to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',":"null,") +// план. дата и время отгрузки
+                    "to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +// план. дата и время отгрузки
                     request.isNds() + ", "+// НДС
                     request.isNds_included() + ", "+// НДС включен в цену
                     ":telephone, " +//телефон
@@ -719,6 +725,11 @@ public class CustomersOrdersRepositoryJPA {
                     ")";
 
                     try{
+                        Date dateNow = new Date();
+                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                        DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                        dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+
                         Query query = entityManager.createNativeQuery(stringQuery);
                         query.setParameter("uid",request.getUid());
 
@@ -734,10 +745,8 @@ public class CustomersOrdersRepositoryJPA {
                         query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
                         query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
                         query.setParameter("track_number",(request.getTrack_number() == null ? "": request.getTrack_number()));
-                        if(request.getShipment_date()!=null&& !request.getShipment_date().equals("")) {
-                            query.setParameter("shipment_date", request.getShipment_date());
-                            query.setParameter("shipment_time", ((request.getShipment_date() == null || request.getShipment_date().equals("")) ? "00:00" : request.getShipment_date()));
-                        }
+                        query.setParameter("shipment_date", ((request.getShipment_date()==null || request.getShipment_date().equals("")) ? dateFormat.format(dateNow) : request.getShipment_date()));
+                        query.setParameter("shipment_time", ((request.getShipment_time()==null || request.getShipment_time().equals("")) ? timeFormat.format(dateNow) : request.getShipment_time()));
                         query.executeUpdate();
                         stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1023,11 +1032,11 @@ public class CustomersOrdersRepositoryJPA {
         String myTimeZone = userRepository.getUserTimeZone();
 
             String stringQuery;
-            stringQuery =   " set timezone='UTC'; update customers_orders set " +
+            stringQuery =   "update customers_orders set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
                     " description = :description, " +
-                    " shipment_date = to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'UTC' at time zone '"+myTimeZone+"',"+
+                    " shipment_date = to_timestamp(CONCAT(:shipment_date,' ',:shipment_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
 //                    " shipment_date = to_date('" + (request.getShipment_date() == "" ? null :request.getShipment_date().replaceAll("[^0-9\\.]", "")) + "','DD.MM.YYYY'), " + // иначе дата будет 01-01-0001
                     " nds  = " + request.isNds() + ", " +
                     " nds_included  = " + request.isNds_included() + ", " +
