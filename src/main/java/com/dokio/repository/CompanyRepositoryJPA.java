@@ -474,10 +474,21 @@ public class CompanyRepositoryJPA {
                     "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
                     "           p.st_netcost_policy as st_netcost_policy, " +
                     "           p.type as type, " +// entity or individual
-                    "           coalesce(p.legal_form,'') as legal_form " +// legal form of individual (ie entrepreneur, ...)
+                    "           coalesce(p.legal_form,'') as legal_form, " +// legal form of individual (ie entrepreneur, ...)
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+                    "           p.is_store as is_store, " +// on off the store
+                    "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
+                    "           p.store_key as store_key, " +  // consumer key
+                    "           p.store_secret as store_secret, " + // consumer secret
+                    "           p.store_type as store_type, " + // e.g. woo
+                    "           p.store_api_version as store_api_version, " + // e.g. v3
+                    "           p.crm_secret_key as crm_secret_key, " + // like UUID generated
+                    "           p.store_price_type_regular as store_price_type_regular, " + // id of regular type price
+                    "           p.store_price_type_sale as store_price_type_sale " + // id of sale type price
+
 
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -578,6 +589,23 @@ public class CompanyRepositoryJPA {
             doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
             doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
             doc.setLegal_form((String)                                      queryList.get(0)[73]);
+
+            doc.setIs_store((Boolean)                                      queryList.get(0)[74]);
+            doc.setStore_site_address(queryList.get(0)[75]!=null?   (String)queryList.get(0)[75]:"");
+            doc.setStore_key(queryList.get(0)[76]!=null?            (String)queryList.get(0)[76]:"");
+            doc.setStore_secret(queryList.get(0)[77]!=null?         (String)queryList.get(0)[77]:"");
+            doc.setStore_type(queryList.get(0)[78]!=null?           (String)queryList.get(0)[78]:"");
+            doc.setStore_api_version(queryList.get(0)[79]!=null?    (String)queryList.get(0)[79]:"");
+            doc.setCrm_secret_key(queryList.get(0)[80]!=null?       (String)queryList.get(0)[80]:"");
+            doc.setStore_price_type_regular( queryList.get(0)[81]!=null?Long.parseLong(  queryList.get(0)[81].toString()):null);
+            doc.setStore_price_type_sale( queryList.get(0)[82]!=null?Long.parseLong(  queryList.get(0)[82].toString()):null);
+
+
+
+
+
+
+
 //            doc.setReg_country_id((Integer)                                 queryList.get(0)[73]);
 //            doc.setTax_number(queryList.get(0)[74]!=null?           (String)queryList.get(0)[74]:"");
 //            doc.setReg_number(queryList.get(0)[75]!=null?           (String)queryList.get(0)[75]:"");
@@ -697,10 +725,23 @@ public class CompanyRepositoryJPA {
                     " st_netcost_policy = :st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
 
                     " type =            :type," +// entity or individual
-                    " legal_form = :legal_form"+
+                    " legal_form = :legal_form,"+
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+
+                    " is_store = "  + request.getIs_store() + ", " +                // on off the store
+                    " store_site_address =          :store_site_address," +         // e.g. http://localhost/DokioShop
+                    " store_key =                   :store_key," +                  // consumer key
+                    " store_secret =                :store_secret," +               // consumer secret
+                    " store_type =                  :store_type," +                 // e.g. woo
+                    " store_api_version =           :store_api_version," +          // e.g. v3
+                    " crm_secret_key =              :crm_secret_key," +             // like UUID generated
+                    " store_price_type_regular = " + request.getStore_price_type_regular() + ", " +//id of regular type price
+                    " store_price_type_sale = " + request.getStore_price_type_sale() + //id of sale type price
+
+
 
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
@@ -743,6 +784,15 @@ public class CompanyRepositoryJPA {
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
+
+            query.setParameter("store_site_address",(request.getStore_site_address()!=null?request.getStore_site_address():""));
+            query.setParameter("store_key",(request.getStore_key()!=null?request.getStore_key():""));
+            query.setParameter("store_secret",(request.getStore_secret()!=null?request.getStore_secret():""));
+            query.setParameter("store_type",(request.getStore_type()!=null?request.getStore_type():""));
+            query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
+            query.setParameter("crm_secret_key",(request.getCrm_secret_key()!=null?request.getCrm_secret_key():""));
+
+
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -937,10 +987,21 @@ public class CompanyRepositoryJPA {
                 " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
                 " st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
                 " type, " +
-                " legal_form"+
+                " legal_form,"+
 //                " reg_country_id, " + // country of registration
 //                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+                " is_store," +
+                " store_site_address," +
+                " store_key," +
+                " store_secret," +
+                " store_type," +
+                " store_api_version," +
+                " crm_secret_key," +
+                " store_price_type_regular," +
+                " store_price_type_sale" +
+
+
 
                 ") values (" +
                 myMasterId + ", "+
@@ -996,10 +1057,19 @@ public class CompanyRepositoryJPA {
                 (Objects.isNull(request.getSt_prefix_barcode_packed())?20:request.getSt_prefix_barcode_packed()) + ", " +// prefix of barcode for packed product
                 ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
                 ":type, " +
-                ":legal_form"+
+                ":legal_form,"+
 //                request.getReg_country_id() + "," +
 //                ":tax_number," +
 //                ":reg_number" +
+                request.getIs_store() + ", " +
+                " :store_site_address," +
+                " :store_key," +
+                " :store_secret," +
+                " :store_type," +
+                " :store_api_version," +
+                " :crm_secret_key," +
+                request.getStore_price_type_regular() + ", " +
+                request.getStore_price_type_sale() +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1040,6 +1110,12 @@ public class CompanyRepositoryJPA {
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
+            query.setParameter("store_site_address",(request.getStore_site_address()!=null?request.getStore_site_address():""));
+            query.setParameter("store_key",(request.getStore_key()!=null?request.getStore_key():""));
+            query.setParameter("store_secret",(request.getStore_secret()!=null?request.getStore_secret():""));
+            query.setParameter("store_type",(request.getStore_type()!=null?request.getStore_type():""));
+            query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
+            query.setParameter("crm_secret_key",(request.getCrm_secret_key()!=null?request.getCrm_secret_key():""));
 
 //            query.setParameter("tax_number",request.getTax_number());
 //            query.setParameter("reg_number",request.getReg_number());

@@ -366,7 +366,7 @@ public class InvoiceinRepositoryJPA {
                     doc.setId(Long.parseLong(                               obj[8].toString()));
                     doc.setIs_material((Boolean)                            obj[9]);
                     doc.setIndivisible((Boolean)                            obj[10]);
-                    doc.setNds_value((Integer)                              obj[11]);
+                    doc.setNds_value((BigDecimal)                           obj[11]);
                     doc.setProduct_sumprice(                                obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
                     returnList.add(doc);
                     row_num++;

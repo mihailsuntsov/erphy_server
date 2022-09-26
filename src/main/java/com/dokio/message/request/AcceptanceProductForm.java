@@ -36,7 +36,7 @@ public class AcceptanceProductForm {
     private BigDecimal  total;                          // остаток на складе
     // для печатной версии
     private Integer row_num; // номер строки при выводе печатной версии
-    private Integer nds_value; // сколько % НДС у данного товара
+    private BigDecimal nds_value; // сколько % НДС у данного товара
 
     public Integer getRow_num() {
         return row_num;
@@ -46,11 +46,11 @@ public class AcceptanceProductForm {
         this.row_num = row_num;
     }
 
-    public Integer getNds_value() {
+    public BigDecimal getNds_value() {
         return nds_value;
     }
 
-    public void setNds_value(Integer nds_value) {
+    public void setNds_value(BigDecimal nds_value) {
         this.nds_value = nds_value;
     }
 

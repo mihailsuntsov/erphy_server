@@ -33,7 +33,7 @@ public class SpravTaxesJSON {
     private String      changer;
     private String      name;
     private String      description;
-    private int         value;
+    private BigDecimal  value;
     private BigDecimal  multiplier;
     private boolean     is_active;
     private boolean     is_deleted;
@@ -131,11 +131,11 @@ public class SpravTaxesJSON {
         this.description = description;
     }
 
-    public int getValue() {
+    public BigDecimal getValue() {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(BigDecimal value) {
         this.value = value;
     }
 

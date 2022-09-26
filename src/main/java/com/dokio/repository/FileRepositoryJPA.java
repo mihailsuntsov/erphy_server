@@ -22,6 +22,7 @@ import com.dokio.message.request.FileCategoriesForm;
 import com.dokio.message.request.FilesForm;
 import com.dokio.message.response.FileCategoriesTableJSON;
 import com.dokio.message.response.FileInfoJSON;
+import com.dokio.message.response.ImageFileJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
@@ -219,6 +220,7 @@ public class FileRepositoryJPA {
                     "           p.changer_id as changer_id, " +
                     "           p.company_id as company_id, " +
                     "           cmp.name as company, " +
+                    "           coalesce(p.alt,'') as alt, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed " +
                     "           from files p " +
@@ -934,6 +936,57 @@ public class FileRepositoryJPA {
         }
     }
 
-
+    public ImageFileJSON getImageFileInfo(Long id) {
+        if(securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
+        {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            stringQuery =
+                    "           select " +
+                    "           p.name as name, " +
+                    "           p.original_name as original_name, " +
+                    "           p.extention as extention, " +
+                    "           p.description as description, " +
+                    "           p.file_size as file_size, " +
+                    "           p.mime_type as mime_type, " +
+                    "           coalesce(p.anonyme_access,false) as anonyme_access, " +
+                    "           p.path as path, " +
+                    "           coalesce(p.alt,'') as alt " +
+                    "           from files p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           where p.id= " + id+
+                    "           and  p.master_id=" + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(13L, "150")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            {
+                //остается только на своё предприятие (151)
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            Query query = entityManager.createNativeQuery(stringQuery);
+            try{
+                List<Object[]> queryList = query.getResultList();
+                ImageFileJSON doc = new ImageFileJSON();
+                if (queryList.size() > 0) {
+                    doc.setId(id);
+                    doc.setName((String) queryList.get(0)[0]);
+                    doc.setOriginal_name((String) queryList.get(0)[1]);
+                    doc.setExtention((String) queryList.get(0)[2]);
+                    doc.setDescription((String) queryList.get(0)[3]);
+                    doc.setFile_size((Integer) queryList.get(0)[4]);
+                    doc.setMime_type((String) queryList.get(0)[5]);
+                    doc.setAnonyme_access((Boolean) queryList.get(0)[6]);
+                    doc.setPath((String) queryList.get(0)[7]);
+                    doc.setAlt((String) queryList.get(0)[8]);
+                }
+                return doc;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getImageFileInfo. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
+    }
 
 }

@@ -819,7 +819,7 @@ public class PostingRepository {
                 " date_time_changed= now()," +
                 " description = :description, "+
                 " doc_number =" + request.getDoc_number() + "," +
-//                " is_completed = " + request.isIs_completed() + "," +
+                " is_completed = " + request.isIs_completed() + "," +
 //                " posting_date = to_date(:posting_date,'DD.MM.YYYY') " + "," +
                 " posting_date = to_timestamp(CONCAT(:posting_date,' ',:posting_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"',"+
                 " status_id = " + request.getStatus_id() +

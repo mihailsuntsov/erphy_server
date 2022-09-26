@@ -82,6 +82,21 @@ public class CommonUtilites {
         }
     }
 
+    public Long getByCrmSecretKey(String subj, String secretKey){ // subj can be master_id for master id, or id for company_id
+        try {
+            String stringQuery;
+            stringQuery = "select "+subj+" from companies where coalesce (is_store, false) = true and crm_secret_key = :secretKey";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("secretKey",secretKey);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (NoResultException nre) {
+                return null;
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @SuppressWarnings("Duplicates")  //генератор номера документа
     public Long generateDocNumberCode(Long company_id, String docTableName)
     {

@@ -27,7 +27,7 @@ public class SpravTaxesForm {
     private Long        company_id;
     private String      name;
     private String      description;
-    private int         value;
+    private BigDecimal  value;
     private BigDecimal  multiplier;
     private boolean     is_active;
     private boolean     is_deleted;
@@ -67,11 +67,11 @@ public class SpravTaxesForm {
         this.description = description;
     }
 
-    public int getValue() {
+    public BigDecimal getValue() {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(BigDecimal value) {
         this.value = value;
     }
 

@@ -64,6 +64,8 @@ public class ProductsRepositoryJPA {
     private UserDetailsServiceImpl userService;
     @Autowired
     private CommonUtilites commonUtilites;
+    @Autowired
+    private FileRepositoryJPA fileRepository;
 
     // Инициализация логера
     private static final Logger logger = Logger.getLogger(ProductsRepositoryJPA.class);
@@ -77,7 +79,6 @@ public class ProductsRepositoryJPA {
             .of("docName","price","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
-    @SuppressWarnings("Duplicates")
     public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//Меню - таблица
         {
@@ -1543,7 +1544,7 @@ public class ProductsRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public Long insertProductCategory(ProductCategoriesForm request) {
+    public Long insertProductCategory(ProductCategoryJSON request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "171,172"))//"Группы товаров" редактирование своих или чужих предприятий (в пределах род. аккаунта разумеется)
         {
             EntityManager emgr = emf.createEntityManager();
@@ -1561,6 +1562,10 @@ public class ProductsRepositoryJPA {
                 Long myId = userRepository.getUserId();
                 stringQuery = "insert into product_categories (" +
                         "name," +
+                        "slug," +
+                        "description," +
+                        "display," +
+                        "image_id," +
                         "master_id," +
                         "creator_id," +
                         "parent_id," +
@@ -1568,6 +1573,10 @@ public class ProductsRepositoryJPA {
                         "date_time_created" +
                         ") values ( " +
                         ":name, " +
+                        ":slug," +
+                        ":description," +
+                        ":display, " +
+                        (Objects.isNull(request.getImage())?null:request.getImage().getId()) + ", " +
                         myMasterId + "," +
                         myId + "," +
                         (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
@@ -1576,6 +1585,9 @@ public class ProductsRepositoryJPA {
                 try {
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("name",request.getName());
+                    query.setParameter("description",request.getDescription());
+                    query.setParameter("display",request.getDisplay());
+                    query.setParameter("slug",request.getSlug());
                     if (query.executeUpdate() == 1) {
                         stringQuery = "select id from product_categories where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1584,26 +1596,31 @@ public class ProductsRepositoryJPA {
                 } catch (Exception e) {
                     logger.error("Exception in method insertProductCategory. SQL query:"+stringQuery, e);
                     e.printStackTrace();
-                    return 0L;
+                    return null;
                 }
             }
-        } else return 0L;
+        } else return -1L;
     }
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean updateProductCategory(ProductCategoriesForm request) {
+    public boolean updateProductCategory(ProductCategoryJSON request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "173,174"))//  "Редактирование категорий"
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long changer = userRepository.getUserIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "update product_categories set " +
-                    " name=:name, " +
-                    " date_time_changed= now()," +
-                    " changer_id= " + changer +
-                    " where id=" + request.getCategoryId() +
-                    " and master_id=" + myMasterId;
+                    " name = :name, " +
+                    " slug = :slug," +
+                    " description = :description," +
+                    " display = :display," +
+                    " parent_id = "+(request.getParentCategoryId()==0L?null:request.getParentCategoryId())+"," +
+                    " image_id = " + (Objects.isNull(request.getImage())?null:request.getImage().getId()) + ", " +
+                    " date_time_changed = now()," +
+                    " changer_id = " + changer +
+                    " where id = " + request.getId() +
+                    " and master_id = " + myMasterId;
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "173")) //Если нет прав по всем предприятиям
             {
 //            остается только на своё предприятие (140)
@@ -1613,7 +1630,10 @@ public class ProductsRepositoryJPA {
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
-                int i = query.executeUpdate();
+                query.setParameter("slug",request.getSlug());
+                query.setParameter("description",request.getDescription());
+                query.setParameter("display",request.getDisplay());
+                query.executeUpdate();
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method updateProductCategory. SQL query:"+stringQuery, e);
@@ -1704,7 +1724,7 @@ public class ProductsRepositoryJPA {
 //    отдает только список корневых категорий, без детей
 //    нужно для изменения порядка вывода корневых категорий
     public List<ProductCategoriesTableJSON> getRootProductCategories(Long companyId) {
-        if (securityRepositoryJPA.userHasPermissions_OR(14L, "173,174"))//"Контрагенты" (см. файл Permissions Id)
+        if (securityRepositoryJPA.userHasPermissions_OR(14L, "173,174"))// (см. файл Permissions Id)
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery = "select " +
@@ -1723,6 +1743,41 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery, ProductCategoriesTableJSON.class);
             return query.getResultList();
         } else return null;
+    }
+
+    //    отдает только список корневых категорий, без детей
+    //    нужно для изменения порядка вывода корневых категорий
+    public ProductCategoryJSON getProductCategory(Long categoryId) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery =
+            " select " +
+            " name as name," +
+            " coalesce(description,'') as description," +
+            " coalesce(display, 'default') as display," +
+            " coalesce(slug,'') as slug," +
+            " image_id as image_id," +
+            " coalesce(parent_id, 0) as parent_id" +
+            " from product_categories " +
+            " where master_id = " + myMasterId + " and id = " + categoryId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            ProductCategoryJSON doc = new ProductCategoryJSON();
+            if (queryList.size() > 0) {
+                doc.setId(categoryId);
+                doc.setName((String)                                queryList.get(0)[0]);
+                doc.setDescription((String)                         queryList.get(0)[1]);
+                doc.setDisplay((String)                             queryList.get(0)[2]);
+                doc.setSlug((String)                                queryList.get(0)[3]);
+                doc.setImage(Objects.isNull(queryList.get(0)[4])?null:fileRepository.getImageFileInfo(((BigInteger) queryList.get(0)[4]).longValue()));
+                doc.setParentCategoryId(Long.parseLong(             queryList.get(0)[5].toString()));
+            }
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductCategory. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 
     @SuppressWarnings("Duplicates") //отдает только список детей, без их детей

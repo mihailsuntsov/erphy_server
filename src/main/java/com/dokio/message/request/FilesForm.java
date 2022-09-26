@@ -25,11 +25,20 @@ public class FilesForm {
     private String      name;
     private String      original_name;
     private String      description;
-    private Long     file_size;
+    private Long        file_size;
     private String      mime_type;
-    private Integer        company_id;
+    private Integer     company_id;
     private Boolean     anonyme_access;
+    private String      alt;
     private Set<Long>   selectedFileCategories;
+
+    public String getAlt() {
+        return alt;
+    }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
+    }
 
     public Long getId() {
         return id;

@@ -50,6 +50,7 @@ public class FilesJSON {
     private String changer_id;
     private String date_time_created;
     private String date_time_changed;
+    private String alt;
 
 //    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
 //    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
@@ -138,6 +139,14 @@ public class FilesJSON {
 
     public void setCompany_id(String company_id) {
         this.company_id = company_id;
+    }
+
+    public String getAlt() {
+        return alt;
+    }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
     }
 
     public String getMaster() {

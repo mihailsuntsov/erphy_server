@@ -395,7 +395,7 @@ public class ShipmentRepositoryJPA {
                     doc.setPpr_name_api_atol((String)                       obj[16]);
                     doc.setIs_material((Boolean)                            obj[17]);
                     doc.setIndivisible((Boolean)                            obj[18]);
-                    doc.setNds_value((Integer)                              obj[19]);
+                    doc.setNds_value((BigDecimal)                           obj[19]);
                     returnList.add(doc);
                     row_num++;
                 }

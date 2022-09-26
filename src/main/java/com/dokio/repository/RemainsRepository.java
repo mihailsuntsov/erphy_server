@@ -186,7 +186,8 @@ public class RemainsRepository {
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
+                    "           and coalesce(p.is_deleted,false) = false" +
+//                    "           and coalesce(p.is_archive,false) !=true " +
                     "           and p.ppr_id in (1,2) " +
                     (categoryId != 0 ? " and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id=" + categoryId + ") " : "");
 
@@ -201,6 +202,8 @@ public class RemainsRepository {
             //если не: ( [v] Скрывать не закупаемые товары и товар не закупаемый) и ( [v] Скрывать снятые с продажи и товар или услуга снят с продажи)
             if (hideNotBuyingProducts) stringQuery = stringQuery + " and coalesce(p.not_buy,false)  is false ";
             if (hideNotSellingProducts) stringQuery = stringQuery + " and coalesce(p.not_sell,false) is false ";
+
+            stringQuery = stringQuery + " and coalesce(p.not_sell,false) is false ";
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +

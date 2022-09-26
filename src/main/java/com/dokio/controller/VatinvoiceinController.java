@@ -329,7 +329,7 @@ public class VatinvoiceinController {
                     // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
                     for(AcceptanceProductForm product:product_table){// бежим по товарам
                         if(parentDoc.isNds()){// если в документе включен переключатель НДС
-                            BigDecimal nds_val = new BigDecimal(product.getNds_value());// величина НДС в процентах у текущего товара. Например, 20
+                            BigDecimal nds_val = product.getNds_value();// величина НДС в процентах у текущего товара. Например, 20
                             // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
                             sumNds=sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val),2,BigDecimal.ROUND_HALF_UP));
                         }
@@ -346,7 +346,7 @@ public class VatinvoiceinController {
                     // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
                     for(InvoiceinProductTableJSON product:product_table){// бежим по товарам
                         if(parentDoc.isNds()){// если в документе включен переключатель НДС
-                            BigDecimal nds_val = new BigDecimal(product.getNds_value());// величина НДС в процентах у текущего товара. Например, 20
+                            BigDecimal nds_val = product.getNds_value();// величина НДС в процентах у текущего товара. Например, 20
                             // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
                             sumNds=sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val),2,BigDecimal.ROUND_HALF_UP));
                         }

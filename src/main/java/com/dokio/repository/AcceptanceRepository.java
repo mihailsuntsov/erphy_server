@@ -365,7 +365,7 @@ public class AcceptanceRepository {
                     doc.setEdizm((String)                                   obj[10]);
                     doc.setIndivisible((Boolean)                            obj[11]);
                     doc.setTotal((BigDecimal)                               obj[12]);
-                    doc.setNds_value((Integer)                              obj[13]);
+                    doc.setNds_value((BigDecimal)                           obj[13]);
                     returnList.add(doc);
                     row_num++;
                 }

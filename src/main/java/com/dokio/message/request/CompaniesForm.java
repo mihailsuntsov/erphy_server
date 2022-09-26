@@ -83,6 +83,32 @@ public class CompaniesForm {
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
+    private Boolean is_store;           // on off the store
+    private String store_site_address;  // e.g. http://localhost/DokioShop
+    private String store_key;           // consumer key
+    private String store_secret;        // consumer secret
+    private String store_type;          // e.g. woo
+    private String store_api_version;   // e.g. v3
+    private String crm_secret_key;      // like UUID generated
+    private Long store_price_type_regular; // id of regular type price
+    private Long store_price_type_sale;    // id of sale type price
+
+    public Long getStore_price_type_regular() {
+        return store_price_type_regular;
+    }
+
+    public void setStore_price_type_regular(Long store_price_type_regular) {
+        this.store_price_type_regular = store_price_type_regular;
+    }
+
+    public Long getStore_price_type_sale() {
+        return store_price_type_sale;
+    }
+
+    public void setStore_price_type_sale(Long store_price_type_sale) {
+        this.store_price_type_sale = store_price_type_sale;
+    }
+
     public String getType() {
         return type;
     }
@@ -546,6 +572,62 @@ public class CompaniesForm {
 
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
+    }
+
+    public Boolean getIs_store() {
+        return is_store;
+    }
+
+    public void setIs_store(Boolean is_store) {
+        this.is_store = is_store;
+    }
+
+    public String getStore_site_address() {
+        return store_site_address;
+    }
+
+    public void setStore_site_address(String store_site_address) {
+        this.store_site_address = store_site_address;
+    }
+
+    public String getStore_key() {
+        return store_key;
+    }
+
+    public void setStore_key(String store_key) {
+        this.store_key = store_key;
+    }
+
+    public String getStore_secret() {
+        return store_secret;
+    }
+
+    public void setStore_secret(String store_secret) {
+        this.store_secret = store_secret;
+    }
+
+    public String getStore_type() {
+        return store_type;
+    }
+
+    public void setStore_type(String store_type) {
+        this.store_type = store_type;
+    }
+
+    public String getStore_api_version() {
+        return store_api_version;
+    }
+
+    public void setStore_api_version(String store_api_version) {
+        this.store_api_version = store_api_version;
+    }
+
+    public String getCrm_secret_key() {
+        return crm_secret_key;
+    }
+
+    public void setCrm_secret_key(String crm_secret_key) {
+        this.crm_secret_key = crm_secret_key;
     }
 
     @Override

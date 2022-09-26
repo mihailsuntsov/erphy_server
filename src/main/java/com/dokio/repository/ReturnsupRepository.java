@@ -341,7 +341,7 @@ public class ReturnsupRepository {
                     doc.setNds_id((Integer)                                 obj[7]);
                     doc.setIndivisible((Boolean)                            obj[8]);
                     doc.setRemains((BigDecimal)                             obj[9]);
-                    doc.setNds_value((Integer)                              obj[10]);
+                    doc.setNds_value((BigDecimal)                           obj[10]);
                     returnsupList.add(doc);
                     row_num++;
                 }

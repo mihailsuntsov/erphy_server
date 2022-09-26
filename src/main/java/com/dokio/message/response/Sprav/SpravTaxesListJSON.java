@@ -25,7 +25,7 @@ public class SpravTaxesListJSON {
     private Long        id;
     private String      name;
     private String      description;
-    private int         value;
+    private BigDecimal  value;
     private BigDecimal  multiplier;
     private String      name_api_atol;
     private boolean     is_active;
@@ -39,11 +39,11 @@ public class SpravTaxesListJSON {
         this.calculated = calculated;
     }
 
-    public int getValue() {
+    public BigDecimal getValue() {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(BigDecimal value) {
         this.value = value;
     }
 

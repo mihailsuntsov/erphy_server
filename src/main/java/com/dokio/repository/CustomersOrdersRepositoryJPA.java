@@ -430,7 +430,7 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setIs_material((Boolean)                            obj[19]);
                 doc.setReserved_current(                                obj[20]==null?BigDecimal.ZERO:(BigDecimal)obj[20]);
                 doc.setIndivisible((Boolean)                            obj[21]);
-                doc.setNds_value((Integer)                              obj[22]);
+                doc.setNds_value((BigDecimal)                           obj[22]);
 
                 returnList.add(doc);
                 row_num++;

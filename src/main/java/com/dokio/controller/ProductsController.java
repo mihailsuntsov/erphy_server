@@ -320,6 +320,17 @@ public class ProductsController {
         return responseEntity;
     }
 
+    @RequestMapping(
+            value = "/api/auth/getProductCategoryChildIds",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductCategoryChildIds(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path api/auth/getProductCategoryChildIds: " + id);
+        try {return new ResponseEntity<>(productsRepositoryJPA.getProductCategoryChildIds(id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Requesting error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     //отдает список отделений в виде их Id с доступным количеством и общим количеством товара в отделении
     @SuppressWarnings("Duplicates")
     @RequestMapping(
@@ -386,9 +397,22 @@ public class ProductsController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     //*************************************************************************************************************************************************
-//**************************************************  C A T E G O R I E S  ************************************************************************
-//*************************************************************************************************************************************************
+    //**************************************************  C A T E G O R I E S  ************************************************************************
+    //*************************************************************************************************************************************************
+
+    @RequestMapping(
+            value = "/api/auth/getProductCategory",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductCategory( @RequestParam("id") Long categoryId) {
+        logger.info("Processing get request for path /api/auth/getProductCategory with categoryId=" + categoryId.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.getProductCategory(categoryId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getProductCategory error with categoryId=" + categoryId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     @PostMapping("/api/auth/getProductCategoriesTrees")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getProductCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
@@ -424,11 +448,8 @@ public class ProductsController {
     }
     @PostMapping("/api/auth/insertProductCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException {
+    public ResponseEntity<?> insertProductCategory(@RequestBody ProductCategoryJSON request) throws ParseException {
         logger.info("Processing post request for path /api/auth/insertProductCategory: " + request.toString());
-
-        //Long newDocument = productGroupFieldsRepositoryJPA.insertProductGroupField(request);
-        //if(newDocument!=null && newDocument>0){
         try {
             Long categoryId = productsRepositoryJPA.insertProductCategory(request);
             ResponseEntity<Long> responseEntity = new ResponseEntity<>(categoryId, HttpStatus.OK);
@@ -443,7 +464,7 @@ public class ProductsController {
 
     @PostMapping("/api/auth/updateProductCategory")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException{
+    public ResponseEntity<?> updateProductCategory(@RequestBody ProductCategoryJSON request) throws ParseException{
         logger.info("Processing post request for path /api/auth/updateProductCategory: " + request.toString());
 
         if(productsRepositoryJPA.updateProductCategory(request)){
@@ -483,40 +504,29 @@ public class ProductsController {
         }
     }
 
-    @PostMapping("/api/auth/getRootProductCategories")
-    @SuppressWarnings("Duplicates")
-    //отдает только список корневых категорий, без детей
-    //нужно для изменения порядка вывода корневых категорий
-    public ResponseEntity<?> getRootProductCategories(@RequestBody SearchForm request) throws ParseException {
-        logger.info("Processing post request for path /api/auth/getRootProductCategories: " + request.toString());
-
-        List<ProductCategoriesTableJSON> returnList ;//
-        try {
-            returnList = productsRepositoryJPA.getRootProductCategories(Long.valueOf(Integer.parseInt((request.getCompanyId()))));
-            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-            return responseEntity;
-        } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @RequestMapping(
+            //отдает только список детей, без их детей
+            //нужно для изменения порядка вывода категорий
+            value = "/api/auth/getChildrensProductCategories",
+            params = {"parentCategoryId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getChildrensProductCategories( @RequestParam("parentCategoryId") Long parentCategoryId) {
+        logger.info("Processing get request for path /api/auth/getChildrensProductCategories with parentCategoryId=" + parentCategoryId.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.getChildrensProductCategories(parentCategoryId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getChildrensProductCategories error with categoryId=" + parentCategoryId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
-    @PostMapping("/api/auth/getChildrensProductCategories")
-    @SuppressWarnings("Duplicates")
-    //отдает только список детей, без их детей
-    //нужно для изменения порядка вывода категорий
-    public ResponseEntity<?> getChildrensProductCategories(@RequestBody CagentCategoriesForm request) throws ParseException {
-        logger.info("Processing post request for path /api/auth/getChildrensProductCategories: " + request.toString());
-
-        List<ProductCategoriesTableJSON> returnList;
-        try {
-            returnList = productsRepositoryJPA.getChildrensProductCategories(request.getParentCategoryId());
-            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-            return responseEntity;
-        } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+    @RequestMapping(
+            //отдает только список корневых категорий, без детей
+            //нужно для изменения порядка вывода корневых категорий
+            value = "/api/auth/getRootProductCategories",
+            params = {"companyId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getRootProductCategories( @RequestParam("companyId") Long companyId) {
+        logger.info("Processing get request for path /api/auth/getRootProductCategories with companyId=" + companyId.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.getRootProductCategories(companyId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getRootProductCategories error with categoryId=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 //*************************************************************************************************************************************************

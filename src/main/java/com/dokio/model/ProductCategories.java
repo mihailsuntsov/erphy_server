@@ -37,7 +37,24 @@ public class ProductCategories {
     private Long id;
 
     @Size(max = 512)
+    @Column(name="name")
     private String name;
+
+    @Size(max = 120)
+    @Column(name="slug")
+    private String slug;
+
+    @Size(max = 250)
+    @Column(name="description")
+    private String description;
+
+    @Size(max = 16)
+    @Column(name="display")
+    private String display;
+
+    @ManyToOne
+    @JoinColumn(name = "image_id")
+    private Image image;
 
     @OrderBy("output_order")
     @OneToMany
@@ -53,7 +70,6 @@ public class ProductCategories {
     @JsonIgnore
     @ManyToMany(mappedBy = "productCategories")
     private Set<Products> products;
-
 
     public Long getId() {
         return id;
@@ -71,6 +87,38 @@ public class ProductCategories {
         this.name = name;
     }
 
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(String display) {
+        this.display = display;
+    }
+
+    public Image getImage() {
+        return image;
+    }
+
+    public void setImage(Image image) {
+        this.image = image;
+    }
+
     public List<ProductCategories> getChildren() {
         return children;
     }
@@ -85,5 +133,13 @@ public class ProductCategories {
 
     public void setParent(ProductCategories parent) {
         this.parent = parent;
+    }
+
+    public Set<Products> getProducts() {
+        return products;
+    }
+
+    public void setProducts(Set<Products> products) {
+        this.products = products;
     }
 }

@@ -467,4 +467,17 @@ public class FilesController {
         }
     }
 
+
+    @RequestMapping(
+            value = "/api/auth/getImageFileInfo",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getImageFileInfo( @RequestParam("id") Long fileId) {
+        logger.info("Processing get request for path /api/auth/getImageFileInfo with fileId=" + fileId.toString());
+        try {return new ResponseEntity<>(fileRepository.getImageFileInfo(fileId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getImageFileInfo error with categoryId=" + fileId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+
 }

@@ -379,7 +379,7 @@ public class InvoiceoutRepositoryJPA {
                     doc.setId(Long.parseLong(                               obj[15].toString()));
                     doc.setIs_material((Boolean)                            obj[16]);
                     doc.setIndivisible((Boolean)                            obj[17]);
-                    doc.setNds_value((Integer)                              obj[18]);
+                    doc.setNds_value((BigDecimal)                           obj[18]);
 
                     returnList.add(doc);
                     row_num++;

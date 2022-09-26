@@ -3780,12 +3780,6 @@ update version set value = '1.0.3', date = '08-07-2022';
 ------------------------------------------------  end of 1.0.3  ------------------------------------------------------
 -----------------------------------------------  begin of 1.0.4   ----------------------------------------------------
 update documents set doc_name_en = 'Products and Services' where doc_name_ru = 'Товары и услуги';
---update documents set doc_name_en = 'Sales', doc_name_ru = 'Продажа'  where upper(doc_name_ru) like upper('%отгруз%');
---update _dictionary set tr_en = 'Sale', tr_ru = 'Продажа' where key = 'shipment';
-
---update documents set doc_name_en = 'Shipment', doc_name_ru = 'Отгрузка'  where doc_name_ru = 'Продажа';
---update _dictionary set tr_en = 'Shipment', tr_ru = 'Отгрузка' where key = 'shipment';
-
 alter table user_settings add column time_format varchar(2);
 update user_settings set time_format = '12'; -- can be 12 or 24
 alter table user_settings alter time_format set not null;
@@ -3840,10 +3834,41 @@ UPDATE posting SET create_time_holder = posting_date::TIMESTAMP;
 ALTER TABLE posting ALTER COLUMN posting_date TYPE TIMESTAMP with time zone USING create_time_holder;
 ALTER TABLE posting DROP COLUMN create_time_holder;
 
-update version set value = '1.0.4', date = '18-07-2022';
+update version set value = '1.0.4', date = '27-08-2022';
 ------------------------------------------------  end of 1.0.4  ------------------------------------------------------
+-----------------------------------------------  start of 1.0.5  -----------------------------------------------------
+update documents set doc_name_en = 'Purchase order' where doc_name_ru = 'Заказ поставщику';
+update _dictionary set tr_en = 'Purchase order' where key = 'ordersup';
 
+update version set value = '1.0.4-1', date = '28-08-2022';
+------------------------------------------------  end of 1.0.4  ------------------------------------------------------
+-----------------------------------------------  start of 1.0.5  -----------------------------------------------------
+alter table sprav_taxes add column woo_id int;
 
+alter table companies add column is_store boolean;
+alter table companies add column store_site_address varchar(128); -- e.g. http://localhost/DokioShop
+alter table companies add column store_key varchar(128);    -- consumer key
+alter table companies add column store_secret varchar(128); -- consumer secret
+alter table companies add column store_type varchar(8); -- e.g. woo
+alter table companies add column store_api_version varchar(16); -- e.g. v3
+alter table companies add column crm_secret_key varchar(36); -- smth like UUID
+alter table companies add column store_price_type_regular bigint; -- id of regular price
+alter table companies add column store_price_type_sale bigint; -- id of sale price
+alter table companies add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
+alter table companies add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
+
+alter table sprav_taxes add constraint woo_id_uq unique (company_id, woo_id) ;
+alter table sprav_taxes alter column value type numeric(4,2);
+alter table sprav_taxes alter column multiplier type numeric(5,4);
+
+alter table product_categories add column date_time_sync timestamp with time zone;
+alter table product_categories add column slug varchar(120);
+alter table product_categories add column description varchar(250);
+alter table product_categories add column display varchar(16);--Options: default, products, subcategories and both. Default is default.
+alter table product_categories add column image_id bigint; -- id of category image file
+alter table product_categories add constraint image_id_fkey foreign key (image_id) references files (id) ON DELETE SET NULL;
+alter table files add column alt varchar(120);
+------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
 
 

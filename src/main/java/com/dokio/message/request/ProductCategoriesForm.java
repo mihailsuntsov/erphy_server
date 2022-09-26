@@ -30,6 +30,43 @@ public class ProductCategoriesForm {
     private String name;
     private Long companyId;
     private  int output_order;
+    private String slug;
+    private String description;
+    private String display;
+    private Long image_id;
+
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(String display) {
+        this.display = display;
+    }
+
+    public Long getImage_id() {
+        return image_id;
+    }
+
+    public void setImage_id(Long image_id) {
+        this.image_id = image_id;
+    }
 
     public Long getParentCategoryId() {
         return parentCategoryId;

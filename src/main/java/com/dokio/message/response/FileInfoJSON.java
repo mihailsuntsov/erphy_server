@@ -18,7 +18,7 @@
 
 package com.dokio.message.response;
 
-public class FileInfoJSON {
+public class    FileInfoJSON {
 
     private String name;
     private String original_name;

@@ -157,7 +157,7 @@ public class SpravTaxesRepository {
                 doc.setDate_time_changed((String)                   obj[10]);
                 doc.setName((String)                                obj[11]);
                 doc.setDescription((String)                         obj[12]);
-                doc.setValue((Integer)                              obj[13]);
+                doc.setValue((BigDecimal)                           obj[13]);
                 doc.setMultiplier((BigDecimal)                      obj[14]);
                 doc.setIs_active((Boolean)                          obj[15]);
                 doc.setIs_deleted((Boolean)                         obj[16]);
@@ -273,7 +273,7 @@ public class SpravTaxesRepository {
                     doc.setDate_time_changed((String)                   obj[10]);
                     doc.setName((String)                                obj[11]);
                     doc.setDescription((String)                         obj[12]);
-                    doc.setValue((Integer)                              obj[13]);
+                    doc.setValue((BigDecimal)                           obj[13]);
                     doc.setMultiplier((BigDecimal)                      obj[14]);
                     doc.setIs_active((Boolean)                          obj[15]);
                     doc.setIs_deleted((Boolean)                         obj[16]);
@@ -537,7 +537,7 @@ public class SpravTaxesRepository {
                 doc.setId(Long.parseLong(obj[0].toString()));
                 doc.setName((String) obj[1]);
                 doc.setDescription((String) obj[2]);
-                doc.setValue((int) obj[3]);
+                doc.setValue((BigDecimal) obj[3]);
                 doc.setMultiplier((BigDecimal) obj[4]);
                 doc.setName_api_atol((String) obj[5]);
                 doc.setCalculated(false);
