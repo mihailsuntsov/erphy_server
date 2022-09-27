@@ -45,6 +45,10 @@ public class Files {
     @Column(name = "original_name", nullable = false)
     private String original_name;
 
+    @Size(max = 120)
+    @Column(name = "alt", nullable = false)
+    private String alt;
+
     @Size(max = 1024)
     @Column(name = "description")
     private String description;
@@ -106,6 +110,14 @@ public class Files {
             joinColumns = @JoinColumn(name = "file_id"),
             inverseJoinColumns = @JoinColumn(name = "product_id"))
     private Set<Products> products = new HashSet<>();
+
+    public String getAlt() {
+        return alt;
+    }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
+    }
 
     public Long getId() {
         return id;

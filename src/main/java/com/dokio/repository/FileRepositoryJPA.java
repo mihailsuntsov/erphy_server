@@ -266,6 +266,7 @@ public class FileRepositoryJPA {
 
                 file.setOriginal_name(request.getOriginal_name() == null ? "" : request.getOriginal_name());
                 file.setDescription(request.getDescription() == null ? "" : request.getDescription());
+                file.setAlt(request.getAlt() == null ? "" : request.getAlt());
                 file.setAnonyme_access(request.getAnonyme_access());
 
                 //категории
