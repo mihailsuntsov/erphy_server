@@ -3868,6 +3868,12 @@ alter table product_categories add column display varchar(16);--Options: default
 alter table product_categories add column image_id bigint; -- id of category image file
 alter table product_categories add constraint image_id_fkey foreign key (image_id) references files (id) ON DELETE SET NULL;
 alter table files add column alt varchar(120);
+alter table product_categories add column woo_id int;
+alter table product_categories add constraint product_categories_woo_id_uq unique (company_id, woo_id) ;
+alter table product_categories add constraint product_categories_slug_uq unique (company_id, slug);-- all company categories need to have unique slug names
+alter table product_categories add constraint product_categories_name_uq unique (parent_id, name); -- one parent category can't contains two or more subcategories with the same names
+CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name) WHERE parent_id IS NULL;
+alter table product_categories add column is_store_category boolean;
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
 

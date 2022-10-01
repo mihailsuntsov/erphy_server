@@ -18,7 +18,6 @@
 package com.dokio.controller.store.woo.v3;
 
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
-import com.dokio.message.request.store.woo.v3.TaxForm;
 import com.dokio.message.request.store.woo.v3.TaxesForm;
 import com.dokio.repository.store.woo.v3.StoreTaxesRepository;
 import org.apache.log4j.Logger;
@@ -42,7 +41,8 @@ public class TaxesController {
     public ResponseEntity<?> syncTaxesFromStore(@RequestBody TaxesForm  request){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesFromStore: " + request.toString());
         try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesFromStore(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesFromStore error", e);
+        return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
@@ -53,13 +53,15 @@ public class TaxesController {
             @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesToStore");
         try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesToStore(key), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesToStore error", e);
+        return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/syncTaxesIds")
     public ResponseEntity<?> syncTaxesIds(@RequestBody SyncIdsForm  request){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesIds: " + request.toString());
         try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesIds(request), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesIds error", e);
+        return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

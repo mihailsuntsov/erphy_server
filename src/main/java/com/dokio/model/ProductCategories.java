@@ -71,6 +71,9 @@ public class ProductCategories {
     @ManyToMany(mappedBy = "productCategories")
     private Set<Products> products;
 
+    @Column(name="is_store_category")
+    private Boolean is_store_category;
+
     public Long getId() {
         return id;
     }
@@ -141,5 +144,13 @@ public class ProductCategories {
 
     public void setProducts(Set<Products> products) {
         this.products = products;
+    }
+
+    public Boolean getIs_store_category() {
+        return is_store_category;
+    }
+
+    public void setIs_store_category(Boolean is_store_category) {
+        this.is_store_category = is_store_category;
     }
 }

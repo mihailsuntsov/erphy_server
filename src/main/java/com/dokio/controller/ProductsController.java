@@ -466,14 +466,7 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProductCategory(@RequestBody ProductCategoryJSON request) throws ParseException{
         logger.info("Processing post request for path /api/auth/updateProductCategory: " + request.toString());
-
-        if(productsRepositoryJPA.updateProductCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        return new ResponseEntity<>(productsRepositoryJPA.updateProductCategory(request), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/deleteProductCategory")

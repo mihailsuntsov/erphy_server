@@ -41,7 +41,7 @@ import java.util.*;
 @Repository
 public class StoreTaxesRepository {
 
-    private Logger logger = Logger.getLogger("StoreTaxesRepository");
+    private Logger logger = Logger.getLogger(StoreTaxesRepository.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -77,7 +77,7 @@ public class StoreTaxesRepository {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
+//    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public TaxesJSON syncTaxesToStore(String key) {
         String stringQuery = "";
         Long companyId = cu.getByCrmSecretKey("id",key);
@@ -114,7 +114,7 @@ public class StoreTaxesRepository {
             result.setQueryResultCode(-200);
             return result;
         }catch (Exception e) {
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             logger.error("Exception in method woo/v3/StoreTaxesRepository/syncTaxesToStore. SQL query:"+stringQuery, e);
             e.printStackTrace();
             result.setQueryResultCode(null);

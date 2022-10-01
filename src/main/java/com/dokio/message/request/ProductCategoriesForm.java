@@ -34,7 +34,7 @@ public class ProductCategoriesForm {
     private String description;
     private String display;
     private Long image_id;
-
+    private boolean         isStoreCategory;
 
     public String getSlug() {
         return slug;
@@ -66,6 +66,14 @@ public class ProductCategoriesForm {
 
     public void setImage_id(Long image_id) {
         this.image_id = image_id;
+    }
+
+    public boolean isStoreCategory() {
+        return isStoreCategory;
+    }
+
+    public void setStoreCategory(boolean storeCategory) {
+        isStoreCategory = storeCategory;
     }
 
     public Long getParentCategoryId() {
