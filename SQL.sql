@@ -3874,6 +3874,147 @@ alter table product_categories add constraint product_categories_slug_uq unique 
 alter table product_categories add constraint product_categories_name_uq unique (parent_id, name); -- one parent category can't contains two or more subcategories with the same names
 CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name) WHERE parent_id IS NULL;
 alter table product_categories add column is_store_category boolean;
+alter table products add column type	varchar(8); --Product type. Options: simple, grouped, external and variable. Default is simple.
+alter table products add column slug varchar(120); --Product slug.
+alter table products add column featured boolean; --Featured product. Default is false.
+alter table products add column short_description varchar(2048);
+alter table products alter column description TYPE varchar(16384);
+alter table products add column virtual boolean; --If the product is virtual. Default is false.
+alter table products add column downloadable	boolean; 	--If the product is downloadable. Default is false.
+alter table products add column download_limit	integer; --Number of times downloadable files can be downloaded after purchase. Default is -1.
+alter table products add column download_expiry	 integer; --Number of days until access to downloadable files expires. Default is -1.
+alter table products add column external_url	varchar(255); --Product external URL. Only for external products.
+alter table products add column button_text	 varchar(60); --Product external button text. Only for external products.
+alter table products add column tax_status	varchar(8); --	Tax status. Options: taxable, shipping and none. Default is taxable.
+alter table products add column manage_stock	boolean; --	Stock management at product level. Default is false.
+alter table products add column stock_status varchar(10);	--Controls the stock status of the product. Options: instock, outofstock, onbackorder. Default is instock.
+alter table products add column backorders	varchar(6); --If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no.
+alter table products add column sold_individually	 boolean; --	Allow one item to be bought in a single order. Default is false.
+alter table products add column height	numeric(10,3); --	Product height.
+alter table products add column width	numeric(10,3); --	Product width.
+alter table products add column length	numeric(10,3); --	Product length.
+alter table products add column shipping_class	varchar(120); --	Shipping class slug.
+alter table products add column reviews_allowed	 boolean; -- Allow reviews. Default is true.
+alter table products add column parent_id	 bigint; --	Product parent ID.
+alter table products add constraint parent_id_fkey foreign key (parent_id) references products (id);
+alter table products add column purchase_note	 varchar(1000); -- Optional note to send the customer after purchase.
+alter table products add column menu_order	int; -- Menu order, used to custom sort products.
+alter table products add column date_on_sale_from_gmt  timestamp with time zone;
+alter table products add column date_on_sale_to_gmt  timestamp with time zone;
+
+-- DELETE FROM product_productcategories WHERE ctid NOT IN (SELECT max(ctid) FROM product_productcategories GROUP BY category_id, product_id); --use this if the next row won't be run perfect (there is duplicates)
+alter table product_productcategories add constraint product_productcategories_uq unique (category_id, product_id);
+
+create table product_upsell(
+                    master_id          bigint,
+                    product_id         bigint,
+                    child_id           bigint,
+                    foreign key (master_id)        references users(id),
+                    foreign key (product_id)       references products(id),
+                    foreign key (child_id)         references products(id)
+);
+create table product_crosssell(
+                             master_id          bigint,
+                             product_id         bigint,
+                             child_id           bigint,
+                             foreign key (master_id)        references users(id),
+                             foreign key (product_id)       references products(id),
+                             foreign key (child_id)         references products(id)
+);
+alter table product_upsell add constraint product_upsell_uq unique (child_id, product_id);
+alter table product_crosssell add constraint product_crosssell_uq unique (child_id, product_id);
+create table product_grouped(
+                                master_id          bigint,
+                                product_id         bigint,
+                                child_id           bigint,
+                                foreign key (master_id)        references users(id),
+                                foreign key (product_id)       references products(id),
+                                foreign key (child_id)         references products(id)
+);
+alter table product_grouped add constraint product_grouped_uq unique (child_id, product_id);
+
+alter table products add column low_stock_threshold	numeric(12,3); --	Low stock threshold
+
+create table product_downloadable_files(
+                                product_id          bigint,
+                                file_id             bigint,
+                                output_order        int,
+                                foreign key (file_id)          references files(id),
+                                foreign key (product_id)       references products(id)
+);
+alter table product_downloadable_files add constraint product_downloadable_files_uq unique (file_id, product_id);
+
+create table product_attributes(
+                            id                  bigserial primary key not null,
+                            master_id           bigint not null,
+                            company_id          bigint not null,
+                            creator_id          bigint not null,
+                            changer_id          bigint,
+                            date_time_created   timestamp with time zone not null,
+                            date_time_changed   timestamp with time zone,
+                            woo_id              int, -- Attribute name.MANDATORY
+                            name                varchar(120),
+                            slug                varchar(120), -- An alphanumeric identifier for the resource unique to its type.
+                            type                varchar(16), -- Type of attribute. By default only 'select' is supported.
+                            order_by            varchar(16), -- Default sort order. Options: menu_order, name, name_num and id. Default is menu_order.
+                            has_archives        boolean, -- Enable/Disable attribute archives. Default is false.
+                            is_deleted boolean,
+                            foreign key (master_id) references users(id),
+                            foreign key (creator_id) references users(id),
+                            foreign key (changer_id) references users(id),
+                            foreign key (company_id) references companies(id)
+);
+create table product_attribute_terms(
+                             id                 bigserial primary key not null,
+                             woo_id             int,
+                             master_id          bigint,
+                             attribute_id       bigint, -- Id of a parent attribute
+                             name               varchar(120), -- Term name.
+                             slug               varchar(120), -- An alphanumeric identifier for the resource unique to its type.
+                             description        varchar(1000), -- HTML description of the resource.
+                             menu_order         int,    -- Menu order, used to custom sort the resource.
+                             foreign key (master_id) references users(id),
+                             foreign key (attribute_id) references product_attributes(id) on delete cascade
+);
+
+create table product_custom_attributes(
+                              id                 bigserial primary key not null,
+                              master_id          bigint,
+                              product_id         bigint,
+                              name               varchar(120),
+                              terms              varchar(1000), -- String with terms divided by | e.g. Red | Blue | Yellow
+                              visible            boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page.
+                              foreign key (master_id) references users(id),
+                              foreign key (product_id) references products(id)
+);
+alter table product_custom_attributes add constraint product_custom_attributes_name_uq unique (name, product_id);
+
+insert into _dictionary (key, tr_ru, tr_en) values
+('color',    'Цвет','Color'),
+('size',     'Размер','Size');
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (53,'Атрибуты товаров','productattributes',1,'product_attributes','Атрибуты товаров', 'Product attributes');
+
+insert into permissions (id,name_ru,name_en,document_id,output_order) values
+(662,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',53,10),
+(663,'Создание документов по всем предприятиям','Creation of documents for all companies',53,20),
+(664,'Создание документов своего предприятия','Create your company documents',53,30),
+(665,'Удаление документов всех предприятий','Deleting documents of all companies',53,130),
+(666,'Удаление документов своего предприятия','Deleting your company documents',53,140),
+(667,'Просмотр документов всех предприятий','View documents of all companies',53,50),
+(668,'Просмотр документов своего предприятия','View your company documents',53,60),
+(669,'Редактирование документов всех предприятий','Editing documents of all companies',53,90),
+(670,'Редактирование документов своего предприятия','Editing your company documents',53,100);
+
+
+alter table product_attributes add constraint product_attributes_slug_uq unique (company_id, slug);-- all company product attributes need to have unique slug names
+alter table product_attribute_terms add constraint product_attribute_terms_slug_uq unique (attribute_id, slug);-- product attribute need to have unique terms slug names
+alter table product_attributes add constraint product_attributes_name_uq unique (company_id, name);--product attribute name must be unique
+alter table product_attribute_terms add constraint product_attribute_terms_name_uq unique (attribute_id, name);-- product attribute need to have unique terms names
+
+
+
+
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
 

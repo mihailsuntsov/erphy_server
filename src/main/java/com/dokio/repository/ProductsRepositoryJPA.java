@@ -21,6 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
+import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
@@ -231,7 +232,6 @@ public class ProductsRepositoryJPA {
                     "           p.id as id, " +
                     "           u.name as master, " +
                     "           p.name as name, " +
-
                     "           p.product_code as product_code, " +
                     "           p.ppr_id as ppr_id, " +
                     "           coalesce(p.by_weight,false) as by_weight, " +
@@ -244,7 +244,6 @@ public class ProductsRepositoryJPA {
                     "           coalesce(p.markable,false) as markable, " +
                     "           p.markable_group_id as markable_group_id, " +
                     "           coalesce(p.excizable,false) as excizable, " +
-
                     "           p.article as article, " +
                     "           p.product_code_free as product_code_free, " +
                     "           p.group_id as productgroup_id, " +
@@ -263,14 +262,45 @@ public class ProductsRepositoryJPA {
                     "           p.description as description, " +
                     "           coalesce(p.not_buy, false) as not_buy, " +
                     "           coalesce(p.indivisible, false) as indivisible, " +
-                    "           coalesce(p.not_sell, false) as not_sell " +
+                    "           coalesce(p.not_sell, false) as not_sell, " +
 
+                    ///////////////////////////// STORE ///////////////////////////////////
+                    "           coalesce(p.type,'simple') as type, " +
+                    "           p.slug as slug, " +
+                    "           coalesce(p.featured,false) as featured, " +
+                    "           p.short_description as short_description, " +
+                    "           coalesce(p.virtual,false) as virtual, " +
+                    "           coalesce(p.downloadable,false) as downloadable, " +
+                    "           coalesce(p.download_limit,-1) as download_limit, " +
+                    "           coalesce(p.download_expiry,-1) as download_expiry, " +
+                    "           p.external_url as external_url, " +
+                    "           p.button_text as button_text, " +
+                    "           coalesce(p.tax_status,'taxable') as tax_status, " +
+                    "           coalesce(p.manage_stock,false) as manage_stock, " +
+                    "           coalesce(p.stock_status,'instock') as stock_status, " +
+                    "           coalesce(p.backorders, 'no') as backorders, " +
+                    "           coalesce(p.sold_individually,false) as sold_individually, " +
+                    "           p.height as height, " +
+                    "           p.width as width, " +
+                    "           p.length as length, " +
+                    "           p.shipping_class as shipping_class, " +
+                    "           coalesce(p.reviews_allowed,true) as reviews_allowed, " +
+                    "           p.parent_id as parent_id, " +
+                    "           p.purchase_note as purchase_note, " +
+                    "           p.menu_order as menu_order, " +
+                    "           pp.name as parent_name, " +
+                    "           to_char(p.date_on_sale_from_gmt at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_on_sale_from_gmt, " +
+                    "           to_char(p.date_on_sale_to_gmt   at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_on_sale_to_gmt, " +
+//                    "           array_to_string(array(select child_id from product_upsell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as upsell_ids, " +
+//                    "           array_to_string(array(select child_id from product_crosssell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as crosssell_ids " +
+                    "           coalesce(p.low_stock_threshold, 0) as low_stock_threshold" +
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
+                    "           LEFT OUTER JOIN products pp ON p.parent_id=pp.id " +
                     "           where p.id= " + id +
                     "           and  p.master_id=" + myMasterId;
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Просмотр документов по всем предприятиям"
@@ -278,10 +308,74 @@ public class ProductsRepositoryJPA {
                 //остается только на своё предприятие (168)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-            Query query = entityManager.createNativeQuery(stringQuery, ProductsJSON.class);
+//            Query query = entityManager.createNativeQuery(stringQuery, ProductsJSON.class);
             try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
-                ProductsJSON response = (ProductsJSON) query.getSingleResult();
-                return response;
+//                ProductsJSON response = (ProductsJSON) query.getSingleResult();
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                ProductsJSON doc = new ProductsJSON();
+                if(queryList.size()>0) {
+                    doc.setId(Long.parseLong(                       queryList.get(0)[0].toString()));
+                    doc.setMaster((String)                          queryList.get(0)[1]);
+                    doc.setName((String)                            queryList.get(0)[2]);
+                    doc.setProduct_code((Integer)                   queryList.get(0)[3]);
+                    doc.setPpr_id((Integer)                         queryList.get(0)[4]);
+                    doc.setBy_weight((Boolean)                      queryList.get(0)[5]);
+                    doc.setEdizm_id((Integer)                       queryList.get(0)[6]);
+                    doc.setNds_id((Integer)                         queryList.get(0)[7]);
+                    doc.setWeight((BigDecimal)                      queryList.get(0)[8]);
+                    doc.setVolume((BigDecimal)                      queryList.get(0)[9]);
+                    doc.setWeight_edizm_id((Integer)                queryList.get(0)[10]);
+                    doc.setVolume_edizm_id((Integer)                queryList.get(0)[11]);
+                    doc.setMarkable((Boolean)                       queryList.get(0)[12]);
+                    doc.setMarkable_group_id((Integer)              queryList.get(0)[13]);
+                    doc.setExcizable((Boolean)                      queryList.get(0)[14]);
+                    doc.setArticle((String)                         queryList.get(0)[15]);
+                    doc.setProduct_code_free(queryList.get(0)[16]!=null?Long.parseLong(queryList.get(0)[16].toString()):null);
+                    doc.setProductgroup_id((Integer)                queryList.get(0)[17]);
+                    doc.setCreator((String)                         queryList.get(0)[18]);
+                    doc.setChanger((String)                         queryList.get(0)[19]);
+                    doc.setProductgroup((String)                    queryList.get(0)[20]);
+                    doc.setMaster_id((Integer)                      queryList.get(0)[21]);
+                    doc.setCreator_id((Integer)                     queryList.get(0)[22]);
+                    doc.setChanger_id((Integer)                     queryList.get(0)[23]);
+                    doc.setCompany_id((Integer)                     queryList.get(0)[24]);
+                    doc.setCompany((String)                         queryList.get(0)[25]);
+                    doc.setDate_time_created((String)               queryList.get(0)[26]);
+                    doc.setDate_time_changed((String)               queryList.get(0)[27]);
+                    doc.setDescription((String)                     queryList.get(0)[30]);
+                    doc.setNot_buy((Boolean)                        queryList.get(0)[31]);
+                    doc.setIndivisible((Boolean)                    queryList.get(0)[32]);
+                    doc.setNot_sell((Boolean)                       queryList.get(0)[33]);
+                    doc.setType((String)                            queryList.get(0)[34]);
+                    doc.setSlug((String)                            queryList.get(0)[35]);
+                    doc.setFeatured((Boolean)                       queryList.get(0)[36]);
+                    doc.setShort_description((String)               queryList.get(0)[37]);
+                    doc.setVirtual((Boolean)                        queryList.get(0)[38]);
+                    doc.setDownloadable((Boolean)                   queryList.get(0)[39]);
+                    doc.setDownload_limit((Integer)                 queryList.get(0)[40]);
+                    doc.setDownload_expiry((Integer)                queryList.get(0)[41]);
+                    doc.setExternal_url((String)                    queryList.get(0)[42]);
+                    doc.setButton_text((String)                     queryList.get(0)[43]);
+                    doc.setTax_status((String)                      queryList.get(0)[44]);
+                    doc.setManage_stock((Boolean)                   queryList.get(0)[45]);
+                    doc.setStock_status((String)                    queryList.get(0)[46]);
+                    doc.setBackorders((String)                      queryList.get(0)[47]);
+                    doc.setSold_individually((Boolean)              queryList.get(0)[48]);
+                    doc.setHeight((BigDecimal)                      queryList.get(0)[49]);
+                    doc.setWidth((BigDecimal)                       queryList.get(0)[50]);
+                    doc.setLength((BigDecimal)                      queryList.get(0)[51]);
+                    doc.setShipping_class((String)                  queryList.get(0)[52]);
+                    doc.setReviews_allowed((Boolean)                queryList.get(0)[53]);
+                    doc.setParent_id(queryList.get(0)[54]!=null?Long.parseLong(queryList.get(0)[54].toString()):null);
+                    doc.setPurchase_note((String)                   queryList.get(0)[55]);
+                    doc.setMenu_order((Integer)                     queryList.get(0)[56]);
+                    doc.setParent_name((String)                     queryList.get(0)[57]);
+                    doc.setDate_on_sale_from_gmt((String)           queryList.get(0)[58]);
+                    doc.setDate_on_sale_to_gmt((String)             queryList.get(0)[59]);
+                    doc.setLow_stock_threshold((BigDecimal)         queryList.get(0)[60]);
+                }
+                return doc;
             } catch (NoResultException nre) {
                 logger.error("Exception in method getProductValues. SQL query:"+stringQuery, nre);
                 return null;
@@ -292,76 +386,214 @@ public class ProductsRepositoryJPA {
         } else return null;
     }
 
-    @Transactional
-    // апдейчу в 3 захода (3 метода), т.к. если делать все в одном методе, получаю ошибку Executing an update/delete query
-    // т.к. транзакция entityManager не коммитится пока нет выхода из метода
-    public boolean updateProducts(ProductsForm request){
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-
-        if (updateProductsWithoutOrders(request)) {                                      //метод 1
-
-            //сохранение порядка поставщиков товара
-            try
-            {
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
+    public Integer updateProducts(ProductsForm request){
+        EntityManager emgr = emf.createEntityManager();
+        Products document = emgr.find(Products.class, request.getId());//сохраняемый документ
+        boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "170"); // "Редактирование док-тов своего предприятия"
+        boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "169"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
+        boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getCompany_id()));//сохраняется документ моего предприятия
+        Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
+        Long myMasterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
+        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));// документ под юрисдикцией главного аккаунта
+        if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
+                || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
+                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
+        {
+            try {
+                // сохранение базовых полей
+                updateProductsWithoutOrders(request, myMasterId);
+                //сохранение порядка поставщиков товара
                 if (request.getCagentsIdsInOrderOfList().size() > 1) {
                     int c = 0;
                     for (Long field : request.getCagentsIdsInOrderOfList()) {
                         c++;
-                        if (!saveChangeProductCagentsOrder(field, request.getId(), c)) {//         //метод 2
-                            break;
-                        }
+                        saveChangeProductCagentsOrder(field, request.getId(), c);
                     }
                 }
-            } catch (Exception e) {
-                logger.error("Exception in method updateProducts. The stage of preserving the order of suppliers of goods.", e);
-                e.printStackTrace();
-                return false;
-            }
-
-
-            //сохранение порядка картинок товара
-            try
-            {
+                //сохранение порядка картинок товара
                 if (request.getImagesIdsInOrderOfList().size() > 1) {
                     int i = 0;
                     for (Long field : request.getImagesIdsInOrderOfList()) {
                         i++;
-                        if (!saveChangeProductImagesOrder(field, request.getId(), i)) {//         //метод 3
-                            break;
-                        }
+                        saveChangeProductFilesOrder(field, request.getId(), i, "product_files");
                     }
                 }
-            } catch (Exception e) {
-                logger.error("Exception in method updateProducts. The stage of saving the order of product images", e);
-                e.printStackTrace();
-                return false;
-            }
+
+                //сохранение порядка скачиваемых товаров
+                if (request.getDfilesIdsInOrderOfList().size() > 1) {
+                    int i = 0;
+                    for (Long field : request.getDfilesIdsInOrderOfList()) {
+                        i++;
+                        saveChangeProductFilesOrder(field, request.getId(), i, "product_downloadable_files");
+                    }
+                }
 
 
-            // сохранение цен
-            try
-            {
+
+                // сохранение цен
                 if (request.getProductPricesTable().size() > 0) {
                     for (ProductPricesJSON field : request.getProductPricesTable()) {
-                        if (!savePrice(field.getPrice_type_id(), request.getId(), myMasterId, request.getCompany_id(), field.getPrice_value())) {//         //метод 4
-                            break;
-                        }
+                        savePrice(field.getPrice_type_id(), request.getId(), myMasterId, request.getCompany_id(), field.getPrice_value()); //         //метод 4
                     }
                 }
+                // сохранение выбранных категорий
+                Set<Long> categories = request.getSelectedProductCategories();
+                if (!categories.isEmpty()) { //если есть выбранные чекбоксы категорий
+                    saveCategories(request.getId(), categories);
+                }
+                // deleting categories that not in selected categories
+                deleteCategories(myMasterId, request.getId(), categories);
+                // сохранение up sell products
+                if (!request.getUpsell_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
+                    saveUpsellCrosssells(request.getId(), request.getUpsell_ids(), myMasterId, "product_upsell");
+                }
+                // сохранение cross sell products
+                if (!request.getCrosssell_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
+                    saveUpsellCrosssells(request.getId(), request.getCrosssell_ids(), myMasterId, "product_crosssell");
+                }
+                // сохранение grouped products
+                if (!request.getGrouped_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
+                    saveUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
+                }
+                deleteUpsellCrosssells(request.getId(), request.getUpsell_ids(), myMasterId, "product_upsell");
+                deleteUpsellCrosssells(request.getId(), request.getCrosssell_ids(), myMasterId, "product_crosssell");
+                deleteUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
+                return 1;
             } catch (Exception e) {
-                logger.error("Exception in method updateProducts. The stage of saving prices", e);
-                e.printStackTrace();
-                return false;
+                // all logging and printStackTraces are in sub-methods of this method
+                return null;
             }
+        } else return -1;
+    }
+    @SuppressWarnings("Duplicates")
+    private void saveUpsellCrosssells(Long productId, Set<Long> childs, Long masterId, String tableName) throws Exception {
+        String stringQuery;
+        BigInteger cnt;
+        try{
+            for(Long childId : childs){
+                //check that this pair (category and product) is not in table
+                stringQuery=
+                        "select count(*) from "+tableName+" where product_id = " + productId + " and child_id = " + childId + " and master_id=" + masterId;
+                try {
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    cnt = (BigInteger) query.getSingleResult();
+                } catch (NoResultException nre) {
+                    cnt = new BigInteger("0");
+                } catch (Exception e) {
+                    logger.error("Exception in method saveUpsellCrosssells. SQL: " + stringQuery, e);
+                    e.printStackTrace();
+                    throw new Exception(e);
+                }
+                //if there is no the pair like this
+                if(cnt.equals(new BigInteger("0"))){
+                    stringQuery="insert into "+tableName+" (" +
+                            "master_id, product_id, child_id) values ("+masterId+", "+productId+", "+childId+")";
+                    try {
+                        Query query = entityManager.createNativeQuery(stringQuery);
+                        query.executeUpdate();
+                    } catch (Exception e) {
+                        logger.error("Exception in method saveUpsellCrosssells. SQL: " + stringQuery, e);
+                        e.printStackTrace();
+                        throw new Exception(e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveUpsells.", e);
+            throw new Exception(e);
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    private void deleteUpsellCrosssells(Long productId, Set<Long> childs, Long masterId, String tableName) throws Exception {
+        String stringQuery;
+        try{
+            String gc;
+            if(childs.size()>0)
+                gc=commonUtilites.SetOfLongToString(childs,",","(",")");
+            else gc="(0)";
 
+            stringQuery=
+                    " delete from " + tableName +
+                            " where product_id="+productId+" " +
+                            " and child_id not in " + gc +
+                            " and (select count(*) from products where master_id="+masterId+" and id="+productId+")>0";
 
-
-            return true;
-        } else return false;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method deleteUpsellCrosssells.", e);
+            throw new Exception(e);
+        }
+    }
+    @SuppressWarnings("Duplicates")
+    private void saveCategories(Long productId, Set<Long> categories) throws Exception {
+        String stringQuery;
+        BigInteger cnt;
+        try{
+            for(Long categoryId : categories){
+                //check that this pair (category and product) is not in table
+                stringQuery=
+                    "select count(*) from product_productcategories where product_id = " + productId + " and category_id = " + categoryId;
+                try {
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    cnt = (BigInteger) query.getSingleResult();
+                } catch (NoResultException nre) {
+                    cnt = new BigInteger("0");
+                } catch (Exception e) {
+                    logger.error("Exception in method saveCategories. SQL: " + stringQuery, e);
+                    e.printStackTrace();
+                    throw new Exception(e);
+                }
+                //if there is no the pair like this
+                if(cnt.equals(new BigInteger("0"))){
+                    stringQuery="insert into product_productcategories (" +
+                    "product_id, category_id) values ("+productId+", "+categoryId+")";
+                    try {
+                        Query query = entityManager.createNativeQuery(stringQuery);
+                        query.executeUpdate();
+                    } catch (Exception e) {
+                        logger.error("Exception in method saveCategories. SQL: " + stringQuery, e);
+                        e.printStackTrace();
+                        throw new Exception(e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveCategories.", e);
+            throw new Exception(e);
+        }
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean savePrice(Long priceTypeId, Long productId, Long myMasterId, Long companyId, BigDecimal priceValue){
+    private void deleteCategories(Long masterId, Long productId, Set<Long> goodCategories) throws Exception {
+        String stringQuery;
+        try{
+            String gc;
+            if(goodCategories.size()>0)
+                gc=commonUtilites.SetOfLongToString(goodCategories,",","(",")");
+            else gc="(0)";
+
+            stringQuery=
+            " delete from product_productcategories " +
+            " where product_id="+productId+" " +
+            " and category_id not in " + gc +
+            " and (select count(*) from products where master_id="+masterId+" and id="+productId+")>0";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method deleteCategories.", e);
+            throw new Exception(e);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private void savePrice(Long priceTypeId, Long productId, Long myMasterId, Long companyId, BigDecimal priceValue) throws Exception {
         String stringQuery;
         stringQuery=
                 "   insert into product_prices (" +
@@ -381,138 +613,98 @@ public class ProductsRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method savePrice. SQL query:" + stringQuery, e);
-            return false;
+            throw new Exception(e);
         }
     }
 
     @SuppressWarnings("Duplicates")
-//    @Transactional
-    public boolean updateProductsWithoutOrders(ProductsForm request) {
-        EntityManager emgr = emf.createEntityManager();
-        Products document = emgr.find(Products.class, request.getId());//сохраняемый документ
-        boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "170"); // "Редактирование док-тов своего предприятия"
-        boolean userHasPermissions_AllUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "169"); // "Редактирование док-тов всех предприятий" (в пределах родительского аккаунта, конечно же)
-        boolean updatingDocumentOfMyCompany = (Long.valueOf(userRepositoryJPA.getMyCompanyId()).equals(request.getCompany_id()));//сохраняется документ моего предприятия
-        Long DocumentMasterId = document.getMaster().getId(); //владелец сохраняемого документа.
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());//владелец моего аккаунта
-        boolean isItMyMastersDoc = (DocumentMasterId.equals(myMasterId));// документ под юрисдикцией главного аккаунта
-
-        if (((updatingDocumentOfMyCompany && (userHasPermissions_OwnUpdate || userHasPermissions_AllUpdate))//(если сохраняю документ своего предприятия и у меня есть на это права
-                || (!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
-                && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
+    public void updateProductsWithoutOrders(ProductsForm request, Long myMasterId) throws Exception {
+            Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            String myTimeZone = userRepository.getUserTimeZone();
+            String stringQuery;
+        try
         {
-            try {
-                Long id = Long.valueOf(request.getId());
-                Products product = emgr.find(Products.class, id);
+            stringQuery = " update products set " +
+                    " changer_id = " + myId + ", "+
+                    " date_time_changed= now()," +
+                    " name = :name," +
+                    " description = :description, "+
+                    " article = :article, "+
+                    " product_code_free = " + (((request.getProduct_code_free() == null ? 0L : request.getProduct_code_free()) > 0L)?request.getProduct_code_free():generateFreeProductCode(request.getCompany_id())) + ", "+
+                    " group_id = " + request.getProductgroup_id() + ", "+
+                    " nds_id = " + request.getNds_id() + ", "+
+                    " edizm_id = " + request.getEdizm_id() + ", "+
+                    " ppr_id = "+request.getPpr_id() +"," +
+                    " by_weight = "+request.isBy_weight() +"," +
+                    " weight = "+ ((request.getWeight() != null && !request.getWeight().isEmpty() && request.getWeight().trim().length() > 0)?(new BigDecimal(request.getWeight().replace(",", "."))):(new BigDecimal("0"))) +"," +
+                    " weight_edizm_id = "+request.getWeight_edizm_id() +"," +
+                    " not_buy = "+request.isNot_buy() +"," +
+                    " not_sell = "+request.isNot_sell() +"," +
+                    " indivisible = "+request.isIndivisible() +"," +
+                    " type = :type, "+
+                    " slug = :slug, "+
+                    " featured = "+ request.getFeatured() +"," +
+                    " short_description = :short_description, "+
+                    " virtual = " + request.getVirtual() +"," +
+                    " downloadable = " + request.getDownloadable() +"," +
+                    " download_limit = "+request.getDownload_limit() +"," +
+                    " download_expiry = "+request.getDownload_expiry() +"," +
+                    " external_url = :external_url, "+
+                    " button_text = :button_text, "+
+                    " tax_status = :tax_status, "+
+                    " manage_stock = "+request.getManage_stock() +"," +
+                    " stock_status = :stock_status, "+
+                    " backorders = :backorders, "+
+                    " sold_individually = "+request.getSold_individually() +"," +
+                    " height = "+ ((request.getHeight() != null && !request.getHeight().isEmpty() && request.getHeight().trim().length() > 0)?(new BigDecimal(request.getHeight().replace(",", "."))):(new BigDecimal("0"))) +"," +
+                    " width = "+ ((request.getWidth() != null && !request.getWidth().isEmpty() && request.getWidth().trim().length() > 0)?(new BigDecimal(request.getWidth().replace(",", "."))):(new BigDecimal("0"))) +"," +
+                    " length = "+ ((request.getLength() != null && !request.getLength().isEmpty() && request.getLength().trim().length() > 0)?(new BigDecimal(request.getLength().replace(",", "."))):(new BigDecimal("0"))) +"," +
+                    " shipping_class = :shipping_class, "+
+                    " reviews_allowed = "+request.getReviews_allowed() +"," +
+                    " parent_id = "+request.getParent_id() +"," +
+                    " purchase_note = :purchase_note, "+
+                    " menu_order = "+request.getMenu_order() +"," +
+                    " date_on_sale_from_gmt = "+((!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))?("to_timestamp(:date_on_sale_from_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
+                    " date_on_sale_to_gmt = "+((!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))?("to_timestamp(:date_on_sale_to_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
+                    " low_stock_threshold = "+ ((request.getLow_stock_threshold() != null && !request.getLow_stock_threshold().isEmpty() && request.getLow_stock_threshold().trim().length() > 0)?(new BigDecimal(request.getLow_stock_threshold().replace(",", "."))):(new BigDecimal("0"))) +
+                    " where master_id = " + myMasterId + " and id = " + request.getId();
 
-                emgr.getTransaction().begin();
-
-                product.setName(request.getName() == null ? "" : request.getName());
-                product.setDescription(request.getDescription() == null ? "" : request.getDescription());
-                product.setArticle(request.getArticle() == null ? "" : request.getArticle());
-
-                if ((request.getProduct_code_free() == null ? 0L : request.getProduct_code_free()) > 0L) {
-                    product.setProduct_code_free(request.getProduct_code_free());
-                } else product.setProduct_code_free(generateFreeProductCode(request.getCompany_id()));
-
-                //группа товаров
-                if (request.getProductgroup_id() != null) {
-                    ProductGroups pg = emgr.find(ProductGroups.class, request.getProductgroup_id());
-                    product.setProductGroup(pg);
-                }
-
-                //категории товаров и услуг
-                Set<Long> categories = request.getSelectedProductCategories();
-                if (!categories.isEmpty()) { //если есть выбранные чекбоксы категорий
-                    Set<ProductCategories> setCategoriesOfProduct = getCategoriesSetBySetOfCategoriesId(categories);
-                    product.setProductCategories(setCategoriesOfProduct);
-                } else { // если ни один чекбокс категорий не выбран
-                    product.setProductCategories(null);
-                }
-
-                //код товара (до 99999)
-                //product.setProduct_code(request.getProduct_code());
-                //признак предмета расчёта
-                if (request.getPpr_id() != null) {
-                    SpravSysPPR ed = emgr.find(SpravSysPPR.class, request.getPpr_id());
-                    product.setPpr(ed);
-                }
-                //весовой товар (Boolean)
-                product.setBy_weight(request.isBy_weight());
-                //единица измерения товара
-                if (request.getEdizm_id() != null) {
-                    SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getEdizm_id());
-                    product.setEdizm(ed);
-                }
-                //НДС
-                if (request.getNds_id() != null) {
-                    SpravSysNds ed = emgr.find(SpravSysNds.class, request.getNds_id());
-                    product.setNds(ed);
-                }
-                //Вес товара (приходит String, конвертим в BigDecimal)
-                if (request.getWeight() != null && !request.getWeight().isEmpty() && request.getWeight().trim().length() > 0) {
-                    product.setWeight(new BigDecimal(request.getWeight().replace(",", ".")));
-                } else {
-                    product.setWeight(new BigDecimal("0"));
-                }
-                //Объём товара (приходит String, конвертим в BigDecimal)
-                if (request.getVolume() != null && !request.getVolume().isEmpty() && request.getVolume().trim().length() > 0) {
-                    product.setVolume(new BigDecimal(request.getVolume().replace(",", ".")));
-                } else {
-                    product.setVolume(new BigDecimal("0"));
-                }
-                //единица измерения веса товара
-                if (request.getWeight_edizm_id() != null) {
-                    SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getWeight_edizm_id());
-                    product.setWeight_edizm(ed);
-                }
-                //единица измерения объёма товара
-                if (request.getVolume_edizm_id() != null) {
-                    SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getVolume_edizm_id());
-                    product.setVolume_edizm(ed);
-                }
-                //маркированный товар (Boolean)
-                product.setMarkable(request.isMarkable());
-                //группа маркированных товаров
-                if (request.getMarkable_group_id() != null) {
-                    SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
-                    product.setMarkable_group(ed);
-                }
-                // не закупаемый товар (Boolean)
-                product.setNot_buy(request.isNot_buy());
-                // снятый с продажи товар (Boolean)
-                product.setNot_sell(request.isNot_sell());
-                // неделимый товар (Boolean)
-                product.setIndivisible(request.isIndivisible());
-
-                User changer = userService.getUserByUsername(userService.getUserName());
-                product.setChanger(changer);//кто изменил
-
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                product.setDate_time_changed(timestamp);//дату изменения
-
-                emgr.getTransaction().commit();
-                emgr.close();
-            } catch (Exception e) {
-                logger.error("Exception in method updateProductsWithoutOrders.", e);
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
+                query.setParameter("name", (request.getName() == null ? "" : request.getName()));
+                query.setParameter("article", (request.getArticle() == null ? "" : request.getArticle()));
+                query.setParameter("type", (request.getType() == null ? "" : request.getType()));
+                query.setParameter("slug", (request.getSlug() == null ? "" : request.getSlug()));
+                query.setParameter("short_description", (request.getShort_description() == null ? "" : request.getShort_description()));
+                query.setParameter("external_url", (request.getExternal_url() == null ? "" : request.getExternal_url()));
+                query.setParameter("button_text", (request.getButton_text() == null ? "" : request.getButton_text()));
+                query.setParameter("tax_status", (request.getTax_status() == null ? "" : request.getTax_status()));
+                query.setParameter("stock_status", (request.getStock_status() == null ? "" : request.getStock_status()));
+                query.setParameter("backorders", (request.getBackorders() == null ? "" : request.getBackorders()));
+                query.setParameter("shipping_class", (request.getShipping_class() == null ? "" : request.getShipping_class()));
+                query.setParameter("purchase_note", (request.getPurchase_note() == null ? "" : request.getPurchase_note()));
+                if(!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))
+                    query.setParameter("date_on_sale_from_gmt", request.getDate_on_sale_from_gmt()+" 00:00:00.000");
+                if(!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))
+                    query.setParameter("date_on_sale_to_gmt", request.getDate_on_sale_to_gmt()+" 23:59:59.999");
+                query.executeUpdate();
+            }catch (Exception e) {
+                logger.error("Exception in method updateProducts. The stage of saving base product fields. stringQuery=", e);
                 e.printStackTrace();
-                return false;
+                throw new Exception();
             }
-            return true;
-        } else return false;
+
     }
 
     // сохранение порядка картинок товара (права не нужны, т.к. вызывается после проверки всех прав)
     @SuppressWarnings("Duplicates")
-//    @Transactional
-    private boolean saveChangeProductImagesOrder(Long ProductImageId, Long productId, int order) {
+    private boolean saveChangeProductFilesOrder(Long ProductImageId, Long productId, int order, String tableName) throws Exception {
         String stringQuery="";
         try {
-            stringQuery = " update product_files set " +
+            stringQuery = " update "+tableName+" set " +
                     " output_order=" + order +
                     " where file_id=" + ProductImageId +
                     " and product_id=" + productId;
@@ -520,16 +712,15 @@ public class ProductsRepositoryJPA {
             query.executeUpdate();
             return true;
         } catch (Exception e) {
-            logger.error("Exception in method saveChangeProductImagesOrder. SQL query:" + stringQuery, e);
+            logger.error("Exception in method saveChangeProductFilesOrder. SQL query:" + stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
     // сохранение порядка картинок товара (права не нужны, т.к. вызывается после проверки всех прав)
     @SuppressWarnings("Duplicates")
-//    @Transactional
-    private boolean saveChangeProductCagentsOrder(Long cagentId, Long productId, int order) {
+    private boolean saveChangeProductCagentsOrder(Long cagentId, Long productId, int order) throws Exception {
         String stringQuery="";
         try {
             stringQuery = " update product_cagents set " +
@@ -542,7 +733,7 @@ public class ProductsRepositoryJPA {
         } catch (Exception e) {
             logger.error("Exception in method saveChangeProductCagentsOrder. SQL query:" + stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
@@ -878,7 +1069,7 @@ public class ProductsRepositoryJPA {
                 UniversalForm universalForm = new UniversalForm();
                 universalForm.setId1(newProductId);
                 universalForm.setSetOfLongs1(imagesIds);
-                addImagesToProduct(universalForm);
+                addFilesToProduct(universalForm);
             }
             //копирование поставщиков
             List<ProductCagentsJSON> listOfProductCagents = getListOfProductCagents(origProductId);
@@ -1320,7 +1511,9 @@ public class ProductsRepositoryJPA {
                         "where " +
                         "product_id="+productId+" and " +
                         "price_type_id=p.id) " +
-                        ",0)                                as price_value " +
+                        ",0)                                as price_value, " +
+                        "(select count(*) from companies where is_store=true and store_price_type_regular = p.id) > 0 as is_store_price_type_regular," +
+                        "(select count(*) from companies where is_store=true and store_price_type_sale = p.id) > 0 as is_store_price_type_sale" +
 
                         " from " +
                         " sprav_type_prices p, products prod " +
@@ -1344,6 +1537,8 @@ public class ProductsRepositoryJPA {
                 doc.setPrice_name((String)                              obj[1]);
                 doc.setPrice_description((String)                       obj[2]);
                 doc.setPrice_value((BigDecimal)                         obj[3]);
+                doc.setIs_store_price_type_regular((Boolean)            obj[4]);
+                doc.setIs_store_price_type_sale((Boolean)               obj[5]);
                 returnList.add(doc);
             }
             return returnList;
@@ -1484,7 +1679,8 @@ public class ProductsRepositoryJPA {
                         "parent_id," +
                         "company_id," +
                         "date_time_created," +
-                        "is_store_category" +
+                        "is_store_category," +
+                        "output_order" +
                         ") values ( " +
                         ":name, " +
                         ":slug," +
@@ -1496,7 +1692,9 @@ public class ProductsRepositoryJPA {
                         (request.getParentCategoryId() > 0 ? request.getParentCategoryId() : null) + ", " +
                         request.getCompanyId() + ", " +
                         "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')), " +
-                        request.getIsStoreCategory()+")";
+                        request.getIsStoreCategory() + ", " +
+                        "(select coalesce(max(output_order)+1,1) from product_categories where company_id = " + request.getCompanyId() + " and parent_id " + (request.getParentCategoryId() > 0 ?(" = " + request.getParentCategoryId() ): " is null") + ")" +
+                        ")";
                 try {
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("name", request.getName());
@@ -1689,6 +1887,26 @@ public class ProductsRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         List<Integer> depIds = query.getResultList();
         return depIds;
+    }
+
+    public List<IdAndName> getProductsUpsellCrosssells(Long id, String tableName) throws Exception {
+        String stringQuery = "select p.child_id, (select name from products where id=p.child_id) from "+tableName+" p where p.product_id= " + id;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndName> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                IdAndName doc = new IdAndName();
+                doc.setId(Long.parseLong(obj[0].toString()));
+                doc.setName((String) obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
     }
 
     @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
@@ -2420,8 +2638,9 @@ public class ProductsRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public boolean addImagesToProduct(UniversalForm request) {
+    public Integer addFilesToProduct(UniversalForm request) {
         Long prouctId = request.getId1();
+        String tableName = request.getString1();
         //Если есть право на "Изменение по всем предприятиям" и id товара принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", prouctId.toString())) ||
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
@@ -2432,38 +2651,36 @@ public class ProductsRepositoryJPA {
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
-                    stringQuery = "select product_id from product_files where product_id=" + prouctId + " and file_id=" + fileId;
+                    stringQuery = "select product_id from " +tableName+ " where product_id=" + prouctId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (fileIsImage(fileId) && query.getResultList().size() == 0) {//если таких картинок еще нет у товара, и файл является картинкой
                         entityManager.close();
-                        manyToMany_productId_FileId(prouctId, fileId);
+                        manyToMany_productId_FileId(prouctId, fileId, tableName);
                     }
                 }
-                return true;
+                return 1;
             } catch (Exception e) {
-                logger.error("Exception in method addImagesToProduct. SQL query:"+stringQuery, e);
+                logger.error("Exception in method addFilesToProduct. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
-    @SuppressWarnings("Duplicates")
-    @Transactional
-    boolean manyToMany_productId_FileId(Long prouctId, Long fileId) {
+    boolean manyToMany_productId_FileId(Long prouctId, Long fileId, String tableName) throws Exception {
         try {
             entityManager.createNativeQuery(" " +
-                    "insert into product_files " +
-                    "(product_id,file_id,output_order) " +
-                    "values " +
-                    "(" + prouctId + ", " + fileId + " , (select coalesce(max(output_order)+1,1) from product_files where product_id=" + prouctId + "))")
+                    "insert into " + tableName +
+                    " (product_id,file_id,output_order) " +
+                    " values " +
+                    " (" + prouctId + ", " + fileId + " , (select coalesce(max(output_order)+1,1) from " + tableName + " where product_id=" + prouctId + "))")
                     .executeUpdate();
             entityManager.close();
             return true;
         } catch (Exception e) {
             logger.error("Exception in method manyToMany_productId_FileId.", e);
             e.printStackTrace();
-            return false;
+            throw new Exception(e);
         }
     }
 
@@ -2471,7 +2688,7 @@ public class ProductsRepositoryJPA {
         return true;
     }
 
-    @SuppressWarnings("Duplicates") //отдает информацию по картинкам товара (fullSize - полным, нет - по их thumbnails)
+    //отдает информацию по картинкам товара (fullSize - полным, нет - по их thumbnails)
     public List<FilesProductImagesJSON> getListOfProductImages(Long productId, boolean fullSize) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//Просмотр документов
         {
@@ -2505,23 +2722,69 @@ public class ProductsRepositoryJPA {
         } else return null;
     }
 
+    public List<FilesProductDownloadable> getProductDownloadableFiles(Long productId) {
+        if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//Просмотр документов
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery = "select" +
+                    "           f.id as id," +
+                    "           f.name as name," +
+                    "           f.original_name as original_name," +
+                    "           pf.output_order as output_order" +
+                    "           from" +
+                    "           products p" +
+                    "           inner join product_downloadable_files pf on p.id=pf.product_id" +
+                    "           inner join files f on pf.file_id=f.id" +
+                    "           where" +
+                    "           p.id= " + productId +
+                    "           and f.trash is not true" +
+                    "           and p.master_id= " + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            {
+                stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            stringQuery = stringQuery + " order by pf.output_order asc ";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+
+                List<FilesProductDownloadable> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    FilesProductDownloadable doc = new FilesProductDownloadable();
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setName((String) obj[1]);
+                    doc.setOriginal_name((String) obj[2]);
+                    doc.setOutput_order((Integer) obj[3]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            }
+            catch (Exception e) {
+                logger.error("Exception in method getProductDownloadableFiles. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return null;
+    }
+
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteProductImage(SearchForm request) {
+    public boolean deleteProductFile(UniversalForm request) {
+        String tableName = request.getString1();
         //Если есть право на "Изменение по всем предприятиям" и id товара принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", request.getAny_id().toString())) ||
+        if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", request.getId1().toString())) ||
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getAny_id().toString()))) {
+                (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getId1().toString()))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
 //            int myCompanyId = userRepositoryJPA.getMyCompanyId();
-            stringQuery = " delete from product_files " +
-                    " where product_id=" + request.getAny_id() +
+            stringQuery = " delete from " + tableName +
+                    " where product_id=" + request.getId1() +
                     " and file_id=" + request.getId() +
-                    " and (select master_id from products where id=" + request.getAny_id() + ")=" + myMasterId;
+                    " and (select master_id from products where id=" + request.getId1() + ")=" + myMasterId;
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                int i = query.executeUpdate();
+                query.executeUpdate();
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method deleteProductImage. SQL query:"+stringQuery, e);
@@ -2530,6 +2793,7 @@ public class ProductsRepositoryJPA {
             }
         } else return false;
     }
+
 
 
 //*****************************************************************************************************************************************************

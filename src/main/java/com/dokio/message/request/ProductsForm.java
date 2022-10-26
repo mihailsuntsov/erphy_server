@@ -20,6 +20,7 @@ package com.dokio.message.request;
 
 import com.dokio.message.response.additional.ProductPricesJSON;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -55,6 +56,63 @@ public class ProductsForm {
     private String linked_doc_name;//имя (таблицы) связанного документа
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
+
+///////////////////////////// STORE ///////////////////////////////////
+
+    private String type;
+    private String slug;
+    private Boolean featured;
+    private String short_description;
+    private Boolean virtual;
+    private Boolean downloadable;
+    private Integer download_limit;
+    private Integer download_expiry;
+    private String external_url;
+    private String button_text;
+    private String tax_status;
+    private Boolean manage_stock;
+    private String stock_status;
+    private String backorders;
+    private Boolean sold_individually;
+    private String height;
+    private String width;
+    private String length;
+    private String shipping_class;
+    private Boolean reviews_allowed;
+    private Long parent_id;
+    private String purchase_note;
+    private Integer menu_order;
+    private String date_on_sale_to_gmt;
+    private String date_on_sale_from_gmt;
+    private Set<Long> upsell_ids;
+    private Set<Long> crosssell_ids;
+    private Set<Long> grouped_ids;
+    private String low_stock_threshold;
+    private List<Long> dfilesIdsInOrderOfList;//List id
+
+    public List<Long> getDfilesIdsInOrderOfList() {
+        return dfilesIdsInOrderOfList;
+    }
+
+    public void setDfilesIdsInOrderOfList(List<Long> dfilesIdsInOrderOfList) {
+        this.dfilesIdsInOrderOfList = dfilesIdsInOrderOfList;
+    }
+
+    public String getLow_stock_threshold() {
+        return low_stock_threshold;
+    }
+
+    public void setLow_stock_threshold(String low_stock_threshold) {
+        this.low_stock_threshold = low_stock_threshold;
+    }
+
+    public Set<Long> getGrouped_ids() {
+        return grouped_ids;
+    }
+
+    public void setGrouped_ids(Set<Long> grouped_ids) {
+        this.grouped_ids = grouped_ids;
+    }
 
     public String getParent_uid() {
         return parent_uid;
@@ -302,6 +360,222 @@ public class ProductsForm {
 
     public void setExcizable(boolean excizable) {
         this.excizable = excizable;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public Boolean getFeatured() {
+        return featured;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public String getShort_description() {
+        return short_description;
+    }
+
+    public void setShort_description(String short_description) {
+        this.short_description = short_description;
+    }
+
+    public Boolean getVirtual() {
+        return virtual;
+    }
+
+    public void setVirtual(Boolean virtual) {
+        this.virtual = virtual;
+    }
+
+    public Boolean getDownloadable() {
+        return downloadable;
+    }
+
+    public void setDownloadable(Boolean downloadable) {
+        this.downloadable = downloadable;
+    }
+
+    public Integer getDownload_limit() {
+        return download_limit;
+    }
+
+    public void setDownload_limit(Integer download_limit) {
+        this.download_limit = download_limit;
+    }
+
+    public Integer getDownload_expiry() {
+        return download_expiry;
+    }
+
+    public void setDownload_expiry(Integer download_expiry) {
+        this.download_expiry = download_expiry;
+    }
+
+    public String getExternal_url() {
+        return external_url;
+    }
+
+    public void setExternal_url(String external_url) {
+        this.external_url = external_url;
+    }
+
+    public String getButton_text() {
+        return button_text;
+    }
+
+    public void setButton_text(String button_text) {
+        this.button_text = button_text;
+    }
+
+    public String getTax_status() {
+        return tax_status;
+    }
+
+    public void setTax_status(String tax_status) {
+        this.tax_status = tax_status;
+    }
+
+    public Boolean getManage_stock() {
+        return manage_stock;
+    }
+
+    public void setManage_stock(Boolean manage_stock) {
+        this.manage_stock = manage_stock;
+    }
+
+    public String getStock_status() {
+        return stock_status;
+    }
+
+    public void setStock_status(String stock_status) {
+        this.stock_status = stock_status;
+    }
+
+    public String getBackorders() {
+        return backorders;
+    }
+
+    public void setBackorders(String backorders) {
+        this.backorders = backorders;
+    }
+
+    public Boolean getSold_individually() {
+        return sold_individually;
+    }
+
+    public void setSold_individually(Boolean sold_individually) {
+        this.sold_individually = sold_individually;
+    }
+
+    public String getHeight() {
+        return height;
+    }
+
+    public void setHeight(String height) {
+        this.height = height;
+    }
+
+    public String getWidth() {
+        return width;
+    }
+
+    public void setWidth(String width) {
+        this.width = width;
+    }
+
+    public String getLength() {
+        return length;
+    }
+
+    public void setLength(String length) {
+        this.length = length;
+    }
+
+    public String getShipping_class() {
+        return shipping_class;
+    }
+
+    public void setShipping_class(String shipping_class) {
+        this.shipping_class = shipping_class;
+    }
+
+    public Boolean getReviews_allowed() {
+        return reviews_allowed;
+    }
+
+    public void setReviews_allowed(Boolean reviews_allowed) {
+        this.reviews_allowed = reviews_allowed;
+    }
+
+    public Long getParent_id() {
+        return parent_id;
+    }
+
+    public void setParent_id(Long parent_id) {
+        this.parent_id = parent_id;
+    }
+
+    public String getPurchase_note() {
+        return purchase_note;
+    }
+
+    public void setPurchase_note(String purchase_note) {
+        this.purchase_note = purchase_note;
+    }
+
+    public Integer getMenu_order() {
+        return menu_order;
+    }
+
+    public void setMenu_order(Integer menu_order) {
+        this.menu_order = menu_order;
+    }
+
+    public String getDate_on_sale_to_gmt() {
+        return date_on_sale_to_gmt;
+    }
+
+    public void setDate_on_sale_to_gmt(String date_on_sale_to_gmt) {
+        this.date_on_sale_to_gmt = date_on_sale_to_gmt;
+    }
+
+    public String getDate_on_sale_from_gmt() {
+        return date_on_sale_from_gmt;
+    }
+
+    public void setDate_on_sale_from_gmt(String date_on_sale_from_gmt) {
+        this.date_on_sale_from_gmt = date_on_sale_from_gmt;
+    }
+
+    public Set<Long> getUpsell_ids() {
+        return upsell_ids;
+    }
+
+    public void setUpsell_ids(Set<Long> upsell_ids) {
+        this.upsell_ids = upsell_ids;
+    }
+
+    public Set<Long> getCrosssell_ids() {
+        return crosssell_ids;
+    }
+
+    public void setCrosssell_ids(Set<Long> crosssell_ids) {
+        this.crosssell_ids = crosssell_ids;
     }
 
     @Override

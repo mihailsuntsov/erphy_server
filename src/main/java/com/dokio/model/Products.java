@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dokio.model.ManyToManyKeys.ProductFields;
 import com.dokio.model.Sprav.*;
+import org.apache.commons.math3.stat.descriptive.summary.Product;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -43,7 +44,7 @@ public class Products {
     @Size(max = 512)
     private String name;
 
-    @Size(max = 2048)
+    @Size(max = 16384)
     @Column(name = "description")
     private String description;
 
@@ -101,8 +102,6 @@ public class Products {
 
     @ManyToMany(mappedBy = "products")
     private Set<Files> images;
-
-    //////////////////////////////////////////////////////////////////////////////////////
 
     @Column(name = "product_code")// Код весового товара (для штрихкода EAN-13 весовых продуктов), генерируется системой по запросу пользователя в generateWeightProductCode
     private Integer product_code;
@@ -165,6 +164,97 @@ public class Products {
     @Column(name = "product_code_free") // Свободный код товара для самостоятельного ввода (в отличии от генерируемого системой весового кода product_code)
     private Long product_code_free;
 
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    @Size(max = 8)
+    @Column(name = "type")//Product type. Options: simple, grouped, external and variable. Default is simple.
+    private String type;
+
+    @Size(max = 120)
+    @Column(name = "slug")//Product slug.
+    private String slug;
+
+    @Column(name = "featured")//Featured product. Default is false.
+    private Boolean featured;
+
+    @Size(max = 2048)
+    @Column(name = "short_description")//If the product is virtual. Default is false.
+    private String short_description;
+
+    @Column(name = "virtual")//If the product is downloadable. Default is false.
+    private Boolean virtual;
+
+    @Column(name = "downloadable")//
+    private Boolean downloadable;
+
+    @Column(name = "download_limit")//Number of times downloadable files can be downloaded after purchase. Default is -1.
+    private Integer download_limit;
+
+    @Column(name = "download_expiry")//Number of days until access to downloadable files expires. Default is -1.
+    private Integer download_expiry;
+
+    @Size(max = 255)
+    @Column(name = "external_url")//Product external URL. Only for external products.
+    private String external_url;
+
+    @Size(max = 60)
+    @Column(name = "button_text")//Product external button text. Only for external products.
+    private String button_text;
+
+    @Size(max = 8)
+    @Column(name = "tax_status")//Tax status. Options: taxable, shipping and none. Default is taxable.
+    private String tax_status;
+
+    @Column(name = "manage_stock")//Stock management at product level. Default is false.
+    private Boolean manage_stock;
+
+    @Size(max = 10)
+    @Column(name = "stock_status")//Controls the stock status of the product. Options: instock, outofstock, onbackorder. Default is instock.
+    private String stock_status;
+
+    @Size(max = 6)
+    @Column(name = "backorders")//If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no.
+    private String backorders;
+
+    @Column(name = "sold_individually")//Allow one item to be bought in a single order. Default is false.
+    private Boolean sold_individually;
+
+    @Column(name = "height")//Product height.
+    private BigDecimal height;
+
+    @Column(name = "width")//Product width.
+    private BigDecimal width;
+
+    @Column(name = "length")//Product length.
+    private BigDecimal length;
+
+    @Size(max = 120)
+    @Column(name = "shipping_class")//Shipping class slug.
+    private String shipping_class;
+
+    @Column(name = "reviews_allowed")//Allow reviews. Default is true.
+    private Boolean reviews_allowed;
+
+    @ManyToOne
+    @JoinColumn(name = "parent_id") // Product parent ID.
+    private Products parent_id;
+
+    @Size(max = 1000)
+    @Column(name = "purchase_note")//Optional note to send the customer after purchase.
+    private String purchase_note;
+
+    @Column(name = "menu_order")//
+    private Integer menu_order;
+
+    @Column(name="date_on_sale_from_gmt", nullable = false)
+    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+    private Timestamp date_on_sale_from_gmt;
+
+    @Column(name="date_on_sale_to_gmt")
+    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+    private Timestamp date_on_sale_to_gmt;
 
     public Long getId() {
         return id;
@@ -428,5 +518,205 @@ public class Products {
 
     public void setBarcodes(Set<SpravSysBarcode> barcodes) {
         this.barcodes = barcodes;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public Boolean getFeatured() {
+        return featured;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public String getShort_description() {
+        return short_description;
+    }
+
+    public void setShort_description(String short_description) {
+        this.short_description = short_description;
+    }
+
+    public Boolean getVirtual() {
+        return virtual;
+    }
+
+    public void setVirtual(Boolean virtual) {
+        this.virtual = virtual;
+    }
+
+    public Boolean getDownloadable() {
+        return downloadable;
+    }
+
+    public void setDownloadable(Boolean downloadable) {
+        this.downloadable = downloadable;
+    }
+
+    public Integer getDownload_limit() {
+        return download_limit;
+    }
+
+    public void setDownload_limit(Integer download_limit) {
+        this.download_limit = download_limit;
+    }
+
+    public Integer getDownload_expiry() {
+        return download_expiry;
+    }
+
+    public void setDownload_expiry(Integer download_expiry) {
+        this.download_expiry = download_expiry;
+    }
+
+    public String getExternal_url() {
+        return external_url;
+    }
+
+    public void setExternal_url(String external_url) {
+        this.external_url = external_url;
+    }
+
+    public String getButton_text() {
+        return button_text;
+    }
+
+    public void setButton_text(String button_text) {
+        this.button_text = button_text;
+    }
+
+    public String getTax_status() {
+        return tax_status;
+    }
+
+    public void setTax_status(String tax_status) {
+        this.tax_status = tax_status;
+    }
+
+    public Boolean getManage_stock() {
+        return manage_stock;
+    }
+
+    public void setManage_stock(Boolean manage_stock) {
+        this.manage_stock = manage_stock;
+    }
+
+    public String getStock_status() {
+        return stock_status;
+    }
+
+    public void setStock_status(String stock_status) {
+        this.stock_status = stock_status;
+    }
+
+    public String getBackorders() {
+        return backorders;
+    }
+
+    public void setBackorders(String backorders) {
+        this.backorders = backorders;
+    }
+
+    public Boolean getSold_individually() {
+        return sold_individually;
+    }
+
+    public void setSold_individually(Boolean sold_individually) {
+        this.sold_individually = sold_individually;
+    }
+
+    public BigDecimal getHeight() {
+        return height;
+    }
+
+    public void setHeight(BigDecimal height) {
+        this.height = height;
+    }
+
+    public BigDecimal getWidth() {
+        return width;
+    }
+
+    public void setWidth(BigDecimal width) {
+        this.width = width;
+    }
+
+    public BigDecimal getLength() {
+        return length;
+    }
+
+    public void setLength(BigDecimal length) {
+        this.length = length;
+    }
+
+    public String getShipping_class() {
+        return shipping_class;
+    }
+
+    public void setShipping_class(String shipping_class) {
+        this.shipping_class = shipping_class;
+    }
+
+    public Boolean getReviews_allowed() {
+        return reviews_allowed;
+    }
+
+    public void setReviews_allowed(Boolean reviews_allowed) {
+        this.reviews_allowed = reviews_allowed;
+    }
+
+    public Products getParent_id() {
+        return parent_id;
+    }
+
+    public void setParent_id(Products parent_id) {
+        this.parent_id = parent_id;
+    }
+
+    public String getPurchase_note() {
+        return purchase_note;
+    }
+
+    public void setPurchase_note(String purchase_note) {
+        this.purchase_note = purchase_note;
+    }
+
+    public Integer getMenu_order() {
+        return menu_order;
+    }
+
+    public void setMenu_order(Integer menu_order) {
+        this.menu_order = menu_order;
+    }
+
+    public Timestamp getDate_on_sale_from_gmt() {
+        return date_on_sale_from_gmt;
+    }
+
+    public void setDate_on_sale_from_gmt(Timestamp date_on_sale_from_gmt) {
+        this.date_on_sale_from_gmt = date_on_sale_from_gmt;
+    }
+
+    public Timestamp getDate_on_sale_to_gmt() {
+        return date_on_sale_to_gmt;
+    }
+
+    public void setDate_on_sale_to_gmt(Timestamp date_on_sale_to_gmt) {
+        this.date_on_sale_to_gmt = date_on_sale_to_gmt;
     }
 }

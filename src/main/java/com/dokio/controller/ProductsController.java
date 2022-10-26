@@ -21,6 +21,7 @@ package com.dokio.controller;
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
@@ -187,7 +188,7 @@ public class ProductsController {
 
     @PostMapping("/api/auth/getProductValues")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getTypePricesValuesById(@RequestBody UniversalForm request) {
+    public ResponseEntity<?> getProductValues(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path /api/auth/getProductValues: " + request.toString());
         ProductsJSON response;
         Long id = request.getId();
@@ -195,11 +196,22 @@ public class ProductsController {
         try
         {
             List<Integer> valuesListId =productsRepositoryJPA.getProductsCategoriesIdsByProductId(Long.valueOf(id));
+            List<IdAndName> upsells = productsRepositoryJPA.getProductsUpsellCrosssells(id,"product_upsell");
+            List<IdAndName> crosssells = productsRepositoryJPA.getProductsUpsellCrosssells(id,"product_crosssell");
+            List<IdAndName> grouped = productsRepositoryJPA.getProductsUpsellCrosssells(id,"product_grouped");
             response.setProduct_categories_id(valuesListId);
+            response.setUpsell_ids(upsells);
+            response.setCrosssell_ids(crosssells);
+            response.setGrouped_ids(grouped);
             ResponseEntity<ProductsJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
             return responseEntity;
         }
         catch(NullPointerException npe){return null;}
+        catch (Exception e) {
+            logger.error("Exception in method getProductValues.", e);
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @PostMapping("/api/auth/insertProduct")
@@ -212,16 +224,12 @@ public class ProductsController {
 
     @PostMapping("/api/auth/updateProducts")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateProducts(@RequestBody ProductsForm request) throws ParseException{
+    public ResponseEntity<?> updateProducts(@RequestBody ProductsForm request){
         logger.info("Processing post request for path /api/auth/updateProducts: " + request.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.updateProducts(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller updateProducts error with request=" + request.toString(), e);
+        return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
 
-        if(productsRepositoryJPA.updateProducts(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
     }
 
     @PostMapping("/api/auth/updateProductCustomFields")
@@ -544,36 +552,25 @@ public class ProductsController {
         }
     }
 
-    @PostMapping("/api/auth/deleteProductImage")
-    public ResponseEntity<?> deleteProductImage(@RequestBody SearchForm request) throws ParseException{
+    @PostMapping("/api/auth/deleteProductFile")
+    public ResponseEntity<?> deleteProductFile(@RequestBody UniversalForm request) {
         logger.info("Processing post request for path /api/auth/deleteProductImage: " + request.toString());
-
-        if(productsRepositoryJPA.deleteProductImage(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productsRepositoryJPA.deleteProductFile(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller deleteProductImage error", e);
+            return new ResponseEntity<>("Error deleting product images", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @SuppressWarnings("Duplicates")
-    @PostMapping("/api/auth/addImagesToProduct")
-    public ResponseEntity<?> addImagesToProduct(@RequestBody UniversalForm request) throws ParseException{
+    @PostMapping("/api/auth/addFilesToProduct")
+    public ResponseEntity<?> addFilesToProduct(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/addImagesToProduct: " + request.toString());
-
-        if(productsRepositoryJPA.addImagesToProduct(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(productsRepositoryJPA.addFilesToProduct(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller addImagesToProduct error", e);
+            return new ResponseEntity<>("Error adding images to product", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @SuppressWarnings("Duplicates")
     @PostMapping("/api/auth/addCagentsToProduct")
-    public ResponseEntity<?> addCagentsToProduct(@RequestBody UniversalForm request) throws ParseException{
+    public ResponseEntity<?> addCagentsToProduct(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/addCagentsToProduct: " + request.toString());
 
         if(productsRepositoryJPA.addCagentsToProduct(request)){
@@ -587,7 +584,7 @@ public class ProductsController {
 
     @PostMapping("/api/auth/getListOfProductCagents")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getListOfProductCagents(@RequestBody SearchForm request) throws ParseException {
+    public ResponseEntity<?> getListOfProductCagents(@RequestBody SearchForm request){
         logger.info("Processing post request for path /api/auth/getListOfProductCagents: " + request.toString());
 
         Long productId=Long.valueOf(request.getId());
@@ -603,7 +600,7 @@ public class ProductsController {
     }
 
     @PostMapping("/api/auth/updateProductCagentProperties")
-    public ResponseEntity<?> updateProductCagentProperties(@RequestBody UniversalForm request) throws ParseException{
+    public ResponseEntity<?> updateProductCagentProperties(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/updateProductCagentProperties: " + request.toString());
 
         if(productsRepositoryJPA.updateProductCagentProperties(request)){
@@ -630,7 +627,7 @@ public class ProductsController {
 
 
     @PostMapping("/api/auth/insertProductBarcode")
-    public ResponseEntity<?> insertProductBarcode(@RequestBody UniversalForm request) throws ParseException{
+    public ResponseEntity<?> insertProductBarcode(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/insertProductBarcode: " + request.toString());
 
         if(productsRepositoryJPA.insertProductBarcode(request)){
@@ -661,7 +658,7 @@ public class ProductsController {
     }
 
     @PostMapping("/api/auth/updateProductBarcode")
-    public ResponseEntity<?> updateProductBarcode(@RequestBody UniversalForm request) throws ParseException{
+    public ResponseEntity<?> updateProductBarcode(@RequestBody UniversalForm request){
         logger.info("Processing post request for path /api/auth/updateProductBarcode: " + request.toString());
 
         if(productsRepositoryJPA.updateProductBarcode(request)){
@@ -920,4 +917,24 @@ public class ProductsController {
             return new ResponseEntity<>("Ошибка при назначении товарам категорий", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @RequestMapping(
+            value = "/api/auth/getProductDownloadableFiles",
+            params = {"product_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductPrice(
+            @RequestParam("product_id") Long product_id
+            )
+    {
+        logger.info("Processing get request for path /api/auth/getProductDownloadableFiles with parameters: " +
+            "product_id: "+product_id.toString());
+        try {
+            return new ResponseEntity<>(productsRepositoryJPA.getProductDownloadableFiles(product_id), HttpStatus.OK);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Error in controller method getProductDownloadableFiles. product_id = " + product_id);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
