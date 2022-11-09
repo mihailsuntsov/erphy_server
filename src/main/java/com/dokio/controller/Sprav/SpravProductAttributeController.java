@@ -3,6 +3,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.Sprav.ProductAttributeForm;
+import com.dokio.message.request.Sprav.ProductAttributeTermForm;
 import com.dokio.message.request.UniversalForm;
 import com.dokio.repository.SpravProductAttributeRepository;
 import com.dokio.util.CommonUtilites;
@@ -101,4 +102,52 @@ public class SpravProductAttributeController {
         catch (Exception e){logger.error("Controller undeleteProductAttribute error", e);
             return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    //*************************************************************************************************************************************************
+    //************************************************************  T E R M S  ************************************************************************
+    //*************************************************************************************************************************************************
+
+    @RequestMapping(
+            value = "/api/auth/getProductAttributeTermsList",
+            params = {"attribute_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductAttributeTermsList( @RequestParam("attribute_id") Long attributeId) {
+        logger.info("Processing get request for path /api/auth/getProductAttributeTermsList with attributeId=" + attributeId.toString());
+        try {return new ResponseEntity<>(spravProductAttributeRepository.getProductAttributeTermsList(attributeId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributeTermsList error with attributeId=" + attributeId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/insertProductAttributeTerm")
+    public ResponseEntity<?> insertProductAttributeTerm(@RequestBody ProductAttributeTermForm request){
+        logger.info("Processing post request for path /api/auth/insertProductAttributeTerm: " + request.toString());
+        try {return new ResponseEntity<>(spravProductAttributeRepository.insertProductAttributeTerm(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertProductAttributeTerm error", e);
+            return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/updateProductAttributeTerm")
+    public ResponseEntity<?> updateProductAttributeTerm(@RequestBody ProductAttributeTermForm request){
+        logger.info("Processing post request for path /api/auth/updateProductAttributeTerm: " + request.toString());
+        try {return new ResponseEntity<>(spravProductAttributeRepository.updateProductAttributeTerm(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateProductAttributeTerm error", e);
+            return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+//    @PostMapping("/api/auth/saveProductAttributeTermsOrder")
+//    public ResponseEntity<?> saveProductAttributeTermsOrder(@RequestBody List<ProductAttributeTermForm> request){
+//        logger.info("Processing post request for path /api/auth/saveProductAttributeTermsOrder: " + request.toString());
+//        try {return new ResponseEntity<>(spravProductAttributeRepository.saveProductAttributeTermsOrder(request), HttpStatus.OK);}
+//        catch (Exception e){logger.error("Controller saveProductAttributeTermsOrder error", e);
+//            return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
+//    }
+    @RequestMapping(
+            value = "/api/auth/deleteProductAttributeTerm",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteProductAttributeTerm( @RequestParam("id") Long termId) {
+        logger.info("Processing get request for path /api/auth/deleteProductAttributeTerm with termId=" + termId.toString());
+        try {return new ResponseEntity<>(spravProductAttributeRepository.deleteProductAttributeTerm(termId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller deleteProductAttributeTerm error with termId=" + termId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

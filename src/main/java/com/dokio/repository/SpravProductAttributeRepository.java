@@ -18,9 +18,12 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.ProductAttributeForm;
+import com.dokio.message.request.Sprav.ProductAttributeTermForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.ProductAttributeJSON;
+import com.dokio.message.response.Sprav.ProductAttributeTermJSON;
 import com.dokio.model.Companies;
+import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -293,6 +296,7 @@ public class SpravProductAttributeRepository {
                 query.setParameter("slug",request.getSlug());
                 query.setParameter("order_by",request.getOrder_by());
                 query.executeUpdate();
+                saveProductAttributeTermsOrder(request.getTerms(),myMasterId);
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -333,8 +337,8 @@ public class SpravProductAttributeRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         if ((   //если есть право на создание по всем предприятиям, или
                 (securityRepositoryJPA.userHasPermissions_OR(53L, "663")) ||
-                        //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, и
-                        (securityRepositoryJPA.userHasPermissions_OR(53L, "664") && myCompanyId.equals(request.getCompany_id()))) &&
+                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, и
+                (securityRepositoryJPA.userHasPermissions_OR(53L, "664") && myCompanyId.equals(request.getCompany_id()))) &&
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {
@@ -481,6 +485,213 @@ public class SpravProductAttributeRepository {
             e.printStackTrace();
             return null;
         }
+    }
+//*****************************************************************************************************************************************************
+//****************************************************   T  E  R  M  S   ******************************************************************************
+//*****************************************************************************************************************************************************
+
+
+    @SuppressWarnings("Duplicates")
+    public List<ProductAttributeTermJSON> getProductAttributeTermsList (Long attrbuteId) {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            stringQuery =       "select " +
+                    "           p.id as id," +
+                    "           p.name as name, " +
+                    "           p.slug as slug, " +
+                    "           p.description as description " +
+                    "           from product_attribute_terms p " +
+                    "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and p.attribute_id =" + attrbuteId +
+                    "           order by p.menu_order";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                List<ProductAttributeTermJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    ProductAttributeTermJSON doc = new ProductAttributeTermJSON();
+                    doc.setId(Long.parseLong(           obj[0].toString()));
+                    doc.setName((String)                obj[1]);
+                    doc.setSlug((String)                obj[2]);
+                    doc.setDescription((String)         obj[3]);
+                    returnList.add(doc);
+                }
+                return returnList;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getProductAttributeTermsList. SQL query:" + stringQuery, e);
+                return null;
+            }
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer insertProductAttributeTerm(ProductAttributeTermForm row) {
+        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",row.getAttribute_id().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",row.getAttribute_id().toString())))
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery =
+                    " insert into product_attribute_terms " +
+                            "(" +
+                            "master_id, " +
+                            "name, " +
+                            "slug, " +
+                            "description, " +
+                            "attribute_id, " +
+                            "menu_order" +
+                            ") values (" +
+                            myMasterId + "," +
+                            ":name," +
+                            ":slug," +
+                            ":description," +
+                            row.getAttribute_id() + ", " +
+                            " (select coalesce(max(menu_order),0)+1 from product_attribute_terms where attribute_id=" + row.getAttribute_id() + ")" +
+                            ")";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", row.getName());
+                query.setParameter("description", row.getDescription());
+                query.setParameter("slug", row.getSlug());
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                Throwable t = e.getCause();
+                while ((t != null) && !(t instanceof ConstraintViolationException)) {
+                    t = t.getCause();
+                }
+                if (t != null) {
+                    String message = ((ConstraintViolationException) t).getSQLException().getMessage();
+                    if (message.contains("product_attribute_terms_slug_uq")) {
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method insertProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
+                        return -212;
+                    } else {
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method insertProductAttributeTerm. (product_attribute_terms_name_uq)", e);
+                        return -214; //product_attribute_terms_name_uq
+                    }
+                } else {
+                    logger.error("Exception in method insertProductAttributeTerm. SQL query:" + stringQuery, e);
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        } else return -1;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer updateProductAttributeTerm(ProductAttributeTermForm row) {
+        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",row.getAttribute_id().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",row.getAttribute_id().toString())))
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery =
+                    " update " +
+                        " product_attribute_terms " +
+                    " set " +
+                        " name = :name, " +
+                        " slug = :slug, " +
+                        " description = :description " +
+                    " where " +
+                        " master_id = " + myMasterId +
+                        " and id = " + row.getId() +
+                        " and attribute_id = " + row.getAttribute_id();
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",row.getName());
+                query.setParameter("description",row.getDescription());
+                query.setParameter("slug",row.getSlug());
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                Throwable t = e.getCause();
+                while ((t != null) && !(t instanceof ConstraintViolationException)) {
+                    t = t.getCause();
+                }
+                if (t != null) {
+                    String message = ((ConstraintViolationException) t).getSQLException().getMessage();
+                    if(message.contains("product_attribute_terms_slug_uq")){
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method updateProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
+                        return -212;
+                    } else {
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method updateProductAttributeTerm. (product_attribute_terms_name_uq)", e);
+                        return -214; //product_attribute_terms_name_uq
+                    }
+                } else {
+                    logger.error("Exception in method updateProductAttributeTerm. SQL query:" + stringQuery, e);
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        } else return -1;
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    public Integer saveProductAttributeTermsOrder(List<ProductAttributeTermForm> request, Long myMasterId) throws Exception{
+        String stringQuery="";
+        int i = 1;
+        try {
+            for (ProductAttributeTermForm field : request) {
+                stringQuery =
+                        " update product_attribute_terms set " +
+                        " menu_order=" + i +
+                        " where id=" + field.getId() +
+                        " and master_id=" + myMasterId;
+                if (!securityRepositoryJPA.userHasPermissions_OR(53L, "669")) //Если нет прав по всем предприятиям
+                {
+//            остается только на своё предприятие
+                    int myCompanyId = userRepositoryJPA.getMyCompanyId();
+                    stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+                }
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                i++;
+            }
+            return 1;
+        } catch (Exception e) {
+            logger.error("Exception in method saveProductAttributeTermsOrder. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e); // cancelling the parent transaction
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer deleteProductAttributeTerm(Long termId) {
+        if (securityRepositoryJPA.userHasPermissions_OR(53L, "669,670"))// редактирование своих или чужих предприятий
+        {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery="";
+            try {
+                    stringQuery =
+                            "   delete from product_attribute_terms  " +
+                            "   where " +
+                            "   master_id = "   + myMasterId +
+                            "   and id = "            + termId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(53L, "669")) //Если нет прав по всем предприятиям
+                    {
+//            остается только на своё предприятие
+                        int myCompanyId = userRepositoryJPA.getMyCompanyId();
+                        stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+                    }
+                    entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteProductAttributeTerm. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
 

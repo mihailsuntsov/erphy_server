@@ -18,6 +18,8 @@
 
 package com.dokio.message.request.Sprav;
 
+import java.util.List;
+
 public class ProductAttributeForm {
 
     private Long id;
@@ -27,6 +29,15 @@ public class ProductAttributeForm {
     private String slug;
     private String order_by;
     private Boolean has_archives;
+    private List<ProductAttributeTermForm> terms;
+
+    public List<ProductAttributeTermForm> getTerms() {
+        return terms;
+    }
+
+    public void setTerms(List<ProductAttributeTermForm> terms) {
+        this.terms = terms;
+    }
 
     public Long getId() {
         return id;

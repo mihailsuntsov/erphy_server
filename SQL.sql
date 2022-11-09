@@ -4011,8 +4011,7 @@ alter table product_attributes add constraint product_attributes_slug_uq unique 
 alter table product_attribute_terms add constraint product_attribute_terms_slug_uq unique (attribute_id, slug);-- product attribute need to have unique terms slug names
 alter table product_attributes add constraint product_attributes_name_uq unique (company_id, name);--product attribute name must be unique
 alter table product_attribute_terms add constraint product_attribute_terms_name_uq unique (attribute_id, name);-- product attribute need to have unique terms names
-
-
+alter table product_attribute_terms alter column attribute_id set not null;
 
 
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------

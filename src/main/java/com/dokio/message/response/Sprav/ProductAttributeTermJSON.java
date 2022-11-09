@@ -22,14 +22,10 @@ package com.dokio.message.response.Sprav;
 
 public class ProductAttributeTermJSON {
 
-
     private Long id;
-    private Long company_id;
     private String name;
-    private Long attribute_id;
     private String description;
     private String slug;
-    private Integer menu_order;
 
     public Long getId() {
         return id;
@@ -39,28 +35,12 @@ public class ProductAttributeTermJSON {
         this.id = id;
     }
 
-    public Long getCompany_id() {
-        return company_id;
-    }
-
-    public void setCompany_id(Long company_id) {
-        this.company_id = company_id;
-    }
-
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Long getAttribute_id() {
-        return attribute_id;
-    }
-
-    public void setAttribute_id(Long attribute_id) {
-        this.attribute_id = attribute_id;
     }
 
     public String getDescription() {
@@ -77,13 +57,5 @@ public class ProductAttributeTermJSON {
 
     public void setSlug(String slug) {
         this.slug = slug;
-    }
-
-    public Integer getMenu_order() {
-        return menu_order;
-    }
-
-    public void setMenu_order(Integer menu_order) {
-        this.menu_order = menu_order;
     }
 }
