@@ -4014,6 +4014,31 @@ alter table product_attribute_terms add constraint product_attribute_terms_name_
 alter table product_attribute_terms alter column attribute_id set not null;
 
 
+create table product_productattributes(
+                                        master_id     bigint not null,
+                                        product_id    bigint not null,
+                                        attribute_id  bigint not null,
+                                        position      int not null, -- 	Attribute position
+                                        visible       boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page. Default is false.
+                                        variation	    boolean, -- Define if the attribute can be used as variation. Default is false.
+                                        foreign key (master_id) references users(id),
+                                        foreign key (product_id) references products(id),
+                                        foreign key (attribute_id) references product_attributes(id)
+);
+alter table product_productattributes add constraint product_productattribute_uq unique (product_id, attribute_id);--product attribute in the product card must be unique
+create table product_terms(
+                                        master_id     bigint not null,
+                                        product_id    bigint not null,
+                                        term_id       bigint not null,
+                                        foreign key (master_id) references users(id),
+                                        foreign key (product_id) references products(id),
+                                        foreign key (term_id) references product_attribute_terms(id)
+);
+
+alter table product_terms add constraint product_term_uq unique (product_id, term_id);--product term in the product card must be unique
+
+
+
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
 

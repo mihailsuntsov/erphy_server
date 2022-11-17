@@ -518,7 +518,6 @@ public class SpravProductAttributeRepository {
                     returnList.add(doc);
                 }
                 return returnList;
-
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.error("Exception in method getProductAttributeTermsList. SQL query:" + stringQuery, e);

@@ -19,6 +19,7 @@
 package com.dokio.message.request;
 
 import com.dokio.message.response.additional.ProductPricesJSON;
+import com.dokio.message.response.additional.ProductProductAttributeJSON;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -89,6 +90,15 @@ public class ProductsForm {
     private Set<Long> grouped_ids;
     private String low_stock_threshold;
     private List<Long> dfilesIdsInOrderOfList;//List id
+    private List<ProductProductAttributeForm> productAttributes;
+
+    public List<ProductProductAttributeForm> getProductAttributes() {
+        return productAttributes;
+    }
+
+    public void setProductAttributes(List<ProductProductAttributeForm> productAttributes) {
+        this.productAttributes = productAttributes;
+    }
 
     public List<Long> getDfilesIdsInOrderOfList() {
         return dfilesIdsInOrderOfList;
