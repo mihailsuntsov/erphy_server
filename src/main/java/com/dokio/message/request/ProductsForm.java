@@ -19,9 +19,9 @@
 package com.dokio.message.request;
 
 import com.dokio.message.response.additional.ProductPricesJSON;
-import com.dokio.message.response.additional.ProductProductAttributeJSON;
+//import com.dokio.message.response.additional.ProductProductAttributeJSON;
 
-import java.math.BigDecimal;
+//import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 

@@ -4037,6 +4037,12 @@ create table product_terms(
 
 alter table product_terms add constraint product_term_uq unique (product_id, term_id);--product term in the product card must be unique
 
+alter table product_terms add column product_attribute_id bigint not null;
+alter table product_terms add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes (id);
+
+
+
+
 
 
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------

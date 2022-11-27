@@ -938,13 +938,13 @@ public class ProductsController {
     }
 
     @RequestMapping(
-            value = "/api/auth/getProductAttributesList",
+            value = "/api/auth/getProductAttributes",
             params = {"product_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getProductAttributesList( @RequestParam("product_id") Long product_id) {
-        logger.info("Processing get request for path /api/auth/getProductAttributesList with companyId=" + product_id.toString());
-        try {return new ResponseEntity<>(productsRepositoryJPA.getProductAttributesList(product_id), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributesList error with categoryId=" + product_id.toString(), e);
+    public ResponseEntity<?> getProductAttributes( @RequestParam("product_id") Long product_id) {
+        logger.info("Processing get request for path /api/auth/getProductAttributes with companyId=" + product_id.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.getProductAttributes(product_id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributes error with categoryId=" + product_id.toString(), e);
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

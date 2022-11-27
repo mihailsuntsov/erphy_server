@@ -22,7 +22,6 @@ import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
-import com.dokio.message.response.Sprav.ProductAttributeTermJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
@@ -287,7 +286,7 @@ public class ProductsRepositoryJPA {
                     "           p.shipping_class as shipping_class, " +
                     "           coalesce(p.reviews_allowed,true) as reviews_allowed, " +
                     "           p.parent_id as parent_id, " +
-                    "           p.purchase_note as purchase_note, " +
+                    "           coalesce(p.purchase_note,'') as purchase_note, " +
                     "           p.menu_order as menu_order, " +
                     "           pp.name as parent_name, " +
                     "           to_char(p.date_on_sale_from_gmt at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_on_sale_from_gmt, " +
@@ -458,7 +457,11 @@ public class ProductsRepositoryJPA {
                     saveUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
                 }
                 // сохранение attributes
-                updateProductAttributes(request.getProductAttributes(), myMasterId);
+                updateProductAttributes(request.getProductAttributes(), myMasterId, request.getId() );
+                // deleting attributes that was deleted on frontend
+                deleteAttributesFromProduct(request.getProductAttributes(), request.getId(), myMasterId);
+                // deleting attribute terms, which attributes was deleted on frontend
+                deleteTermsOfDeletedAttributes(request.getProductAttributes(), request.getId(), myMasterId);
                 deleteUpsellCrosssells(request.getId(), request.getUpsell_ids(), myMasterId, "product_upsell");
                 deleteUpsellCrosssells(request.getId(), request.getCrosssell_ids(), myMasterId, "product_crosssell");
                 deleteUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
@@ -653,8 +656,8 @@ public class ProductsRepositoryJPA {
                     " short_description = :short_description, "+
                     " virtual = " + request.getVirtual() +"," +
                     " downloadable = " + request.getDownloadable() +"," +
-                    " download_limit = "+request.getDownload_limit() +"," +
-                    " download_expiry = "+request.getDownload_expiry() +"," +
+                    " download_limit = "+(Objects.isNull(request.getDownload_limit())?-1:request.getDownload_limit()) +"," +
+                    " download_expiry = "+(Objects.isNull(request.getDownload_expiry())?-1:request.getDownload_expiry()) +"," +
                     " external_url = :external_url, "+
                     " button_text = :button_text, "+
                     " tax_status = :tax_status, "+
@@ -3567,36 +3570,40 @@ public class ProductsRepositoryJPA {
 //**********************************************  P R O D U C T   A T T R I B U T E S   ***************************************************************
 //*****************************************************************************************************************************************************
 
-    public Integer updateProductAttributes(List<ProductProductAttributeForm> attributesList, Long masterId) throws Exception {
-
+    private Integer updateProductAttributes(List<ProductProductAttributeForm> attributesList, Long masterId, Long productId) throws Exception {
         if (attributesList.size() > 0) {
             String stringQuery;
             int i = 1;
             for (ProductProductAttributeForm attribute : attributesList) {
 
                 stringQuery=
-                        "   insert into product_productattributes (" +
-                                " master_id, " +
-                                " product_id, " +
-                                " attribute_id, " +
-                                " position, " +
-                                " visible, " +
-                                " variation " +
-                                " ) values (" +
-                                masterId + ", " +
-                                " (select id from products where id="+attribute.getProduct_id() +" and master_id="+masterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
-                                attribute.getAttribute_id() + ", " +
-                                " (select max(position)+1 from product_productattributes where product_id="+attribute.getProduct_id()+"), " +
-                                attribute.isVisible() + ", "+ attribute.isVariation() + ")" +
-                                " ON CONFLICT ON CONSTRAINT product_productattribute_uq " +// "upsert"
-                                " DO update set " +
-                                " position = " + i + ", " +
-                                " visible = " + attribute.isVisible() + ", " +
-                                " variation = " + attribute.isVariation();
+                        " insert into product_productattributes (" +
+                        " master_id, " +
+                        " product_id, " +
+                        " attribute_id, " +
+                        " position, " +
+                        " visible, " +
+                        " variation " +
+                        " ) values (" +
+                        masterId + ", " +
+                        " (select id from products where id="+productId +" and master_id="+masterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
+                        attribute.getAttribute_id() + ", " +
+//                        " coalesce((select max(position)+1 from product_productattributes where product_id="+productId+"),1), " +
+                        i + ", " +
+                        attribute.isVisible() + ", "+
+                        attribute.isVariation() + ")" +
+                        " ON CONFLICT ON CONSTRAINT product_productattribute_uq " +// "upsert"
+                        " DO update set " +
+                        " position = " + i + ", " +
+                        " visible = " + attribute.isVisible() + ", " +
+                        " variation = " + attribute.isVariation();
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.executeUpdate();
-                    setProductTerms(attribute.getTerms_ids());
+                    if(!Objects.isNull(attribute.getTerms_ids())) {
+                        setProductTerms(attribute.getTerms_ids(),productId , masterId, attribute.getAttribute_id()); // add new terms
+                        deleteTerms(attribute.getTerms_ids(),productId , masterId, attribute.getAttribute_id()); // delete terms that was deleted on frontend
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("Exception in method updateProductAttributes. SQL query:" + stringQuery, e);
@@ -3608,20 +3615,109 @@ public class ProductsRepositoryJPA {
         return 1;
     }
 
-    public List<ProductProductAttributeJSON> getProductAttributesList (Long product_id){
+    private void deleteAttributesFromProduct(List<ProductProductAttributeForm> attributesList, Long productId, Long masterId) throws Exception  {
+        List<Long> attributesIds = new ArrayList<>();
+        for(ProductProductAttributeForm attribute : attributesList){
+            attributesIds.add(attribute.getAttribute_id());
+        }
+            String stringQuery =
+                    " delete from product_productattributes " +
+                            " where " +
+                            " master_id = " + masterId + " and " +
+                            " product_id = " +productId;
+            if(attributesIds.size()>0) {
+                stringQuery = stringQuery + " and ((attribute_id not in " + commonUtilites.ListOfLongToString(attributesIds,",","(",")") + ")" +
+                " or " +
+                "(attribute_id not in (select product_attribute_id from product_terms where product_id = "+productId+")))";
+            }
+            try {
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+            } catch (Exception e) {
+                logger.error("Exception in method deleteAttributesFromProduct. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                throw new Exception(e);
+            }
+    }
+    private void deleteTermsOfDeletedAttributes(List<ProductProductAttributeForm> attributesList, Long productId, Long masterId) throws Exception  {
+        List<Long> attributesIds = new ArrayList<>();
+        for(ProductProductAttributeForm attribute : attributesList){
+            attributesIds.add(attribute.getAttribute_id());
+        }
+        String stringQuery =
+                " delete from product_terms " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " product_id = " +productId;
+        if(attributesIds.size()>0) {
+            stringQuery = stringQuery + " and product_attribute_id not in " + commonUtilites.ListOfLongToString(attributesIds,",","(",")");
+        }
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteTermsOfDeletedAttributes. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+    private void setProductTerms(List<Long> terms_ids, Long productId, Long masterId, Long attributeId) throws Exception {
+        for (Long termId : terms_ids) {
+            String stringQuery =
+                    " insert into product_terms (" +
+                            " master_id, " +
+                            " product_id, " +
+                            " product_attribute_id, " +
+                            " term_id " +
+                            " ) values (" +
+                            masterId + ", " +
+                            productId + ", " +
+                            attributeId + ", " +
+                            " (select id from product_attribute_terms where id=" + termId + " and master_id=" + masterId + ")) " +// чтобы не мочь переназначить на другого master_id, случайно или намеренно
+                            " ON CONFLICT " +// "upsert"
+                            " DO NOTHING ";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method setProductTerms. SQL query:" + stringQuery, e);
+                throw new Exception(e);
+            }
+        }
+    }
+
+    private void deleteTerms(List<Long> terms_ids, Long productId, Long masterId, Long attributeId) throws Exception  {
+            String stringQuery =
+                    " delete from product_terms " +
+                    " where " +
+                    " master_id = " + masterId + " and " +
+                    " product_id = " +productId + " and " +
+                    " product_attribute_id = " + attributeId;
+            if(terms_ids.size()>0)
+                stringQuery = stringQuery + " and term_id not in " + commonUtilites.ListOfLongToString(terms_ids,",","(",")");
+            try {
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+            } catch (Exception e) {
+                logger.error("Exception in method deleteTerms. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                throw new Exception(e);
+            }
+    }
+
+
+    public List<ProductProductAttributeJSON> getProductAttributes (Long product_id){
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         stringQuery =
-                "           select " +
-                "           p.name, " +
-                "           coalesce(pp.visible, false), " +
-                "           coalesce(pp.variation, false), " +
-                "           p.id " +
-                "           from product_attributes p " +
-                "           INNER JOIN product_productattributes pp ON pp.attribute_id=p.id " +
-                "           where  p.master_id=" + myMasterId +
-                "           and pp.product_id =" + product_id +
-                "           order by pp.position";
+            "           select " +
+            "           p.name as name, " +
+            "           coalesce(pp.visible, false) as visible, " +
+            "           coalesce(pp.variation, false) as variation, " +
+            "           p.id as id" +
+            "           from product_attributes p " +
+            "           INNER JOIN product_productattributes pp ON pp.attribute_id=p.id " +
+            "           where  p.master_id=" + myMasterId +
+            "           and pp.product_id =" + product_id +
+            "           order by pp.position";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
@@ -3631,14 +3727,14 @@ public class ProductsRepositoryJPA {
                 doc.setName((String)                obj[0]);
                 doc.setVisible((Boolean)            obj[1]);
                 doc.setVariation((Boolean)          obj[2]);
-                doc.setTerms_list(getAllAttributeTermsWith(product_id,Long.parseLong(obj[2].toString()), myMasterId));
+                doc.setTerms(getAllAttributeTermsWith(product_id,Long.parseLong(obj[3].toString()), myMasterId));
+                doc.setAttribute_id(Long.parseLong( obj[3].toString()));
                 returnList.add(doc);
             }
             return returnList;
-
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getProductAttributesList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getProductAttributes. SQL query:" + stringQuery, e);
             return null;
         }
     }
@@ -3647,7 +3743,7 @@ public class ProductsRepositoryJPA {
         String stringQuery =       "select " +
                 "           p.id as id," +
                 "           p.name as name, " +
-                "           (select count(*) from product_terms where master_id = " + masterId + " and product_id = " + productId + ")" +
+                "           coalesce((select count(*) from product_terms where master_id = " + masterId + " and product_id = " + productId + " and term_id = p.id),0) as is_selected" +
                 "           from product_attribute_terms p " +
                 "           INNER JOIN users u ON p.master_id=u.id " +
                 "           where  p.master_id=" + masterId +
@@ -3661,7 +3757,7 @@ public class ProductsRepositoryJPA {
                 ProductAttributeTermsJSON doc = new ProductAttributeTermsJSON();
                 doc.setId(Long.parseLong(           obj[0].toString()));
                 doc.setName((String)                obj[1]);
-                doc.setIs_selected(                 !(obj[2]).equals("0"));// if this term is selected in the product - it will be true
+                doc.setIs_selected(                 !(obj[2].toString()).equals("0"));// if this term is selected in the product - it will be true
                 returnList.add(doc);
             }
             return returnList;
@@ -3672,13 +3768,6 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    private boolean setProductTerms(List<Long> terms_ids) throws Exception {
-
-
-
-        return true;
-    }
 
 }
 
-s

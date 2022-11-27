@@ -107,6 +107,16 @@ public class SpravProductAttributeController {
     //*************************************************************************************************************************************************
 
     @RequestMapping(
+            value = "/api/auth/getProductAttributesList",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getProductAttributesList( @RequestParam("company_id") Long companyId) {
+        logger.info("Processing get request for path /api/auth/getProductAttributesList with companyId=" + companyId.toString());
+        try {return new ResponseEntity<>(spravProductAttributeRepository.getProductAttributesList(companyId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributesList error with attributeId=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
             value = "/api/auth/getProductAttributeTermsList",
             params = {"attribute_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")

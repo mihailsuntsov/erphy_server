@@ -18,7 +18,7 @@
 package com.dokio.controller.store.woo.v3;
 
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
-import com.dokio.repository.store.woo.v3.StoreProductCategoriesRepository;
+import com.dokio.repository.store.woo.v3.StoreProductAttributesRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,30 +29,30 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/public/woo_v3")
-public class ProductCategoriesController {
+public class ProductAttributesController {
 
-    Logger logger = Logger.getLogger(ProductCategoriesController.class);
+    Logger logger = Logger.getLogger(ProductAttributesController.class);
 
     @Autowired
-    StoreProductCategoriesRepository storeProductCategoriesRepository;
+    StoreProductAttributesRepository storeProductAttributesRepository;
 
     @RequestMapping(
-            value = "/syncProductCategoriesToStore",
+            value = "/syncProductAttributesToStore",
             params = {"key"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> syncProductCategoriesToStore(
+    public ResponseEntity<?> syncProductAttributesToStore(
             @RequestParam("key") String key){
-        logger.info("Processing post request for path /api/public/woo_v3/syncProductCategoriesToStore");
-        try {return new ResponseEntity<>(storeProductCategoriesRepository.syncProductCategoriesToStore(key), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Controller syncProductCategoriesToStore error", e);
-        return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesToStore");
+        try {return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesToStore(key), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesToStore error", e);
+            return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @PostMapping("/syncProductCategoriesIds")
-    public ResponseEntity<?> syncProductCategoriesIds(@RequestBody SyncIdsForm request){
-        logger.info("Processing post request for path /api/public/woo_v3/syncProductCategoriesIds: " + request.toString());
-        try {return new ResponseEntity<>(storeProductCategoriesRepository.syncProductCategoriesIds(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Controller syncProductCategoriesIds error", e);
-        return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    @PostMapping("/syncProductAttributesIds")
+    public ResponseEntity<?> syncProductAttributesIds(@RequestBody SyncIdsForm request){
+        logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesIds: " + request.toString());
+        try {return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesIds(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesIds error", e);
+            return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

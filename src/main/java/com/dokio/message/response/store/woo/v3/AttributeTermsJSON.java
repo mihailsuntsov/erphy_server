@@ -15,15 +15,14 @@
         You should have received a copy of the GNU Affero General Public License
         along with this program.  If not, see <https://www.gnu.org/licenses/>
 */
-
 package com.dokio.message.response.store.woo.v3;
 
 import java.util.List;
 
-public class ProductCategoriesJSON {
+public class AttributeTermsJSON {
 
     private Integer queryResultCode; // look at _ErrorCodes file
-    private List<ProductCategoryJSON> productCategories;
+    private List<AttributeTermJSON> attributeTerms;
 
     public Integer getQueryResultCode() {
         return queryResultCode;
@@ -33,11 +32,11 @@ public class ProductCategoriesJSON {
         this.queryResultCode = queryResultCode;
     }
 
-    public List<ProductCategoryJSON> getProductCategories() {
-        return productCategories;
+    public List<AttributeTermJSON> getAttributeTerms() {
+        return attributeTerms;
     }
 
-    public void setProductCategories(List<ProductCategoryJSON> productCategories) {
-        this.productCategories = productCategories;
+    public void setAttributeTerms(List<AttributeTermJSON> attributeTerms) {
+        this.attributeTerms = attributeTerms;
     }
 }

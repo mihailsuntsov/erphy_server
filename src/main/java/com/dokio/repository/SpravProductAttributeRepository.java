@@ -22,6 +22,7 @@ import com.dokio.message.request.Sprav.ProductAttributeTermForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.ProductAttributeJSON;
 import com.dokio.message.response.Sprav.ProductAttributeTermJSON;
+import com.dokio.message.response.Sprav.ProductAttributesListJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -485,6 +486,38 @@ public class SpravProductAttributeRepository {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public List<ProductAttributesListJSON> getProductAttributesList (Long companyId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(53L, "667,668"))//(см. файл Permissions Id)
+        {
+            String stringQuery;
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            stringQuery =       "select " +
+                    "           p.id as id," +
+                    "           p.name as name " +
+                    "           from product_attributes p " +
+                    "           where  p.master_id=" + myMasterId + " and company_id = " + companyId + " order by name";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                List<Object[]> queryList = query.getResultList();
+                List<ProductAttributesListJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    ProductAttributesListJSON doc = new ProductAttributesListJSON();
+                    doc.setId(Long.parseLong(           obj[0].toString()));
+                    doc.setName((String)                obj[1]);
+                    doc.setTerms(getProductAttributeTermsList (Long.parseLong(obj[0].toString())));
+                    returnList.add(doc);
+                }
+                return returnList;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getProductAttributeTable. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
     }
 //*****************************************************************************************************************************************************
 //****************************************************   T  E  R  M  S   ******************************************************************************

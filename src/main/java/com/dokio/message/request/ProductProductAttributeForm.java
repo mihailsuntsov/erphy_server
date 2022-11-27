@@ -21,9 +21,6 @@ package com.dokio.message.request;
 import java.util.List;
 
 public class ProductProductAttributeForm {
-    private Long master_id;
-    private Long company_id;
-    private Long product_id;
     private Long attribute_id;
     private List<Long> terms_ids;
     private int  position;        //	Attribute position
@@ -36,30 +33,6 @@ public class ProductProductAttributeForm {
 
     public void setTerms_ids(List<Long> terms_ids) {
         this.terms_ids = terms_ids;
-    }
-
-    public Long getMaster_id() {
-        return master_id;
-    }
-
-    public void setMaster_id(Long master_id) {
-        this.master_id = master_id;
-    }
-
-    public Long getCompany_id() {
-        return company_id;
-    }
-
-    public void setCompany_id(Long company_id) {
-        this.company_id = company_id;
-    }
-
-    public Long getProduct_id() {
-        return product_id;
-    }
-
-    public void setProduct_id(Long product_id) {
-        this.product_id = product_id;
     }
 
     public Long getAttribute_id() {
