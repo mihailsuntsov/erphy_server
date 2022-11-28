@@ -68,7 +68,8 @@ public class StoreProductAttributesRepository {
                         " p.id as crm_id," +
                         " p.woo_id as woo_id" +
                         " from product_attributes p" +
-                        " where p.company_id = " + companyId;
+                        " where p.company_id = " + companyId +
+                        " and p.is_deleted = false";
         try{
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
