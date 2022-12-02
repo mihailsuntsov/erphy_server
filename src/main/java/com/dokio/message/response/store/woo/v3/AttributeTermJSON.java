@@ -21,10 +21,28 @@ public class AttributeTermJSON {
 
     private Long            crm_id;
     private Integer         woo_id;
+    private Long            attribute_crm_id;
+    private Integer         attribute_woo_id;
     private String          name;
     private String          description;
     private String          slug;
     private int             menu_order;
+
+    public Long getAttribute_crm_id() {
+        return attribute_crm_id;
+    }
+
+    public void setAttribute_crm_id(Long attribute_crm_id) {
+        this.attribute_crm_id = attribute_crm_id;
+    }
+
+    public Integer getAttribute_woo_id() {
+        return attribute_woo_id;
+    }
+
+    public void setAttribute_woo_id(Integer attribute_woo_id) {
+        this.attribute_woo_id = attribute_woo_id;
+    }
 
     public Long getCrm_id() {
         return crm_id;

@@ -4039,11 +4039,11 @@ alter table product_terms add constraint product_term_uq unique (product_id, ter
 
 alter table product_terms add column product_attribute_id bigint not null;
 alter table product_terms add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes (id);
+alter table product_terms add constraint template_docs_file_id_fkey foreign key (file_id) references files (id) on delete cascade;
 
 
-
-
-
+alter table product_terms drop constraint product_terms_term_id_fkey, add constraint product_terms_term_id_fkey foreign key (term_id) references product_attribute_terms(id) on delete cascade;
+alter table products add column woo_id int;
 
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
