@@ -1,5 +1,6 @@
 package com.dokio.message.response.store.woo.v3.products;
 
+import java.util.List;
 import java.util.Set;
 
 public class ProductJSON {
@@ -12,7 +13,43 @@ public class ProductJSON {
     private String          description;
     private String          short_description;
     private Set<Long>       categories;
-    private Set<ImageJSON>  images;
+    private List<ImageJSON> images;
+
+    public Long getCrm_id() {
+        return crm_id;
+    }
+
+    public Integer getWoo_id() {
+        return woo_id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getRegular_price() {
+        return regular_price;
+    }
+
+    public String getSale_price() {
+        return sale_price;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getShort_description() {
+        return short_description;
+    }
+
+    public Set<Long> getCategories() {
+        return categories;
+    }
 
     public void setCrm_id(Long crm_id) {
         this.crm_id = crm_id;
@@ -50,7 +87,11 @@ public class ProductJSON {
         this.categories = categories;
     }
 
-    public void setImages(Set<ImageJSON> images) {
+    public List<ImageJSON> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ImageJSON> images) {
         this.images = images;
     }
 }

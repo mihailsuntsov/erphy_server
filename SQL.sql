@@ -4044,6 +4044,10 @@ alter table product_terms add constraint template_docs_file_id_fkey foreign key 
 
 alter table product_terms drop constraint product_terms_term_id_fkey, add constraint product_terms_term_id_fkey foreign key (term_id) references product_attribute_terms(id) on delete cascade;
 alter table products add column woo_id int;
+alter table products add column date_time_syncwoo timestamp with time zone;
+--DELETE FROM product_files WHERE ctid NOT IN (SELECT max(ctid) FROM product_files GROUP BY file_id, product_id); run it, if next row won't be executed
+alter table product_files add constraint product_file_uq unique (file_id, product_id);
+alter table products add column need_to_syncwoo boolean;
 
 ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 

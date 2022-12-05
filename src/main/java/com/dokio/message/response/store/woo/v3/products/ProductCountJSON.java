@@ -1,24 +1,24 @@
 package com.dokio.message.response.store.woo.v3.products;
 
-import java.util.List;
+import java.math.BigInteger;
 
-public class ProductsJSON {
+public class ProductCountJSON {
+    private BigInteger productCount;
     private Integer queryResultCode; // look at _ErrorCodes file
-    private List<ProductJSON> products;
+
+    public BigInteger getProductCount() {
+        return productCount;
+    }
 
     public Integer getQueryResultCode() {
         return queryResultCode;
     }
 
-    public List<ProductJSON> getProducts() {
-        return products;
+    public void setProductCount(BigInteger productCount) {
+        this.productCount = productCount;
     }
 
     public void setQueryResultCode(Integer queryResultCode) {
         this.queryResultCode = queryResultCode;
-    }
-
-    public void setProducts(List<ProductJSON> products) {
-        this.products = products;
     }
 }
