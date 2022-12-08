@@ -30,6 +30,7 @@ import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.repository.Exceptions.CalculateNetcostNegativeSumException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.store.woo.v3.StoreProductsRepository;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -64,11 +65,13 @@ public class ProductsRepositoryJPA {
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
-    private UserDetailsServiceImpl userService;
+    private StoreProductsRepository storeProductsRepository;
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
     private FileRepositoryJPA fileRepository;
+//    @Autowired
+//    private StoreProductsRepository storeProductsRepository;
 
     // Инициализация логера
     private static final Logger logger = Logger.getLogger(ProductsRepositoryJPA.class);
@@ -611,11 +614,13 @@ public class ProductsRepositoryJPA {
                         "   ) values (" +
                         "(select id from products where id="+productId +" and master_id="+myMasterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
                         priceTypeId+", "+
-                        (priceValue==null?"0":priceValue.toString()) + "," +
+//                        (priceValue==null?"-1":priceValue.toString()) + "," +
+                        priceValue+", "+
                         myMasterId + ", "+ companyId + ")" +
                         "ON CONFLICT ON CONSTRAINT product_prices_uq " +// "upsert"
                         " DO update set " +
-                        "price_value = " + (priceValue==null?"0":priceValue.toString());
+//                        "price_value = " + (priceValue==null?"-1":priceValue.toString());
+                        "price_value = " + priceValue;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -1512,12 +1517,12 @@ public class ProductsRepositoryJPA {
                         " p.description                         as price_description, " +
 
                         " coalesce(" +
-                        "(select coalesce(price_value,0) " +
+                        "(select coalesce(price_value,null) " +
                         "from product_prices " +
                         "where " +
                         "product_id="+productId+" and " +
                         "price_type_id=p.id) " +
-                        ",0)                                as price_value, " +
+                        ",null)                                as price_value, " +
                         "(select count(*) from companies where is_store=true and store_price_type_regular = p.id) > 0 as is_store_price_type_regular," +
                         "(select count(*) from companies where is_store=true and store_price_type_sale = p.id) > 0 as is_store_price_type_sale" +
 
@@ -1771,6 +1776,9 @@ public class ProductsRepositoryJPA {
                 query.setParameter("slug",(request.getSlug().trim().equals("")?null:request.getSlug()));
                 query.setParameter("description",request.getDescription());
                 query.setParameter("display",request.getDisplay());
+                // if it wasn't a store category but now it will - we need to mark all products of this category as need to be synchronized
+                if(!isStoreCategory(request.getId()) && request.getIsStoreCategory())
+                    markProductsofCategoryAsNeedToSyncWoo(request.getId(), myMasterId);
                 query.executeUpdate();
                 return 1;
             } catch (Exception e) {
@@ -1817,7 +1825,10 @@ public class ProductsRepositoryJPA {
             }
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                int i = query.executeUpdate();
+                if(isStoreCategory(request.getCategoryId()))
+                    markProductsofCategoryAsNeedToSyncWoo(request.getCategoryId(), myMasterId);
+                query.executeUpdate();
+
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method deleteProductCategory. SQL query:"+stringQuery, e);
@@ -1827,6 +1838,51 @@ public class ProductsRepositoryJPA {
         } else return false;
     }
 
+    private Boolean markProductsofCategoryAsNeedToSyncWoo(Long categoryId, Long masterId) throws Exception {
+        String stringQuery =
+                " update products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and id in (select product_id from product_productcategories where category_id = " + categoryId + ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsofCategoryAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private Boolean markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
+        String stringQuery =
+                " update products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private Boolean isStoreCategory(Long categoryId) throws Exception {
+        String stringQuery = "select coalesce(is_store_category,false) from product_categories where id="+categoryId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean)query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method isCategoryStore. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean saveChangeCategoriesOrder(List<ProductCategoriesForm> request) {
@@ -3544,6 +3600,7 @@ public class ProductsRepositoryJPA {
             }
             try {
                 entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
+                markProductsAsNeedToSyncWoo(productsIds, userRepositoryJPA.getMyMasterId());
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method setCategoriesToProducts. SQL query:" + stringQuery, e);
@@ -3565,6 +3622,7 @@ public class ProductsRepositoryJPA {
             throw new Exception();
         }
     }
+
 
 //*****************************************************************************************************************************************************
 //**********************************************  P R O D U C T   A T T R I B U T E S   ***************************************************************

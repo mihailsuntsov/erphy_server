@@ -4,16 +4,26 @@ import java.util.List;
 import java.util.Set;
 
 public class ProductJSON {
-    private Long            crm_id;
-    private Integer         woo_id;
-    private String          name;
-    private String          type;
-    private String          regular_price;
-    private String          sale_price;
-    private String          description;
-    private String          short_description;
-    private Set<Long>       categories;
-    private List<ImageJSON> images;
+
+    private Long                crm_id;
+    private Integer             woo_id;
+    private String              name;
+    private String              type;
+    private String              regular_price;
+    private String              sale_price;
+    private String              description;
+    private String              short_description;
+    private Set<Long>           categories;
+    private List<ImageJSON>     images;
+    private List<AttributeJSON> attributes;
+
+    public List<AttributeJSON> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(List<AttributeJSON> attributes) {
+        this.attributes = attributes;
+    }
 
     public Long getCrm_id() {
         return crm_id;
