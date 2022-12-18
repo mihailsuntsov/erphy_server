@@ -21,6 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
+import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
@@ -351,8 +352,6 @@ public class DepartmentRepositoryJPA {
         return query.getResultList();
     }
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
     public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         String stringQuery;
 
@@ -388,6 +387,34 @@ public class DepartmentRepositoryJPA {
         }
         return returnList;
     }
+
+    public List<IdAndName> getDepartmentsList(Long company_id) {
+        String stringQuery="select " +
+                "           p.id as id, " +
+                "           p.name as name " +
+                "           from departments p " +
+                "           where  p.company_id = "+company_id+
+                "           and coalesce(p.is_deleted, false) = false" +
+                "           order by p.name asc";
+
+        try{
+        Query query =  entityManager.createNativeQuery(stringQuery);
+        List<Object[]> queryList = query.getResultList();
+        List<IdAndName> returnList = new ArrayList<>();
+        for(Object[] obj:queryList) {
+            IdAndName doc = new IdAndName();
+            doc.setId(Long.parseLong(       obj[0].toString()));
+            doc.setName((String)            obj[1]);
+            returnList.add(doc);
+        }
+        return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
     @Transactional
     @SuppressWarnings("Duplicates")
     public List<DepartmentsListJSON> getMyDepartmentsListByCompanyId(int company_id, boolean has_parent) {

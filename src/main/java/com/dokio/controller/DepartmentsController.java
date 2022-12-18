@@ -30,8 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -152,6 +152,19 @@ public class DepartmentsController {
         return responseEntity;
     }
 
+    @RequestMapping(
+            value = "/api/auth/getDepartmentsList",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentsList(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getDepartmentsList");
+        try {return new ResponseEntity<>(departmentService.getDepartmentsList(company_id), HttpStatus.OK);}
+        catch (Exception e){
+            e.printStackTrace();
+            logger.error("Controller /api/auth/getDepartmentsList error", e);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
     @PostMapping("/api/auth/insertDepartment")
     @SuppressWarnings("Duplicates")

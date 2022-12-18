@@ -126,4 +126,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		return query.getSingleResult().toString();
 	}
 
+	public String getUserTimeZone(Long userId){
+		String stringQuery;
+		stringQuery=    " select " +
+				" s.canonical_id " +
+				" from " +
+				" sprav_sys_timezones s" +
+				" where s.id=(" +
+				" select u.time_zone_id from user_settings u where u.user_id=" + userId +
+				")";
+		Query query = entityManager.createNativeQuery(stringQuery);
+		return query.getSingleResult().toString();
+	}
+
 }

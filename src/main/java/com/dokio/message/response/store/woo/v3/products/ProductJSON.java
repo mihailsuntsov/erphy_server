@@ -1,5 +1,7 @@
 package com.dokio.message.response.store.woo.v3.products;
 
+import org.apache.xpath.operations.Bool;
+
 import java.util.List;
 import java.util.Set;
 
@@ -13,9 +15,90 @@ public class ProductJSON {
     private String              sale_price;
     private String              description;
     private String              short_description;
+    private String              stock_status; //Controls the stock status of the product. Options: instock, outofstock, onbackorder. Default is instock.
+    private String              sku;
+    private Integer             stock_quantity;
+    private Boolean             sold_individually;
+    private Boolean             manage_stock; //Stock management at product level. Default is false.
+    private String              backorders;
+    private String              purchase_note;
+    private Integer             menu_order;
+    private Boolean             reviews_allowed;
     private Set<Long>           categories;
     private List<ImageJSON>     images;
     private List<AttributeJSON> attributes;
+
+    public String getPurchase_note() {
+        return purchase_note;
+    }
+
+    public void setPurchase_note(String purchase_note) {
+        this.purchase_note = purchase_note;
+    }
+
+    public Integer getMenu_order() {
+        return menu_order;
+    }
+
+    public void setMenu_order(Integer menu_order) {
+        this.menu_order = menu_order;
+    }
+
+    public Boolean getReviews_allowed() {
+        return reviews_allowed;
+    }
+
+    public void setReviews_allowed(Boolean reviews_allowed) {
+        this.reviews_allowed = reviews_allowed;
+    }
+
+    public Boolean getManage_stock() {
+        return manage_stock;
+    }
+
+    public void setManage_stock(Boolean manage_stock) {
+        this.manage_stock = manage_stock;
+    }
+
+    public String getBackorders() {
+        return backorders;
+    }
+
+    public void setBackorders(String backorders) {
+        this.backorders = backorders;
+    }
+
+    public String getStock_status() {
+        return stock_status;
+    }
+
+    public void setStock_status(String stock_status) {
+        this.stock_status = stock_status;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
+    }
+
+    public Integer getStock_quantity() {
+        return stock_quantity;
+    }
+
+    public void setStock_quantity(Integer stock_quantity) {
+        this.stock_quantity = stock_quantity;
+    }
+
+    public Boolean getSold_individually() {
+        return sold_individually;
+    }
+
+    public void setSold_individually(Boolean sold_individually) {
+        this.sold_individually = sold_individually;
+    }
 
     public List<AttributeJSON> getAttributes() {
         return attributes;

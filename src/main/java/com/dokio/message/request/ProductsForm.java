@@ -91,6 +91,15 @@ public class ProductsForm {
     private String low_stock_threshold;
     private List<Long> dfilesIdsInOrderOfList;//List id
     private List<ProductProductAttributeForm> productAttributes;
+    private Boolean outofstock_aftersale; //auto set product as out-of-stock after it has been sold
+
+    public Boolean getOutofstock_aftersale() {
+        return outofstock_aftersale;
+    }
+
+    public void setOutofstock_aftersale(Boolean outofstock_aftersale) {
+        this.outofstock_aftersale = outofstock_aftersale;
+    }
 
     public List<ProductProductAttributeForm> getProductAttributes() {
         return productAttributes;

@@ -114,7 +114,21 @@ public class CommonUtilites {
             return 0L;
         }
     }
-
+    public Long generateDocNumberCode(Long company_id, String docTableName, Long masterId)
+    {
+        String stringQuery;
+        stringQuery = "select coalesce(max(doc_number)+1,1) from "+docTableName+" where company_id="+company_id+" and master_id="+masterId;
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString(),10);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method generateDocNumberCode. SQL query:" + stringQuery, e);
+            return 0L;
+        }
+    }
     @SuppressWarnings("Duplicates") // проверка на уникальность номера документа
     public Boolean isDocumentNumberUnical(Long company_id, Integer code, Long doc_id, String docTableName)
     {
@@ -333,10 +347,18 @@ public class CommonUtilites {
     public CompanySettingsJSON getCompanySettings(Long company_id) throws Exception {
         String stringQuery;
         stringQuery =   " select "+
-                        " st_prefix_barcode_pieced  as st_prefix_barcode_pieced,   "+
-                        " st_prefix_barcode_packed  as st_prefix_barcode_packed,"+
-                        " st_netcost_policy         as st_netcost_policy "+
-                        " from companies where id="+company_id;
+                        " cmp.st_prefix_barcode_pieced  as st_prefix_barcode_pieced,   "+
+                        " cmp.st_prefix_barcode_packed  as st_prefix_barcode_packed,"+
+                        " cmp.st_netcost_policy         as st_netcost_policy," +
+                        " cmp.store_orders_department_id  as store_orders_department_id," +
+                        " coalesce(cmp.store_if_customer_not_found,'create_new') as store_if_customer_not_found," +
+                        " cmp.store_default_customer_id   as store_default_customer_id,"+
+                        " cmp.store_default_creator_id as store_default_creator_id," +
+                        " coalesce(cmp.store_days_for_esd,0) as store_days_for_esd, " +
+                        " coalesce(cmp.nds_payer, false) as nds_payer, " +
+                        " coalesce(cmp.nds_included, false) as nds_included, " +
+                        " coalesce(cmp.store_auto_reserve, false) " +
+                        " from companies cmp where cmp.id="+company_id;
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -344,9 +366,17 @@ public class CommonUtilites {
 
             CompanySettingsJSON returnObj=new CompanySettingsJSON();
                 for (Object[] obj : queryList) {
-                    returnObj.setSt_prefix_barcode_pieced((Integer) obj[0]);
-                    returnObj.setSt_prefix_barcode_packed((Integer) obj[1]);
-                    returnObj.setNetcost_policy((String)            obj[2]);
+                    returnObj.setSt_prefix_barcode_pieced((Integer)         obj[0]);
+                    returnObj.setSt_prefix_barcode_packed((Integer)         obj[1]);
+                    returnObj.setNetcost_policy((String)                    obj[2]);
+                    returnObj.setStore_orders_department_id(obj[3]!=null?Long.parseLong(obj[3].toString()):null);
+                    returnObj.setStore_if_customer_not_found((String)       obj[4]);
+                    returnObj.setStore_default_customer_id(obj[5]!=null?Long.parseLong(obj[5].toString()):null);
+                    returnObj.setStore_default_creator_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
+                    returnObj.setStore_days_for_esd((Integer)               obj[7]);
+                    returnObj.setVat((Boolean)                              obj[8]);
+                    returnObj.setVat_included((Boolean)                     obj[9]);
+                    returnObj.setStore_auto_reserve((Boolean)               obj[10]);
                 }
 
             return returnObj;

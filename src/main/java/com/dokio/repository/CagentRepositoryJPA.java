@@ -1043,10 +1043,12 @@ public class CagentRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    private Long insertCagentBaseFields(CagentsForm request,Long myMasterId){
+    public Long insertCagentBaseFields(CagentsForm request,Long myMasterId){
         String stringQuery;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         Long myId = userRepository.getUserId();
+        // if Counterparty is creating from the online store, then there is no logged in user, and master user will be in a creator role
+        if(Objects.isNull(myId)) myId = myMasterId;
         Long newDocId;
         stringQuery =   "insert into cagents (" +
                 " master_id," + //мастер-аккаунт
@@ -2052,4 +2054,51 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
     }
 
+    public Long getCustomerIdByStoreCustomerData(Long company_id, Integer customerWooId, String customerEmail, String customerTelephone) throws Exception {
+
+        // if customerWooId is not null then this customer there is in a DokioCRM database
+        try
+        {
+            if(!Objects.isNull(customerWooId)) {
+                String stringQuery =
+                        " select id from cagents where " +
+                        " company_id = " + company_id +
+                        " and woo_id = " + customerWooId + " limit 1";
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                return (Long.valueOf(query.getSingleResult().toString()));
+            } else return getCustomerIdByTelOrEmail( company_id,  customerEmail,  customerTelephone);
+        }catch (NoResultException nre) {
+            return getCustomerIdByTelOrEmail( company_id,  customerEmail,  customerTelephone);
+        }catch (Exception e) {
+            logger.error("Exception in method getCustomerIdByStoreCustomerData.:", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private Long getCustomerIdByTelOrEmail(Long company_id, String customerEmail, String customerTelephone) throws Exception {
+
+        String stringQuery =
+                        " select id from cagents where " +
+                        " company_id = "+company_id+
+                        " and " +
+                        "(" +
+                        " replace(email, ' ', '') = :email or " +
+                        " regexp_replace(telephone, '\\D', '', 'g')  = :telephone" +
+                        ") limit 1";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("email",customerEmail.replaceAll("\\s", ""));
+            query.setParameter("telephone",customerTelephone.replaceAll("[^0-9\\+]", ""));
+            return (Long.valueOf(query.getSingleResult().toString()));
+        }catch (NoResultException nres) {
+            return null;
+        }catch (Exception e) {
+            logger.error("Exception in method getCustomerIdByStoreCustomerData. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 }

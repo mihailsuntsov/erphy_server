@@ -18,6 +18,12 @@
 
 package com.dokio.message.response;
 
+import com.dokio.message.response.Sprav.IdAndName;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.List;
+
 public class CompaniesJSON {
 
     private Long id;
@@ -111,6 +117,97 @@ public class CompaniesJSON {
     private String crm_secret_key;      // like UUID generated
     private Long store_price_type_regular; // id of regular type price
     private Long store_price_type_sale;    // id of sale type price
+
+    private Boolean nds_included; //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+    private Long    store_orders_department_id; // department for creation Customer order from store
+    private String  store_if_customer_not_found; // "create_new" or "use_default"
+    private Long    store_default_customer_id; // counterparty id if store_if_customer_not_found=use_default
+    private String  cagent;                 // the name of store_default_customer
+    private Long    store_default_creator_id;    // ID of default user, that will be marked as a creator of store order. Default is master user
+    private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
+    private String  store_default_creator;       // Name of default user that will be marked as a creator of store order.
+    private List<BigInteger> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
+    private Boolean store_auto_reserve; //auto reserve product after getting internet store order
+
+    public List<BigInteger> getCompanyStoreDepartments() {
+        return companyStoreDepartments;
+    }
+
+    public void setCompanyStoreDepartments(List<BigInteger> companyStoreDepartments) {
+        this.companyStoreDepartments = companyStoreDepartments;
+    }
+
+    public Boolean getStore_auto_reserve() {
+        return store_auto_reserve;
+    }
+
+    public void setStore_auto_reserve(Boolean store_auto_reserve) {
+        this.store_auto_reserve = store_auto_reserve;
+    }
+
+    public String getStore_default_creator() {
+        return store_default_creator;
+    }
+
+    public void setStore_default_creator(String store_default_creator) {
+        this.store_default_creator = store_default_creator;
+    }
+
+    public Long getStore_default_creator_id() {
+        return store_default_creator_id;
+    }
+
+    public void setStore_default_creator_id(Long store_default_creator_id) {
+        this.store_default_creator_id = store_default_creator_id;
+    }
+
+    public Integer getStore_days_for_esd() {
+        return store_days_for_esd;
+    }
+
+    public void setStore_days_for_esd(Integer store_days_for_esd) {
+        this.store_days_for_esd = store_days_for_esd;
+    }
+
+    public String getCagent() {
+        return cagent;
+    }
+
+    public void setCagent(String cagent) {
+        this.cagent = cagent;
+    }
+
+    public Boolean getNds_included() {
+        return nds_included;
+    }
+
+    public void setNds_included(Boolean nds_included) {
+        this.nds_included = nds_included;
+    }
+
+    public Long getStore_orders_department_id() {
+        return store_orders_department_id;
+    }
+
+    public void setStore_orders_department_id(Long store_orders_department_id) {
+        this.store_orders_department_id = store_orders_department_id;
+    }
+
+    public String getStore_if_customer_not_found() {
+        return store_if_customer_not_found;
+    }
+
+    public void setStore_if_customer_not_found(String store_if_customer_not_found) {
+        this.store_if_customer_not_found = store_if_customer_not_found;
+    }
+
+    public Long getStore_default_customer_id() {
+        return store_default_customer_id;
+    }
+
+    public void setStore_default_customer_id(Long store_default_customer_id) {
+        this.store_default_customer_id = store_default_customer_id;
+    }
 
     public Long getStore_price_type_regular() {
         return store_price_type_regular;

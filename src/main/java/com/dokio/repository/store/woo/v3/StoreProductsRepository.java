@@ -7,7 +7,6 @@ import com.dokio.message.response.store.woo.v3.products.*;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
-import org.apache.xpath.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -74,6 +73,7 @@ public class StoreProductsRepository {
     public ProductsJSON syncProductsToStore(String key, Integer firstResult, Integer maxResults) {
         Long companyId = cu.getByCrmSecretKey("id",key);
         ProductsJSON result = new ProductsJSON();
+
         String stringQuery =
                         " select " +
                         " p.id as crm_id, " +
@@ -83,7 +83,15 @@ public class StoreProductsRepository {
                         " coalesce(p.description, '') as description, " +
                         " coalesce(p.short_description, '') as short_description, " +
                         " ppr.price_value as price_regular, " +
-                        " pps.price_value as price_sale " +
+                        " pps.price_value as price_sale, " +
+                        " p.stock_status as stock_status, " +
+                        " p.article as sku, " +
+                        " p.sold_individually as sold_individually, " +
+                        " p.backorders as backorders, " +
+                        " p.manage_stock as manage_stock, " +
+                        " p.purchase_note as purchase_note, " +
+                        " p.menu_order as menu_order, " +
+                        " p.reviews_allowed as reviews_allowed " +
                         " from products p  " +
                         " inner join companies c on c.id = p.company_id  " +
                         " left outer join product_prices ppr on ppr.product_id = p.id and ppr.price_type_id = c.store_price_type_regular " +
@@ -120,6 +128,14 @@ public class StoreProductsRepository {
                 doc.setImages(                                      getSetOfProductImages(Long.parseLong(obj[0].toString()),companyId));
                 doc.setCategories(                                  getProductCategoriesIds(Long.parseLong(obj[0].toString())));
                 doc.setAttributes(                                  getListOfProductAttributes(Long.parseLong(obj[0].toString())));
+                doc.setStock_status((String)                        obj[8]);
+                doc.setSku((String)                                 obj[9]);
+                doc.setSold_individually((Boolean)                  obj[10]);
+                doc.setBackorders((String)                          obj[11]); //If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no
+                doc.setManage_stock((Boolean)                       obj[12]);
+                doc.setPurchase_note((String)                       obj[13]);
+                doc.setMenu_order((Integer)                         obj[14]);
+                doc.setReviews_allowed((Boolean)                    obj[15]);
                 returnList.add(doc);
             }
             result.setQueryResultCode(1);
@@ -376,7 +392,7 @@ public class StoreProductsRepository {
             List<Object[]> queryList = query.getResultList();
             List<List<String>> returnMap = new ArrayList<>();
             for (Object[] obj : queryList) {
-                returnMap.add(Arrays.asList(obj[0].toString(), (String)obj[2]));
+                returnMap.add(Arrays.asList(obj[0].toString(), (String)obj[1]));
             }
             return returnMap;
         } catch (Exception e) {

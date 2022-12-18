@@ -224,11 +224,11 @@ public class CompaniesController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCompany(@RequestBody CompaniesForm companyRequest) {
         logger.info("Processing post request for path /api/auth/updateCompany: " + companyRequest.toString());
-
-        if(companyRepositoryJPA.updateCompany(companyRequest)){
-            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
+        try {
+            return  new ResponseEntity<>(companyRepositoryJPA.updateCompany(companyRequest), HttpStatus.OK);
+        } catch (Exception e){
+            e.printStackTrace();logger.error("Controller updateCompany error", e);
+            return new ResponseEntity<>("Exception in controller updateCompany", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -242,6 +242,7 @@ public class CompaniesController {
         try {
             return  new ResponseEntity<>(companyRepositoryJPA.getCompanyPaymentAccounts(id), HttpStatus.OK);
         } catch (Exception e){
+            e.printStackTrace();logger.error("Controller getCompaniesPaymentAccounts error", e);
             return new ResponseEntity<>("Ошибка запроса списка счетов предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

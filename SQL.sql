@@ -4047,9 +4047,33 @@ alter table products add column woo_id int;
 alter table products add column date_time_syncwoo timestamp with time zone;
 --DELETE FROM product_files WHERE ctid NOT IN (SELECT max(ctid) FROM product_files GROUP BY file_id, product_id); run it, if next row won't be executed
 alter table product_files add constraint product_file_uq unique (file_id, product_id);
-alter table products add column need_to_syncwoo boolean;
-
-------------------------------------------------  end of 1.0.5  ------------------------------------------------------
+alter table products add column need_to_syncwoo boolean; -- the product is need to be synchronized because its category turned into store type category
+alter table customers_orders add column woo_gmt_date varchar(19);
+alter table customers_orders add column woo_id int;
+alter table companies add column nds_included boolean; -- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+alter table companies add column store_orders_department_id bigint;
+alter table companies add constraint store_orders_department_id_fkey foreign key (store_orders_department_id) references departments (id);
+alter table companies add column store_if_customer_not_found varchar(11); -- create_new or use_default
+alter table companies add column store_default_customer_id bigint;
+alter table companies add constraint store_default_customer_id_fkey foreign key (store_default_customer_id) references cagents (id);
+alter table cagents add column woo_id integer;
+alter table companies add column store_default_creator_id bigint;
+alter table companies add constraint store_default_creator_id_fkey foreign key (store_default_creator_id) references users (id);
+alter table companies add column store_days_for_esd int;
+alter table products add constraint product_woo_id_uq unique (company_id, woo_id);
+create table company_store_departments(
+                                      master_id          bigint not null,
+                                      company_id         bigint not null,
+                                      department_id      bigint not null,
+                                      menu_order         int,    -- Menu order, used to custom sort the departments
+                                      foreign key (master_id) references users(id),
+                                      foreign key (department_id) references departments(id),
+                                      foreign key (company_id) references companies(id)
+);
+alter table company_store_departments add constraint company_store_department_uq unique (company_id, department_id);
+alter table companies add column store_auto_reserve boolean; -- auto reserve product after getting internet store order
+alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
+  ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
 
 
 

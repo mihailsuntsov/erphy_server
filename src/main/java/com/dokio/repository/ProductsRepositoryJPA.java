@@ -296,7 +296,8 @@ public class ProductsRepositoryJPA {
                     "           to_char(p.date_on_sale_to_gmt   at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_on_sale_to_gmt, " +
 //                    "           array_to_string(array(select child_id from product_upsell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as upsell_ids, " +
 //                    "           array_to_string(array(select child_id from product_crosssell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as crosssell_ids " +
-                    "           coalesce(p.low_stock_threshold, 0) as low_stock_threshold" +
+                    "           coalesce(p.low_stock_threshold, 0) as low_stock_threshold"  + ", " +
+                    "           coalesce(p.outofstock_aftersale,false) as outofstock_aftersale " + // auto set product as out-of-stock after it has been sold
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -377,6 +378,7 @@ public class ProductsRepositoryJPA {
                     doc.setDate_on_sale_from_gmt((String)           queryList.get(0)[58]);
                     doc.setDate_on_sale_to_gmt((String)             queryList.get(0)[59]);
                     doc.setLow_stock_threshold((BigDecimal)         queryList.get(0)[60]);
+                    doc.setOutofstock_aftersale((Boolean)           queryList.get(0)[61]);
                 }
                 return doc;
             } catch (NoResultException nre) {
@@ -680,7 +682,8 @@ public class ProductsRepositoryJPA {
                     " menu_order = "+request.getMenu_order() +"," +
                     " date_on_sale_from_gmt = "+((!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))?("to_timestamp(:date_on_sale_from_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
                     " date_on_sale_to_gmt = "+((!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))?("to_timestamp(:date_on_sale_to_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
-                    " low_stock_threshold = "+ ((request.getLow_stock_threshold() != null && !request.getLow_stock_threshold().isEmpty() && request.getLow_stock_threshold().trim().length() > 0)?(new BigDecimal(request.getLow_stock_threshold().replace(",", "."))):(new BigDecimal("0"))) +
+                    " low_stock_threshold = "+ ((request.getLow_stock_threshold() != null && !request.getLow_stock_threshold().isEmpty() && request.getLow_stock_threshold().trim().length() > 0)?(new BigDecimal(request.getLow_stock_threshold().replace(",", "."))):(new BigDecimal("0"))) +"," +
+                    " outofstock_aftersale = " + request.getOutofstock_aftersale() + // auto set product as out-of-stock after it has been sold
                     " where master_id = " + myMasterId + " and id = " + request.getId();
 
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -1199,8 +1202,7 @@ public class ProductsRepositoryJPA {
         // всего единиц товара в отделении (складе):
         String stringQuery = " select (select coalesce(quantity,0) from product_quantity where department_id = "+ department_id +" and product_id = "+product_id+") as total, " +
                 " (select " +
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                "   sum(coalesce(reserved_current,0)-0) " +//пока отгрузки не реализованы, считаем, что отгружено 0. Потом надо будет высчитывать из всех Отгрузок, исходящих из этого Заказа покупателя
+                "   sum(coalesce(reserved_current,0)) " +
                 "   from " +
                 "   customers_orders_product " +
                 "   where " +
@@ -1224,7 +1226,31 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
-
+    // возвращает доступное количество товара в отделениях
+    public BigDecimal getAvailable(Long product_id, Set<Long> departmentsIds){
+        if(departmentsIds.size()==0) return new BigDecimal("0");
+        // всего единиц товара в отделении (складе):
+        String stringQuery = " select " +
+                "  (select coalesce(quantity,0) from product_quantity where " +
+                "  department_id in "+ commonUtilites.SetOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as total, " +
+                "  (select sum(coalesce(reserved_current,0)) " +
+                "   from customers_orders_product " +
+                "   where product_id="+product_id+
+                "   and department_id in "+ commonUtilites.SetOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> ql = query.getResultList();
+            BigDecimal total = (ql.get(0)[0]==null?BigDecimal.ZERO:(BigDecimal)ql.get(0)[0]);
+            BigDecimal reserved = (ql.get(0)[1]==null?BigDecimal.ZERO:(BigDecimal)ql.get(0)[1]);
+            // на всякий случай проверяем что разница "Всего" и "В резерве" не отрицательная (если так то возвращаем 0)
+            // вообще такого не должно быть, но "случаи разные бывают"
+            return total.subtract(reserved).compareTo(new BigDecimal("0"))<0?(new BigDecimal("0")):total.subtract(reserved);
+        } catch (Exception e) {
+            logger.error("Exception in method getAvailable. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     @SuppressWarnings("Duplicates")
     // возвращает отгруженное через Отгрузки и проданное через Розн. продажи кол-во товара в отделении у Заказа покупателя
     public BigDecimal getShippedAndSold(Long product_id, Long department_id, Long document_id){

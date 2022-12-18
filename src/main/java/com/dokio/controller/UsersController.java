@@ -444,6 +444,7 @@ public class UsersController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     //загрузка краткой информации о пользователе
     @SuppressWarnings("Duplicates")
     @RequestMapping(
@@ -463,6 +464,18 @@ public class UsersController {
         }
     }
 
-
+    @RequestMapping(
+            value = "/api/auth/getUsersList",
+            params = {"company_id", "search_string"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getUsersList(
+            @RequestParam("company_id") Long companyId,
+            @RequestParam("search_string") String searchString
+            ){
+        logger.info("Processing post request for path /api/auth/getUsersList");
+        try {return new ResponseEntity<>(userRepositoryJPA.getUsersList(companyId, searchString), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getUsersList error", e);
+            return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
 }

@@ -924,7 +924,7 @@ public class CustomersOrdersRepositoryJPA {
     }
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    public CustomersOrdersUpdateReportJSON insertCustomersOrdersProducts(CustomersOrdersForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> rowIds=new HashSet<>();
         CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет о сохранении таблицы товаров
         Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
@@ -1021,7 +1021,7 @@ public class CustomersOrdersRepositoryJPA {
             return saveResult;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveCustomersOrdersProductTable. SQL query:"+stringQuery, e);
+            logger.error("Exception in method CustomersOrdersRepositoryJPA/saveCustomersOrdersProductTable. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

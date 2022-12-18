@@ -21,6 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
+import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
@@ -275,6 +276,38 @@ public class UserRepositoryJPA {
             return query.getResultList();
         }catch (Exception e) {
             logger.error("Exception in method getEmployeeListByDepartmentId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    //поиск пользователей предприятия по подстроке
+    @SuppressWarnings("Duplicates")
+    public List<IdAndName> getUsersList(Long companyId, String search_string) {
+        String stringQuery="select " +
+                "           u.id as id, " +
+                "           u.name as name " +
+                "           from users u " +
+                "           where u.status_account<4 and u.company_id="+companyId+
+                "           and master_id=" + getMyMasterId();
+        if(!Objects.isNull(search_string) && search_string.length()>0)
+            stringQuery=stringQuery+" and upper(u.name) like upper(CONCAT('%',:sg,'%'))";
+        stringQuery=stringQuery+" order by u.name asc";
+        try
+        {
+            Query query =  entityManager.createNativeQuery(stringQuery);
+            if(!Objects.isNull(search_string) && search_string.length()>0)
+                query.setParameter("sg", search_string);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndName> usersList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                IdAndName doc=new IdAndName();
+                doc.setId(Long.parseLong(                               obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                usersList.add(doc);
+            }
+            return usersList;
+        }catch (Exception e) {
+            logger.error("Exception in method getUsersList. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

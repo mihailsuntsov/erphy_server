@@ -18,6 +18,7 @@
 
 package com.dokio.message.request;
 
+import java.util.List;
 import java.util.Set;
 
 public class CompaniesForm {
@@ -84,14 +85,87 @@ public class CompaniesForm {
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
     private Boolean is_store;           // on off the store
-    private String store_site_address;  // e.g. http://localhost/DokioShop
-    private String store_key;           // consumer key
-    private String store_secret;        // consumer secret
-    private String store_type;          // e.g. woo
-    private String store_api_version;   // e.g. v3
-    private String crm_secret_key;      // like UUID generated
-    private Long store_price_type_regular; // id of regular type price
-    private Long store_price_type_sale;    // id of sale type price
+    private String  store_site_address;  // e.g. http://localhost/DokioShop
+    private String  store_key;           // consumer key
+    private String  store_secret;        // consumer secret
+    private String  store_type;          // e.g. woo
+    private String  store_api_version;   // e.g. v3
+    private String  crm_secret_key;      // like UUID generated
+    private Long    store_price_type_regular;    // id of regular type price
+    private Long    store_price_type_sale;       // id of sale type price
+
+    private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+    private Long    store_orders_department_id;  // department for creation Customer order from store
+    private String  store_if_customer_not_found; // "create_new" or "use_default". Default is "create_new"
+    private Long    store_default_customer_id;   // counterparty id if store_if_customer_not_found=use_default
+    private Long    store_default_creator_id;    // default user that will be marked as a creator of store order. Default is master user
+    private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
+    private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
+    private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
+
+    public Boolean getStore_auto_reserve() {
+        return store_auto_reserve;
+    }
+
+    public void setStore_auto_reserve(Boolean store_auto_reserve) {
+        this.store_auto_reserve = store_auto_reserve;
+    }
+
+    public List<Long> getCompanyStoreDepartments() {
+        return companyStoreDepartments;
+    }
+
+    public void setCompanyStoreDepartments(List<Long> companyStoreDepartments) {
+        this.companyStoreDepartments = companyStoreDepartments;
+    }
+
+    public Long getStore_default_creator_id() {
+        return store_default_creator_id;
+    }
+
+    public void setStore_default_creator_id(Long store_default_creator_id) {
+        this.store_default_creator_id = store_default_creator_id;
+    }
+
+    public Integer getStore_days_for_esd() {
+        return store_days_for_esd;
+    }
+
+    public void setStore_days_for_esd(Integer store_days_for_esd) {
+        this.store_days_for_esd = store_days_for_esd;
+    }
+
+    public Boolean getNds_included() {
+        return nds_included;
+    }
+
+    public void setNds_included(Boolean nds_included) {
+        this.nds_included = nds_included;
+    }
+
+    public Long getStore_orders_department_id() {
+        return store_orders_department_id;
+    }
+
+    public void setStore_orders_department_id(Long store_orders_department_id) {
+        this.store_orders_department_id = store_orders_department_id;
+    }
+
+    public String getStore_if_customer_not_found() {
+        return store_if_customer_not_found;
+    }
+
+    public void setStore_if_customer_not_found(String store_if_customer_not_found) {
+        this.store_if_customer_not_found = store_if_customer_not_found;
+    }
+
+    public Long getStore_default_customer_id() {
+        return store_default_customer_id;
+    }
+
+    public void setStore_default_customer_id(Long store_default_customer_id) {
+        this.store_default_customer_id = store_default_customer_id;
+    }
 
     public Long getStore_price_type_regular() {
         return store_price_type_regular;
