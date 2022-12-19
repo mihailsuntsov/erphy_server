@@ -126,14 +126,14 @@ public class CompaniesJSON {
     private Long    store_default_creator_id;    // ID of default user, that will be marked as a creator of store order. Default is master user
     private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
     private String  store_default_creator;       // Name of default user that will be marked as a creator of store order.
-    private List<BigInteger> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
+    private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
     private Boolean store_auto_reserve; //auto reserve product after getting internet store order
 
-    public List<BigInteger> getCompanyStoreDepartments() {
+    public List<Long> getCompanyStoreDepartments() {
         return companyStoreDepartments;
     }
 
-    public void setCompanyStoreDepartments(List<BigInteger> companyStoreDepartments) {
+    public void setCompanyStoreDepartments(List<Long> companyStoreDepartments) {
         this.companyStoreDepartments = companyStoreDepartments;
     }
 

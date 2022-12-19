@@ -266,9 +266,12 @@ public class StoreOrdersRepository {
         if (request.getLine_items()!=null && request.getLine_items().size() > 0) {//если есть что сохранять
             CompanySettingsJSON settings = cu.getCompanySettings(companyId);
             boolean reserve = settings.isStore_auto_reserve();
-            for (ProductForm wooProductRow : request.getLine_items()) {
-                CustomersOrdersProductTableForm crmProductRow = new CustomersOrdersProductTableForm();
-                try{
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products that will have reserves and need to be synchronised,
+            try{
+                // as a reserve is decrease available quantity of product in department
+                for (ProductForm wooProductRow : request.getLine_items()) {
+                    CustomersOrdersProductTableForm crmProductRow = new CustomersOrdersProductTableForm();
+
                     ProductsJSON currentProductInfo = getProductInfoByWooId(wooProductRow.getProduct_id(), companyId);
                     crmProductRow.setProduct_id(currentProductInfo.getId());
                     crmProductRow.setCustomers_orders_id(parentDocId);
@@ -292,15 +295,19 @@ public class StoreOrdersRepository {
                             crmProductRow.setReserved_current(available);// уменьшаем резерв до величины, равной доступному количеству товара на складе
                         }
                         // После постановки в резерв доступное количество товара
+                        productsIdsToSyncWoo.add(crmProductRow.getProduct_id());
                     }
                     saveCustomersOrdersProductTable(crmProductRow, companyId, myMasterId, reserve);
-                } catch (Exception e) {
-                    logger.error("Exception in method toreOrdersRepository/insertCustomersOrdersProducts on querying product ID by Woo_id = " + wooProductRow.getProduct_id(), e);
-                    e.printStackTrace();
-                    throw new Exception();
+                
                 }
-
+                if(productsIdsToSyncWoo.size()>0) productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo,myMasterId);
+            } catch (Exception e) {
+                logger.error("Exception in method toreOrdersRepository/insertCustomersOrdersProducts", e);
+                e.printStackTrace();
+                throw new Exception();
             }
+
+
         }
     }
 

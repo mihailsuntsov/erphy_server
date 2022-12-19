@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1227,16 +1228,16 @@ public class ProductsRepositoryJPA {
         }
     }
     // возвращает доступное количество товара в отделениях
-    public BigDecimal getAvailable(Long product_id, Set<Long> departmentsIds){
+    public BigDecimal getAvailable(Long product_id, List<Long> departmentsIds, boolean roundToInteger){
         if(departmentsIds.size()==0) return new BigDecimal("0");
         // всего единиц товара в отделении (складе):
         String stringQuery = " select " +
                 "  (select coalesce(quantity,0) from product_quantity where " +
-                "  department_id in "+ commonUtilites.SetOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as total, " +
+                "  department_id in "+ commonUtilites.ListOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as total, " +
                 "  (select sum(coalesce(reserved_current,0)) " +
                 "   from customers_orders_product " +
                 "   where product_id="+product_id+
-                "   and department_id in "+ commonUtilites.SetOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
+                "   and department_id in "+ commonUtilites.ListOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as reserved ";//зарезервировано в других документах Заказ покупателя
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> ql = query.getResultList();
@@ -1244,7 +1245,10 @@ public class ProductsRepositoryJPA {
             BigDecimal reserved = (ql.get(0)[1]==null?BigDecimal.ZERO:(BigDecimal)ql.get(0)[1]);
             // на всякий случай проверяем что разница "Всего" и "В резерве" не отрицательная (если так то возвращаем 0)
             // вообще такого не должно быть, но "случаи разные бывают"
-            return total.subtract(reserved).compareTo(new BigDecimal("0"))<0?(new BigDecimal("0")):total.subtract(reserved);
+            if(roundToInteger)
+                return (total.subtract(reserved).compareTo(new BigDecimal("0"))<0?(new BigDecimal("0")):total.subtract(reserved)).setScale(0, RoundingMode.UP);
+            else
+                return total.subtract(reserved).compareTo(new BigDecimal("0"))<0?(new BigDecimal("0")):total.subtract(reserved);
         } catch (Exception e) {
             logger.error("Exception in method getAvailable. SQL query:" + stringQuery, e);
             e.printStackTrace();
@@ -1881,7 +1885,7 @@ public class ProductsRepositoryJPA {
             throw new Exception();
         }
     }
-    private Boolean markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
+    public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
         String stringQuery =
                 " update products " +
                         " set need_to_syncwoo = true " +
@@ -1891,7 +1895,6 @@ public class ProductsRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         } catch (Exception e) {
             logger.error("Exception in method markProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
             e.printStackTrace();

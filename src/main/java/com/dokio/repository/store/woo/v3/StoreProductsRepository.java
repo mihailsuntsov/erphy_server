@@ -4,7 +4,9 @@ import com.dokio.message.request.store.woo.v3.IntListForm;
 import com.dokio.message.request.store.woo.v3.SyncIdForm;
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.response.store.woo.v3.products.*;
+import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
+import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,10 @@ public class StoreProductsRepository {
 
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    ProductsRepositoryJPA productsRepository;
+    @Autowired
+    CompanyRepositoryJPA companyRepository;
 
     public ProductCountJSON countProductsToStoreSync(String key) {
         Long companyId = cu.getByCrmSecretKey("id",key);
@@ -72,6 +78,7 @@ public class StoreProductsRepository {
 
     public ProductsJSON syncProductsToStore(String key, Integer firstResult, Integer maxResults) {
         Long companyId = cu.getByCrmSecretKey("id",key);
+        Long masterId = cu.getByCrmSecretKey("master_id",key);
         ProductsJSON result = new ProductsJSON();
 
         String stringQuery =
@@ -115,6 +122,7 @@ public class StoreProductsRepository {
             if (maxResults != null) {query.setMaxResults(maxResults);}
             List<Object[]> queryList = query.getResultList();
             List<ProductJSON> returnList = new ArrayList<>();
+            List<Long> storeDepartments = companyRepository.getCompanyStoreDepartmentsIds(companyId,masterId);
             for (Object[] obj : queryList) {
                 ProductJSON doc = new ProductJSON();
                 doc.setCrm_id(Long.parseLong(                       obj[0].toString()));
@@ -136,6 +144,7 @@ public class StoreProductsRepository {
                 doc.setPurchase_note((String)                       obj[13]);
                 doc.setMenu_order((Integer)                         obj[14]);
                 doc.setReviews_allowed((Boolean)                    obj[15]);
+                if(doc.getManage_stock()) doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
                 returnList.add(doc);
             }
             result.setQueryResultCode(1);

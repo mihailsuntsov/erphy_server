@@ -50,6 +50,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sun.security.krb5.Confounder.longValue;
+
 @Repository("CompanyRepositoryJPA")
 public class CompanyRepositoryJPA {
 
@@ -875,7 +877,7 @@ public class CompanyRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    private List<BigInteger> getCompanyStoreDepartmentsIds (Long companyId, Long masterId) {
+    public List<Long> getCompanyStoreDepartmentsIds (Long companyId, Long masterId) {
         String stringQuery;
         stringQuery =      "select   csd.department_id as id" +
                 "           from     company_store_departments csd " +
@@ -885,9 +887,9 @@ public class CompanyRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<BigInteger> queryList = query.getResultList();
-            List<BigInteger> returnList = new ArrayList<>();
+            List<Long> returnList = new ArrayList<>();
             for (BigInteger obj : queryList) {
-                returnList.add(obj);
+                returnList.add(obj.longValue());
             }
             return returnList;
         } catch (Exception e) {
