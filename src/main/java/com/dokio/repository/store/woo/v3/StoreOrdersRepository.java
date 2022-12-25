@@ -294,11 +294,10 @@ public class StoreOrdersRepository {
                         if (crmProductRow.getReserved_current().compareTo(available) > 0) {
                             crmProductRow.setReserved_current(available);// уменьшаем резерв до величины, равной доступному количеству товара на складе
                         }
-                        // После постановки в резерв доступное количество товара
+                        // После постановки в резерв доступное количество товара уменьшается, и этот товар подлежит синхронизации с WooCommerce
                         productsIdsToSyncWoo.add(crmProductRow.getProduct_id());
                     }
                     saveCustomersOrdersProductTable(crmProductRow, companyId, myMasterId, reserve);
-                
                 }
                 if(productsIdsToSyncWoo.size()>0) productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo,myMasterId);
             } catch (Exception e) {

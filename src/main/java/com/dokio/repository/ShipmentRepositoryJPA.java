@@ -21,6 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsShipmentForm;
 import com.dokio.message.response.*;
+import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsShipmentJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
@@ -792,6 +793,8 @@ public class ShipmentRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всей отгрузке
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
+
             String stringQuery;
             stringQuery =   "update shipment set " +
                     " changer_id = " + myId + ", "+
@@ -807,6 +810,11 @@ public class ShipmentRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+
+                // если документ проводится и нет товаров - ошибка
+                if(request.isIs_completed()!=null && request.isIs_completed() && request.getShipmentProductTable().size()==0)
+                    throw new CantInsertProductRowCauseErrorException();
+
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -833,6 +841,10 @@ public class ShipmentRepositoryJPA {
                         // бежим по товарам в Отгрузке
                         for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
                             docProductsSum=docProductsSum.add(row.getProduct_sumprice());
+                            // collect product IDs to sytchronization with WooCommerce
+                            productsIdsToSyncWoo.add(row.getProduct_id());
+                            // if product has "Out of stock after sale" = true, then need to set it as Out-of-stock
+                            productsRepository.setProductAsOutOfStockIfOutofstockAftersale(row.getProduct_id(), request.getCompany_id(), myMasterId);
                             //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
                             if(row.getIs_material() && customersOrdersProductTable.size()>0){
                                 //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
@@ -863,10 +875,11 @@ public class ShipmentRepositoryJPA {
                                 }
                             }
                             addProductHistory(row, request, myMasterId);
-
                         }
                         // обновляем баланс с контрагентом
                         commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), new BigDecimal(0), docProductsSum,true,request.getDoc_number(),request.getStatus_id());
+                        // отмечаем товары как необходимые для синхронизации с WooCommerce
+                        productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                     }
                     return 1;
                 } else return null;
@@ -931,6 +944,7 @@ public class ShipmentRepositoryJPA {
         {
             if(request.getShipmentProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             String stringQuery =
                     " update shipment set " +
                             " changer_id = " + myId + ", "+
@@ -955,9 +969,12 @@ public class ShipmentRepositoryJPA {
                 for (ShipmentProductTableForm row : request.getShipmentProductTable()) {
                     docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                     addProductHistory(row, request, myMasterId);
+                    productsIdsToSyncWoo.add(row.getProduct_id());
                 }
                 // обновляем баланс с контрагентом
                 commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "shipment","shipment", request.getId(), docProductsSum,new BigDecimal(0),false, request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
+                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

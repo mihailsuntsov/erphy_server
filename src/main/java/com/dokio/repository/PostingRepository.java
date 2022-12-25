@@ -597,6 +597,7 @@ public class PostingRepository {
             }
 
             Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             try {//сохранение таблицы
 
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
@@ -611,7 +612,10 @@ public class PostingRepository {
                 if(request.isIs_completed()){
                     for (PostingProductForm row : request.getPostingProductTable()) {
                         addProductHistory(row, request, myMasterId);
+                        productsIdsToSyncWoo.add(row.getProduct_id());
                     }
+                    // отмечаем товары как необходимые для синхронизации с WooCommerce
+                    productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 }
                 return 1;
 
@@ -666,6 +670,7 @@ public class PostingRepository {
         {
             if(request.getPostingProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             String stringQuery =
                     " update posting set " +
                             " changer_id = " + myId + ", "+
@@ -686,7 +691,10 @@ public class PostingRepository {
                 request.setIs_completed(false);
                 for (PostingProductForm row : request.getPostingProductTable()) {
                     addProductHistory(row, request, myMasterId);
+                    productsIdsToSyncWoo.add(row.getProduct_id());
                 }
+                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

@@ -499,6 +499,7 @@ public class ReturnsupRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
             BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всему возврату
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             String stringQuery;
             stringQuery =   "update returnsup set " +
                     " changer_id = " + myId + ", "+
@@ -537,9 +538,12 @@ public class ReturnsupRepository {
                     for (ReturnsupProductTableForm row : request.getReturnsupProductTable()) {
                         docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                         addProductHistory(row, request, myMasterId);
+                        productsIdsToSyncWoo.add(row.getProduct_id());
                     }
                     // обновляем баланс с контрагентом
                     commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "returnsup", "returnsup", request.getId(), new BigDecimal(0), docProductsSum,true,request.getDoc_number(),request.getStatus_id());
+                    // отмечаем товары как необходимые для синхронизации с WooCommerce
+                    productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 }
                 return 1;
 
@@ -599,6 +603,7 @@ public class ReturnsupRepository {
         {
             if(request.getReturnsupProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             String stringQuery =
                     " update returnsup set " +
                             " changer_id = " + myId + ", "+
@@ -622,9 +627,12 @@ public class ReturnsupRepository {
                 for (ReturnsupProductTableForm row : request.getReturnsupProductTable()) {
                     docProductsSum=docProductsSum.add(row.getProduct_sumprice());
                     addProductHistory(row, request, myMasterId);
+                    productsIdsToSyncWoo.add(row.getProduct_id());
                 }
                 // обновляем баланс с контрагентом
                 commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "returnsup","returnsup", request.getId(), docProductsSum,new BigDecimal(0),false, request.getDoc_number().toString(),request.getStatus_id());//при приёмке баланс с контрагентом должен смещаться в положительную сторону, т.е. в наш долг контрагенту
+                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

@@ -899,20 +899,20 @@ public class CompanyRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     private Boolean isStoreDepartsChanged (List<Long> newDepartsList, Long companyId) throws Exception  {
         String stringQuery;
-        stringQuery =       "select count(*)" +
+        stringQuery =
+                "           select csd.department_id" +
                 "           from   company_store_departments csd " +
-                "           where  csd.company_id =" + companyId +
-                "           and    csd.department_id in " +
-                (newDepartsList.size()>0?cu.ListOfLongToString(newDepartsList,",","(",")"):"(0)");
+                "           where  csd.company_id =" + companyId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
-            BigInteger cnt = (BigInteger) query.getSingleResult();
-            BigInteger size = new BigInteger(Integer.toString(newDepartsList.size()));
-            // if count(*) is not equals to size of Set, then internet-store departments have been changed
-            return !((cnt).compareTo(size)==0);
+            List<BigInteger> queryList = query.getResultList();
+            List<Long> allDataBaseIds = new ArrayList<>();
+            for (BigInteger obj : queryList) {
+                allDataBaseIds.add(obj.longValue());
+            }
+            return !(new HashSet<>(allDataBaseIds).equals(new HashSet<>(newDepartsList)));
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method isStoreDepartsChanged. SQL query:" + stringQuery, e);
@@ -1801,7 +1801,8 @@ public class CompanyRepositoryJPA {
                 " st_netcost_policy," +
                 " st_prefix_barcode_pieced," +
                 " st_prefix_barcode_packed," +
-                " name" + //наименование
+                " name, " + //наименование
+                " st_netcost_policy" +
                 ") values (" +
                 myMasterId + ", "+
                 myMasterId + ", "+
@@ -1809,7 +1810,8 @@ public class CompanyRepositoryJPA {
                 "'all', " +
                 request.getSt_prefix_barcode_pieced()+", "+
                 request.getSt_prefix_barcode_packed()+", "+
-                "'" + (request.getName() == null ? "Company": request.getName()) + "'" +//наименование
+                "'" + (request.getName() == null ? "Company": request.getName()) + "'," +//наименование
+                "'" + request.getSt_netcost_policy() + "'" +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

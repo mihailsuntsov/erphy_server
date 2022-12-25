@@ -105,6 +105,8 @@ public class AuthRestAPIs {
 	FileRepositoryJPA fileRepository;
 	@Autowired
 	DocumentsRepositoryJPA documentsRepository;
+	@Autowired
+	SpravProductAttributeRepository spravProductAttributes;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -173,6 +175,7 @@ public class AuthRestAPIs {
 		company.setName(map.get("my_company"));
 		company.setSt_prefix_barcode_packed(20);
 		company.setSt_prefix_barcode_pieced(21);
+		company.setSt_netcost_policy("all");
 		Long companyId = companyRepositoryJPA.insertCompanyFast(company,createdUserId);
         // типы цен
         Long price = typePricesRepository.insertPriceTypesFast(createdUserId,companyId);
@@ -215,6 +218,8 @@ public class AuthRestAPIs {
         expenditureRepository.insertExpendituresFast(createdUserId,createdUserId,companyId);
         // статусы документов
 		statusDocRepository.insertStatusesFast(createdUserId,createdUserId,companyId);
+		// базовые аттрибуты товаров (размер, цвет)
+		spravProductAttributes.insertProductAttributeFast(createdUserId,createdUserId,companyId);
         // отправили письмо для подтверждения e-mail
         mailRepository.activateAccount(signUpRequest.getEmail(),user.getActivationCode());
 

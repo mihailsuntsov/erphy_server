@@ -144,7 +144,8 @@ public class StoreProductsRepository {
                 doc.setPurchase_note((String)                       obj[13]);
                 doc.setMenu_order((Integer)                         obj[14]);
                 doc.setReviews_allowed((Boolean)                    obj[15]);
-                if(doc.getManage_stock()) doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
+//                if(doc.getManage_stock())
+                    doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
                 returnList.add(doc);
             }
             result.setQueryResultCode(1);

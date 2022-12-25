@@ -609,6 +609,7 @@ public class WriteoffRepositoryJPA {
                 ) return -1;
             }
             Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             try {
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "writeoff"))
@@ -621,7 +622,10 @@ public class WriteoffRepositoryJPA {
                 if(request.isIs_completed()){
                     for (WriteoffProductForm row : request.getWriteoffProductTable()) {
                         addProductHistory(row, request, myMasterId);
+                        productsIdsToSyncWoo.add(row.getProduct_id());
                     }
+                    // отмечаем товары как необходимые для синхронизации с WooCommerce
+                    productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                 }
                 return 1;
 
@@ -683,6 +687,7 @@ public class WriteoffRepositoryJPA {
         {
             if(request.getWriteoffProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             String stringQuery =
                     " update writeoff set " +
                             " changer_id = " + myId + ", "+
@@ -704,7 +709,11 @@ public class WriteoffRepositoryJPA {
 
                 for (WriteoffProductForm row : request.getWriteoffProductTable()) {
                     addProductHistory(row, request, myMasterId);
-                }return 1;
+                    productsIdsToSyncWoo.add(row.getProduct_id());
+                }
+                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
+                return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into products_history cause oversell.", e);

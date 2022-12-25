@@ -793,6 +793,7 @@ public class CustomersOrdersRepositoryJPA {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public CustomersOrdersUpdateReportJSON updateCustomersOrders(CustomersOrdersForm request) throws Exception {
         CustomersOrdersUpdateReportJSON updateResults = new CustomersOrdersUpdateReportJSON();// отчет об апдейте
+        Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -827,6 +828,7 @@ public class CustomersOrdersRepositoryJPA {
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "customers_orders"))
                     throw new DocumentAlreadyCompletedException();
+                // если документ проводится и нет товаров - ошибка
                 if(request.getIs_completed()!=null && request.getIs_completed() && request.getCustomersOrdersProductTable().size()==0) throw new CantInsertProductRowCauseErrorException();
 
                 Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -836,6 +838,12 @@ public class CustomersOrdersRepositoryJPA {
 
                 // сохранение таблицы товаров
                 updateResults=insertCustomersOrdersProducts(request, request.getId(), myMasterId);
+
+                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
+                    productsIdsToSyncWoo.add(row.getProduct_id());
+                }
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
 
                 // возвращаем весть об успешности операции
                 updateResults.setSuccess(true);
@@ -955,11 +963,12 @@ public class CustomersOrdersRepositoryJPA {
         String stringQuery="";
         Integer saveResult=0;   // 0 - если был резерв - он сохранился, 1 - если был резерв - он отменился. (это относится только к вновь поставленным резервам) Если резерв уже был выставлен - он не отменится.
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
-        BigDecimal reserved_current = row.getReserved_current()==null?new BigDecimal(0):row.getReserved_current(); // зарезервированное количество товара
+//        BigDecimal reserved_current = row.getReserved_current()==null?new BigDecimal(0):row.getReserved_current(); // зарезервированное количество товара
+        if(Objects.isNull(row.getReserved_current())) row.setReserved_current(new BigDecimal(0));
         BigDecimal shipped = productsRepository.getShippedAndSold(row.getProduct_id(),row.getDepartment_id(),row.getCustomers_orders_id()); //отгруженное кол-во товара. Можно конечно его было брать из row, но на всякий случай берем свежие данные
         try {
             //Проверка на то, чтобы зарезервированное количество товара не превышало заказанное количество товара (графа Кол-во) минус отгруженное количество товара (графа Отгружено)
-            if(reserved_current.compareTo(row.getProduct_count().subtract(shipped)) > 0) { //1, т.е. резерв превышает разницу заказанного и отгруженного количества товара.
+            if(row.getReserved_current().compareTo(row.getProduct_count().subtract(shipped)) > 0) { //1, т.е. резерв превышает разницу заказанного и отгруженного количества товара.
                 row.setReserved_current(row.getProduct_count().subtract(shipped));//уменьшаем резерв до величины, равной разнице заказанного и отгруженного
                 saveResult = 1;
             } else { // резерв НЕ превышает заказываемое количество товара. Тогда проверим еще на то, что резерв не превышает доступное количество товара.

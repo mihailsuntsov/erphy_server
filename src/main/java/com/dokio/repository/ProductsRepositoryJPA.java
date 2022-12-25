@@ -1227,6 +1227,35 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
+    public void setProductAsOutOfStockIfOutofstockAftersale(Long productId, Long companyId, Long masterId){
+        String stringQuery=
+                " update products set " +
+                " not_sell=true, " +
+                " stock_status='outofstock'" +
+                " where " +
+                " master_id="+masterId+" and " +
+                " company_id="+companyId+" and " +
+                " id="+productId+" and " +
+                " coalesce(outofstock_aftersale,false) = true";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method isOutofstockAftersale. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+        }
+    }
+    public boolean isOutofstockAftersale(Long product_id){
+        String stringQuery="select coalesce(outofstock_aftersale,false) from products where id="+product_id;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean) query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method isOutofstockAftersale. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
     // возвращает доступное количество товара в отделениях
     public BigDecimal getAvailable(Long product_id, List<Long> departmentsIds, boolean roundToInteger){
         if(departmentsIds.size()==0) return new BigDecimal("0");
@@ -1369,7 +1398,8 @@ public class ProductsRepositoryJPA {
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
-                " and coalesce(p.is_deleted,false) !=true ";
+                " and coalesce(p.is_deleted,false) = false " +
+                " and coalesce(p.not_sell,false) = false ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +

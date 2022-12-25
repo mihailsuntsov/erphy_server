@@ -85,7 +85,12 @@ public class CommonUtilites {
     public Long getByCrmSecretKey(String subj, String secretKey){ // subj can be master_id for master id, or id for company_id
         try {
             String stringQuery;
-            stringQuery = "select "+subj+" from companies where coalesce (is_store, false) = true and crm_secret_key = :secretKey";
+            stringQuery =
+                    "select "+subj+" from companies where " +
+                    "coalesce (is_store, false) = true and " +
+                    "crm_secret_key = :secretKey and " +
+                    "crm_secret_key is not null and " +
+                    "crm_secret_key !=''";
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("secretKey",secretKey);
             return Long.parseLong(query.getSingleResult().toString());

@@ -580,7 +580,7 @@ public class RetailSalesRepository {
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long linkedDocsGroupId=null;
-
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             if ((//если есть право на создание по всем предприятиям, или
@@ -708,7 +708,10 @@ public class RetailSalesRepository {
 
                     // бежим по товарам в Розничной продаже
                     for (RetailSalesProductTableForm row : request.getRetailSalesProductTable()) {
-
+                        // collect product IDs to sytchronization with WooCommerce
+                        productsIdsToSyncWoo.add(row.getProduct_id());
+                        // if product has "Out of stock after sale" = true, then need to set it as Out-of-stock
+                        productsRepository.setProductAsOutOfStockIfOutofstockAftersale(row.getProduct_id(), request.getCompany_id(), myMasterId);
                         //если товар материален и есть родительский Заказ покупателя - нужно у данного товара в Заказе покупателя изменить резерв (если конечно его нужно будет менять
                         if(row.getIs_material() && customersOrdersProductTable.size()>0){
                             //нужно найти этот товар в списке товаров Заказа покупателя по совпадению его id и id его склада (т.к. в Заказе покупателя могут быть несколько позиций одного и того же товара, но с разных складов)
@@ -750,6 +753,8 @@ public class RetailSalesRepository {
                     // поэтому создаем запись одновременно с равными друг другу положительной и отрицательной суммами
                     // записываем контрагенту положительную сумму, увеличивая наш долг ему, и записываем контрагенту отрицательную сумму, уменьшая наш долг ему
                     commonUtilites.addDocumentHistory("cagent", request.getCompany_id(), request.getCagent_id(), "retail_sales","retailsales", newDocId, summ, summ,true, doc_number.toString(),request.getStatus_id());
+                    // отмечаем товары как необходимые для синхронизации с WooCommerce
+                    productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
                     return newDocId;
 
                 } catch (CantSaveProductQuantityException e) {
