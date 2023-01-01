@@ -1611,7 +1611,6 @@ public class CompanyRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("fileName",fileName);
-            query.executeUpdate();
             return Long.parseLong(query.getSingleResult().toString());
         }
         catch (Exception e) {
@@ -1802,7 +1801,7 @@ public class CompanyRepositoryJPA {
                 " st_prefix_barcode_pieced," +
                 " st_prefix_barcode_packed," +
                 " name, " + //наименование
-                " st_netcost_policy" +
+                " type " +
                 ") values (" +
                 myMasterId + ", "+
                 myMasterId + ", "+
@@ -1811,7 +1810,7 @@ public class CompanyRepositoryJPA {
                 request.getSt_prefix_barcode_pieced()+", "+
                 request.getSt_prefix_barcode_packed()+", "+
                 "'" + (request.getName() == null ? "Company": request.getName()) + "'," +//наименование
-                "'" + request.getSt_netcost_policy() + "'" +
+                "'entity'" +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

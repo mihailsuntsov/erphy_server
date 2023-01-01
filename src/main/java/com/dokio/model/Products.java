@@ -235,6 +235,9 @@ public class Products {
     @Column(name = "reviews_allowed")//Allow reviews. Default is true.
     private Boolean reviews_allowed;
 
+    @Column(name = "outofstock_aftersale")//Set as Out-of-stock after first completed shipment. Default is false.
+    private Boolean outofstock_aftersale;
+
     @ManyToOne
     @JoinColumn(name = "parent_id") // Product parent ID.
     private Products parent_id;
@@ -270,6 +273,14 @@ public class Products {
 
     public void setProductCategories(Set<ProductCategories> productCategories) {
         this.productCategories = productCategories;
+    }
+
+    public Boolean getOutofstock_aftersale() {
+        return outofstock_aftersale;
+    }
+
+    public void setOutofstock_aftersale(Boolean outofstock_aftersale) {
+        this.outofstock_aftersale = outofstock_aftersale;
     }
 
     public Boolean getNot_sell() {

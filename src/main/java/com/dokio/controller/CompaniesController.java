@@ -27,6 +27,7 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.FileRepositoryJPA;
 import com.dokio.repository.UserGroupRepositoryJPA;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.dokio.service.StorageService;
@@ -35,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -55,6 +57,8 @@ public class CompaniesController {
     StorageService storageService;
     @Autowired
     FileRepositoryJPA fileRepository;
+    @Autowired
+    CommonUtilites cu;
 
     @PostMapping("/api/auth/getCompaniesTable")
     @SuppressWarnings("Duplicates")
@@ -274,6 +278,20 @@ public class CompaniesController {
             return  new ResponseEntity<>(companyRepositoryJPA.getBoxofficeByDepId(company_id,dep_id), HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>("Ошибка запроса кассы отделения", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @RequestMapping(
+            value = "/api/auth/getCompanySettings",// отдаёт настройки предприятия
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCompanySettings(
+            @RequestParam("id") Long id){
+        logger.info("Processing post request for path /api/auth/getCompanySettings, id = " + id);
+        try {
+            return  new ResponseEntity<>(cu.getCompanySettings_(id), HttpStatus.OK);
+        } catch (Exception e){
+            e.printStackTrace();logger.error("Controller getCompanySettings error", e);
+            return new ResponseEntity<>("Controller getCompanySettings error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 //*****************************************************************************************************************************************************

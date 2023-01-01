@@ -53,6 +53,8 @@ public class CommonUtilites {
     private SecurityRepositoryJPA securityRepository;
     @Autowired
     private _Info info;
+    @Autowired
+    SecurityRepositoryJPA securityRepositoryJPA;
 
 
     @SuppressWarnings("Duplicates")
@@ -345,6 +347,23 @@ public class CommonUtilites {
             }
 
         } else throw new Exception(); // отмена всей транзакции по причине попытки создать запись по не своему предприятию или не по правильным таблицам
+    }
+
+
+    // возвращает настройки предприятия с проверкой на то что предприятие принадлежит master-аккаунту залогиненного пользователя
+    public CompanySettingsJSON getCompanySettings_(Long company_id) {
+        if(securityRepositoryJPA.isItAllMyMastersDocuments("companies",company_id.toString())){
+            try{
+                return getCompanySettings(company_id);
+            }catch (Exception e) {
+                logger.error("Exception in method getCompanySettings_.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            logger.error("Company with id="+company_id+" is not belongs to master id of logged in user");
+            return null;
+        }
     }
 
 

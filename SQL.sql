@@ -4039,7 +4039,6 @@ alter table product_terms add constraint product_term_uq unique (product_id, ter
 
 alter table product_terms add column product_attribute_id bigint not null;
 alter table product_terms add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes (id);
-alter table product_terms add constraint template_docs_file_id_fkey foreign key (file_id) references files (id) on delete cascade;
 
 
 alter table product_terms drop constraint product_terms_term_id_fkey, add constraint product_terms_term_id_fkey foreign key (term_id) references product_attribute_terms(id) on delete cascade;
@@ -4073,7 +4072,8 @@ create table company_store_departments(
 alter table company_store_departments add constraint company_store_department_uq unique (company_id, department_id);
 alter table companies add column store_auto_reserve boolean; -- auto reserve product after getting internet store order
 alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
-  ------------------------------------------------  end of 1.0.5  ------------------------------------------------------
+update version set value = '1.1.0', date = '28-12-2022';
+  ------------------------------------------------  end of 1.1.0  ------------------------------------------------------
 
 
 

@@ -475,8 +475,8 @@ public class SpravProductAttributeRepository {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
                 "'color'","'size'"});
         stringQuery = "insert into product_attributes ( master_id,creator_id,company_id,date_time_created,name,type,slug,order_by,has_archives,is_deleted) values "+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("color")+"', 'select','menu_order',false, false),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("size")+"', 'select','menu_order',false,false)";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("color")+"', 'select','color','menu_order',false, false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("size")+"', 'select','size','menu_order',false,false)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

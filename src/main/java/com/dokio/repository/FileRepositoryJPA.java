@@ -483,7 +483,7 @@ public class FileRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права или если он открыт на общий доступ
-    public FileInfoJSON getFileAuth(String filename) {
+        public FileInfoJSON getFileAuth(String filename) {
 
         List<Integer> myPermissions = securityRepositoryJPA.giveMeMyPermissions(13L);
         if(myPermissions.contains(150) || (myPermissions.contains(151)))

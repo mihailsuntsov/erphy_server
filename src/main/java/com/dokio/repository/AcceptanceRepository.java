@@ -901,7 +901,7 @@ public class AcceptanceRepository {
         try {
 
             // все записи в таблицы product_history и product_quantity производим только если товар материален (т.е. это не услуга и т.п.)
-            if (productsRepository.isProductMaterial(row.getProduct_id())) {
+            if (productsRepository.isProductMaterial(row.getProduct_id())) {// Если это товар // if the product is a Commodity
                 // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
                 String netcostPolicy = commonUtilites.getCompanySettings(request.getCompany_id()).getNetcost_policy();
                 // берём информацию о товаре (кол-во и ср. себестоимость) в данном отделении (если netcostPolicy == "all" то независимо от отделения)
@@ -961,6 +961,19 @@ public class AcceptanceRepository {
                             lastQuantity.subtract(row.getProduct_count()),
                             avgNetcostPrice
                     );
+            } else { // Если это услуга // if the product is a Service
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        15,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count(),
+                        row.getProduct_price(),
+                        new BigDecimal("0"), // себестоимость товара в операции
+                        request.getIs_completed()
+                );
             }
 
             return true;

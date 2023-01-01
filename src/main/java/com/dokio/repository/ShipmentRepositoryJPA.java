@@ -1056,6 +1056,19 @@ public class ShipmentRepositoryJPA {
                             lastQuantity.add(row.getProduct_count()),
                             lastAvgNetcostPrice
                     );
+            } else{
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        row.getDepartment_id(),
+                        21,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count().negate(),
+                        row.getProduct_price(),
+                        new BigDecimal("0"),
+                        request.isIs_completed()
+                );
             }
 
             return true;

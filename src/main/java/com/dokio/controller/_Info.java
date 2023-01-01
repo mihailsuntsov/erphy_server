@@ -35,14 +35,14 @@ public class _Info {
     CommonUtilites cu;
 
     @PersistenceContext
-    private EntityManager entityManager; // do NOT touch!
+    private EntityManager entityManager; // do NOT touch, even if it seems like not active!
 
     public String getBackendVersion() {
-        return "1.0.4-1";
+        return "1.1.0";
     }
 
     public String getBackendVersionDate() {
-        return "29-08-2022";
+        return "28-12-2022";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",

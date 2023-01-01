@@ -866,6 +866,8 @@ public class ProductsRepositoryJPA {
                     newDocument.setIndivisible(request.isIndivisible());
                     //товар снят с продажи (Boolean)
                     newDocument.setNot_sell(request.isNot_sell());
+                    //Set as Out-of-stock after first completed shipment. Default is false.
+                    newDocument.setOutofstock_aftersale(request.getOutofstock_aftersale());
 
                     entityManager.persist(newDocument);
                     entityManager.flush();
@@ -1333,7 +1335,7 @@ public class ProductsRepositoryJPA {
 
     // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
-    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id, Long priceTypeId) {
+    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id, Long priceTypeId, Boolean showRemovedFromSale) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
@@ -1399,7 +1401,7 @@ public class ProductsRepositoryJPA {
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
                 " and coalesce(p.is_deleted,false) = false " +
-                " and coalesce(p.not_sell,false) = false ";
+                (!showRemovedFromSale?" and coalesce(p.not_sell,false) = false ":" ");
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +

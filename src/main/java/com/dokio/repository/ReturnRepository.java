@@ -704,6 +704,19 @@ public class ReturnRepository {
                             lastQuantity.subtract(row.getProduct_count()),
                             avgNetcostPrice
                     );
+            } else {
+                productsRepository.setProductHistory(
+                        masterId,
+                        request.getCompany_id(),
+                        request.getDepartment_id(),
+                        28,
+                        request.getId(),
+                        row.getProduct_id(),
+                        row.getProduct_count(),
+                        row.getProduct_price(),
+                        new BigDecimal("0"),
+                        request.getIs_completed()
+                );
             }
 
             return true;
