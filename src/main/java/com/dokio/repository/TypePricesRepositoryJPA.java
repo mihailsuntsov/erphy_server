@@ -395,17 +395,18 @@ public class TypePricesRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public List<PriceTypesListJSON> getPriceTypesList(int companyId) {
+    public List<PriceTypesListJSON> getPriceTypesList(Long companyId) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String stringQuery=
                 "select " +
                         " p.id as id, " +
                         " p.name  as name, " +
-                        " p.description as description " +
+                        " p.description as description, " +
+                        " coalesce(p.is_default, false) " +
                         " from sprav_type_prices p " +
                         " where p.master_id=" + myMasterId +
                         " and p.company_id=" + companyId +
-                        " and coalesce(p.is_archive, false) = false"+
+                        " and coalesce(p.is_deleted, false) = false"+
                         " order by p.name asc";
         Query query =  entityManager.createNativeQuery(stringQuery);
         List<Object[]> queryList = query.getResultList();
@@ -415,6 +416,7 @@ public class TypePricesRepositoryJPA {
             doc.setId(Long.parseLong(obj[0].toString()));
             doc.setName((String) obj[1]);
             doc.setDescription((String) obj[2]);
+            doc.setIs_default((Boolean) obj[3]);
             returnList.add(doc);
         }
         return returnList;

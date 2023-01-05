@@ -92,6 +92,15 @@ public class ProductsForm {
     private List<Long> dfilesIdsInOrderOfList;//List id
     private List<ProductProductAttributeForm> productAttributes;
     private Boolean outofstock_aftersale; //auto set product as out-of-stock after it has been sold
+    private String label_description;
+
+    public String getLabel_description() {
+        return label_description;
+    }
+
+    public void setLabel_description(String label_description) {
+        this.label_description = label_description;
+    }
 
     public Boolean getOutofstock_aftersale() {
         return outofstock_aftersale;

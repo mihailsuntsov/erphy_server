@@ -22,6 +22,15 @@ public class PriceTypesListJSON {
     private Long id;
     private String name;
     private String description;
+    private Boolean is_default;
+
+    public Boolean getIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(Boolean is_default) {
+        this.is_default = is_default;
+    }
 
     public Long getId() {
         return id;

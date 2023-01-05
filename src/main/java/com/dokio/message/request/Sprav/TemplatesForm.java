@@ -29,6 +29,24 @@ public class TemplatesForm {
     private String  file_original_name;
     private Boolean is_show;
     private Integer output_order;
+    private String  type;
+    private Integer num_labels_in_row;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getNum_labels_in_row() {
+        return num_labels_in_row;
+    }
+
+    public void setNum_labels_in_row(Integer num_labels_in_row) {
+        this.num_labels_in_row = num_labels_in_row;
+    }
 
     public Long getId() {
         return id;

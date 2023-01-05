@@ -249,6 +249,10 @@ public class Products {
     @Column(name = "menu_order")//
     private Integer menu_order;
 
+    @Size(max = 2048)
+    @Column(name = "label_description")
+    private String label_description;
+
     @Column(name="date_on_sale_from_gmt", nullable = false)
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
@@ -281,6 +285,14 @@ public class Products {
 
     public void setOutofstock_aftersale(Boolean outofstock_aftersale) {
         this.outofstock_aftersale = outofstock_aftersale;
+    }
+
+    public String getLabel_description() {
+        return label_description;
+    }
+
+    public void setLabel_description(String label_description) {
+        this.label_description = label_description;
     }
 
     public Boolean getNot_sell() {

@@ -4074,9 +4074,11 @@ alter table companies add column store_auto_reserve boolean; -- auto reserve pro
 alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
 update version set value = '1.1.0', date = '28-12-2022';
   ------------------------------------------------  end of 1.1.0  ------------------------------------------------------
-
-
-
+alter table template_docs add column type varchar(8); -- the type of template/ Can be: "document", "label"
+alter table template_docs add column num_labels_in_row int; -- quantity of labels in the each row
+update template_docs set type='document';
+alter table template_docs alter column type set not null;
+alter table products add column label_description varchar(2048);
 
 
 

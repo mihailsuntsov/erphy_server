@@ -104,6 +104,21 @@ public class CommonUtilites {
         }
     }
 
+    public Long getLongFromAnyTableById(String subj, String tableName, Long idValue){
+        try {
+            String stringQuery;
+            stringQuery =
+                    "select " + subj + " from " + tableName + " where id = " + idValue +" limit 1";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (NoResultException nre) {
+            return null;
+        }catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @SuppressWarnings("Duplicates")  //генератор номера документа
     public Long generateDocNumberCode(Long company_id, String docTableName)
     {

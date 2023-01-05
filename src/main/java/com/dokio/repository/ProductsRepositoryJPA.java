@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.additional.LabelsPrintProduct;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -43,6 +44,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -127,7 +131,8 @@ public class ProductsRepositoryJPA {
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           coalesce(p.not_buy, false) as not_buy, " +
-                    "           coalesce(p.not_sell, false) as not_sell " +
+                    "           coalesce(p.not_sell, false) as not_sell, " +
+                    "           coalesce(p.label_description,'') as label_description" +
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -298,7 +303,8 @@ public class ProductsRepositoryJPA {
 //                    "           array_to_string(array(select child_id from product_upsell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as upsell_ids, " +
 //                    "           array_to_string(array(select child_id from product_crosssell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as crosssell_ids " +
                     "           coalesce(p.low_stock_threshold, 0) as low_stock_threshold"  + ", " +
-                    "           coalesce(p.outofstock_aftersale,false) as outofstock_aftersale " + // auto set product as out-of-stock after it has been sold
+                    "           coalesce(p.outofstock_aftersale,false) as outofstock_aftersale, " + // auto set product as out-of-stock after it has been sold
+                    "           coalesce(p.label_description,'') as label_description" +
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -380,6 +386,7 @@ public class ProductsRepositoryJPA {
                     doc.setDate_on_sale_to_gmt((String)             queryList.get(0)[59]);
                     doc.setLow_stock_threshold((BigDecimal)         queryList.get(0)[60]);
                     doc.setOutofstock_aftersale((Boolean)           queryList.get(0)[61]);
+                    doc.setLabel_description((String)               queryList.get(0)[62]);
                 }
                 return doc;
             } catch (NoResultException nre) {
@@ -684,7 +691,8 @@ public class ProductsRepositoryJPA {
                     " date_on_sale_from_gmt = "+((!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))?("to_timestamp(:date_on_sale_from_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
                     " date_on_sale_to_gmt = "+((!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))?("to_timestamp(:date_on_sale_to_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
                     " low_stock_threshold = "+ ((request.getLow_stock_threshold() != null && !request.getLow_stock_threshold().isEmpty() && request.getLow_stock_threshold().trim().length() > 0)?(new BigDecimal(request.getLow_stock_threshold().replace(",", "."))):(new BigDecimal("0"))) +"," +
-                    " outofstock_aftersale = " + request.getOutofstock_aftersale() + // auto set product as out-of-stock after it has been sold
+                    " outofstock_aftersale = " + request.getOutofstock_aftersale() + "," + // auto set product as out-of-stock after it has been sold
+                    " label_description = :label_description "+
                     " where master_id = " + myMasterId + " and id = " + request.getId();
 
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -701,6 +709,7 @@ public class ProductsRepositoryJPA {
                 query.setParameter("backorders", (request.getBackorders() == null ? "" : request.getBackorders()));
                 query.setParameter("shipping_class", (request.getShipping_class() == null ? "" : request.getShipping_class()));
                 query.setParameter("purchase_note", (request.getPurchase_note() == null ? "" : request.getPurchase_note()));
+                query.setParameter("label_description", (request.getLabel_description() == null ? "" : request.getLabel_description()));
                 if(!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))
                     query.setParameter("date_on_sale_from_gmt", request.getDate_on_sale_from_gmt()+" 00:00:00.000");
                 if(!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))
@@ -868,6 +877,8 @@ public class ProductsRepositoryJPA {
                     newDocument.setNot_sell(request.isNot_sell());
                     //Set as Out-of-stock after first completed shipment. Default is false.
                     newDocument.setOutofstock_aftersale(request.getOutofstock_aftersale());
+                    // Label description
+                    newDocument.setLabel_description(request.getLabel_description());
 
                     entityManager.persist(newDocument);
                     entityManager.flush();
@@ -3887,6 +3898,72 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    // returns list of product data (name, sku, description, ... and product's price by priceTypeId)
+    public List<ProductLabel> getProductLabelsList(List<LabelsPrintProduct> labelsPrintProductList , Long priceTypeId, Long companyId){
+        List<Long> productIds = labelsPrintProductList.stream().map(LabelsPrintProduct::getProduct_id).collect(Collectors.toList());
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String myTimeZone = userSettings.getTime_zone();
+        String dateFormat = userSettings.getDateFormat();
+//        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
+        String stringQuery = " select " +
+                "           p.id as product_id, " +
+                "           p.name as name, " +
+                "           p.article as article, " +
+                "           cmp.name as company, " +
+                "           to_char(p.product_code_free,'fm0000000000') as product_code, " +
+                "           p.label_description as label_description," +
+                "           coalesce((select value from product_barcodes where product_id = p.id order by id asc limit 1),'') as barcode," +
+                "           coalesce((select name_short  from sprav_currencies where company_id="+companyId+" and is_default=true limit 1),'') as currency," +
+                "           coalesce((select short_name  from sprav_sys_edizm where company_id="+companyId+" and id=coalesce(p.edizm_id,0)),'') as unit," +
+                "           coalesce((select price_value from product_prices   where product_id=p.id and price_type_id="+priceTypeId+"),0.00) as price," +
+                "           to_char(now() at time zone '" + myTimeZone + "', '"+dateFormat+"') as date " +
+                "           from products p " +
+                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                "           where  p.company_id=" + companyId +
+                "           and p.id in " + commonUtilites.ListOfLongToString(productIds, ",","(", ")");
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
 
+            List<Object[]> queryList = query.getResultList();
+            List<ProductLabel> returnList = new ArrayList<>();
+//            DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(Locale.US);
+//            DecimalFormatSymbols symbols = formatter.getDecimalFormatSymbols();
+//
+//            symbols.setGroupingSeparator('*');
+//            formatter.setDecimalFormatSymbols(symbols);
+
+            int currentLabelQuantity=1;
+            for(Object[] obj:queryList){
+                ProductLabel doc=new ProductLabel();
+                doc.setId(Long.parseLong(                       obj[0].toString()));
+                doc.setProductName((String)                     obj[1]);
+                doc.setSku((String)                             obj[2]);
+                doc.setCompanyName((String)                     obj[3]);
+                doc.setProductCode((String)                     obj[4]);
+                doc.setLabelDescription((String)                obj[5]);
+                doc.setBarcode((String)                         obj[6]);
+                doc.setCurrency((String)                        obj[7]);
+                doc.setShortUnit((String)                       obj[8]);
+                doc.setPriceFull(((BigDecimal)                  obj[9]).toString());
+                doc.setPriceIntegerPart(new DecimalFormat("#,###.##").format(Double.parseDouble(((BigDecimal)           obj[9]).toBigInteger().toString())));
+                doc.setPriceDecimalPart(((BigDecimal)obj[9]).toString().split("\\.")[1]);
+                doc.setDate((String)                            obj[10]);
+
+                for(LabelsPrintProduct lpp:labelsPrintProductList){
+                    if(doc.getId().equals(lpp.getProduct_id()))
+                        currentLabelQuantity=lpp.getLabels_quantity();
+                }
+
+                for (int i = 0; i < currentLabelQuantity; i++) returnList.add(doc);
+
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductLabelsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+
+    }
 }
 

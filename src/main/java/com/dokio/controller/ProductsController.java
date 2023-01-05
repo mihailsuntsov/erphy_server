@@ -20,6 +20,8 @@ package com.dokio.controller;
 
 //import com.dokio.message.TestForm;
 import com.dokio.message.request.*;
+import com.dokio.message.request.additional.LabelsPrintForm;
+import com.dokio.message.request.additional.LabelsPrintProduct;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.*;
@@ -27,13 +29,22 @@ import com.dokio.model.ProductCategories;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import com.dokio.service.TemplatesService;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
+import org.jxls.common.Context;
+import org.jxls.util.JxlsHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -62,6 +73,12 @@ public class ProductsController {
     ProductsRepositoryJPA productsRepositoryJPA;
     @Autowired
     StorageService storageService;
+    @Autowired
+    private TemplatesService tservice;
+    @Autowired
+    FileRepositoryJPA fileRepository;
+    @Autowired
+    CommonUtilites cu;
 
 
     @PostMapping("/api/auth/getProductsTable")
@@ -871,21 +888,6 @@ public class ProductsController {
         return new ResponseEntity<>(productsRepositoryJPA.getProductHistoryTable(companyId, departmentId, productId, dateFrom, dateTo, sortColumn, sortAsc, result, docTypesIds, offsetreal), HttpStatus.OK);//запрос списка: взять кол-во rezult, начиная с offsetreal, HttpStatus.OK);
     }
 
-//    @PostMapping("/api/auth/syncQuantityProducts")
-//    @SuppressWarnings("Duplicates")
-//    public ResponseEntity<?> syncQuantityProducts(@RequestBody UniversalForm request) { //синхронизирует кол-во товаров в products_history и в product_quantity
-//        logger.info("Processing post request for path /api/auth/syncQuantityProducts: " + request.toString());
-//
-//        try {
-//            Boolean ret = productsRepositoryJPA.syncQuantityProducts(request);
-//            return new ResponseEntity<>(ret, HttpStatus.OK);
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
-
     //загружает список товаров по их id или id их категорий
     @PostMapping("/api/auth/getProductsInfoListByIds")
     @SuppressWarnings("Duplicates")
@@ -949,4 +951,49 @@ public class ProductsController {
         catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributes error with categoryId=" + product_id.toString(), e);
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+
+
+
+    // печать документов
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/labelsPrint")
+    public void labelsPrint(HttpServletResponse response, @RequestBody LabelsPrintForm labelsPrintForm) throws Exception  {
+        logger.info("Processing post request for path /api/auth/labelsPrint with parameters: " + labelsPrintForm.toString());
+//        String filename="94ca2b16-dc1-2023-01-02-12-51-33-559.xls";
+        String filename=labelsPrintForm.getFile_name();
+        FileInfoJSON fileInfo = tservice.getFileInfo(filename);
+        InputStream  is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        OutputStream os = response.getOutputStream();
+
+        try {
+            List<ProductLabel> productLabelsList = productsRepositoryJPA.getProductLabelsList(labelsPrintForm.getLabelsPrintProductsList(), labelsPrintForm.getPricetype_id(),labelsPrintForm.getCompany_id());
+
+            List<List<ProductLabel>> allLabelRowsList = new ArrayList<>();
+            int maxNumOfLabelsInRow = labelsPrintForm.getNum_labels_in_row();
+            for (int i = 0; i < productLabelsList.size(); i+=maxNumOfLabelsInRow) {
+                allLabelRowsList.add(new ArrayList(productLabelsList.subList(i,(i+maxNumOfLabelsInRow) > productLabelsList.size() ? productLabelsList.size() : (i+maxNumOfLabelsInRow))));
+            }
+            Context context = new Context();
+            context.putVar("allLabelRowsList", allLabelRowsList);
+            context.putVar("tservice", tservice); // helper-класс для формирования файла
+            JxlsHelper.getInstance().processTemplate(is, os, context);
+        } catch (Exception e){
+            logger.error("Exception in method labelsPrint.", e);
+            e.printStackTrace();
+            response.resetBuffer();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getOutputStream().println("{");
+            response.getOutputStream().println("\"status\": " + 500 + ",");
+            response.getOutputStream().println("\"error\": \"" + "Internal server error" + "\",");
+            response.getOutputStream().println("\"message\": \"" + "Error -> INTERNAL_SERVER_ERROR" + "\"");
+            response.getOutputStream().println("}");
+            response.flushBuffer();
+        } finally {
+            is.close();
+            os.close();
+        }
+    }
+
 }

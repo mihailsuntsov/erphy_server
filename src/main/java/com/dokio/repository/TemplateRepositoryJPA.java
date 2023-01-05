@@ -97,7 +97,9 @@ public class TemplateRepositoryJPA {
                 "           f.name as file_name, " +                      // наименование файла как он хранится на диске
                 "           f.original_name as file_original_name, " +    // оригинальное наименование файла
                 "           f.id as file_id, " +                          // id файла
-                "           p.company_id as company_id " +                // id предприятия
+                "           p.company_id as company_id, " +               // id предприятия
+                "           p.type as type," +                            // the type of template/ Can be: "document", "label"
+                "           coalesce(p.num_labels_in_row,0)"+             // quantity of labels in the each row
 
                 "           from template_docs p " +
                 "           INNER JOIN files f ON p.file_id = f.id " +
@@ -118,12 +120,16 @@ public class TemplateRepositoryJPA {
                 doc.setId(Long.parseLong(                       obj[0].toString()));
                 doc.setName((String)                            obj[1]);
                 doc.setDocument_id((Integer)                    obj[2]);
+                doc.setName((String)                            obj[1]);
                 doc.setIs_show((Boolean)                        obj[3]);
                 doc.setOutput_order((Integer)                   obj[4]);
                 doc.setFile_name((String)                       obj[5]);
                 doc.setFile_original_name((String)              obj[6]);
                 doc.setFile_id(Long.parseLong(                  obj[7].toString()));
                 doc.setCompany_id(Long.parseLong(               obj[8].toString()));
+                doc.setType((String)                            obj[9]);
+                doc.setNum_labels_in_row((Integer)              obj[10]);
+
                 returnList.add(doc);
             }
             return returnList;
@@ -174,7 +180,9 @@ public class TemplateRepositoryJPA {
                         " document_id,"+
                         " file_id," +
                         " is_show," +
-                        " output_order" +
+                        " output_order," +
+                        " type," +
+                        " num_labels_in_row" +
                         ") values ("+
                         masterId + ","+
                         template.getCompany_id() + ","+
@@ -183,10 +191,14 @@ public class TemplateRepositoryJPA {
                         template.getDocument_id() + ","+
                         template.getFile_id() + ","+
                         template.getIs_show() + ","+
-                        template.getOutput_order()+ ")";
+                        template.getOutput_order()+ ","+
+                        ":type,"+
+                        template.getNum_labels_in_row() +
+                        ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name",template.getName());
+            query.setParameter("type",template.getType());
             query.executeUpdate();
             return true;
         }
@@ -202,11 +214,15 @@ public class TemplateRepositoryJPA {
                     " name = :name, " +
                     " file_id = " + template.getFile_id() + ","+
                     " is_show = " + template.getIs_show() + ","+
-                    " output_order = "+ template.getOutput_order() +
+                    " type = :type,"+
+                    " num_labels_in_row = " + template.getNum_labels_in_row() + ","+
+                    " output_order = " + template.getOutput_order() +
                     " where master_id = " + masterId + " and company_id=" + template.getCompany_id() +" and user_id = " + myId + " and id = " + template.getId();
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name",template.getName());
+            query.setParameter("type",template.getType());
+
             query.executeUpdate();
             return true;
         }

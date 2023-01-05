@@ -492,11 +492,11 @@ public class SpravCurrenciesRepository {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
         "'curr_us_dollar'","'curr_euro'","'curr_canadian_dollar'","'curr_australian_dollar'","'curr_new_zealand_dollar'","'curr_russian_rouble'","'curr_pound_sterling'"});
         stringQuery = "insert into sprav_currencies ( master_id,creator_id,company_id,date_time_created,name_short,name_full,code_lit,code_num,is_default,is_deleted) values "+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','"+map.get("curr_us_dollar")+"',            'USD','840',true, false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'$','"+map.get("curr_us_dollar")+"',            'USD','840',true, false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'€',  '"+map.get("curr_euro")+"',                 'EUR','978',false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'C$', '"+map.get("curr_canadian_dollar")+"',      'CAD','124',false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'A$', '"+map.get("curr_australian_dollar")+"',    'AUD','036',false,false),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'\t$','"+map.get("curr_new_zealand_dollar")+"',   'NZD','554',false,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'$','"+map.get("curr_new_zealand_dollar")+"',   'NZD','554',false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'р.', '"+map.get("curr_russian_rouble")+"',       'RUB','643',false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'£',  '"+map.get("curr_pound_sterling")+"',       'GBP','826',false,false);";
         try{

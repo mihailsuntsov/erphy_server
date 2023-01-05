@@ -30,8 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.text.ParseException;
@@ -206,19 +206,6 @@ public class SpravTypePricesController {
             return new ResponseEntity<>("Restore error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-
-    @PostMapping("/api/auth/getPriceTypesList")//возвращает список отделений предприятия по его id
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getPriceTypesList(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path api/auth/getPriceTypesList: " + searchRequest.toString());
-
-        int companyId=Integer.parseInt(searchRequest.getCompanyId());
-        List<PriceTypesListJSON> priceTypesList;
-        priceTypesList = typePricesRepositoryJPA.getPriceTypesList(companyId);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(priceTypesList, HttpStatus.OK);
-        return responseEntity;
-    }
-
     @PostMapping("/api/auth/setDefaultPriceType")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> setDefaultPriceType(@RequestBody UniversalForm request){
@@ -230,5 +217,14 @@ public class SpravTypePricesController {
             return responseEntity;
         }
     }
-
+    @RequestMapping(
+            value = "/api/auth/getPriceTypesList",
+            params = {"companyId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPriceTypesList( @RequestParam("companyId") Long companyId) {
+        logger.info("Processing get request for path /api/auth/getPriceTypesList with companyId=" + companyId.toString());
+        try {return new ResponseEntity<>(typePricesRepositoryJPA.getPriceTypesList(companyId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getPriceTypesList error with companyId=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

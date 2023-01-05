@@ -29,6 +29,24 @@ public class TemplatesListJSON {
     private int     document_id;
     private Boolean is_show;
     private int     output_order;
+    private String  type;
+    private Integer num_labels_in_row;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getNum_labels_in_row() {
+        return num_labels_in_row;
+    }
+
+    public void setNum_labels_in_row(Integer num_labels_in_row) {
+        this.num_labels_in_row = num_labels_in_row;
+    }
 
     public int getDocument_id() {
         return document_id;
