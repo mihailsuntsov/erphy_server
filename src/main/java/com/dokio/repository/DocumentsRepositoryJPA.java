@@ -121,19 +121,18 @@ public class DocumentsRepositoryJPA {
         int i = 0;
         for (BaseFiles bf : baseFilesList){
             if(!Objects.isNull(bf.getDocId())){
-                insertingRows.add((i==1?", ":"") + "("+masterId+", "+companyId+", "+bf.getFileId()+", "+bf.getDocId()+", true, "+(i+1)+", '"+bf.getMenuName()+"', "+userId+")");
+                insertingRows.add((i>0?", ":"") + "("+masterId+", "+companyId+", "+bf.getFileId()+", "+bf.getDocId()+", true, "+(i+1)+", '"+bf.getMenuName()+"', "+userId+", '"+bf.getType()+"', "+bf.getNum_labels_in_row()+")");
             }
             i++;
         }
         if(insertingRows.size()>0){
             String stringQuery =
                     " insert into template_docs " +
-                    " (master_id, company_id, file_id, document_id, is_show, output_order, name, user_id)" +
+                    " (master_id, company_id, file_id, document_id, is_show, output_order, name, user_id, type, num_labels_in_row)" +
                     " values ";
             for(String row : insertingRows){
                 stringQuery = stringQuery + row;
             }
-
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();

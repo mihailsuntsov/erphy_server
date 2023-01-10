@@ -426,8 +426,8 @@ public class SpravCurrenciesRepository {
     public Integer setDefaultCurrency(UniversalForm request) {// id : предприятие, id3 : id документа
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
-        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getId());//предприятие для создаваемого документа
-        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getId());//предприятие для редактируемого документа
+        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия редактируемого документа.
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         if ((   //если есть право на редактирование по всем предприятиям, или
                 (securityRepositoryJPA.userHasPermissions_OR(51L, "651")) ||

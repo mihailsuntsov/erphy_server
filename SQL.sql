@@ -4079,10 +4079,14 @@ alter table template_docs add column num_labels_in_row int; -- quantity of label
 update template_docs set type='document';
 alter table template_docs alter column type set not null;
 alter table products add column label_description varchar(2048);
-
-
-
-
+insert into _dictionary (key, tr_ru, tr_en) values
+('pricetag',             'Ценник',                       'Price tag');
+alter table products add column description_html varchar(16384);
+alter table products add column short_description_html varchar(3000);
+alter table products add column description_type varchar(6); -- editor / custom
+alter table products add column short_description_type varchar(6); -- editor / custom
+alter table file_filecategories alter column category_id TYPE bigint USING category_id::bigint;
+alter table sprav_sys_edizm add column is_default boolean;
 
 
 

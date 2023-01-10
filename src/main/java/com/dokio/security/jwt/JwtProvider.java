@@ -40,7 +40,8 @@ public class JwtProvider {
     @Value("$(jwt.secret)")
     private String jwtSecret;
 
-    @Value("86400")
+//    @Value("86400")
+    @Value("60")
     private int jwtExpiration;
 
     public String generateJwtToken(Authentication authentication) {

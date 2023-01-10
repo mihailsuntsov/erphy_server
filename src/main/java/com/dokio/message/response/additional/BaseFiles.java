@@ -23,13 +23,33 @@ public class BaseFiles {
     private String menuName;
     private Integer docId;
     private Long fileId;
+    private String type; // the type of template/ Can be: "document", "label"
+    private Integer num_labels_in_row; // quantity of labels in the each row (if type='label'), else = null
 
-    public BaseFiles(String filePath, String fileName, String menuName, Integer docId, Long fileId) {
+    public BaseFiles(String filePath, String fileName, String menuName, Integer docId, Long fileId, String type, Integer num_labels_in_row) {
         this.filePath = filePath;
         this.fileName = fileName;
         this.menuName = menuName;
         this.docId = docId;
         this.fileId = fileId;
+        this.type = type;
+        this.num_labels_in_row = num_labels_in_row;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Integer getNum_labels_in_row() {
+        return num_labels_in_row;
+    }
+
+    public void setNum_labels_in_row(Integer num_labels_in_row) {
+        this.num_labels_in_row = num_labels_in_row;
     }
 
     public String getFileName() {

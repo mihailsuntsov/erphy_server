@@ -93,6 +93,42 @@ public class ProductsForm {
     private List<ProductProductAttributeForm> productAttributes;
     private Boolean outofstock_aftersale; //auto set product as out-of-stock after it has been sold
     private String label_description;
+    private String          description_html;       // custom HTML full description
+    private String          short_description_html; // custom HTML short description
+    private String          description_type;       // "editor" or "custom"
+    private String          short_description_type; // "editor" or "custom"
+
+    public String getDescription_html() {
+        return description_html;
+    }
+
+    public void setDescription_html(String description_html) {
+        this.description_html = description_html;
+    }
+
+    public String getShort_description_html() {
+        return short_description_html;
+    }
+
+    public void setShort_description_html(String short_description_html) {
+        this.short_description_html = short_description_html;
+    }
+
+    public String getDescription_type() {
+        return description_type;
+    }
+
+    public void setDescription_type(String description_type) {
+        this.description_type = description_type;
+    }
+
+    public String getShort_description_type() {
+        return short_description_type;
+    }
+
+    public void setShort_description_type(String short_description_type) {
+        this.short_description_type = short_description_type;
+    }
 
     public String getLabel_description() {
         return label_description;

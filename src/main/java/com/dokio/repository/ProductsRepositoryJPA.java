@@ -45,8 +45,8 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
+//import java.text.DecimalFormatSymbols;
+//import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -304,7 +304,11 @@ public class ProductsRepositoryJPA {
 //                    "           array_to_string(array(select child_id from product_crosssell where master_id=" + myMasterId +" and product_id="+id+"),',', '*') as crosssell_ids " +
                     "           coalesce(p.low_stock_threshold, 0) as low_stock_threshold"  + ", " +
                     "           coalesce(p.outofstock_aftersale,false) as outofstock_aftersale, " + // auto set product as out-of-stock after it has been sold
-                    "           coalesce(p.label_description,'') as label_description" +
+                    "           coalesce(p.label_description,'') as label_description," +
+                    "           coalesce(p.description_html,'') as description_html, " +  // custom HTML description
+                    "           coalesce(p.short_description_html,'') as short_description_html, " +  // custom HTML short description
+                    "           coalesce(p.description_type,'editor') as description_type, " + // "editor" or "custom"
+                    "           coalesce(p.short_description_type,'editor') as short_description_type " + // "editor" or "custom"
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -387,6 +391,10 @@ public class ProductsRepositoryJPA {
                     doc.setLow_stock_threshold((BigDecimal)         queryList.get(0)[60]);
                     doc.setOutofstock_aftersale((Boolean)           queryList.get(0)[61]);
                     doc.setLabel_description((String)               queryList.get(0)[62]);
+                    doc.setDescription_html((String)                queryList.get(0)[63]);
+                    doc.setShort_description_html((String)          queryList.get(0)[64]);
+                    doc.setDescription_type((String)                queryList.get(0)[65]);
+                    doc.setShort_description_type((String)          queryList.get(0)[66]);
                 }
                 return doc;
             } catch (NoResultException nre) {
@@ -692,7 +700,14 @@ public class ProductsRepositoryJPA {
                     " date_on_sale_to_gmt = "+((!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))?("to_timestamp(:date_on_sale_to_gmt,'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'GMT' at time zone '"+myTimeZone+"'"):"null")+","+
                     " low_stock_threshold = "+ ((request.getLow_stock_threshold() != null && !request.getLow_stock_threshold().isEmpty() && request.getLow_stock_threshold().trim().length() > 0)?(new BigDecimal(request.getLow_stock_threshold().replace(",", "."))):(new BigDecimal("0"))) +"," +
                     " outofstock_aftersale = " + request.getOutofstock_aftersale() + "," + // auto set product as out-of-stock after it has been sold
-                    " label_description = :label_description "+
+                    " label_description = :label_description, "+
+                    " description_html = :description_html, "+
+                    " short_description_html = :short_description_html, "+
+                    " description_type = :description_type, "+
+                    " short_description_type = :short_description_type "+
+
+
+
                     " where master_id = " + myMasterId + " and id = " + request.getId();
 
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -710,6 +725,11 @@ public class ProductsRepositoryJPA {
                 query.setParameter("shipping_class", (request.getShipping_class() == null ? "" : request.getShipping_class()));
                 query.setParameter("purchase_note", (request.getPurchase_note() == null ? "" : request.getPurchase_note()));
                 query.setParameter("label_description", (request.getLabel_description() == null ? "" : request.getLabel_description()));
+                query.setParameter("description_html", (request.getDescription_html() == null ? "" : request.getDescription_html()));
+                query.setParameter("short_description_html", (request.getShort_description_html() == null ? "" : request.getShort_description_html()));
+                query.setParameter("description_type", (request.getDescription_type() == null ? "editor" : request.getDescription_type()));
+                query.setParameter("short_description_type", (request.getShort_description_type() == null ? "editor" : request.getShort_description_type()));
+
                 if(!Objects.isNull(request.getDate_on_sale_from_gmt())&&!request.getDate_on_sale_from_gmt().equals(""))
                     query.setParameter("date_on_sale_from_gmt", request.getDate_on_sale_from_gmt()+" 00:00:00.000");
                 if(!Objects.isNull(request.getDate_on_sale_to_gmt())&&!request.getDate_on_sale_to_gmt().equals(""))

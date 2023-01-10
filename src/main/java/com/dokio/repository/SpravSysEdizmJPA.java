@@ -23,6 +23,7 @@ import com.dokio.message.request.UniversalForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.SpravSysEdizmJSON;
 import com.dokio.message.response.Sprav.SpravSysEdizmTableJSON;
+import com.dokio.model.Companies;
 import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -98,6 +99,7 @@ public class SpravSysEdizmJPA {
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.short_name as short_name, " +
+                    "           p.is_default as is_default, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from sprav_sys_edizm p " +
@@ -387,7 +389,8 @@ public class SpravSysEdizmJPA {
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +
-                    "           p.short_name as short_name " +
+                    "           p.short_name as short_name, " +
+                    "           p.is_default as is_default" +
                     "           from sprav_sys_edizm p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -396,14 +399,39 @@ public class SpravSysEdizmJPA {
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.company_id="+ request.getId1() +
-//                    "           and p.type_id in "+ request.getString1()+ " order by p.id asc";
                     "           and p.type_id in ("+ request.getString1().replaceAll("[^0-9\\,]", "")+ ") order by p.id asc";
 
             Query query = entityManager.createNativeQuery(stringQuery, SpravSysEdizmTableJSON.class);
             return query.getResultList();
 //        } else return null;
     }
-
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer setDefaultEdizm(Long edizm_id, Long company_id) {
+        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        if ((   //если есть право на редактирование по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(11L, "124")) ||
+                //если есть право на редактирование по всем отделениям своего предприятия, и предприятие документа своё, и
+                (securityRepositoryJPA.userHasPermissions_OR(11L, "125") && myCompanyId.equals(company_id))) &&
+                //редактируется документ предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
+                securityRepositoryJPA.isItAllMyMastersDocuments("sprav_sys_edizm", edizm_id.toString()))
+        {
+            try{
+                String stringQuery;
+                stringQuery =   " update sprav_sys_edizm set is_default=(" +
+                        " case when (id="+edizm_id+") then true else false end) " +
+                        " where " +
+                        " company_id= "+company_id + " and master_id = " + myMasterId;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
 
     // inserting base set of units of measurement of new user
     // Types oа UoM 1 - object, 2 - mass, 3 - length, 4 - area, 5 - volume
@@ -416,17 +444,17 @@ public class SpravSysEdizmJPA {
                 "'um_piece'","'um_piece_s'","'um_uncountable'","'um_gramm'","'um_ton'","'um_meter'","'um_centimeter'","'um_litre'"
                 ,"'um_cubic_meter'","'um_square_meter'","'um_kilogramm'","'um_kilogramm_s'","'um_gramm_s'","'um_ton_s'","'um_meter_s'"
                 ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'"});
-        stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si) values "+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_kilogramm")+"','"+map.get("um_kilogramm_s")+"',2,1),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_gramm")+"','"+map.get("um_gramm_s")+"',2,0.001),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_ton")+"','"+map.get("um_ton_s")+"',2,1000),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_meter")+"','"+map.get("um_meter_s")+"',3,1),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1);";
+        stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si,is_default) values "+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1,true),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_kilogramm")+"','"+map.get("um_kilogramm_s")+"',2,1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_gramm")+"','"+map.get("um_gramm_s")+"',2,0.001,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_ton")+"','"+map.get("um_ton_s")+"',2,1000,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_meter")+"','"+map.get("um_meter_s")+"',3,1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

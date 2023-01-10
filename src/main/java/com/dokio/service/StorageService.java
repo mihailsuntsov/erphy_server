@@ -292,8 +292,8 @@ public class StorageService {
                     MultipartFile multipartFile = new CommonsMultipartFile(fileItem);
                     Long fileId = store(multipartFile, companyId, false, categoryId, "", masterId, userId, true);
                     //Returned list contains: [String filePath, String menuName, int docId, Long fileId]
-                    //Returned list forming only for template files (they have docId, in which type of document's menu they will be used)
-                    if(!Objects.isNull(baseFile.getDocId())) retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), fileId));
+                    //Returned list forming only for template files. They have docId (in which type of document's menu they will be used) and type - "label" or "document")
+                    if(!Objects.isNull(baseFile.getDocId())) retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), fileId,baseFile.getType(), baseFile.getNum_labels_in_row()));
                 } else logger.error("Method: copyFilesFromPathToCompany. Error: There is no file in path = " + baseFile.getFilePath());
             }
         }

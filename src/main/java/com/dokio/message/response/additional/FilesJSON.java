@@ -59,7 +59,7 @@ public class FilesJSON {
 //    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
 //    private Timestamp date_time_changed;
     @ElementCollection(fetch = FetchType.LAZY)
-    private List<Integer> file_categories_id;
+    private List<Long> file_categories_id;
 
     public Long getId() {
         return id;
@@ -213,27 +213,11 @@ public class FilesJSON {
         this.date_time_changed = date_time_changed;
     }
 
-//    public Timestamp getDate_time_created() {
-//        return date_time_created;
-//    }
-//
-//    public void setDate_time_created(Timestamp date_time_created) {
-//        this.date_time_created = date_time_created;
-//    }
-//
-//    public Timestamp getDate_time_changed() {
-//        return date_time_changed;
-//    }
-//
-//    public void setDate_time_changed(Timestamp date_time_changed) {
-//        this.date_time_changed = date_time_changed;
-//    }
-
-    public List<Integer> getFile_categories_id() {
+    public List<Long> getFile_categories_id() {
         return file_categories_id;
     }
 
-    public void setFile_categories_id(List<Integer> file_categories_id) {
+    public void setFile_categories_id(List<Long> file_categories_id) {
         this.file_categories_id = file_categories_id;
     }
 }

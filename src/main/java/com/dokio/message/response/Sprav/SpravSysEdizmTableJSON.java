@@ -33,6 +33,15 @@ public class SpravSysEdizmTableJSON {
     private String changer;
     private String date_time_created;
     private String date_time_changed;
+    private Boolean is_default;
+
+    public Boolean getIs_default() {
+        return is_default;
+    }
+
+    public void setIs_default(Boolean is_default) {
+        this.is_default = is_default;
+    }
 
     public Long getId() {
         return id;

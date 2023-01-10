@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -581,11 +582,13 @@ public class FileRepositoryJPA {
     }
 
     //права не нужны т.к. не вызывается по API, только из контроллера
-    public List<Integer> getFilesCategoriesIdsByFileId(Long id) {
+    public List<Long> getFilesCategoriesIdsByFileId(Long id) {
         String stringQuery="select p.category_id from file_filecategories p where p.file_id= "+id;
         Query query = entityManager.createNativeQuery(stringQuery);
-        List<Integer> depIds = query.getResultList();
-        return depIds;
+        List<BigInteger> queryList = query.getResultList();
+        List<Long> returnList = new ArrayList<>();
+        for (BigInteger obj : queryList) {returnList.add(Long.parseLong(obj.toString()));}
+        return returnList;
     }
 
     //права не нужны т.к. не вызывается по API, только из контроллера
@@ -798,7 +801,7 @@ public class FileRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public boolean deleteFileCategory(FileCategoriesForm request)
     {
-        if(securityRepositoryJPA.userHasPermissions_OR(13L, "158,159"))//"Группы товаров" редактирование своих или чужих предприятий (в пределах род. аккаунта разумеется)
+        if(securityRepositoryJPA.userHasPermissions_OR(13L, "158,159"))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
@@ -849,7 +852,7 @@ public class FileRepositoryJPA {
                         stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
                     }
                     Query query = entityManager.createNativeQuery(stringQuery);
-                    int i = query.executeUpdate();
+                    query.executeUpdate();
                 }
                 return true;
             }
@@ -859,6 +862,108 @@ public class FileRepositoryJPA {
                 return false;
             }
         } else return false;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean setCategoriesToFiles(Set<Long> filesIds, Set<Long> categoriesIds, Boolean save) {
+        if(securityRepositoryJPA.userHasPermissions_OR(13L,"152,153"))//  "Редактирование файлов"
+        {
+            try {
+                String files = commonUtilites.SetOfLongToString(filesIds, ",", "", "");
+                //поверка на то, что присланные id файлов действительно являются файлами мастер-аккаунта
+                if (securityRepositoryJPA.isItAllMyMastersDocuments("files", files)) {
+                    if (!save) {//если не нужно сохранять те категории у файла, которые уже есть
+                        //удаляем все категории у всех запрашиваемых файлов
+                        if (deleteAllFilesCategories(files)) {
+                            //назначаем файлам категории
+                            if(setCategoriesToFiles(filesIds,categoriesIds))
+                                return true;
+                            else return null; // ошибка на прописывании категорий у файла
+                        } else return null; // ошибка на стадии удаления категорий файлов в deleteAllFilesCategories
+                    } else {//нужно сохранить предыдущие категории у файлов. Тут уже сложнее - нужно отдельно работать с каждым файлом
+                        //цикл по файлам
+                        for (Long p : filesIds) {
+                            //получим уже имеющиеся категории у текущего файла
+                            Set<Long> fileCategoriesIds = new HashSet<>();
+                            fileCategoriesIds.addAll(getFilesCategoriesIdsByFileId(p));
+                            //дополним их новыми категориями
+                            fileCategoriesIds.addAll(categoriesIds);
+                            //удалим старые категории
+                            if (deleteAllFilesCategories(p.toString())) {
+                                Set<Long> prod = new HashSet<>();
+                                prod.add(p);
+                                //назначаем текущему файлу категории
+                                if(!setCategoriesToFiles(prod,fileCategoriesIds))
+                                    return null; // ошибка на прописывании категорий у файла
+                            } else return null; // ошибка на стадии удаления категорий текущего файла в deleteAllFilesCategories
+                        }
+                        return true;
+                    }
+                } else return null; // не прошли по безопасности - подсунуты "левые" id файлов
+            } catch (Exception e) {
+                logger.error("Exception in method setCategoriesToFiles", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return null; // не прошли по безопасности
+    }
+
+    private Boolean setCategoriesToFiles(Set<Long> filesIds, Set<Long> categoriesIds) throws Exception {
+        if(categoriesIds.size()>0) {//если категории есть
+            //прописываем их у всех запрашиваемых файлов
+            StringBuilder stringQuery = new StringBuilder("insert into file_filecategories (file_id, category_id) values ");
+            int i = 0;
+            for (Long p : filesIds) {
+                for (Long c : categoriesIds) {
+                    stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
+                    i++;
+                }
+            }
+            try {
+                entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
+                return true;
+            } catch (Exception e) {
+                logger.error("Exception in method setCategoriesToFiles. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
+        } else return true;
+    }
+
+    private Boolean deleteAllFilesCategories(String files) throws Exception {
+        String stringQuery = "delete from file_filecategories where file_id in("+files.replaceAll("[^0-9\\,]", "")+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAllFilesCategories. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean setFilesExternalAccess(Set<Long> filesIds, Boolean access) {
+        if(securityRepositoryJPA.userHasPermissions_OR(13L,"152,153"))//  "Редактирование файлов "
+        {
+            try {
+                String files = commonUtilites.SetOfLongToString(filesIds, ",", "", "");
+                //поверка на то, что присланные id файлов действительно являются файлами мастер-аккаунта
+                if (securityRepositoryJPA.isItAllMyMastersDocuments("files", files)) {
+                    String stringQuery =  "update files set anonyme_access = " + access + " where id in ("+files+")";
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    query.executeUpdate();
+                } else return null; // не прошли по безопасности - подсунуты "левые" id файлов
+            } catch (Exception e) {
+                logger.error("Exception in method setFilesExternalAccess", e);
+                e.printStackTrace();
+                return null;
+            }
+            return true;
+        } else return null; // не прошли по безопасности
     }
 
     // inserting base set of categories of new user
@@ -889,17 +994,19 @@ public class FileRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public List<BaseFiles> insertBaseFilesFast(Long mId, Long uId, Long cId, Long catgId) {
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'","'pricetag'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
         List<BaseFiles> filePaths = new ArrayList<>();
 //      List of :               [String filePath, String menuName, int docId, Long fileId (null)]
 //      Returned list contains: [String filePath, String menuName, int docId, Long fileId]
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg",map.get("logo")+".jpg","", null,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png",map.get("signature")+"1.png","", null,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"2.png",map.get("signature")+"2.png","", null,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png","",map.get("stamp")+".png", null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document",null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null, "document",null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg",map.get("logo")+".jpg","", null,null, null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png",map.get("signature")+"1.png","", null,null, null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"2.png",map.get("signature")+"2.png","", null,null, null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png","",map.get("stamp")+".png", null,null, null,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm", 14,null, "label",5));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm", 14,null, "label",3));
         return storageService.copyFilesFromPathToCompany(filePaths,cId,catgId, mId, uId);
     }
 
@@ -908,8 +1015,10 @@ public class FileRepositoryJPA {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
         List<BaseFiles> filePaths = new ArrayList<>();
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document", null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null, "document", null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm", 14,null, "label", 5));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm", 14,null, "label", 3));
         return filePaths;
     }
 
@@ -926,7 +1035,7 @@ public class FileRepositoryJPA {
                 for (BaseFiles baseFile : baseFilesList) {
                     for (Object[] obj : queryList) {
                         if (baseFile.getFileName().equals(obj[1]) && (retList.size() == 0 || retList.stream().noneMatch(o -> o.getFileName().equals(obj[1]))))
-                            retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), Long.parseLong(obj[0].toString())));
+                            retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), Long.parseLong(obj[0].toString()),null,null));
                     }
                 }
             return retList;

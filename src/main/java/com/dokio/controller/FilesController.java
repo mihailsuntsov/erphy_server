@@ -39,6 +39,8 @@ import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -199,7 +201,7 @@ public class FilesController {
 
     @PostMapping("/api/auth/getFileValues")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getTypePricesValuesById(@RequestBody SearchForm request) {
+    public ResponseEntity<?> getFileValues(@RequestBody SearchForm request) {
         logger.info("Processing post request for path /api/auth/getFileValues: " + request.toString());
 
         FilesJSON response;
@@ -207,7 +209,7 @@ public class FilesController {
         response=filesRepositoryJPA.getFileValues(id);//результат запроса помещается в экземпляр класса
         try
         {
-            List<Integer> valuesListId =filesRepositoryJPA.getFilesCategoriesIdsByFileId(Long.valueOf(id));
+            List<Long> valuesListId =filesRepositoryJPA.getFilesCategoriesIdsByFileId(Long.valueOf(id));
             response.setFile_categories_id(valuesListId);
 
             ResponseEntity<FilesJSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
@@ -340,22 +342,43 @@ public class FilesController {
 //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************
-    @PostMapping("/api/auth/getFileCategoriesTrees")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getFileCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
-        logger.info("Processing post request for path /api/auth/getFileCategoriesTrees: " + request.toString());
+//    @PostMapping("/api/auth/getFileCategoriesTrees")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> getFileCategoriesTrees(@RequestBody SearchForm request) throws ParseException {
+//        logger.info("Processing post request for path /api/auth/getFileCategoriesTrees: " + request.toString());
+//
+//        List<FileCategories> returnList;
+//        List<Integer> categoriesRootIds = filesRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
+//        try {
+//            returnList = filesRepositoryJPA.getFileCategoriesTrees(categoriesRootIds);
+//            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
+//            return responseEntity;
+//        } catch (Exception e){
+//            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+//            return responseEntity;
+//        }
+//    }
 
+
+    @RequestMapping(
+            value = "/api/auth/getFileCategoriesTrees",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getFileCategoriesTrees( @RequestParam("company_id") Long companyId) {
+        logger.info("Processing get request for path /api/auth/getFileCategoriesTrees with fileId=" + companyId.toString());
         List<FileCategories> returnList;
-        List<Integer> categoriesRootIds = filesRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
+        List<Integer> categoriesRootIds = filesRepositoryJPA.getCategoriesRootIds(companyId);//
         try {
             returnList = filesRepositoryJPA.getFileCategoriesTrees(categoriesRootIds);
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
-        } catch (Exception e){
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
-            return responseEntity;
         }
+        catch (Exception e){e.printStackTrace();logger.error("Controller getFileCategoriesTrees error with companyId=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+
 
     @PostMapping("/api/auth/getRootFileCategories")
     @SuppressWarnings("Duplicates")
@@ -467,6 +490,22 @@ public class FilesController {
         }
     }
 
+    @PostMapping("/api/auth/setCategoriesToFiles")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setCategoriesToFiles(@RequestBody UniversalForm form) {
+        logger.info("Processing post request for path api/auth/setCategoriesToFiles: " + form.toString());
+
+        Set<Long> filesIds = form.getSetOfLongs1();
+        Set<Long> categoriesIds = form.getSetOfLongs2();
+        Boolean save = form.getYesNo();
+
+        Boolean result = filesRepositoryJPA.setCategoriesToFiles(filesIds, categoriesIds, save);
+        if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error assigning categories to files!", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @RequestMapping(
             value = "/api/auth/getImageFileInfo",
@@ -479,5 +518,17 @@ public class FilesController {
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-
+    @PostMapping("/api/auth/setFilesExternalAccess")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setFilesExternalAccess(@RequestBody UniversalForm form) {
+        logger.info("Processing post request for path api/auth/setFilesExternalAccess: " + form.toString());
+        Set<Long> filesIds = form.getSetOfLongs1();
+        Boolean access = form.getYesNo();
+        Boolean result = filesRepositoryJPA.setFilesExternalAccess(filesIds, access);
+        if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error assigning external access to files!", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

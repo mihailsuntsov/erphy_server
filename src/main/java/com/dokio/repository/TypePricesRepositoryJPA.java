@@ -392,8 +392,6 @@ public class TypePricesRepositoryJPA {
         } else return -1;
     }
 
-
-
     @SuppressWarnings("Duplicates")
     public List<PriceTypesListJSON> getPriceTypesList(Long companyId) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());

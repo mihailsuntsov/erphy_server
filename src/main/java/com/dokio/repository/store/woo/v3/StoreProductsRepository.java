@@ -98,7 +98,11 @@ public class StoreProductsRepository {
                         " p.manage_stock as manage_stock, " +
                         " p.purchase_note as purchase_note, " +
                         " p.menu_order as menu_order, " +
-                        " p.reviews_allowed as reviews_allowed " +
+                        " p.reviews_allowed as reviews_allowed, " +
+                        " coalesce(p.description_type, 'editor') as description_type, " + // "editor" or "custom"
+                        " coalesce(p.short_description_type, 'editor') as short_description_type, " + // "editor" or "custom"
+                        " coalesce(p.description_html, '') as description_html, " +
+                        " coalesce(p.short_description_html, '') as short_description_html " +
                         " from products p  " +
                         " inner join companies c on c.id = p.company_id  " +
                         " left outer join product_prices ppr on ppr.product_id = p.id and ppr.price_type_id = c.store_price_type_regular " +
@@ -129,8 +133,8 @@ public class StoreProductsRepository {
                 doc.setWoo_id((Integer)                             obj[1]);
                 doc.setName((String)                                obj[2]);
                 doc.setType((String)                                obj[3]);
-                doc.setDescription((String)                         obj[4]);
-                doc.setShort_description((String)                   obj[5]);
+                doc.setDescription(((String)obj[16]).equals("editor")?((String)obj[4]):((String)obj[18]));
+                doc.setShort_description(((String)obj[17]).equals("editor")?((String)obj[5]):((String)obj[19]));
                 doc.setRegular_price(                               Objects.isNull(obj[6])?"":obj[6].toString());
                 doc.setSale_price(                                  getSalePrice((BigDecimal)obj[6],(BigDecimal)obj[7]));
                 doc.setImages(                                      getSetOfProductImages(Long.parseLong(obj[0].toString()),companyId));

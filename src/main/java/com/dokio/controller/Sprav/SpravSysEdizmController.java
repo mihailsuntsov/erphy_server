@@ -30,10 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +57,6 @@ public class SpravSysEdizmController {
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать / 0 - по всем
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
@@ -101,10 +98,8 @@ public class SpravSysEdizmController {
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
         int companyId;//по какому предприятию показывать документы/ 0 - по всем
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
         companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -116,7 +111,6 @@ public class SpravSysEdizmController {
             offset = 0;}
         pagenum = offset + 1;
         int size = spravSysEdizmRepositoryJPA.getSpravSysEdizmSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -162,6 +156,17 @@ public class SpravSysEdizmController {
         return responseEntity;
     }
 
+    @RequestMapping(
+            value = "/api/auth/setDefaultEdizm",
+            params = {"edizm_id", "company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> setDefaultEdizm( @RequestParam("company_id") Long company_id, @RequestParam("edizm_id") Long edizm_id) {
+        logger.info("Processing get request for path /api/auth/setDefaultEdizm with edizm_id=" + edizm_id.toString() + ", company_id = " + company_id);
+        try {return new ResponseEntity<>(spravSysEdizmRepositoryJPA.setDefaultEdizm(edizm_id,company_id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setDefaultEdizm error with edizm_id=" + edizm_id.toString() + ", company_id = " + company_id, e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     @PostMapping("/api/auth/getSpravSysEdizmValuesById")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getSpravSysEdizmValuesById(@RequestBody SearchForm request) {
@@ -175,7 +180,7 @@ public class SpravSysEdizmController {
     }
     @PostMapping("/api/auth/insertSpravSysEdizm")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> insertSpravSysEdizm(@RequestBody SpravSysEdizmForm request) throws ParseException {
+    public ResponseEntity<?> insertSpravSysEdizm(@RequestBody SpravSysEdizmForm request){
         logger.info("Processing post request for path /api/auth/insertSpravSysEdizm: " + request.toString());
 
         Long newDocument = spravSysEdizmRepositoryJPA.insertSpravSysEdizm(request);
@@ -183,20 +188,20 @@ public class SpravSysEdizmController {
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + String.valueOf(newDocument)+"\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when inserting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
     @PostMapping("/api/auth/updateSpravSysEdizm")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateSpravSysEdizm(@RequestBody SpravSysEdizmForm request) throws ParseException{
+    public ResponseEntity<?> updateSpravSysEdizm(@RequestBody SpravSysEdizmForm request){
         logger.info("Processing post request for path /api/auth/updateSpravSysEdizm: " + request.toString());
 
         if(spravSysEdizmRepositoryJPA.updateSpravSysEdizm(request)){
             ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
             return responseEntity;
         } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
@@ -228,7 +233,7 @@ public class SpravSysEdizmController {
             return responseEntity;
         } catch (Exception e){
             e.printStackTrace();
-            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.BAD_REQUEST);
+            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);
             return responseEntity;
         }
     }
