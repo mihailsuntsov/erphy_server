@@ -1012,7 +1012,7 @@ public class FileRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public List<BaseFiles> assemblyBaseFilesList(Long mId) {
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'f_with_stamp_sign'","'pricetag'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
         List<BaseFiles> filePaths = new ArrayList<>();
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document", null));
@@ -1035,7 +1035,7 @@ public class FileRepositoryJPA {
                 for (BaseFiles baseFile : baseFilesList) {
                     for (Object[] obj : queryList) {
                         if (baseFile.getFileName().equals(obj[1]) && (retList.size() == 0 || retList.stream().noneMatch(o -> o.getFileName().equals(obj[1]))))
-                            retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), Long.parseLong(obj[0].toString()),null,null));
+                            retList.add(new BaseFiles(baseFile.getFilePath(), baseFile.getFileName(), baseFile.getMenuName(), baseFile.getDocId(), Long.parseLong(obj[0].toString()),baseFile.getType(),baseFile.getNum_labels_in_row()));
                     }
                 }
             return retList;

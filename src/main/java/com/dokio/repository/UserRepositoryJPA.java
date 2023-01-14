@@ -935,7 +935,8 @@ public class UserRepositoryJPA {
                 "   (select count(*) from departments   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as departments," +
                 "   (select count(*) from users         where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as users," +
                 "   (select count(*) from products      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as products," +
-                "   (select count(*) from cagents       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties";
+                "   (select count(*) from cagents       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties," +
+                "   (select count(*) from companies     where master_id="+myMasterId+" and coalesce(is_store  ,false)=true ) as stores";
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserResources doc = new UserResources();
@@ -945,6 +946,7 @@ public class UserRepositoryJPA {
             doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString()));
             doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
             doc.setMegabytes(Math.round(size/1024/1024));
+            doc.setStores(Long.parseLong(                   queryList.get(0)[5].toString()));
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
@@ -965,22 +967,26 @@ public class UserRepositoryJPA {
                             " sum(users) as users, " +
                             " sum(products) as products, " +
                             " sum(counterparties) as counterparties, " +
-                            " sum(megabytes) as megabytes " +
+                            " sum(megabytes) as megabytes, " +
+                            " sum(stores) as stores " +
                             " from (" +
                             "(select n_companies as companies, " +
                             " n_departments as departments, " +
                             " n_users as users, " +
                             " n_products as products, " +
                             " n_counterparties as counterparties, " +
-                            " n_megabytes as megabytes " +
+                            " n_megabytes as megabytes, " +
+                            " n_stores as stores " +
                             " from plans " +
                             " where id = "+plan_id+")" +
                             " UNION " +
-                            " (select n_companies as companies, " +
+                            " (select " +
+                            " n_companies as companies, " +
                             " n_departments as departments, n_users as users, " +
                             " n_products as products, " +
                             " n_counterparties as counterparties, " +
-                            " n_megabytes as megabytes " +
+                            " n_megabytes as megabytes, " +
+                            " n_stores as stores " +
                             " from plans_add_options " +
                             " where user_id="+myMasterId+")" +
                             ") AS result ";
@@ -993,6 +999,7 @@ public class UserRepositoryJPA {
             doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString()));
             doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
             doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString()));
+            doc.setStores(        Long.parseLong(           queryList.get(0)[6].toString()));
             return doc;
         } catch (Exception e) {
             e.printStackTrace();

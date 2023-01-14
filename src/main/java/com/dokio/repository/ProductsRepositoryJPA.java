@@ -69,8 +69,8 @@ public class ProductsRepositoryJPA {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
-    @Autowired
-    private StoreProductsRepository storeProductsRepository;
+//    @Autowired
+//    private StoreProductsRepository storeProductsRepository;
     @Autowired
     private CommonUtilites commonUtilites;
     @Autowired
@@ -127,7 +127,7 @@ public class ProductsRepositoryJPA {
                     "           cmp.name as company, " +
                     "           to_char(p.date_time_created at time zone '" + myTimeZone + "', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                    "           p.description as description, " +
+                    "           coalesce(p.label_description,'') as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           coalesce(p.not_buy, false) as not_buy, " +
@@ -151,6 +151,7 @@ public class ProductsRepositoryJPA {
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.label_description) like upper(CONCAT('%',:sg,'%')) or " +
                         "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
                         "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
@@ -204,6 +205,7 @@ public class ProductsRepositoryJPA {
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.label_description) like upper(CONCAT('%',:sg,'%')) or " +
                         "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
                         "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
@@ -3953,6 +3955,8 @@ public class ProductsRepositoryJPA {
 //            formatter.setDecimalFormatSymbols(symbols);
 
             int currentLabelQuantity=1;
+            String priceTagIntDecDelimitter = ".";
+            String priceTagThousandsDelimitter = " ";
             for(Object[] obj:queryList){
                 ProductLabel doc=new ProductLabel();
                 doc.setId(Long.parseLong(                       obj[0].toString()));
@@ -3964,9 +3968,11 @@ public class ProductsRepositoryJPA {
                 doc.setBarcode((String)                         obj[6]);
                 doc.setCurrency((String)                        obj[7]);
                 doc.setShortUnit((String)                       obj[8]);
-                doc.setPriceFull(((BigDecimal)                  obj[9]).toString());
-                doc.setPriceIntegerPart(new DecimalFormat("#,###.##").format(Double.parseDouble(((BigDecimal)           obj[9]).toBigInteger().toString())));
+//                doc.setPriceFull(((BigDecimal)                  obj[9]).toString());
+//                doc.setPriceFull(new DecimalFormat("#,###.00").format(Double.parseDouble(((BigDecimal)obj[9]).toString())).replace(",", "."));
+                doc.setPriceIntegerPart(new DecimalFormat("#,###.##").format(Double.parseDouble(((BigDecimal)obj[9]).toBigInteger().toString())).replace(",", priceTagThousandsDelimitter));
                 doc.setPriceDecimalPart(((BigDecimal)obj[9]).toString().split("\\.")[1]);
+                doc.setPriceFull(doc.getPriceIntegerPart()+priceTagIntDecDelimitter+doc.getPriceDecimalPart());
                 doc.setDate((String)                            obj[10]);
 
                 for(LabelsPrintProduct lpp:labelsPrintProductList){

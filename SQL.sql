@@ -3842,7 +3842,7 @@ update _dictionary set tr_en = 'Purchase order' where key = 'ordersup';
 
 update version set value = '1.0.4-1', date = '28-08-2022';
 ------------------------------------------------  end of 1.0.4  ------------------------------------------------------
------------------------------------------------  start of 1.0.5  -----------------------------------------------------
+-----------------------------------------------  start of 1.1.0  -----------------------------------------------------
 alter table sprav_taxes add column woo_id int;
 
 alter table companies add column is_store boolean;
@@ -4073,7 +4073,8 @@ alter table company_store_departments add constraint company_store_department_uq
 alter table companies add column store_auto_reserve boolean; -- auto reserve product after getting internet store order
 alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
 update version set value = '1.1.0', date = '28-12-2022';
-  ------------------------------------------------  end of 1.1.0  ------------------------------------------------------
+------------------------------------------------  end of 1.1.0  ------------------------------------------------------
+------------------------------------------------  start of 1.1.1  ------------------------------------------------------
 alter table template_docs add column type varchar(8); -- the type of template/ Can be: "document", "label"
 alter table template_docs add column num_labels_in_row int; -- quantity of labels in the each row
 update template_docs set type='document';
@@ -4087,6 +4088,31 @@ alter table products add column description_type varchar(6); -- editor / custom
 alter table products add column short_description_type varchar(6); -- editor / custom
 alter table file_filecategories alter column category_id TYPE bigint USING category_id::bigint;
 alter table sprav_sys_edizm add column is_default boolean;
+create table customers_orders_files (
+                                customers_orders_id bigint not null,
+                                file_id bigint not null,
+                                foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                foreign key (customers_orders_id ) references customers_orders (id) ON DELETE CASCADE
+);
+alter table plans add column n_stores int;
+update plans set n_stores=1 where name_en='No limits';
+update plans set n_stores=0 where name_en='Free';
+alter table plans alter column n_stores set not null;
+alter table plans_add_options add column n_stores int not null;
+alter table plans_add_options add column stores_ppu numeric(10,3);
+alter table plans_add_options alter column companies_ppu TYPE numeric (10,3);
+alter table plans_add_options alter column departments_ppu TYPE numeric (10,3);
+alter table plans_add_options alter column users_ppu TYPE numeric (10,3);
+alter table plans_add_options alter column products_ppu TYPE numeric (10,3);
+alter table plans_add_options alter column counterparties_ppu TYPE numeric (10,3);
+alter table plans_add_options alter column megabytes_ppu TYPE numeric (10,3);
+alter table companies add column store_ip varchar(21);
+update companies set crm_secret_key = null where crm_secret_key='';
+alter table companies add constraint crm_secret_key_uq unique (crm_secret_key);
+-- CREATE UNIQUE INDEX crm_secret_key_uq ON companies (crm_secret_key) WHERE crm_secret_key IS NOT NULL;
+CREATE INDEX crm_secret_key_idx ON companies(crm_secret_key);
+update version set value = '1.1.1', date = '13-01-2023';
+------------------------------------------------  end of 1.1.1  ------------------------------------------------------
 
 
 
@@ -4102,7 +4128,39 @@ alter table sprav_sys_edizm add column is_default boolean;
 
 
 
-WITH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

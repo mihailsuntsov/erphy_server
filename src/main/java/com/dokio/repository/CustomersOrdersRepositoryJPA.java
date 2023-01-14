@@ -1666,22 +1666,20 @@ public class CustomersOrdersRepositoryJPA {
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************
-/* Пока не понятно, нужно ли прицепление файлов к заказу клиента. Если да, то что там вообще может быть?
-   Поэтому блок пока закомментирован и функционал не реализован
 
     @SuppressWarnings("Duplicates")
     @Transactional
     public boolean addFilesToCustomersOrders(UniversalForm request){
-        Long shipmentId = request.getId1();
+        Long customers_ordersId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id докмента принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
-        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",shipmentId.toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"292") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",shipmentId.toString()))||
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта, ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders",customers_ordersId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"292") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",customers_ordersId.toString()))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"293") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",shipmentId.toString()))||
-                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",shipmentId.toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"293") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",customers_ordersId.toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",customers_ordersId.toString())))
         {
             try
             {
@@ -1689,17 +1687,18 @@ public class CustomersOrdersRepositoryJPA {
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
-                    stringQuery = "select shipment_id from shipment_files where shipment_id=" + shipmentId + " and file_id=" + fileId;
+                    stringQuery = "select customers_orders_id from customers_orders_files where customers_orders_id=" + customers_ordersId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
                         entityManager.close();
-                        manyToMany_CustomersOrdersId_FileId(shipmentId,fileId);
+                        manyToMany_CustomersOrdersId_FileId(customers_ordersId,fileId);
                     }
                 }
                 return true;
             }
             catch (Exception ex)
             {
+                logger.error("Exception in method addFilesToCustomersOrders.", ex);
                 ex.printStackTrace();
                 return false;
             }
@@ -1708,30 +1707,32 @@ public class CustomersOrdersRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    boolean manyToMany_CustomersOrdersId_FileId(Long shipmentId, Long fileId){
+    boolean manyToMany_CustomersOrdersId_FileId(Long customers_ordersId, Long fileId){
         try
         {
             entityManager.createNativeQuery(" " +
-                    "insert into shipment_files " +
-                    "(shipment_id,file_id) " +
+                    "insert into customers_orders_files " +
+                    "(customers_orders_id,file_id) " +
                     "values " +
-                    "(" + shipmentId + ", " + fileId +")")
+                    "(" + customers_ordersId + ", " + fileId +")")
                     .executeUpdate();
             entityManager.close();
             return true;
         }
         catch (Exception ex)
         {
+            logger.error("Exception in method manyToMany_CustomersOrdersId_FileId. ", ex);
             ex.printStackTrace();
             return false;
         }
     }
 
     @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
-    public List<FilesCustomersOrdersJSON> getListOfCustomersOrdersFiles(Long shipmentId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288"))//Просмотр документов
+    public List<FilesCustomersOrdersJSON> getListOfCustomersOrdersFiles(Long customers_ordersId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//Просмотр документов
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId();
+            Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
             boolean needToSetParameter_MyDepthsIds = false;
             String stringQuery="select" +
                     "           f.id as id," +
@@ -1739,16 +1740,15 @@ public class CustomersOrdersRepositoryJPA {
                     "           f.name as name," +
                     "           f.original_name as original_name" +
                     "           from" +
-                    "           shipment p" +
+                    "           customers_orders p" +
                     "           inner join" +
-                    "           shipment_files pf" +
-                    "           on p.id=pf.shipment_id" +
+                    "           customers_orders_files pf" +
+                    "           on p.id=pf.customers_orders_id" +
                     "           inner join" +
                     "           files f" +
                     "           on pf.file_id=f.id" +
                     "           where" +
-                    "           p.id= " + shipmentId +
-                    "           and p.master_id=" + myMasterId +
+                    "           p.id= " + customers_ordersId +
                     "           and f.trash is not true"+
                     "           and p.master_id= " + myMasterId;
             if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
@@ -1757,28 +1757,37 @@ public class CustomersOrdersRepositoryJPA {
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
                     if (!securityRepositoryJPA.userHasPermissions_OR(23L, "289")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
             }
             stringQuery = stringQuery+" order by f.original_name asc ";
-            Query query = entityManager.createNativeQuery(stringQuery);
 
-            if(needToSetParameter_MyDepthsIds)
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-            List<Object[]> queryList = query.getResultList();
+                if (needToSetParameter_MyDepthsIds) {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
 
-            List<FilesCustomersOrdersJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                FilesCustomersOrdersJSON doc=new FilesCustomersOrdersJSON();
-                doc.setId(Long.parseLong(                               obj[0].toString()));
-                doc.setDate_time_created((Timestamp)                    obj[1]);
-                doc.setName((String)                                    obj[2]);
-                doc.setOriginal_name((String)                           obj[3]);
-                returnList.add(doc);
+                List<Object[]> queryList = query.getResultList();
+
+                List<FilesCustomersOrdersJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    FilesCustomersOrdersJSON doc = new FilesCustomersOrdersJSON();
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setDate_time_created((Timestamp) obj[1]);
+                    doc.setName((String) obj[2]);
+                    doc.setOriginal_name((String) obj[3]);
+                    returnList.add(doc);
+                }
+                return returnList;
             }
-            return returnList;
+            catch (Exception e) {
+                logger.error("Exception in method getListOfCustomersOrdersFiles. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
         } else return null;
     }
 
@@ -1787,30 +1796,31 @@ public class CustomersOrdersRepositoryJPA {
     public boolean deleteCustomersOrdersFile(SearchForm request)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment", String.valueOf(request.getId()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(23L,"291") && securityRepositoryJPA.isItAllMyMastersDocuments("customers_orders", String.valueOf(request.getAny_id()))) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"292") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",String.valueOf(request.getId())))||
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"292") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("customers_orders",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"293") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",String.valueOf(request.getId())))||
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"293") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("customers_orders",String.valueOf(request.getAny_id())))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",String.valueOf(request.getId()))))
+                (securityRepositoryJPA.userHasPermissions_OR(23L,"294") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("customers_orders",String.valueOf(request.getAny_id()))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
 //            int myCompanyId = userRepositoryJPA.getMyCompanyId();
-            stringQuery  =  " delete from shipment_files "+
-                    " where shipment_id=" + request.getAny_id()+
+            stringQuery  =  " delete from customers_orders_files "+
+                    " where customers_orders_id=" + request.getAny_id()+
                     " and file_id="+request.getId()+
-                    " and (select master_id from shipment where id="+request.getAny_id()+")="+myMasterId ;
+                    " and (select master_id from customers_orders where id="+request.getAny_id()+")="+myMasterId ;
             try
             {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }
             catch (Exception e) {
+                logger.error("Exception in method deleteCustomersOrdersFile. SQL query:" + stringQuery, e);
                 e.printStackTrace();
                 return false;
             }
         } else return false;
-    }*/
+    }
 }

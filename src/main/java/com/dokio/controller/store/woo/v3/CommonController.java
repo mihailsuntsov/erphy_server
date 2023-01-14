@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -21,12 +22,13 @@ public class CommonController {
             value = "/DokioCrmConnectionTest",
             params = {"key"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> DokioCrmConnectionTest(
-            @RequestParam("key") String key){
+    public ResponseEntity<?> DokioCrmConnectionTest(HttpServletRequest httpServletRequest,
+                                                    @RequestParam("key") String key){
         logger.info("Processing get request for path /api/public/woo_v3/DokioCrmConnectionTest");
         try {
             if(Objects.isNull(cu.getByCrmSecretKey("id", key)))
                 return new ResponseEntity<>(-200, HttpStatus.OK);
+            cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
             return new ResponseEntity<>(1, HttpStatus.OK);}
         catch (Exception e){
             e.printStackTrace();

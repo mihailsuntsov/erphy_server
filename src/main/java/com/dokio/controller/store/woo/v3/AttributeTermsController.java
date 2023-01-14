@@ -19,11 +19,14 @@ package com.dokio.controller.store.woo.v3;
 
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.repository.store.woo.v3.StoreAttributeTermsRepository;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -35,24 +38,28 @@ public class AttributeTermsController {
 
     @Autowired
     StoreAttributeTermsRepository storeAttributeTermsRepository;
+    @Autowired
+    CommonUtilites cu;
 
     @RequestMapping(
             value = "/syncAttributeTermsToStore",
             params = {"key"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> syncAttributeTermsToStore(
-            @RequestParam("key") String key){
+    public ResponseEntity<?> syncAttributeTermsToStore(HttpServletRequest httpServletRequest,
+                                                       @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncAttributeTermsToStore");
-        try {return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsToStore(key), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+            return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsToStore(key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncAttributeTermsToStore error", e);
-            return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/syncAttributeTermsIds")
-    public ResponseEntity<?> syncAttributeTermsIds(@RequestBody SyncIdsForm request){
+    public ResponseEntity<?> syncAttributeTermsIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncAttributeTermsIds: " + request.toString());
-        try {return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsIds(request), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+            return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncAttributeTermsIds error", e);
-            return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

@@ -19,11 +19,14 @@ package com.dokio.controller.store.woo.v3;
 
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.repository.store.woo.v3.StoreProductAttributesRepository;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -35,24 +38,28 @@ public class ProductAttributesController {
 
     @Autowired
     StoreProductAttributesRepository storeProductAttributesRepository;
+    @Autowired
+    CommonUtilites cu;
 
     @RequestMapping(
             value = "/syncProductAttributesToStore",
             params = {"key"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> syncProductAttributesToStore(
-            @RequestParam("key") String key){
+    public ResponseEntity<?> syncProductAttributesToStore(HttpServletRequest httpServletRequest,
+        @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesToStore");
-        try {return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesToStore(key), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+            return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesToStore(key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesToStore error", e);
-            return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/syncProductAttributesIds")
-    public ResponseEntity<?> syncProductAttributesIds(@RequestBody SyncIdsForm request){
+    public ResponseEntity<?> syncProductAttributesIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesIds: " + request.toString());
-        try {return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesIds(request), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+            return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesIds error", e);
-            return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

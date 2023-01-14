@@ -26,7 +26,16 @@ public class UserResources {
     private Long users;
     private Long products;
     private Long counterparties;
+    private Long  stores;
     private int  megabytes;
+
+    public Long getStores() {
+        return stores;
+    }
+
+    public void setStores(Long stores) {
+        this.stores = stores;
+    }
 
     public Long getCompanies() {
         return companies;

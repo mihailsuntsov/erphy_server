@@ -118,16 +118,25 @@ public class CompaniesJSON {
     private Long store_price_type_regular; // id of regular type price
     private Long store_price_type_sale;    // id of sale type price
 
-    private Boolean nds_included; //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-    private Long    store_orders_department_id; // department for creation Customer order from store
+    private Boolean nds_included;                //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+    private Long    store_orders_department_id;  // department for creation Customer order from store
     private String  store_if_customer_not_found; // "create_new" or "use_default"
-    private Long    store_default_customer_id; // counterparty id if store_if_customer_not_found=use_default
-    private String  cagent;                 // the name of store_default_customer
+    private Long    store_default_customer_id;   // counterparty id if store_if_customer_not_found=use_default
+    private String  cagent;                      // the name of store_default_customer
     private Long    store_default_creator_id;    // ID of default user, that will be marked as a creator of store order. Default is master user
     private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
     private String  store_default_creator;       // Name of default user that will be marked as a creator of store order.
     private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
-    private Boolean store_auto_reserve; //auto reserve product after getting internet store order
+    private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
+    private String store_ip;                     // internet-store ip address
+
+    public String getStore_ip() {
+        return store_ip;
+    }
+
+    public void setStore_ip(String store_ip) {
+        this.store_ip = store_ip;
+    }
 
     public List<Long> getCompanyStoreDepartments() {
         return companyStoreDepartments;

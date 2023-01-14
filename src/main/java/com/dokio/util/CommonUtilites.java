@@ -396,7 +396,8 @@ public class CommonUtilites {
                         " coalesce(cmp.store_days_for_esd,0) as store_days_for_esd, " +
                         " coalesce(cmp.nds_payer, false) as nds_payer, " +
                         " coalesce(cmp.nds_included, false) as nds_included, " +
-                        " coalesce(cmp.store_auto_reserve, false) " +
+                        " coalesce(cmp.store_auto_reserve, false) as store_auto_reserve, " +
+                        " coalesce(cmp.is_store, false) as is_store" +
                         " from companies cmp where cmp.id="+company_id;
         try
         {
@@ -416,6 +417,7 @@ public class CommonUtilites {
                     returnObj.setVat((Boolean)                              obj[8]);
                     returnObj.setVat_included((Boolean)                     obj[9]);
                     returnObj.setStore_auto_reserve((Boolean)               obj[10]);
+                    returnObj.setIs_store((Boolean)                         obj[11]);
                 }
 
             return returnObj;
@@ -644,6 +646,29 @@ public class CommonUtilites {
             e.printStackTrace();
             logger.error("Exception in method getSettingsGeneral. SQL query:" + stringQuery, e);
             return null;
+        }
+    }
+
+    public String getStoreIp(String crmSecretKey){
+        String stringQuery = "select store_ip from companies where crm_secret_key = :crm_secret_key";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("crm_secret_key", crmSecretKey);
+            return query.getSingleResult().toString();
+        } catch (NoResultException nre) {
+            return null;
+        } catch (Exception e) {
+            logger.error("Exception in method getStoreIp. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    public void checkStoreIp(String storeRemoteAddr, String key) throws Exception {
+        String crmRemoteAddress = getStoreIp(key);
+        if(Objects.isNull(crmRemoteAddress))
+            throw new Exception("Can't found CRM-side StoreIP by given CRM secret key.");
+        if(!storeRemoteAddr.equals(crmRemoteAddress)){
+            throw new Exception("The store remote address in query is not equals to store remote address in CRM. Query remote address: " + storeRemoteAddr + ", CRM remote address: " + crmRemoteAddress);
         }
     }
 }

@@ -31,6 +31,15 @@ public class CompanySettingsJSON {
     private boolean vat;
     private boolean vat_included;
     private boolean store_auto_reserve;
+    private boolean is_store;                           // the store of company is switched on
+
+    public boolean isIs_store() {
+        return is_store;
+    }
+
+    public void setIs_store(boolean is_store) {
+        this.is_store = is_store;
+    }
 
     public boolean isStore_auto_reserve() {
         return store_auto_reserve;

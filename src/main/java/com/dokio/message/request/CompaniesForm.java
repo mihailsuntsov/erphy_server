@@ -102,6 +102,15 @@ public class CompaniesForm {
     private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
     private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
     private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
+    private String store_ip;                     // internet-store ip address
+
+    public String getStore_ip() {
+        return store_ip;
+    }
+
+    public void setStore_ip(String store_ip) {
+        this.store_ip = store_ip;
+    }
 
     public Boolean getStore_auto_reserve() {
         return store_auto_reserve;

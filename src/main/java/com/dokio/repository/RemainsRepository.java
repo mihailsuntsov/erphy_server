@@ -93,7 +93,7 @@ public class RemainsRepository {
                             "           coalesce(pg.name,'') as productgroup, " +
                             "           coalesce(p.not_buy,false) as not_buy, " +
                             "           coalesce(p.not_sell,false) as not_sell, " +
-                            "           p.description as description, " +
+                            "           coalesce(p.label_description,'') as description, " +
                             " coalesce((select " +
                             " sum(coalesce(quantity,0)) " +
                             " from " +
@@ -209,7 +209,7 @@ public class RemainsRepository {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
                         "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
-                        "upper(p.description) like upper(CONCAT('%',:sg,'%')) or " +
+                        "upper(p.label_description) like upper(CONCAT('%',:sg,'%')) or " +
                         "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
                         "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
@@ -319,7 +319,7 @@ public class RemainsRepository {
                 pagesList = getPagesList(result, offset, returnListSize);
 
                 //обрезаем лишнее
-                returnList = returnList.subList(offsetreal, (offsetreal + result) > returnListSize ? returnListSize : (offsetreal + result));
+                returnList = returnList.subList(offsetreal > returnListSize?0:offsetreal, (offsetreal + result) > returnListSize ? returnListSize : (offsetreal + result));
 
                 RemainsJSON remainsTableForm = new RemainsJSON();
                 remainsTableForm.setTable(returnList);//проверка на IndexOutOfBoundsException
@@ -337,6 +337,7 @@ public class RemainsRepository {
     private List<Integer> getPagesList(int result, int offset, int size) {
         int listsize;//количество страниц пагинации
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
+        if(result*offset>=size) offset=0; // если произведение кол-ва товаров на странице и страницы больше найденного кол-ва товаров - сбрасываем страницу в 0
         pagenum = offset + 1;
         if ((size % result) == 0) {//общее количество выборки делим на количество записей на странице
             listsize = size / result;//если делится без остатка

@@ -452,13 +452,52 @@ public class CustomersOrdersController {
         }
     }
 
-
     @PostMapping("/api/auth/setCustomersOrdersAsDecompleted")
     public ResponseEntity<?> setCustomersOrdersAsDecompleted(@RequestBody CustomersOrdersForm request){
         logger.info("Processing post request for path /api/auth/setCustomersOrdersAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(customersOrdersRepositoryJPA.setCustomersOrdersAsDecompleted(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller setCustomersOrdersAsDecompleted error", e);
             return new ResponseEntity<>("Ошибка запроса на снятие с проведения", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/getListOfCustomersOrdersFiles")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getListOfCustomersOrdersFiles(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/getListOfCustomersOrdersFiles: " + request.toString());
+
+        Long productId=Long.valueOf(request.getId());
+        List<FilesCustomersOrdersJSON> returnList;
+        try {
+            returnList = customersOrdersRepositoryJPA.getListOfCustomersOrdersFiles(productId);
+            return new ResponseEntity<>(returnList, HttpStatus.OK);
+        } catch (Exception e){
+            return new ResponseEntity<>("Ошибка запроса списка файлов", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteCustomersOrdersFile")
+    public ResponseEntity<?> deleteCustomersOrdersFile(@RequestBody SearchForm request){
+        logger.info("Processing post request for path /api/auth/deleteCustomersOrdersFile: " + request.toString());
+
+        if(customersOrdersRepositoryJPA.deleteCustomersOrdersFile(request)){
+            return new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("File deletion error", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/addFilesToCustomersOrders")
+    public ResponseEntity<?> addFilesToCustomersOrders(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/addFilesToCustomersOrders: " + request.toString());
+
+        if(customersOrdersRepositoryJPA.addFilesToCustomersOrders(request)){
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+            return responseEntity;
+        } else {
+            ResponseEntity<String> responseEntity = new ResponseEntity<>("Ошибка добавления файла", HttpStatus.INTERNAL_SERVER_ERROR);
+            return responseEntity;
+        }
     }
 
 }

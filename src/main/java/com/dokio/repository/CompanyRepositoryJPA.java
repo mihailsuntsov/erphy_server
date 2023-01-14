@@ -481,7 +481,7 @@ public class CompanyRepositoryJPA {
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-                    "           p.is_store as is_store, " +// on off the store
+                    "           coalesce(p.is_store,false) as is_store, " +// on off the store
                     "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
                     "           p.store_key as store_key, " +  // consumer key
                     "           p.store_secret as store_secret, " + // consumer secret
@@ -499,8 +499,8 @@ public class CompanyRepositoryJPA {
                     "           uoc.name as store_default_creator," +
                     "           p.store_default_creator_id as store_default_creator_id," + // ID of default user, that will be marked as a creator of store order. Default is master user
                     "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
-                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve " + // auto reserve product after getting internet store order
-
+                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
+                    "           coalesce(p.store_ip,'')" +
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -609,7 +609,8 @@ public class CompanyRepositoryJPA {
             doc.setStore_secret(queryList.get(0)[77]!=null?         (String)queryList.get(0)[77]:"");
             doc.setStore_type(queryList.get(0)[78]!=null?           (String)queryList.get(0)[78]:"");
             doc.setStore_api_version(queryList.get(0)[79]!=null?    (String)queryList.get(0)[79]:"");
-            doc.setCrm_secret_key(queryList.get(0)[80]!=null?       (String)queryList.get(0)[80]:"");
+//            doc.setCrm_secret_key(queryList.get(0)[80]!=null?       (String)queryList.get(0)[80]:"");
+            doc.setCrm_secret_key(                                  (String)queryList.get(0)[80]);
             doc.setStore_price_type_regular( queryList.get(0)[81]!=null?Long.parseLong(  queryList.get(0)[81].toString()):null);
             doc.setStore_price_type_sale( queryList.get(0)[82]!=null?Long.parseLong(  queryList.get(0)[82].toString()):null);
             doc.setNds_included((Boolean)                                      queryList.get(0)[83]);
@@ -619,9 +620,10 @@ public class CompanyRepositoryJPA {
             doc.setCagent(queryList.get(0)[87]!=null?            (String)queryList.get(0)[87]:"");
             doc.setStore_default_creator(queryList.get(0)[88]!=null?(String)queryList.get(0)[88]:"");
             doc.setStore_default_creator_id(queryList.get(0)[89]!=null?Long.parseLong(queryList.get(0)[89].toString()):null);
-            doc.setStore_days_for_esd((Integer)                                queryList.get(0)[90]);
+            doc.setStore_days_for_esd((Integer)                                 queryList.get(0)[90]);
             doc.setCompanyStoreDepartments(getCompanyStoreDepartmentsIds(id, myMasterId));
-            doc.setStore_auto_reserve((Boolean)                                queryList.get(0)[91]);
+            doc.setStore_auto_reserve((Boolean)                                 queryList.get(0)[91]);
+            doc.setStore_ip((String)                                            queryList.get(0)[92]);
 
 //            doc.setReg_country_id((Integer)                                 queryList.get(0)[73]);
 //            doc.setTax_number(queryList.get(0)[74]!=null?           (String)queryList.get(0)[74]:"");
@@ -631,6 +633,20 @@ public class CompanyRepositoryJPA {
 
         } else return null;
     }
+
+
+    private boolean isCompanyWithStore(long companyId) throws Exception {
+        String stringQuery = "select coalesce(is_store,false) from companies where id="+companyId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean)query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method isCompanyWithStore. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
@@ -649,6 +665,10 @@ public class CompanyRepositoryJPA {
                 && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try{
+                // if Is store field is "on" and before it was "off", and plan with limits - checking limits for internet stores
+                if(request.getIs_store() && (!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) && !isCompanyWithStore(request.getId()))
+                    if(userRepositoryJPA.getMyConsumedResources().getStores() >= userRepositoryJPA.getMyMaxAllowedResources().getStores())
+                        return -121; // number of internet-stores is out of bounds of tariff plan
                 updateCompanyBaseFields(request);
                 if(isStoreDepartsChanged(request.getCompanyStoreDepartments(), request.getId()))
                     markAllCompanyProductsAsNeedToSyncWoo(request.getId());
@@ -749,7 +769,8 @@ public class CompanyRepositoryJPA {
                     " store_default_customer_id = " + request.getStore_default_customer_id() + ", " + // counterparty id if store_if_customer_not_found=use_default
                     " store_default_creator_id = " + request.getStore_default_creator_id() + ", " + //ID of default user, that will be marked as a creator of store order. Default is master user
                     " store_days_for_esd = " + (Objects.isNull(request.getStore_days_for_esd())?0:request.getStore_days_for_esd()) +  ", " + // number of days for ESD of created store order. Default is 0
-                    " store_auto_reserve = " + request.getStore_auto_reserve() +   // auto reserve product after getting internet store order
+                    " store_auto_reserve = " + request.getStore_auto_reserve()  +  ", " +  // auto reserve product after getting internet store order
+                    " store_ip = :store_ip" +         // store server ip address
 
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
@@ -800,6 +821,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
             query.setParameter("crm_secret_key",(request.getCrm_secret_key()!=null?request.getCrm_secret_key():""));
             query.setParameter("store_if_customer_not_found",(request.getStore_if_customer_not_found()!=null?request.getStore_if_customer_not_found():"create_new"));
+            query.setParameter("store_ip",(request.getStore_ip()!=null?request.getStore_ip():""));
 
             query.executeUpdate();
         }catch (Exception e) {
@@ -1250,7 +1272,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("store_secret",(request.getStore_secret()!=null?request.getStore_secret():""));
             query.setParameter("store_type",(request.getStore_type()!=null?request.getStore_type():""));
             query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
-            query.setParameter("crm_secret_key",(request.getCrm_secret_key()!=null?request.getCrm_secret_key():""));
+            query.setParameter("crm_secret_key",(request.getCrm_secret_key().equals("")?null:request.getCrm_secret_key()));
 
 //            query.setParameter("tax_number",request.getTax_number());
 //            query.setParameter("reg_number",request.getReg_number());

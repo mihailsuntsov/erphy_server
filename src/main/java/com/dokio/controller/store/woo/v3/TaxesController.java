@@ -20,11 +20,14 @@ package com.dokio.controller.store.woo.v3;
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.request.store.woo.v3.TaxesForm;
 import com.dokio.repository.store.woo.v3.StoreTaxesRepository;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -36,32 +39,37 @@ public class TaxesController {
 
     @Autowired
     StoreTaxesRepository storeTaxesRepository;
+    @Autowired
+    CommonUtilites cu;
 
     @PostMapping("/syncTaxesFromStore")
-    public ResponseEntity<?> syncTaxesFromStore(@RequestBody TaxesForm  request){
+    public ResponseEntity<?> syncTaxesFromStore(HttpServletRequest httpServletRequest, @RequestBody TaxesForm  request){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesFromStore: " + request.toString());
-        try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesFromStore(request), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+            return new ResponseEntity<>(storeTaxesRepository.syncTaxesFromStore(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesFromStore error", e);
-        return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(
             value = "/syncTaxesToStore",
             params = {"key"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> syncTaxesToStore(
+    public ResponseEntity<?> syncTaxesToStore(HttpServletRequest httpServletRequest,
             @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesToStore");
-        try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesToStore(key), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        return new ResponseEntity<>(storeTaxesRepository.syncTaxesToStore(key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesToStore error", e);
-        return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/syncTaxesIds")
-    public ResponseEntity<?> syncTaxesIds(@RequestBody SyncIdsForm  request){
+    public ResponseEntity<?> syncTaxesIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm  request){
         logger.info("Processing post request for path /api/public/woo_v3/syncTaxesIds: " + request.toString());
-        try {return new ResponseEntity<>(storeTaxesRepository.syncTaxesIds(request), HttpStatus.OK);}
+        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+            return new ResponseEntity<>(storeTaxesRepository.syncTaxesIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesIds error", e);
-        return new ResponseEntity<>("Operation of the synchronization ids error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }
