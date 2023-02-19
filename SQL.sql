@@ -4113,24 +4113,115 @@ alter table companies add constraint crm_secret_key_uq unique (crm_secret_key);
 CREATE INDEX crm_secret_key_idx ON companies(crm_secret_key);
 update version set value = '1.1.1', date = '13-01-2023';
 ------------------------------------------------  end of 1.1.1  ------------------------------------------------------
+----------------------------------------------  start of 1.2.0  ------------------------------------------------------
+drop table if exists sites_html;
+drop table if exists sites_routes;
+drop table if exists sites;
+delete from usergroup_permissions where permission_id in (select id from permissions where document_id=20);
+delete from permissions where document_id=20;
+delete from documents where id=20;
 
+create table stores (id bigserial primary key not null,
+                     master_id  bigint not null,
+                     company_id bigint not null,
+                     creator_id bigint not null,
+                     changer_id bigint,
+                     date_time_created timestamp with time zone not null,
+                     date_time_changed timestamp with time zone,
+                     name varchar(250) not null,
+                     lang_code  varchar(2) not null,
+                     store_type varchar(8) not null, -- e.g. woo
+                     store_api_version varchar(16) not null, -- e.g. v3
+                     crm_secret_key varchar(36), -- smth like UUID
+                     store_price_type_regular bigint not null, -- id of regular price
+                     store_price_type_sale bigint, -- id of sale price
+                     store_ip varchar(21) not null,
+                     is_deleted boolean,
+                     store_auto_reserve boolean,
+                     store_days_for_esd int not null,
+                     store_default_creator_id bigint not null,
+                     store_default_customer_id bigint,
+                     store_if_customer_not_found varchar(11) not null,
+                     store_orders_department_id bigint not null,
+                     foreign key (master_id) references users(id),
+                     foreign key (creator_id) references users(id),
+                     foreign key (changer_id) references users(id),
+                     foreign key (company_id) references companies(id),
+                     foreign key (store_default_creator_id) references users(id),
+                     foreign key (store_default_customer_id) references cagents(id),
+                     foreign key (store_orders_department_id) references departments(id)
+);
+alter table stores add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
+alter table stores add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
+alter table stores add constraint store_crm_secret_key_uq unique (crm_secret_key);
 
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (54,'Интернет-магазины','stores',1,'stores','Интернет-магазины', 'Online stores');
 
+insert into permissions (id,name_ru,name_en,document_id,output_order) values
+(671,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',54,10),
+(672,'Создание документов по всем предприятиям','Creation of documents for all companies',54,20),
+(673,'Создание документов своего предприятия','Create your company documents',54,30),
+(674,'Удаление документов всех предприятий','Deleting documents of all companies',54,130),
+(675,'Удаление документов своего предприятия','Deleting your company documents',54,140),
+(676,'Просмотр документов всех предприятий','View documents of all companies',54,50),
+(677,'Просмотр документов своего предприятия','View your company documents',54,60),
+(678,'Редактирование документов всех предприятий','Editing documents of all companies',54,90),
+(679,'Редактирование документов своего предприятия','Editing your company documents',54,100);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+create table store_departments(
+                              master_id          bigint not null,
+                              company_id         bigint not null,
+                              store_id           bigint not null,
+                              department_id      bigint not null,
+                              menu_order         int,    -- Menu order, used to custom sort the departments
+                              foreign key (master_id) references users(id),
+                              foreign key (department_id) references departments(id),
+                              foreign key (store_id) references stores(id),
+                              foreign key (company_id) references companies(id)
+);
+alter table store_departments add constraint store_department_uq unique (store_id, department_id);
+create table stores_products (
+                               master_id          bigint not null,
+                               company_id         bigint not null,
+                               store_id           bigint not null,
+                               product_id         bigint not null,
+                               woo_id             int,
+                               need_to_syncwoo    boolean,
+                               date_time_syncwoo  timestamp with time zone,
+                               foreign key (master_id) references users(id),
+                               foreign key (company_id) references companies(id),
+                               foreign key (product_id) references products(id),
+                               foreign key (store_id) references stores(id)
+);
+alter table stores_products add constraint stores_products_uq unique (store_id, product_id);
+alter table companies add column store_default_lang_code  varchar(2);-- e.g. RU or EN
+update companies set store_default_lang_code='EN';
+create table store_translate_categories(
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                lang_code          varchar(2) not null,
+                                category_id        bigint not null,
+                                name               varchar(512),
+                                slug               varchar(120),
+                                description        varchar(250),
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (category_id) references product_categories(id) on delete cascade
+);
+alter table store_translate_categories add constraint category_lang_uq unique (category_id, lang_code);
+alter table companies alter column store_default_lang_code set not null;
+create table stores_productcategories (
+                               master_id          bigint not null,
+                               company_id         bigint not null,
+                               store_id           bigint not null,
+                               category_id        bigint not null,
+                               woo_id             int,
+                               foreign key (master_id) references users(id),
+                               foreign key (company_id) references companies(id),
+                               foreign key (category_id) references products(id) on delete cascade,
+                               foreign key (store_id) references stores(id)
+);
+alter table stores_productcategories add constraint stores_categories_uq unique (store_id, category_id);
 
 
 

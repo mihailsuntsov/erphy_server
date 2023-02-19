@@ -31,7 +31,6 @@ import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.repository.Exceptions.CalculateNetcostNegativeSumException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.store.woo.v3.StoreProductsRepository;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -45,8 +44,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
-//import java.text.DecimalFormatSymbols;
-//import java.text.NumberFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1747,6 +1744,7 @@ public class ProductsRepositoryJPA {
                 doc.setImage(Objects.isNull(queryList.get(0)[4])?null:fileRepository.getImageFileInfo(((BigInteger) queryList.get(0)[4]).longValue()));
                 doc.setParentCategoryId(Long.parseLong(             queryList.get(0)[5].toString()));
                 doc.setIsStoreCategory((Boolean)                    queryList.get(0)[6]);
+                doc.setStoresIds(getCategoryStoresIds(categoryId, myMasterId));
             }
             return doc;
         } catch (Exception e) {
@@ -1755,6 +1753,27 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
+
+    private List<Long> getCategoryStoresIds(Long categoryId, Long masterId){
+        String stringQuery = "  select   csd.store_id as id" +
+                "               from     stores_productcategories csd " +
+                "               where    csd.master_id=" + masterId +
+                "               and      csd.category_id =" + categoryId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<BigInteger> queryList = query.getResultList();
+            List<Long> returnList = new ArrayList<>();
+            for (BigInteger obj : queryList) {
+                returnList.add(obj.longValue());
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getCategoryStoresIds. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     @SuppressWarnings("Duplicates")
@@ -1810,7 +1829,20 @@ public class ProductsRepositoryJPA {
                     if (query.executeUpdate() == 1) {
                         stringQuery = "select id from product_categories where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
-                        return Long.valueOf(Integer.parseInt(query2.getSingleResult().toString()));
+                        Long newCategoryId = Long.valueOf(query2.getSingleResult().toString());
+                        // If category belongs to online store(s) - saving store translations
+                        if (request.getIsStoreCategory() && !Objects.isNull(request.getStoreCategoryTranslations()) && request.getStoreCategoryTranslations().size() > 0) {
+                            for (StoreTranslationCategoryJSON row : request.getStoreCategoryTranslations()) {
+                                saveStoreCategoryTranslations(row, myMasterId, request.getCompanyId(), newCategoryId);
+                            }
+                        }
+                        //Saving list of online stores that category belongs to
+                        if (request.getIsStoreCategory() && !Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
+                            for (Long storeId : request.getStoresIds()) {
+                                saveCategoryStore(newCategoryId, storeId, myMasterId, request.getCompanyId());
+                            }
+                        }
+                        return newCategoryId;
                     } else return (0L);
                 } catch (Exception e) {
                     //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
@@ -1839,7 +1871,7 @@ public class ProductsRepositoryJPA {
         } else return -1L;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     @SuppressWarnings("Duplicates")
     public Integer updateProductCategory(ProductCategoryJSON request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "173,174"))//  "Редактирование категорий"
@@ -1875,6 +1907,19 @@ public class ProductsRepositoryJPA {
                 if(!isStoreCategory(request.getId()) && request.getIsStoreCategory())
                     markProductsofCategoryAsNeedToSyncWoo(request.getId(), myMasterId);
                 query.executeUpdate();
+
+                // if category belongs to online store(s) - saving store translations
+                if (request.getIsStoreCategory() && !Objects.isNull(request.getStoreCategoryTranslations()) && request.getStoreCategoryTranslations().size() > 0) {
+                    for (StoreTranslationCategoryJSON row : request.getStoreCategoryTranslations()) {
+                        saveStoreCategoryTranslations(row, myMasterId, request.getCompanyId(), request.getId());
+                    }
+                }
+                deleteNonSelectedCategoryStores(request.getStoresIds(), request.getId(), myMasterId);
+                if (request.getIsStoreCategory() && !Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
+                    for (Long storeId : request.getStoresIds()) {
+                        saveCategoryStore(request.getId(), storeId, myMasterId, request.getCompanyId());
+                    }
+                }
                 return 1;
             } catch (Exception e) {
                 //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
@@ -1900,6 +1945,80 @@ public class ProductsRepositoryJPA {
                 }
             }
         } else return -1;
+    }
+    private void saveCategoryStore(Long category_id, Long store_id, Long master_id, Long company_id) throws Exception {
+        String stringQuery = "insert into stores_productcategories (" +
+                "   master_id," +
+                "   company_id," +
+                "   store_id," +
+                "   category_id " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                "(select id from stores where id="+store_id+" and master_id="+master_id+"), "+// +", " +
+                "(select id from product_categories where id="+category_id+" and master_id="+master_id+") "+// чтобы не мочь изменить категорию другого master_id, случайно или намеренно
+                ") ON CONFLICT ON CONSTRAINT stores_categories_uq " +// "upsert"
+                " DO NOTHING";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveCategoryStore. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+    private void saveStoreCategoryTranslations(StoreTranslationCategoryJSON row, Long master_id, Long company_id, Long category_id) throws Exception {
+        String stringQuery = "insert into store_translate_categories (" +
+                        "   master_id," +
+                        "   company_id," +
+                        "   lang_code," +
+                        "   category_id, " +
+                        "   name, " +
+                        "   slug, " +
+                        "   description " +
+                        "   ) values (" +
+                        master_id+", "+
+                        company_id+", "+
+                        ":lang_code," +
+                        "(select id from product_categories where id="+category_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить категорию другого master_id, случайно или намеренно
+                        ":name," +
+                        ":slug," +
+                        ":description" +
+                        ") ON CONFLICT ON CONSTRAINT category_lang_uq " +// "upsert"
+                        " DO update set " +
+                        " name = :name, " +
+                        " slug = :slug, " +
+                        " description = :description";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", row.getName());
+            query.setParameter("slug", row.getSlug());
+            query.setParameter("description", row.getDescription());
+            query.setParameter("lang_code", row.getLangCode());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveStoreCategoryTranslations. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    private void deleteNonSelectedCategoryStores(List<Long> storesIds, Long categoryId, Long masterId) throws Exception {
+        String stringQuery = "delete from stores_productcategories " +
+                " where master_id=" + masterId +
+                " and category_id=" + categoryId +
+                " and store_id not in " + ((!Objects.isNull(storesIds)&&storesIds.size()>0)?(commonUtilites.ListOfLongToString(storesIds,",","(",")")):"(0)");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+//            if(isStoreCategory(request.getCategoryId()))
+//                markProductsofCategoryAsNeedToSyncWoo(request.getCategoryId(), myMasterId);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteNonSelectedCategoryStores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
     }
 
     @Transactional
@@ -2059,7 +2178,7 @@ public class ProductsRepositoryJPA {
             }
             return returnList;
         } catch (Exception e) {
-            logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
+            logger.error("Exception in method getProductsUpsellCrosssells. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception(e);
         }

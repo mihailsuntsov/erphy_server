@@ -83,8 +83,10 @@ public class CompaniesForm {
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+    private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
 
-    private Boolean is_store;           // on off the store
+    /*
+    private Boolean is_store;            // on off the store
     private String  store_site_address;  // e.g. http://localhost/DokioShop
     private String  store_key;           // consumer key
     private String  store_secret;        // consumer secret
@@ -93,8 +95,6 @@ public class CompaniesForm {
     private String  crm_secret_key;      // like UUID generated
     private Long    store_price_type_regular;    // id of regular type price
     private Long    store_price_type_sale;       // id of sale type price
-
-    private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
     private Long    store_orders_department_id;  // department for creation Customer order from store
     private String  store_if_customer_not_found; // "create_new" or "use_default". Default is "create_new"
     private Long    store_default_customer_id;   // counterparty id if store_if_customer_not_found=use_default
@@ -103,45 +103,15 @@ public class CompaniesForm {
     private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
     private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
     private String store_ip;                     // internet-store ip address
+    */
+    private String store_default_lang_code;      // internet-store basic language, e.g. EN, RU, UA, ...
 
-    public String getStore_ip() {
-        return store_ip;
+    public String getStore_default_lang_code() {
+        return store_default_lang_code;
     }
 
-    public void setStore_ip(String store_ip) {
-        this.store_ip = store_ip;
-    }
-
-    public Boolean getStore_auto_reserve() {
-        return store_auto_reserve;
-    }
-
-    public void setStore_auto_reserve(Boolean store_auto_reserve) {
-        this.store_auto_reserve = store_auto_reserve;
-    }
-
-    public List<Long> getCompanyStoreDepartments() {
-        return companyStoreDepartments;
-    }
-
-    public void setCompanyStoreDepartments(List<Long> companyStoreDepartments) {
-        this.companyStoreDepartments = companyStoreDepartments;
-    }
-
-    public Long getStore_default_creator_id() {
-        return store_default_creator_id;
-    }
-
-    public void setStore_default_creator_id(Long store_default_creator_id) {
-        this.store_default_creator_id = store_default_creator_id;
-    }
-
-    public Integer getStore_days_for_esd() {
-        return store_days_for_esd;
-    }
-
-    public void setStore_days_for_esd(Integer store_days_for_esd) {
-        this.store_days_for_esd = store_days_for_esd;
+    public void setStore_default_lang_code(String store_default_lang_code) {
+        this.store_default_lang_code = store_default_lang_code;
     }
 
     public Boolean getNds_included() {
@@ -150,46 +120,6 @@ public class CompaniesForm {
 
     public void setNds_included(Boolean nds_included) {
         this.nds_included = nds_included;
-    }
-
-    public Long getStore_orders_department_id() {
-        return store_orders_department_id;
-    }
-
-    public void setStore_orders_department_id(Long store_orders_department_id) {
-        this.store_orders_department_id = store_orders_department_id;
-    }
-
-    public String getStore_if_customer_not_found() {
-        return store_if_customer_not_found;
-    }
-
-    public void setStore_if_customer_not_found(String store_if_customer_not_found) {
-        this.store_if_customer_not_found = store_if_customer_not_found;
-    }
-
-    public Long getStore_default_customer_id() {
-        return store_default_customer_id;
-    }
-
-    public void setStore_default_customer_id(Long store_default_customer_id) {
-        this.store_default_customer_id = store_default_customer_id;
-    }
-
-    public Long getStore_price_type_regular() {
-        return store_price_type_regular;
-    }
-
-    public void setStore_price_type_regular(Long store_price_type_regular) {
-        this.store_price_type_regular = store_price_type_regular;
-    }
-
-    public Long getStore_price_type_sale() {
-        return store_price_type_sale;
-    }
-
-    public void setStore_price_type_sale(Long store_price_type_sale) {
-        this.store_price_type_sale = store_price_type_sale;
     }
 
     public String getType() {
@@ -655,62 +585,6 @@ public class CompaniesForm {
 
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
-    }
-
-    public Boolean getIs_store() {
-        return is_store;
-    }
-
-    public void setIs_store(Boolean is_store) {
-        this.is_store = is_store;
-    }
-
-    public String getStore_site_address() {
-        return store_site_address;
-    }
-
-    public void setStore_site_address(String store_site_address) {
-        this.store_site_address = store_site_address;
-    }
-
-    public String getStore_key() {
-        return store_key;
-    }
-
-    public void setStore_key(String store_key) {
-        this.store_key = store_key;
-    }
-
-    public String getStore_secret() {
-        return store_secret;
-    }
-
-    public void setStore_secret(String store_secret) {
-        this.store_secret = store_secret;
-    }
-
-    public String getStore_type() {
-        return store_type;
-    }
-
-    public void setStore_type(String store_type) {
-        this.store_type = store_type;
-    }
-
-    public String getStore_api_version() {
-        return store_api_version;
-    }
-
-    public void setStore_api_version(String store_api_version) {
-        this.store_api_version = store_api_version;
-    }
-
-    public String getCrm_secret_key() {
-        return crm_secret_key;
-    }
-
-    public void setCrm_secret_key(String crm_secret_key) {
-        this.crm_secret_key = crm_secret_key;
     }
 
     @Override

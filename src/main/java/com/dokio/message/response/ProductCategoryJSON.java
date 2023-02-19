@@ -17,6 +17,10 @@
 */
 package com.dokio.message.response;
 
+import com.dokio.message.response.additional.StoreTranslationCategoryJSON;
+
+import java.util.List;
+
 public class ProductCategoryJSON {
     private Long            id;
     private String          description;
@@ -27,6 +31,32 @@ public class ProductCategoryJSON {
     private Long            parentCategoryId;
     private Long            companyId;
     private Boolean         isStoreCategory;
+    private List<StoreTranslationCategoryJSON> storeCategoryTranslations;
+    private List<Long>      storesIds;
+
+    public List<Long> getStoresIds() {
+        return storesIds;
+    }
+
+    public void setStoresIds(List<Long> storesIds) {
+        this.storesIds = storesIds;
+    }
+
+    public Boolean getStoreCategory() {
+        return isStoreCategory;
+    }
+
+    public void setStoreCategory(Boolean storeCategory) {
+        isStoreCategory = storeCategory;
+    }
+
+    public List<StoreTranslationCategoryJSON> getStoreCategoryTranslations() {
+        return storeCategoryTranslations;
+    }
+
+    public void setStoreCategoryTranslations(List<StoreTranslationCategoryJSON> storeCategoryTranslations) {
+        this.storeCategoryTranslations = storeCategoryTranslations;
+    }
 
     public Long getCompanyId() {
         return companyId;

@@ -360,7 +360,7 @@ public class SpravTaxesRepository {
         if ((   //если есть право на создание по всем предприятиям, или
                 (securityRepositoryJPA.userHasPermissions_OR(50L, "636")) ||
                 //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                (securityRepositoryJPA.userHasPermissions_OR(50L, "636") && myCompanyId.equals(request.getCompany_id()))) &&
+                (securityRepositoryJPA.userHasPermissions_OR(50L, "637") && myCompanyId.equals(request.getCompany_id()))) &&
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {

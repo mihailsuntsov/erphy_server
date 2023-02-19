@@ -176,6 +176,7 @@ public class AuthRestAPIs {
 		company.setSt_prefix_barcode_packed(20);
 		company.setSt_prefix_barcode_pieced(21);
 		company.setSt_netcost_policy("all");
+		company.setStore_default_lang_code(signUpRequest.getLanguage());
 		Long companyId = companyRepositoryJPA.insertCompanyFast(company,createdUserId);
         // типы цен
         Long price = typePricesRepository.insertPriceTypesFast(createdUserId,companyId);

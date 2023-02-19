@@ -497,7 +497,7 @@ public class SpravProductAttributeRepository {
                     "           p.id as id," +
                     "           p.name as name " +
                     "           from product_attributes p " +
-                    "           where  p.master_id=" + myMasterId + " and company_id = " + companyId + " order by name";
+                    "           where  p.master_id=" + myMasterId + " and company_id = " + companyId + " and coalesce(is_deleted,false) = false order by name";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
 

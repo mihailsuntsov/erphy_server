@@ -339,24 +339,34 @@ public class CompaniesController {
     }
 
     @SuppressWarnings("Duplicates")
-    @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
-        logger.info("Processing get request for path /api/auth/getCompanyCard: fileId=" + fileId);
+//    @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
+//    @ResponseBody
+//    public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
+//        logger.info("Processing get request for path /api/auth/getCompanyCard: fileId=" + fileId);
+//
+//        FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
+//        if(fileInfo !=null){
+//            fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
+//            Resource file = companyRepositoryJPA.getCompanyCard(fileInfo);//и отправим экземпляр класса FileInfoJSON с путём к файлу и системным именем файла на получение карточки
+//            if(file!=null) {//если файл есть - значит docx4j отработал, и успешно записал файл Карточка предприятия.docx.
+//                String fileName = "Карточка предприятия.docx";
+//                return ResponseEntity.ok()
+//                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
+//                        .body(file);
+//            }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
+//                return responseEntity;}
+//        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+//            return responseEntity;}
+//    }
 
-        FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
-        if(fileInfo !=null){
-            fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
-            Resource file = companyRepositoryJPA.getCompanyCard(fileInfo);//и отправим экземпляр класса FileInfoJSON с путём к файлу и системным именем файла на получение карточки
-            if(file!=null) {//если файл есть - значит docx4j отработал, и успешно записал файл Карточка предприятия.docx.
-                String fileName = "Карточка предприятия.docx";
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
-                        .body(file);
-            }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
-                return responseEntity;}
-        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
-            return responseEntity;}
+    @RequestMapping(
+            value = "/api/auth/getStoreDefaultLanguageOfCompany",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getStoreDefaultLanguageOfCompany(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getStoreDefaultLanguageOfCompany with parameters: " + "company_id: " + company_id);
+        try {return new ResponseEntity<>(companyRepositoryJPA.getStoreDefaultLanguageOfCompany(company_id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
 }
