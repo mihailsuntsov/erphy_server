@@ -629,7 +629,6 @@ public class StoreRepository {
         }
     }
 
-    @Transactional//отдает список налогов по id предприятия
     @SuppressWarnings("Duplicates")
     public List<StoresListJSON> getStoresList(Long companyId) {
 

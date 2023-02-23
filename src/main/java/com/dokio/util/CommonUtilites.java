@@ -21,6 +21,7 @@ import com.dokio.controller._Info;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
+import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -84,23 +85,25 @@ public class CommonUtilites {
         }
     }
 
-    public Long getByCrmSecretKey(String subj, String secretKey){ // subj can be master_id for master id, or id for company_id
+    public Object getByCrmSecretKey(String subj, String secretKey) throws Exception { // subj can be master_id for master id, or id for company_id
         try {
             String stringQuery;
             stringQuery =
-                    "select "+subj+" from companies where " +
-                    "coalesce (is_store, false) = true and " +
+                    "select "+subj+" from stores where " +
                     "crm_secret_key = :secretKey and " +
                     "crm_secret_key is not null and " +
                     "crm_secret_key !=''";
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("secretKey",secretKey);
-            return Long.parseLong(query.getSingleResult().toString());
+//            return Long.parseLong(query.getSingleResult().toString());
+            return query.getSingleResult();
         }catch (NoResultException nre) {
-                return null;
+            logger.error("NoResultException in method getByCrmSecretKey.", nre);
+            throw new WrongCrmSecretKeyException();// because nno result only can be if data not found by secret key
         }catch (Exception e){
+            logger.error("Exception in method getByCrmSecretKey.", e);
             e.printStackTrace();
-            return null;
+            throw new Exception();
         }
     }
 

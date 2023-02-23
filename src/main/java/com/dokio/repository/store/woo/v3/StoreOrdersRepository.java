@@ -44,16 +44,14 @@ public class StoreOrdersRepository {
     ProductsRepositoryJPA productsRepository;
 
     public String getLastSynchronizedOrderTime(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
-
-        String stringQuery =
-                " select p.woo_gmt_date from customers_orders p  " +
+        String stringQuery="";
+        try {
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            stringQuery=" select p.woo_gmt_date from customers_orders p  " +
                         " where p.company_id = " + companyId +
                         " and coalesce(p.is_deleted, false) = false " +
                         " and p.woo_gmt_date is not null " +
                         " order by p.woo_gmt_date desc limit 1";
-        try {
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             String result = (String)query.getSingleResult();
             if(Objects.isNull(result)) result="2000-01-01T00:00:00";
@@ -74,9 +72,9 @@ public class StoreOrdersRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class,StoreDefaultCustomerIsNotSet.class,StoreDepartmentIsNotSet.class})
     public Integer putOrdersIntoCRM(OrdersForm request){
         String stringQuery = "";
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
-        Long masterId = cu.getByCrmSecretKey("master_id",request.getCrmSecretKey());
         try {
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
             CompanySettingsJSON settings = cu.getCompanySettings(companyId);
             if (Objects.isNull(settings.getStore_orders_department_id()))
                 throw new StoreDepartmentIsNotSet();
@@ -305,8 +303,6 @@ public class StoreOrdersRepository {
                 e.printStackTrace();
                 throw new Exception();
             }
-
-
         }
     }
 

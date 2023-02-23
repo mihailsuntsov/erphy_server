@@ -41,9 +41,12 @@ public class StoreProductsRepository {
     CompanyRepositoryJPA companyRepository;
 
     public ProductCountJSON countProductsToStoreSync(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
+//        Long companyId = cu.getByCrmSecretKey("id",key);
+        String stringQuery = "";
         ProductCountJSON result = new ProductCountJSON();
-        String stringQuery =
+     try{
+             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+             stringQuery =
                         " select count(*) from products p  " +
                         " where p.company_id = " + companyId +
                         " and coalesce(p.is_deleted, false) = false " +
@@ -57,7 +60,6 @@ public class StoreProductsRepository {
                         ") and " + // and product is in the store category
                             " p.id in (select product_id from product_productcategories where category_id in " +
                             "(select id from product_categories where coalesce(is_store_category,false)=true)) ";
-        try{
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             result.setQueryResultCode(1);
@@ -77,49 +79,50 @@ public class StoreProductsRepository {
     }
 
     public ProductsJSON syncProductsToStore(String key, Integer firstResult, Integer maxResults) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
-        Long masterId = cu.getByCrmSecretKey("master_id",key);
         ProductsJSON result = new ProductsJSON();
-
-        String stringQuery =
-                        " select " +
-                        " p.id as crm_id, " +
-                        " p.woo_id as woo_id, " +
-                        " p.name as name, " +
-                        " coalesce(p.type, 'simple') as type, " +
-                        " coalesce(p.description, '') as description, " +
-                        " coalesce(p.short_description, '') as short_description, " +
-                        " ppr.price_value as price_regular, " +
-                        " pps.price_value as price_sale, " +
-                        " p.stock_status as stock_status, " +
-                        " p.article as sku, " +
-                        " p.sold_individually as sold_individually, " +
-                        " p.backorders as backorders, " +
-                        " p.manage_stock as manage_stock, " +
-                        " p.purchase_note as purchase_note, " +
-                        " p.menu_order as menu_order, " +
-                        " p.reviews_allowed as reviews_allowed, " +
-                        " coalesce(p.description_type, 'editor') as description_type, " + // "editor" or "custom"
-                        " coalesce(p.short_description_type, 'editor') as short_description_type, " + // "editor" or "custom"
-                        " coalesce(p.description_html, '') as description_html, " +
-                        " coalesce(p.short_description_html, '') as short_description_html " +
-                        " from products p  " +
-                        " inner join companies c on c.id = p.company_id  " +
-                        " left outer join product_prices ppr on ppr.product_id = p.id and ppr.price_type_id = c.store_price_type_regular " +
-                        " left outer join product_prices pps on pps.product_id = p.id and pps.price_type_id = c.store_price_type_sale " +
-                        " where p.company_id = " + companyId +
-                        " and coalesce(p.is_deleted, false) = false " +
-                        " and (" +
-                            // if the product need to be synchronized because its category turned into store type category
-                            "(p.need_to_syncwoo = true) or " +
-                            // if the product is created recently, or changed, but still not synchronized
-                            "(p.date_time_syncwoo is null) or " +
-                            // or product is changed after synchronization
-                            "(p.date_time_changed is not null and p.date_time_syncwoo is not null and p.date_time_changed > p.date_time_syncwoo)" +
-                        ") and " + // and product is in the store category
-                            " p.id in (select product_id from product_productcategories where category_id in " +
-                            "(select id from product_categories where coalesce(is_store_category,false)=true)) ";
+        String stringQuery = "";
         try{
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
+            stringQuery =
+            " select " +
+            " p.id as crm_id, " +
+            " p.woo_id as woo_id, " +
+            " p.name as name, " +
+            " coalesce(p.type, 'simple') as type, " +
+            " coalesce(p.description, '') as description, " +
+            " coalesce(p.short_description, '') as short_description, " +
+            " ppr.price_value as price_regular, " +
+            " pps.price_value as price_sale, " +
+            " p.stock_status as stock_status, " +
+            " p.article as sku, " +
+            " p.sold_individually as sold_individually, " +
+            " p.backorders as backorders, " +
+            " p.manage_stock as manage_stock, " +
+            " p.purchase_note as purchase_note, " +
+            " p.menu_order as menu_order, " +
+            " p.reviews_allowed as reviews_allowed, " +
+            " coalesce(p.description_type, 'editor') as description_type, " + // "editor" or "custom"
+            " coalesce(p.short_description_type, 'editor') as short_description_type, " + // "editor" or "custom"
+            " coalesce(p.description_html, '') as description_html, " +
+            " coalesce(p.short_description_html, '') as short_description_html " +
+            " from products p  " +
+            " inner join companies c on c.id = p.company_id  " +
+            " left outer join product_prices ppr on ppr.product_id = p.id and ppr.price_type_id = c.store_price_type_regular " +
+            " left outer join product_prices pps on pps.product_id = p.id and pps.price_type_id = c.store_price_type_sale " +
+            " where p.company_id = " + companyId +
+            " and coalesce(p.is_deleted, false) = false " +
+            " and (" +
+            // if the product need to be synchronized because its category turned into store type category
+            "(p.need_to_syncwoo = true) or " +
+            // if the product is created recently, or changed, but still not synchronized
+            "(p.date_time_syncwoo is null) or " +
+            // or product is changed after synchronization
+            "(p.date_time_changed is not null and p.date_time_syncwoo is not null and p.date_time_changed > p.date_time_syncwoo)" +
+            ") and " + // and product is in the store category
+            " p.id in (select product_id from product_productcategories where category_id in " +
+            "(select id from product_categories where coalesce(is_store_category,false)=true)) ";
+
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             if (firstResult != null) {query.setFirstResult(firstResult);} // from 0
@@ -174,12 +177,11 @@ public class StoreProductsRepository {
         else return "";
     }
 
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncProductsIds(SyncIdsForm request) {
         String stringQuery = "";
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
         try {
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductId(row, companyId);
@@ -281,23 +283,25 @@ public class StoreProductsRepository {
     }
 
     public Set<Integer> getProductWooIdsToDeleteInStore(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
-        String stringQuery="" +
-        " select p.woo_id " +
-        " from products p where  " +
-        " p.company_id = "+companyId+" and  " +
-        " p.woo_id is not null and " +
-        "(" +
-//            "( " +
-    //       не относится к товарам у которых есть категории
-            " p.id not in (select product_id from product_productcategories) or " +
-    //       или не относится к товарам, у которых есть хотя бы одна категория 'интернет-магазин'
-            " p.id not in (select product_id from product_productcategories where category_id in " +
-                "(select id from product_categories where coalesce(is_store_category,false)=true)) " +
-//            " ) " +
-            "or coalesce(p.is_deleted, false) = true " +
-        " )";
+        String stringQuery="";
         try {
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+
+            stringQuery=" select p.woo_id " +
+            " from products p where  " +
+            " p.company_id = "+companyId+" and  " +
+            " p.woo_id is not null and " +
+            "(" +
+    //            "( " +
+        //       не относится к товарам у которых есть категории
+                " p.id not in (select product_id from product_productcategories) or " +
+        //       или не относится к товарам, у которых есть хотя бы одна категория 'интернет-магазин'
+                " p.id not in (select product_id from product_productcategories where category_id in " +
+                    "(select id from product_categories where coalesce(is_store_category,false)=true)) " +
+    //            " ) " +
+                "or coalesce(p.is_deleted, false) = true " +
+            " )";
+
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             Set<Integer> productIds = new HashSet<>();
@@ -318,12 +322,15 @@ public class StoreProductsRepository {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer deleteWooIdsFromProducts(IntListForm request){
-        String wooIds = cu.ListOfIntToString(request.getIdsSet(),",","(", ")");
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
-        String stringQuery="update products set woo_id = null where " +
-                " company_id = "+companyId+" and  " +
-                "coalesce(woo_id,0) in "+wooIds;
+        String stringQuery = "";
         try {
+            String wooIds = cu.ListOfIntToString(request.getIdsSet(),",","(", ")");
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
+                stringQuery=
+                " update products set woo_id = null where " +
+                " company_id = "+companyId+" and  " +
+                " coalesce(woo_id,0) in "+wooIds;
+
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

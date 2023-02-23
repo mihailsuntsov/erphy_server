@@ -34,7 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/public/woo_v3")
 public class TaxesController {
-
+/*
     Logger logger = Logger.getLogger(TaxesController.class);
 
     @Autowired
@@ -72,4 +72,5 @@ public class TaxesController {
         catch (Exception e){e.printStackTrace();logger.error("Controller syncTaxesIds error", e);
         return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    */
 }

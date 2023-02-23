@@ -105,7 +105,7 @@ public class StoresController {
             @RequestParam("company_id") Long company_id){
         logger.info("Processing get request for path /api/auth/getStoresList with parameters: " + "company_id: " + company_id);
         try {return new ResponseEntity<>(storesRepository.getStoresList(company_id), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Error loading data", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping(

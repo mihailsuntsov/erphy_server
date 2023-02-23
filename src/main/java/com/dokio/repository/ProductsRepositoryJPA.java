@@ -23,6 +23,7 @@ import com.dokio.message.request.additional.LabelsPrintProduct;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.Sprav.StoresListJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
@@ -2021,6 +2022,39 @@ public class ProductsRepositoryJPA {
         }
     }
 
+
+    // returns the list of internet-stores of category
+    @SuppressWarnings("Duplicates")
+    public List<StoresListJSON> getCategoryStoresList(Long categoryId) {
+
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+        stringQuery = "select" +
+                "           id as id, " +
+                "           name as name " +
+                "           from stores " +
+                "           where  master_id = " + myMasterId +
+                "           and coalesce(is_deleted, false) = false " +
+                "           and id in (select store_id from stores_productcategories where category_id="+categoryId+")" +
+                "           order by name";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<StoresListJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                StoresListJSON doc = new StoresListJSON();
+                doc.setId(Long.parseLong(obj[0].toString()));
+                doc.setName((String) obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            logger.error("Exception in method getCategoryStoresList. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public boolean deleteProductCategory(ProductCategoriesForm request) {
@@ -2050,6 +2084,35 @@ public class ProductsRepositoryJPA {
                 return false;
             }
         } else return false;
+    }
+
+    @Transactional
+    public Integer deleteProductCategories(UniversalForm request) {
+        if (securityRepositoryJPA.userHasPermissions_OR(14L, "175,176"))// "Удаление категорий"
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery;
+            stringQuery = "delete from product_categories " +
+                    " where id in " + commonUtilites.SetOfLongToString(request.getSetOfLongs1(),",","(",")") +
+                    " and master_id=" + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(14L, "175")) //Если нет прав по всем предприятиям
+            {
+                //остается только на своё предприятие
+                int myCompanyId = userRepositoryJPA.getMyCompanyId();
+                stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            }
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+//                if(isStoreCategory(request.getCategoryId()))
+//                    markProductsofCategoryAsNeedToSyncWoo(request.getCategoryId(), myMasterId);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteProductCategories. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 
     private Boolean markProductsofCategoryAsNeedToSyncWoo(Long categoryId, Long masterId) throws Exception {
@@ -2198,7 +2261,23 @@ public class ProductsRepositoryJPA {
         return returnTreesList;
     }
 
-
+    //возвращает сет всех id интернет-магазинов от id категории товаров
+    @SuppressWarnings("Duplicates")
+    private Set<Long> getCategoryStoresIds(Long categoryId) throws Exception {
+        String stringQuery="    SELECT store_id FROM stores_productcategories WHERE category_id = " + categoryId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            Set<Long> catIds = new HashSet<>();
+            for (Object i : query.getResultList()) {
+                catIds.add(new Long(i.toString()));
+            }
+            return catIds;
+        }catch (Exception e) {
+            logger.error("Exception in method getCategoryStoresIds. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception (e);
+        }
+    }
     //возвращает сет всех id категорий от id товара
     @SuppressWarnings("Duplicates")
     private Set<Long> getProductCategoriesIds(Long productId) {
@@ -3757,7 +3836,7 @@ public class ProductsRepositoryJPA {
     }
 
 
-
+    // Mass addind categories to products
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds, Boolean save) {
         try{
@@ -3799,7 +3878,6 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
-
     private Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds) throws Exception {
         if(categoriesIds.size()>0) {//если категории есть
             //прописываем их у всех запрашиваемых товаров
@@ -3822,7 +3900,6 @@ public class ProductsRepositoryJPA {
             }
         } else return true;
     }
-
     private Boolean deleteAllProductsCategories(String products) throws Exception {
         String stringQuery = "delete from product_productcategories where product_id in("+products.replaceAll("[^0-9\\,]", "")+")";
         try {
@@ -3835,8 +3912,107 @@ public class ProductsRepositoryJPA {
             throw new Exception();
         }
     }
+// Mass adding online stores to categoties
+@Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+public Boolean setStoresToCategories(Set<Long> categoriesIds, Set<Long> storesIds, Long companyId, Boolean save) {
+    try{
+        String categories = commonUtilites.SetOfLongToString(categoriesIds, ",", "", "");
+        //поверка на то, что присланные id категорий действительно являются категориями мастер-аккаунта
+        if (securityRepositoryJPA.isItAllMyMastersDocuments("product_categories", categories) &&
+        (storesIds.size()==0||(securityRepositoryJPA.isItAllMyMastersDocuments("stores", commonUtilites.SetOfLongToString(storesIds, ",", "", "")))) &&
+        securityRepositoryJPA.isItAllMyMastersDocuments("companies", companyId.toString()))
+        {
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            if (!save) {//Если не нужно сохранять те магазины у категории, которые уже есть
+                //удаляем все магазины у всех запрашиваемых категорий
+                deleteAllCategoriesStores(categories);
+                //назначаем категориям магазины
+                setStoresToCategories(categoriesIds,storesIds,masterId,companyId);
+                setProductCategoriesAsStoreOrUnstore(categoriesIds,!(storesIds.size()==0),masterId,companyId);
+                return true;
+            } else {//Если нужно сохранить предыдущие магазины у категорий. Отдельно работаем с каждой категорией
+                //цикл по категориям
+                for (Long p : categoriesIds) {
+                    //получим уже имеющиеся магазины у текущей категории
+                    Set<Long> categoryStoresIds=getCategoryStoresIds(p);
+                    //дополним их новыми магазинами
+                    categoryStoresIds.addAll(storesIds);
+                    //удалим старые магазины
+                    deleteAllCategoriesStores(p.toString());
+                    Set<Long> category = new HashSet<>();
+                    category.add(p);
+                    //назначаем текущей категории магазины
+                    setStoresToCategories(category,categoryStoresIds,masterId,companyId);
+                    setProductCategoriesAsStoreOrUnstore(category,!(categoryStoresIds.size()==0),masterId,companyId);
+                }
+                return true;
+            }
+        } else return null; // не прошли по безопасности - подсунуты "левые" id категорий
+    } catch (Exception e) {
+        logger.error("Exception in method setStoresToCategories", e);
+        e.printStackTrace();
+        return null;
+    }
+}
 
+    private Boolean setStoresToCategories(Set<Long> categoriesIds, Set<Long> storesIds, Long masterId, Long companyId) throws Exception {
+        if(storesIds.size()>0) {//если магазины есть
+            //прописываем их у всех запрашиваемых категорий
+            StringBuilder stringQuery = new StringBuilder("insert into stores_productcategories (category_id, store_id, master_id, company_id) values ");
+            int i = 0;
+            for (Long p : categoriesIds) {
+                for (Long c : storesIds) {
+                    stringQuery.append(i > 0 ? "," : "")
+                            .append("(")
+                            .append(p).append(",")
+                            .append(c).append(",")
+                            .append(masterId).append(",")
+                            .append(companyId)
+                            .append(")");
+                    i++;
+                }
+            }
+            try {
+                entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
+//                markProductsAsNeedToSyncWoo(categoriesIds, userRepositoryJPA.getMyMasterId());
+                return true;
+            } catch (Exception e) {
+                logger.error("Exception in method setStoresToCategories. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
+        } else return true;
+    }
 
+    private Boolean deleteAllCategoriesStores(String categories) throws Exception {
+        String stringQuery = "delete from stores_productcategories where category_id in("+categories.replaceAll("[^0-9\\,]", "")+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAllCategoriesStores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void setProductCategoriesAsStoreOrUnstore(Set<Long> categoriesIds, boolean isStoreCategories, Long masterId, Long companyId) throws Exception {
+        String stringQuery =
+                " update product_categories set is_store_category = " + isStoreCategories +
+                " where master_id="+masterId+
+                " and company_id="+companyId+
+                " and id in "+commonUtilites.SetOfLongToString(categoriesIds,",","(",")")+
+                " and coalesce(is_store_category,false) != " + isStoreCategories;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method setProductCategoriesAsStoreOrUnstore. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 //*****************************************************************************************************************************************************
 //**********************************************  P R O D U C T   A T T R I B U T E S   ***************************************************************
 //*****************************************************************************************************************************************************

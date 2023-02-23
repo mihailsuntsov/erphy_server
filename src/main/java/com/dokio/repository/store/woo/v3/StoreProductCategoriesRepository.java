@@ -1,5 +1,5 @@
 /*
-        Dokio CRM - server part. Sales, finance and warehouse management system
+        DokioCRM - server part. Sales, finance and warehouse management system
         Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
 
         This program is free software: you can redistribute it and/or modify
@@ -53,30 +53,41 @@ public class StoreProductCategoriesRepository {
     CommonUtilites cu;
 
     public ProductCategoriesJSON syncProductCategoriesToStore(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
         ProductCategoriesJSON result = new ProductCategoriesJSON();
-        String stringQuery =
-                " select " +
-                        " p.name as name," +
-                        " coalesce(p.description,'') as description," +
-                        " coalesce(p.display, 'default') as display," +
-                        " coalesce(p.slug,'') as slug," +
-                        " coalesce(p.parent_id, 0) as parent_crm_id," +
-                        " p.id as crm_id," +
-                        " p.woo_id as woo_id," +
-                        " parent_ctg.woo_id as parent_woo_id," +
-                        " coalesce(f.original_name,'') as img_original_name,"+
-                        " coalesce(f.name,'') as img_name,"+
-                        " coalesce(f.alt,'') as img_alt,"+
-                        " coalesce(f.anonyme_access, false) as img_anonyme_access,"+
-                        " coalesce(p.output_order,10000) as menu_order," +
-                        " coalesce(parent_ctg.is_store_category,false) as is_parent_store_category" +
-                        " from product_categories p" +
-                        " LEFT OUTER JOIN files f ON p.image_id=f.id " +
-                        " LEFT OUTER JOIN product_categories parent_ctg ON p.parent_id=parent_ctg.id " +
-                        " where p.company_id = " + companyId +
-                        " and coalesce(p.is_store_category, false) = true";
         try{
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
+
+            String stringQuery =
+            " select " +
+            " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
+            " coalesce(NULLIF(translator.description, ''), coalesce(p.description,'')) as description, " +
+            " coalesce(NULLIF(translator.slug, ''), coalesce(p.slug,'')) as slug, " +
+            " coalesce(p.display, 'default') as display, " +
+            " p.id as crm_id, " +
+            " coalesce(p.parent_id, 0) as parent_crm_id, " +
+            " spc.woo_id as woo_id, " +
+            " parent_ctg.woo_id as parent_woo_id, " +
+            " coalesce(f.original_name,'') as img_original_name, " +
+            " coalesce(f.name,'') as img_name, " +
+            " coalesce(f.alt,'') as img_alt, " +
+            " coalesce(f.anonyme_access, false) as img_anonyme_access, " +
+            " coalesce(p.output_order,10000) as menu_order, " +
+            " coalesce(parent_ctg_.is_store_category,false) as is_parent_store_category" +
+            //        " spc.store_id as store_id " +
+            " from product_categories p " +
+            " INNER JOIN companies c ON p.company_id = c.id  " +
+            " INNER JOIN stores_productcategories spc ON spc.category_id = p.id  " +
+            " INNER JOIN stores str ON spc.store_id = str.id " +
+            " LEFT OUTER JOIN files f ON p.image_id=f.id  " +
+            " LEFT OUTER JOIN stores_productcategories parent_ctg ON p.parent_id=parent_ctg.category_id and parent_ctg.store_id=str.id " +
+            " LEFT OUTER JOIN product_categories parent_ctg_ ON p.parent_id=parent_ctg_.id   " +
+            " LEFT OUTER JOIN store_translate_categories translator ON p.id = translator.category_id and translator.lang_code = '" + langCode + "'" +
+            " where p.company_id = " + companyId +
+            " and str.id = " + storeId +
+            " and coalesce(p.is_store_category, false) = true ";
+
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
@@ -87,10 +98,10 @@ public class StoreProductCategoriesRepository {
                 ProductCategoryJSON doc = new ProductCategoryJSON();
                 doc.setName((String)                                obj[0]);
                 doc.setDescription((String)                         obj[1]);
-                doc.setDisplay((String)                             obj[2]);
-                doc.setSlug((String)                                obj[3]);
-                doc.setParent_crm_id(((Boolean)obj[13])?Long.parseLong(obj[4].toString()):0L);// If parent category of the current category is not "store category" - then the current category is the root category in WooCommerce
-                doc.setCrm_id(Long.parseLong(                       obj[5].toString()));
+                doc.setSlug((String)                                obj[2]);
+                doc.setDisplay((String)                             obj[3]);
+                doc.setCrm_id(Long.parseLong(                       obj[4].toString()));
+                doc.setParent_crm_id(((Boolean)obj[13])?Long.parseLong(obj[5].toString()):0L);// If parent category of the current category is not "store category" - then the current category will be the one of root categories in WooCommerce
                 doc.setWoo_id((Integer)                             obj[6]);
                 doc.setParent_woo_id((Integer)                      obj[7]);
                 doc.setImg_original_name((String)                   obj[8]);
@@ -109,22 +120,21 @@ public class StoreProductCategoriesRepository {
             result.setQueryResultCode(-200);
             return result;
         }catch (Exception e) {
-            logger.error("Exception in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesToStore. SQL query:"+stringQuery, e);
+            logger.error("Exception in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesToStore. Key:"+key, e);
             e.printStackTrace();
             result.setQueryResultCode(null);
             return result;
         }
     }
 
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncProductCategoriesIds(SyncIdsForm request) {
-        String stringQuery = "";
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
-        try {
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
+        try{
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
             for (SyncIdForm row : request.getIdsSet()) {
-                syncProductCategoryId(row, companyId);
+                syncProductCategoryId(row, companyId, storeId, masterId);
             }
             return 1;
         }catch (WrongCrmSecretKeyException e) {
@@ -133,22 +143,29 @@ public class StoreProductCategoriesRepository {
             return -200;
         }catch (Exception e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            logger.error("Exception in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesIds. SQL query:"+stringQuery, e);
+            logger.error("Exception in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesIds. request:"+request.toString(), e);
             e.printStackTrace();
             return null;
         }
     }
-    private Boolean syncProductCategoryId(SyncIdForm ids, Long companyId) throws Exception {
+    private Boolean syncProductCategoryId(SyncIdForm ids, Long companyId, Long storeId, Long masterId) throws Exception {
         String stringQuery="";
         try {
-            stringQuery =
-                    " update product_categories " +
-                            " set " +
-                            " woo_id = " + ids.getId() +
-                            " where " +
-                            " company_id = " + companyId + " and " +
-                            " id = " + ids.getCrm_id() + " and " +
-                            ids.getCrm_id() + " in (select id from product_categories where company_id = "+companyId+")";
+            stringQuery =   " insert into stores_productcategories (" +
+                            " master_id, " +
+                            " company_id, " +
+                            " store_id, " +
+                            " category_id, " +
+                            " woo_id" +
+                            " ) values (" +
+                            masterId + ", " +
+                            companyId + ", " +
+                            storeId + ", " +
+                            "(select id from product_categories where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
+                            ids.getId() + ") " +
+                            " ON CONFLICT ON CONSTRAINT stores_categories_uq " +// "upsert"
+                            " DO update set " +
+                            " woo_id = "+ids.getId();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

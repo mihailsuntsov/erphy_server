@@ -446,7 +446,7 @@ public class ProductsController {
         logger.info("Processing post request for path /api/auth/getProductCategoriesTrees: " + request.toString());
 
         List<ProductCategories> returnList;
-        List<Integer> categoriesRootIds = productsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
+        List<Integer> categoriesRootIds = productsRepositoryJPA.getCategoriesRootIds(Long.valueOf((request.getCompanyId())));//
         try {
             returnList = productsRepositoryJPA.getProductCategoriesTrees(categoriesRootIds);
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
@@ -496,18 +496,18 @@ public class ProductsController {
         return new ResponseEntity<>(productsRepositoryJPA.updateProductCategory(request), HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/deleteProductCategory")
-    public ResponseEntity<?> deleteProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException{
-        logger.info("Processing post request for path /api/auth/deleteProductCategory: " + request.toString());
-
-        if(productsRepositoryJPA.deleteProductCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
-    }
+//    @PostMapping("/api/auth/deleteProductCategory")
+//    public ResponseEntity<?> deleteProductCategory(@RequestBody ProductCategoriesForm request) throws ParseException{
+//        logger.info("Processing post request for path /api/auth/deleteProductCategory: " + request.toString());
+//
+//        if(productsRepositoryJPA.deleteProductCategory(request)){
+//            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+//            return responseEntity;
+//        } else {
+//            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
+//            return responseEntity;
+//        }
+//    }
 
     @PostMapping("/api/auth/saveChangeCategoriesOrder")
     @SuppressWarnings("Duplicates")
@@ -549,6 +549,16 @@ public class ProductsController {
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @RequestMapping(
+            value = "/api/auth/getCategoryStoresList",
+            params = {"category_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCategoryStoresList(
+            @RequestParam("category_id") Long category_id){
+        logger.info("Processing get request for path /api/auth/getCategoryStoresList with parameters: " + "category_id: " + category_id);
+        try {return new ResponseEntity<>(productsRepositoryJPA.getCategoryStoresList(category_id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error loading data", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 //*************************************************************************************************************************************************
 //**********************************************************  I M A G E S  ************************************************************************
 //*************************************************************************************************************************************************
@@ -918,9 +928,35 @@ public class ProductsController {
         if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
             return new ResponseEntity<>(result, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Ошибка при назначении товарам категорий", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @PostMapping("/api/auth/setStoresToCategories")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setStoresToCategories(@RequestBody UniversalForm form) {
+        logger.info("Processing post request for path api/auth/setStoresToCategories: " + form.toString());
+
+        Set<Long> storesIds = form.getSetOfLongs1();
+        Set<Long> categoriesIds = form.getSetOfLongs2();
+        Long companyId = form.getId();
+        Boolean save = form.getYesNo();
+
+        Boolean result = productsRepositoryJPA.setStoresToCategories(categoriesIds, storesIds, companyId, save);
+        if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/api/auth/deleteProductCategories")
+    public ResponseEntity<?> deleteProductCategories(@RequestBody UniversalForm form) {
+        logger.info("Processing post request for path api/auth/deleteProductCategories: " + form.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.deleteProductCategories(form), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getProductAttributes error with categoriesIds=" + form.getSetOfLongs1().toString(), e);
+        return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     @RequestMapping(
             value = "/api/auth/getProductDownloadableFiles",
             params = {"product_id"},

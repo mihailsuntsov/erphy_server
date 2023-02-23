@@ -56,21 +56,23 @@ public class StoreProductAttributesRepository {
 
 
     public ProductAttributesJSON syncProductAttributesToStore(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
+        String stringQuery="";
         ProductAttributesJSON result = new ProductAttributesJSON();
-        String stringQuery =
-                " select " +
-                        " p.name as name," +
-                        " coalesce(p.type, 'select') as type," +
-                        " coalesce(p.slug,'') as slug," +
-                        " coalesce(p.order_by, 'menu_order') as order_by," +
-                        " coalesce(p.has_archives,false) as has_archives," +
-                        " p.id as crm_id," +
-                        " p.woo_id as woo_id" +
-                        " from product_attributes p" +
-                        " where p.company_id = " + companyId +
-                        " and p.is_deleted = false";
         try{
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            stringQuery =
+                " select " +
+                " p.name as name," +
+                " coalesce(p.type, 'select') as type," +
+                " coalesce(p.slug,'') as slug," +
+                " coalesce(p.order_by, 'menu_order') as order_by," +
+                " coalesce(p.has_archives,false) as has_archives," +
+                " p.id as crm_id," +
+                " p.woo_id as woo_id" +
+                " from product_attributes p" +
+                " where p.company_id = " + companyId +
+                " and p.is_deleted = false";
+
             if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
@@ -108,9 +110,8 @@ public class StoreProductAttributesRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncProductAttributesIds(SyncIdsForm request) {
         String stringQuery = "";
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
         try {
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductAttributeId(row, companyId);
             }

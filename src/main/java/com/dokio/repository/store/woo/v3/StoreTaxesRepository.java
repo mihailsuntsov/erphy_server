@@ -40,7 +40,7 @@ import java.util.*;
 
 @Repository
 public class StoreTaxesRepository {
-
+/*
     private Logger logger = Logger.getLogger(StoreTaxesRepository.class);
 
     @PersistenceContext
@@ -241,6 +241,6 @@ public class StoreTaxesRepository {
             throw new Exception();
         }
     }
-
+*/
 
 }

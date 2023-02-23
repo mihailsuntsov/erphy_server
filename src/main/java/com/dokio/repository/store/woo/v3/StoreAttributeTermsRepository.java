@@ -56,10 +56,11 @@ public class StoreAttributeTermsRepository {
 
 
     public AttributeTermsJSON syncAttributeTermsToStore(String key) {
-        Long companyId = cu.getByCrmSecretKey("id",key);
+        String stringQuery = "";
         AttributeTermsJSON result = new AttributeTermsJSON();
-        String stringQuery =
-                " select " +
+        try{
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            stringQuery=" select " +
                         " p.name as name," +
                         " coalesce(p.description, '') as description," +
                         " coalesce(p.slug,'') as slug," +
@@ -72,8 +73,6 @@ public class StoreAttributeTermsRepository {
                         " inner join product_attributes pa on pa.id = p.attribute_id" +
                         " where pa.company_id = " + companyId +
                         " and pa.is_deleted = false";
-        try{
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
             //.setMaxResults(result);
@@ -111,9 +110,8 @@ public class StoreAttributeTermsRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncAttributeTermsIds(SyncIdsForm request) {
         String stringQuery = "";
-        Long companyId = cu.getByCrmSecretKey("id",request.getCrmSecretKey());
         try {
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
+            Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             for (SyncIdForm row : request.getIdsSet()) {
                 syncAttributeTermId(row, companyId);
             }

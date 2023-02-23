@@ -17,7 +17,7 @@
 */
 package com.dokio.message.response.store.woo.v3;
 
-public class ProductCategoryJSON {
+public class  ProductCategoryJSON {
     private Long            crm_id;
     private Integer         woo_id;
     private Integer         parent_woo_id;      // parent category id in store database
