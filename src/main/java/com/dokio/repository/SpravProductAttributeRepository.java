@@ -23,6 +23,8 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.ProductAttributeJSON;
 import com.dokio.message.response.Sprav.ProductAttributeTermJSON;
 import com.dokio.message.response.Sprav.ProductAttributesListJSON;
+import com.dokio.message.response.additional.StoreTranslationAttributeJSON;
+import com.dokio.message.response.additional.StoreTranslationTermJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.User;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -36,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -211,7 +214,7 @@ public class SpravProductAttributeRepository {
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
 
             stringQuery = "     select  p.id as id, " +
                     "           u.name as master, " +
@@ -234,7 +237,7 @@ public class SpravProductAttributeRepository {
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.id= " + id;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(53L, "667")){ //Если нет прав на "Просмотр документов по всем предприятиям"
@@ -262,6 +265,8 @@ public class SpravProductAttributeRepository {
                 doc.setOrder_by((String)            obj[14]);
                 doc.setHas_archives((Boolean)       obj[15]);
             }
+            doc.setStoresIds(getAttributeStoresIds(id, masterId));
+            doc.setStoreAttributeTranslations(getStoreAttributeTranslationsList(doc.getId(), masterId));
             return doc;
         } else return null;
     }
@@ -297,7 +302,34 @@ public class SpravProductAttributeRepository {
                 query.setParameter("slug",request.getSlug());
                 query.setParameter("order_by",request.getOrder_by());
                 query.executeUpdate();
+
                 saveProductAttributeTermsOrder(request.getTerms(),myMasterId);
+
+                //save the list of translations of this attribute
+                if (!Objects.isNull(request.getStoreAttributeTranslations()) && request.getStoreAttributeTranslations().size() > 0) {
+                    for (StoreTranslationAttributeJSON row : request.getStoreAttributeTranslations()) {
+                        saveStoreAttributeTranslations(row, myMasterId, request.getCompany_id(), request.getId());
+                    }
+                }
+
+                //Saving the list of online stores that attribute belongs to
+                deleteNonSelectedAttributeStores(request.getStoresIds(), request.getId(), myMasterId);
+                if (!Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
+                    for (Long storeId : request.getStoresIds()) {
+                        saveAttributeStore(request.getId(), storeId, myMasterId, request.getCompany_id());
+                    }
+                }
+
+                //Saving the list of stores IDs for each term of this attribute
+                deleteNonSelectedAttributeTermsStores(request.getStoresIds(), request.getId(), myMasterId);
+                List<ProductAttributeTermJSON> attributeTermsList = getProductAttributeTermsList(request.getId());
+                if (!Objects.isNull(attributeTermsList) && attributeTermsList.size() > 0 && !Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
+                    for (Long storeId : request.getStoresIds()) {
+                        for (ProductAttributeTermJSON termRow : attributeTermsList) {
+                            saveTermStore(termRow.getId(), storeId, myMasterId, request.getCompany_id());
+                        }
+                    }
+                }
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -377,7 +409,22 @@ public class SpravProductAttributeRepository {
                 query.executeUpdate();
                 stringQuery="select id from product_attributes where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
-                return Long.valueOf(query2.getSingleResult().toString());
+
+                Long newAttributeId = Long.valueOf(query2.getSingleResult().toString());
+
+                //save the list of translations of this attribute
+                if (!Objects.isNull(request.getStoreAttributeTranslations()) && request.getStoreAttributeTranslations().size() > 0) {
+                    for (StoreTranslationAttributeJSON row : request.getStoreAttributeTranslations()) {
+                        saveStoreAttributeTranslations(row, myMasterId, request.getCompany_id(), newAttributeId);
+                    }
+                }
+//                //Saving the list of online stores that attribute belongs to
+                if (!Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
+                    for (Long storeId : request.getStoresIds()) {
+                        saveAttributeStore(newAttributeId, storeId, myMasterId, request.getCompany_id());
+                    }
+                }
+                return newAttributeId;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method insertProductAttribute on inserting into product_attributes. SQL query:"+stringQuery, e);
@@ -405,7 +452,115 @@ public class SpravProductAttributeRepository {
             return -1L;
         }
     }
+    private void saveAttributeStore(Long attribute_id, Long store_id, Long master_id, Long company_id) throws Exception {
+        String stringQuery = "insert into stores_attributes (" +
+                "   master_id," +
+                "   company_id," +
+                "   store_id," +
+                "   attribute_id " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                "(select id from stores where id="+store_id+" and master_id="+master_id+"), "+// +", " +
+                "(select id from product_attributes where id="+attribute_id+" and master_id="+master_id+") "+// чтобы не мочь изменить атрибут другого master_id, случайно или намеренно
+                ") ON CONFLICT ON CONSTRAINT stores_attributes_uq " +// "upsert"
+                " DO NOTHING";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveAttributeStore. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
 
+    private void deleteNonSelectedAttributeStores(List<Long> storesIds, Long attributeId, Long masterId) throws Exception {
+        String stringQuery = "delete from stores_attributes " +
+                " where master_id=" + masterId +
+                " and attribute_id=" + attributeId +
+                " and store_id not in " + ((!Objects.isNull(storesIds)&&storesIds.size()>0)?(commonUtilites.ListOfLongToString(storesIds,",","(",")")):"(0)");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteNonSelectedAttributeStores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private void deleteNonSelectedAttributeTermsStores(List<Long> storesIds, Long attributeId, Long masterId) throws Exception {
+        String stringQuery = "delete from stores_terms " +
+                " where master_id=" + masterId +
+                " and term_id in (select id from product_attribute_terms where attribute_id = " + attributeId +
+                " and store_id not in " + ((!Objects.isNull(storesIds)&&storesIds.size()>0)?(commonUtilites.ListOfLongToString(storesIds,",","(",")")):"(0)");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteNonSelectedTermStores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private List<StoreTranslationAttributeJSON> getStoreAttributeTranslationsList(Long attributeId, Long masterId){
+        String stringQuery = "      select   p.lang_code as lang_code," +
+                "           coalesce(p.name,'') as name, " +
+                "           coalesce(p.slug,'') as slug " +
+//                "           coalesce(p.description,'') as description " +
+                "           from     store_translate_attributes p " +
+                "           where    p.master_id=" + masterId +
+                "           and      p.attribute_id =" + attributeId +
+                "           order by p.lang_code";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<StoreTranslationAttributeJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                StoreTranslationAttributeJSON doc = new StoreTranslationAttributeJSON();
+                doc.setLangCode((String)                                obj[0]);
+                doc.setName((String)                                    obj[1]);
+                doc.setSlug((String)                                    obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getStoreAttributeTranslationsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+    private void saveStoreAttributeTranslations(StoreTranslationAttributeJSON row, Long master_id, Long company_id, Long attribute_id) throws Exception {
+        String stringQuery = "insert into store_translate_attributes (" +
+                "   master_id," +
+                "   company_id," +
+                "   lang_code," +
+                "   attribute_id, " +
+                "   name, " +
+                "   slug " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                ":lang_code," +
+                "(select id from product_attributes where id="+attribute_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить атрибут другого master_id, случайно или намеренно
+                ":name," +
+                ":slug" +
+                ") ON CONFLICT ON CONSTRAINT attribute_lang_uq " +// "upsert"
+                " DO update set " +
+                " name = :name, " +
+                " slug = :slug";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", row.getName());
+            query.setParameter("slug", row.getSlug());
+            query.setParameter("lang_code", row.getLangCode());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveStoreAttributeTranslations. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public Integer deleteProductAttribute(String delNumbers) {
@@ -465,6 +620,25 @@ public class SpravProductAttributeRepository {
         } else return -1;
     }
 
+    private List<Long> getAttributeStoresIds(Long attributeId, Long masterId){
+        String stringQuery = "  select   csd.store_id as id" +
+                "               from     stores_attributes csd " +
+                "               where    csd.master_id=" + masterId +
+                "               and      csd.attribute_id =" + attributeId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<BigInteger> queryList = query.getResultList();
+            List<Long> returnList = new ArrayList<>();
+            for (BigInteger obj : queryList) {
+                returnList.add(obj.longValue());
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getAttributeStoresIds. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     // inserting base set of product attributes on register of new user
     @SuppressWarnings("Duplicates")
@@ -527,7 +701,7 @@ public class SpravProductAttributeRepository {
     @SuppressWarnings("Duplicates")
     public List<ProductAttributeTermJSON> getProductAttributeTermsList (Long attrbuteId) {
             String stringQuery;
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Long masterId = userRepositoryJPA.getMyMasterId();
             stringQuery =       "select " +
                     "           p.id as id," +
                     "           p.name as name, " +
@@ -535,7 +709,7 @@ public class SpravProductAttributeRepository {
                     "           p.description as description " +
                     "           from product_attribute_terms p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.attribute_id =" + attrbuteId +
                     "           order by p.menu_order";
             try {
@@ -548,8 +722,10 @@ public class SpravProductAttributeRepository {
                     doc.setName((String)                obj[1]);
                     doc.setSlug((String)                obj[2]);
                     doc.setDescription((String)         obj[3]);
+                    doc.setStoreTermTranslations(getStoreTermTranslationsList(doc.getId(), masterId));
                     returnList.add(doc);
                 }
+
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -557,14 +733,40 @@ public class SpravProductAttributeRepository {
                 return null;
             }
     }
-
-
+    private List<StoreTranslationTermJSON> getStoreTermTranslationsList(Long termId, Long masterId){
+        String stringQuery = "      select   p.lang_code as lang_code," +
+                "           coalesce(p.name,'') as name, " +
+                "           coalesce(p.slug,'') as slug, " +
+                "           coalesce(p.description,'') as description " +
+                "           from     store_translate_terms p " +
+                "           where    p.master_id=" + masterId +
+                "           and      p.term_id =" + termId +
+                "           order by p.lang_code";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<StoreTranslationTermJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                StoreTranslationTermJSON doc = new StoreTranslationTermJSON();
+                doc.setLangCode((String)                                obj[0]);
+                doc.setName((String)                                    obj[1]);
+                doc.setSlug((String)                                    obj[2]);
+                doc.setDescription((String)                             obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getStoreTermTranslationsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Integer insertProductAttributeTerm(ProductAttributeTermForm row) {
-        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",row.getAttribute_id().toString())) ||
+    public Integer insertProductAttributeTerm(ProductAttributeTermForm request) {
+        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",request.getAttribute_id().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",row.getAttribute_id().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",request.getAttribute_id().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery =
@@ -581,15 +783,36 @@ public class SpravProductAttributeRepository {
                             ":name," +
                             ":slug," +
                             ":description," +
-                            row.getAttribute_id() + ", " +
-                            " (select coalesce(max(menu_order),0)+1 from product_attribute_terms where attribute_id=" + row.getAttribute_id() + ")" +
+                            request.getAttribute_id() + ", " +
+                            " (select coalesce(max(menu_order),0)+1 from product_attribute_terms where attribute_id=" + request.getAttribute_id() + ")" +
                             ")";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("name", row.getName());
-                query.setParameter("description", row.getDescription());
-                query.setParameter("slug", row.getSlug());
+                query.setParameter("name", request.getName());
+                query.setParameter("description", request.getDescription());
+                query.setParameter("slug", request.getSlug());
                 query.executeUpdate();
+
+                // find created term by product_attribute_terms_name_uq (product attribute need to have unique terms names)
+                stringQuery="select id from product_attribute_terms where master_id="+myMasterId+" and attribute_id = "+request.getAttribute_id()+" and name=:name";
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                query2.setParameter("name", request.getName());
+                Long newTermId = Long.valueOf(query2.getSingleResult().toString());
+
+                //Saving the list of translations of this term
+                if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
+                    for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
+                        saveStoreTermTranslations(row, myMasterId, request.getCompany_id(), newTermId);
+                    }
+                }
+                //Saving the list of online stores that term belongs to
+                List<Long> storesIds = getAttributeStoresIds(request.getAttribute_id(), myMasterId);
+                if (!Objects.isNull(storesIds) && storesIds.size() > 0) {
+                    for (Long storeId : storesIds) {
+                        saveTermStore(newTermId, storeId, myMasterId, request.getCompany_id());
+                    }
+                }
+
                 return 1;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -618,10 +841,10 @@ public class SpravProductAttributeRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public Integer updateProductAttributeTerm(ProductAttributeTermForm row) {
-        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",row.getAttribute_id().toString())) ||
+    public Integer updateProductAttributeTerm(ProductAttributeTermForm request) {
+        if(     (securityRepositoryJPA.userHasPermissions_OR(53L,"669") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes",request.getAttribute_id().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",row.getAttribute_id().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(53L,"670") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes",request.getAttribute_id().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery =
@@ -633,14 +856,21 @@ public class SpravProductAttributeRepository {
                         " description = :description " +
                     " where " +
                         " master_id = " + myMasterId +
-                        " and id = " + row.getId() +
-                        " and attribute_id = " + row.getAttribute_id();
+                        " and id = " + request.getId() +
+                        " and attribute_id = " + request.getAttribute_id();
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("name",row.getName());
-                query.setParameter("description",row.getDescription());
-                query.setParameter("slug",row.getSlug());
+                query.setParameter("name",request.getName());
+                query.setParameter("description",request.getDescription());
+                query.setParameter("slug",request.getSlug());
                 query.executeUpdate();
+                //save the list of translations of this term
+                if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
+                    for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
+                        saveStoreTermTranslations(row, myMasterId, request.getCompany_id(), request.getId());
+                    }
+                }
+
                 return 1;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -667,6 +897,64 @@ public class SpravProductAttributeRepository {
         } else return -1;
     }
 
+    private void saveTermStore(Long term_id, Long store_id, Long master_id, Long company_id) throws Exception {
+        String stringQuery =
+                "insert into stores_terms (" +
+                "   master_id," +
+                "   company_id," +
+                "   store_id," +
+                "   term_id" +
+                ") values (" +
+                    master_id+", "+
+                    company_id+", "+
+                    "(select id from stores where id="+store_id+" and master_id="+master_id+"), "+// +", " +
+                    "(select id from product_terms where id="+term_id+" and master_id="+master_id+") "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
+                ") ON CONFLICT ON CONSTRAINT stores_terms_uq " +// "upsert"
+                " DO NOTHING";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveTermStore. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+    private void saveStoreTermTranslations(StoreTranslationTermJSON row, Long master_id, Long company_id, Long term_id) throws Exception {
+        String stringQuery = "insert into store_translate_terms (" +
+                "   master_id," +
+                "   company_id," +
+                "   lang_code," +
+                "   term_id, " +
+                "   name, " +
+                "   slug, " +
+                "   description " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                ":lang_code," +
+                "(select id from product_terms where id="+term_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
+                ":name," +
+                ":slug," +
+                ":description" +
+                ") ON CONFLICT ON CONSTRAINT term_lang_uq " +// "upsert"
+                " DO update set " +
+                " name = :name, " +
+                " slug = :slug, " +
+                " description = :description";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", row.getName());
+            query.setParameter("slug", row.getSlug());
+            query.setParameter("description", row.getDescription());
+            query.setParameter("lang_code", row.getLangCode());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveStoreTermTranslations. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
 
     @SuppressWarnings("Duplicates")
     public Integer saveProductAttributeTermsOrder(List<ProductAttributeTermForm> request, Long myMasterId) throws Exception{

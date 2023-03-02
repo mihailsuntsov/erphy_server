@@ -47,9 +47,12 @@ public class StoreOrdersRepository {
         String stringQuery="";
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
+
             stringQuery=" select p.woo_gmt_date from customers_orders p  " +
                         " where p.company_id = " + companyId +
                         " and coalesce(p.is_deleted, false) = false " +
+                        " and p.store_id = " + storeId +
                         " and p.woo_gmt_date is not null " +
                         " order by p.woo_gmt_date desc limit 1";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -75,16 +78,17 @@ public class StoreOrdersRepository {
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
+
             CompanySettingsJSON settings = cu.getCompanySettings(companyId);
             if (Objects.isNull(settings.getStore_orders_department_id()))
                 throw new StoreDepartmentIsNotSet();
             if (settings.getStore_if_customer_not_found().equals("use_default") && Objects.isNull(settings.getStore_default_customer_id()))
                 throw new StoreDefaultCustomerIsNotSet();
-            if (Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             if (Objects.isNull(settings.getStore_default_creator_id()))
                 settings.setStore_default_creator_id(masterId);
             for (OrderForm row : request.getOrders()) {
-                insertOrder(row, masterId, companyId, settings);
+                insertOrder(row, masterId, companyId, storeId, settings);
             }
             return 1;
         }catch (StoreDefaultCustomerIsNotSet e) {
@@ -108,7 +112,7 @@ public class StoreOrdersRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private void insertOrder(OrderForm row, Long masterId, Long companyId, CompanySettingsJSON settings) throws Exception {
+    private void insertOrder(OrderForm row, Long masterId, Long companyId, Long storeId, CompanySettingsJSON settings) throws Exception {
         Long    store_orders_department_id  = settings.getStore_orders_department_id();
         String  store_if_customer_not_found = settings.getStore_if_customer_not_found();
         Long    store_default_customer_id   = settings.getStore_default_customer_id();
@@ -192,6 +196,7 @@ public class StoreOrdersRepository {
                 " track_number," + //трек-номер отправленного заказа
                 " status_id,"+//статус заказа
                 " uid,"+// уникальный идентификатор документа
+                " store_id, " + // id интернет-магазина, из которого поступил заказ
                 " woo_gmt_date" + // дата в текстовом виде в формате ISO8601: YYYY-MM-DDTHH:MM:SS
                 ") values ("+
                 masterId + ", "+//мастер-аккаунт
@@ -219,6 +224,7 @@ public class StoreOrdersRepository {
                 ":track_number, " +//трек-номер отправленного заказа
                 cu.getDocumentsDefaultStatus(companyId,23) + "," +//статус заказа
                 "'"+UUID.randomUUID().toString()+"',"+// уникальный идентификатор документа
+                storeId + ", " + // id интернет-магазина, из которого поступил заказ
                 ":woo_gmt_date"+
                 ")";
 

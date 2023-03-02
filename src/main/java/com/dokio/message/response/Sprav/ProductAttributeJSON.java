@@ -18,6 +18,8 @@
 
 package com.dokio.message.response.Sprav;
 
+import com.dokio.message.response.additional.StoreTranslationAttributeJSON;
+
 import java.util.List;
 
 public class ProductAttributeJSON {
@@ -39,6 +41,24 @@ public class ProductAttributeJSON {
     private String order_by;
     private Boolean has_archives;
     private List<ProductAttributeTermJSON> terms;
+    private List<StoreTranslationAttributeJSON> storeAttributeTranslations;
+    private List<Long>      storesIds;
+
+    public List<StoreTranslationAttributeJSON> getStoreAttributeTranslations() {
+        return storeAttributeTranslations;
+    }
+
+    public void setStoreAttributeTranslations(List<StoreTranslationAttributeJSON> storeAttributeTranslations) {
+        this.storeAttributeTranslations = storeAttributeTranslations;
+    }
+
+    public List<Long> getStoresIds() {
+        return storesIds;
+    }
+
+    public void setStoresIds(List<Long> storesIds) {
+        this.storesIds = storesIds;
+    }
 
     public Long getMaster_id() {
         return master_id;

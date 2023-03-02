@@ -31,13 +31,11 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Repository
 public class StoreAttributeTermsRepository {
@@ -53,25 +51,31 @@ public class StoreAttributeTermsRepository {
     @Autowired
     CommonUtilites cu;
 
-
-
     public AttributeTermsJSON syncAttributeTermsToStore(String key) {
         String stringQuery = "";
         AttributeTermsJSON result = new AttributeTermsJSON();
         try{
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
+
             stringQuery=" select " +
-                        " p.name as name," +
-                        " coalesce(p.description, '') as description," +
-                        " coalesce(p.slug,'') as slug," +
+                        " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
+                        " coalesce(NULLIF(translator.description, ''), coalesce(p.description,'')) as description, " +
+                        " coalesce(NULLIF(translator.slug, ''), coalesce(p.slug,'')) as slug, " +
                         " coalesce(p.menu_order,0) as menu_order," +
                         " p.id as crm_id," +
-                        " p.woo_id as woo_id," +
+                        " spt.woo_id as woo_id, " +
                         " pa.id as attribute_crm_id," +
-                        " pa.woo_id as attribute_woo_id" +
+                        " spc.woo_id as attribute_woo_id" +
                         " from product_attribute_terms p" +
-                        " inner join product_attributes pa on pa.id = p.attribute_id" +
+                        " INNER JOIN product_attributes pa ON pa.id = p.attribute_id" +
+                        " INNER JOIN stores_attributes spc ON spc.attribute_id = p.attribute_id" +
+                        " INNER JOIN stores_terms spt ON spt.term_id = p.id  " +
+                        " INNER JOIN stores str ON spc.store_id = str.id " +
+                        " LEFT OUTER JOIN store_translate_terms translator ON p.id = translator.term_id and translator.lang_code = '" + langCode + "'" +
                         " where pa.company_id = " + companyId +
+                        " and str.id = " + storeId +
                         " and pa.is_deleted = false";
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
@@ -112,8 +116,11 @@ public class StoreAttributeTermsRepository {
         String stringQuery = "";
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
+
             for (SyncIdForm row : request.getIdsSet()) {
-                syncAttributeTermId(row, companyId);
+                syncAttributeTermId(row, companyId, storeId, masterId);
             }
             return 1;
         }catch (WrongCrmSecretKeyException e) {
@@ -127,18 +134,24 @@ public class StoreAttributeTermsRepository {
             return null;
         }
     }
-    private Boolean syncAttributeTermId(SyncIdForm ids, Long companyId) throws Exception {
+    private Boolean syncAttributeTermId(SyncIdForm ids, Long companyId, Long storeId, Long masterId) throws Exception {
         String stringQuery="";
         try {
-            stringQuery =
-                    " update product_attribute_terms " +
-                            " set " +
-                            " woo_id = " + ids.getId() +
-                            " where " +
-                            " id = " + ids.getCrm_id() + " and " +
-                            " attribute_id = (select id from product_attributes where company_id = "+companyId+
-                            " and id = (select attribute_id from product_attribute_terms where  id = "+ids.getCrm_id()+")" +
-                            " limit 1)";
+            stringQuery =   " insert into stores_terms (" +
+                    " master_id, " +
+                    " company_id, " +
+                    " store_id, " +
+                    " term_id, " +
+                    " woo_id" +
+                    " ) values (" +
+                    masterId + ", " +
+                    companyId + ", " +
+                    storeId + ", " +
+                    "(select id from product_attribute_terms where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
+                    ids.getId() + ") " +
+                    " ON CONFLICT ON CONSTRAINT stores_terms_uq " +// "upsert"
+                    " DO update set " +
+                    " woo_id = "+ids.getId();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

@@ -19,6 +19,7 @@
 package com.dokio.message.response;
 
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.additional.StoreTranslationProductJSON;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -103,6 +104,24 @@ public class ProductsJSON {
     private String          short_description_html; // custom HTML short description
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
+    private List<StoreTranslationProductJSON> storeProductTranslations;
+//    private List<Long>      storesIds;
+
+    public List<StoreTranslationProductJSON> getStoreProductTranslations() {
+        return storeProductTranslations;
+    }
+
+    public void setStoreProductTranslations(List<StoreTranslationProductJSON> storeProductTranslations) {
+        this.storeProductTranslations = storeProductTranslations;
+    }
+
+//    public List<Long> getStoresIds() {
+//        return storesIds;
+//    }
+//
+//    public void setStoresIds(List<Long> storesIds) {
+//        this.storesIds = storesIds;
+//    }
 
     public String getDescription_html() {
         return description_html;

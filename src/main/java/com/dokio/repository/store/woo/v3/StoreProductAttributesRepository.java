@@ -31,7 +31,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -53,30 +52,33 @@ public class StoreProductAttributesRepository {
     @Autowired
     CommonUtilites cu;
 
-
-
     public ProductAttributesJSON syncProductAttributesToStore(String key) {
         String stringQuery="";
         ProductAttributesJSON result = new ProductAttributesJSON();
         try{
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
+            String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
+
             stringQuery =
                 " select " +
-                " p.name as name," +
+                " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
                 " coalesce(p.type, 'select') as type," +
-                " coalesce(p.slug,'') as slug," +
+                " coalesce(NULLIF(translator.slug, ''), coalesce(p.slug,'')) as slug, " +
                 " coalesce(p.order_by, 'menu_order') as order_by," +
                 " coalesce(p.has_archives,false) as has_archives," +
                 " p.id as crm_id," +
-                " p.woo_id as woo_id" +
+                " spc.woo_id as woo_id, " +
                 " from product_attributes p" +
+                " INNER JOIN stores_attributes spc ON spc.attribute_id = p.id  " +
+                " INNER JOIN stores str ON spc.store_id = str.id " +
+                " LEFT OUTER JOIN store_translate_attributes translator ON p.id = translator.attribute_id and translator.lang_code = '" + langCode + "'" +
                 " where p.company_id = " + companyId +
+                " and str.id = " + storeId +
                 " and p.is_deleted = false";
 
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
+
             Query query = entityManager.createNativeQuery(stringQuery);
-            //.setFirstResult(offsetreal)
-            //.setMaxResults(result);
             List<Object[]> queryList = query.getResultList();
             List<ProductAttributeJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
@@ -106,14 +108,16 @@ public class StoreProductAttributesRepository {
         }
     }
 
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncProductAttributesIds(SyncIdsForm request) {
         String stringQuery = "";
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
+            Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
+
             for (SyncIdForm row : request.getIdsSet()) {
-                syncProductAttributeId(row, companyId);
+                syncProductAttributeId(row, companyId, storeId, masterId);
             }
             return 1;
         }catch (WrongCrmSecretKeyException e) {
@@ -127,17 +131,25 @@ public class StoreProductAttributesRepository {
             return null;
         }
     }
-    private Boolean syncProductAttributeId(SyncIdForm ids, Long companyId) throws Exception {
+
+    private Boolean syncProductAttributeId(SyncIdForm ids, Long companyId, Long storeId, Long masterId) throws Exception {
         String stringQuery="";
         try {
-            stringQuery =
-                    " update product_attributes " +
-                            " set " +
-                            " woo_id = " + ids.getId() +
-                            " where " +
-                            " company_id = " + companyId + " and " +
-                            " id = " + ids.getCrm_id() + " and " +
-                            ids.getCrm_id() + " in (select id from product_attributes where company_id = "+companyId+")";
+            stringQuery = "insert into stores_attributes (" +
+                    " master_id, " +
+                    " company_id, " +
+                    " store_id, " +
+                    " attribute_id, " +
+                    " woo_id" +
+                    " ) values (" +
+                    masterId + ", " +
+                    companyId + ", " +
+                    storeId + ", " +
+                    "(select id from product_attributes where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
+                    ids.getId() + ") " +
+                    " ON CONFLICT ON CONSTRAINT stores_attributes_uq " +// "upsert"
+                    " DO update set " +
+                    " woo_id = "+ids.getId();
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -149,10 +161,4 @@ public class StoreProductAttributesRepository {
             throw new Exception();
         }
     }
-
-
-
-
-
-
 }

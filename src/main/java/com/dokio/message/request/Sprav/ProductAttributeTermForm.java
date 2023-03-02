@@ -20,6 +20,10 @@
 package com.dokio.message.request.Sprav;
 
 
+import com.dokio.message.response.additional.StoreTranslationTermJSON;
+
+import java.util.List;
+
 public class ProductAttributeTermForm {
 
 
@@ -30,6 +34,15 @@ public class ProductAttributeTermForm {
     private String description;
     private String slug;
     private Integer menu_order;
+    private List<StoreTranslationTermJSON> storeTermTranslations;
+
+    public List<StoreTranslationTermJSON> getStoreTermTranslations() {
+        return storeTermTranslations;
+    }
+
+    public void setStoreTermTranslations(List<StoreTranslationTermJSON> storeTermTranslations) {
+        this.storeTermTranslations = storeTermTranslations;
+    }
 
     public Long getId() {
         return id;

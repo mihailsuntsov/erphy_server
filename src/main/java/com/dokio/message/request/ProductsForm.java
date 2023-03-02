@@ -19,6 +19,7 @@
 package com.dokio.message.request;
 
 import com.dokio.message.response.additional.ProductPricesJSON;
+import com.dokio.message.response.additional.StoreTranslationProductJSON;
 //import com.dokio.message.response.additional.ProductProductAttributeJSON;
 
 //import java.math.BigDecimal;
@@ -97,6 +98,24 @@ public class ProductsForm {
     private String          short_description_html; // custom HTML short description
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
+    private List<StoreTranslationProductJSON> storeProductTranslations;
+//    private List<Long>      storesIds;
+
+    public List<StoreTranslationProductJSON> getStoreProductTranslations() {
+        return storeProductTranslations;
+    }
+
+    public void setStoreProductTranslations(List<StoreTranslationProductJSON> storeProductTranslations) {
+        this.storeProductTranslations = storeProductTranslations;
+    }
+
+//    public List<Long> getStoresIds() {
+//        return storesIds;
+//    }
+//
+//    public void setStoresIds(List<Long> storesIds) {
+//        this.storesIds = storesIds;
+//    }
 
     public String getDescription_html() {
         return description_html;

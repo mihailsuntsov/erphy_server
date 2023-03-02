@@ -10,6 +10,7 @@ public class ProductJSON {
     private Long                crm_id;
     private Integer             woo_id;
     private String              name;
+    private String              slug;
     private String              type;
     private String              regular_price;
     private String              sale_price;
@@ -27,6 +28,14 @@ public class ProductJSON {
     private Set<Long>           categories;
     private List<ImageJSON>     images;
     private List<AttributeJSON> attributes;
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
 
     public String getPurchase_note() {
         return purchase_note;

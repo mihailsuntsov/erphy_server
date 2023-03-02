@@ -396,6 +396,8 @@ public class ProductsRepositoryJPA {
                     doc.setDescription_type((String)                queryList.get(0)[65]);
                     doc.setShort_description_type((String)          queryList.get(0)[66]);
                 }
+//                doc.setStoresIds(getProductStoresIds(id, myMasterId));
+                doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
                 return doc;
             } catch (NoResultException nre) {
                 logger.error("Exception in method getProductValues. SQL query:"+stringQuery, nre);
@@ -479,6 +481,12 @@ public class ProductsRepositoryJPA {
                 }
                 // сохранение attributes
                 updateProductAttributes(request.getProductAttributes(), myMasterId, request.getId() );
+                //save the list of translations of this product
+                if (!Objects.isNull(request.getStoreProductTranslations()) && request.getStoreProductTranslations().size() > 0) {
+                    for (StoreTranslationProductJSON row : request.getStoreProductTranslations()) {
+                        saveStoreProductTranslations(row, myMasterId, request.getCompany_id(), request.getId());
+                    }
+                }
                 // deleting attributes that was deleted on frontend
                 deleteAttributesFromProduct(request.getProductAttributes(), request.getId(), myMasterId);
                 // deleting attribute terms, which attributes was deleted on frontend
@@ -492,6 +500,64 @@ public class ProductsRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+    public List<StoreTranslationProductJSON> getStoreProductTranslationsList(Long productId, Long masterId){
+        String stringQuery = "      select   p.lang_code as lang_code," +
+                "           coalesce(p.name,'') as name, " +
+                "           coalesce(p.slug,'') as slug, " +
+                "           coalesce(p.description,'') as description " +
+                "           from     store_translate_products p " +
+                "           where    p.master_id=" + masterId +
+                "           and      p.product_id =" + productId +
+                "           order by p.lang_code";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<StoreTranslationProductJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                StoreTranslationProductJSON doc = new StoreTranslationProductJSON();
+                doc.setLangCode((String)                                obj[0]);
+                doc.setName((String)                                    obj[1]);
+                doc.setSlug((String)                                    obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getStoreProductTranslationsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+    private void saveStoreProductTranslations(StoreTranslationProductJSON row, Long master_id, Long company_id, Long products_id) throws Exception {
+        String stringQuery = "insert into store_translate_products (" +
+                "   master_id," +
+                "   company_id," +
+                "   lang_code," +
+                "   products_id, " +
+                "   name, " +
+                "   slug " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                ":lang_code," +
+                "(select id from product_products where id="+products_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить атрибут другого master_id, случайно или намеренно
+                ":name," +
+                ":slug" +
+                ") ON CONFLICT ON CONSTRAINT products_lang_uq " +// "upsert"
+                " DO update set " +
+                " name = :name, " +
+                " slug = :slug";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", row.getName());
+            query.setParameter("slug", row.getSlug());
+            query.setParameter("lang_code", row.getLangCode());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveStoreProductTranslations. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
     }
     @SuppressWarnings("Duplicates")
     private void saveUpsellCrosssells(Long productId, Set<Long> childs, Long masterId, String tableName) throws Exception {
@@ -618,7 +684,25 @@ public class ProductsRepositoryJPA {
             throw new Exception(e);
         }
     }
-
+//    private List<Long> getProductStoresIds(Long productId, Long masterId){
+//        String stringQuery = "  select   csd.store_id as id" +
+//                "               from     stores_products csd " +
+//                "               where    csd.master_id=" + masterId +
+//                "               and      csd.product_id =" + productId;
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<BigInteger> queryList = query.getResultList();
+//            List<Long> returnList = new ArrayList<>();
+//            for (BigInteger obj : queryList) {
+//                returnList.add(obj.longValue());
+//            }
+//            return returnList;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getProductStoresIds. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
     @SuppressWarnings("Duplicates")
     private void savePrice(Long priceTypeId, Long productId, Long myMasterId, Long companyId, BigDecimal priceValue) throws Exception {
         String stringQuery;
@@ -1593,9 +1677,6 @@ public class ProductsRepositoryJPA {
         }
     }
 
-
-
-
     // возвращает все типы цен (названия, id) с их значениеми для товара с id = productId
     @SuppressWarnings("Duplicates")
     public List<ProductPricesJSON> getProductPrices(Long productId){
@@ -1969,6 +2050,7 @@ public class ProductsRepositoryJPA {
             throw new Exception(e);
         }
     }
+
     private void saveStoreCategoryTranslations(StoreTranslationCategoryJSON row, Long master_id, Long company_id, Long category_id) throws Exception {
         String stringQuery = "insert into store_translate_categories (" +
                         "   master_id," +
@@ -2655,6 +2737,7 @@ public class ProductsRepositoryJPA {
         }
     }
 
+
 //*****************************************************************************************************************************************************
 //***********************************************   Product Custom Fields   ***************************************************************************
 //*****************************************************************************************************************************************************
@@ -2803,7 +2886,6 @@ public class ProductsRepositoryJPA {
             return query.getResultList();
         } else return null;
     }
-
 
 //*****************************************************************************************************************************************************
 //******************************************************   C A G E N T S    ***************************************************************************

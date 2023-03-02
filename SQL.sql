@@ -4169,29 +4169,29 @@ insert into permissions (id,name_ru,name_en,document_id,output_order) values
 (679,'Редактирование документов своего предприятия','Editing your company documents',54,100);
 
 create table store_departments(
-                              master_id          bigint not null,
-                              company_id         bigint not null,
-                              store_id           bigint not null,
-                              department_id      bigint not null,
-                              menu_order         int,    -- Menu order, used to custom sort the departments
-                              foreign key (master_id) references users(id),
-                              foreign key (department_id) references departments(id),
-                              foreign key (store_id) references stores(id),
-                              foreign key (company_id) references companies(id)
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                store_id           bigint not null,
+                                department_id      bigint not null,
+                                menu_order         int,    -- Menu order, used to custom sort the departments
+                                foreign key (master_id) references users(id),
+                                foreign key (department_id) references departments(id),
+                                foreign key (store_id) references stores(id),
+                                foreign key (company_id) references companies(id)
 );
 alter table store_departments add constraint store_department_uq unique (store_id, department_id);
 create table stores_products (
-                               master_id          bigint not null,
-                               company_id         bigint not null,
-                               store_id           bigint not null,
-                               product_id         bigint not null,
-                               woo_id             int,
-                               need_to_syncwoo    boolean,
-                               date_time_syncwoo  timestamp with time zone,
-                               foreign key (master_id) references users(id),
-                               foreign key (company_id) references companies(id),
-                               foreign key (product_id) references products(id),
-                               foreign key (store_id) references stores(id)
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                store_id           bigint not null,
+                                product_id         bigint not null,
+                                woo_id             int,
+                                need_to_syncwoo    boolean,
+                                date_time_syncwoo  timestamp with time zone,
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (product_id) references products(id),
+                                foreign key (store_id) references stores(id)
 );
 alter table stores_products add constraint stores_products_uq unique (store_id, product_id);
 alter table companies add column store_default_lang_code  varchar(2);-- e.g. RU or EN
@@ -4211,31 +4211,91 @@ create table store_translate_categories(
 alter table store_translate_categories add constraint category_lang_uq unique (category_id, lang_code);
 alter table companies alter column store_default_lang_code set not null;
 create table stores_productcategories (
-                               master_id          bigint not null,
-                               company_id         bigint not null,
-                               store_id           bigint not null,
-                               category_id        bigint not null,
-                               woo_id             int,
-                               foreign key (master_id) references users(id),
-                               foreign key (company_id) references companies(id),
-                               foreign key (category_id) references products(id) on delete cascade,
-                               foreign key (store_id) references stores(id)
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                store_id           bigint not null,
+                                category_id        bigint not null,
+                                woo_id             int,
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (category_id) references product_categories(id) on delete cascade,
+                                foreign key (store_id) references stores(id)
 );
 alter table stores_productcategories add constraint stores_categories_uq unique (store_id, category_id);
 
+create table store_translate_attributes(
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                lang_code          varchar(2) not null,
+                                attribute_id       bigint not null,
+                                name               varchar(512),
+                                slug               varchar(120),
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (attribute_id) references product_attributes(id) on delete cascade
+);
+alter table store_translate_attributes add constraint attribute_lang_uq unique (attribute_id, lang_code);
+create table stores_attributes (
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                store_id           bigint not null,
+                                attribute_id       bigint not null,
+                                woo_id             int,
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (attribute_id) references product_attributes(id) on delete cascade,
+                                foreign key (store_id) references stores(id)
+);
+alter table stores_attributes add constraint stores_attributes_uq unique (store_id, attribute_id);
+create table store_translate_terms(
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                lang_code          varchar(2) not null,
+                                term_id            bigint not null,
+                                name               varchar(512),
+                                slug               varchar(120),
+                                description        varchar(250),
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (term_id) references product_attribute_terms(id) on delete cascade
+);
+alter table store_translate_terms add constraint term_lang_uq unique (term_id, lang_code);
+create table stores_terms (
+                                master_id          bigint not null,
+                                company_id         bigint not null,
+                                store_id           bigint not null,
+                                term_id            bigint not null,
+                                woo_id             int,
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (term_id) references product_attribute_terms(id) on delete cascade,
+                                foreign key (store_id) references stores(id)
+);
+alter table stores_terms add constraint stores_terms_uq unique (store_id, term_id);
+create table store_translate_products(
+                                    master_id          bigint not null,
+                                    company_id         bigint not null,
+                                    lang_code          varchar(2) not null,
+                                    product_id         bigint not null,
+                                    name               varchar(512),
+                                    slug               varchar(512),
+                                    description        varchar(100000),
+                                    description_html   varchar(100000),
+                                    short_description  varchar(100000),
+                                    short_description_html varchar(100000),
+                                    foreign key (master_id) references users(id),
+                                    foreign key (company_id) references companies(id),
+                                    foreign key (product_id) references products(id) on delete cascade
+);
+alter table store_translate_products add constraint product_lang_uq unique (product_id, lang_code);
+alter table products alter column description type varchar(100000);
+alter table products alter column description_html type varchar(100000);
+alter table products alter column short_description type varchar(100000);
+alter table products alter column short_description_html type varchar(100000);
+alter table products alter column slug type varchar(512);
 
-
-
-
-
-
-
-
-
-
-
-
-
+alter table customers_orders add column store_id bigint;
+alter table customers_orders add constraint customers_orders_store_id_fkey foreign key (store_id) references stores (id);
 
 
 

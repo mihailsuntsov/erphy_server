@@ -1,24 +1,25 @@
 package com.dokio.message.response.store.woo.v3.products;
 
-import java.util.List;
+//import java.util.List;
+import java.util.Set;
 
 public class ProductsJSON {
     private Integer queryResultCode; // look at _ErrorCodes file
-    private List<ProductJSON> products;
+    private Set<ProductJSON> products;
 
     public Integer getQueryResultCode() {
         return queryResultCode;
-    }
-
-    public List<ProductJSON> getProducts() {
-        return products;
     }
 
     public void setQueryResultCode(Integer queryResultCode) {
         this.queryResultCode = queryResultCode;
     }
 
-    public void setProducts(List<ProductJSON> products) {
+    public Set<ProductJSON> getProducts() {
+        return products;
+    }
+
+    public void setProducts(Set<ProductJSON> products) {
         this.products = products;
     }
 }

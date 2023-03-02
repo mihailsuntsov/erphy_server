@@ -88,7 +88,6 @@ public class StoreProductCategoriesRepository {
             " and str.id = " + storeId +
             " and coalesce(p.is_store_category, false) = true ";
 
-            if(Objects.isNull(companyId)) throw new WrongCrmSecretKeyException();
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
             //.setMaxResults(result);

@@ -16,9 +16,11 @@
         along with this program.  If not, see <https://www.gnu.org/licenses/>
 */
 
-
 package com.dokio.message.response.Sprav;
 
+import com.dokio.message.response.additional.StoreTranslationTermJSON;
+
+import java.util.List;
 
 public class ProductAttributeTermJSON {
 
@@ -26,6 +28,15 @@ public class ProductAttributeTermJSON {
     private String name;
     private String description;
     private String slug;
+    private List<StoreTranslationTermJSON> storeTermTranslations;
+
+    public List<StoreTranslationTermJSON> getStoreTermTranslations() {
+        return storeTermTranslations;
+    }
+
+    public void setStoreTermTranslations(List<StoreTranslationTermJSON> storeTermTranslations) {
+        this.storeTermTranslations = storeTermTranslations;
+    }
 
     public Long getId() {
         return id;
