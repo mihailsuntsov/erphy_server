@@ -32,6 +32,8 @@ import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.repository.Exceptions.CalculateNetcostNegativeSumException;
 import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
+import com.dokio.repository.Exceptions.TranslatedCategoryNameIsNotUniqueOnSameLevel;
+import com.dokio.repository.Exceptions.TranslatedCategorySlugIsNotUnique;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -1914,7 +1916,9 @@ public class ProductsRepositoryJPA {
                         Long newCategoryId = Long.valueOf(query2.getSingleResult().toString());
                         // If category belongs to online store(s) - saving store translations
                         if (request.getIsStoreCategory() && !Objects.isNull(request.getStoreCategoryTranslations()) && request.getStoreCategoryTranslations().size() > 0) {
+                            Long parentCategoryId = getParentCategoryId(newCategoryId);
                             for (StoreTranslationCategoryJSON row : request.getStoreCategoryTranslations()) {
+                                checkTranslatedCategoryNameUniqueOnSameLevel(parentCategoryId, newCategoryId, request.getCompanyId(), row.getLangCode(),row.getName(), row.getSlug());
                                 saveStoreCategoryTranslations(row, myMasterId, request.getCompanyId(), newCategoryId);
                             }
                         }
@@ -1926,6 +1930,16 @@ public class ProductsRepositoryJPA {
                         }
                         return newCategoryId;
                     } else return (0L);
+                } catch (TranslatedCategoryNameIsNotUniqueOnSameLevel e){
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
+                    return -209L; // см. _ErrorCodes
+                } catch (TranslatedCategorySlugIsNotUnique e){
+                    TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
+                    return -208L; // см. _ErrorCodes
                 } catch (Exception e) {
                     //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1936,12 +1950,19 @@ public class ProductsRepositoryJPA {
                     }
                     if (t != null) {
                         String message = ((ConstraintViolationException) t).getSQLException().getMessage();
-                        if(message.contains("product_categories_slug_uq")){
-                            logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
-                            return -212L; // см. _ErrorCodes
-                        } else { //product_categories_name_uq (if parent_id is not null) and product_categories_name_nn_uq (if parent_id is null)
+                        if(message.contains("product_categories_name_nn_uq")) { // unique category names on the same level FOR ROOT CATEGORIES
+                            logger.error("ConstraintViolationException (product_categories_name_nn_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
+                            return -210L; // см. _ErrorCodes
+                        } else if (message.contains("product_categories_name_uq")){ // unique category names on the same level FOR SUBCATEGORIES
                             logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
                             return -210L; // см. _ErrorCodes
+                        } else if(message.contains("product_categories_slug_uq")){
+                            logger.error("ConstraintViolationException (product_categories_slug_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
+                            return -207L; // см. _ErrorCodes
+                        } else {
+                            logger.error("Exception in method insertProductCategory. SQL query:" + stringQuery, e);
+                            e.printStackTrace();
+                            return null;
                         }
                     } else {
                         logger.error("Exception in method insertProductCategory. SQL query:" + stringQuery, e);
@@ -1981,18 +2002,20 @@ public class ProductsRepositoryJPA {
             }
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("name",request.getName());
-                query.setParameter("slug",(request.getSlug().trim().equals("")?null:request.getSlug()));
-                query.setParameter("description",request.getDescription());
-                query.setParameter("display",request.getDisplay());
+                query.setParameter("name", request.getName());
+                query.setParameter("slug", (request.getSlug().trim().equals("") ? null : request.getSlug()));
+                query.setParameter("description", request.getDescription());
+                query.setParameter("display", request.getDisplay());
                 // if it wasn't a store category but now it will - we need to mark all products of this category as need to be synchronized
-                if(!isStoreCategory(request.getId()) && request.getIsStoreCategory())
+                if (!isStoreCategory(request.getId()) && request.getIsStoreCategory())
                     markProductsofCategoryAsNeedToSyncWoo(request.getId(), myMasterId);
                 query.executeUpdate();
 
                 // if category belongs to online store(s) - saving store translations
+                Long parentCategoryId = getParentCategoryId(request.getId());
                 if (request.getIsStoreCategory() && !Objects.isNull(request.getStoreCategoryTranslations()) && request.getStoreCategoryTranslations().size() > 0) {
                     for (StoreTranslationCategoryJSON row : request.getStoreCategoryTranslations()) {
+                        checkTranslatedCategoryNameUniqueOnSameLevel(parentCategoryId, request.getId(), request.getCompanyId(), row.getLangCode(),row.getName(), row.getSlug());
                         saveStoreCategoryTranslations(row, myMasterId, request.getCompanyId(), request.getId());
                     }
                 }
@@ -2003,6 +2026,16 @@ public class ProductsRepositoryJPA {
                     }
                 }
                 return 1;
+            } catch (TranslatedCategoryNameIsNotUniqueOnSameLevel e){
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                logger.error(e.getMessage(), e);
+                return -209; // см. _ErrorCodes
+            } catch (TranslatedCategorySlugIsNotUnique e){
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                logger.error(e.getMessage(), e);
+                return -208; // см. _ErrorCodes
             } catch (Exception e) {
                 //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -2013,12 +2046,19 @@ public class ProductsRepositoryJPA {
                 }
                 if (t != null) {
                     String message = ((ConstraintViolationException) t).getSQLException().getMessage();
-                    if(message.contains("product_categories_slug_uq")){
-                        logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/updateProductCategory.", e);
-                        return -212; // см. _ErrorCodes
-                    } else { //product_categories_name_uq (if parent_id is not null) and product_categories_name_nn_uq (if parent_id is null)
-                        logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/updateProductCategory.", e);
+                    if(message.contains("product_categories_name_nn_uq")) { // unique category names on the same level FOR ROOT CATEGORIES
+                        logger.error("ConstraintViolationException (product_categories_name_nn_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
                         return -210; // см. _ErrorCodes
+                    } else if (message.contains("product_categories_name_uq")){ // unique category names on the same level FOR SUBCATEGORIES
+                        logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/insertProductCategory.", e);
+                        return -210; // см. _ErrorCodes
+                    } else if (message.contains("product_categories_slug_uq")){
+                        logger.error("ConstraintViolationException (product_categories_name_uq) in method ProductRepositoryJPA/updateProductCategory.", e);
+                        return -207; // см. _ErrorCodes
+                    } else {
+                        logger.error("Exception in method updateProductCategory. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        return null;
                     }
                 } else {
                     logger.error("Exception in method updateProductCategory. SQL query:" + stringQuery, e);
@@ -2299,6 +2339,56 @@ public class ProductsRepositoryJPA {
         }
         //иначе в categoriesSet один хрен попадают Integer'ы, хоть как кастуй, и здравствуй, java.lang.Integer cannot be cast to java.lang.Long в getCategoriesSetBySetOfCategoriesId
         return categoriesSet;
+    }
+
+    private Long getParentCategoryId(Long categoryId) throws Exception {
+        String stringQuery="";
+        try{
+            stringQuery="select coalesce(parent_id,0) from product_categories where id = " + categoryId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (Exception e){
+            logger.error("Exception in method getParentCategoryId. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+
+    private void checkTranslatedCategoryNameUniqueOnSameLevel(Long parentCategoryId, Long currCategoryId, Long companyId, String language, String name, String slug) throws Exception {
+        String stringQueryName="";
+        String stringQuerySlug="";
+        try {
+            stringQueryName = "select count(*) from store_translate_categories " +
+                    " where " +
+                    " lang_code = :language" +
+                    " and company_id = " + companyId +
+                    " and category_id != " + currCategoryId;
+            stringQuerySlug = stringQueryName + " and upper(slug) = upper(:slug) and slug !=''";
+            stringQueryName = stringQueryName + " and category_id in " +
+                    "(" +
+                    "select id from product_categories where parent_id " +
+                    (parentCategoryId == 0 ? " is null " : ("=" + parentCategoryId)) +
+                    ") " +
+                    "and upper(name) = upper(:name) and name !=''";
+            Query query = entityManager.createNativeQuery(stringQueryName);
+            query.setParameter("name", name);
+            query.setParameter("language", language);
+            long cnt = ((BigInteger)query.getSingleResult()).longValue();
+            if(cnt>0) throw new TranslatedCategoryNameIsNotUniqueOnSameLevel();
+            Query query2 = entityManager.createNativeQuery(stringQuerySlug);
+            query2.setParameter("slug", slug);
+            query2.setParameter("language", language);
+            cnt = ((BigInteger)query2.getSingleResult()).longValue();
+            if(cnt>0) throw new TranslatedCategorySlugIsNotUnique();
+
+        } catch (TranslatedCategoryNameIsNotUniqueOnSameLevel e){throw new TranslatedCategoryNameIsNotUniqueOnSameLevel();
+        } catch (TranslatedCategorySlugIsNotUnique e){throw new TranslatedCategorySlugIsNotUnique();
+        } catch (Exception e) {
+            logger.error("Exception in method isTranslatedCategoryNameUniqueOnSameLevel. stringQuerySlug: " + stringQuerySlug, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
     }
 
     //права не нужны т.к. не вызывается по API, только из контроллера

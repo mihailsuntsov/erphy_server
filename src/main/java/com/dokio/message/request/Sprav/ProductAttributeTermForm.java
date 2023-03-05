@@ -28,7 +28,7 @@ public class ProductAttributeTermForm {
 
 
     private Long id;
-    private Long company_id;
+    private Long companyId;
     private String name;
     private Long attribute_id;
     private String description;
@@ -52,12 +52,12 @@ public class ProductAttributeTermForm {
         this.id = id;
     }
 
-    public Long getCompany_id() {
-        return company_id;
+    public Long getCompanyId() {
+        return companyId;
     }
 
-    public void setCompany_id(Long company_id) {
-        this.company_id = company_id;
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
     }
 
     public String getName() {

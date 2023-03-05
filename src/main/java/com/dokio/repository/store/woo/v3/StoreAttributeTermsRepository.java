@@ -110,7 +110,6 @@ public class StoreAttributeTermsRepository {
         }
     }
 
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer syncAttributeTermsIds(SyncIdsForm request) {
         String stringQuery = "";

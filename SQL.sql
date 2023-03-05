@@ -3872,7 +3872,7 @@ alter table product_categories add column woo_id int;
 alter table product_categories add constraint product_categories_woo_id_uq unique (company_id, woo_id) ;
 alter table product_categories add constraint product_categories_slug_uq unique (company_id, slug);-- all company categories need to have unique slug names
 alter table product_categories add constraint product_categories_name_uq unique (parent_id, name); -- one parent category can't contains two or more subcategories with the same names
-CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name) WHERE parent_id IS NULL;
+CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
 alter table product_categories add column is_store_category boolean;
 alter table products add column type	varchar(8); --Product type. Options: simple, grouped, external and variable. Default is simple.
 alter table products add column slug varchar(120); --Product slug.
@@ -4297,6 +4297,16 @@ alter table products alter column slug type varchar(512);
 alter table customers_orders add column store_id bigint;
 alter table customers_orders add constraint customers_orders_store_id_fkey foreign key (store_id) references stores (id);
 
+--alter table store_translate_attributes add constraint store_translate_attributes_name_uq unique (attribute_id, lang_code, name);-- attribute need to have unique translated names for each language
+--alter table store_translate_attributes add constraint store_translate_attributes_slug_uq unique (attribute_id, lang_code, slug);-- attribute need to have unique translated slugs for each language
+CREATE UNIQUE INDEX store_translate_attributes_slug_uq ON store_translate_attributes (company_id, lang_code, slug) WHERE slug !='';-- attribute need to have unique translated slugs for each language
+alter table store_translate_terms add constraint store_translate_terms_name_uq unique (term_id, lang_code, name);-- term need to have unique translated names for each language
+alter table store_translate_terms add constraint store_translate_terms_slug_uq unique (term_id, lang_code, slug);-- term need to have unique translated slugs for each language
+drop index product_categories_name_nn_uq;
+CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
+alter table product_categories drop constraint product_categories_slug_uq;
+CREATE UNIQUE INDEX product_categories_slug_uq ON product_categories (company_id, slug) WHERE slug !='';
+alter table product_attributes drop constraint product_attributes_name_uq;
 
 
 
@@ -4311,7 +4321,77 @@ alter table customers_orders add constraint customers_orders_store_id_fkey forei
 
 
 
-  WITH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WITH
   credit as (
     select
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

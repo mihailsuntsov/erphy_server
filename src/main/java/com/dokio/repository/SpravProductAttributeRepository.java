@@ -341,12 +341,23 @@ public class SpravProductAttributeRepository {
                 }
                 if (t != null) {
                     String message = ((ConstraintViolationException) t).getSQLException().getMessage();
+//                    if(message.contains("product_attributes_name_uq")){
+//                        logger.error("ConstraintViolationException (product_attributes) in method updateProductAttribute. (product_attributes_name_uq)", e);
+//                        return -211; //product_attributes_name_uq - now this constraint is deleted because WooCommerce allows to have non-unical attribute names
+//                    } else
                     if(message.contains("product_attributes_slug_uq")){
                         logger.error("ConstraintViolationException (product_attributes) in method updateProductAttribute. (product_attributes_slug_uq)", e);
-                        return -212;
+                        return -213;
+//                    } else if (message.contains("store_translate_attributes_name_uq")){
+//                        logger.error("ConstraintViolationException (store_translate_attributes) in method saveStoreAttributeTranslations->updateProductAttribute. (store_translate_attributes_name_uq)", e);
+//                        return -212; //store_translate_attributes_name_uq
+                    } else if (message.contains("store_translate_attributes_slug_uq")){
+                        logger.error("ConstraintViolationException (store_translate_attributes) in method saveStoreAttributeTranslations->updateProductAttribute. (store_translate_attributes_slug_uq)", e);
+                        return -214; //store_translate_attributes_slug_uq
                     } else {
-                        logger.error("ConstraintViolationException (product_attributes) in method updateProductAttribute. (product_attributes_name_uq)", e);
-                        return -214; //product_attributes_name_uq
+                        logger.error("Exception in method updateProductAttribute. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        return null;
                     }
                 } else {
                     logger.error("Exception in method updateProductAttribute. SQL query:" + stringQuery, e);
@@ -435,12 +446,23 @@ public class SpravProductAttributeRepository {
                 }
                 if (t != null) {
                     String message = ((ConstraintViolationException) t).getSQLException().getMessage();
-                    if(message.contains("product_attributes_slug_uq")){
-                        logger.error("ConstraintViolationException (product_attributes) in method updateProductAttribute. (product_attributes_slug_uq)", e);
-                        return -212L;
+//                    if(message.contains("product_attributes_name_uq")){
+//                        logger.error("ConstraintViolationException (product_attributes) in method insertProductAttribute. (product_attributes_name_uq)", e);
+//                        return -211L; //product_attributes_name_uq - now this constraint is deleted because WooCommerce allows to have non-unical attribute names
+//                    } else
+                    if (message.contains("product_attributes_slug_uq")){
+                        logger.error("ConstraintViolationException (product_attributes) in method insertProductAttribute. (product_attributes_slug_uq)", e);
+                        return -213L;//product_attributes_slug_uq
+//                    } else if  (message.contains("store_translate_attributes_name_uq")){
+//                        logger.error("ConstraintViolationException (store_translate_attributes) in method saveStoreAttributeTranslations->insertProductAttribute. (store_translate_attributes_name_uq)", e);
+//                        return -212L; //store_translate_attributes_name_uq
+                    } else if (message.contains("store_translate_attributes_slug_uq")){
+                        logger.error("ConstraintViolationException (store_translate_attributes) in method saveStoreAttributeTranslations->insertProductAttribute. (store_translate_attributes_slug_uq)", e);
+                        return -214L; //store_translate_attributes_slug_uq
                     } else {
-                        logger.error("ConstraintViolationException (product_attributes) in method updateProductAttribute. (product_attributes_name_uq)", e);
-                        return -214L; //product_attributes_name_uq
+                        logger.error("Exception in method insertProductAttribute. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        return null;
                     }
                 } else {
                     logger.error("Exception in method insertProductAttribute. SQL query:" + stringQuery, e);
@@ -492,8 +514,11 @@ public class SpravProductAttributeRepository {
     private void deleteNonSelectedAttributeTermsStores(List<Long> storesIds, Long attributeId, Long masterId) throws Exception {
         String stringQuery = "delete from stores_terms " +
                 " where master_id=" + masterId +
-                " and term_id in (select id from product_attribute_terms where attribute_id = " + attributeId +
-                " and store_id not in " + ((!Objects.isNull(storesIds)&&storesIds.size()>0)?(commonUtilites.ListOfLongToString(storesIds,",","(",")")):"(0)");
+                " and term_id in " +
+                "(" +
+                "   select id from product_attribute_terms where attribute_id = " + attributeId +
+                "   and store_id not in " + ((!Objects.isNull(storesIds)&&storesIds.size()>0)?(commonUtilites.ListOfLongToString(storesIds,",","(",")")):"(0)") +
+                ")";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -802,14 +827,14 @@ public class SpravProductAttributeRepository {
                 //Saving the list of translations of this term
                 if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
                     for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
-                        saveStoreTermTranslations(row, myMasterId, request.getCompany_id(), newTermId);
+                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), newTermId);
                     }
                 }
                 //Saving the list of online stores that term belongs to
                 List<Long> storesIds = getAttributeStoresIds(request.getAttribute_id(), myMasterId);
                 if (!Objects.isNull(storesIds) && storesIds.size() > 0) {
                     for (Long storeId : storesIds) {
-                        saveTermStore(newTermId, storeId, myMasterId, request.getCompany_id());
+                        saveTermStore(newTermId, storeId, myMasterId, request.getCompanyId());
                     }
                 }
 
@@ -823,12 +848,22 @@ public class SpravProductAttributeRepository {
                 }
                 if (t != null) {
                     String message = ((ConstraintViolationException) t).getSQLException().getMessage();
-                    if (message.contains("product_attribute_terms_slug_uq")) {
-                        logger.error("ConstraintViolationException (product_attribute_terms) in method insertProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
-                        return -212;
-                    } else {
+                    if (message.contains("product_attribute_terms_name_uq")) {
                         logger.error("ConstraintViolationException (product_attribute_terms) in method insertProductAttributeTerm. (product_attribute_terms_name_uq)", e);
-                        return -214; //product_attribute_terms_name_uq
+                        return -215; //product_attribute_terms_name_uq
+                    } else if (message.contains("product_attribute_terms_slug_uq")) {
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method insertProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
+                        return -217;
+                    } else if (message.contains("store_translate_terms_name_uq")){
+                        logger.error("ConstraintViolationException (store_translate_terms) in method saveStoreTermTranslations->updateProductAttributeTerm. (store_translate_terms_name_uq)", e);
+                        return -216; //store_translate_terms_name_uq
+                    } else if (message.contains("store_translate_terms_slug_uq")){
+                        logger.error("ConstraintViolationException (store_translate_terms) in method saveStoreTermTranslations->updateProductAttributeTerm. (store_translate_terms_slug_uq)", e);
+                        return -218; //store_translate_terms_slug_uq
+                    } else {
+                        logger.error("Exception in method insertProductAttributeTerm. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        return null;
                     }
                 } else {
                     logger.error("Exception in method insertProductAttributeTerm. SQL query:" + stringQuery, e);
@@ -867,7 +902,7 @@ public class SpravProductAttributeRepository {
                 //save the list of translations of this term
                 if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
                     for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
-                        saveStoreTermTranslations(row, myMasterId, request.getCompany_id(), request.getId());
+                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), request.getId());
                     }
                 }
 
@@ -881,12 +916,22 @@ public class SpravProductAttributeRepository {
                 }
                 if (t != null) {
                     String message = ((ConstraintViolationException) t).getSQLException().getMessage();
-                    if(message.contains("product_attribute_terms_slug_uq")){
-                        logger.error("ConstraintViolationException (product_attribute_terms) in method updateProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
-                        return -212;
-                    } else {
+                    if(message.contains("product_attribute_terms_name_uq")){
                         logger.error("ConstraintViolationException (product_attribute_terms) in method updateProductAttributeTerm. (product_attribute_terms_name_uq)", e);
-                        return -214; //product_attribute_terms_name_uq
+                        return -215; //product_attribute_terms_name_uq
+                    } else if (message.contains("product_attribute_terms_slug_uq")){
+                        logger.error("ConstraintViolationException (product_attribute_terms) in method updateProductAttributeTerm. (product_attribute_terms_slug_uq)", e);
+                        return -217;
+                    } else if (message.contains("store_translate_terms_name_uq")){
+                        logger.error("ConstraintViolationException (store_translate_terms) in method saveStoreTermTranslations->updateProductAttributeTerm. (store_translate_terms_name_uq)", e);
+                        return -216; //store_translate_terms_name_uq
+                    } else if (message.contains("store_translate_terms_slug_uq")){
+                        logger.error("ConstraintViolationException (store_translate_terms) in method saveStoreTermTranslations->updateProductAttributeTerm. (store_translate_terms_slug_uq)", e);
+                        return -218; //store_translate_terms_slug_uq
+                    } else {
+                        logger.error("Exception in method updateProductAttributeTerm. SQL query:" + stringQuery, e);
+                        e.printStackTrace();
+                        return null;
                     }
                 } else {
                     logger.error("Exception in method updateProductAttributeTerm. SQL query:" + stringQuery, e);
@@ -908,7 +953,7 @@ public class SpravProductAttributeRepository {
                     master_id+", "+
                     company_id+", "+
                     "(select id from stores where id="+store_id+" and master_id="+master_id+"), "+// +", " +
-                    "(select id from product_terms where id="+term_id+" and master_id="+master_id+") "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
+                    "(select id from product_attribute_terms where id="+term_id+" and master_id="+master_id+") "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
                 ") ON CONFLICT ON CONSTRAINT stores_terms_uq " +// "upsert"
                 " DO NOTHING";
         try{
@@ -933,7 +978,7 @@ public class SpravProductAttributeRepository {
                 master_id+", "+
                 company_id+", "+
                 ":lang_code," +
-                "(select id from product_terms where id="+term_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
+                "(select id from product_attribute_terms where id="+term_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
                 ":name," +
                 ":slug," +
                 ":description" +
