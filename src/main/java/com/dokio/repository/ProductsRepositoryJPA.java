@@ -504,10 +504,14 @@ public class ProductsRepositoryJPA {
         } else return -1;
     }
     public List<StoreTranslationProductJSON> getStoreProductTranslationsList(Long productId, Long masterId){
-        String stringQuery = "      select   p.lang_code as lang_code," +
+        String stringQuery = "      select   " +
+                "           p.lang_code as lang_code," +
                 "           coalesce(p.name,'') as name, " +
                 "           coalesce(p.slug,'') as slug, " +
-                "           coalesce(p.description,'') as description " +
+                "           coalesce(p.description,'') as description, " +
+                "           coalesce(p.short_description,'') as short_description, " +
+                "           coalesce(p.description_html,'') as description_html, " +
+                "           coalesce(p.short_description_html,'') as short_description_html " +
                 "           from     store_translate_products p " +
                 "           where    p.master_id=" + masterId +
                 "           and      p.product_id =" + productId +
@@ -521,6 +525,10 @@ public class ProductsRepositoryJPA {
                 doc.setLangCode((String)                                obj[0]);
                 doc.setName((String)                                    obj[1]);
                 doc.setSlug((String)                                    obj[2]);
+                doc.setDescription((String)                             obj[3]);
+                doc.setShortDescription((String)                        obj[4]);
+                doc.setDescriptionHtml((String)                         obj[5]);
+                doc.setShortDescriptionHtml((String)                    obj[6]);
                 returnList.add(doc);
             }
             return returnList;
@@ -530,30 +538,46 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
-    private void saveStoreProductTranslations(StoreTranslationProductJSON row, Long master_id, Long company_id, Long products_id) throws Exception {
+    private void saveStoreProductTranslations(StoreTranslationProductJSON row, Long master_id, Long company_id, Long product_id) throws Exception {
         String stringQuery = "insert into store_translate_products (" +
                 "   master_id," +
                 "   company_id," +
                 "   lang_code," +
-                "   products_id, " +
+                "   product_id, " +
                 "   name, " +
-                "   slug " +
+                "   slug, " +
+                "   description, " +
+                "   short_description, " +
+                "   description_html, " +
+                "   short_description_html " +
                 "   ) values (" +
                 master_id+", "+
                 company_id+", "+
                 ":lang_code," +
-                "(select id from product_products where id="+products_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить атрибут другого master_id, случайно или намеренно
+                "(select id from products where id="+product_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить товар другого master_id, случайно или намеренно
                 ":name," +
-                ":slug" +
-                ") ON CONFLICT ON CONSTRAINT products_lang_uq " +// "upsert"
+                ":slug," +
+                ":description, " +
+                ":short_description, " +
+                ":description_html, " +
+                ":short_description_html " +
+                ") ON CONFLICT ON CONSTRAINT product_lang_uq " +// "upsert"
                 " DO update set " +
                 " name = :name, " +
-                " slug = :slug";
+                " slug = :slug, " +
+                " description=:description, " +
+                " short_description=:short_description, " +
+                " description_html=:description_html, " +
+                " short_description_html=:short_description_html";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name", row.getName());
             query.setParameter("slug", row.getSlug());
             query.setParameter("lang_code", row.getLangCode());
+            query.setParameter("description", row.getDescription());
+            query.setParameter("short_description", row.getShortDescription());
+            query.setParameter("description_html", row.getDescriptionHtml());
+            query.setParameter("short_description_html", row.getShortDescriptionHtml());
             query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

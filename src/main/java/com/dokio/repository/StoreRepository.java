@@ -373,6 +373,11 @@ public class StoreRepository {
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {
+            //plan limit check
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if(userRepositoryJPA.getMyConsumedResources().getStores()>=userRepositoryJPA.getMyMaxAllowedResources().getStores())
+                    return -121L; // number of stores is out of bounds of tariff plan
+
             Long myId = userRepository.getUserId();
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             String stringQuery =
@@ -478,8 +483,13 @@ public class StoreRepository {
             //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
             (securityRepositoryJPA.userHasPermissions_OR(54L, "675") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores", delNumbers)))
         {
+
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
+            long amountToRepair = delNumbers.split(",").length;
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
+                if((userRepositoryJPA.getMyConsumedResources().getStores()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getStores())
+                    return -121; // number of stores is out of bounds of tariff plan
             String stringQuery =
                     " update stores p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)

@@ -39,7 +39,6 @@ public class CompaniesJSON {
     private Integer currency_id;
     private String  opf;
     private Integer opf_id;
-    // Апдейт Предприятий:
     private String  code;
     private String  telephone;
     private String  site;
@@ -108,28 +107,7 @@ public class CompaniesJSON {
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-/*
-    private Boolean is_store;           // on off the store
-    private String store_site_address;  // e.g. http://localhost/DokioShop
-    private String store_key;           // consumer key
-    private String store_secret;        // consumer secret
-    private String store_type;          // e.g. woo
-    private String store_api_version;   // e.g. v3
-    private String crm_secret_key;      // like UUID generated
-    private Long store_price_type_regular; // id of regular type price
-    private Long store_price_type_sale;    // id of sale type price
-    private Long    store_orders_department_id;  // department for creation Customer order from store
-    private String  store_if_customer_not_found; // "create_new" or "use_default"
-    private Long    store_default_customer_id;   // counterparty id if store_if_customer_not_found=use_default
-    private String  cagent;                      // the name of store_default_customer
-    private Long    store_default_creator_id;    // ID of default user, that will be marked as a creator of store order. Default is master user
-    private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
-    private String  store_default_creator;       // Name of default user that will be marked as a creator of store order.
-    private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
-    private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
-    private String store_ip;                     // internet-store ip address
 
-    */
     private String store_default_lang_code;      // internet-store basic language, e.g. EN, RU, UA, ...
 
     public String getStore_default_lang_code() {
@@ -156,30 +134,6 @@ public class CompaniesJSON {
     public void setType(String type) {
         this.type = type;
     }
-
-//    public Integer getReg_country_id() {
-//        return reg_country_id;
-//    }
-//
-//    public void setReg_country_id(Integer reg_country_id) {
-//        this.reg_country_id = reg_country_id;
-//    }
-//
-//    public String getTax_number() {
-//        return tax_number;
-//    }
-//
-//    public void setTax_number(String tax_number) {
-//        this.tax_number = tax_number;
-//    }
-//
-//    public String getReg_number() {
-//        return reg_number;
-//    }
-//
-//    public void setReg_number(String reg_number) {
-//        this.reg_number = reg_number;
-//    }
 
     public String getLegal_form() {
         return legal_form;

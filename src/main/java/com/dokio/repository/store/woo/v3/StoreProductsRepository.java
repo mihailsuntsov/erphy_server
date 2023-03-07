@@ -147,7 +147,7 @@ public class StoreProductsRepository {
             List<Object[]> queryList = query.getResultList();
 //            List<ProductJSON> returnList = new ArrayList<>();
             Set<ProductJSON> returnList = new HashSet<>();
-            List<Long> storeDepartments = companyRepository.getCompanyStoreDepartmentsIds(companyId,masterId);
+            List<Long> storeDepartments = companyRepository.getCompanyStoreDepartmentsIds(companyId,storeId,masterId);
             for (Object[] obj : queryList) {
                 ProductJSON doc = new ProductJSON();
                 doc.setCrm_id(Long.parseLong(                       obj[0].toString()));

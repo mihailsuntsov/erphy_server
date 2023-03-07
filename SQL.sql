@@ -4296,28 +4296,19 @@ alter table products alter column slug type varchar(512);
 
 alter table customers_orders add column store_id bigint;
 alter table customers_orders add constraint customers_orders_store_id_fkey foreign key (store_id) references stores (id);
-
---alter table store_translate_attributes add constraint store_translate_attributes_name_uq unique (attribute_id, lang_code, name);-- attribute need to have unique translated names for each language
---alter table store_translate_attributes add constraint store_translate_attributes_slug_uq unique (attribute_id, lang_code, slug);-- attribute need to have unique translated slugs for each language
 CREATE UNIQUE INDEX store_translate_attributes_slug_uq ON store_translate_attributes (company_id, lang_code, slug) WHERE slug !='';-- attribute need to have unique translated slugs for each language
-alter table store_translate_terms add constraint store_translate_terms_name_uq unique (term_id, lang_code, name);-- term need to have unique translated names for each language
-alter table store_translate_terms add constraint store_translate_terms_slug_uq unique (term_id, lang_code, slug);-- term need to have unique translated slugs for each language
 drop index product_categories_name_nn_uq;
 CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
 alter table product_categories drop constraint product_categories_slug_uq;
 CREATE UNIQUE INDEX product_categories_slug_uq ON product_categories (company_id, slug) WHERE slug !='';
 alter table product_attributes drop constraint product_attributes_name_uq;
-
-
-
-
-
-
-
-
-
-
-
+alter table store_translate_terms add column attribute_id int not null ;
+alter table store_translate_terms add constraint store_translate_terms_attribute_id_fkey foreign key (attribute_id) references product_attributes (id) on delete cascade;
+CREATE UNIQUE INDEX store_translate_terms_name_uq ON store_translate_terms (attribute_id, lang_code, name) WHERE name !='';
+CREATE UNIQUE INDEX store_translate_terms_slug_uq ON store_translate_terms (attribute_id, lang_code, slug) WHERE slug !='';
+alter table plans alter column  daily_price type numeric (20,10);
+drop table company_store_departments;
+insert into _dictionary (key, tr_en, tr_ru) values ('sale_price', 'Sale price', 'Скидочная цена');
 
 
 

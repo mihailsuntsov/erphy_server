@@ -827,7 +827,7 @@ public class SpravProductAttributeRepository {
                 //Saving the list of translations of this term
                 if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
                     for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
-                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), newTermId);
+                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), request.getAttribute_id(), newTermId);
                     }
                 }
                 //Saving the list of online stores that term belongs to
@@ -902,7 +902,7 @@ public class SpravProductAttributeRepository {
                 //save the list of translations of this term
                 if (!Objects.isNull(request.getStoreTermTranslations()) && request.getStoreTermTranslations().size() > 0) {
                     for (StoreTranslationTermJSON row : request.getStoreTermTranslations()) {
-                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), request.getId());
+                        saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), request.getAttribute_id(), request.getId());
                     }
                 }
 
@@ -965,10 +965,11 @@ public class SpravProductAttributeRepository {
             throw new Exception(e);
         }
     }
-    private void saveStoreTermTranslations(StoreTranslationTermJSON row, Long master_id, Long company_id, Long term_id) throws Exception {
+    private void saveStoreTermTranslations(StoreTranslationTermJSON row, Long master_id, Long company_id, Long attribute_id, Long term_id) throws Exception {
         String stringQuery = "insert into store_translate_terms (" +
                 "   master_id," +
                 "   company_id," +
+                "   attribute_id," +
                 "   lang_code," +
                 "   term_id, " +
                 "   name, " +
@@ -977,6 +978,7 @@ public class SpravProductAttributeRepository {
                 "   ) values (" +
                 master_id+", "+
                 company_id+", "+
+                attribute_id+", "+
                 ":lang_code," +
                 "(select id from product_attribute_terms where id="+term_id+" and master_id="+master_id+"), "+// чтобы не мочь изменить терм другого master_id, случайно или намеренно
                 ":name," +

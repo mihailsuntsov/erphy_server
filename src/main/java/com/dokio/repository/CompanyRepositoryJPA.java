@@ -15,12 +15,10 @@
         You should have received a copy of the GNU Affero General Public License
         along with this program.  If not, see <https://www.gnu.org/licenses/>
 */
-
 package com.dokio.repository;
 import com.dokio.controller.AuthRestAPIs;
 import com.dokio.message.request.*;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
-import com.dokio.message.response.FileInfoJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
@@ -28,29 +26,19 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
-import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import javax.persistence.*;
-import java.io.File;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static sun.security.krb5.Confounder.longValue;
 
 @Repository("CompanyRepositoryJPA")
 public class CompanyRepositoryJPA {
@@ -202,7 +190,6 @@ public class CompanyRepositoryJPA {
                 stringQuery = stringQuery + " and (" +
                         "upper(p.name) like upper(CONCAT('%',:sg,'%')))";
             }
-
             stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             try{
                 Query query = entityManager.createNativeQuery(stringQuery)
@@ -211,7 +198,6 @@ public class CompanyRepositoryJPA {
 
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
-
                 List<Object[]> queryList = query.getResultList();
                 List<CompaniesJSON> returnList = new ArrayList<>();
                 for(Object[] obj:queryList){
@@ -292,7 +278,6 @@ public class CompanyRepositoryJPA {
                     "           from companies p " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
-
             if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Меню - таблица - "Контрагенты" по всем предприятиям"
             {
                 //остается только на своё предприятие (5)
@@ -304,18 +289,14 @@ public class CompanyRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-
                 if (searchRequest.getSearchString() != null && !searchRequest.getSearchString().isEmpty())
                 {query.setParameter("sg", searchRequest.getSearchString());}
-
-
                 return query.getResultList().size();
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.error("Exception in method getCompaniesSize. SQL query:" + stringQuery, e);
                 return 0;
             }
-
         } else return 0;
     }
 
@@ -603,52 +584,11 @@ public class CompanyRepositoryJPA {
             doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
             doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
             doc.setLegal_form((String)                                      queryList.get(0)[73]);
-
-//            doc.setIs_store((Boolean)                                       queryList.get(0)[74]);
-//            doc.setStore_site_address(queryList.get(0)[75]!=null?   (String)queryList.get(0)[75]:"");
-//            doc.setStore_key(queryList.get(0)[76]!=null?            (String)queryList.get(0)[76]:"");
-//            doc.setStore_secret(queryList.get(0)[77]!=null?         (String)queryList.get(0)[77]:"");
-//            doc.setStore_type(queryList.get(0)[78]!=null?           (String)queryList.get(0)[78]:"");
-//            doc.setStore_api_version(queryList.get(0)[79]!=null?    (String)queryList.get(0)[79]:"");
-//            doc.setCrm_secret_key(queryList.get(0)[80]!=null?       (String)queryList.get(0)[80]:"");
-//            doc.setCrm_secret_key(                                  (String)queryList.get(0)[80]);
-//            doc.setStore_price_type_regular( queryList.get(0)[81]!=null?Long.parseLong(  queryList.get(0)[81].toString()):null);
-//            doc.setStore_price_type_sale( queryList.get(0)[82]!=null?Long.parseLong(  queryList.get(0)[82].toString()):null);
             doc.setNds_included((Boolean)                                      queryList.get(0)[83]);
-//            doc.setStore_orders_department_id(queryList.get(0)[84]!=null?Long.parseLong(queryList.get(0)[84].toString()):null);
-//            doc.setStore_if_customer_not_found((String)                        queryList.get(0)[85]);
-//            doc.setStore_default_customer_id(queryList.get(0)[86]!=null?Long.parseLong(queryList.get(0)[86].toString()):null);
-//            doc.setCagent(queryList.get(0)[87]!=null?            (String)queryList.get(0)[87]:"");
-//            doc.setStore_default_creator(queryList.get(0)[88]!=null?(String)queryList.get(0)[88]:"");
-//            doc.setStore_default_creator_id(queryList.get(0)[89]!=null?Long.parseLong(queryList.get(0)[89].toString()):null);
-//            doc.setStore_days_for_esd((Integer)                                 queryList.get(0)[90]);
-//            doc.setCompanyStoreDepartments(getCompanyStoreDepartmentsIds(id, myMasterId));
-//            doc.setStore_auto_reserve((Boolean)                                 queryList.get(0)[91]);
-//            doc.setStore_ip((String)                                            queryList.get(0)[92]);
             doc.setStore_default_lang_code((String)                             queryList.get(0)[93]);
-
-//            doc.setReg_country_id((Integer)                                 queryList.get(0)[73]);
-//            doc.setTax_number(queryList.get(0)[74]!=null?           (String)queryList.get(0)[74]:"");
-//            doc.setReg_number(queryList.get(0)[75]!=null?           (String)queryList.get(0)[75]:"");
-
             return doc;
-
         } else return null;
     }
-
-
-//    private boolean isCompanyWithStore(long companyId) throws Exception {
-//        String stringQuery = "select coalesce(is_store,false) from companies where id="+companyId;
-//        try {
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            return (Boolean)query.getSingleResult();
-//        } catch (Exception e) {
-//            logger.error("Exception in method isCompanyWithStore. SQL query:"+stringQuery, e);
-//            e.printStackTrace();
-//            throw new Exception();
-//        }
-//    }
-
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
@@ -753,28 +693,8 @@ public class CompanyRepositoryJPA {
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-
-
-//                    " is_store = "  + request.getIs_store() + ", " +                // on off the store
-//                    " store_site_address =          :store_site_address," +         // e.g. http://localhost/DokioShop
-//                    " store_key =                   :store_key," +                  // consumer key
-//                    " store_secret =                :store_secret," +               // consumer secret
-//                    " store_type =                  :store_type," +                 // e.g. woo
-//                    " store_api_version =           :store_api_version," +          // e.g. v3
-//                    " crm_secret_key =              :crm_secret_key," +             // like UUID generated
-//                    " store_price_type_regular = " + request.getStore_price_type_regular() + ", " +//id of regular type price
-//                    " store_price_type_sale = " + request.getStore_price_type_sale() +  ", " +//id of sale type price
-
                     " nds_included = " + request.getNds_included() + ", " + // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-//                    " store_orders_department_id = " + request.getStore_orders_department_id() + ", " + // department for creation Customer order from store
-//                    " store_if_customer_not_found = :store_if_customer_not_found, " + // "create_new" or "use_default"
-//                    " store_default_customer_id = " + request.getStore_default_customer_id() + ", " + // counterparty id if store_if_customer_not_found=use_default
-//                    " store_default_creator_id = " + request.getStore_default_creator_id() + ", " + //ID of default user, that will be marked as a creator of store order. Default is master user
-//                    " store_days_for_esd = " + (Objects.isNull(request.getStore_days_for_esd())?0:request.getStore_days_for_esd()) +  ", " + // number of days for ESD of created store order. Default is 0
-//                    " store_auto_reserve = " + request.getStore_auto_reserve()  +  ", " +  // auto reserve product after getting internet store order
-//                    " store_ip = :store_ip" +  ", " +         // store server ip address
                     " store_default_lang_code = upper(:store_default_lang_code)" +
-
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
         Query query = entityManager.createNativeQuery(stringQuery);
@@ -816,15 +736,6 @@ public class CompanyRepositoryJPA {
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
-
-//            query.setParameter("store_site_address",(request.getStore_site_address()!=null?request.getStore_site_address():""));
-//            query.setParameter("store_key",(request.getStore_key()!=null?request.getStore_key():""));
-//            query.setParameter("store_secret",(request.getStore_secret()!=null?request.getStore_secret():""));
-//            query.setParameter("store_type",(request.getStore_type()!=null?request.getStore_type():""));
-//            query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
-//            query.setParameter("crm_secret_key",(request.getCrm_secret_key()!=null?request.getCrm_secret_key():""));
-//            query.setParameter("store_if_customer_not_found",(request.getStore_if_customer_not_found()!=null?request.getStore_if_customer_not_found():"create_new"));
-//            query.setParameter("store_ip",(request.getStore_ip()!=null?request.getStore_ip():""));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
 
             query.executeUpdate();
@@ -835,80 +746,14 @@ public class CompanyRepositoryJPA {
         }
     }
 
-
     @SuppressWarnings("Duplicates")
-//    private void insertCompanyStoreDepartments(CompaniesForm request, Long masterId) throws Exception {
-//        Set<Long> departsIds=new HashSet<>();
-//        int i = 0;
-//        try{
-//            if (request.getCompanyStoreDepartments()!=null && request.getCompanyStoreDepartments().size() > 0) {
-//                for (Long departId : request.getCompanyStoreDepartments()) {
-//                    saveCompanyStoreDepartment(departId,request.getId(), masterId, i);
-//                    departsIds.add(departId);
-//                    i++;
-//                }
-//            }
-//            deleteCompanyStoreDepartmentsExcessRows(departsIds.size()>0?(cu.SetOfLongToString(departsIds,",","","")):"0", request.getId());
-//        }catch (Exception e) {
-//            logger.error("Error of insertCompanyStoreDepartments.", e);
-//            e.printStackTrace();
-//            throw new Exception();
-//        }
-//    }
-
-    private void saveCompanyStoreDepartment(Long departId, Long companyId, Long masterId, int menuOrder) throws Exception {
-        String stringQuery;
-
-        stringQuery = " insert into company_store_departments (" +
-                " master_id," +
-                " company_id," +
-                " department_id," +
-                " menu_order" +
-                ") values (" +
-                masterId + ", " +
-                companyId + ", " +
-                departId + ", " +
-                menuOrder +
-                ") ON CONFLICT ON CONSTRAINT company_store_department_uq " +// "upsert"
-                " DO update set " +
-                " menu_order = " + menuOrder;
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method CompanyRepositoryJPA/saveCompanyStoreDepartment. SQL query:"+stringQuery, e);
-            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
-
-    private Boolean deleteCompanyStoreDepartmentsExcessRows(String departIds, Long companyId) {
-        String stringQuery;
-
-        stringQuery =   " delete from company_store_departments " +
-                " where company_id=" + companyId +
-                " and department_id not in (" + departIds.replaceAll("[^0-9\\,]", "") + ")";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            logger.error("Exception in method CompanyRepositoryJPA/deleteCompanyStoreDepartmentsExcessRows. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-
-    @SuppressWarnings("Duplicates")
-    public List<Long> getCompanyStoreDepartmentsIds (Long companyId, Long masterId) {
+    public List<Long> getCompanyStoreDepartmentsIds (Long companyId, Long storeId, Long masterId) {
         String stringQuery;
         stringQuery =      "select   csd.department_id as id" +
-                "           from     company_store_departments csd " +
+                "           from     store_departments csd " +
                 "           where    csd.master_id=" + masterId +
                 "           and      csd.company_id =" + companyId +
+                "           and      csd.store_id =" + storeId +
                 "           order by csd.menu_order";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -924,62 +769,6 @@ public class CompanyRepositoryJPA {
             return null;
         }
     }
-
-    private Boolean isStoreDepartsChanged (List<Long> newDepartsList, Long companyId) throws Exception  {
-        String stringQuery;
-        stringQuery =
-                "           select csd.department_id" +
-                "           from   company_store_departments csd " +
-                "           where  csd.company_id =" + companyId;
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<BigInteger> queryList = query.getResultList();
-            List<Long> allDataBaseIds = new ArrayList<>();
-            for (BigInteger obj : queryList) {
-                allDataBaseIds.add(obj.longValue());
-            }
-            return !(new HashSet<>(allDataBaseIds).equals(new HashSet<>(newDepartsList)));
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method isStoreDepartsChanged. SQL query:" + stringQuery, e);
-            throw new Exception();
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-//    private void markAllCompanyProductsAsNeedToSyncWoo(Long companyId) throws Exception {
-//        String stringQuery =
-//                " update products " +
-//                        " set need_to_syncwoo = true " +
-//                        " where " +
-//                        " company_id = " + companyId;
-//        try {
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            query.executeUpdate();
-//        } catch (Exception e) {
-//            logger.error("Exception in method markAllCompanyProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-//            e.printStackTrace();
-//            throw new Exception();
-//        }
-//    }
-
-//    @SuppressWarnings("Duplicates")
-    //удаление лишних расчетных счетов (которые удалили в фронтэнде)
-//    private Boolean deleteCompanyPaymentAccountsExcessRows(String accountsIds, Long company_id) {
-//        String stringQuery;
-//        try {
-//            stringQuery =   " delete from companies_payment_accounts " +
-//                    " where company_id=" + company_id +
-//                    " and id not in (" + accountsIds + ")";
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            query.executeUpdate();
-//            return true;
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
 
     private Boolean insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) {
         String stringQuery;
@@ -1019,39 +808,6 @@ public class CompanyRepositoryJPA {
         }
 
     }
-
-//    @SuppressWarnings("Duplicates")
-//    private Boolean updateCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) {
-//        String stringQuery;
-//        try {
-//            stringQuery =   " update companies_payment_accounts set " +
-////                    " bik = :bik, " +
-////                    " name = :name, " +
-////                    " address = :address, " +
-////                    " corr_account = :corr_acc, " +
-////                    " payment_account = :paym_acc, " +
-//                    " output_order = :output_order"+
-//                    " where " +
-//                    " id="+row.getId()+" and "+
-//                    " master_id="+master_id+" and "+
-//                    " company_id="+company_id;
-//
-//            Query query = entityManager.createNativeQuery(stringQuery);
-////            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
-////            query.setParameter("name", (row.getName()!=null?row.getName():""));
-////            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
-////            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
-////            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
-//            query.setParameter("output_order",row.getOutput_order());
-//            query.executeUpdate();
-//            return true;
-//        }
-//        catch (Exception e) {
-//            logger.error("Error of updateCompanyPaymentAccounts", e);
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
 
     @SuppressWarnings("Duplicates")
     @Transactional
@@ -1149,22 +905,7 @@ public class CompanyRepositoryJPA {
                 " type, " +
                 " legal_form,"+
                 " nds_included, " +
-//                " reg_country_id, " + // country of registration
-//                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
-//                " reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-//                " is_store," +
-//                " store_site_address," +
-//                " store_key," +
-//                " store_secret," +
-//                " store_type," +
-//                " store_api_version," +
-//                " crm_secret_key," +
-//                " store_price_type_regular," +
-//                " store_price_type_sale," +
                 " store_default_lang_code" +
-
-
-
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -1221,18 +962,6 @@ public class CompanyRepositoryJPA {
                 ":type, " +
                 ":legal_form,"+
                 request.getNds_included() + ", " +
-//                request.getReg_country_id() + "," +
-//                ":tax_number," +
-//                ":reg_number" +
-//                request.getIs_store() + ", " +
-//                " :store_site_address," +
-//                " :store_key," +
-//                " :store_secret," +
-//                " :store_type," +
-//                " :store_api_version," +
-//                " :crm_secret_key," +
-//                request.getStore_price_type_regular() + ", " +
-//                request.getStore_price_type_sale() + ", " +
                 " upper(:store_default_lang_code) " +
                 ")";
         try{
@@ -1274,16 +1003,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
-//            query.setParameter("store_site_address",(request.getStore_site_address()!=null?request.getStore_site_address():""));
-//            query.setParameter("store_key",(request.getStore_key()!=null?request.getStore_key():""));
-//            query.setParameter("store_secret",(request.getStore_secret()!=null?request.getStore_secret():""));
-//            query.setParameter("store_type",(request.getStore_type()!=null?request.getStore_type():""));
-//            query.setParameter("store_api_version",(request.getStore_api_version()!=null?request.getStore_api_version():""));
-//            query.setParameter("crm_secret_key",(request.getCrm_secret_key().equals("")?null:request.getCrm_secret_key()));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
-
-//            query.setParameter("tax_number",request.getTax_number());
-//            query.setParameter("reg_number",request.getReg_number());
             query.executeUpdate();
             stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
@@ -1444,7 +1164,7 @@ public class CompanyRepositoryJPA {
             long amountToRepair = delNumbers.split(",").length;
             if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
                 if((userRepositoryJPA.getMyConsumedResources().getCompanies()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getCompanies())
-                    return -120; // number of users is out of bounds of tariff plan
+                    return -120; // number of companies is out of bounds of tariff plan
             String stringQuery;
             Long myId = userRepositoryJPA.getMyId();
             stringQuery = "Update companies p set " +
@@ -1755,26 +1475,19 @@ public class CompanyRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public Resource getCompanyCard(FileInfoJSON fileInfo) {
-
+   /* public Resource getCompanyCard(FileInfoJSON fileInfo) {
         GenerateDocumentsDocxService gt = new GenerateDocumentsDocxService();
-
-
         //запросим данные по предприятию, найдя его через название файла
         Long companyId=getCompanyIdByFilename(fileInfo.getOriginal_name());
         CompaniesJSON company=getCompanyValues(companyId);
-
         //создадим данные для подмены плейсхолдеров вида "Имя-Значение", например, "TM_NAME" - "ООО Докио"
         Map<String,String> changeMap = new HashMap<String,String>();
         changeMap.put("TMFIODIRECTOR", company.getFio_director());
         changeMap.put("TMNAME", company.getName());
         changeMap.put("TMDIRECTORPOSITION", company.getDirector_position());
-
         String orgType;
-
         List<Map<String,String>> mapAsList=new ArrayList<Map<String, String>>();
         //создадим данные для заполнения таблицы
-
         switch (company.getOpf_id()) {
             case  (1):// Индивидуальный предприниматель
                 mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Полное наименование","Индивидуальный предприниматель " + company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo()}));
@@ -1806,16 +1519,9 @@ public class CompanyRepositoryJPA {
             mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Кор. счёт", companyPaymentAccounts.get(0).getCorr_account()}));
             mapAsList.add(gt.getHashMap(new String[]{"TM_PARAMETER","TM_VALUE"},new String[]{"Расчётный счёт", companyPaymentAccounts.get(0).getPayment_account()}));
         }
-
-
-
-
-
-
         String filePath=fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
         File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
         String outputDocument = fileInfo.getPath()+"/company_card.docx";
-
         try
         {
             if(gt.generateDocument(template, outputDocument, changeMap, mapAsList)) {
@@ -1831,7 +1537,7 @@ public class CompanyRepositoryJPA {
             throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+outputDocument+"'");
         }
     }
-
+*/
     @Transactional
     public Long insertCompanyFast(CompaniesForm request,Long myMasterId){
         String stringQuery;
