@@ -135,7 +135,7 @@ public class StoreProductsRepository {
                     " and coalesce(p.is_deleted, false) = false " +
                     " and s.id = " + storeId +
                     " and (" +
-                    " (coalesce(sp.need_to_syncwoo,true) = true) or " +// if the product need to be synchronized because its category turned into store type category
+                    " (coalesce(sp.need_to_syncwoo,true) = true) or " +// if the product need to be synchronized
                     " (sp.date_time_syncwoo is null) or " +// if the product is created recently, or changed, but still not synchronized
                     " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
                     " ) ";

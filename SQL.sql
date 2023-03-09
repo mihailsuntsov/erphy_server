@@ -4310,8 +4310,9 @@ alter table plans alter column  daily_price type numeric (20,10);
 drop table company_store_departments;
 insert into _dictionary (key, tr_en, tr_ru) values ('sale_price', 'Sale price', 'Скидочная цена');
 
-
-
+alter table products drop column woo_id;
+alter table products drop column date_time_syncwoo;
+alter table products drop column need_to_syncwoo;
 
 
 
