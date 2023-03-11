@@ -1722,9 +1722,9 @@ public class ProductsRepositoryJPA {
                         "where " +
                         "product_id="+productId+" and " +
                         "price_type_id=p.id) " +
-                        ",null)                                as price_value, " +
-                        "(select count(*) from companies where is_store=true and store_price_type_regular = p.id) > 0 as is_store_price_type_regular," +
-                        "(select count(*) from companies where is_store=true and store_price_type_sale = p.id) > 0 as is_store_price_type_sale" +
+                        ",null)                                as price_value " +
+                        //"(select count(*) from companies where is_store=true and store_price_type_regular = p.id) > 0 as is_store_price_type_regular," +
+                        //"(select count(*) from companies where is_store=true and store_price_type_sale = p.id) > 0 as is_store_price_type_sale" +
 
                         " from " +
                         " sprav_type_prices p, products prod " +
@@ -1748,8 +1748,8 @@ public class ProductsRepositoryJPA {
                 doc.setPrice_name((String)                              obj[1]);
                 doc.setPrice_description((String)                       obj[2]);
                 doc.setPrice_value((BigDecimal)                         obj[3]);
-                doc.setIs_store_price_type_regular((Boolean)            obj[4]);
-                doc.setIs_store_price_type_sale((Boolean)               obj[5]);
+//                doc.setIs_store_price_type_regular((Boolean)            obj[4]);
+//                doc.setIs_store_price_type_sale((Boolean)               obj[5]);
                 returnList.add(doc);
             }
             return returnList;
@@ -4177,7 +4177,6 @@ public class ProductsRepositoryJPA {
                     //назначаем категориям магазины
                     setStoresToCategories(categoriesIds,storesIds,masterId,companyId);
                     setProductCategoriesAsStoreOrUnstore(categoriesIds,!(storesIds.size()==0),masterId,companyId);
-                    return true;
                 } else {//Если нужно сохранить предыдущие магазины у категорий. Отдельно работаем с каждой категорией
                     //цикл по категориям
                     for (Long p : categoriesIds) {
@@ -4193,11 +4192,13 @@ public class ProductsRepositoryJPA {
                         setStoresToCategories(category,categoryStoresIds,masterId,companyId);
                         setProductCategoriesAsStoreOrUnstore(category,!(categoryStoresIds.size()==0),masterId,companyId);
                     }
-                    // Now need to mark all products of these categories as need to be synchronized
-                    if(storesIds.size()>0)
-                        markProductsOfCategoriesAsNeedToSyncWoo(new ArrayList<>(categoriesIds), masterId, new ArrayList<>(storesIds));
-                    return true;
                 }
+
+                // Now need to mark all products of these categories as need to be synchronized
+                if(storesIds.size()>0)
+                    markProductsOfCategoriesAsNeedToSyncWoo(new ArrayList<>(categoriesIds), masterId, new ArrayList<>(storesIds));
+
+                return true;
             } else return null; // не прошли по безопасности - подсунуты "левые" id категорий
         } catch (Exception e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

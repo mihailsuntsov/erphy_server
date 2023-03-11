@@ -6,12 +6,14 @@ import com.dokio.message.request.store.woo.v3.orders.OrdersForm;
 import com.dokio.message.request.store.woo.v3.orders.ProductForm;
 import com.dokio.message.response.ProductsJSON;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
+import com.dokio.message.response.Sprav.StoresJSON;
 import com.dokio.repository.CagentRepositoryJPA;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.StoreDefaultCustomerIsNotSet;
 import com.dokio.repository.Exceptions.StoreDepartmentIsNotSet;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.repository.StoreRepository;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +44,8 @@ public class StoreOrdersRepository {
     CagentRepositoryJPA cagentRepository;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    StoreRepository storeRepository;
 
     public String getLastSynchronizedOrderTime(String key) {
         String stringQuery="";
@@ -80,7 +84,8 @@ public class StoreOrdersRepository {
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
 
-            CompanySettingsJSON settings = cu.getCompanySettings(companyId);
+            StoresJSON settings = storeRepository.getStoreBaseValues(storeId);
+
             if (Objects.isNull(settings.getStore_orders_department_id()))
                 throw new StoreDepartmentIsNotSet();
             if (settings.getStore_if_customer_not_found().equals("use_default") && Objects.isNull(settings.getStore_default_customer_id()))
@@ -112,7 +117,7 @@ public class StoreOrdersRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private void insertOrder(OrderForm row, Long masterId, Long companyId, Long storeId, CompanySettingsJSON settings) throws Exception {
+    private void insertOrder(OrderForm row, Long masterId, Long companyId, Long storeId, StoresJSON settings) throws Exception {
         Long    store_orders_department_id  = settings.getStore_orders_department_id();
         String  store_if_customer_not_found = settings.getStore_if_customer_not_found();
         Long    store_default_customer_id   = settings.getStore_default_customer_id();
@@ -121,8 +126,9 @@ public class StoreOrdersRepository {
         String  customerTelephone = row.getBilling().getPhone();
         String  customerEmail = row.getBilling().getEmail();
         Integer customerWooId = row.getCustomer_id();
-        boolean vat = settings.isVat();
-        boolean vatIncluded = settings.isVat_included();
+        CompanySettingsJSON companySettings = cu.getCompanySettings(companyId);
+        boolean vat = companySettings.isVat();
+        boolean vatIncluded = companySettings.isVat_included();
 
         try{
             Long customerId = cagentRepository.getCustomerIdByStoreCustomerData(companyId,customerWooId,customerEmail,customerTelephone);
@@ -207,7 +213,7 @@ public class StoreOrdersRepository {
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                 doc_number + ", "+//номер заказа
                 "'WooCommerce order #"+doc_number.toString()+"', " +//наименование
-                ":description, " +//описание
+                "CONCAT(:description,' ',(select name from stores where id="+storeId+")), " +//описание
                 "now() + interval '"+store_days_for_esd+"' day, " +// план. дата и время отгрузки
                 vat + ", "+// НДС
                 vatIncluded + ", "+// НДС включен в цену
@@ -243,11 +249,11 @@ public class StoreOrdersRepository {
                 query.setParameter("track_number",(""));
                 query.setParameter("woo_gmt_date", row.getDate_created_gmt());
                 query.executeUpdate();
-                stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+store_default_creator_id;
+                stringQuery="select id from customers_orders where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and doc_number = "+doc_number+" and creator_id="+store_default_creator_id;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 Long newDocId=Long.valueOf(query2.getSingleResult().toString());
                 //сохранение таблицы товаров
-                insertCustomersOrdersProducts(row, newDocId, masterId, companyId, store_orders_department_id);
+                insertCustomersOrdersProducts(row.getLine_items(), newDocId, masterId, companyId, store_orders_department_id, storeId, settings);
 
             } catch (CantInsertProductRowCauseErrorException e) {
                 logger.error("Exception in method insertCustomersOrders on inserting into customers_orders_products. ", e);
@@ -266,42 +272,48 @@ public class StoreOrdersRepository {
     }
 
     //сохранение таблицы товаров
-    private void insertCustomersOrdersProducts(OrderForm request, Long parentDocId, Long myMasterId, Long companyId, Long departmentId) throws Exception {
-        if (request.getLine_items()!=null && request.getLine_items().size() > 0) {//если есть что сохранять
-            CompanySettingsJSON settings = cu.getCompanySettings(companyId);
-            boolean reserve = settings.isStore_auto_reserve();
-            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products that will have reserves and need to be synchronised,
-            try{
-                // as a reserve is decrease available quantity of product in department
-                for (ProductForm wooProductRow : request.getLine_items()) {
-                    CustomersOrdersProductTableForm crmProductRow = new CustomersOrdersProductTableForm();
+    private void insertCustomersOrdersProducts(List<ProductForm> productsList, Long parentDocId, Long myMasterId, Long companyId, Long departmentId, Long storeId, StoresJSON settings) throws Exception {
+        if (productsList!=null && productsList.size() > 0) {//если есть что сохранять
 
-                    ProductsJSON currentProductInfo = getProductInfoByWooId(wooProductRow.getProduct_id(), companyId);
-                    crmProductRow.setProduct_id(currentProductInfo.getId());
-                    crmProductRow.setCustomers_orders_id(parentDocId);
-                    crmProductRow.setEdizm_id(Long.valueOf(currentProductInfo.getEdizm_id()));
-                    crmProductRow.setProduct_count(new BigDecimal(wooProductRow.getQuantity()));
-                    crmProductRow.setProduct_price(new BigDecimal(wooProductRow.getPrice()));
-                    crmProductRow.setProduct_sumprice(crmProductRow.getProduct_price().multiply(crmProductRow.getProduct_count()).setScale(2,BigDecimal.ROUND_HALF_UP));
-                    crmProductRow.setPrice_type_id(null);
-                    crmProductRow.setNds_id(Long.valueOf(currentProductInfo.getNds_id()));
-                    crmProductRow.setDepartment_id(departmentId);
-                    crmProductRow.setProduct_price_of_type_price(new BigDecimal(0));
-                    if(!reserve)
-                        crmProductRow.setReserved_current(new BigDecimal(0));
-                    else{// Если в настройках предприятия есть Авторезерв товаров из заказов интернет-магазина
-                        // Ставим в резерв заказываемое количество товаров
-                        crmProductRow.setReserved_current(crmProductRow.getProduct_count());
-                        // узнаём, есть ли свободные товары
-                        BigDecimal available = productsRepository.getAvailableExceptMyDoc(crmProductRow.getProduct_id(), departmentId, parentDocId);
-                        // Если резерв превышает доступное кол-во товара - уменьшаем резерв до доступного количества товара на складе
-                        if (crmProductRow.getReserved_current().compareTo(available) > 0) {
-                            crmProductRow.setReserved_current(available);// уменьшаем резерв до величины, равной доступному количеству товара на складе
+            boolean reserve = settings.getStore_auto_reserve();
+
+            Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products that will have reserves and need to be synchronised,
+                                                              // as a reserve is decrease available quantity of product in department
+            try{
+
+                for (ProductForm wooProductRow : productsList) {
+                    CustomersOrdersProductTableForm crmProductRow = new CustomersOrdersProductTableForm();
+                    if(wooProductRow.getProduct_id()>0){ // if there is woo_id (woo_id can be = 0 if product that there is in a order was manually deleted in WooCommerce)
+                        ProductsJSON currentProductInfo = getProductInfoByWooId(wooProductRow.getProduct_id(), companyId, storeId);
+                        if(!Objects.isNull(currentProductInfo)){ //if the product is found
+                            crmProductRow.setProduct_id(currentProductInfo.getId());
+                            crmProductRow.setCustomers_orders_id(parentDocId);
+                            crmProductRow.setEdizm_id(Long.valueOf(currentProductInfo.getEdizm_id()));
+                            crmProductRow.setProduct_count(new BigDecimal(wooProductRow.getQuantity()));
+                            crmProductRow.setProduct_price(new BigDecimal(wooProductRow.getPrice()));
+                            crmProductRow.setProduct_sumprice(crmProductRow.getProduct_price().multiply(crmProductRow.getProduct_count()).setScale(2,BigDecimal.ROUND_HALF_UP));
+                            crmProductRow.setPrice_type_id(null);
+                            crmProductRow.setNds_id(Long.valueOf(currentProductInfo.getNds_id()));
+                            crmProductRow.setDepartment_id(departmentId);
+                            crmProductRow.setProduct_price_of_type_price(new BigDecimal(0));
+                            if(!reserve)
+                                crmProductRow.setReserved_current(new BigDecimal(0));
+                            else{// Если в настройках предприятия есть Авторезерв товаров из заказов интернет-магазина
+                                // Ставим в резерв заказываемое количество товаров
+                                crmProductRow.setReserved_current(crmProductRow.getProduct_count());
+                                // узнаём, есть ли свободные товары
+                                BigDecimal available = productsRepository.getAvailableExceptMyDoc(crmProductRow.getProduct_id(), departmentId, parentDocId);
+                                // Если резерв превышает доступное кол-во товара - уменьшаем резерв до доступного количества товара на складе
+                                if (crmProductRow.getReserved_current().compareTo(available) > 0) {
+                                    crmProductRow.setReserved_current(available);// уменьшаем резерв до величины, равной доступному количеству товара на складе
+                                }
+                                // После постановки в резерв доступное количество товара уменьшается, и этот товар подлежит синхронизации с WooCommerce
+                                productsIdsToSyncWoo.add(crmProductRow.getProduct_id());
+                            }
+                            saveCustomersOrdersProductTable(crmProductRow, companyId, myMasterId, reserve);
                         }
-                        // После постановки в резерв доступное количество товара уменьшается, и этот товар подлежит синхронизации с WooCommerce
-                        productsIdsToSyncWoo.add(crmProductRow.getProduct_id());
                     }
-                    saveCustomersOrdersProductTable(crmProductRow, companyId, myMasterId, reserve);
+
                 }
                 if(productsIdsToSyncWoo.size()>0) productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo,myMasterId);
             } catch (Exception e) {
@@ -369,12 +381,14 @@ public class StoreOrdersRepository {
         }
     }
 
-    private ProductsJSON getProductInfoByWooId(int wooId, Long companyId) throws Exception {
+    private ProductsJSON getProductInfoByWooId(int wooId, Long companyId, Long storeId) throws Exception {
         String stringQuery="select " +
-                " id as id, " +
-                " edizm_id as edizm_id," +
-                " nds_id as nds_id" +
-                " from products where company_id="+companyId+" and woo_id="+wooId;
+                " p.id as id, " +
+                " p.edizm_id as edizm_id," +
+                " p.nds_id as nds_id" +
+                " from products p" +
+                " inner join stores_products sp on sp.product_id=p.id" +
+                " where p.company_id="+companyId+" and sp.woo_id="+wooId+" and sp.store_id="+storeId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
@@ -383,12 +397,13 @@ public class StoreOrdersRepository {
                 doc.setId(Long.parseLong( queryList.get(0)[0].toString()));
                 doc.setEdizm_id((Integer) queryList.get(0)[1]);
                 doc.setNds_id((Integer)   queryList.get(0)[2]);
-            }
+            } else throw new NoResultException();
             return doc;
         } catch (NoResultException nre) {
             logger.error("Exception in method StoreOrdersRepository/getProductIdByWooId. Product ID is not found by Woo_id = "+wooId+", SQL query:"+stringQuery, nre);
             nre.printStackTrace();
-            throw new Exception();
+            return null; // There is no product found by it's woo id. It can be if, for example, since the last time of orders synchronization
+                         // product in the online store was manually deleted, and then resynchronized (or not resynchronized)
         }
         catch (Exception e) {
             logger.error("Exception in method StoreOrdersRepository/getProductIdByWooId. SQL query:"+stringQuery, e);

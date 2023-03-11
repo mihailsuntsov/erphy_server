@@ -23,15 +23,15 @@ public class CompanySettingsJSON {
     private Integer st_prefix_barcode_pieced;
     private Integer st_prefix_barcode_packed;
     private String  netcost_policy;
-    private Long    store_orders_department_id;         // department for creation Customer order from store
-    private String  store_if_customer_not_found;        // "create_new" or "use_default" customer (counterparty)
-    private Long    store_default_customer_id;          // counterparty id if store_if_customer_not_found == use_default
-    private Long    store_default_creator_id;           // ID of default user, that will be marked as a creator of store order. Default is master user
-    private Integer store_days_for_esd;                 // number of days for ESD of created store order. Default is 0
+//    private Long    store_orders_department_id;         // department for creation Customer order from store
+//    private String  store_if_customer_not_found;        // "create_new" or "use_default" customer (counterparty)
+//    private Long    store_default_customer_id;          // counterparty id if store_if_customer_not_found == use_default
+//    private Long    store_default_creator_id;           // ID of default user, that will be marked as a creator of store order. Default is master user
+//    private Integer store_days_for_esd;                 // number of days for ESD of created store order. Default is 0
     private boolean vat;
     private boolean vat_included;
-    private boolean store_auto_reserve;
-    private boolean is_store;                           // the store of company is switched on
+//    private boolean store_auto_reserve;
+    private boolean is_store;                             // true if there is at least 1 non-deleted online stores
 
     public boolean isIs_store() {
         return is_store;
@@ -39,70 +39,6 @@ public class CompanySettingsJSON {
 
     public void setIs_store(boolean is_store) {
         this.is_store = is_store;
-    }
-
-    public boolean isStore_auto_reserve() {
-        return store_auto_reserve;
-    }
-
-    public void setStore_auto_reserve(boolean store_auto_reserve) {
-        this.store_auto_reserve = store_auto_reserve;
-    }
-
-    public boolean isVat() {
-        return vat;
-    }
-
-    public void setVat(boolean vat) {
-        this.vat = vat;
-    }
-
-    public boolean isVat_included() {
-        return vat_included;
-    }
-
-    public void setVat_included(boolean vat_included) {
-        this.vat_included = vat_included;
-    }
-
-    public Long getStore_default_creator_id() {
-        return store_default_creator_id;
-    }
-
-    public void setStore_default_creator_id(Long store_default_creator_id) {
-        this.store_default_creator_id = store_default_creator_id;
-    }
-
-    public Integer getStore_days_for_esd() {
-        return store_days_for_esd;
-    }
-
-    public void setStore_days_for_esd(Integer store_days_for_esd) {
-        this.store_days_for_esd = store_days_for_esd;
-    }
-
-    public Long getStore_orders_department_id() {
-        return store_orders_department_id;
-    }
-
-    public void setStore_orders_department_id(Long store_orders_department_id) {
-        this.store_orders_department_id = store_orders_department_id;
-    }
-
-    public String getStore_if_customer_not_found() {
-        return store_if_customer_not_found;
-    }
-
-    public void setStore_if_customer_not_found(String store_if_customer_not_found) {
-        this.store_if_customer_not_found = store_if_customer_not_found;
-    }
-
-    public Long getStore_default_customer_id() {
-        return store_default_customer_id;
-    }
-
-    public void setStore_default_customer_id(Long store_default_customer_id) {
-        this.store_default_customer_id = store_default_customer_id;
     }
 
     public Integer getSt_prefix_barcode_pieced() {
@@ -127,5 +63,21 @@ public class CompanySettingsJSON {
 
     public void setNetcost_policy(String netcost_policy) {
         this.netcost_policy = netcost_policy;
+    }
+
+    public boolean isVat() {
+        return vat;
+    }
+
+    public void setVat(boolean vat) {
+        this.vat = vat;
+    }
+
+    public boolean isVat_included() {
+        return vat_included;
+    }
+
+    public void setVat_included(boolean vat_included) {
+        this.vat_included = vat_included;
     }
 }

@@ -462,26 +462,27 @@ public class CompanyRepositoryJPA {
 //                    "           p.reg_country_id as reg_country_id, " + // country of registration
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
-                    "           coalesce(p.is_store,false) as is_store, " +// on off the store
-                    "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
-                    "           p.store_key as store_key, " +  // consumer key
-                    "           p.store_secret as store_secret, " + // consumer secret
-                    "           p.store_type as store_type, " + // e.g. woo
-                    "           p.store_api_version as store_api_version, " + // e.g. v3
-                    "           p.crm_secret_key as crm_secret_key, " + // like UUID generated
-                    "           p.store_price_type_regular as store_price_type_regular, " + // id of regular type price
-                    "           p.store_price_type_sale as store_price_type_sale, " + // id of sale type price
+
+//                    "           coalesce(p.is_store,false) as is_store, " +// on off the store
+//                    "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
+//                    "           p.store_key as store_key, " +  // consumer key
+//                    "           p.store_secret as store_secret, " + // consumer secret
+//                    "           p.store_type as store_type, " + // e.g. woo
+//                    "           p.store_api_version as store_api_version, " + // e.g. v3
+//                    "           p.crm_secret_key as crm_secret_key, " + // like UUID generated
+//                    "           p.store_price_type_regular as store_price_type_regular, " + // id of regular type price
+//                    "           p.store_price_type_sale as store_price_type_sale, " + // id of sale type price
 
                     "           coalesce(p.nds_included,false) as nds_included, " + // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-                    "           p.store_orders_department_id as store_orders_department_id, " + // department for creation Customer order from store
-                    "           coalesce(p.store_if_customer_not_found,'create_new') as store_if_customer_not_found, " + // "create_new" or "use_default"
-                    "           p.store_default_customer_id as store_default_customer_id, " + // counterparty id if store_if_customer_not_found=use_default
-                    "           cag.name as store_default_customer," +
-                    "           uoc.name as store_default_creator," +
-                    "           p.store_default_creator_id as store_default_creator_id," + // ID of default user, that will be marked as a creator of store order. Default is master user
-                    "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
-                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
-                    "           coalesce(p.store_ip,'') as store_ip," +
+//                    "           p.store_orders_department_id as store_orders_department_id, " + // department for creation Customer order from store
+//                    "           coalesce(p.store_if_customer_not_found,'create_new') as store_if_customer_not_found, " + // "create_new" or "use_default"
+//                    "           p.store_default_customer_id as store_default_customer_id, " + // counterparty id if store_if_customer_not_found=use_default
+//                    "           cag.name as store_default_customer," +
+//                    "           uoc.name as store_default_creator," +
+//                    "           p.store_default_creator_id as store_default_creator_id," + // ID of default user, that will be marked as a creator of store order. Default is master user
+//                    "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
+//                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
+//                    "           coalesce(p.store_ip,'') as store_ip," +
                     "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code" +
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -490,8 +491,8 @@ public class CompanyRepositoryJPA {
                     "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                    "           LEFT OUTER JOIN cagents cag ON p.store_default_customer_id=cag.id" +
-                    "           LEFT OUTER JOIN users uoc ON p.store_default_creator_id=uoc.id " +
+//                    "           LEFT OUTER JOIN cagents cag ON p.store_default_customer_id=cag.id" +
+//                    "           LEFT OUTER JOIN users uoc ON p.store_default_creator_id=uoc.id " +
 //                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
 //                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                     "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
@@ -584,8 +585,8 @@ public class CompanyRepositoryJPA {
             doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
             doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
             doc.setLegal_form((String)                                      queryList.get(0)[73]);
-            doc.setNds_included((Boolean)                                      queryList.get(0)[83]);
-            doc.setStore_default_lang_code((String)                             queryList.get(0)[93]);
+            doc.setNds_included((Boolean)                                   queryList.get(0)[74]);
+            doc.setStore_default_lang_code((String)                         queryList.get(0)[75]);
             return doc;
         } else return null;
     }

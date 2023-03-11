@@ -27,8 +27,6 @@ public class ProductPricesJSON {
     private String price_description;
     private BigDecimal price_value;
     private int row_id;
-    private Boolean is_store_price_type_regular;
-    private Boolean is_store_price_type_sale;
 
     public int getRow_id() {
         return row_id;
@@ -70,19 +68,4 @@ public class ProductPricesJSON {
         this.price_description = price_description;
     }
 
-    public Boolean getIs_store_price_type_regular() {
-        return is_store_price_type_regular;
-    }
-
-    public void setIs_store_price_type_regular(Boolean is_store_price_type_regular) {
-        this.is_store_price_type_regular = is_store_price_type_regular;
-    }
-
-    public Boolean getIs_store_price_type_sale() {
-        return is_store_price_type_sale;
-    }
-
-    public void setIs_store_price_type_sale(Boolean is_store_price_type_sale) {
-        this.is_store_price_type_sale = is_store_price_type_sale;
-    }
 }

@@ -71,12 +71,14 @@ public class StoreAttributeTermsRepository {
                         " from product_attribute_terms p" +
                         " INNER JOIN product_attributes pa ON pa.id = p.attribute_id" +
                         " INNER JOIN stores_attributes spc ON spc.attribute_id = p.attribute_id" +
-                        " INNER JOIN stores_terms spt ON spt.term_id = p.id  " +
                         " INNER JOIN stores str ON spc.store_id = str.id " +
+                        " INNER JOIN stores_terms spt ON spt.term_id = p.id and spt.store_id = str.id " +
                         " LEFT OUTER JOIN store_translate_terms translator ON p.id = translator.term_id and translator.lang_code = '" + langCode + "'" +
                         " where pa.company_id = " + companyId +
                         " and str.id = " + storeId +
-                        " and pa.is_deleted = false";
+                        " and spc.store_id = str.id " +
+                        " and pa.is_deleted = false " +
+                        " and str.is_deleted=false";
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
             //.setMaxResults(result);
@@ -146,7 +148,7 @@ public class StoreAttributeTermsRepository {
                     masterId + ", " +
                     companyId + ", " +
                     storeId + ", " +
-                    "(select id from product_attribute_terms where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
+                    "(select id from product_attribute_terms where master_id = "+masterId+" and id = " + ids.getCrm_id() + "), " +
                     ids.getId() + ") " +
                     " ON CONFLICT ON CONSTRAINT stores_terms_uq " +// "upsert"
                     " DO update set " +

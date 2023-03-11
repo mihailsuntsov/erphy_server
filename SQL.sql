@@ -4313,8 +4313,16 @@ insert into _dictionary (key, tr_en, tr_ru) values ('sale_price', 'Sale price', 
 alter table products drop column woo_id;
 alter table products drop column date_time_syncwoo;
 alter table products drop column need_to_syncwoo;
-
-
+alter table companies drop column is_store;
+alter table companies drop column store_site_address;
+alter table companies drop column store_key;
+alter table companies drop column store_secret;
+alter table companies drop column store_type;
+alter table companies drop column store_api_version;
+alter table companies drop column crm_secret_key;
+alter table companies drop column store_price_type_regular;
+alter table companies drop column store_price_type_sale;
+alter table product_categories drop column woo_id;
 
 
 

@@ -73,6 +73,15 @@ public class CustomersOrdersJSON
     private String flat;
     private BigDecimal sum_price;
     private String shipment_time;
+    private String store;
+
+    public String getStore() {
+        return store;
+    }
+
+    public void setStore(String store) {
+        this.store = store;
+    }
 
     public String getShipment_time() {
         return shipment_time;

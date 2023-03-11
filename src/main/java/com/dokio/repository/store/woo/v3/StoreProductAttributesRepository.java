@@ -68,14 +68,15 @@ public class StoreProductAttributesRepository {
                 " coalesce(p.order_by, 'menu_order') as order_by," +
                 " coalesce(p.has_archives,false) as has_archives," +
                 " p.id as crm_id," +
-                " spc.woo_id as woo_id, " +
+                " spc.woo_id as woo_id " +
                 " from product_attributes p" +
                 " INNER JOIN stores_attributes spc ON spc.attribute_id = p.id  " +
                 " INNER JOIN stores str ON spc.store_id = str.id " +
                 " LEFT OUTER JOIN store_translate_attributes translator ON p.id = translator.attribute_id and translator.lang_code = '" + langCode + "'" +
                 " where p.company_id = " + companyId +
                 " and str.id = " + storeId +
-                " and p.is_deleted = false";
+                " and p.is_deleted = false " +
+                " and str.is_deleted=false";
 
 
             Query query = entityManager.createNativeQuery(stringQuery);

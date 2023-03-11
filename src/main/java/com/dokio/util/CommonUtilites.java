@@ -107,20 +107,20 @@ public class CommonUtilites {
         }
     }
 
-    public Long getLongFromAnyTableById(String subj, String tableName, Long idValue){
-        try {
-            String stringQuery;
-            stringQuery =
-                    "select " + subj + " from " + tableName + " where id = " + idValue +" limit 1";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            return Long.parseLong(query.getSingleResult().toString());
-        }catch (NoResultException nre) {
-            return null;
-        }catch (Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
+//    public Long getLongFromAnyTableById(String subj, String tableName, Long idValue){
+//        try {
+//            String stringQuery;
+//            stringQuery =
+//                    "select " + subj + " from " + tableName + " where id = " + idValue +" limit 1";
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            return Long.parseLong(query.getSingleResult().toString());
+//        }catch (NoResultException nre) {
+//            return null;
+//        }catch (Exception e){
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
 
     @SuppressWarnings("Duplicates")  //генератор номера документа
     public Long generateDocNumberCode(Long company_id, String docTableName)
@@ -392,15 +392,16 @@ public class CommonUtilites {
                         " cmp.st_prefix_barcode_pieced  as st_prefix_barcode_pieced,   "+
                         " cmp.st_prefix_barcode_packed  as st_prefix_barcode_packed,"+
                         " cmp.st_netcost_policy         as st_netcost_policy," +
-                        " cmp.store_orders_department_id  as store_orders_department_id," +
-                        " coalesce(cmp.store_if_customer_not_found,'create_new') as store_if_customer_not_found," +
-                        " cmp.store_default_customer_id   as store_default_customer_id,"+
-                        " cmp.store_default_creator_id as store_default_creator_id," +
-                        " coalesce(cmp.store_days_for_esd,0) as store_days_for_esd, " +
+//                        " cmp.store_orders_department_id  as store_orders_department_id," +
+//                        " coalesce(cmp.store_if_customer_not_found,'create_new') as store_if_customer_not_found," +
+//                        " cmp.store_default_customer_id   as store_default_customer_id,"+
+//                        " cmp.store_default_creator_id as store_default_creator_id," +
+//                        " coalesce(cmp.store_days_for_esd,0) as store_days_for_esd, " +
                         " coalesce(cmp.nds_payer, false) as nds_payer, " +
                         " coalesce(cmp.nds_included, false) as nds_included, " +
-                        " coalesce(cmp.store_auto_reserve, false) as store_auto_reserve, " +
-                        " coalesce(cmp.is_store, false) as is_store" +
+                        "(select count(*) from stores where company_id="+company_id+" and coalesce(is_deleted,false)=false) > 0 as is_store" +
+//                        " coalesce(cmp.store_auto_reserve, false) as store_auto_reserve, " +
+//                        " coalesce(cmp.is_store, false) as is_store" +
                         " from companies cmp where cmp.id="+company_id;
         try
         {
@@ -412,15 +413,15 @@ public class CommonUtilites {
                     returnObj.setSt_prefix_barcode_pieced((Integer)         obj[0]);
                     returnObj.setSt_prefix_barcode_packed((Integer)         obj[1]);
                     returnObj.setNetcost_policy((String)                    obj[2]);
-                    returnObj.setStore_orders_department_id(obj[3]!=null?Long.parseLong(obj[3].toString()):null);
-                    returnObj.setStore_if_customer_not_found((String)       obj[4]);
-                    returnObj.setStore_default_customer_id(obj[5]!=null?Long.parseLong(obj[5].toString()):null);
-                    returnObj.setStore_default_creator_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
-                    returnObj.setStore_days_for_esd((Integer)               obj[7]);
-                    returnObj.setVat((Boolean)                              obj[8]);
-                    returnObj.setVat_included((Boolean)                     obj[9]);
-                    returnObj.setStore_auto_reserve((Boolean)               obj[10]);
-                    returnObj.setIs_store((Boolean)                         obj[11]);
+//                    returnObj.setStore_orders_department_id(obj[3]!=null?Long.parseLong(obj[3].toString()):null);
+//                    returnObj.setStore_if_customer_not_found((String)       obj[4]);
+//                    returnObj.setStore_default_customer_id(obj[5]!=null?Long.parseLong(obj[5].toString()):null);
+//                    returnObj.setStore_default_creator_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
+//                    returnObj.setStore_days_for_esd((Integer)               obj[7]);
+                    returnObj.setVat((Boolean)                              obj[3]);
+                    returnObj.setVat_included((Boolean)                     obj[4]);
+//                    returnObj.setStore_auto_reserve((Boolean)               obj[10]);
+                    returnObj.setIs_store((Boolean)                         obj[5]);
                 }
 
             return returnObj;
@@ -652,20 +653,16 @@ public class CommonUtilites {
         }
     }
 
-    public String getStoreIp(String crmSecretKey){
-        String stringQuery = "select store_ip from companies where crm_secret_key = :crm_secret_key";
+    private String getStoreIp(String crmSecretKey){
         try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("crm_secret_key", crmSecretKey);
-            return query.getSingleResult().toString();
-        } catch (NoResultException nre) {
-            return null;
+            return getByCrmSecretKey("store_ip", crmSecretKey).toString();
         } catch (Exception e) {
-            logger.error("Exception in method getStoreIp. SQL: " + stringQuery, e);
+            logger.error("Exception in method getStoreIp.", e);
             e.printStackTrace();
             return null;
         }
     }
+
     public void checkStoreIp(String storeRemoteAddr, String key) throws Exception {
         String crmRemoteAddress = getStoreIp(key);
         if(Objects.isNull(crmRemoteAddress))

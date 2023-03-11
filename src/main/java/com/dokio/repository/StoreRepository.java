@@ -74,7 +74,6 @@ public class StoreRepository {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    @Transactional
     @SuppressWarnings("Duplicates")
     public List<StoresJSON> getStoresTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(54L, "676,677"))// (см. файл Permissions Id)
@@ -163,7 +162,6 @@ public class StoreRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
     public int getStoresSize(String searchString, Long companyId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(54L, "676,677"))//"Статусы документов" (см. файл Permissions Id)
         {
@@ -201,7 +199,6 @@ public class StoreRepository {
 //****************************************************   C  R  U  D   *********************************************************************************
 //*****************************************************************************************************************************************************
 
-    @Transactional
     @SuppressWarnings("Duplicates")
     public StoresJSON getStoresValues(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(54L,"676,677"))//"Статусы документов" (см. файл Permissions Id)
@@ -290,7 +287,7 @@ public class StoreRepository {
                     doc.setStore_ip((String)                            obj[24]);
                     doc.setStore_default_customer(obj[25]!=null?(String)obj[25]:"");
                     doc.setStore_default_creator((String)               obj[26]);
-                    doc.setStoreDepartments(getStoreDepartmentsIds(id, doc.getCompany_id(), myMasterId));
+                    doc.setStoreDepartments(getStoreDepartmentsIds(id, doc.getCompany_id()));
 
                 }
                 return doc;
@@ -512,12 +509,11 @@ public class StoreRepository {
 //*******************************************************************  U T I L S **********************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public List<Long> getStoreDepartmentsIds (Long storeId, Long companyId, Long masterId) {
+    public List<Long> getStoreDepartmentsIds (Long storeId, Long companyId) {
         String stringQuery;
         stringQuery = "     select   csd.department_id as id" +
                 "           from     store_departments csd " +
-                "           where    csd.master_id=" + masterId +
-                "           and      csd.company_id =" + companyId +
+                "           where    csd.company_id =" + companyId +
                 "           and      csd.store_id =" + storeId +
                 "           order by csd.menu_order";
         try {
@@ -726,4 +722,62 @@ public class StoreRepository {
             return null;
         }
     }
+
+    @SuppressWarnings("Duplicates")
+    public StoresJSON getStoreBaseValues(Long id) {
+        String stringQuery = "select  " +
+                "           p.id as id, " +
+                "           p.company_id as company_id, " +
+                "           p.name as name, " +
+                "           upper(p.lang_code) as lang_code, " + // code of store language, e.g. EN
+                "           p.store_type, " +                   // e.g. woo
+                "           p.store_api_version, " +            // e.g. v3
+                "           p.crm_secret_key, " +               // like UUID generated
+                "           p.store_price_type_regular, " +     // id of regular type price
+                "           p.store_price_type_sale, " +        // id of sale type price
+                "           p.store_orders_department_id, " +   // department for creation Customer order from store
+                "           p.store_if_customer_not_found, " +  // "create_new" or "use_default". Default is "create_new"
+                "           p.store_default_customer_id, " +    // counterparty id if store_if_customer_not_found=use_default
+                "           p.store_default_creator_id, " +     // default user that will be marked as a creator of store order. Default is master user
+                "           p.store_days_for_esd, " +           // number of days for ESD of created store order. Default is 0
+                "           coalesce(p.store_auto_reserve,false), " +// auto reserve product after getting internet store order
+                "           p.store_ip " +                      // internet-store ip address
+                "           from stores p " +
+                "           where p.id = " + id;
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            StoresJSON doc = new StoresJSON();
+
+            for (Object[] obj : queryList) {
+
+                doc.setId(Long.parseLong(obj[0].toString()));
+                doc.setCompany_id(Long.parseLong(obj[1].toString()));
+                doc.setName((String) obj[2]);
+                doc.setLang_code((String) obj[3]);
+                doc.setStore_type((String) obj[4]);
+                doc.setStore_api_version((String) obj[5]);
+                doc.setCrm_secret_key((String) obj[6]);
+                doc.setStore_price_type_regular(Long.parseLong(obj[7].toString()));
+                doc.setStore_price_type_sale(obj[8] != null ? Long.parseLong(obj[8].toString()) : null);
+                doc.setStore_orders_department_id(Long.parseLong(obj[9].toString()));
+                doc.setStore_if_customer_not_found((String) obj[10]);
+                doc.setStore_default_customer_id(obj[11] != null ? Long.parseLong(obj[11].toString()) : null);
+                doc.setStore_default_creator_id(Long.parseLong(obj[12].toString()));
+                doc.setStore_days_for_esd((Integer) obj[13]);
+                doc.setStore_auto_reserve((Boolean) obj[14]);
+                doc.setStore_ip((String) obj[15]);
+                doc.setStoreDepartments(getStoreDepartmentsIds(id, doc.getCompany_id()));
+            }
+            return doc;
+        } catch (Exception e) {
+            logger.error("Exception in method getStoresValues on selecting from stores. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 }

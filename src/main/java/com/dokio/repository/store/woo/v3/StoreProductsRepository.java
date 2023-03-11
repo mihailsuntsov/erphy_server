@@ -48,26 +48,28 @@ public class StoreProductsRepository {
              Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
              String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
              stringQuery =
-             "select " +
-             " count(*)" +
-             " from products p" +
-             " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id " +
-             " INNER JOIN product_categories pc ON pc.id=ppc.category_id " +
-             " INNER JOIN stores_productcategories spc ON pc.id=spc.category_id " +
-             " INNER JOIN stores s on s.id=spc.store_id " +
-             " LEFT OUTER JOIN store_translate_products translator ON p.id = translator.product_id and translator.lang_code = '" + langCode + "'" +
-             " LEFT OUTER JOIN stores_products sp ON sp.product_id = p.id and sp.store_id=s.id " +
-             " where " +
-             " p.company_id = " + companyId +
-             " and coalesce(pc.is_store_category,false)=true " +
-             " and coalesce(p.is_deleted, false) = false " +
-             " and s.id = " + storeId +
-             " and (" +
-             " (coalesce(sp.need_to_syncwoo,true) = true) or " +
-             " (sp.date_time_syncwoo is null) or " +
-             " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
-             " )" +
-             " group by p.id ";
+             "select count(*) " +
+             " from (" +
+             "   select p.id from products p" +
+             "   INNER JOIN product_productcategories ppc ON ppc.product_id=p.id " +
+             "   INNER JOIN product_categories pc ON pc.id=ppc.category_id " +
+             "   INNER JOIN stores_productcategories spc ON pc.id=spc.category_id " +
+             "   INNER JOIN stores s on s.id=spc.store_id " +
+             "   LEFT OUTER JOIN store_translate_products translator ON p.id = translator.product_id and translator.lang_code = '" + langCode + "'" +
+             "   LEFT OUTER JOIN stores_products sp ON sp.product_id = p.id and sp.store_id=s.id " +
+             "   where " +
+             "   p.company_id = " + companyId +
+             "   and coalesce(pc.is_store_category,false)=true " +
+             "   and coalesce(p.is_deleted, false) = false " +
+             "   and s.id = " + storeId +
+             "   and coalesce(s.is_deleted, false) = false " +
+             "   and (" +
+             "   (coalesce(sp.need_to_syncwoo,true) = true) or " +
+             "   (sp.date_time_syncwoo is null) or " +
+             "   (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
+             "   )" +
+             "   group by p.id" +
+             " ) as subqery ";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             result.setQueryResultCode(1);
@@ -134,12 +136,13 @@ public class StoreProductsRepository {
                     " and coalesce(pc.is_store_category,false)=true " + // if product is in the store category
                     " and coalesce(p.is_deleted, false) = false " +
                     " and s.id = " + storeId +
+                    " and coalesce(s.is_deleted, false) = false " +
                     " and (" +
                     " (coalesce(sp.need_to_syncwoo,true) = true) or " +// if the product need to be synchronized
                     " (sp.date_time_syncwoo is null) or " +// if the product is created recently, or changed, but still not synchronized
                     " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
-                    " ) ";
-                    //" group by 1,2,3,4,5,6,7,8 ";
+                    " ) " +
+                    " group by 1,2,3,4,5,6,7,8 ";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             if (firstResult != null) {query.setFirstResult(firstResult);} // from 0
@@ -241,9 +244,9 @@ public class StoreProductsRepository {
                     " now()) " +
                     " ON CONFLICT ON CONSTRAINT stores_products_uq " +// "upsert"
                     " DO update set " +
-                    " woo_id = "+ids.getId() +
-                    " need_to_syncwoo=false, " +
-                    " date_time_syncwoo=now()";
+                    " woo_id = " + ids.getId() + ", " +
+                    " need_to_syncwoo = false, " +
+                    " date_time_syncwoo = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -296,18 +299,17 @@ public class StoreProductsRepository {
         String stringQuery="" +
 
         " select " +
-        " pc.id as crm_id " +
-        " from product_categories pc " +
-        " INNER JOIN product_productcategories ppc ON ppc.category_id=pc.id " +
+        " spc.woo_id as woo_id " +
+        " from " +
+        " stores_productcategories spc " +
+        " INNER JOIN product_categories pc ON pc.id=spc.category_id " +
+        " INNER JOIN product_productcategories ppc ON ppc.category_id=pc.id  " +
         " INNER JOIN products p ON p.id=ppc.product_id " +
-        " INNER JOIN stores_productcategories spc ON pc.id=spc.category_id " +
         " INNER JOIN stores s on s.id=spc.store_id " +
         " where " +
         " coalesce(pc.is_store_category,false)=true " +
-        " and coalesce(p.is_deleted, false) = false " +
         " and s.id = " + storeId +
         " and spc.woo_id is not null" +
-        " and coalesce(pc.is_store_category, false) = true " +
         " and p.id=" + productId;
 
         try {
@@ -436,8 +438,12 @@ public class StoreProductsRepository {
                     " where " +
                     " p.company_id = " + companyId +
                     " and coalesce(pc.is_store_category,false)=true " +
-    //                " and coalesce(p.is_deleted, false) = false " +
+
+                    " and coalesce(p.is_deleted, false) = false " +
+
                     " and s.id = " + storeId +
+
+                    " and coalesce(s.is_deleted, false) = false " +
 
                 " ) ";
 

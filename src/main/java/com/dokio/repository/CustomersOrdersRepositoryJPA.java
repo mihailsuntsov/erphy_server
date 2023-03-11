@@ -76,7 +76,7 @@ public class CustomersOrdersRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("doc_number","name","cagent","status_name","sum_price","hasSellReceipt","company","department","creator","date_time_created_sort","shipment_date_sort","description","is_completed","product_count")
+            .of("doc_number","store","name","cagent","status_name","sum_price","hasSellReceipt","company","department","creator","date_time_created_sort","shipment_date_sort","description","is_completed","product_count")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -127,7 +127,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from customers_orders_product where customers_orders_id=p.id),0) as sum_price, " +
                     "           p.name as name, " +
                     "           (select count(*) from customers_orders_product ip where coalesce(ip.customers_orders_id,0)=p.id) as product_count," + //подсчет кол-ва товаров
-                    "           cg.name as cagent " +
+                    "           cg.name as cagent, " +
+                    "           st.name as store" +
 //                    "           cnt.name_ru, ' ', reg.name_ru, ' ', cty.name_ru, ' ',
                     "           from customers_orders p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -137,6 +138,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+                    "           LEFT OUTER JOIN stores st ON p.store_id=st.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
@@ -166,6 +168,7 @@ public class CustomersOrdersRepositoryJPA {
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(st.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
@@ -220,6 +223,7 @@ public class CustomersOrdersRepositoryJPA {
                 doc.setName((String)                          obj[25]);
                 doc.setProduct_count(Long.parseLong(          obj[26].toString()));
                 doc.setCagent((String)                        obj[27]);
+                doc.setStore((String)                         obj[28]);
 
 
                 returnList.add(doc);
@@ -243,6 +247,7 @@ public class CustomersOrdersRepositoryJPA {
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                "           LEFT OUTER JOIN stores st ON p.store_id=st.id" +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
@@ -270,6 +275,7 @@ public class CustomersOrdersRepositoryJPA {
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(st.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
