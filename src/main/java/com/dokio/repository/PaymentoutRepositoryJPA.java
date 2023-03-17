@@ -327,7 +327,7 @@ public class PaymentoutRepositoryJPA {
                     "           coalesce(p.income_number,'') as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+ // id банковский счёт препдриятия, откуда перемещаем денежные средства"
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
+                    "           coalesce(cpa.payment_account,'')||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
                     "           p.expenditure_id as expenditure_id,"+ // статья расходов
                     "           sei.name as expenditure," +
                     "           p.moving_type as moving_type," +   // тип внутреннего перемещения денежных средств: boxoffice - касса предприятия (не путать с ККМ!), account - банковский счёт препдриятия

@@ -4323,9 +4323,10 @@ alter table companies drop column crm_secret_key;
 alter table companies drop column store_price_type_regular;
 alter table companies drop column store_price_type_sale;
 alter table product_categories drop column woo_id;
-
-
-
+alter table product_attributes drop column woo_id;
+alter table product_attribute_terms drop column woo_id;
+update version set value = '1.2.0', date = '13-03-2023';
+------------------------------------------------  end of 1.2.0  ------------------------------------------------------
 
 
 

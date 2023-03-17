@@ -23,6 +23,7 @@ import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.response.store.woo.v3.ProductCategoriesJSON;
 import com.dokio.message.response.store.woo.v3.ProductCategoryJSON;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
+import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Repository
 public class StoreProductCategoriesRepository {
@@ -50,6 +50,8 @@ public class StoreProductCategoriesRepository {
 
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    ProductsRepositoryJPA productsRepository;
 
     public ProductCategoriesJSON syncProductCategoriesToStore(String key) {
         ProductCategoriesJSON result = new ProductCategoriesJSON();
@@ -131,9 +133,15 @@ public class StoreProductCategoriesRepository {
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
+            // if category was deleted in the store side, its products will lost their belonging to this category.
+            // And if this category recreated, these products will not be assigned to this category
+            // So, need to mark this products as need to be resynchronized
+            Set<Long> setOfCategoriesIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductCategoryId(row, companyId, storeId, masterId);
+                setOfCategoriesIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
             }
+            productsRepository.markProductsOfCategoriesAsNeedToSyncWoo(setOfCategoriesIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesIds. Key:"+request.getCrmSecretKey(), e);

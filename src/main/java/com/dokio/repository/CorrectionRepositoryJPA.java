@@ -122,7 +122,7 @@ public class CorrectionRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           sb.name as boxoffice, " +                 //  касса предприятия
                     "           p.type as type, "+                                  // boxoffice - коррекция кассы, cagent - коррекция баланса с контрагентом, account - коррекция расчётного счёта
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," + //расч счёт предприятия (номер и адрес)
+                    "           coalesce(cpa.payment_account,'')||' ('||cpa.name||')' as payment_account," + //расч счёт предприятия (номер и адрес)
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
 
@@ -307,7 +307,7 @@ public class CorrectionRepositoryJPA {
                     "           p.is_completed as is_completed, " +
 
                     "           p.payment_account_id as payment_account_id,"+ // id банковский счёт препдриятия, откуда перемещаем денежные средства"
-                    "           cpa.payment_account||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
+                    "           coalesce(cpa.payment_account,'')||' ('||cpa.name||')' as payment_account," +//  банковский счёт препдриятия, откуда перемещаем денежные средства"
                     "           p.boxoffice_id as boxoffice_id" +  // касса предприятия (не путать с ККМ!)
 
                     "           from correction p " +

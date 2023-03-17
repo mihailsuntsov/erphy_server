@@ -23,6 +23,7 @@ import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.response.store.woo.v3.ProductAttributeJSON;
 import com.dokio.message.response.store.woo.v3.ProductAttributesJSON;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
+import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +35,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Repository
 public class StoreProductAttributesRepository {
@@ -51,6 +50,8 @@ public class StoreProductAttributesRepository {
 
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    ProductsRepositoryJPA productsRepository;
 
     public ProductAttributesJSON syncProductAttributesToStore(String key) {
         String stringQuery="";
@@ -116,10 +117,15 @@ public class StoreProductAttributesRepository {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
-
+            // if attribute was deleted in the store side, its products will lost their belonging to this attribute.
+            // And if this attribute recreated, these products will not be assigned to this attribute.
+            // So, need to mark this products as need to be resynchronized
+            Set<Long> setOfAttributesdIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductAttributeId(row, companyId, storeId, masterId);
+                setOfAttributesdIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
             }
+            productsRepository.markProductsOfAttributesAsNeedToSyncWoo(setOfAttributesdIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductAttributesRepository/syncProductAttributesIds. Key:"+request.getCrmSecretKey(), e);

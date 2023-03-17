@@ -2286,44 +2286,6 @@ public class ProductsRepositoryJPA {
         } else return -1;
     }
 
-    private Boolean markProductsOfCategoryAsNeedToSyncWoo(Long categoryId, Long masterId, List<Long> storesIds) throws Exception {
-
-        String stringQuery =
-                " update stores_products " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
-                        " master_id = " + masterId +
-                        " and product_id in (select product_id from product_productcategories where category_id = " + categoryId + ")" +
-                        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        } catch (Exception e) {
-            logger.error("Exception in method markProductsOfCategoryAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();
-        }
-    }
-    private Boolean markProductsOfCategoriesAsNeedToSyncWoo(List<Long> categoriesIds, Long masterId, List<Long> storesIds) throws Exception {
-
-        String stringQuery =
-                " update stores_products " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
-                        " master_id = " + masterId +
-                        " and product_id in (select product_id from product_productcategories where category_id in " +  commonUtilites.ListOfLongToString(categoriesIds, ",","(",")") + ")" +
-                        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        } catch (Exception e) {
-            logger.error("Exception in method markProductsOfCategoriesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();
-        }
-    }
     public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
         String stringQuery =
                 " update stores_products " +
@@ -2336,6 +2298,77 @@ public class ProductsRepositoryJPA {
             query.executeUpdate();
         } catch (Exception e) {
             logger.error("Exception in method markProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void markProductsOfCategoryAsNeedToSyncWoo(Long categoryId, Long masterId, List<Long> storesIds) throws Exception {
+
+        String stringQuery =
+                " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id in (select product_id from product_productcategories where category_id = " + categoryId + ")" +
+                        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsOfCategoryAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    public void markProductsOfCategoriesAsNeedToSyncWoo(Set<Long> categoriesIds, Long masterId, List<Long> storesIds) throws Exception {
+
+        String stringQuery =
+                " update stores_products " +
+                " set need_to_syncwoo = true " +
+                " where " +
+                " master_id = " + masterId +
+                " and product_id in (select product_id from product_productcategories where category_id in " +  commonUtilites.SetOfLongToString(categoriesIds, ",","(",")") + ")" +
+                " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsOfCategoriesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    public void markProductsOfAttributesAsNeedToSyncWoo(Set<Long> attributesIds, Long masterId, List<Long> storesIds) throws Exception {
+        String stringQuery =
+        " update stores_products " +
+        " set need_to_syncwoo = true " +
+        " where " +
+        " master_id = " + masterId +
+        " and product_id in (select product_id from product_productattributes where attribute_id in "+ commonUtilites.SetOfLongToString(attributesIds,",","(",")") + ")" +
+        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsOfAttributesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    public void markProductsOfTermsAsNeedToSyncWoo(Set<Long> termsIds, Long masterId, List<Long> storesIds) throws Exception {
+        String stringQuery =
+        " update stores_products " +
+        " set need_to_syncwoo = true " +
+        " where " +
+        " master_id = " + masterId +
+        " and product_id in (select product_id from product_terms where term_id in "+ commonUtilites.SetOfLongToString(termsIds,",","(",")") + ")" +
+        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markProductsOfTermsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }
@@ -4163,25 +4196,24 @@ public class ProductsRepositoryJPA {
     // Multiple adding online stores to categoties
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Boolean setStoresToCategories(Set<Long> categoriesIds, Set<Long> storesIds, Long companyId, Boolean save) {
-        try{
+        try {
             String categories = commonUtilites.SetOfLongToString(categoriesIds, ",", "", "");
             //поверка на то, что присланные id категорий действительно являются категориями мастер-аккаунта
             if (securityRepositoryJPA.isItAllMyMastersDocuments("product_categories", categories) &&
-            (storesIds.size()==0||(securityRepositoryJPA.isItAllMyMastersDocuments("stores", commonUtilites.SetOfLongToString(storesIds, ",", "", "")))) &&
-            securityRepositoryJPA.isItAllMyMastersDocuments("companies", companyId.toString()))
-            {
+                    (storesIds.size() == 0 || (securityRepositoryJPA.isItAllMyMastersDocuments("stores", commonUtilites.SetOfLongToString(storesIds, ",", "", "")))) &&
+                    securityRepositoryJPA.isItAllMyMastersDocuments("companies", companyId.toString())) {
                 Long masterId = userRepositoryJPA.getMyMasterId();
                 if (!save) {//Если не нужно сохранять те магазины у категории, которые уже есть
                     //удаляем все магазины у всех запрашиваемых категорий
                     deleteAllCategoriesStores(categories);
                     //назначаем категориям магазины
-                    setStoresToCategories(categoriesIds,storesIds,masterId,companyId);
-                    setProductCategoriesAsStoreOrUnstore(categoriesIds,!(storesIds.size()==0),masterId,companyId);
+                    setStoresToCategories(categoriesIds, storesIds, masterId, companyId);
+                    setProductCategoriesAsStoreOrUnstore(categoriesIds, !(storesIds.size() == 0), masterId, companyId);
                 } else {//Если нужно сохранить предыдущие магазины у категорий. Отдельно работаем с каждой категорией
                     //цикл по категориям
                     for (Long p : categoriesIds) {
                         //получим уже имеющиеся магазины у текущей категории
-                        Set<Long> categoryStoresIds=getCategoryStoresIds(p);
+                        Set<Long> categoryStoresIds = getCategoryStoresIds(p);
                         //дополним их новыми магазинами
                         categoryStoresIds.addAll(storesIds);
                         //удалим старые магазины
@@ -4189,17 +4221,20 @@ public class ProductsRepositoryJPA {
                         Set<Long> category = new HashSet<>();
                         category.add(p);
                         //назначаем текущей категории магазины
-                        setStoresToCategories(category,categoryStoresIds,masterId,companyId);
-                        setProductCategoriesAsStoreOrUnstore(category,!(categoryStoresIds.size()==0),masterId,companyId);
+                        setStoresToCategories(category, categoryStoresIds, masterId, companyId);
+                        setProductCategoriesAsStoreOrUnstore(category, !(categoryStoresIds.size() == 0), masterId, companyId);
                     }
                 }
 
                 // Now need to mark all products of these categories as need to be synchronized
-                if(storesIds.size()>0)
-                    markProductsOfCategoriesAsNeedToSyncWoo(new ArrayList<>(categoriesIds), masterId, new ArrayList<>(storesIds));
+                if (storesIds.size() > 0)
+                    markProductsOfCategoriesAsNeedToSyncWoo(new HashSet<>(categoriesIds), masterId, new ArrayList<>(storesIds));
 
                 return true;
-            } else return null; // не прошли по безопасности - подсунуты "левые" id категорий
+            } else {
+                logger.error("Not all IDs are master's account IDs");
+                return null; // не прошли по безопасности - подсунуты "левые" id категорий
+            }
         } catch (Exception e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             logger.error("Exception in method setStoresToCategories", e);

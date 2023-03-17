@@ -999,7 +999,7 @@ public class ReturnsupRepository {
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_returnsup_user_uq " +// "upsert"
                             " DO update set " +
-                            " pricing_type = :pricing_type" +
+                            " pricing_type = :pricing_type, " +
                             " price_type_id = " + row.getPriceTypeId() + ","+
                             " change_price = " + row.getChangePrice() + ","+
                             " plus_minus = :plusMinus" +

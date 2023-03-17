@@ -304,7 +304,7 @@ public class PaymentinRepositoryJPA {
                     "           coalesce(p.income_number,'') as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as income_number_date, " +
                     "           p.payment_account_id as payment_account_id,"+
-                    "           cpas.payment_account||' ('||cpas.name||')' as payment_account," +
+                    "           coalesce(cpas.payment_account,'')||' ('||cpas.name||')' as payment_account," +
                     "           p.internal as internal," +
                     "           p.moving_type as moving_type, " +
                     "           p.boxoffice_from_id as boxoffice_from_id, " +

@@ -104,6 +104,8 @@ public class StoreProductsRepository {
                     " coalesce(p.type, 'simple') as type, " +
                     " coalesce(NULLIF(translator.description, ''), p.description) as description, " +
                     " coalesce(NULLIF(translator.short_description, ''), p.short_description) as short_description, " +
+                    " coalesce(NULLIF(translator.description_html, ''), p.description_html) as description_html, " +
+                    " coalesce(NULLIF(translator.short_description_html, ''), p.short_description_html) as short_description_html, " +
                     " ppr.price_value as price_regular, " +
                     " pps.price_value as price_sale, " +
                     " p.stock_status as stock_status, " +
@@ -115,9 +117,7 @@ public class StoreProductsRepository {
                     " p.menu_order as menu_order, " +
                     " p.reviews_allowed as reviews_allowed, " +
                     " coalesce(p.description_type, 'editor') as description_type, " + // "editor" or "custom"
-                    " coalesce(p.short_description_type, 'editor') as short_description_type, " + // "editor" or "custom"
-                    " coalesce(p.description_html, '') as description_html, " +
-                    " coalesce(p.short_description_html, '') as short_description_html " +
+                    " coalesce(p.short_description_type, 'editor') as short_description_type " + // "editor" or "custom"
 
                     " from products p" +
 
@@ -142,7 +142,9 @@ public class StoreProductsRepository {
                     " (sp.date_time_syncwoo is null) or " +// if the product is created recently, or changed, but still not synchronized
                     " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
                     " ) " +
-                    " group by 1,2,3,4,5,6,7,8 ";
+                    " group by 1,2,3,4,5,6,7,8,9,10";  // Without grouping will output rows per each product as many categories product has.
+                                                       // There is no categories data in output here, but they need to filter products by
+                                                       // their belongings to categories where selected needed online store
 
             Query query = entityManager.createNativeQuery(stringQuery);
             if (firstResult != null) {query.setFirstResult(firstResult);} // from 0
@@ -157,21 +159,21 @@ public class StoreProductsRepository {
                 doc.setWoo_id((Integer)                             obj[1]);
                 doc.setName((String)                                obj[2]);
                 doc.setType((String)                                obj[3]);
-                doc.setDescription(((String)obj[16]).equals("editor")?((String)obj[4]):((String)obj[18]));
-                doc.setShort_description(((String)obj[17]).equals("editor")?((String)obj[5]):((String)obj[19]));
-                doc.setRegular_price(                               Objects.isNull(obj[6])?"":obj[6].toString());
-                doc.setSale_price(                                  getSalePrice((BigDecimal)obj[6],(BigDecimal)obj[7]));
+                doc.setDescription(((String)obj[18]).equals("editor")?((String)obj[4]):((String)obj[6]));
+                doc.setShort_description(((String)obj[19]).equals("editor")?((String)obj[5]):((String)obj[7]));
+                doc.setRegular_price(                               Objects.isNull(obj[8])?"":obj[8].toString());
+                doc.setSale_price(                                  getSalePrice((BigDecimal)obj[8],(BigDecimal)obj[9]));
                 doc.setImages(                                      getSetOfProductImages(Long.parseLong(obj[0].toString()),companyId));
                 doc.setCategories(                                  getProductCategoriesIds(Long.parseLong(obj[0].toString()), storeId));
                 doc.setAttributes(                                  getListOfProductAttributes(Long.parseLong(obj[0].toString()), storeId));
-                doc.setStock_status((String)                        obj[8]);
-                doc.setSku((String)                                 obj[9]);
-                doc.setSold_individually((Boolean)                  obj[10]);
-                doc.setBackorders((String)                          obj[11]); //If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no
-                doc.setManage_stock((Boolean)                       obj[12]);
-                doc.setPurchase_note((String)                       obj[13]);
-                doc.setMenu_order((Integer)                         obj[14]);
-                doc.setReviews_allowed((Boolean)                    obj[15]);
+                doc.setStock_status((String)                        obj[10]);
+                doc.setSku((String)                                 obj[11]);
+                doc.setSold_individually((Boolean)                  obj[12]);
+                doc.setBackorders((String)                          obj[13]); //If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no
+                doc.setManage_stock((Boolean)                       obj[14]);
+                doc.setPurchase_note((String)                       obj[15]);
+                doc.setMenu_order((Integer)                         obj[16]);
+                doc.setReviews_allowed((Boolean)                    obj[17]);
 //                if(doc.getManage_stock())
                     doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
                 returnList.add(doc);
@@ -343,7 +345,7 @@ public class StoreProductsRepository {
                         " order by ppa.position ";
 
         try {
-            List<List<String>> mapOfAttributesAndTerms = getMapOfAttributesAndTerms(productId);
+            List<List<String>> mapOfAttributesAndTerms = getMapOfAttributesAndTerms(productId, storeId);
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             List<AttributeJSON> returnList = new ArrayList<>();
@@ -375,7 +377,7 @@ public class StoreProductsRepository {
         return returnList;
     }
 
-    // it returns List of map with pairs of Attribute ID and Term name
+    // it returns List of map with pairs of Attribute ID and Term name (translated if it is required and the translation exists)
     //                       GENERAL list
     //                attribute_id      term_name
     // inner List 1      1                blue
@@ -384,14 +386,15 @@ public class StoreProductsRepository {
     // inner List 4      2                big
     // inner List 5      2                small
 
-    private List<List<String>> getMapOfAttributesAndTerms(Long productId) throws Exception {
+    private List<List<String>> getMapOfAttributesAndTerms(Long productId, Long storeId) throws Exception {
         String stringQuery =
                 " select " +
                     " pat.attribute_id as attribute_id, " +
-                    " pat.name as term_name " +
+                    " coalesce(NULLIF(translator.name, ''), pat.name) as term_name " +
                 " from " +
                     " product_attribute_terms pat " +
-                    " inner join product_terms pt on pat.id = pt.term_id " +
+                    " INNER JOIN product_terms pt ON pat.id = pt.term_id " +
+                    " LEFT OUTER JOIN store_translate_terms translator ON pat.id = translator.term_id and translator.lang_code = (select coalesce(lang_code,'EN') from stores where id="+storeId+") " +
                 " where " +
                     " pt.product_id = " + productId +
                 " order by pat.menu_order ";

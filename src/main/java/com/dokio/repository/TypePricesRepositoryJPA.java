@@ -464,7 +464,10 @@ public class TypePricesRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            stringQuery="select id from sprav_type_prices where date_time_created=(to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+mId;
+            stringQuery="select id from sprav_type_prices where " +
+                    " date_time_created = (to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and " +
+                    " creator_id = " + mId + " and " +
+                    " is_default = true";
             Query query2 = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query2.getSingleResult().toString());
         } catch (Exception e) {

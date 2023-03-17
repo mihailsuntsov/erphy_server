@@ -23,6 +23,7 @@ import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.response.store.woo.v3.AttributeTermJSON;
 import com.dokio.message.response.store.woo.v3.AttributeTermsJSON;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
+import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Repository
 public class StoreAttributeTermsRepository {
@@ -50,6 +50,8 @@ public class StoreAttributeTermsRepository {
 
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    ProductsRepositoryJPA productsRepository;
 
     public AttributeTermsJSON syncAttributeTermsToStore(String key) {
         String stringQuery = "";
@@ -119,10 +121,16 @@ public class StoreAttributeTermsRepository {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",request.getCrmSecretKey()).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",request.getCrmSecretKey()).toString());
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",request.getCrmSecretKey()).toString());
+            // if term was deleted in the store side, its products will lost their belonging to this term.
+            // And if this term recreated, these products will not be assigned to this term.
+            // So, need to mark this products as need to be resynchronized
+            Set<Long> setOfTermsdIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
 
             for (SyncIdForm row : request.getIdsSet()) {
                 syncAttributeTermId(row, companyId, storeId, masterId);
+                setOfTermsdIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
             }
+            productsRepository.markProductsOfTermsAsNeedToSyncWoo(setOfTermsdIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreAttributeTermsRepository/syncAttributeTermsIds. Key:"+request.getCrmSecretKey(), e);
