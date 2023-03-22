@@ -165,9 +165,12 @@ public class CagentRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
-                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
+                 stringQuery = stringQuery + " and (" +
+                        " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(replace(p.email, ' ', '')) like upper(CONCAT('%',:sg,'%')) or "+
+                        " regexp_replace(coalesce(p.telephone,'0'), '\\D', '', 'g') like upper(CONCAT('%',coalesce(nullif(regexp_replace(:sg, '\\D', '', 'g'),''),'---'),'%'))" +
+                        ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -270,8 +273,11 @@ public class CagentRepositoryJPA {
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        "upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
-                        "upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
+                        " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(replace(p.email, ' ', '')) like upper(CONCAT('%',:sg,'%')) or "+
+                        " regexp_replace(coalesce(p.telephone,'0'), '\\D', '', 'g') like upper(CONCAT('%',coalesce(nullif(regexp_replace(:sg, '\\D', '', 'g'),''),'---'),'%'))" +
+                        ")";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -2059,7 +2065,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
         // if customerWooId is not null then this customer there is in a DokioCRM database
         try
         {
-            if(!Objects.isNull(customerWooId)) {
+            if(!Objects.isNull(customerWooId) && customerWooId > 0) {
                 String stringQuery =
                         " select id from cagents where " +
                         " company_id = " + company_id +
@@ -2067,7 +2073,11 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 return (Long.valueOf(query.getSingleResult().toString()));
-            } else return getCustomerIdByTelOrEmail( company_id,  customerEmail,  customerTelephone);
+            } else {
+                if(!customerEmail.equals("") || !customerTelephone.equals(""))
+                    return getCustomerIdByTelOrEmail( company_id,  customerEmail,  customerTelephone);
+                else return null;
+            }
         }catch (NoResultException nre) {
             return getCustomerIdByTelOrEmail( company_id,  customerEmail,  customerTelephone);
         }catch (Exception e) {
@@ -2081,17 +2091,32 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
         String stringQuery =
                         " select id from cagents where " +
-                        " company_id = "+company_id+
+                        " company_id = " + company_id +
                         " and " +
-                        "(" +
-                        " replace(email, ' ', '') = :email or " +
-                        " regexp_replace(telephone, '\\D', '', 'g')  = :telephone" +
-                        ") limit 1";
-        try
-        {
+                        "(";
+
+        if(!customerEmail.equals("") )
+            stringQuery = stringQuery + " upper(replace(email, ' ', '')) = upper(:email) ";
+
+        if(!customerEmail.equals("") && !customerTelephone.equals(""))
+            stringQuery = stringQuery + " or ";
+
+        if(!customerTelephone.equals(""))
+        stringQuery = stringQuery + " regexp_replace(telephone, '\\D', '', 'g')  = regexp_replace(:telephone, '\\D', '', 'g') ";
+
+        stringQuery = stringQuery + ") limit 1";
+        try{
             Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("email",customerEmail.replaceAll("\\s", ""));
-            query.setParameter("telephone",customerTelephone.replaceAll("[^0-9\\+]", ""));
+            if(!customerEmail.equals("") ){
+                String email = customerEmail.replaceAll("\\s", "");
+                query.setParameter("email", email);
+                logger.info("Email in query = " + email);
+            }
+            if(!customerTelephone.equals("")) {
+                String telephone = customerTelephone.replaceAll("[^0-9\\+]", "");
+                query.setParameter("telephone", telephone);
+                logger.info("Telephone in query = " + telephone);
+            }
             return (Long.valueOf(query.getSingleResult().toString()));
         }catch (NoResultException nres) {
             return null;

@@ -38,7 +38,7 @@ public class _Info {
     private EntityManager entityManager; // do NOT touch, even if it seems like not active!
 
     public String getBackendVersion() {
-        return "1.2.0";
+        return "1.2.0-1";
     }
 
     public String getBackendVersionDate() {

@@ -149,7 +149,6 @@ public class ReturnsupRepository {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
                         " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -249,7 +248,6 @@ public class ReturnsupRepository {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
                     " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+

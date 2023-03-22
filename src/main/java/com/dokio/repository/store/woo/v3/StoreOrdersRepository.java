@@ -123,8 +123,8 @@ public class StoreOrdersRepository {
         Long    store_default_customer_id   = settings.getStore_default_customer_id();
         Long    store_default_creator_id    = settings.getStore_default_creator_id();
         int     store_days_for_esd          = settings.getStore_days_for_esd();
-        String  customerTelephone = row.getBilling().getPhone();
-        String  customerEmail = row.getBilling().getEmail();
+        String  customerTelephone = row.getBilling().getPhone().replace(" ","");
+        String  customerEmail = row.getBilling().getEmail().replace(" ","");
         Integer customerWooId = row.getCustomer_id();
         CompanySettingsJSON companySettings = cu.getCompanySettings(companyId);
         boolean vat = companySettings.isVat();
