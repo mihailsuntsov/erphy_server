@@ -87,7 +87,7 @@ public class ProductsRepositoryJPA {
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("docName","price","change","quantity","last_operation_price","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .of("docName","price","change","quantity","last_operation_price","ppr_id","description","p.article","p.name","article","name","not_buy","not_sell","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
@@ -161,7 +161,12 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
             }
 
-            stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
+                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
+            } else {
+                throw new IllegalArgumentException("Invalid query parameters");
+            }
+
             try{
                 Query query = entityManager.createNativeQuery(stringQuery, ProductsTableJSON.class)
                         .setFirstResult(offsetreal)
@@ -426,6 +431,21 @@ public class ProductsRepositoryJPA {
                 && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try {
+
+                int subjOfTradeInDB = (Integer)commonUtilites.getFieldValueFromTableById("products","ppr_id",myMasterId,request.getId());
+                int subjOfTradeIncome = Integer.parseInt(request.getPpr_id().toString());
+                if(subjOfTradeInDB!=subjOfTradeIncome && wasOperationsOnProduct(request.getId()))
+                    return -230;
+                    // Subject of trade was changed (from Service to Commodity or from Commodity to Service)
+                    // If this product (or service) is already has the history of operations - Reject this update
+                    // because it will produce discrepancy of product quantity in warehouse / negative quantity / fraud opportunities
+
+                //non-unique sku check
+                if(!Objects.isNull(request.getArticle()) && !request.getArticle().equals("") && isThereProductWithSameSku(request.getArticle(),request.getId(), request.getCompany_id()))
+                    return -250;
+
+
+
                 // сохранение базовых полей
                 updateProductsWithoutOrders(request, myMasterId);
                 //сохранение порядка поставщиков товара
@@ -498,7 +518,9 @@ public class ProductsRepositoryJPA {
                 deleteUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
                 return 1;
             } catch (Exception e) {
-                // all logging and printStackTraces are in sub-methods of this method
+                logger.error("Exception in method updateProducts.", e);
+                e.printStackTrace();
+
                 return null;
             }
         } else return -1;
@@ -896,132 +918,151 @@ public class ProductsRepositoryJPA {
     public Long insertProduct(ProductsForm request) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "163,164"))//  "Создание"
         {
-            Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
+
+            //non-unique sku check
+            if(!Objects.isNull(request.getArticle()) && !request.getArticle().equals("") && isThereProductWithSameSku(request.getArticle(),0L,request.getCompany_id()))
+                return -250L;
 
             //plan limit check
             if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
                 if(userRepositoryJPA.getMyConsumedResources().getProducts()>=userRepositoryJPA.getMyMaxAllowedResources().getProducts())
                     return -120L; // number of products is out of bounds of tariff plan
+            try {
 
-            EntityManager emgr = emf.createEntityManager();
-            Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
-            Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
-            Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+                EntityManager emgr = emf.createEntityManager();
+                Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
+                Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
+                Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
 
-            //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-            if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "163") &&
-                    Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
-                return null;
-            } else {
-                try {
-                    Products newDocument = new Products();
-                    //создатель
-                    User creator = userRepository.getUserByUsername(userRepository.getUserName());
-                    newDocument.setCreator(creator);//создателя
-                    //владелец
-                    User master = userRepository.getUserByUsername(
-                            userRepositoryJPA.getUsernameById(
-                                    userRepositoryJPA.getUserMasterIdByUsername(
-                                            userRepository.getUserName())));
-                    newDocument.setMaster(master);
-                    //дата и время создания
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    newDocument.setDate_time_created(timestamp);//
-                    //предприятие
-                    newDocument.setCompany(companyRepositoryJPA.getCompanyById(request.getCompany_id()));
-                    //Наименование
-                    newDocument.setName(request.getName() == null ? "" : request.getName());
-                    //дополнительная информация
-                    newDocument.setDescription(request.getDescription() == null ? "" : request.getDescription());
-                    //артикул
-                    newDocument.setArticle(request.getArticle() == null ? "" : request.getArticle());
-                    //свободный код
-                    //              newDocument.setProduct_code_free        (request.getProduct_code_free() == null ? "": request.getProduct_code_free());
-                    newDocument.setProduct_code_free(generateFreeProductCode(request.getCompany_id()));
-
-                    //группа товаров
-                    if (request.getProductgroup_id() != null) {
-                        ProductGroups pg = emgr.find(ProductGroups.class, request.getProductgroup_id());
-                        newDocument.setProductGroup(pg);
-                    }
-
-                    Set<Long> categories = request.getSelectedProductCategories();
-                    if (!categories.isEmpty()) {
-                        Set<ProductCategories> setCategoriesOfProduct = getCategoriesSetBySetOfCategoriesId(categories);
-                        newDocument.setProductCategories(setCategoriesOfProduct);
-                    }
-
-                    //код товара (до 99999)
-                    //newDocument.setProduct_code(request.getProduct_code());
-                    //признак предмета расчёта
-                    if (request.getPpr_id() != null) {
-                        SpravSysPPR ed = emgr.find(SpravSysPPR.class, request.getPpr_id());
-                        newDocument.setPpr(ed);
-                    }
-                    //весовой товар (Boolean)
-                    newDocument.setBy_weight(request.isBy_weight());
-                    //единица измерения товара
-                    if (request.getEdizm_id() != null) {
-                        SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getEdizm_id());
-                        newDocument.setEdizm(ed);
-                    }
-                    //НДС
-                    if (request.getNds_id() != null) {
-                        SpravSysNds ed = emgr.find(SpravSysNds.class, request.getNds_id());
-                        newDocument.setNds(ed);
-                    }
-                    //Вес товара (приходит String, конвертим в BigDecimal)
-                    if (request.getWeight() != null && !request.getWeight().isEmpty() && request.getWeight().trim().length() > 0) {
-                        newDocument.setWeight(new BigDecimal(request.getWeight().replace(",", ".")));
-                    } else {
-                        newDocument.setWeight(new BigDecimal("0"));
-                    }
-                    //Объём товара (приходит String, конвертим в BigDecimal)
-                    if (request.getVolume() != null && !request.getVolume().isEmpty() && request.getVolume().trim().length() > 0) {
-                        newDocument.setVolume(new BigDecimal(request.getVolume().replace(",", ".")));
-                    } else {
-                        newDocument.setVolume(new BigDecimal("0"));
-                    }
-                    //единица измерения веса товара
-                    if (request.getWeight_edizm_id() != null) {
-                        SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getWeight_edizm_id());
-                        newDocument.setWeight_edizm(ed);
-                    }
-                    //единица измерения объёма товара
-                    if (request.getVolume_edizm_id() != null) {
-                        SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getVolume_edizm_id());
-                        newDocument.setVolume_edizm(ed);
-                    }
-                    //маркированный товар (Boolean)
-                    newDocument.setMarkable(request.isMarkable());
-                    //группа маркированных товаров
-                    if (request.getMarkable_group_id() != null) {
-                        SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
-                        newDocument.setMarkable_group(ed);
-                    }
-                    //не закупаемый товар (Boolean)
-                    newDocument.setNot_buy(request.isNot_buy());
-                    //неделимый товар (Boolean)
-                    newDocument.setIndivisible(request.isIndivisible());
-                    //товар снят с продажи (Boolean)
-                    newDocument.setNot_sell(request.isNot_sell());
-                    //Set as Out-of-stock after first completed shipment. Default is false.
-                    newDocument.setOutofstock_aftersale(request.getOutofstock_aftersale());
-                    // Label description
-                    newDocument.setLabel_description(request.getLabel_description());
-
-                    entityManager.persist(newDocument);
-                    entityManager.flush();
-                    return newDocument.getId();
-                } catch (Exception e) {
-                    logger.error("Exception in method insertProduct.", e);
-                    e.printStackTrace();
+                //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
+                if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "163") &&
+                        Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
                     return null;
+                } else {
+
+                        Products newDocument = new Products();
+                        //создатель
+                        User creator = userRepository.getUserByUsername(userRepository.getUserName());
+                        newDocument.setCreator(creator);//создателя
+                        //владелец
+                        User master = userRepository.getUserByUsername(
+                                userRepositoryJPA.getUsernameById(
+                                        userRepositoryJPA.getUserMasterIdByUsername(
+                                                userRepository.getUserName())));
+                        newDocument.setMaster(master);
+                        //дата и время создания
+                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                        newDocument.setDate_time_created(timestamp);//
+                        //предприятие
+                        newDocument.setCompany(companyRepositoryJPA.getCompanyById(request.getCompany_id()));
+                        //Наименование
+                        newDocument.setName(request.getName() == null ? "" : request.getName());
+                        //дополнительная информация
+                        newDocument.setDescription(request.getDescription() == null ? "" : request.getDescription());
+                        //артикул
+                        newDocument.setArticle(request.getArticle() == null ? "" : request.getArticle());
+                        //свободный код
+                        //              newDocument.setProduct_code_free        (request.getProduct_code_free() == null ? "": request.getProduct_code_free());
+                        newDocument.setProduct_code_free(generateFreeProductCode(request.getCompany_id()));
+
+                        //группа товаров
+                        if (request.getProductgroup_id() != null) {
+                            ProductGroups pg = emgr.find(ProductGroups.class, request.getProductgroup_id());
+                            newDocument.setProductGroup(pg);
+                        }
+
+                        Set<Long> categories = request.getSelectedProductCategories();
+                        if (!categories.isEmpty()) {
+                            Set<ProductCategories> setCategoriesOfProduct = getCategoriesSetBySetOfCategoriesId(categories);
+                            newDocument.setProductCategories(setCategoriesOfProduct);
+                        }
+
+                        //код товара (до 99999)
+                        //newDocument.setProduct_code(request.getProduct_code());
+                        //признак предмета расчёта
+                        if (request.getPpr_id() != null) {
+                            SpravSysPPR ed = emgr.find(SpravSysPPR.class, request.getPpr_id());
+                            newDocument.setPpr(ed);
+                        }
+                        //весовой товар (Boolean)
+                        newDocument.setBy_weight(request.isBy_weight());
+                        //единица измерения товара
+                        if (request.getEdizm_id() != null) {
+                            SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getEdizm_id());
+                            newDocument.setEdizm(ed);
+                        }
+                        //НДС
+                        if (request.getNds_id() != null) {
+                            SpravSysNds ed = emgr.find(SpravSysNds.class, request.getNds_id());
+                            newDocument.setNds(ed);
+                        }
+                        //Вес товара (приходит String, конвертим в BigDecimal)
+                        if (request.getWeight() != null && !request.getWeight().isEmpty() && request.getWeight().trim().length() > 0) {
+                            newDocument.setWeight(new BigDecimal(request.getWeight().replace(",", ".")));
+                        } else {
+                            newDocument.setWeight(new BigDecimal("0"));
+                        }
+                        //Объём товара (приходит String, конвертим в BigDecimal)
+                        if (request.getVolume() != null && !request.getVolume().isEmpty() && request.getVolume().trim().length() > 0) {
+                            newDocument.setVolume(new BigDecimal(request.getVolume().replace(",", ".")));
+                        } else {
+                            newDocument.setVolume(new BigDecimal("0"));
+                        }
+                        //единица измерения веса товара
+                        if (request.getWeight_edizm_id() != null) {
+                            SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getWeight_edizm_id());
+                            newDocument.setWeight_edizm(ed);
+                        }
+                        //единица измерения объёма товара
+                        if (request.getVolume_edizm_id() != null) {
+                            SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getVolume_edizm_id());
+                            newDocument.setVolume_edizm(ed);
+                        }
+                        //маркированный товар (Boolean)
+                        newDocument.setMarkable(request.isMarkable());
+                        //группа маркированных товаров
+                        if (request.getMarkable_group_id() != null) {
+                            SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
+                            newDocument.setMarkable_group(ed);
+                        }
+                        //не закупаемый товар (Boolean)
+                        newDocument.setNot_buy(request.isNot_buy());
+                        //неделимый товар (Boolean)
+                        newDocument.setIndivisible(request.isIndivisible());
+                        //товар снят с продажи (Boolean)
+                        newDocument.setNot_sell(request.isNot_sell());
+                        //Set as Out-of-stock after first completed shipment. Default is false.
+                        newDocument.setOutofstock_aftersale(request.getOutofstock_aftersale());
+                        // Label description
+                        newDocument.setLabel_description(request.getLabel_description());
+
+                        entityManager.persist(newDocument);
+                        entityManager.flush();
+                        return newDocument.getId();
                 }
+            } catch (Exception e) {
+                logger.error("Exception in method insertProduct.", e);
+                e.printStackTrace();
+                return null;
             }
         } else return null;
     }
 
+    public boolean isThereProductWithSameSku(String sku, Long productId, Long companyId){
+        String stringQuery="select count(*) from products where company_id = "+companyId+" and article = :sku and article !=''";
+        if(productId>0L) // on update
+            stringQuery = stringQuery + " and id != " + productId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("sku",sku);
+            return ((BigInteger)query.getSingleResult()).compareTo(new BigInteger("0"))>0;
+        } catch (Exception e) {
+            logger.error("Exception in method isThereProductWithSameSku. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
     @Transactional
     @SuppressWarnings("Duplicates")
     public Integer deleteProducts(String delNumbers) {
@@ -1399,6 +1440,17 @@ public class ProductsRepositoryJPA {
             return false;
         }
     }
+    public boolean isThereServicesInProductsList(Set<Long> productIds){
+        String stringQuery="select count(*) from products where ppr_id = 4 and id in "+commonUtilites.SetOfLongToString(productIds,",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).compareTo(new BigInteger("0"))>0;
+        } catch (Exception e) {
+            logger.error("Exception in method isThereServicesInProductsList. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return false;
+        }
+    }
     // возвращает доступное количество товара в отделениях
     public BigDecimal getAvailable(Long product_id, List<Long> departmentsIds, boolean roundToInteger){
         if(departmentsIds.size()==0) return new BigDecimal("0");
@@ -1476,7 +1528,7 @@ public class ProductsRepositoryJPA {
 
     // тут не надо прописывать права, т.к. это сервисный запрос
     @SuppressWarnings("Duplicates")
-    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id, Long priceTypeId, Boolean showRemovedFromSale) {
+    public List getProductsList(String searchString, Long companyId, Long departmentId, Long document_id, Long priceTypeId, boolean showRemovedFromSale, boolean showNotPurchased, boolean showServices) {
         String stringQuery;
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
@@ -1542,7 +1594,10 @@ public class ProductsRepositoryJPA {
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
                 " and coalesce(p.is_deleted,false) = false " +
-                (!showRemovedFromSale?" and coalesce(p.not_sell,false) = false ":" ");
+                (!showRemovedFromSale?" and coalesce(p.not_sell,false) = false ":" ") +
+                (!showNotPurchased?" and coalesce(p.not_buy,false) = false ":" ") +
+                (!showServices?" and p.ppr_id != 4":" ")  // if  showServices=false
+        ;
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
@@ -3910,29 +3965,8 @@ public class ProductsRepositoryJPA {
                         (Objects.isNull(departmentId)?" ":" and department_id=" + departmentId) +
                         "   and product_id=" + productId +
                         "   and is_completed = true ";
-
-
-
-                      /*  " coalesce((select avg_netcost_price from product_quantity where ";
-                        if(!Objects.isNull(department_id))
-                            stringQuery = stringQuery+"department_id="+department_id+" and ";
-                        stringQuery = stringQuery+" product_id="+product_id;
-                        if(Objects.isNull(department_id))
-                            stringQuery = stringQuery+" order by date_time_created desc limit 1";
-                        stringQuery = stringQuery+"),0)     as avg_netcost_price,   "; // если отделение не задано - средняя себестоимость берется из последней записи по товару не зависимо от отделения
-                        if(!Objects.isNull(department_id))
-                            stringQuery = stringQuery+" coalesce((select quantity from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as quantity   ";
-                        else
-                            stringQuery = stringQuery+" coalesce((select sum(quantity) from product_quantity where product_id="+product_id+"),0)     as quantity   ";
-
-                        */
-
-
-
-
         try
         {
-
             Query query = entityManager.createNativeQuery(stringQuery);
             Object queryList = query.getSingleResult();
 
@@ -3943,10 +3977,6 @@ public class ProductsRepositoryJPA {
             }else {
                 returnObj.setAvg_netcost_price(recountProductNetcost(companyId, departmentId, productId));
                 returnObj.setQuantity((BigDecimal) queryList);
-//                for (Object[] obj : queryList) {
-//                    returnObj.setAvg_netcost_price(recountProductNetcost(companyId, departmentId, productId));
-//                    returnObj.setQuantity((BigDecimal)              obj[0]);
-//                }
             }
             return returnObj;
         }
@@ -3987,6 +4017,18 @@ public class ProductsRepositoryJPA {
         }
         catch (Exception e) {
             logger.error("Exception in method geProductQuantity. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private Boolean wasOperationsOnProduct(Long productId) throws Exception {
+        // category is online-store category if it marked as "is_store_category" and it has selected internet stores
+        String stringQuery = "select count(*) from product_history where product_id="+productId+" and coalesce(is_completed,false) = true";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).longValue() > 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method wasOperationsOnProduct. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }
@@ -4574,5 +4616,51 @@ public class ProductsRepositoryJPA {
         }
 
     }
+
+    // inserting base set of categories of new account or company
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Boolean insertProductCategoriesFast(Long mId, Long uId, Long cId) {
+        String stringQuery;
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'p_catg_myprods'","'p_catg_srvcs'","'p_catg_in_srvcs'","'prod_work_empl'","'prod_transp'","'prod_rent'","'prod_prolltax'","'prod_incomtax'","'prod_banking'","'prod_my_prod'","'prod_my_srvc'","'prod_accounting'","'um_piece'","'um_uncountable'","'tax_no_tax'"});
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        stringQuery = "insert into product_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("p_catg_myprods")+"'),"+ // cagent_supplier
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("p_catg_srvcs")+"'),"+ // cagent_customer
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("p_catg_in_srvcs")+"');" +// cagent_taxoffce
+
+                "insert into products (master_id, creator_id, company_id, date_time_created, name, ppr_id, indivisible, not_buy, not_sell, edizm_id, nds_id) values " +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_work_empl")+"' ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_transp")+"'    ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_rent")+"'      ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_prolltax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_incomtax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_banking")+"'   ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_accounting")+"',4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_my_srvc")+"'   ,4,true,true,false, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_my_prod")+"'   ,1,true,false,false,(select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_piece")+"'),       (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'));" +
+
+                "insert into product_productcategories (category_id,product_id) values " +
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_accounting")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_work_empl")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_transp")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_rent")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_prolltax")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_incomtax")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_in_srvcs")+"'),(select id from products where company_id="+cId+" and name = '"+map.get("prod_banking")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_srvcs")+"')   ,(select id from products where company_id="+cId+" and name = '"+map.get("prod_my_srvc")+"')),"+
+                "((select id from product_categories where company_id="+cId+" and name = '"+map.get("p_catg_myprods")+"') ,(select id from products where company_id="+cId+" and name = '"+map.get("prod_my_prod")+"'));";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method insertCagentCategoriesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }
 

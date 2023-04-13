@@ -4327,8 +4327,41 @@ alter table product_attributes drop column woo_id;
 alter table product_attribute_terms drop column woo_id;
 update version set value = '1.2.0', date = '13-03-2023';
 ------------------------------------------------  end of 1.2.0  ------------------------------------------------------
+insert into _dictionary (key, tr_ru, tr_en) values
+('payroll_taxes',               'Налоги на зарплату',                       'Payroll taxes'),
+('accounting_srvcs',            'Бухгалтерские услуги',                     'Accounting services');
+update _dictionary set tr_ru = 'Подоходные налоги', tr_en = 'Income taxes' where key = 'exp_taxes';
+
+CREATE UNIQUE INDEX products_sku_uq ON products (article, company_id) WHERE article !=''; -- because in WooCommerce article must be unique
+
+insert into _dictionary (key, tr_ru, tr_en) values
+('catg_accounting',              'Бухгалтерские услуги',                      'Accounting services'),
+('cagent_director_y',            'Директор (вы)',                             'CEO (you)'),
+('cagent_accntnts',              'Бухгалтер',                                 'Accountant'),
+('cagent_supplier',              'Поставщик',                                 'Supplier'),
+('cagent_customer',              'Покупатель',                                'Customer'),
+('cagent_bank',                  'Банк',                                      'Bank'),
+('cagent_taxoffce',              'Налоговая служба',                          'Tax office'),
+('cagent_carrier',               'Перевозчик',                                'Carrier'),
+('cagent_landlord',              'Арендодатель',                              'Landlord'),
+('p_catg_myprods',               'Мои товары',                                'My products'),
+('p_catg_srvcs',                 'Мои услуги',                                'My services'),
+('p_catg_in_srvcs',              'Принимаемые',                               'Receiving'),
+('prod_work_empl',               'Работа и услуги от сотрудника',             'Work and services from an employee'),
+('prod_transp',                  'Транспортные услуги',                       'Transport service'),
+('prod_rent',                    'Услуги аренды',                             'Rent service'),
+('prod_prolltax',                'Обязательства по налогам на зарплату',      'Payroll taxes obligations'),
+('prod_incomtax',                'Обязательства по налогу на прибыль',        'Income taxes obligations'),
+('prod_banking',                 'Банковские услуги',                         'Banking service'),
+('prod_my_prod',                 'Мой товар',                                 'My example product'),
+('prod_my_srvc',                 'Моя услуга',                                'My example service'),
+('prod_accounting',              'Бухгалтерские услуги',                      'Accounting service');
 
 
+
+
+update version set value = '1.2.1', date = '05-04-2023';
+------------------------------------------------  end of 1.2.1  ------------------------------------------------------
 
 
 
@@ -4394,7 +4427,7 @@ update version set value = '1.2.0', date = '13-03-2023';
 
 WITH
   credit as (
-    select
+    selectgetProductHistoryTableReport
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in
           (select ac.id from acceptance ac where ac.master_id=4 and ac.company_id=1 and coalesce(ac.is_completed,false)=true and ac.cagent_id=1))
         +

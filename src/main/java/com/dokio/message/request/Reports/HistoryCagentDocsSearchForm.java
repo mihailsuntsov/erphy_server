@@ -35,6 +35,24 @@ public class HistoryCagentDocsSearchForm {
     private String  dateFrom;               //  с даты
     private String  dateTo;                 //  по дату
     private Set<Integer> filterOptionsIds;  //  опции поиска
+    private Set<Long> accountsIds;          //  банковские счета
+    private Set<Long> boxofficesIds;        //  cash rooms
+
+    public Set<Long> getAccountsIds() {
+        return accountsIds;
+    }
+
+    public void setAccountsIds(Set<Long> accountsIds) {
+        this.accountsIds = accountsIds;
+    }
+
+    public Set<Long> getBoxofficesIds() {
+        return boxofficesIds;
+    }
+
+    public void setBoxofficesIds(Set<Long> boxofficesIds) {
+        this.boxofficesIds = boxofficesIds;
+    }
 
     public Long getCagentId() {
         return cagentId;

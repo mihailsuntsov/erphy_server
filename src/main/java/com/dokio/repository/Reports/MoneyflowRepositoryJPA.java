@@ -55,7 +55,7 @@ public class MoneyflowRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","company","department","creator","date_time_created_sort","doc_name","date_created","summ","status","summ_in","summ_out","doc_number","summ_on_start","summ_on_end","obj_name")
+            .of("name","cagent","company","department","creator","date_time_created_sort","doc_name","date_created","summ","status","summ_in","summ_out","doc_number","summ_on_start","summ_on_end","obj_name")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -65,7 +65,7 @@ public class MoneyflowRepositoryJPA {
 
 
     @SuppressWarnings("Duplicates")
-    public List<MoneyflowTableJSON> getMoneyflowTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
+    public List<MoneyflowTableJSON> getMoneyflowTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(48L, "587,588"))//(см. файл Permissions Id)
         {
             String stringQuery;
@@ -73,7 +73,8 @@ public class MoneyflowRepositoryJPA {
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String dateFormat=userRepositoryJPA.getMyDateFormat();
-
+            String accounts=commonUtilites.SetOfLongToString(accountsIds,",","(",")").replace("()","(0)");
+            String boxoffices=commonUtilites.SetOfLongToString(boxofficesIds,",","(",")").replace("()","(0)");
             if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) ||
                     !VALID_COLUMNS_FOR_ASC.contains(sortAsc) ||
                     !commonUtilites.isDateValid(dateFrom) ||
@@ -99,25 +100,25 @@ public class MoneyflowRepositoryJPA {
                     " generate_series(timestamp with time zone '"+dateFrom+"',  timestamp with time zone '"+dateTo+"'  , interval  '1 day') AS dc,   " +
 //                    " generate_series(timestamp '"+dateFrom+"',  timestamp '"+dateTo+"'  , interval  '1 day') AS dc,   " +
 
-                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_in_pa, " +
+                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and payment_account_id in "+accounts+" and tt.type='account'),0) as summ_corr_in_pa, " +
 
-                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_pa, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_out_pa,  " +
+                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_pa, " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and payment_account_id in "+accounts+"  and tt.type='account'),0) as summ_corr_out_pa,  " +
 
-                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
-                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
+                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
+                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and payment_account_id in "+accounts+" and tt.type='account'),0) as summ_result_corr_pa, " +
 
-                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
+                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and boxoffice_id in "+boxoffices+" and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
 
-                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_bx, " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_out_bx,  " +
+                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_bx, " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and boxoffice_id in "+boxoffices+" and tt.type='boxoffice'),0) as summ_corr_out_bx,  " +
 
-                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
-                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx ";
+                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
+                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(to_char(dc,'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and boxoffice_id in "+boxoffices+" and tt.type='boxoffice'),0) as summ_result_corr_bx ";
 
             stringQuery = stringQuery +" where ((summ_in_pa + summ_corr_in_pa) !=0 or (summ_out_pa + ABS(summ_corr_out_pa)) !=0 or (summ_in_bx + summ_corr_in_bx) !=0 or (summ_out_bx + ABS(summ_corr_out_bx)) !=0) ";
             stringQuery = stringQuery +" group by  date_created, summ_in_pa, summ_out_pa, summ_result_pa, summ_in_bx, summ_out_bx,summ_result_bx, summ_corr_in_pa,summ_corr_out_pa,summ_corr_in_bx,summ_corr_out_bx, dc  order by date_created_sort asc ";
@@ -151,13 +152,15 @@ public class MoneyflowRepositoryJPA {
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    public Integer getMoneyflowSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo) {
+    public Integer getMoneyflowSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(48L, "587,588"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String accounts=commonUtilites.SetOfLongToString(accountsIds,",","(",")").replace("()","(0)");
+            String boxoffices=commonUtilites.SetOfLongToString(boxofficesIds,",","(",")").replace("()","(0)");
             if (    !commonUtilites.isDateValid(dateFrom) ||
                     !commonUtilites.isDateValid(dateTo) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
@@ -171,17 +174,17 @@ public class MoneyflowRepositoryJPA {
                             " from " +
                             "generate_series(timestamp with time zone '"+dateFrom+"', timestamp with time zone '"+dateTo+"', interval  '1 day') AS dc, " +
 //                    " generate_series(timestamp '"+dateFrom+"',  timestamp '"+dateTo+"'  , interval  '1 day') AS dc,   " +
-                            " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
-                            " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_in_pa, " +
+                            " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_pa, " +
+                            " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and payment_account_id in "+accounts+" and tt.type='account'),0) as summ_corr_in_pa, " +
 
-                            " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_pa, " +
-                            " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='account'),0) as summ_corr_out_pa,  " +
+                            " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_pa, " +
+                            " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and payment_account_id in "+accounts+" and tt.type='account'),0) as summ_corr_out_pa,  " +
 
-                            " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
-                            " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
+                            " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_in_bx, " +
+                            " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and boxoffice_id in "+boxoffices+" and tt.type='boxoffice'),0) as summ_corr_in_bx, " +
 
-                            " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_bx, " +
-                            " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_out_bx  ";
+                            " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true),0) as summ_out_bx, " +
+                            " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and to_char(tt.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY')=to_char(dc, 'DD.MM.YYYY') and tt.is_completed=true and boxoffice_id in "+boxoffices+" and tt.type='boxoffice'),0) as summ_corr_out_bx  ";
 
             stringQuery = stringQuery +" where ((summ_in_pa + summ_corr_in_pa) !=0 or (summ_out_pa + ABS(summ_corr_out_pa)) !=0 or (summ_in_bx + summ_corr_in_bx) !=0 or (summ_out_bx + ABS(summ_corr_out_bx)) !=0) ";
             stringQuery = stringQuery + " group by  summ_in_pa, summ_out_pa, summ_in_bx, summ_out_bx, summ_corr_in_pa, summ_corr_out_pa, summ_corr_in_bx, summ_corr_out_bx";
@@ -199,13 +202,15 @@ public class MoneyflowRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public MoneyflowTableJSON getMoneyflowBalances(Long companyId, String dateFrom, String dateTo) {
+    public MoneyflowTableJSON getMoneyflowBalances(Long companyId, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(48L, "587,588"))//(см. файл Permissions Id)
         {
             String stringQuery;
             String myTimeZone = userRepository.getUserTimeZone();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String accounts=commonUtilites.SetOfLongToString(accountsIds,",","(",")").replace("()","(0)");
+            String boxoffices=commonUtilites.SetOfLongToString(boxofficesIds,",","(",")").replace("()","(0)");
             if (    !commonUtilites.isDateValid(dateFrom) ||
                     !commonUtilites.isDateValid(dateTo) ||
                     (!securityRepositoryJPA.userHasPermissions_OR(48L, "587") && !myCompanyId.equals(companyId)))//если есть право только на своё предприятие, но запрашиваем не своё
@@ -234,32 +239,32 @@ public class MoneyflowRepositoryJPA {
                     " generate_series(timestamp with time zone '"+dateFrom+"',  timestamp with time zone '"+dateTo+"', interval  '1 day') AS dc,   " +
 //                    " generate_series(timestamp '"+dateFrom+"',  timestamp '"+dateTo+"'  , interval  '1 day') AS dc,   " +
                     // Начальный остаток
-                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_pa,   " +
-                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_pa, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_corr_before_pa, " +
+                    " coalesce((select SUM(    tt.summ)  from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_pa,   " +
+                    " coalesce((select SUM(    tt.summ)  from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_pa, " +
+                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_corr_before_pa, " +
 
-                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_bx,   " +
-                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_bx, " +
-                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_before_bx, " +
+                    " coalesce((select SUM(    tt.summ)  from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_in_before_bx,   " +
+                    " coalesce((select SUM(    tt.summ)  from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true ),0) as summ_out_before_bx, " +
+                    " coalesce((select SUM(    tt.summ)  from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' < to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_corr_before_bx, " +
                     // Конечный остаток
-                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
-                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
+                    " coalesce((select SUM(    tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_pa, " +
+                    " coalesce((select SUM(    tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_pa, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as summ_result_corr_pa, " +
 
-                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
-                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
-                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx, " +
+                    " coalesce((select SUM(    tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_in_bx, " +
+                    " coalesce((select SUM(    tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as summ_result_out_bx, " +
+                    " coalesce((select SUM(    tt.summ) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as summ_result_corr_bx, " +
 
                     //Сумма за период
-                    " coalesce((select SUM(tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_pa,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_in_pa, " +
-                    " coalesce((select SUM(tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_pa,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_out_pa, " +
+                    " coalesce((select SUM(tt.summ) from paymentin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_pa,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_in_pa, " +
+                    " coalesce((select SUM(tt.summ) from paymentout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_pa,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and payment_account_id in "+accounts+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='account'),0) as total_summ_corr_out_pa, " +
 
-                    " coalesce((select SUM(tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_bx,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_in_bx, " +
-                    " coalesce((select SUM(tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_bx,   " +
-                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_out_bx " +
+                    " coalesce((select SUM(tt.summ) from orderin tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_in_bx,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ>0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_in_bx, " +
+                    " coalesce((select SUM(tt.summ) from orderout tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true),0) as total_summ_out_bx,   " +
+                    " coalesce((select SUM(CASE 	WHEN tt.summ<0 THEN  tt.summ ELSE 0 END) from correction tt where tt.master_id="+myMasterId+" and tt.company_id="+companyId+" and boxoffice_id in "+boxoffices+" and tt.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp('"+dateFrom+"'||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and tt.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp('"+dateTo+"'||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') and tt.is_completed=true and tt.type='boxoffice'),0) as total_summ_corr_out_bx " +
 //                    " where (summ_in_pa!=0 or summ_out_pa!=0 or summ_in_bx!=0 or summ_out_bx!=0) " +
                     " group by  date_created, summ_before_pa, summ_before_bx,  summ_result_pa, summ_result_bx, total_summ_in_pa,total_summ_out_pa,total_summ_in_bx,total_summ_out_bx,total_summ_in_all,total_summ_out_all,dc,total_summ_corr_in_pa,total_summ_corr_out_pa,total_summ_in_bx,total_summ_corr_in_bx,total_summ_corr_out_bx  order by dc asc ";
 
@@ -302,13 +307,15 @@ public class MoneyflowRepositoryJPA {
         } else return null;
     }
 
-    private String getMoneyflowDetailedSQL(String searchString, Long companyId){
+    private String getMoneyflowDetailedSQL(String searchString, Long companyId, Set<Long> accountsIds, Set<Long> boxofficesIds){
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String sx = userRepositoryJPA.getMySuffix();
         Map<String, String> map = commonUtilites.translateForMe(new String[]{"'acc_short'","'cash_room'"});
         String dateFormat=userRepositoryJPA.getMyDateFormat();
+        String accounts=commonUtilites.SetOfLongToString(accountsIds,",","(",")").replace("()","(0)");
+        String boxoffices=commonUtilites.SetOfLongToString(boxofficesIds,",","(",")").replace("()","(0)");
         stringQuery = " select  " +
                 " d.doc_name_"+sx+" as doc_name, " + // Входящий платеж
                 " p.doc_number as doc_number,  " +
@@ -319,15 +326,19 @@ public class MoneyflowRepositoryJPA {
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
                 "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
-                " p.date_time_created as date_time_created_sort  " +
+                " p.date_time_created as date_time_created_sort,  " +
+                " coalesce(cg.id,"+companyId+")  as cagent_id, " +
+                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from paymentin p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 33 " +
                 " LEFT OUTER JOIN sprav_status_dock st ON p.status_id=st.id  " +
+                " LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id  " +
                 " where  " +
                 " p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.is_completed=true" +
+                " and payment_account_id in "+accounts+
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')  " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -345,15 +356,19 @@ public class MoneyflowRepositoryJPA {
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
                 "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
-                " p.date_time_created as date_time_created_sort  " +
+                " p.date_time_created as date_time_created_sort,  " +
+                " coalesce(cg.id,"+companyId+")  as cagent_id, " +
+                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from paymentout p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 34 " +
                 " LEFT OUTER JOIN sprav_status_dock st ON p.status_id=st.id  " +
+                " LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id  " +
                 " where  " +
                 " p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.is_completed=true" +
+                " and payment_account_id in "+accounts+
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -370,15 +385,19 @@ public class MoneyflowRepositoryJPA {
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
                 "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
-                " p.date_time_created as date_time_created_sort  " +
+                " p.date_time_created as date_time_created_sort,  " +
+                " coalesce(cg.id,"+companyId+")  as cagent_id, " +
+                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from orderin p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 35 " +
                 " LEFT OUTER JOIN sprav_status_dock st ON p.status_id=st.id  " +
+                " LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id  " +
                 " where  " +
                 " p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.is_completed=true" +
+                " and boxoffice_id in "+boxoffices+
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')" +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -389,21 +408,25 @@ public class MoneyflowRepositoryJPA {
                 " d.doc_name_"+sx+" as doc_name, " +  // Расходный ордер
                 " p.doc_number as doc_number,  " +
                 " to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created,  " +
-                " p.summ as summ_in,  " +
-                " 0.00 as summ_out, " +
+                " 0.00 as summ_in,  " +
+                " p.summ as summ_out, " +
                 " st.name as status,  " +
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
                 "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
-                " p.date_time_created as date_time_created_sort  " +
+                " p.date_time_created as date_time_created_sort,  " +
+                " coalesce(cg.id,"+companyId+")  as cagent_id, " +
+                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from orderout p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 36 " +
                 " LEFT OUTER JOIN sprav_status_dock st ON p.status_id=st.id  " +
+                " LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id  " +
                 " where  " +
                 " p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.is_completed=true" +
+                " and boxoffice_id in "+boxoffices+
                 " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
@@ -420,7 +443,9 @@ public class MoneyflowRepositoryJPA {
                 " d.page_name as doc_page_name,  " +
                 " p.id as doc_id,  " +
                 " (CASE WHEN p.boxoffice_id is null THEN  ('"+map.get("acc_short")+" "+"'||obj2.payment_account||', '||obj2.name) ELSE ('"+map.get("cash_room")+" "+"'||obj1.name) END) as obj_name,  " +
-                " p.date_time_created as date_time_created_sort  " +
+                " p.date_time_created as date_time_created_sort,  " +
+                " null as cagent_id, " +
+                " '' as cagent " +
                 " from correction p  " +
                 " INNER JOIN documents d ON d.id = 41 " +
                 " LEFT OUTER JOIN sprav_status_dock st ON p.status_id=st.id  " +
@@ -432,8 +457,9 @@ public class MoneyflowRepositoryJPA {
                 " p.master_id="+myMasterId+
                 " and p.company_id="+companyId+
                 " and p.is_completed=true" +
-                " and type in ('account','boxoffice')" +
-                " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
+//                " and type in ('account','boxoffice')" +
+                " and ((type='account' and payment_account_id in "+accounts+") or (type='boxoffice' and boxoffice_id in "+boxoffices+"))" +
+        " and p.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') " +
                 " and p.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')  ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (upper(d.doc_name_"+sx+") like upper(CONCAT('%',:sg,'%')) or upper(" +
@@ -443,12 +469,12 @@ public class MoneyflowRepositoryJPA {
 //        Query query = entityManager.createNativeQuery(stringQuery);
         return stringQuery;
     }
-    //возвращает детализированный отчет по взаиморасчетам с выбранным контрагентом за период
+
     @SuppressWarnings("Duplicates")
-    public List<MoneyflowTableJSON> getMoneyflowDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
+    public List<MoneyflowTableJSON> getMoneyflowDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
             throw new IllegalArgumentException("Invalid query parameters");
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId);
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId, accountsIds, boxofficesIds);
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -472,6 +498,8 @@ public class MoneyflowRepositoryJPA {
                 doc.setDoc_page_name((String)                               obj[6]);
                 doc.setDoc_id(Long.parseLong(                               obj[7].toString()));
                 doc.setObj_name((String)                                    obj[8]);
+                doc.setCagent_id(obj[10]!=null?Long.parseLong(obj[10].toString()):null);
+                doc.setCagent((String)                                      obj[11]);
                 returnList.add(doc);
             }
             return returnList;
@@ -483,8 +511,8 @@ public class MoneyflowRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public Integer getMoneyflowDetailedSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo) {
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId);
+    public Integer getMoneyflowDetailedSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId,  accountsIds, boxofficesIds);
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             if (searchString != null && !searchString.isEmpty())

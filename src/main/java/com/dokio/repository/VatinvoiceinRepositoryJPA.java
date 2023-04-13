@@ -652,7 +652,7 @@ public class VatinvoiceinRepositoryJPA {
             for(Object[] obj:queryList){
                 returnObj.setId(Long.parseLong(                             obj[0].toString()));
                 returnObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
-                returnObj.setStatusIdOnComplete(obj[4]!=null?Long.parseLong(obj[2].toString()):null);
+                returnObj.setStatusIdOnComplete(obj[2]!=null?Long.parseLong(obj[2].toString()):null);
             }
             return returnObj;
         }

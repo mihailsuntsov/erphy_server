@@ -474,7 +474,7 @@ public class MovingRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, ThereIsServicesInProductsListException.class, CantInsertProductRowCauseErrorException.class})
     public Long insertMoving(MovingForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -538,6 +538,11 @@ public class MovingRepository {
                 logger.error("Exception in method insertMoving on inserting into moving_products cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240L;
             } catch (Exception e) {
                 logger.error("Exception in method insertMoving. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -550,7 +555,7 @@ public class MovingRepository {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, ThereIsServicesInProductsListException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
     public  Integer updateMoving(MovingForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(30L,"388") && securityRepositoryJPA.isItAllMyMastersDocuments("moving",request.getId().toString())) ||
@@ -623,6 +628,11 @@ public class MovingRepository {
                 logger.error("Exception in method updateMoving on inserting into moving_products cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240;
             } catch (CantSaveProductHistoryException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method updateMoving on inserting into products_history.", e);
@@ -639,7 +649,7 @@ public class MovingRepository {
 
     // смена проведености документа с "Проведён" на "Не проведён"
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CalculateNetcostNegativeSumException.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, CalculateNetcostNegativeSumException.class, ThereIsServicesInProductsListException.class, CantSetHistoryCauseNegativeSumException.class, NotEnoughPermissionsException.class})
     public Integer setMovingAsDecompleted(MovingForm request) throws Exception {
         // Есть ли права на проведение
         if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
@@ -704,6 +714,11 @@ public class MovingRepository {
                 logger.error("Exception in method MovingRepository/setMovingAsDecompleted.", e);
                 e.printStackTrace();
                 return -80; // см. _ErrorCodes
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method MovingRepository/setMovingAsDecompleted. SQL query:"+stringQuery, e);
@@ -874,8 +889,7 @@ public class MovingRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertMovingProducts(MovingForm request, Long parentDocId, Long myMasterId, boolean decompletion) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException
-    {
+    private boolean insertMovingProducts(MovingForm request, Long parentDocId, Long myMasterId, boolean decompletion) throws CantInsertProductRowCauseErrorException, CantInsertProductRowCauseOversellException, ThereIsServicesInProductsListException {
         Set<Long> productIds=new HashSet<>();
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
         if (request.getMovingProductTable()!=null && request.getMovingProductTable().size() > 0) {
@@ -892,6 +906,9 @@ public class MovingRepository {
                 }
                 productIds.add(row.getProduct_id());
             }
+            //checking on there is services in products list
+            if(productsRepository.isThereServicesInProductsList(productIds))
+                throw new ThereIsServicesInProductsListException();
         }
         if (!deleteMovingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
             throw new CantInsertProductRowCauseErrorException();

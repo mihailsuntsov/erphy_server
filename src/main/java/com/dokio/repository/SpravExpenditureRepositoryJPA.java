@@ -503,7 +503,7 @@ public class SpravExpenditureRepositoryJPA {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
-                "'exp_rent'","'exp_return'","'exp_salary'","'exp_banking_srvcs'","'exp_taxes'","'exp_pay_goods_srvcs'","'exp_pay_wh_company'"});
+                "'exp_rent'","'exp_return'","'exp_salary'","'exp_banking_srvcs'","'exp_taxes'","'exp_pay_goods_srvcs'","'exp_pay_wh_company'","'payroll_taxes'","'accounting_srvcs'"});
         stringQuery = "insert into sprav_expenditure_items (master_id,creator_id,company_id,date_time_created,name,type,is_deleted,is_completed,is_default) values "+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_rent")+"','other_opex',false,false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_return")+"','return',false,false,false),"+
@@ -511,6 +511,8 @@ public class SpravExpenditureRepositoryJPA {
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_banking_srvcs")+"','other_opex',false,false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_taxes")+"','taxes',false,false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_pay_goods_srvcs")+"','purchases',false,false,true),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("payroll_taxes")+"','other_opex',false,false,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("accounting_srvcs")+"','other_opex',false,false,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("exp_pay_wh_company")+"','moving',false,false,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

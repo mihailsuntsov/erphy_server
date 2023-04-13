@@ -84,6 +84,8 @@ public class CompanyRepositoryJPA {
     @Autowired
     FileRepositoryJPA fileRepository;
     @Autowired
+    ProductsRepositoryJPA productsRepository;
+    @Autowired
     DocumentsRepositoryJPA documentsRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -1050,6 +1052,8 @@ public class CompanyRepositoryJPA {
         spravSysEdizm.insertEdizmFast(myMasterId, myId, companyId);
         // налоги
         taxesRepository.insertTaxesFast(myMasterId, myId,companyId);
+        // базовые категоии товаров и сами товары
+        productsRepository.insertProductCategoriesFast(myMasterId,myId,companyId);
         // расходы
         expenditureRepository.insertExpendituresFast(myMasterId, myId,companyId);
         // статусы документов

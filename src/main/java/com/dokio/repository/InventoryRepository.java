@@ -27,10 +27,7 @@ import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.FilesInventoryJSON;
 import com.dokio.message.response.additional.InventoryProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
-import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
-import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
-import com.dokio.repository.Exceptions.DocumentAlreadyDecompletedException;
-import com.dokio.repository.Exceptions.NotEnoughPermissionsException;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -445,7 +442,7 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class,ThereIsServicesInProductsListException.class})
     public Integer updateInventory(InventoryForm request){
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(27L,"340") && securityRepositoryJPA.isItAllMyMastersDocuments("inventory",request.getId().toString())) ||
@@ -508,6 +505,11 @@ public class InventoryRepository {
                 logger.error("Exception in method insertInventory on inserting into inventory_products cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240;
             }catch (Exception e) {
                 logger.error("Exception in method updateInventory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -571,7 +573,7 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,CantInsertProductRowCauseErrorException.class,ThereIsServicesInProductsListException.class})
     public Long insertInventory(InventoryForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -633,6 +635,11 @@ public class InventoryRepository {
                 logger.error("Exception in method insertInventory on inserting into inventory_products cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240L;
             } catch (Exception e) {
                 logger.error("Exception in method insertInventory on inserting into inventory. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -646,9 +653,9 @@ public class InventoryRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean insertInventoryProducts(InventoryForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertInventoryProducts(InventoryForm request, Long newDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, ThereIsServicesInProductsListException {
         Boolean insertProductRowResult; // отчет о сохранении позиции товара (строки таблицы). true - успешно false если превышено доступное кол-во товара на складе и записать нельзя, null если ошибка
-        String productIds = "";
+        Set<Long> productIds=new HashSet<>();
         //сохранение таблицы
         if (request.getInventoryProductTable()!=null && request.getInventoryProductTable().size() > 0) {
 
@@ -659,11 +666,17 @@ public class InventoryRepository {
                     throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров inventory_product
                 }
                 //копим id сохранённых товаров
-                productIds = productIds + (productIds.length()>0?",":"") + row.getProduct_id();
+                productIds.add(row.getProduct_id());
             }
+            //checking on there is services in products list
+            if(productsRepository.isThereServicesInProductsList(productIds))
+                throw new ThereIsServicesInProductsListException();
         }
-        deleteInventoryProductTableExcessRows(productIds, request.getId(), myMasterId);
-        return true;
+        if (!deleteInventoryProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId(), myMasterId)) {
+            throw new CantInsertProductRowCauseErrorException();
+        } else return true;
+//        deleteInventoryProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId(), myMasterId);
+//        return true;
     }
 
     @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении инвентаризации (те позиции, которые ранее были в заказе, но потом их удалили)
@@ -984,7 +997,8 @@ public class InventoryRepository {
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
                 " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
                 " where  p.master_id=" + myMasterId +
-                " and coalesce(p.is_archive,false) !=true ";
+                " and coalesce(p.is_archive,false) !=true " +
+                " and p.ppr_id != 4 ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.product_code_free,'fm0000000000') like CONCAT('%',:sg) or "+

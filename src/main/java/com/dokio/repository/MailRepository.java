@@ -48,8 +48,8 @@ public class MailRepository {
     public Integer activateAccount(String email, String uuid){
         try{
             String mailLink ="http://"+dokioserver+"/activate/"+ uuid ;
-            String mailBody="\n\n You have registered new account in the Dokio application. Please use the below link to confirm your e-mail."+ "\n\n Click on Link: "+mailLink;
-            MimeMessagePreparator preparator = getMessagePreparator(from_email,email,"Dokio registration confirm",mailBody);
+            String mailBody="\n\n You have registered new account in the DokioCRM application. Please use the below link to confirm your e-mail."+ "\n\n Click on Link: "+mailLink;
+            MimeMessagePreparator preparator = getMessagePreparator(from_email,email,"DokioCRM registration confirm",mailBody);
             mailSender.send(preparator);
             return 1;
         } catch (Exception e){

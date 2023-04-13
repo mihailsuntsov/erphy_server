@@ -83,6 +83,8 @@ public class AuthRestAPIs {
     SpravCurrenciesRepository currenciesRepository;
 	@Autowired
     CagentRepositoryJPA cagentRepository;
+	@Autowired
+	ProductsRepositoryJPA productsRepository;
     @Autowired
     SpravSysEdizmJPA spravSysEdizm;
     @Autowired
@@ -203,7 +205,7 @@ public class AuthRestAPIs {
 		userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
         // зададим пользователю набор валют
         currenciesRepository.insertCurrenciesFast(createdUserId,createdUserId,companyId);
-        // базовые категоии контрагентов
+        // базовые категоии контрагентов и сами контрагенты
         cagentRepository.insertCagentCategoriesFast(createdUserId,createdUserId,companyId);
 		// базовые категоии файлов + базовые файлы (шаблоны)
 		Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId,createdUserId,companyId);
@@ -213,8 +215,10 @@ public class AuthRestAPIs {
 		if(!Objects.isNull(baseFilesList)) documentsRepository.createPrintMenus(baseFilesList,createdUserId,createdUserId,companyId);
         // единицы имерения
         spravSysEdizm.insertEdizmFast(createdUserId,createdUserId,companyId);
-        // налоги
-        taxesRepository.insertTaxesFast(createdUserId,createdUserId,companyId);
+		// налоги
+		taxesRepository.insertTaxesFast(createdUserId,createdUserId,companyId);
+		// базовые категоии товаров и сами товары
+		productsRepository.insertProductCategoriesFast(createdUserId,createdUserId,companyId);
         // траты
         expenditureRepository.insertExpendituresFast(createdUserId,createdUserId,companyId);
         // статусы документов

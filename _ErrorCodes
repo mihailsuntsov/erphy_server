@@ -38,3 +38,12 @@ null                            Ошибка выполнения
 
 -220                            Не выбрано отделение для создания Заказа покупателя из интернет-магазина StoreDepartmentIsNotSet
 -222                            Не выбран покупатель по умолчанию для создания Заказа покупателя из интернет-магазина StoreDefaultCustomerIsNotSet
+
+-230                            Попытка изменить Признак предмета расчёта у товара с уже имеющимися операциями (с Услуги на Товар или наоборот)
+                                Trying to change the "Subject of trade" of Product (from Servie to Commodity or from Commodity to Service)
+
+-240                            Есть услуги в списке товаров для таких документов как Оприходование, Перемещение, Списание, Инвентаризация
+                                There is service(s) in a products list of such documents as Posting, Moving, Writeoff, Inventory
+
+-250                            Товар или услуга с таким артикулом уже существует
+                                A product or service with this SKU already exists

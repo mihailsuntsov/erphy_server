@@ -55,7 +55,7 @@ public class MoneyflowController {
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int offsetreal = offset * result;//создана переменная с номером страницы
-        return new ResponseEntity<List>(moneyflowRepository.getMoneyflowTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);
+        return new ResponseEntity<List>(moneyflowRepository.getMoneyflowTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo(),searchRequest.getAccountsIds(), searchRequest.getBoxofficesIds()), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getMoneyflowPagesList")
@@ -65,14 +65,14 @@ public class MoneyflowController {
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         String searchString = searchRequest.getSearchString();
-        int size = moneyflowRepository.getMoneyflowSize(searchString, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds(),searchRequest.getDateFrom(), searchRequest.getDateTo());//  - общее количество записей выборки
+        int size = moneyflowRepository.getMoneyflowSize(searchString, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds(),searchRequest.getDateFrom(), searchRequest.getDateTo(),searchRequest.getAccountsIds(), searchRequest.getBoxofficesIds());//  - общее количество записей выборки
         return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
     }
 
     @PostMapping("/api/auth/getMoneyflowBalances")
     public ResponseEntity<?> getMoneyflowBalances(@RequestBody HistoryCagentDocsSearchForm searchRequest){
         logger.info("Processing get request for path /api/auth/getMoneyflowBalances with parameters: " + searchRequest.toString());
-        try {return new ResponseEntity<>(moneyflowRepository.getMoneyflowBalances(searchRequest.getCompanyId(), searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);}
+        try {return new ResponseEntity<>(moneyflowRepository.getMoneyflowBalances(searchRequest.getCompanyId(), searchRequest.getDateFrom(), searchRequest.getDateTo(),searchRequest.getAccountsIds(), searchRequest.getBoxofficesIds()), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();return new ResponseEntity<>("Ошибка загрузки крайних значений балансов", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/getMoneyflowDetailedTable")
@@ -91,7 +91,7 @@ public class MoneyflowController {
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int offsetreal = offset * result;//создана переменная с номером страницы
-        return new ResponseEntity<List>(moneyflowRepository.getMoneyflowDetailedTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);
+        return new ResponseEntity<List>(moneyflowRepository.getMoneyflowDetailedTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo(),searchRequest.getAccountsIds(), searchRequest.getBoxofficesIds()), HttpStatus.OK);
     }
     @PostMapping("/api/auth/getMoneyflowDetailedPagesList")
     @SuppressWarnings("Duplicates")
@@ -100,7 +100,7 @@ public class MoneyflowController {
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         String searchString = searchRequest.getSearchString();
-        int size = moneyflowRepository.getMoneyflowDetailedSize(searchString, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds(),searchRequest.getDateFrom(), searchRequest.getDateTo());//  - общее количество записей выборки
+        int size = moneyflowRepository.getMoneyflowDetailedSize(searchString, searchRequest.getCompanyId(),searchRequest.getFilterOptionsIds(),searchRequest.getDateFrom(), searchRequest.getDateTo(),searchRequest.getAccountsIds(), searchRequest.getBoxofficesIds());//  - общее количество записей выборки
         return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
     }
 }

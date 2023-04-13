@@ -1076,7 +1076,7 @@ public class PaymentoutRepositoryJPA {
                 "           and p.payment_account_id = " + account_id +
                 "           and coalesce(p.is_completed,false) = true" +
                 "           and coalesce(p.is_deleted,false) = false" +
-                "           and ((p.moving_type='boxoffice' and p.boxoffice_to_id=:recipient_id) or (p.moving_type='account' and p.payment_account_to_id=:recipient_id))" +
+                "           and ((p.moving_type='boxoffice' and p.boxoffice_id=:recipient_id) or (p.moving_type='account' and p.payment_account_to_id=:recipient_id))" +
                 "           and exp.type = 'moving'" +                  // moving - внутреннее перевод
                 "           and coalesce(p.is_delivered,false) = false";
 

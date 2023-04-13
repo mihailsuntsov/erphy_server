@@ -141,9 +141,8 @@ public class PricesRepository {
                     "           from products p " +
                     "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
-                    "           and coalesce(p.is_archive,false) !=true " +
-                 (categoryId!=0?" and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id="+categoryId+") ":"");
-//            stringQuery = stringQuery + " and p.id in (33,128,149)";
+                    "           and coalesce(p.is_deleted,false) = false" +
+            (categoryId!=0?" and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id="+categoryId+") ":"");
             if (!securityRepositoryJPA.userHasPermissions_OR(19L, "242")) //Если нет прав по всем предприятиям"
             {
                 //остается только на своё предприятие

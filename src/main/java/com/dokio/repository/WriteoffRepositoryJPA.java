@@ -458,7 +458,7 @@ public class WriteoffRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class,ThereIsServicesInProductsListException.class})
     public Long insertWriteoff(WriteoffForm request) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String myTimeZone = userRepository.getUserTimeZone();
@@ -537,8 +537,6 @@ public class WriteoffRepositoryJPA {
                 //если есть таблица с товарами - нужно создать их
                 insertWriteoffProducts(request, newDocId, myMasterId);
 
-
-
                 //если документ создался из другого документа - добавим эти документы в их общую группу связанных документов linkedDocsGroupId и залинкуем между собой
                 if (request.getLinked_doc_id() != null) {
                     linkedDocsUtilites.addDocsToGroupAndLinkDocs(request.getLinked_doc_id(), newDocId, linkedDocsGroupId, request.getParent_uid(),request.getChild_uid(),request.getLinked_doc_name(), "writeoff", request.getUid(), request.getCompany_id(), myMasterId);
@@ -551,6 +549,11 @@ public class WriteoffRepositoryJPA {
                 logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240L;
             } catch (Exception e) {
                 logger.error("Exception in method insertWriteoff. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -565,10 +568,11 @@ public class WriteoffRepositoryJPA {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertWriteoffProducts(WriteoffForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, ThereIsServicesInProductsListException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getWriteoffProductTable()!=null && request.getWriteoffProductTable().size() > 0) {
+
             for (WriteoffProductForm row : request.getWriteoffProductTable()) {
                 row.setWriteoff_id(parentDocId);// чтобы через API сюда нельзя было подсунуть рандомный id
                 if (!saveWriteoffProductTable(row, myMasterId)) {
@@ -576,13 +580,17 @@ public class WriteoffRepositoryJPA {
                 }
                 productIds.add(row.getProduct_id());
             }
+
+            //checking on there is services in products list
+            if(productsRepository.isThereServicesInProductsList(productIds))
+                throw new ThereIsServicesInProductsListException();
         }
         if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)){
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseOversellException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, ThereIsServicesInProductsListException.class, CantInsertProductRowCauseOversellException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, InsertProductHistoryExceprions.class})
     public  Integer updateWriteoff(WriteoffForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого редактируют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(17L,"227") && securityRepositoryJPA.isItAllMyMastersDocuments("writeoff",request.getId().toString())) ||
@@ -615,6 +623,8 @@ public class WriteoffRepositoryJPA {
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "writeoff"))
                     throw new DocumentAlreadyCompletedException();
 
+
+
                 //сохранение таблицы товаров
                 updateWriteoffWithoutTable(request);
                 insertWriteoffProducts(request,request.getId(),myMasterId);
@@ -639,6 +649,11 @@ public class WriteoffRepositoryJPA {
                 logger.error("CalculateNetcostNegativeSumException in method WriteoffRepository/updateWriteoff.", e);
                 e.printStackTrace();
                 return -70; // см. _ErrorCodes
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240;
             } catch (CantSaveProductQuantityException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method updateWriteoff on inserting into product_quantity cause error.", e);

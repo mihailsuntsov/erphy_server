@@ -444,7 +444,7 @@ public class PostingRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class,ThereIsServicesInProductsListException.class})
     public Long insertPosting(PostingForm request) {
 
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -538,6 +538,11 @@ public class PostingRepository {
                 logger.error("Exception in method insertPosting on inserting into posting_products cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240L;
             } catch (Exception e) {
                 logger.error("Exception in method insertPosting. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -552,7 +557,7 @@ public class PostingRepository {
 
     //сохранение таблицы товаров
     @SuppressWarnings("Duplicates")
-    private boolean insertPostingProducts(PostingForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    private boolean insertPostingProducts(PostingForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException, ThereIsServicesInProductsListException {
         Set<Long> productIds=new HashSet<>();
 
         if (request.getPostingProductTable()!=null && request.getPostingProductTable().size() > 0) {
@@ -563,13 +568,16 @@ public class PostingRepository {
                 }
                 productIds.add(row.getProduct_id());
             }
+            //checking on there is services in products list
+            if(productsRepository.isThereServicesInProductsList(productIds))
+                throw new ThereIsServicesInProductsListException();
         }
         if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)) {
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, CantSaveProductHistoryException.class, InsertProductHistoryExceprions.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, ThereIsServicesInProductsListException.class, CantInsertProductRowCauseErrorException.class, CantSaveProductQuantityException.class, CantSaveProductHistoryException.class, InsertProductHistoryExceprions.class})
     public  Integer updatePosting(PostingForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(16L,"211") && securityRepositoryJPA.isItAllMyMastersDocuments("posting",request.getId().toString())) ||
@@ -634,6 +642,11 @@ public class PostingRepository {
                 logger.error("Exception in method updatePosting on inserting into product_quantity cause error.", e);
                 e.printStackTrace();
                 return null;
+            } catch (ThereIsServicesInProductsListException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertWriteoff on inserting into writeoff_product cause error - there is service(s) in a products list.", e);
+                e.printStackTrace();
+                return -240;
             } catch (CantInsertProductRowCauseErrorException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method updatePosting on inserting into posting_products cause error.", e);

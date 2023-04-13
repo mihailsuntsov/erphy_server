@@ -309,7 +309,9 @@ public class ProductsController {
             @RequestParam("departmentId") Long departmentId,
             @RequestParam("priceTypeId")  Long priceTypeId,
             @RequestParam("document_id") Long document_id,
-            @RequestParam("showRemovedFromSale") Boolean showRemovedFromSale)
+            @RequestParam("showRemovedFromSale") Boolean showRemovedFromSale,
+            @RequestParam("showNotPurchased") Boolean showNotPurchased,
+            @RequestParam("showServices") Boolean showServices)
     {
         logger.info("Processing post request for path /api/auth/getProductsLists with parameters: " +
                 "searchString: " + searchString +
@@ -317,9 +319,11 @@ public class ProductsController {
                 ", departmentId: " + departmentId.toString() +
                 ", priceTypeId: "   + priceTypeId.toString() +
                 ", document_id: "+ document_id.toString() +
-                ", showRemovedFromSale: " +showRemovedFromSale.toString());
+                ", showRemovedFromSale: " +showRemovedFromSale.toString() +
+                ", showNotPurchased: " +showNotPurchased.toString() +
+                ", showServices: " +showServices.toString());
         List returnList;
-        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId, document_id, priceTypeId,showRemovedFromSale);
+        returnList = productsRepositoryJPA.getProductsList(searchString, companyId, departmentId, document_id, priceTypeId, showRemovedFromSale, showNotPurchased, showServices);
         return new ResponseEntity<>(returnList, HttpStatus.OK);
     }
 

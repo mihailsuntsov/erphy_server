@@ -678,7 +678,7 @@ public class VatinvoiceoutRepositoryJPA {
             SettingsVatinvoiceoutJSON returnObj=new SettingsVatinvoiceoutJSON();
 
             for(Object[] obj:queryList){
-                returnObj.setCagentId(obj[1]!=null?Long.parseLong(          obj[0].toString()):null);
+                returnObj.setCagentId(obj[0]!=null?Long.parseLong(          obj[0].toString()):null);
                 returnObj.setCagent((String)                                obj[1]);
                 returnObj.setId(Long.parseLong(                             obj[2].toString()));
                 returnObj.setCompanyId(Long.parseLong(                      obj[3].toString()));

@@ -22,11 +22,10 @@ import com.dokio.message.request.CagentCategoriesForm;
 import com.dokio.message.request.CagentsContactsForm;
 import com.dokio.message.request.CagentsForm;
 import com.dokio.message.request.CagentsPaymentAccountsForm;
-import com.dokio.message.request.Reports.HistoryCagentBalanceForm;
 import com.dokio.message.response.CagentCategoriesTableJSON;
 import com.dokio.message.response.CagentsJSON;
+import com.dokio.message.response.HistoryCagentBalanceObjectJSON;
 import com.dokio.message.response.Reports.HistoryCagentBalanceJSON;
-import com.dokio.message.response.Reports.HistoryCagentDocsJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.CagentsListJSON;
 import com.dokio.model.CagentCategories;
@@ -429,47 +428,47 @@ public class CagentRepositoryJPA {
                     "           sso.id as opf_id, "+
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                    "           p.description as description, " +
+                    "           coalesce(p.description,'') as description, " +
                     // Апдейт Контрагентов
-                    "           p.code as code, " +
-                    "           p.telephone as telephone, " +
-                    "           p.site as site, " +
-                    "           p.email as email, " +
-                    "           p.zip_code as zip_code, " +
+                    "           coalesce(p.code,'') as code, " +
+                    "           coalesce(p.telephone,'') as telephone, " +
+                    "           coalesce(p.site,'') as site, " +
+                    "           coalesce(p.email,'') as email, " +
+                    "           coalesce(p.zip_code,'') as zip_code, " +
                     "           p.country_id as country_id, " +
                     "           p.region_id as region_id, " +
                     "           p.city_id as city_id, " +
-                    "           p.street as street, " +
-                    "           p.home as home, " +
-                    "           p.flat as flat, " +
-                    "           p.additional_address as additional_address, " +
+                    "           coalesce(p.street,'') as street, " +
+                    "           coalesce(p.home,'') as home, " +
+                    "           coalesce(p.flat,'') as flat, " +
+                    "           coalesce(p.additional_address,'') as additional_address, " +
                     "           p.status_id as status_id, " +
                     "           p.price_type_id as price_type_id, " +
-                    "           p.discount_card as discount_card, " +
-                    "           p.jr_jur_full_name as jr_jur_full_name, " +
-                    "           p.jr_jur_kpp as jr_jur_kpp, " +
-                    "           p.jr_jur_ogrn as jr_jur_ogrn, " +
-                    "           p.jr_zip_code as jr_zip_code, " +
+                    "           coalesce(p.discount_card,'') as discount_card, " +
+                    "           coalesce(p.jr_jur_full_name,'') as jr_jur_full_name, " +
+                    "           coalesce(p.jr_jur_kpp,'') as jr_jur_kpp, " +
+                    "           coalesce(p.jr_jur_ogrn,'') as jr_jur_ogrn, " +
+                    "           coalesce(p.jr_zip_code,'') as jr_zip_code, " +
                     "           p.jr_country_id as jr_country_id, " +
                     "           p.jr_region_id as jr_region_id, " +
                     "           p.jr_city_id as jr_city_id, " +
-                    "           p.jr_street as jr_street, " +
-                    "           p.jr_home as jr_home, " +
-                    "           p.jr_flat as jr_flat, " +
-                    "           p.jr_additional_address as jr_additional_address, " +
-                    "           p.jr_inn as jr_inn, " +
-                    "           p.jr_okpo as jr_okpo, " +
-                    "           p.jr_fio_family as jr_fio_family, " +
-                    "           p.jr_fio_name as jr_fio_name, " +
-                    "           p.jr_fio_otchestvo as jr_fio_otchestvo, " +
-                    "           p.jr_ip_ogrnip as jr_ip_ogrnip, " +
-                    "           p.jr_ip_svid_num as jr_ip_svid_num, " +
+                    "           coalesce(p.jr_street,'') as jr_street, " +
+                    "           coalesce(p.jr_home,'') as jr_home, " +
+                    "           coalesce(p.jr_flat,'') as jr_flat, " +
+                    "           coalesce(p.jr_additional_address,'') as jr_additional_address, " +
+                    "           coalesce(p.jr_inn,'') as jr_inn, " +
+                    "           coalesce(p.jr_okpo,'') as jr_okpo, " +
+                    "           coalesce(p.jr_fio_family,'') as jr_fio_family, " +
+                    "           coalesce(p.jr_fio_name,'') as jr_fio_name, " +
+                    "           coalesce(p.jr_fio_otchestvo,'') as jr_fio_otchestvo, " +
+                    "           coalesce(p.jr_ip_ogrnip,'') as jr_ip_ogrnip, " +
+                    "           coalesce(p.jr_ip_svid_num,'') as jr_ip_svid_num, " +
                     "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
-                    "           stat.name as status_name, " +
-                    "           stat.color as status_color, " +
-                    "           stat.description as status_description, " +
-                    "           ctr.name_ru as country, " +
-                    "           jr_ctr.name_ru as jr_country, " +
+                    "           coalesce(stat.name,'') as status_name, " +
+                    "           coalesce(stat.color,'') as status_color, " +
+                    "           coalesce(stat.description,'') as status_description, " +
+                    "           coalesce(ctr.name_ru,'') as country, " +
+                    "           coalesce(jr_ctr.name_ru,'') as jr_country, " +
 //                    "           reg.name_ru as region, " +
                     "           coalesce(p.region,'') as region, " +
 //                    "           jr_reg.name_ru as jr_region, " +
@@ -1313,180 +1312,7 @@ public class CagentRepositoryJPA {
         }
         return returnList;
     }
-/*
-    @SuppressWarnings("Duplicates")
-    public List<HistoryCagentDocsJSON> getHistoryCagentDocsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long departmentId, Set<Integer> filterOptionsIds) {
-//        if(securityRepositoryJPA.userHasPermissions_OR(43L, "560,561,566"))//(см. файл Permissions Id)
-//        {
-            String stringQuery;
-            String myTimeZone = userRepository.getUserTimeZone();
-            boolean needToSetParameter_MyDepthsIds = false;
-//            Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-
-            stringQuery = "     select  p.id as id, " +
-
-                    "           p.company_id as company_id, " +
-                    "           p.department_id as department_id, " +
-                    "           p.creator_id as creator_id, " +
-                    "           p.cagent_id as cagent_id, " +
-
-                    "           cmp.name as company, " +
-                    "           dp.name as department, " +
-                    "           us.name as creator, " +
-                    "           cg.name as cagent," +
-
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-
-                    "           d.doc_name_ru as doc_name, " +
-                    "           d.page_name as pagename, " +
-                    "           p.doc_id as doc_id, " +
-                    "           abs(p.summ_change) as summ, " +
-
-                    "           p.date_time_created as date_time_created_sort " +
-
-                    "           from history_cagent_summ p " +
-                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           INNER JOIN users us ON p.creator_id=us.id " +
-                    "           INNER JOIN cagents cg ON p.object_id=cg.id " +
-                    "           INNER JOIN documents d ON p.doc_table_name=d.table_name " +
-                    "           where  p.master_id=" + myMasterId;
-
-
-            if (searchString != null && !searchString.isEmpty()) {
-                stringQuery = stringQuery + " and (" +
-                        " to_char(p.shift_number,'0000000000') like CONCAT('%',:sg) or "+
-                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
-            }
-            if (companyId > 0) {
-                stringQuery = stringQuery + " and p.company_id=" + companyId;
-            }
-            if (departmentId > 0) {
-                stringQuery = stringQuery + " and p.department_id=" + departmentId;
-            }
-
-
-            if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
-                stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-            } else {
-                throw new IllegalArgumentException("Invalid query parameters");
-            }
-
-
-            try{
-                Query query = entityManager.createNativeQuery(stringQuery);
-
-                if (searchString != null && !searchString.isEmpty())
-                {query.setParameter("sg", searchString);}
-
-                if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-                {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
-                query.setFirstResult(offsetreal).setMaxResults(result);
-
-
-                List<Object[]> queryList = query.getResultList();
-                List<HistoryCagentDocsJSON> returnList = new ArrayList<>();
-                for(Object[] obj:queryList){
-                    HistoryCagentDocsJSON doc=new HistoryCagentDocsJSON();
-                    doc.setId(Long.parseLong(                     obj[0].toString()));
-                    doc.setCreator((String)                       obj[2]);
-                    doc.setCreator_id(Long.parseLong(             obj[5].toString()));
-                    doc.setCompany_id(Long.parseLong(             obj[7].toString()));
-                    doc.setDepartment_id(Long.parseLong(          obj[8].toString()));
-                    doc.setDepartment((String)                    obj[9]);
-                    doc.setCompany((String)                       obj[11]);
-                    doc.setDate_time_created((String)             obj[12]);
-                    returnList.add(doc);
-                }
-                return returnList;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Exception in method getShiftsTable. SQL query:" + stringQuery, e);
-                return null;
-            }
-//        } else return null;
-    }
-*/
-/*
-@SuppressWarnings("Duplicates")
-public List<HistoryCagentBalanceJSON> getHistoryCagentBalanceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
-    String stringQuery;
-    String myTimeZone = userRepository.getUserTimeZone();
-    Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-    stringQuery =   "           select  " +
-
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+" HH24:MI') as date_time_created, " +
-                    "           cmp.name as company, " +
-                    "           cg.name as cagent," +
-
-                    "           p.summ_change as summ_on_start, " +// начальный остаток
-                    "           p.summ_change as summ_on_end, " +  // конечный остаток
-                    "           p.summ_change as summ_in, " +// приход
-                    "           p.summ_change as summ_out, " +  // расход
-
-                    "           d.doc_name_ru as doc_name, " +  // aka doc_name_ru - Наименование документа из таблицы documents
-                    "           d.page_name as pagename, " +// имя страницы в ангулар
-                    "           p.doc_id as doc_id, " +// id документа (для формирования ссылки на док типа .../shipment/344 )
-    //              "           p.doc_number as doc_number, "   // на будущее
-    //              "           p.status as status, "           // на будущее
-                    "           p.date_time_created as date_time_created_sort " +
-
-                    "           from history_cagent_summ p " +
-                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                    "           INNER JOIN cagents cg ON p.object_id=cg.id " +
-                    "           INNER JOIN documents d ON p.doc_table_name=d.table_name " +
-                    "           where  p.master_id=" + myMasterId;
-
-    if (searchString != null && !searchString.isEmpty()) {
-        stringQuery = stringQuery + " and (" +
-                " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
-                " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                " upper(d.doc_name_ru)  like upper(CONCAT('%',:sg,'%'))"+")";
-    }
-    if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
-        stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
-    } else {
-        throw new IllegalArgumentException("Invalid query parameters");
-    }
-    try{
-        Query query = entityManager.createNativeQuery(stringQuery);
-        if (searchString != null && !searchString.isEmpty())
-        {query.setParameter("sg", searchString);}
-
-        query.setFirstResult(offsetreal).setMaxResults(result);
-
-        List<Object[]> queryList = query.getResultList();
-        List<HistoryCagentBalanceJSON> returnList = new ArrayList<>();
-        for(Object[] obj:queryList){
-            HistoryCagentBalanceJSON doc=new HistoryCagentBalanceJSON();
-            doc.setDate_time_created((String)                           obj[0]);
-            doc.setCompany((String)                                     obj[1]);
-            doc.setCagent((String)                                      obj[2]);
-            doc.setSumm_on_start((BigDecimal)                           obj[3]);
-            doc.setSumm_on_end((BigDecimal)                             obj[4]);
-            doc.setSumm_in((BigDecimal)                                 obj[5]);
-            doc.setSumm_out((BigDecimal)                                obj[6]);
-            doc.setDoc_name((String)                                    obj[7]);
-            doc.setPagename((String)                                    obj[8]);
-            doc.setDoc_id(Long.parseLong(                               obj[9].toString()));
-            returnList.add(doc);
-        }
-        return returnList;
-    } catch (Exception e) {
-        e.printStackTrace();
-        logger.error("Exception in method getHistoryCagentBalanceTable. SQL query:" + stringQuery, e);
-        return null;
-    }
-}
-*/
 @SuppressWarnings("Duplicates")
 public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo) {
     String stringQuery;
@@ -1541,6 +1367,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
         return null;
     }
 }
+
     @SuppressWarnings("Duplicates")
     public Integer getMutualpaymentSize(String searchString, Long companyId, Set<Integer> filterOptionsIds) {
         String stringQuery;
@@ -1572,7 +1399,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
     //возвращает детализированный отчет по взаиморасчетам с выбранным контрагентом за период
     @SuppressWarnings("Duplicates")
-    public List<HistoryCagentBalanceJSON> getMutualpaymentDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long cagentId, String dateFrom, String dateTo) {
+    public HistoryCagentBalanceObjectJSON getMutualpaymentDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Long cagentId, String dateFrom, String dateTo) {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
         String suffix = userRepositoryJPA.getMySuffix();
@@ -1630,13 +1457,21 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 doc.setDoc_id(Long.parseLong(                               obj[7].toString()));
                 returnList.add(doc);
             }
-            return returnList;
+            HistoryCagentBalanceObjectJSON returnObject = new HistoryCagentBalanceObjectJSON();
+            returnObject.setTable(returnList);
+            List<BigDecimal> indicators = getCagentMutualpaymentIndicators(cagentId, companyId, dateFrom, dateTo);
+            returnObject.setSumm_on_start(indicators.get(0));
+            returnObject.setSumm_in(indicators.get(1));
+            returnObject.setSumm_out(indicators.get(2));
+            returnObject.setSumm_on_end(indicators.get(3));
+            return returnObject;
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getMutualpaymentDetailedTable. SQL query:" + stringQuery, e);
             return null;
         }
     }
+
     @SuppressWarnings("Duplicates")
     public Integer getMutualpaymentDetailedSize(String searchString, Long companyId, Long cagentId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo) {
         String stringQuery;
@@ -1674,56 +1509,110 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     }
 
     @SuppressWarnings("Duplicates")
-    public String getCagentFullName(CagentsJSON cagent){
-        String result;
-        // получим наименование организационно-правовой формы
-        switch (cagent.getOpf_id()) {
-            case  (1):// Индивидуальный предприниматель
-                result = cagent.getOpf() + cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
-                break;
-            case (2): // Самозанятый
-                result = cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
-                break;
-            default:  // Все юрлица ( ООО, ЗАО и т.д.)
-                result = cagent.getJr_jur_full_name();
-                break;
-        }
-        return result;
-    }
+    public List<BigDecimal> getCagentMutualpaymentIndicators(Long cagentId, Long companyId, String dateFrom, String dateTo) {
+        String stringQuery;
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-    @SuppressWarnings("Duplicates")
-    public String getCagentAddress(CagentsJSON cagent){
-        String result;
-        // получим адрес контрагента
-        switch (cagent.getOpf_id()) {
-            case (1):// Индивидуальный предприниматель
-                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
-                break;
-            case (2): // Самозанятый
-                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
-                break;
-            default:  // Все юрлица ( ООО, ЗАО и т.д.)
-                result = cagent.getZip_code()+" "+cagent.getJr_region()+", "+cagent.getJr_area()+", "+cagent.getJr_city()+" "+cagent.getJr_street()+" "+cagent.getJr_home()+(!Objects.isNull(cagent.getJr_flat())?(" "+cagent.getJr_flat()):"");
-                break;
-        }
-        return result;
-    }
+        stringQuery =
+                " select " +
+                " coalesce((select SUM(    p4.summ_in-p4.summ_out)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and object_id="+cagentId+" and p4.is_completed=true and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_on_start, " +
+                " coalesce((select SUM(    p4.summ_in)              from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and object_id="+cagentId+" and p4.is_completed=true and p4.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_in, " +
+                " coalesce((select SUM(    p5.summ_out)             from history_cagent_summ p5 where p5.master_id="+myMasterId+" and p5.company_id="+companyId+" and object_id="+cagentId+" and p5.is_completed=true and p5.date_time_created at time zone '"+myTimeZone+"' >= to_timestamp(:dateFrom||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') and p5.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_out, " +
+                " coalesce((select SUM(    p4.summ_in-p4.summ_out)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and object_id="+cagentId+" and p4.is_completed=true and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_on_end";
 
-    // inserting base set of categories of new user
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("dateFrom", dateFrom);
+            query.setParameter("dateTo", dateTo);
+
+            List<Object[]> queryList = query.getResultList();
+            List<BigDecimal> returnList = new ArrayList<>();
+            returnList.add((BigDecimal) queryList.get(0)[0]);//summ_on_start
+            returnList.add((BigDecimal) queryList.get(0)[1]);//summ_in
+            returnList.add((BigDecimal) queryList.get(0)[2]);//summ_out
+            returnList.add((BigDecimal) queryList.get(0)[3]);//summ_on_end
+
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getCagentMutualpaymentIndicators. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+//    @SuppressWarnings("Duplicates")
+//    public String getCagentFullName(CagentsJSON cagent){
+//        String result;
+//        // получим наименование организационно-правовой формы
+//        switch (cagent.getOpf_id()) {
+//            case  (1):// Индивидуальный предприниматель
+//                result = cagent.getOpf() + cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
+//                break;
+//            case (2): // Самозанятый
+//                result = cagent.getJr_fio_family()+" "+cagent.getJr_fio_name()+" "+cagent.getJr_fio_otchestvo();
+//                break;
+//            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+//                result = cagent.getJr_jur_full_name();
+//                break;
+//        }
+//        return result;
+//    }
+//
+//    @SuppressWarnings("Duplicates")
+//    public String getCagentAddress(CagentsJSON cagent){
+//        String result;
+//        // получим адрес контрагента
+//        switch (cagent.getOpf_id()) {
+//            case (1):// Индивидуальный предприниматель
+//                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
+//                break;
+//            case (2): // Самозанятый
+//                result = cagent.getZip_code()+" "+cagent.getRegion()+", "+cagent.getArea()+", "+cagent.getCity()+" "+cagent.getStreet()+" д."+cagent.getHome()+(!Objects.isNull(cagent.getFlat())?(" кв."+cagent.getFlat()):"");
+//                break;
+//            default:  // Все юрлица ( ООО, ЗАО и т.д.)
+//                result = cagent.getZip_code()+" "+cagent.getJr_region()+", "+cagent.getJr_area()+", "+cagent.getJr_city()+" "+cagent.getJr_street()+" "+cagent.getJr_home()+(!Objects.isNull(cagent.getJr_flat())?(" "+cagent.getJr_flat()):"");
+//                break;
+//        }
+//        return result;
+//    }
+
+    // inserting base set of categories of new account or company
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean insertCagentCategoriesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_accounting'","'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'","'cagent_accntnts'","'cagent_director_y'","'cagent_supplier'","'cagent_customer'","'cagent_bank'","'cagent_taxoffce'","'cagent_carrier'","'cagent_landlord'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into cagent_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("catg_customers")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("catg_employees")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'"+map.get("catg_banks")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_transport")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_rent")+"'),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_tax_srvcs")+"');";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+ // cagent_supplier
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,2,'"+map.get("catg_customers")+"'),"+ // cagent_customer
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("catg_employees")+"'),"+ // cagent_director_y
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,4,'"+map.get("catg_banks")+"'),"+     // cagent_bank
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_accounting")+"'),"+// cagent_accntnts
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_transport")+"'),"+ // cagent_carrier
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_rent")+"'),"+      // cagent_landlord
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,8,'"+map.get("catg_tax_srvcs")+"');" +// cagent_taxoffce
+
+                "insert into cagents (master_id, creator_id, company_id, date_time_created, name, jr_jur_full_name, type) values " +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_accntnts")+"'  ,'"+map.get("cagent_accntnts")+"'   ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_director_y")+"','"+map.get("cagent_director_y")+"' ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_supplier")+"'  ,'"+map.get("cagent_supplier")+"'   ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_customer")+"'  ,'"+map.get("cagent_customer")+"'   ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_bank")+"'      ,'"+map.get("cagent_bank")+"'       ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_taxoffce")+"'  ,'"+map.get("cagent_taxoffce")+"'   ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_carrier")+"'   ,'"+map.get("cagent_carrier")+"'    ,'entity')," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_landlord")+"'  ,'"+map.get("cagent_landlord")+"'   ,'entity');" +
+
+                "insert into cagent_cagentcategories (category_id,cagent_id) values " +
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_suppliers")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_supplier")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_customers")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_customer")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_employees")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_director_y")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_banks")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_bank")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_accounting")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_accntnts")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_transport")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_carrier")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_rent")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_landlord")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_tax_srvcs")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_taxoffce")+"'));";
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

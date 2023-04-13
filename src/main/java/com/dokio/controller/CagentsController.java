@@ -320,8 +320,7 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
     int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
     int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
     int offsetreal = offset * result;//создана переменная с номером страницы
-    List<HistoryCagentBalanceJSON> returnList = cagentsRepositoryJPA.getMutualpaymentTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo());//запрос списка: взять кол-во rezult, начиная с offsetreal
-    return new ResponseEntity<List>(returnList, HttpStatus.OK);
+    return new ResponseEntity<List>(cagentsRepositoryJPA.getMutualpaymentTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);
 }
     @PostMapping("/api/auth/getMutualpaymentPagesList")
     @SuppressWarnings("Duplicates")
@@ -349,8 +348,7 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int offsetreal = offset * result;//создана переменная с номером страницы
-        List<HistoryCagentBalanceJSON> returnList = cagentsRepositoryJPA.getMutualpaymentDetailedTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getCagentId(),searchRequest.getDateFrom(), searchRequest.getDateTo());//запрос списка: взять кол-во rezult, начиная с offsetreal
-        return new ResponseEntity<List>(returnList, HttpStatus.OK);
+        return new ResponseEntity(cagentsRepositoryJPA.getMutualpaymentDetailedTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(),searchRequest.getCagentId(),searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);
     }
     @PostMapping("/api/auth/getMutualpaymentDetailedPagesList")
     @SuppressWarnings("Duplicates")

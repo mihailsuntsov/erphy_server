@@ -663,7 +663,76 @@ public class ProductsForm {
 
     @Override
     public String toString() {
-        return "ProductsForm: id=" + this.id + ", name=" + this.name + ", article=" + this.article +
-                ", company_id=" + this.company_id + ", productgroup_id=" + this.productgroup_id;
+        return "ProductsForm{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", article='" + article + '\'' +
+                ", company_id=" + company_id +
+                ", productgroup_id=" + productgroup_id +
+                ", selectedProductCategories=" + selectedProductCategories +
+                ", imagesIdsInOrderOfList=" + imagesIdsInOrderOfList +
+                ", cagentsIdsInOrderOfList=" + cagentsIdsInOrderOfList +
+                ", productPricesTable=" + productPricesTable +
+                ", product_code=" + product_code +
+                ", ppr_id=" + ppr_id +
+                ", by_weight=" + by_weight +
+                ", edizm_id=" + edizm_id +
+                ", nds_id=" + nds_id +
+                ", weight='" + weight + '\'' +
+                ", volume='" + volume + '\'' +
+                ", weight_edizm_id=" + weight_edizm_id +
+                ", volume_edizm_id=" + volume_edizm_id +
+                ", markable=" + markable +
+                ", markable_group_id=" + markable_group_id +
+                ", excizable=" + excizable +
+                ", product_code_free=" + product_code_free +
+                ", not_buy=" + not_buy +
+                ", not_sell=" + not_sell +
+                ", indivisible=" + indivisible +
+                ", uid='" + uid + '\'' +
+                ", linked_doc_id=" + linked_doc_id +
+                ", linked_doc_name='" + linked_doc_name + '\'' +
+                ", parent_uid='" + parent_uid + '\'' +
+                ", child_uid='" + child_uid + '\'' +
+                ", type='" + type + '\'' +
+                ", slug='" + slug + '\'' +
+                ", featured=" + featured +
+                ", short_description='" + short_description + '\'' +
+                ", virtual=" + virtual +
+                ", downloadable=" + downloadable +
+                ", download_limit=" + download_limit +
+                ", download_expiry=" + download_expiry +
+                ", external_url='" + external_url + '\'' +
+                ", button_text='" + button_text + '\'' +
+                ", tax_status='" + tax_status + '\'' +
+                ", manage_stock=" + manage_stock +
+                ", stock_status='" + stock_status + '\'' +
+                ", backorders='" + backorders + '\'' +
+                ", sold_individually=" + sold_individually +
+                ", height='" + height + '\'' +
+                ", width='" + width + '\'' +
+                ", length='" + length + '\'' +
+                ", shipping_class='" + shipping_class + '\'' +
+                ", reviews_allowed=" + reviews_allowed +
+                ", parent_id=" + parent_id +
+                ", purchase_note='" + purchase_note + '\'' +
+                ", menu_order=" + menu_order +
+                ", date_on_sale_to_gmt='" + date_on_sale_to_gmt + '\'' +
+                ", date_on_sale_from_gmt='" + date_on_sale_from_gmt + '\'' +
+                ", upsell_ids=" + upsell_ids +
+                ", crosssell_ids=" + crosssell_ids +
+                ", grouped_ids=" + grouped_ids +
+                ", low_stock_threshold='" + low_stock_threshold + '\'' +
+                ", dfilesIdsInOrderOfList=" + dfilesIdsInOrderOfList +
+                ", productAttributes=" + productAttributes +
+                ", outofstock_aftersale=" + outofstock_aftersale +
+                ", label_description='" + label_description + '\'' +
+                ", description_html='" + description_html + '\'' +
+                ", short_description_html='" + short_description_html + '\'' +
+                ", description_type='" + description_type + '\'' +
+                ", short_description_type='" + short_description_type + '\'' +
+                ", storeProductTranslations=" + storeProductTranslations +
+                '}';
     }
 }
