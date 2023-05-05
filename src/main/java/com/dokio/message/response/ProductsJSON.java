@@ -19,14 +19,12 @@
 package com.dokio.message.response;
 
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.additional.DefaultAttributesJSON;
 import com.dokio.message.response.additional.StoreTranslationProductJSON;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 //@Entity
 public class ProductsJSON {
@@ -105,23 +103,24 @@ public class ProductsJSON {
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
     private List<StoreTranslationProductJSON> storeProductTranslations;
-//    private List<Long>      storesIds;
 
     public List<StoreTranslationProductJSON> getStoreProductTranslations() {
         return storeProductTranslations;
     }
 
+    private Set<DefaultAttributesJSON> defaultAttributes;
+
+    public Set<DefaultAttributesJSON> getDefaultAttributes() {
+        return defaultAttributes;
+    }
+
+    public void setDefaultAttributes(Set<DefaultAttributesJSON> defaultAttributes) {
+        this.defaultAttributes = defaultAttributes;
+    }
+
     public void setStoreProductTranslations(List<StoreTranslationProductJSON> storeProductTranslations) {
         this.storeProductTranslations = storeProductTranslations;
     }
-
-//    public List<Long> getStoresIds() {
-//        return storesIds;
-//    }
-//
-//    public void setStoresIds(List<Long> storesIds) {
-//        this.storesIds = storesIds;
-//    }
 
     public String getDescription_html() {
         return description_html;
@@ -162,7 +161,6 @@ public class ProductsJSON {
     public void setLabel_description(String label_description) {
         this.label_description = label_description;
     }
-
 
     public Boolean getOutofstock_aftersale() {
         return outofstock_aftersale;

@@ -607,18 +607,21 @@ public class VatinvoiceinRepositoryJPA {
                     " insert into settings_vatinvoicein (" +
                             "master_id, " +
                             "company_id, " +
+                            "date_time_update, " +
                             "user_id, " +
                             "status_id_on_complete"+// статус документа при проведении
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
+                            "now(), " +
                             myId + "," +
                             row.getStatusIdOnComplete()+
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_vatinvoicein_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_vatinvoicein_user_uq " +// "upsert"
                             " DO update set " +
                             "company_id = "+row.getCompanyId()+"," +
-                            "status_id_on_complete = "+row.getStatusIdOnComplete();
+                            "status_id_on_complete = "+row.getStatusIdOnComplete()+
+                            ", date_time_update = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -642,7 +645,7 @@ public class VatinvoiceinRepositoryJPA {
                 "           p.company_id as company_id, " +                                 // предприятие
                 "           p.status_id_on_complete as status_id_on_complete " +           // статус по проведении
                 "           from settings_vatinvoicein p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

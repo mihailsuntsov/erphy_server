@@ -1354,6 +1354,7 @@ public class AcceptanceRepository {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "department_id, " +         // отделение по умолчанию
                             "status_on_finish_id, "+    // статус документа при завершении инвентаризации
                             "auto_add,"+                // автодобавление товара из формы поиска в таблицу
@@ -1362,6 +1363,7 @@ public class AcceptanceRepository {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             row.getDepartmentId() + "," +
                             row.getStatusOnFinishId() + "," +
                             row.getAutoAdd() + "," +
@@ -1373,6 +1375,7 @@ public class AcceptanceRepository {
                             ", company_id = "+row.getCompanyId()+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", auto_add = "+row.getAutoAdd()+
+                            ", date_time_update = now()" +
                             ", auto_price = "+row.getAutoPrice();
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1399,7 +1402,7 @@ public class AcceptanceRepository {
                 "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
                 "           coalesce(p.auto_price,false) as auto_price " +              // автодоматическое подставление последней закупочной цены
                 "           from settings_acceptance p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

@@ -578,7 +578,7 @@ public class SpravStatusDocRepository {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
                 "'st_new'","'st_cancel'","'st_send'","'st_ret_compl'","'st_assembly'","'st_wait_pay'","'st_wait_receive'","'st_paym_made'","'st_new_order'",
                 "'st_assembl_ord'","'st_await_iss'","'st_issd_buyer'","'st_wait_prices'","'st_wait_invoice'","'st_ord_delvrd'","'st_in_process'","'st_completed'",
-                "'st_payment_send'","'st_money_accptd'","'st_money_issued'","'st_invc_issued'","'st_invc_paid'","'st_printed'"});
+                "'st_payment_send'","'st_money_accptd'","'st_money_issued'","'st_invc_issued'","'st_invc_paid'","'st_printed'","'st_cg_new'","'st_cg_lead_new'","'st_cg_lead_prop'","'st_cg_lead_negot'","'st_cg_lead_out'","'st_cg_customer'"});
         stringQuery = "insert into sprav_status_dock ( master_id,creator_id,company_id,date_time_created,name,dock_id,status_type,color,output_order,is_deleted,is_default) values "+
                 // Возврат покупателя
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',28,1,'#cccccc',1,false,true),"+            //Новый документ
@@ -681,7 +681,16 @@ public class SpravStatusDocRepository {
                 // Счёт-фактура полученный
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',38,1,'#cccccc',1,false,true),"+            //Новый документ
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_printed")+"',38,2,'#0cb149',2,false,false),"+       //Напечатан
-                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',38,3,'#000000',3,false,false); " +      //Отмена
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',38,3,'#000000',3,false,false), " +      //Отмена
+                // Контрагент
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_new")+"',12,1,'#cccccc',1,false,true),"+         //New counterparty
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_new")+"',12,1,'#eeff00',2,false,false),"+   //Lead - New added
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_prop")+"',12,1,'#8979fb',3,false,false),"+  //Lead - Sent proposal
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_negot")+"',12,1,'#33f1ff',4,false,false),"+ //Lead - Negotiations
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_customer")+"',12,2,'#009e03',5,false,false),"+   //Lead - Out of funnel
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false);"+   //Customer
+
+
 
                 // Set the Status of Completed document into settings of each type of documents
                 "insert into settings_acceptance        ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=15 and status_type=2));" +

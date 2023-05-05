@@ -888,6 +888,7 @@ public class OrdersupRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "department_id, " +     //отделение по умолчанию
                             "cagent_id, "+          //поставщик по умолчанию
                             "autocreate, "+         //автосоздание нового документа
@@ -899,6 +900,7 @@ public class OrdersupRepositoryJPA {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             row.getDepartmentId() + "," +
                             row.getCagentId() + ","+
                             row.getAutocreate() +"," +
@@ -907,7 +909,7 @@ public class OrdersupRepositoryJPA {
                             row.getAutoPrice()+"," +
                             row.getAutoAdd() +
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_ordersup_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_ordersup_user_uq " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
                             " name=:name"+
@@ -915,6 +917,7 @@ public class OrdersupRepositoryJPA {
                             ", company_id = "+row.getCompanyId()+
                             ", status_id_on_complete = "+row.getStatusIdOnComplete()+
                             ", autocreate = "+row.getAutocreate()+
+                            ", date_time_update = now()" +
                             ", auto_price = "+row.getAutoPrice()+
                             ", auto_add = "+row.getAutoAdd();
 
@@ -949,7 +952,7 @@ public class OrdersupRepositoryJPA {
                 "           coalesce(p.name,'') as name " +                                 // наименование заказа по умолчанию
                 "           from settings_ordersup p " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

@@ -38,11 +38,11 @@ public class _Info {
     private EntityManager entityManager; // do NOT touch, even if it seems like not active!
 
     public String getBackendVersion() {
-        return "1.2.1";
+        return "1.2.2";
     }
 
     public String getBackendVersionDate() {
-        return "05-04-2023";
+        return "16-04-2023";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",
@@ -53,5 +53,15 @@ public class _Info {
         catch (Exception e){e.printStackTrace();logger.error("Controller getSettingsGeneral error", e);
             return new ResponseEntity<>("Error query of general settings", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(value = "/api/public/is_saas",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> isSaas() {
+        logger.info("Processing get request for path /api/auth/is_saas with no params");
+        try {return new ResponseEntity<>(cu.isSaas(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller is_saas error", e);
+            return new ResponseEntity<>("Error query of isSaas", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }
 

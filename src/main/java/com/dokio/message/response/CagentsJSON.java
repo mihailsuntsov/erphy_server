@@ -70,6 +70,7 @@ public class CagentsJSON {
     private String jr_additional_address;
 
     private String jr_inn;
+    private String jr_vat;
     private String jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
@@ -129,6 +130,14 @@ public class CagentsJSON {
 //    public void setReg_number(String reg_number) {
 //        this.reg_number = reg_number;
 //    }
+
+    public String getJr_vat() {
+        return jr_vat;
+    }
+
+    public void setJr_vat(String jr_vat) {
+        this.jr_vat = jr_vat;
+    }
 
     public String getLegal_form() {
         return legal_form;

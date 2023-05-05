@@ -778,6 +778,7 @@ public class InventoryRepository {
                             "hide_tenths, " +           //убирать десятые (копейки) - boolean
                             "department_id, " +         //отделение по умолчанию
                             "name, "+                   //наименование заказа
+                            "date_time_update, " +
                             "status_on_finish_id, "+    //статус документа при завершении инвентаризации
                             "default_actual_balance, "+ // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
                             "other_actual_balance,"+    // другой фактический баланс по умолчанию. Например, 1
@@ -794,6 +795,7 @@ public class InventoryRepository {
                             row.getHideTenths() + "," +
                             row.getDepartmentId() + "," +
                             ":name, " +//наименование
+                            "now(), " +
                             row.getStatusOnFinishId() + ",'" +
                             row.getDefaultActualBalance() + "'," +
                             row.getOtherActualBalance() + "," +
@@ -810,6 +812,7 @@ public class InventoryRepository {
                             ", department_id = "+row.getDepartmentId()+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
                             ", company_id = "+row.getCompanyId()+
                             ", name = :name"+
+                            ", date_time_update = now()" +
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", default_actual_balance = '"+row.getDefaultActualBalance()+"'"+
                             ", other_actual_balance = "+row.getOtherActualBalance()+
@@ -851,7 +854,7 @@ public class InventoryRepository {
                 "           p.other_actual_balance as other_actual_balance, " +         // "другой" фактический баланс по умолчанию. Например, 1
                 "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                 "           from settings_inventory p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

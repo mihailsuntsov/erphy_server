@@ -165,6 +165,8 @@ public class AuthRestAPIs {
         user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
 		SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(); // чтобы узнать тарифный план по умолчанию
 		user.setPlanId(settingsGeneral.getPlanDefaultId());
+		user.setPlanPrice(settingsGeneral.getPlanPrice());
+		user.setFreeTrialDays(settingsGeneral.getFreeTrialDays());
 		Long createdUserId=userRepository.save(user).getId();// и сохранили его
 		user.setMaster(userDetailsService.getUserById(createdUserId));// в качестве мастера устанавливаем его же
 		userRepository.save(user);// сохраняем чтобы записался master id
@@ -172,6 +174,8 @@ public class AuthRestAPIs {
 		userRepositoryJPA.setUserSettings(createdUserId,24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru")?10:4, "24");
 		userRepository.save(user);// сохраняем чтобы применился язык
 		Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'","'my_department'","'role_admins'"});
+		// set plan options with current prices to master user
+		userRepositoryJPA.createMasterUserPlanOptions(createdUserId, settingsGeneral.getPlanDefaultId());
 		// создадим пользователю предприятие
 		CompaniesForm company = new CompaniesForm();
 		company.setName(map.get("my_company"));

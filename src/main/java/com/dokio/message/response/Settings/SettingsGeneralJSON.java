@@ -17,6 +17,8 @@
 */
 package com.dokio.message.response.Settings;
 
+import java.math.BigDecimal;
+
 public class SettingsGeneralJSON {
 
     private boolean showRegistrationLink;
@@ -29,6 +31,33 @@ public class SettingsGeneralJSON {
     private String  databaseVersionDate;
     private String  showInSignin;
     private int     planDefaultId;
+    private int     freeTrialDays;
+    private BigDecimal planPrice;
+    private boolean isSaas;
+
+    public boolean isSaas() {
+        return isSaas;
+    }
+
+    public void setSaas(boolean saas) {
+        isSaas = saas;
+    }
+
+    public BigDecimal getPlanPrice() {
+        return planPrice;
+    }
+
+    public void setPlanPrice(BigDecimal planPrice) {
+        this.planPrice = planPrice;
+    }
+
+    public int getFreeTrialDays() {
+        return freeTrialDays;
+    }
+
+    public void setFreeTrialDays(int freeTrialDays) {
+        this.freeTrialDays = freeTrialDays;
+    }
 
     public int getPlanDefaultId() {
         return planDefaultId;

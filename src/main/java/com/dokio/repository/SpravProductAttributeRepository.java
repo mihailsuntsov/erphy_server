@@ -596,10 +596,14 @@ public class SpravProductAttributeRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update product_attributes p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now(), " +//дату и время изменения
-                    " is_deleted=true " +
+//            stringQuery = "Update product_attributes p" +
+//                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+//                    " date_time_changed = now(), " +//дату и время изменения
+//                    " is_deleted=true " +
+//                    " where p.master_id=" + myMasterId +
+//                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
+
+            stringQuery = "delete from product_attributes p" +
                     " where p.master_id=" + myMasterId +
                     " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
             try

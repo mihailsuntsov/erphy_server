@@ -1129,6 +1129,7 @@ public class CustomersOrdersRepositoryJPA {
                     "customer_id, "+        //покупатель по умолчанию
                     "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
                     "name, "+               //наименование заказа
+                    "date_time_update, " +
                     "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
                     "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
                     ") values (" +
@@ -1145,6 +1146,7 @@ public class CustomersOrdersRepositoryJPA {
                     row.getCustomerId() + ","+
                     ":priorityTypePriceSide,"+
                     ":name, " +//наименование
+                    "now(), " +
                     row.getAutocreateOnStart()+ ", " +
                     row.getStatusIdOnAutocreateOnCheque() +
                     ") " +
@@ -1161,6 +1163,7 @@ public class CustomersOrdersRepositoryJPA {
                     ", company_id = "+row.getCompanyId()+
                     ", customer_id = "+row.getCustomerId()+
                     ", name = :name"+
+                    ", date_time_update = now()" +
                     ", priority_type_price_side = :priorityTypePriceSide"+
                     ", autocreate_on_start = "+row.getAutocreateOnStart()+
                     ", status_id_on_autocreate_on_cheque = " + row.getStatusIdOnAutocreateOnCheque() +
@@ -1264,8 +1267,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           p.status_id_on_autocreate_on_cheque as status_id_on_autocreate_on_cheque " +
                     "           from settings_customers_orders p " +
                     "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
-                    "           where p.user_id= " + myId;
-            try{
+                    "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
+        try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 List<Object[]> queryList = query.getResultList();
 

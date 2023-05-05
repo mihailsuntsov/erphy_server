@@ -1191,6 +1191,7 @@ public class ShipmentRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
                             "price_type_id, " +     //тип цены из справочника Типы цен
                             "change_price, " +      //наценка/скидка в цифре (например, 50)
@@ -1210,6 +1211,7 @@ public class ShipmentRepositoryJPA {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             ":pricing_type," +
                             row.getPriceTypeId() + "," +
                             row.getChangePrice() + "," +
@@ -1235,6 +1237,7 @@ public class ShipmentRepositoryJPA {
                             " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
                             " save_settings = " + row.getSaveSettings() +
+                            ", date_time_update = now()" +
                             ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
                             ", customer_id = "+row.getCustomerId()+
@@ -1342,7 +1345,7 @@ public class ShipmentRepositoryJPA {
                 "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                 "           from settings_shipment p " +
                 "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

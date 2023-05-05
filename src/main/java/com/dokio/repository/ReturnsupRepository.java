@@ -972,6 +972,7 @@ public class ReturnsupRepository {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                             "price_type_id, " +         //тип цены из справочника Типы цен
                             "change_price, " +          //наценка/скидка в цифре (например, 50)
@@ -985,6 +986,7 @@ public class ReturnsupRepository {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             ":pricing_type," +
                             row.getPriceTypeId() + "," +
                             row.getChangePrice() + "," +
@@ -1002,6 +1004,7 @@ public class ReturnsupRepository {
                             " change_price = " + row.getChangePrice() + ","+
                             " plus_minus = :plusMinus" +
                             ", change_price_type = :changePriceType" +
+                            ", date_time_update = now()" +
                             ", hide_tenths = " + row.getHideTenths() +
                             ", department_id = "+row.getDepartmentId()+
                             ", company_id = "+row.getCompanyId()+
@@ -1041,7 +1044,7 @@ public class ReturnsupRepository {
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
 
                 "           from settings_returnsup p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

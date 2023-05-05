@@ -56,15 +56,18 @@ public class DashboardRepository {
                     " insert into settings_dashboard (" +
                             "master_id, " +
                             "company_id, " +
-                            "user_id " +
+                            "user_id, " +
+                            "date_time_update" +
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
-                            myId +
+                            myId + "," +
+                            " now()" +
                             ") " +
                             "ON CONFLICT ON CONSTRAINT settings_dashboard_user_uq " +// "upsert"
                             " DO update set " +
-                            " company_id = " +row.getCompanyId();
+                            " company_id = " +row.getCompanyId()+
+                            ", date_time_update = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -88,7 +91,7 @@ public class DashboardRepository {
                 "           p.company_id as company_id ," +
                 "           1 as ballast " + //чтобы получился массив Object, а не BigInteger
                 "           from settings_dashboard p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

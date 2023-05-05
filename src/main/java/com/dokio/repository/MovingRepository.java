@@ -1494,6 +1494,7 @@ public class MovingRepository {
                     " insert into settings_moving (" +
                             "master_id, " +
                             "company_id, " +
+                            "date_time_update, " +
                             "user_id, " +
                             "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                             "price_type_id, " +         //тип цены из справочника Типы цен
@@ -1508,6 +1509,7 @@ public class MovingRepository {
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
+                            "now(), " +
                             myId + "," +
                             ":pricing_type," +
                             row.getPriceTypeId() + "," +
@@ -1531,6 +1533,7 @@ public class MovingRepository {
                             ", department_from_id = "+row.getDepartmentFromId()+
                             ", department_to_id = "+row.getDepartmentToId()+
                             ", company_id = "+row.getCompanyId()+
+                            ", date_time_update = now()" +
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", auto_add = "+row.getAutoAdd();
 
@@ -1567,7 +1570,7 @@ public class MovingRepository {
                 "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +           // убирать десятые (копейки)
                 "           from settings_moving p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

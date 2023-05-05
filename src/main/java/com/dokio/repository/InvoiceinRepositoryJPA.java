@@ -921,6 +921,7 @@ public class InvoiceinRepositoryJPA {
                             "autocreate, "+         //автосоздание нового документа
                             "status_id_on_complete,"+// статус документа при проведении
                             "name," +
+                            "date_time_update, " +
                             "auto_price, "+
                             "auto_add"+             // автодобавление товара из формы поиска в таблицу
                             ") values (" +
@@ -932,10 +933,11 @@ public class InvoiceinRepositoryJPA {
                             row.getAutocreate() +"," +
                             row.getStatusIdOnComplete()+ "," +
                             ":name" +"," +
+                            "now(), " +
                             row.getAutoPrice()+"," +
                             row.getAutoAdd() +
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_invoicein_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_invoicein_user_uq " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
                             " name=:name"+
@@ -943,6 +945,7 @@ public class InvoiceinRepositoryJPA {
                             ", company_id = "+row.getCompanyId()+
                             ", status_id_on_complete = "+row.getStatusIdOnComplete()+
                             ", autocreate = "+row.getAutocreate()+
+                            ", date_time_update = now()" +
                             ", auto_price = "+row.getAutoPrice()+
                             ", auto_add = "+row.getAutoAdd();
 
@@ -977,7 +980,7 @@ public class InvoiceinRepositoryJPA {
                 "           coalesce(p.name,'') as name " +                                 // наименование заказа по умолчанию
                 "           from settings_invoicein p " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

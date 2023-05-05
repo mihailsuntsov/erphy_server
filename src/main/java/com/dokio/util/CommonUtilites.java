@@ -627,7 +627,10 @@ public class CommonUtilites {
                         " (select value from version) as database_version," +
                         " (select date from version) as database_date," +
                         " p.show_in_signin as show_in_signin," +
-                        " p.plan_default_id as plan_default_id" +
+                        " p.plan_default_id as plan_default_id," +
+                        " (select coalesce(daily_price, 0.0) from plans where id=(select plan_default_id from settings_general)) as daily_price," +
+                        " p.free_trial_days as free_trial_days," +
+                        " coalesce(p.is_saas, false) as is_saas" +
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -644,12 +647,27 @@ public class CommonUtilites {
                 doc.setBackendVersion(info.getBackendVersion());
                 doc.setBackendVersionDate(info.getBackendVersionDate());
                 doc.setPlanDefaultId((Integer) queryList.get(0)[7]);
+                doc.setPlanPrice((BigDecimal) queryList.get(0)[8]);
+                doc.setFreeTrialDays((Integer) queryList.get(0)[9]);
+                doc.setSaas((Boolean) queryList.get(0)[10]);
             }
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getSettingsGeneral. SQL query:" + stringQuery, e);
             return null;
+        }
+    }
+    public boolean isSaas() {
+        String stringQuery =
+                "select coalesce(p.is_saas, false) as is_saas from settings_general p;";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean)query.getSingleResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isSaas. SQL query:" + stringQuery, e);
+            return false;
         }
     }
 

@@ -1,7 +1,5 @@
 package com.dokio.message.response.store.woo.v3.products;
 
-import org.apache.xpath.operations.Bool;
-
 import java.util.List;
 import java.util.Set;
 
@@ -28,6 +26,15 @@ public class ProductJSON {
     private Set<Long>           categories;
     private List<ImageJSON>     images;
     private List<AttributeJSON> attributes;
+    private List<DefaultAttributes> defaultAttributes;
+
+    public List<DefaultAttributes> getDefaultAttributes() {
+        return defaultAttributes;
+    }
+
+    public void setDefaultAttributes(List<DefaultAttributes> defaultAttributes) {
+        this.defaultAttributes = defaultAttributes;
+    }
 
     public String getSlug() {
         return slug;

@@ -485,7 +485,8 @@ public class CompanyRepositoryJPA {
 //                    "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
 //                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
 //                    "           coalesce(p.store_ip,'') as store_ip," +
-                    "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code" +
+                    "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code," +
+                    "           p.vat as jr_vat" + // VAT identification number
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -589,6 +590,7 @@ public class CompanyRepositoryJPA {
             doc.setLegal_form((String)                                      queryList.get(0)[73]);
             doc.setNds_included((Boolean)                                   queryList.get(0)[74]);
             doc.setStore_default_lang_code((String)                         queryList.get(0)[75]);
+            doc.setJr_vat((String)                                          queryList.get(0)[76]);
             return doc;
         } else return null;
     }
@@ -671,6 +673,7 @@ public class CompanyRepositoryJPA {
                     " jr_flat = :jr_flat, " +//квартира
                     " jr_additional_address = :jr_additional_address, " +//дополнение к адресу
                     " jr_inn = :jr_inn, " +//ИНН
+                    " vat = :jr_vat, " +//VAT
                     " jr_okpo = :jr_okpo, " +//ОКПО
                     " jr_fio_family = :jr_fio_family, " +//Фамилия (для ИП или физлица)
                     " jr_fio_name = :jr_fio_name, " +//Имя (для ИП или физлица)
@@ -740,6 +743,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
+            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
 
             query.executeUpdate();
         }catch (Exception e) {
@@ -908,6 +912,7 @@ public class CompanyRepositoryJPA {
                 " type, " +
                 " legal_form,"+
                 " nds_included, " +
+                " vat, " +// VAT number
                 " store_default_lang_code" +
                 ") values (" +
                 myMasterId + ", "+
@@ -965,6 +970,7 @@ public class CompanyRepositoryJPA {
                 ":type, " +
                 ":legal_form,"+
                 request.getNds_included() + ", " +
+                ":jr_vat, " +
                 " upper(:store_default_lang_code) " +
                 ")";
         try{
@@ -1006,6 +1012,7 @@ public class CompanyRepositoryJPA {
             query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
             query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
+            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
             query.executeUpdate();
             stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;

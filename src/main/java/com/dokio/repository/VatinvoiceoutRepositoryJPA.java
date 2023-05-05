@@ -624,6 +624,7 @@ public class VatinvoiceoutRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "cagent_id, "+          //контрагент по умолчанию
                             "cagent2_id, "+          //предприятие-грузополучатель по умолчанию
                             "status_id_on_complete"+// статус документа при проведении
@@ -631,16 +632,18 @@ public class VatinvoiceoutRepositoryJPA {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             row.getCagentId() + ","+
                             row.getCagent2Id() + ","+
                             row.getStatusIdOnComplete()+
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_vatinvoiceout_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_vatinvoiceout_user_uq " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
                             " cagent2_id = "+row.getCagent2Id()+"," +
-                            "company_id = "+row.getCompanyId()+"," +
-                            "status_id_on_complete = "+row.getStatusIdOnComplete();
+                            " company_id = "+row.getCompanyId()+"," +
+                            " status_id_on_complete = "+row.getStatusIdOnComplete()+
+                            ", date_time_update = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -670,7 +673,7 @@ public class VatinvoiceoutRepositoryJPA {
                 "           from settings_vatinvoiceout p " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN cagents cg2 ON p.cagent2_id=cg2.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

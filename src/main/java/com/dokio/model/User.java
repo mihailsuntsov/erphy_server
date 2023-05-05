@@ -18,6 +18,7 @@
 
 package com.dokio.model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
@@ -152,8 +153,17 @@ public class User{
     @Column(name = "is_deleted")
     private Boolean is_deleted;
 
-    @Column(name = "plan_id")
+    @Column(name = "plan_id")               // The default plan of master account
     private Integer planId;
+
+    @Column(name = "plan_price")            // The current daily price of default plan
+    private BigDecimal planPrice;
+
+    @Column(name = "free_trial_days")       // Free trial days when money won't write off from master user account
+    private Integer freeTrialDays;
+
+    @Column(name = "is_blocked_master_id")  // Master user and all its child accounts has been blocked (out of money, out of terms etc.)
+    private Integer isBlockedMasterId;
 
     public User() {}
 
@@ -162,6 +172,30 @@ public class User{
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public BigDecimal getPlanPrice() {
+        return planPrice;
+    }
+
+    public void setPlanPrice(BigDecimal planPrice) {
+        this.planPrice = planPrice;
+    }
+
+    public Integer getFreeTrialDays() {
+        return freeTrialDays;
+    }
+
+    public void setFreeTrialDays(Integer freeTrialDays) {
+        this.freeTrialDays = freeTrialDays;
+    }
+
+    public Integer getIsBlockedMasterId() {
+        return isBlockedMasterId;
+    }
+
+    public void setIsBlockedMasterId(Integer isBlockedMasterId) {
+        this.isBlockedMasterId = isBlockedMasterId;
     }
 
     public Integer getPlanId() {

@@ -1244,6 +1244,7 @@ public class WriteoffRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "pricing_type, " +          //тип расценки (выпад. список: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                             "price_type_id, " +         //тип цены из справочника Типы цен
                             "change_price, " +          //наценка/скидка в цифре (например, 50)
@@ -1257,6 +1258,7 @@ public class WriteoffRepositoryJPA {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             ":pricing_type," +
                             row.getPriceTypeId() + "," +
                             row.getChangePrice() + "," +
@@ -1276,6 +1278,7 @@ public class WriteoffRepositoryJPA {
                             " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() +
                             ", department_id = "+row.getDepartmentId()+
+                            ", date_time_update = now()" +
                             ", company_id = "+row.getCompanyId()+
                             ", status_on_finish_id = "+row.getStatusOnFinishId()+
                             ", auto_add = "+row.getAutoAdd();
@@ -1313,7 +1316,7 @@ public class WriteoffRepositoryJPA {
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
 
                 "           from settings_writeoff p " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

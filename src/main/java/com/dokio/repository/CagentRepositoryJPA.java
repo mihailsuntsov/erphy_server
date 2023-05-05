@@ -68,7 +68,7 @@ public class CagentRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("p.name","name","company","creator","date_time_created_sort","description","cagent","summ_on_start","summ_in","summ_out","summ_on_end")
+            .of("p.name","name","company","status_name","creator","contacts","date_time_created_sort","description","cagent","summ_on_start","summ_in","summ_out","summ_on_end")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -144,6 +144,7 @@ public class CagentRepositoryJPA {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
+                    "           CONCAT(p.telephone,' ',p.email,' ',p.site) as contacts, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
 
@@ -168,6 +169,7 @@ public class CagentRepositoryJPA {
                         " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(replace(p.email, ' ', '')) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(stat.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " regexp_replace(coalesce(p.telephone,'0'), '\\D', '', 'g') like upper(CONCAT('%',coalesce(nullif(regexp_replace(:sg, '\\D', '', 'g'),''),'---'),'%'))" +
                         ")";
             }
@@ -261,6 +263,7 @@ public class CagentRepositoryJPA {
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id " +
                     "           from cagents p " +
+                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (categoryId!=0?" and p.id in (select ppg.cagent_id from cagent_cagentcategories ppg where ppg.category_id="+categoryId+") ":"");
@@ -275,6 +278,7 @@ public class CagentRepositoryJPA {
                         " upper(p.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(replace(p.email, ' ', '')) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(stat.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " regexp_replace(coalesce(p.telephone,'0'), '\\D', '', 'g') like upper(CONCAT('%',coalesce(nullif(regexp_replace(:sg, '\\D', '', 'g'),''),'---'),'%'))" +
                         ")";
             }
@@ -487,7 +491,8 @@ public class CagentRepositoryJPA {
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-                    "           p.legal_form as legal_form " +// legal form of individual (ie entrepreneur, ...)
+                    "           p.legal_form as legal_form, " +// legal form of individual (ie entrepreneur, ...)
+                    "           p.vat as jr_vat" + // VAT identification number
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -576,6 +581,7 @@ public class CagentRepositoryJPA {
             doc.setJr_area((String)                                         queryList.get(0)[59]);
             doc.setType(queryList.get(0)[60]!=null?                 (String)queryList.get(0)[60]:"");
             doc.setLegal_form((String)                                      queryList.get(0)[61]);
+            doc.setJr_vat((String)                                          queryList.get(0)[62]);
 //            doc.setReg_country_id((Integer)                                 queryList.get(0)[61]);
 //            doc.setTax_number(queryList.get(0)[62]!=null?           (String)queryList.get(0)[62]:"");
 //            doc.setReg_number(queryList.get(0)[63]!=null?           (String)queryList.get(0)[63]:"");
@@ -925,6 +931,7 @@ public class CagentRepositoryJPA {
                     " jr_flat = :jr_flat, " +//квартира
                     " jr_additional_address = :jr_additional_address, " +//дополнение к адресу
                     " jr_inn = :jr_inn, " +//ИНН
+                    " vat = :jr_vat, " +//VAT
                     " jr_okpo = :jr_okpo, " +//ОКПО
                     " jr_fio_family = :jr_fio_family, " +//Фамилия (для ИП или физлица)
                     " jr_fio_name = :jr_fio_name, " +//Имя (для ИП или физлица)
@@ -976,7 +983,7 @@ public class CagentRepositoryJPA {
             query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
             query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
-
+            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
             query.executeUpdate();
             return true;
         }catch (Exception e) {
@@ -1105,6 +1112,7 @@ public class CagentRepositoryJPA {
                 " jr_ip_svid_num,"+//номер свидетельства (для ИП)
                 " jr_ip_reg_date," + //дата регистрации (для ИП)
                 " type, " +// entity or individual
+                " vat, "+ // VAT number
                 " legal_form"+
 //                " reg_country_id, " + // country of registration
 //                " tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
@@ -1159,6 +1167,7 @@ public class CagentRepositoryJPA {
                 ":jr_ip_svid_num, " +//номер свидетельства (для ИП)
                 "to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
                 ":type, " +
+                ":jr_vat, " +
                 ":legal_form"+
 //                request.getReg_country_id() + "," +
 //                ":tax_number," +
@@ -1200,6 +1209,7 @@ public class CagentRepositoryJPA {
             query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
             query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
+            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
 
             query.executeUpdate();
             stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
@@ -1581,7 +1591,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean insertCagentCategoriesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_accounting'","'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'","'cagent_accntnts'","'cagent_director_y'","'cagent_supplier'","'cagent_customer'","'cagent_bank'","'cagent_taxoffce'","'cagent_carrier'","'cagent_landlord'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'catg_accounting'","'catg_suppliers'","'catg_customers'","'catg_employees'","'catg_banks'","'catg_transport'","'catg_rent'","'catg_tax_srvcs'","'cagent_accntnts'","'cagent_director_y'","'cagent_supplier'","'cagent_customer'","'cagent_bank'","'cagent_taxoffce'","'cagent_carrier'","'cagent_landlord'","'catg_leads'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into cagent_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("catg_suppliers")+"'),"+ // cagent_supplier
@@ -1591,7 +1601,8 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,5,'"+map.get("catg_accounting")+"'),"+// cagent_accntnts
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,6,'"+map.get("catg_transport")+"'),"+ // cagent_carrier
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,7,'"+map.get("catg_rent")+"'),"+      // cagent_landlord
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,8,'"+map.get("catg_tax_srvcs")+"');" +// cagent_taxoffce
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,8,'"+map.get("catg_tax_srvcs")+"')," +// cagent_taxoffce
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,8,'"+map.get("catg_leads")+"');" +
 
                 "insert into cagents (master_id, creator_id, company_id, date_time_created, name, jr_jur_full_name, type) values " +
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("cagent_accntnts")+"'  ,'"+map.get("cagent_accntnts")+"'   ,'entity')," +

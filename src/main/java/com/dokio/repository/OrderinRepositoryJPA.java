@@ -830,20 +830,23 @@ public class OrderinRepositoryJPA {
                     " insert into settings_orderin (" +
                             "master_id, " +
                             "company_id, " +
+                            "date_time_update, " +
                             "user_id, " +
                             "cagent_id, "+          //поставщик по умолчанию
                             "status_id_on_complete"+// статус документа при проведении
                             ") values (" +
                             myMasterId + "," +
                             row.getCompanyId() + "," +
+                            "now(), " +
                             myId + "," +
                             row.getCagentId() + ","+
                             row.getStatusIdOnComplete()+
                             ") " +
-                            " ON CONFLICT ON CONSTRAINT settings_orderin_user_id_key " +// "upsert"
+                            " ON CONFLICT ON CONSTRAINT settings_orderin_user_uq " +// "upsert"
                             " DO update set " +
                             " cagent_id = "+row.getCagentId()+"," +
-                            " company_id = "+row.getCompanyId()+"," +
+                            " company_id = "+row.getCompanyId()+
+                            ", date_time_update = now(), " +
                             " status_id_on_complete = "+row.getStatusIdOnComplete();
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -871,7 +874,7 @@ public class OrderinRepositoryJPA {
                 "           p.status_id_on_complete as status_id_on_complete " +           // статус по проведении
                 "           from settings_orderin p " +
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

@@ -52,6 +52,7 @@ public class CompaniesForm {
     private String jr_flat;
     private String jr_additional_address;
     private String jr_inn;
+    private String jr_vat;
     private String jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
@@ -105,6 +106,14 @@ public class CompaniesForm {
     private String store_ip;                     // internet-store ip address
     */
     private String store_default_lang_code;      // internet-store basic language, e.g. EN, RU, UA, ...
+
+    public String getJr_vat() {
+        return jr_vat;
+    }
+
+    public void setJr_vat(String jr_vat) {
+        this.jr_vat = jr_vat;
+    }
 
     public String getStore_default_lang_code() {
         return store_default_lang_code;

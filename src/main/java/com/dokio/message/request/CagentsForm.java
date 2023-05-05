@@ -57,6 +57,7 @@ public class CagentsForm {
     private String jr_flat;
     private String jr_additional_address;
     private String jr_inn;
+    private String jr_vat;
     private String jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
@@ -76,6 +77,14 @@ public class CagentsForm {
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+    public String getJr_vat() {
+        return jr_vat;
+    }
+
+    public void setJr_vat(String jr_vat) {
+        this.jr_vat = jr_vat;
+    }
 
     public String getType() {
         return type;

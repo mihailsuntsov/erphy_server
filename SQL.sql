@@ -3545,7 +3545,7 @@ alter table sprav_expenditure_items add column is_default boolean;
 
 
 insert into _dictionary (key, tr_ru, tr_en) values
-('st_new',              'Новый документ',         'New document'),
+  ('st_new',              'Новый документ',         'New document'),
 ('st_cancel',           'Отмена',                 'Cancelled'),
 ('st_send',             'Товары отправлены',      'Shipped'),
 ('st_ret_compl',        'Возврат произведён',     'Refund made'),
@@ -4358,10 +4358,196 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('prod_accounting',              'Бухгалтерские услуги',                      'Accounting service');
 
 
+insert into _dictionary (key, tr_ru, tr_en) values ('catg_leads',              'Лиды',                      'Leads');
 
 
 update version set value = '1.2.1', date = '05-04-2023';
 ------------------------------------------------  end of 1.2.1  ------------------------------------------------------
+-----------------------------------------------  start of 1.2.2  -----------------------------------------------------
+insert into _dictionary (key, tr_ru, tr_en) values
+('st_cg_new',               'Новый контрагент',                 'New counterparty'),
+('st_cg_lead_new',          'Лид - Новый',                      'Lead - New added'),
+('st_cg_lead_prop',         'Лид - Отправлено предложение',     'Lead - Sent proposal'),
+('st_cg_lead_negot',        'Лид - Переговоры',                 'Lead - Negotiations'),
+('st_cg_lead_out',          'Лид - Вышел из воронки',           'Lead - Out of funnel'),
+('st_cg_customer',          'Клиент',                           'Customer');
+
+update version set value = '1.2.2', date = '16-04-2023';
+------------------------------------------------  end of 1.2.2  ------------------------------------------------------
+-----------------------------------------------  start of 1.2.3  -----------------------------------------------------
+
+alter table users add column  plan_price           numeric (20,10);
+alter table users add column  free_trial_days      int;
+alter table users add column  is_blocked_master_id boolean; -- blocked the master user and all its child users
+alter table plans add column  n_stores_woo         int;
+alter table plans_add_options add column n_stores_woo   int;
+alter table plans_add_options add column stores_woo_ppu numeric (10,3); -- price per unit
+alter table settings_general  add column free_trial_days int;
+update settings_general set free_trial_days=14;
+alter table users add column plan_version int;
+alter table stores add column rent_store_requested boolean;
+alter table stores add column rent_store_exists boolean;
+alter table stores add column rent_store_ip varchar(15);
+alter table stores add column rent_store_third_lvl_domain_name varchar(30);
+alter table settings_general  add column is_saas boolean;
+update settings_general set is_saas = false;
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (55,'Подписка','subscription',1,'','Подписка', 'Subscription');
+insert into permissions (id,name_ru,name_en,document_id,output_order) values
+(680,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',55,10),
+(681,'Просмотр','View',55,50),
+(682,'Редактирование','Editing',55,90);
+update plans set n_stores_woo=0;
+insert into plans_add_options (user_id,n_companies,n_departments,n_users,n_products,n_counterparties,n_megabytes,n_stores,n_stores_woo,companies_ppu,departments_ppu,users_ppu,products_ppu,counterparties_ppu,megabytes_ppu,stores_ppu,stores_woo_ppu)
+select u.id,0,0,0,0,0,0,0,0,0.166,0.166,0.166,0.166,0.166,0.166,0.166,0.233 from users u where id=master_id;
+create table plans_add_options_prices (
+                                        name            varchar(100) not null,
+                                        ppu             numeric (10,3) not null,
+                                        step            int not null,
+                                        quantity_limit  int not null,
+                                        is_active       boolean not null
+                                      );
+insert into plans_add_options_prices  (name, ppu, step, quantity_limit, is_active) values
+                                      ('companies',      0.166, 1,    1000,   true),
+                                      ('departments',    0.166, 1,    1000,   true),
+                                      ('users',          0.166, 1,    100,    true),
+                                      ('products',       0.166, 1000, 100000, true),
+                                      ('counterparties', 0.166, 1000, 100000, true),
+                                      ('megabytes',      0.166, 500,  5000,   true),
+                                      ('stores',         0.166, 1,    10,     true),
+                                      ('stores_woo',     0.233, 1,    10,     true);
+
+alter table companies add column vat varchar(100);
+alter table cagents add column vat varchar(100);
+alter table settings_acceptance drop constraint settings_acceptance_user_uq;
+alter table settings_acceptance add constraint settings_acceptance_user_uq UNIQUE (company_id, user_id);
+alter table settings_correction drop constraint if exists settings_correction_user_uq;
+alter table settings_correction add constraint settings_correction_user_uq UNIQUE (company_id, user_id);
+alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_uq;
+alter table settings_customers_orders add constraint settings_customers_orders_user_uq UNIQUE (company_id, user_id);
+alter table settings_inventory drop constraint if exists settings_inventory_user_uq;
+alter table settings_inventory add constraint settings_inventory_user_uq UNIQUE (company_id, user_id);
+alter table settings_invoicein drop constraint if exists settings_invoicein_user_uq;
+alter table settings_invoicein add constraint settings_invoicein_user_uq UNIQUE (company_id, user_id);
+alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_uq;
+alter table settings_invoiceout add constraint settings_invoiceout_user_uq UNIQUE (company_id, user_id);
+alter table settings_moving drop constraint if exists settings_moving_user_uq;
+alter table settings_moving add constraint settings_moving_user_uq UNIQUE (company_id, user_id);
+alter table settings_orderin drop constraint if exists settings_orderin_user_uq;
+alter table settings_orderin add constraint settings_orderin_user_uq UNIQUE (company_id, user_id);
+alter table settings_orderout drop constraint if exists settings_orderout_user_uq;
+alter table settings_orderout add constraint settings_orderout_user_uq UNIQUE (company_id, user_id);
+alter table settings_ordersup drop constraint if exists settings_ordersup_user_uq;
+alter table settings_ordersup add constraint settings_ordersup_user_uq UNIQUE (company_id, user_id);
+alter table settings_paymentin drop constraint if exists settings_paymentin_user_uq;
+alter table settings_paymentin add constraint settings_paymentin_user_uq UNIQUE (company_id, user_id);
+alter table settings_paymentout drop constraint if exists settings_paymentout_user_uq;
+alter table settings_paymentout add constraint settings_paymentout_user_uq UNIQUE (company_id, user_id);
+alter table settings_posting drop constraint if exists settings_posting_user_uq;
+alter table settings_posting add constraint settings_posting_user_uq UNIQUE (company_id, user_id);
+alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_uq;
+alter table settings_retail_sales add constraint settings_retail_sales_user_uq UNIQUE (company_id, user_id);
+alter table settings_return drop constraint if exists settings_return_user_uq;
+alter table settings_return add constraint settings_return_user_uq UNIQUE (company_id, user_id);
+alter table settings_returnsup drop constraint if exists settings_returnsup_user_uq;
+alter table settings_returnsup add constraint settings_returnsup_user_uq UNIQUE (company_id, user_id);
+alter table settings_shipment drop constraint if exists settings_shipment_user_uq;
+alter table settings_shipment add constraint settings_shipment_user_uq UNIQUE (company_id, user_id);
+alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_uq;
+alter table settings_vatinvoicein add constraint settings_vatinvoicein_user_uq UNIQUE (company_id, user_id);
+alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_uq;
+alter table settings_vatinvoiceout add constraint settings_vatinvoiceout_user_uq UNIQUE (company_id, user_id);
+alter table settings_writeoff drop constraint if exists settings_writeoff_user_uq;
+alter table settings_writeoff add constraint settings_writeoff_user_uq UNIQUE (company_id, user_id);
+alter table settings_dashboard drop constraint if exists settings_dashboard_user_uq;
+alter table settings_dashboard add constraint settings_dashboard_user_uq UNIQUE (company_id, user_id);
+alter table settings_correction drop constraint if exists settings_correction_user_id_key;
+alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_id_key;
+alter table settings_inventory drop constraint if exists settings_inventory_user_id_key;
+alter table settings_invoicein drop constraint if exists settings_invoicein_user_id_key;
+alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_id_key;
+alter table settings_moving drop constraint if exists settings_moving_user_id_key;
+alter table settings_orderin drop constraint if exists settings_orderin_user_id_key;
+alter table settings_orderout drop constraint if exists settings_orderout_user_id_key;
+alter table settings_ordersup drop constraint if exists settings_ordersup_user_id_key;
+alter table settings_paymentin drop constraint if exists settings_paymentin_user_id_key;
+alter table settings_paymentout drop constraint if exists settings_paymentout_user_id_key;
+alter table settings_posting drop constraint if exists settings_posting_user_id_key;
+alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_id_key;
+alter table settings_return drop constraint if exists settings_return_user_id_key;
+alter table settings_returnsup drop constraint if exists settings_returnsup_user_id_key;
+alter table settings_shipment drop constraint if exists settings_shipment_user_id_key;
+alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_id_key;
+alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_id_key;
+alter table settings_writeoff drop constraint if exists settings_writeoff_user_id_key;
+alter table settings_dashboard drop constraint if exists settings_dashboard_user_id_key;
+
+alter table settings_acceptance add column date_time_update timestamp with time zone;
+alter table settings_correction add column date_time_update timestamp with time zone;
+alter table settings_customers_orders add column date_time_update timestamp with time zone;
+alter table settings_inventory add column date_time_update timestamp with time zone;
+alter table settings_invoicein add column date_time_update timestamp with time zone;
+alter table settings_invoiceout add column date_time_update timestamp with time zone;
+alter table settings_moving add column date_time_update timestamp with time zone;
+alter table settings_orderin add column date_time_update timestamp with time zone;
+alter table settings_orderout add column date_time_update timestamp with time zone;
+alter table settings_ordersup add column date_time_update timestamp with time zone;
+alter table settings_paymentin add column date_time_update timestamp with time zone;
+alter table settings_paymentout add column date_time_update timestamp with time zone;
+alter table settings_posting add column date_time_update timestamp with time zone;
+alter table settings_retail_sales add column date_time_update timestamp with time zone;
+alter table settings_return add column date_time_update timestamp with time zone;
+alter table settings_returnsup add column date_time_update timestamp with time zone;
+alter table settings_shipment add column date_time_update timestamp with time zone;
+alter table settings_vatinvoicein add column date_time_update timestamp with time zone;
+alter table settings_vatinvoiceout add column date_time_update timestamp with time zone;
+alter table settings_writeoff add column date_time_update timestamp with time zone;
+alter table settings_dashboard add column date_time_update timestamp with time zone;
+
+alter table stores add column is_rent_store_exists boolean;
+-- this table describes the field "Default Form Values" in WooCommerce
+create table default_attributes(
+                                 master_id     bigint not null,
+                                 product_id    bigint not null, -- variable (parent) product.
+                                 attribute_id  bigint not null,
+                                 term_id       bigint not null,
+                                 foreign key (master_id) references users(id) on delete cascade,
+                                 foreign key (product_id) references products(id) on delete cascade,
+                                 foreign key (attribute_id) references product_attributes(id) on delete cascade,
+                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade
+);
+
+alter table product_productattributes drop constraint product_productattributes_attribute_id_fkey, add constraint product_productattributes_attribute_id_fkey foreign key (attribute_id) references product_attributes(id) on delete cascade;
+alter table product_terms drop constraint attribute_id_fkey, add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes(id) on delete cascade;
+
+create table product_variations
+(
+                                 id         bigserial primary key not null,
+                                 master_id  bigint not null,
+                                 product_id bigint not null, -- variable (parent) product.
+                                 variation_product_id bigint not null,  -- variation of variable (parent) product.
+                                 menu_order int,
+                                 foreign key (master_id) references users (id) on delete cascade,
+                                 foreign key (variation_product_id) references products(id),
+                                 foreign key (product_id) references products (id) on delete cascade
+);
+
+create table product_variations_row_items(
+  -- each row of this table describes a part of one variation
+  -- for example:
+  -- variation with id=1 contains [Color(id=50) = Red(id=5)] and [Size(id=51) = Large(id=10)]
+  -- then it will be described in this table by two rows as
+  -- variation_id=1, attribute_id=50, term_id=5;
+  -- variation_id=1, attribute_id=51, term_id=10;
+
+                                 variation_id         bigint not null,
+                                 master_id            bigint not null,
+                                 attribute_id         bigint not null,
+                                 term_id              bigint,
+                                 foreign key (master_id) references users(id),
+                                 foreign key (variation_id) references product_variations(id) on delete cascade,
+                                 foreign key (attribute_id) references product_attributes(id) on delete cascade,
+                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade
+);
 
 
 
@@ -4394,38 +4580,7 @@ update version set value = '1.2.1', date = '05-04-2023';
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-WITH
+  WITH
   credit as (
     selectgetProductHistoryTableReport
         (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in

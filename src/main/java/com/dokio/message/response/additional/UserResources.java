@@ -26,8 +26,17 @@ public class UserResources {
     private Long users;
     private Long products;
     private Long counterparties;
-    private Long  stores;
+    private Long stores;    // store connections
+    private Long stores_woo;// server hosted sites
     private int  megabytes;
+
+    public Long getStores_woo() {
+        return stores_woo;
+    }
+
+    public void setStores_woo(Long stores_woo) {
+        this.stores_woo = stores_woo;
+    }
 
     public Long getStores() {
         return stores;

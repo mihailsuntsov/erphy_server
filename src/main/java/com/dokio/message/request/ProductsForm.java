@@ -18,6 +18,8 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.DefaultAttributesForm;
+import com.dokio.message.response.additional.DefaultAttributesJSON;
 import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.message.response.additional.StoreTranslationProductJSON;
 //import com.dokio.message.response.additional.ProductProductAttributeJSON;
@@ -99,7 +101,16 @@ public class ProductsForm {
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
     private List<StoreTranslationProductJSON> storeProductTranslations;
-//    private List<Long>      storesIds;
+
+    private Set<DefaultAttributesForm> defaultAttributes;
+
+    public Set<DefaultAttributesForm> getDefaultAttributes() {
+        return defaultAttributes;
+    }
+
+    public void setDefaultAttributes(Set<DefaultAttributesForm> defaultAttributes) {
+        this.defaultAttributes = defaultAttributes;
+    }
 
     public List<StoreTranslationProductJSON> getStoreProductTranslations() {
         return storeProductTranslations;

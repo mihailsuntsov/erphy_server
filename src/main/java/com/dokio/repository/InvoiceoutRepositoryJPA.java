@@ -947,6 +947,7 @@ public class InvoiceoutRepositoryJPA {
                             "master_id, " +
                             "company_id, " +
                             "user_id, " +
+                            "date_time_update, " +
                             "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
                             "price_type_id, " +     //тип цены из справочника Типы цен
                             "change_price, " +      //наценка/скидка в цифре (например, 50)
@@ -964,6 +965,7 @@ public class InvoiceoutRepositoryJPA {
                             myMasterId + "," +
                             row.getCompanyId() + "," +
                             myId + "," +
+                            "now(), " +
                             ":pricing_type," +
                             row.getPriceTypeId() + "," +
                             row.getChangePrice() + "," +
@@ -978,7 +980,7 @@ public class InvoiceoutRepositoryJPA {
                             row.getStatusIdOnComplete()+ "," +
                             row.getAutoAdd() +
                             ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_id_key " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_uq " +// "upsert"
                             " DO update set " +
                             " pricing_type = :pricing_type,"+
                             " price_type_id = " + row.getPriceTypeId() + ","+
@@ -986,6 +988,7 @@ public class InvoiceoutRepositoryJPA {
                             " plus_minus = :plusMinus,"+
                             " change_price_type = :changePriceType,"+
                             " hide_tenths = " + row.getHideTenths() + ","+
+                            " date_time_update = now(), " +
                             " save_settings = " + row.getSaveSettings() +
                             (row.getDepartmentId() == null ? "": (", department_id = "+row.getDepartmentId()))+//некоторые строки (как эту) проверяем на null, потому что при сохранении из расценки они не отправляются, и эти настройки сбрасываются изза того, что в них прописываются null
                             (row.getCompanyId() == null ? "": (", company_id = "+row.getCompanyId()))+
@@ -1035,7 +1038,7 @@ public class InvoiceoutRepositoryJPA {
                 "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                 "           from settings_invoiceout p " +
                 "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
-                "           where p.user_id= " + myId;
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

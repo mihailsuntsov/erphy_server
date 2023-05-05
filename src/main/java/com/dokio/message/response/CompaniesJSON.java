@@ -64,6 +64,7 @@ public class CompaniesJSON {
     private String  jr_flat;
     private String  jr_additional_address;
     private String   jr_inn;
+    private String   jr_vat;
     private String   jr_okpo;
     private String jr_fio_family;
     private String jr_fio_name;
@@ -118,6 +119,13 @@ public class CompaniesJSON {
         this.store_default_lang_code = store_default_lang_code;
     }
 
+    public String getJr_vat() {
+        return jr_vat;
+    }
+
+    public void setJr_vat(String jr_vat) {
+        this.jr_vat = jr_vat;
+    }
 
     public Boolean getNds_included() {
         return nds_included;

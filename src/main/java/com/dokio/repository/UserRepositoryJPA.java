@@ -25,6 +25,7 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.additional.MasterAccountInfoJSON;
 import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Departments;
@@ -41,6 +42,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.persistence.*;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -931,12 +933,13 @@ public class UserRepositoryJPA {
                 size = storageService.getDirectorySize(folder);
             String stringQuery =
                 "   select" +
-                "   (select count(*) from companies     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as companies," +
-                "   (select count(*) from departments   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as departments," +
-                "   (select count(*) from users         where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as users," +
-                "   (select count(*) from products      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as products," +
-                "   (select count(*) from cagents       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties," +
-                "   (select count(*) from stores        where master_id="+myMasterId+" and coalesce(is_deleted,false)=true ) as stores";
+                "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as companies," +
+                "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as departments," +
+                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as users," +
+                "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as products," +
+                "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties," +
+                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as stores," +
+                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_rent_store_exists,false)=true) as stores_woo";
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserResources doc = new UserResources();
@@ -947,6 +950,7 @@ public class UserRepositoryJPA {
             doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
             doc.setMegabytes(Math.round(size/1024/1024));
             doc.setStores(Long.parseLong(                   queryList.get(0)[5].toString()));
+            doc.setStores_woo(Long.parseLong(               queryList.get(0)[6].toString()));
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
@@ -968,7 +972,8 @@ public class UserRepositoryJPA {
                             " sum(products) as products, " +
                             " sum(counterparties) as counterparties, " +
                             " sum(megabytes) as megabytes, " +
-                            " sum(stores) as stores " +
+                            " sum(stores) as stores, " +
+                            " sum(n_stores_woo) as n_stores_woo " +
                             " from (" +
                             "(select n_companies as companies, " +
                             " n_departments as departments, " +
@@ -976,7 +981,8 @@ public class UserRepositoryJPA {
                             " n_products as products, " +
                             " n_counterparties as counterparties, " +
                             " n_megabytes as megabytes, " +
-                            " n_stores as stores " +
+                            " n_stores as stores, " +
+                            " n_stores_woo as n_stores_woo " +
                             " from plans " +
                             " where id = "+plan_id+")" +
                             " UNION " +
@@ -986,7 +992,8 @@ public class UserRepositoryJPA {
                             " n_products as products, " +
                             " n_counterparties as counterparties, " +
                             " n_megabytes as megabytes, " +
-                            " n_stores as stores " +
+                            " n_stores as stores, " +
+                            " n_stores_woo as n_stores_woo " +
                             " from plans_add_options " +
                             " where user_id="+myMasterId+")" +
                             ") AS result ";
@@ -1000,6 +1007,7 @@ public class UserRepositoryJPA {
             doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
             doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString()));
             doc.setStores(        Long.parseLong(           queryList.get(0)[6].toString()));
+            doc.setStores_woo(    Long.parseLong(           queryList.get(0)[7].toString()));
             return doc;
         } catch (Exception e) {
             e.printStackTrace();
@@ -1018,6 +1026,141 @@ public class UserRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
+    public void createMasterUserPlanOptions(Long userId, int planId){
+        String stringQuery= "insert into plans_add_options set " +
+                "user_id="+userId + ", " +
+                "n_companies = 0," +
+                "n_departments=0," +
+                "n_users=0," +
+                "n_products=0," +
+                "n_counterparties=0," +
+                "n_megabytes=0," +
+                "n_stores=0," +
+                "n_stores_woo=0," +
+                "companies_ppu = (select companies_ppu from plans where id="+planId+")," +
+                "departments_ppu = (select departments_ppu from plans where id="+planId+")," +
+                "users_ppu = (select users_ppu from plans where id="+planId+")," +
+                "products_ppu = (select products_ppu from plans where id="+planId+")," +
+                "counterparties_ppu = (select counterparties_ppu from plans where id="+planId+")," +
+                "megabytes_ppu = (select megabytes_ppu from plans where id="+planId+")," +
+                "stores_ppu = (select stores_ppu from plans where id="+planId+")," +
+                "stores_woo_ppu = (select stores_woo_ppu from plans where id="+planId+")" +
+                "";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+           query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method createMasterUserPlanOptions. SQL = "+stringQuery, e);
+        }
+    }
 
+    public MasterAccountInfoJSON getMasterAccountInfo(){
+        Long masterId=userRepositoryJPA.getMyMasterId();
+        MasterAccountInfoJSON accInfo = new MasterAccountInfoJSON();
+        String suffix = userRepositoryJPA.getMySuffix();
+        int planId = getMasterUserPlan(masterId);
+        String stringQuery="";
+        try{
+
+            // get the info about tariff plan
+
+            stringQuery = "select coalesce(sum(operation_sum),0) from _saas_billing_history u where master_account_id = "+masterId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            accInfo.setMoney(((BigDecimal) query.getSingleResult()).setScale(2, BigDecimal.ROUND_HALF_UP));
+
+            stringQuery = "select " +
+                    " n_companies as n_companies, " +
+                    " n_departments as n_departments, " +
+                    " n_users as n_users, " +
+                    " n_products as n_products, " +
+                    " n_counterparties as n_counterparties, " +
+                    " n_megabytes as n_megabytes, " +
+                    " n_stores as n_stores, " +
+                    " n_stores_woo as n_stores_woo, " +
+                    " name_"+suffix+" as name, " +
+                    " version as version, " +
+                    " daily_price as daily_price," +
+                    " is_nolimits as is_nolimits "+
+                    " from plans u where id = "+planId;
+
+            query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            accInfo.setN_companies(Long.valueOf(queryList.get(0)[0].toString()));
+            accInfo.setN_departments(Long.valueOf(queryList.get(0)[1].toString()));
+            accInfo.setN_users(Long.valueOf(queryList.get(0)[2].toString()));
+            accInfo.setN_products(Long.valueOf(queryList.get(0)[3].toString()));
+            accInfo.setN_counterparties(Long.valueOf(queryList.get(0)[4].toString()));
+            accInfo.setN_megabytes(Integer.valueOf(queryList.get(0)[5].toString()));
+            accInfo.setN_stores(Long.valueOf(queryList.get(0)[6].toString()));
+            accInfo.setN_stores_woo(Long.valueOf(queryList.get(0)[7].toString()));
+            accInfo.setPlan_name((String) queryList.get(0)[8]);
+            accInfo.setPlan_version((Integer) queryList.get(0)[9]);
+            accInfo.setPlan_price((BigDecimal) queryList.get(0)[10]);
+            accInfo.setPlan_no_limits((Boolean) queryList.get(0)[11]);
+
+            // get the info about an additional options
+
+            stringQuery = "select " +
+                    "n_companies as n_companies, " +
+                    "n_departments as n_departments, " +
+                    "n_users as n_users, " +
+                    "n_products as n_products, " +
+                    "n_counterparties as n_counterparties, " +
+                    "n_megabytes as n_megabytes, " +
+                    "n_stores as n_stores, " +
+                    "n_stores_woo as n_stores_woo, " +
+                    "companies_ppu as companies_ppu, " +
+                    "departments_ppu as departments_ppu, " +
+                    "users_ppu as users_ppu, " +
+                    "products_ppu as products_ppu, " +
+                    "counterparties_ppu as counterparties_ppu, " +
+                    "megabytes_ppu as megabytes_ppu, " +
+                    "stores_ppu as stores_ppu, " +
+                    "stores_woo_ppu as stores_woo_ppu " +
+                    " from plans_add_options u where user_id = "+masterId;
+
+            query = entityManager.createNativeQuery(stringQuery);
+            queryList = query.getResultList();
+
+            accInfo.setN_companies_add(Long.valueOf(queryList.get(0)[0].toString()));
+            accInfo.setN_departments_add(Long.valueOf(queryList.get(0)[1].toString()));
+            accInfo.setN_users_add(Long.valueOf(queryList.get(0)[2].toString()));
+            accInfo.setN_products_add(Long.valueOf(queryList.get(0)[3].toString()));
+            accInfo.setN_counterparties_add(Long.valueOf(queryList.get(0)[4].toString()));
+            accInfo.setN_megabytes_add(Integer.valueOf(queryList.get(0)[5].toString()));
+            accInfo.setN_stores_add(Long.valueOf(queryList.get(0)[6].toString()));
+            accInfo.setN_stores_woo_add(Long.valueOf(queryList.get(0)[7].toString()));
+            accInfo.setCompanies_ppu((BigDecimal)       queryList.get(0)[8]);
+            accInfo.setDepartments_ppu((BigDecimal)     queryList.get(0)[9]);
+            accInfo.setUsers_ppu((BigDecimal)           queryList.get(0)[10]);
+            accInfo.setProducts_ppu((BigDecimal)        queryList.get(0)[11]);
+            accInfo.setCounterparties_ppu((BigDecimal)  queryList.get(0)[12]);
+            accInfo.setMegabytes_ppu((BigDecimal)       queryList.get(0)[13]);
+            accInfo.setStores_ppu((BigDecimal)          queryList.get(0)[14]);
+            accInfo.setStores_woo_ppu((BigDecimal)      queryList.get(0)[15]);
+
+            // get the info about consumed resources
+            UserResources userResources = getMyConsumedResources();
+
+            accInfo.setN_companies_fact(userResources.getCompanies());
+            accInfo.setN_departments_fact(userResources.getDepartments());
+            accInfo.setN_users_fact(userResources.getUsers());
+            accInfo.setN_products_fact(userResources.getProducts());
+            accInfo.setN_counterparties_fact(userResources.getCounterparties());
+            accInfo.setN_megabytes_fact(userResources.getMegabytes());
+            accInfo.setN_stores_fact(userResources.getStores());
+            accInfo.setN_stores_woo_fact(userResources.getStores_woo());
+
+            return accInfo;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMasterAccountInfo. SQL = "+stringQuery, e);
+            return null;
+        }
+
+    }
 
 }

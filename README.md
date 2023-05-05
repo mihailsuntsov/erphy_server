@@ -8,5 +8,5 @@ The example of WooCommerce integration: https://dokio.me/shop/<br>
 The example of WooCommerce multilingual store integration: https://dokio.me/examples/realestate_en/<br>
 <br>
 My Telegram: @eager_beager<br>
-My LinkedIn: Mihail Suntsov<br>
+My LinkedIn: Mikhail Suntsov<br>
 My e-mail: mihail.suntsov@gmail.com<br>

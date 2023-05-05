@@ -232,8 +232,6 @@ public class ProductsRepositoryJPA {
 //****************************************************   C  R  U  D   *********************************************************************************
 //*****************************************************************************************************************************************************
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
     public ProductsJSON getProductValues(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))//Просмотр документов
         {
@@ -402,6 +400,7 @@ public class ProductsRepositoryJPA {
                     doc.setShort_description_html((String)          queryList.get(0)[64]);
                     doc.setDescription_type((String)                queryList.get(0)[65]);
                     doc.setShort_description_type((String)          queryList.get(0)[66]);
+                    doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
                 }
 //                doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
@@ -706,6 +705,34 @@ public class ProductsRepositoryJPA {
             e.printStackTrace();
             logger.error("Exception in method saveCategories.", e);
             throw new Exception(e);
+        }
+    }
+
+    private Set<DefaultAttributesJSON> getDefaultAttributes(Long masterId, Long productId){
+        String stringQuery =
+                " select " +
+                        " da.attribute_id as attribute_id," +
+                        " da.term_id as term_id," +
+                        " pa.name as attribute_name " +
+                        " from  default_attributes da" +
+                        " inner join product_attributes pa on pa.id = da.attribute_id" +
+                        " where da.master_id = " + masterId + " and da.product_id = " + productId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            Set<DefaultAttributesJSON> returnList = new HashSet<>();
+            for(Object[] obj:resultList){
+                DefaultAttributesJSON doc=new DefaultAttributesJSON();
+                doc.setAttribute_id(Long.parseLong(                 obj[0].toString()));
+                doc.setTerm_id(Long.parseLong(                      obj[1].toString()));
+                doc.setName((String)                                obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDefaultAttributes. SQL query:" + stringQuery, e);
+            return null;
         }
     }
 
