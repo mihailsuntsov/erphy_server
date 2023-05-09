@@ -19,6 +19,7 @@
 package com.dokio.message.request;
 
 import com.dokio.message.request.additional.DefaultAttributesForm;
+import com.dokio.message.request.additional.ProductVariationsForm;
 import com.dokio.message.response.additional.DefaultAttributesJSON;
 import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.message.response.additional.StoreTranslationProductJSON;
@@ -101,8 +102,16 @@ public class ProductsForm {
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
     private List<StoreTranslationProductJSON> storeProductTranslations;
-
     private Set<DefaultAttributesForm> defaultAttributes;
+    private List<ProductVariationsForm> productVariations;
+
+    public List<ProductVariationsForm> getProductVariations() {
+        return productVariations;
+    }
+
+    public void setProductVariations(List<ProductVariationsForm> productVariations) {
+        this.productVariations = productVariations;
+    }
 
     public Set<DefaultAttributesForm> getDefaultAttributes() {
         return defaultAttributes;
@@ -119,14 +128,6 @@ public class ProductsForm {
     public void setStoreProductTranslations(List<StoreTranslationProductJSON> storeProductTranslations) {
         this.storeProductTranslations = storeProductTranslations;
     }
-
-//    public List<Long> getStoresIds() {
-//        return storesIds;
-//    }
-//
-//    public void setStoresIds(List<Long> storesIds) {
-//        this.storesIds = storesIds;
-//    }
 
     public String getDescription_html() {
         return description_html;
@@ -744,6 +745,8 @@ public class ProductsForm {
                 ", description_type='" + description_type + '\'' +
                 ", short_description_type='" + short_description_type + '\'' +
                 ", storeProductTranslations=" + storeProductTranslations +
+                ", defaultAttributes=" + defaultAttributes +
+                ", productVariationsForm=" + productVariations +
                 '}';
     }
 }

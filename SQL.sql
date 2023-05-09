@@ -4531,6 +4531,9 @@ create table product_variations
                                  foreign key (product_id) references products (id) on delete cascade
 );
 
+--alter table product_variations add constraint variation_product_id_uq UNIQUE (product_id, variation_product_id);
+alter table product_variations add constraint variation_product_id_uq UNIQUE (variation_product_id);
+
 create table product_variations_row_items(
   -- each row of this table describes a part of one variation
   -- for example:
@@ -4538,7 +4541,7 @@ create table product_variations_row_items(
   -- then it will be described in this table by two rows as
   -- variation_id=1, attribute_id=50, term_id=5;
   -- variation_id=1, attribute_id=51, term_id=10;
-
+                                 id                   bigserial primary key not null,
                                  variation_id         bigint not null,
                                  master_id            bigint not null,
                                  attribute_id         bigint not null,
@@ -4549,7 +4552,9 @@ create table product_variations_row_items(
                                  foreign key (term_id) references product_attribute_terms(id) on delete cascade
 );
 
-
+alter table product_variations_row_items add constraint variation_row_attribute_id_uq UNIQUE (variation_id, attribute_id);
+alter table default_attributes add constraint variation_default_attributes_uq UNIQUE (product_id, attribute_id);
+alter table default_attributes alter column term_id drop not null;
 
 
 

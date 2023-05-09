@@ -19,7 +19,10 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
+import com.dokio.message.request.additional.DefaultAttributesForm;
 import com.dokio.message.request.additional.LabelsPrintProduct;
+import com.dokio.message.request.additional.ProductVariationsForm;
+import com.dokio.message.request.additional.ProductVariationsRowItemsForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -30,10 +33,7 @@ import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.Sprav.SpravSysMarkableGroup;
 import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
-import com.dokio.repository.Exceptions.CalculateNetcostNegativeSumException;
-import com.dokio.repository.Exceptions.CantSaveProductQuantityException;
-import com.dokio.repository.Exceptions.TranslatedCategoryNameIsNotUniqueOnSameLevel;
-import com.dokio.repository.Exceptions.TranslatedCategorySlugIsNotUnique;
+import com.dokio.repository.Exceptions.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -401,6 +401,8 @@ public class ProductsRepositoryJPA {
                     doc.setDescription_type((String)                queryList.get(0)[65]);
                     doc.setShort_description_type((String)          queryList.get(0)[66]);
                     doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
+                    doc.setProductVariations(getProductVariations(myMasterId, id));
+                    doc.setVariation(isProductUsedAsVariation(doc.getId())); // if this product is a variation of another product
                 }
 //                doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
@@ -415,7 +417,7 @@ public class ProductsRepositoryJPA {
         } else return null;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, ProductAlreadyUsedAsVariation.class})
     public Integer updateProducts(ProductsForm request){
         EntityManager emgr = emf.createEntityManager();
         Products document = emgr.find(Products.class, request.getId());//сохраняемый документ
@@ -443,6 +445,11 @@ public class ProductsRepositoryJPA {
                 if(!Objects.isNull(request.getArticle()) && !request.getArticle().equals("") && isThereProductWithSameSku(request.getArticle(),request.getId(), request.getCompany_id()))
                     return -250;
 
+                // Product selected as a variable, but already used as a variation in another variable product
+                // Variation can't be variable product!
+                // Вариация не может быть вариативным товаром!
+                if(request.getType().equals("variable") && isProductUsedAsVariation(request.getId()))
+                    return -280;
 
 
                 // сохранение базовых полей
@@ -500,7 +507,7 @@ public class ProductsRepositoryJPA {
                 if (!request.getGrouped_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
                     saveUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
                 }
-                // сохранение attributes
+                // saving attributes
                 updateProductAttributes(request.getProductAttributes(), myMasterId, request.getId() );
                 //save the list of translations of this product
                 if (!Objects.isNull(request.getStoreProductTranslations()) && request.getStoreProductTranslations().size() > 0) {
@@ -508,22 +515,40 @@ public class ProductsRepositoryJPA {
                         saveStoreProductTranslations(row, myMasterId, request.getCompany_id(), request.getId());
                     }
                 }
+
                 // deleting attributes that was deleted on frontend
                 deleteAttributesFromProduct(request.getProductAttributes(), request.getId(), myMasterId);
+
                 // deleting attribute terms, which attributes was deleted on frontend
                 deleteTermsOfDeletedAttributes(request.getProductAttributes(), request.getId(), myMasterId);
                 deleteUpsellCrosssells(request.getId(), request.getUpsell_ids(), myMasterId, "product_upsell");
                 deleteUpsellCrosssells(request.getId(), request.getCrosssell_ids(), myMasterId, "product_crosssell");
                 deleteUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
+
+                //saving Default Variations
+                updateDefaultAttributes(request.getDefaultAttributes(), request.getId(), myMasterId);
+
+                //saving variations
+                updateProductVariations(request.getProductVariations(), request.getId(), myMasterId);
+
                 return 1;
+
+            } catch (ProductAlreadyUsedAsVariation e) {
+                e.printStackTrace();
+                logger.error("ProductAlreadyUsedAsVariation exception in method updateProducts. ", e);
+                return -260;
+            } catch (VariableProductCantBeUsedAsVariation e) {
+                e.printStackTrace();
+                logger.error("VariableProductCantBeUsedAsVariation exception in method updateProducts. ", e);
+                return -270;
             } catch (Exception e) {
                 logger.error("Exception in method updateProducts.", e);
                 e.printStackTrace();
-
                 return null;
             }
         } else return -1;
     }
+
     public List<StoreTranslationProductJSON> getStoreProductTranslationsList(Long productId, Long masterId){
         String stringQuery = "      select   " +
                 "           p.lang_code as lang_code," +
@@ -708,34 +733,6 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    private Set<DefaultAttributesJSON> getDefaultAttributes(Long masterId, Long productId){
-        String stringQuery =
-                " select " +
-                        " da.attribute_id as attribute_id," +
-                        " da.term_id as term_id," +
-                        " pa.name as attribute_name " +
-                        " from  default_attributes da" +
-                        " inner join product_attributes pa on pa.id = da.attribute_id" +
-                        " where da.master_id = " + masterId + " and da.product_id = " + productId;
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> resultList = query.getResultList();
-            Set<DefaultAttributesJSON> returnList = new HashSet<>();
-            for(Object[] obj:resultList){
-                DefaultAttributesJSON doc=new DefaultAttributesJSON();
-                doc.setAttribute_id(Long.parseLong(                 obj[0].toString()));
-                doc.setTerm_id(Long.parseLong(                      obj[1].toString()));
-                doc.setName((String)                                obj[2]);
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getDefaultAttributes. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
-
     @SuppressWarnings("Duplicates")
     private void deleteCategories(Long masterId, Long productId, Set<Long> goodCategories) throws Exception {
         String stringQuery;
@@ -759,25 +756,7 @@ public class ProductsRepositoryJPA {
             throw new Exception(e);
         }
     }
-//    private List<Long> getProductStoresIds(Long productId, Long masterId){
-//        String stringQuery = "  select   csd.store_id as id" +
-//                "               from     stores_products csd " +
-//                "               where    csd.master_id=" + masterId +
-//                "               and      csd.product_id =" + productId;
-//        try {
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            List<BigInteger> queryList = query.getResultList();
-//            List<Long> returnList = new ArrayList<>();
-//            for (BigInteger obj : queryList) {
-//                returnList.add(obj.longValue());
-//            }
-//            return returnList;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.error("Exception in method getProductStoresIds. SQL query:" + stringQuery, e);
-//            return null;
-//        }
-//    }
+
     @SuppressWarnings("Duplicates")
     private void savePrice(Long priceTypeId, Long productId, Long myMasterId, Long companyId, BigDecimal priceValue) throws Exception {
         String stringQuery;
@@ -4571,6 +4550,336 @@ public class ProductsRepositoryJPA {
             throw new Exception(e);
         }
     }
+//*****************************************************************************************************************************************************
+//**********************************************  P R O D U C T   VARIATIONS   ***************************************************************
+//*****************************************************************************************************************************************************
+
+    // Forming the set of attribute fields for "Default Form Values" selection in WooCommerce
+    private Set<DefaultAttributesJSON> getDefaultAttributes(Long masterId, Long productId){
+        String stringQuery =
+                " select " +
+                        " da.attribute_id as attribute_id," +
+                        " coalesce(da.term_id,0) as term_id," +
+                        " pa.name as attribute_name " +
+                        " from  default_attributes da" +
+                        " inner join product_attributes pa on pa.id = da.attribute_id" +
+                        " where da.master_id = " + masterId + " and da.product_id = " + productId + " order by da.attribute_id";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            Set<DefaultAttributesJSON> returnList = new HashSet<>();
+            for(Object[] obj:resultList){
+                DefaultAttributesJSON doc=new DefaultAttributesJSON();
+                doc.setAttribute_id(Long.parseLong(                 obj[0].toString()));
+                doc.setTerm_id(Long.parseLong(                      obj[1].toString()));
+                doc.setName((String)                                obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDefaultAttributes. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    // Updating the set of attribute fields for "Default Form Values" selection in WooCommerce
+    private Integer updateDefaultAttributes(Set<DefaultAttributesForm> attributesList, Long productId, Long masterId) throws Exception {
+        String stringQuery="";
+        Set<Long>existingAttributes = new HashSet<>();
+        try{
+            for (DefaultAttributesForm attribute : attributesList) {
+                stringQuery=
+                        " insert into default_attributes (" +
+                                " master_id, " +
+                                " product_id, " +       // variable (parent) product.
+                                " attribute_id, " +     // default attribute
+                                " term_id " +           // value of default attribute
+                                " ) values (" +
+                                masterId + ", " +
+                                " (select id from products where id=" + productId +" and master_id = " + masterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
+                                " (select id from product_attributes where id = " + attribute.getAttribute_id() + " and master_id="+masterId+"), "+//
+                                (attribute.getTerm_id()==0L?null:attribute.getTerm_id()) + ")" +
+                                " ON CONFLICT ON CONSTRAINT variation_default_attributes_uq " +// "upsert"
+                                " DO update set " +
+                                " term_id = " + (attribute.getTerm_id()==0L?null:attribute.getTerm_id());
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                existingAttributes.add(attribute.getAttribute_id());
+            }
+            deleteDefaultAttributes(existingAttributes, productId, masterId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method updateDefaultAttributes. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+        return 1;
+    }
+
+    // Deleting default attributes that no more existed in product card
+    private void deleteDefaultAttributes(Set<Long> existingAttributes, Long productId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from default_attributes " +
+                " where " +
+                " master_id = " + masterId + " and " +
+                " product_id = " +productId;
+        if(existingAttributes.size()>0)
+            stringQuery = stringQuery + " and attribute_id not in " + commonUtilites.SetOfLongToString(existingAttributes,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteDefaultAttributes. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private List<ProductVariationsJSON> getProductVariations(Long masterId, Long productId){
+        String stringQuery =
+                " select " +
+                " da.id as id," +
+                " da.product_id as product_id," +
+                " da.variation_product_id as variation_product_id," +
+                " p.name as variation_product_name," +
+                " da.menu_order as menu_order " +
+                " from  product_variations da" +
+                " inner join products p on p.id = da.variation_product_id" +
+                " where da.master_id = " + masterId + " and da.product_id = " + productId + " order by da.menu_order";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<ProductVariationsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                ProductVariationsJSON doc=new ProductVariationsJSON();
+                doc.setId(Long.parseLong(                       obj[0].toString()));
+                doc.setProduct_id(Long.parseLong(               obj[1].toString()));
+                doc.setVariation_product_id(Long.parseLong(     obj[2].toString()));
+                doc.setVariation_product_name((String)          obj[3]);
+                doc.setProductVariationsRowItems(getProductVariationsRowItems(doc.getId(), masterId));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductVariations. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private List<ProductVariationsRowItemsJSON> getProductVariationsRowItems(Long variationId, Long masterId){
+        String stringQuery =
+                " select " +
+                        " da.attribute_id as attribute_id," +
+                        " coalesce(da.term_id,0) as term_id" +
+                        " from  product_variations_row_items da" +
+                        " where da.master_id = " + masterId + " and da.variation_id = " + variationId + " order by da.attribute_id";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<ProductVariationsRowItemsJSON> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                ProductVariationsRowItemsJSON doc=new ProductVariationsRowItemsJSON();
+                doc.setAttribute_id(Long.parseLong(                 obj[0].toString()));
+                doc.setTerm_id(Long.parseLong(                      obj[1].toString()));
+                doc.setVariation_id(variationId);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductVariationsRowItems. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private Integer updateProductVariations(List<ProductVariationsForm> variationsList, Long productId, Long masterId) throws Exception {
+//        if (variationsList.size() > 0) {
+        String stringQuery="";
+            try{
+
+                int i = 1;
+                List<Long> variationsIds = new ArrayList<>();
+                for (ProductVariationsForm variation : variationsList) {
+                    if(isProductUsedAsVariation(productId, variation.getVariation_product_id())) throw new ProductAlreadyUsedAsVariation();
+                    if(isProductVariable(variation.getVariation_product_id())) throw new VariableProductCantBeUsedAsVariation();
+                    stringQuery=
+                    " insert into product_variations (" +
+                    " master_id, " +
+                    " product_id, " + // variable (parent) product.
+                    " variation_product_id, " + // variation of variable (parent) product.
+                    " menu_order " +
+                    " ) values (" +
+                    masterId + ", " +
+                    " (select id from products where id="+variation.getProduct_id() +" and master_id="+masterId+"), "+// чтобы не мочь переназначить цену товара другого master_id, случайно или намеренно
+                    " (select id from products where id="+variation.getVariation_product_id() +" and master_id="+masterId+"), "+//
+                    i + ")" +
+                    " ON CONFLICT ON CONSTRAINT variation_product_id_uq " +// "upsert"
+                    " DO update set " +
+//                                " variation_product_id = (select id from products where id="+variation.getVariation_product_id() +" and master_id="+masterId+")" + ", " +
+//                    " menu_order = " + variation.getMenu_order();
+                    " menu_order = " + i;
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    query.executeUpdate();
+                    stringQuery="select id from product_variations where master_id="+masterId+" and product_id = "+variation.getProduct_id()+" and variation_product_id = "+variation.getVariation_product_id();
+                    query = entityManager.createNativeQuery(stringQuery);
+                    Long variationId=Long.valueOf(query.getSingleResult().toString());
+                    variationsIds.add(variationId);
+                    if(!Objects.isNull(variation.getProductVariationsRowItems())) {
+                        setProductVariationAttributes(variation.getProductVariationsRowItems(),masterId, variationId);// add new attribute values, update existing, remove non-existing
+                    }
+
+                    i++;
+                }
+            deleteVariations(variationsIds, productId, masterId); // delete variations that was deleted on frontend
+            } catch (ProductAlreadyUsedAsVariation e) {
+                e.printStackTrace();
+                logger.error("ProductAlreadyUsedAsVariation exception in method updateProductVariations. SQL query:" + stringQuery, e);
+                throw new ProductAlreadyUsedAsVariation();
+            } catch (VariableProductCantBeUsedAsVariation e) {
+                e.printStackTrace();
+                logger.error("VariableProductCantBeUsedAsVariation exception in method updateProductVariations. SQL query:" + stringQuery, e);
+                throw new VariableProductCantBeUsedAsVariation();
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method updateProductVariations. SQL query:" + stringQuery, e);
+                throw new Exception(e);
+            }
+
+//        }
+        return 1;
+    }
+    private boolean isProductVariable(long productId) throws Exception {
+        try{
+            String stringQuery="select count(*) from products where id="+productId+" and type='variable'";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            long cnt = ((BigInteger)query.getSingleResult()).longValue();
+            return (cnt>0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isProductVariable", e);
+            throw new Exception(e);
+        }
+    }
+    // if product is variation of any product
+    private boolean isProductUsedAsVariation(long variationProductId) throws Exception {
+        try{
+            String stringQuery="select count(*) from product_variations where variation_product_id="+variationProductId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            long cnt = ((BigInteger)query.getSingleResult()).longValue();
+            return (cnt>0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isProductUsedAsVariation(1).", e);
+            throw new Exception(e);
+        }
+    }
+
+    // if product is variation of productId product
+    private boolean isProductUsedAsVariation(long productId, long variationProductId) throws Exception {
+        try{
+            String stringQuery="select count(*) from product_variations where variation_product_id="+variationProductId+" and product_id !="+productId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            long cnt = ((BigInteger)query.getSingleResult()).longValue();
+            return (cnt>0);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isProductUsedAsVariation(2).", e);
+            throw new Exception(e);
+        }
+    }
+
+
+
+    private void setProductVariationAttributes(List<ProductVariationsRowItemsForm> productVariationsRowItems, Long masterId, Long variationId) throws Exception {
+        String stringQuery="";
+        try {
+            List<Long> itemsIds = new ArrayList<>();
+            for (ProductVariationsRowItemsForm rowItems : productVariationsRowItems) {
+
+                 stringQuery =
+                        " insert into product_variations_row_items (" +
+                        " master_id, " +
+                        " variation_id, " +
+                        " attribute_id, " +
+                        " term_id " +
+                        " ) values (" +
+                        masterId + ", " +
+                        variationId + ", " +
+                        " (select id from product_attributes where id="+rowItems.getAttribute_id()+" and master_id="+masterId+")," +
+                        // Attrinute value can be "Any". In this case incomes 0. Should be null in DB :
+                        (rowItems.getTerm_id()==0?null:(" (select id from product_attribute_terms where id="+rowItems.getTerm_id()+" and master_id="+masterId+")")) +
+                        " )" +
+                        " ON CONFLICT ON CONSTRAINT variation_row_attribute_id_uq" +// "upsert on unique variation_id, attribute_id"
+                        " DO update set " +
+                        " term_id = (select id from product_attribute_terms where id="+rowItems.getTerm_id()+" and master_id="+masterId+")";
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                stringQuery="select id from product_variations_row_items where master_id="+masterId+" and attribute_id = "+rowItems.getAttribute_id()+" and variation_id = "+variationId;
+                query = entityManager.createNativeQuery(stringQuery);
+                Long rowItemId=Long.valueOf(query.getSingleResult().toString());
+                itemsIds.add(rowItemId);
+            }
+            deleteVariationsRowItems(itemsIds, variationId, masterId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method setProductVariationAttributes. SQL query: " + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    private void deleteVariations(List<Long> existingVariationsIds, Long productId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from product_variations " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " product_id = " +productId;
+        if(existingVariationsIds.size()>0)
+            stringQuery = stringQuery + " and id not in " + commonUtilites.ListOfLongToString(existingVariationsIds,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteVariations. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private void deleteVariationsRowItems(List<Long> existingItemsIds, Long variation_id, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from product_variations_row_items " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " variation_id = " +variation_id;
+        if(existingItemsIds.size()>0)
+            stringQuery = stringQuery + " and id not in " + commonUtilites.ListOfLongToString(existingItemsIds,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteVariationsRowItems. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // returns list of product data (name, sku, description, ... and product's price by priceTypeId)
     public List<ProductLabel> getProductLabelsList(List<LabelsPrintProduct> labelsPrintProductList , Long priceTypeId, Long companyId){

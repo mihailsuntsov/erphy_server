@@ -245,7 +245,7 @@ public class ProductsController {
         logger.info("Processing post request for path /api/auth/updateProducts: " + request.toString());
         try {return new ResponseEntity<>(productsRepositoryJPA.updateProducts(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller updateProducts error with request=" + request.toString(), e);
-        return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+        return new ResponseEntity<>("Error updating product", HttpStatus.INTERNAL_SERVER_ERROR);}
 
     }
 

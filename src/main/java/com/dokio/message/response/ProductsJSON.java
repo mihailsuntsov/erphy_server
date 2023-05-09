@@ -20,6 +20,7 @@ package com.dokio.message.response;
 
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.DefaultAttributesJSON;
+import com.dokio.message.response.additional.ProductVariationsJSON;
 import com.dokio.message.response.additional.StoreTranslationProductJSON;
 
 import java.math.BigDecimal;
@@ -103,12 +104,29 @@ public class ProductsJSON {
     private String          description_type;       // "editor" or "custom"
     private String          short_description_type; // "editor" or "custom"
     private List<StoreTranslationProductJSON> storeProductTranslations;
+    private Set<DefaultAttributesJSON> defaultAttributes;
+    private List<ProductVariationsJSON> productVariations;
+    private boolean isVariation;
+
+    public boolean isVariation() {
+        return isVariation;
+    }
+
+    public void setVariation(boolean variation) {
+        isVariation = variation;
+    }
+
+    public List<ProductVariationsJSON> getProductVariations() {
+        return productVariations;
+    }
+
+    public void setProductVariations(List<ProductVariationsJSON> productVariations) {
+        this.productVariations = productVariations;
+    }
 
     public List<StoreTranslationProductJSON> getStoreProductTranslations() {
         return storeProductTranslations;
     }
-
-    private Set<DefaultAttributesJSON> defaultAttributes;
 
     public Set<DefaultAttributesJSON> getDefaultAttributes() {
         return defaultAttributes;
