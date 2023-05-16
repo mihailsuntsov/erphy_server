@@ -243,7 +243,7 @@ public class ProductsController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateProducts(@RequestBody ProductsForm request){
         logger.info("Processing post request for path /api/auth/updateProducts: " + request.toString());
-        try {return new ResponseEntity<>(productsRepositoryJPA.updateProducts(request), HttpStatus.OK);}
+        try {return new ResponseEntity<>(productsRepositoryJPA.updateProduct(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller updateProducts error with request=" + request.toString(), e);
         return new ResponseEntity<>("Error updating product", HttpStatus.INTERNAL_SERVER_ERROR);}
 

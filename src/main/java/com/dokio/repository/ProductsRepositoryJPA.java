@@ -403,6 +403,7 @@ public class ProductsRepositoryJPA {
                     doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
                     doc.setProductVariations(getProductVariations(myMasterId, id));
                     doc.setVariation(isProductUsedAsVariation(doc.getId())); // if this product is a variation of another product
+
                 }
 //                doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
@@ -418,7 +419,7 @@ public class ProductsRepositoryJPA {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, ProductAlreadyUsedAsVariation.class})
-    public Integer updateProducts(ProductsForm request){
+    public Integer updateProduct(ProductsForm request){
         EntityManager emgr = emf.createEntityManager();
         Products document = emgr.find(Products.class, request.getId());//сохраняемый документ
         boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "170"); // "Редактирование док-тов своего предприятия"
@@ -451,6 +452,9 @@ public class ProductsRepositoryJPA {
                 if(request.getType().equals("variable") && isProductUsedAsVariation(request.getId()))
                     return -280;
 
+                // no matter - variable product or not - because can be that it was Variable and now selected as Simple
+                // at this place method running for deleted variations (here they are still belongs to product)
+                markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
 
                 // сохранение базовых полей
                 updateProductsWithoutOrders(request, myMasterId);
@@ -503,6 +507,7 @@ public class ProductsRepositoryJPA {
                 if (!request.getCrosssell_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
                     saveUpsellCrosssells(request.getId(), request.getCrosssell_ids(), myMasterId, "product_crosssell");
                 }
+
                 // сохранение grouped products
                 if (!request.getGrouped_ids().isEmpty()) { //если есть выбранные чекбоксы категорий
                     saveUpsellCrosssells(request.getId(), request.getGrouped_ids(), myMasterId, "product_grouped");
@@ -531,18 +536,25 @@ public class ProductsRepositoryJPA {
                 //saving variations
                 updateProductVariations(request.getProductVariations(), request.getId(), myMasterId);
 
+                // setting variations as need to be synchronized
+                // at this place method running for added variations
+                markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
+
+                //variation can't be upsell or crosssell product (вариация не может быть upsell or crosssell)
+                clearUpsellCrosssellsFromVariations(request.getId(), myMasterId);
+
                 return 1;
 
             } catch (ProductAlreadyUsedAsVariation e) {
                 e.printStackTrace();
-                logger.error("ProductAlreadyUsedAsVariation exception in method updateProducts. ", e);
+                logger.error("ProductAlreadyUsedAsVariation exception in method updateProduct. ", e);
                 return -260;
             } catch (VariableProductCantBeUsedAsVariation e) {
                 e.printStackTrace();
-                logger.error("VariableProductCantBeUsedAsVariation exception in method updateProducts. ", e);
+                logger.error("VariableProductCantBeUsedAsVariation exception in method updateProduct. ", e);
                 return -270;
             } catch (Exception e) {
-                logger.error("Exception in method updateProducts.", e);
+                logger.error("Exception in method updateProduct.", e);
                 e.printStackTrace();
                 return null;
             }
@@ -1074,24 +1086,53 @@ public class ProductsRepositoryJPA {
     public Integer deleteProducts(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(14L,"165") && securityRepositoryJPA.isItAllMyMastersDocuments("products",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+           (securityRepositoryJPA.userHasPermissions_OR(14L,"166") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products",delNumbers)))
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update products p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now(), " +//дату и время изменения
-                    " is_deleted=true " +
-                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
+            stringQuery =
+
+                    "update products p" +
+                        " set changer_id="+ myId + ", " + // кто изменил (удалил)
+                        " date_time_changed = now(), " +//дату и время изменения
+                        " is_deleted=true " +
+                        " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +"); " +
+
+                    " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " product_id in (" +
+                        "   select variation_product_id from product_variations where " +
+                        "   product_id           in (" + delNumbers.replaceAll("[^0-9\\,]", "") +") or " +
+                        "   variation_product_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")" +
+                        " );" +
+
+                    " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " product_id in (" +
+                        "   select product_id from product_variations where " +
+                        "   variation_product_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")" +
+                        " );"+
+
+                    " delete from product_variations where " +
+                        " product_id           in (" + delNumbers.replaceAll("[^0-9\\,]", "") +") or " +
+                        " variation_product_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +");" +
+
+                    " delete from product_upsell where " +
+                        " product_id           in (" + delNumbers.replaceAll("[^0-9\\,]", "") +") or " +
+                        " child_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +");" +
+
+                    " delete from product_crosssell where " +
+                        " product_id           in (" + delNumbers.replaceAll("[^0-9\\,]", "") +") or " +
+                        " child_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +");";
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-                if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
-                    query.executeUpdate();
-                    return 1;
-                } else return null;
+                query.executeUpdate();
+                return 1;
             }catch (Exception e) {
                 logger.error("Exception in method deleteProducts. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -1116,11 +1157,19 @@ public class ProductsRepositoryJPA {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update products p" +
+            stringQuery =
+                    " update products p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
-                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
+                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +"); "+
+
+                    " update stores_products " +
+                    " set need_to_syncwoo = true " +
+                    " where " +
+                    " product_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +"); ";
+
+            ;
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -2359,6 +2408,51 @@ public class ProductsRepositoryJPA {
             query.executeUpdate();
         } catch (Exception e) {
             logger.error("Exception in method markProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void markProductVariationsAsNeedToSyncWoo(Long productId, Long masterId) throws Exception {
+        String stringQuery =
+                " update stores_variations " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id in (select variation_product_id from product_variations where product_id = "+productId+"); " +
+        //just in case - if product productId was Variable and now it is Simple
+                " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id in (select variation_product_id from product_variations where product_id = "+productId+"); ";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markProductVariationsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void clearUpsellCrosssellsFromVariations(Long productId, Long masterId) throws Exception {
+        String stringQuery =
+
+                " delete from product_upsell where " +
+                " master_id = " + masterId +
+                " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
+                "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));" +
+
+                " delete from product_crosssell where " +
+                " master_id = " + masterId +
+                " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
+                "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method clearUpsellCrosssellsFromVariations. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }

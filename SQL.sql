@@ -4555,8 +4555,21 @@ create table product_variations_row_items(
 alter table product_variations_row_items add constraint variation_row_attribute_id_uq UNIQUE (variation_id, attribute_id);
 alter table default_attributes add constraint variation_default_attributes_uq UNIQUE (product_id, attribute_id);
 alter table default_attributes alter column term_id drop not null;
-
-
+create table stores_variations (
+                                 master_id          bigint not null,
+                                 company_id         bigint not null,
+                                 store_id           bigint not null,
+                                 product_id         bigint not null,
+                                 woo_id             int,
+                                 need_to_syncwoo    boolean,
+                                 date_time_syncwoo  timestamp with time zone,
+                                 foreign key (master_id) references users(id),
+                                 foreign key (company_id) references companies(id),
+                                 --for automatic deletion row in this table after deleting the variation
+                                 foreign key (product_id) references product_variations(variation_product_id) on delete cascade,
+                                 foreign key (store_id) references stores(id)
+);
+alter table stores_variations add constraint stores_variations_uq unique (store_id, product_id);
 
 
 

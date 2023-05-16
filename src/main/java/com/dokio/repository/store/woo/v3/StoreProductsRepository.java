@@ -3,6 +3,7 @@ package com.dokio.repository.store.woo.v3;
 import com.dokio.message.request.store.woo.v3.IntListForm;
 import com.dokio.message.request.store.woo.v3.SyncIdForm;
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
+import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.store.woo.v3.products.*;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
@@ -40,11 +42,13 @@ public class StoreProductsRepository {
     @Autowired
     CompanyRepositoryJPA companyRepository;
 
+    @SuppressWarnings("Duplicates")
     public ProductCountJSON countProductsToStoreSync(String key) {
         String stringQuery = "";
         ProductCountJSON result = new ProductCountJSON();
         try{
              Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
+             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
              Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
              String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
              stringQuery =
@@ -61,6 +65,7 @@ public class StoreProductsRepository {
              "   p.company_id = " + companyId +
              "   and coalesce(pc.is_store_category,false)=true " +
              "   and coalesce(p.is_deleted, false) = false " +
+             "   and p.id not in (select variation_product_id from product_variations where master_id = " + masterId + ")" + // product is not used as variation
              "   and s.id = " + storeId +
              "   and coalesce(s.is_deleted, false) = false " +
              "   and (" +
@@ -79,6 +84,12 @@ public class StoreProductsRepository {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductsRepository/syncProductsToStore. Key:"+key, e);
             e.printStackTrace();
             result.setQueryResultCode(-200);
+            return result;
+        } catch (NoResultException nre) {
+            logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, nre);
+            nre.printStackTrace();
+            result.setQueryResultCode(1);
+            result.setProductCount(new BigInteger("0"));
             return result;
         }catch (Exception e) {
             logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, e);
@@ -135,6 +146,7 @@ public class StoreProductsRepository {
                     " p.company_id = " + companyId +
                     " and coalesce(pc.is_store_category,false)=true " + // if product is in the store category
                     " and coalesce(p.is_deleted, false) = false " +
+                    " and p.id not in (select variation_product_id from product_variations where master_id = " + masterId + ")" + // product is not used as variation
                     " and s.id = " + storeId +
                     " and coalesce(s.is_deleted, false) = false " +
                     " and (" +
@@ -150,7 +162,6 @@ public class StoreProductsRepository {
             if (firstResult != null) {query.setFirstResult(firstResult);} // from 0
             if (maxResults != null) {query.setMaxResults(maxResults);}
             List<Object[]> queryList = query.getResultList();
-//            List<ProductJSON> returnList = new ArrayList<>();
             Set<ProductJSON> returnList = new HashSet<>();
             List<Long> storeDepartments = companyRepository.getCompanyStoreDepartmentsIds(companyId,storeId,masterId);
             for (Object[] obj : queryList) {
@@ -174,8 +185,11 @@ public class StoreProductsRepository {
                 doc.setPurchase_note((String)                       obj[15]);
                 doc.setMenu_order((Integer)                         obj[16]);
                 doc.setReviews_allowed((Boolean)                    obj[17]);
-//                if(doc.getManage_stock())
-                    doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
+                doc.setStock_quantity(productsRepository.getAvailable(doc.getCrm_id(), storeDepartments, true).intValue());
+                doc.setUpsells   (getUpsellCrosssells(doc.getCrm_id(), "product_upsell", storeId));
+                doc.setCrosssells(getUpsellCrosssells(doc.getCrm_id(), "product_crosssell", storeId));
+                doc.setVariations_woo_ids(getVariationsWooIds(doc.getCrm_id(), storeId));
+                doc.setDefaultAttributes(getDefaultAttributes(doc.getCrm_id(), storeId));
                 returnList.add(doc);
             }
             result.setQueryResultCode(1);
@@ -186,6 +200,12 @@ public class StoreProductsRepository {
             e.printStackTrace();
             result.setQueryResultCode(-200);
             return result;
+        } catch (NoResultException nre) {
+            logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, nre);
+            nre.printStackTrace();
+            result.setQueryResultCode(1);
+            result.setProducts(new HashSet<>());
+            return result;
         }catch (Exception e) {
             logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, e);
             e.printStackTrace();
@@ -194,7 +214,7 @@ public class StoreProductsRepository {
         }
     }
 
-    private String getSalePrice(BigDecimal Regular_price, BigDecimal Sale_price){
+    String getSalePrice(BigDecimal Regular_price, BigDecimal Sale_price){
         if(!Objects.isNull(Regular_price) && !Objects.isNull(Sale_price) && Regular_price.compareTo(Sale_price)>0)
             return Sale_price.toString();
         else return "";
@@ -368,6 +388,40 @@ public class StoreProductsRepository {
         }
     }
 
+    private List<DefaultAttributes> getDefaultAttributes(Long productId, Long storeId) throws Exception {
+        String stringQuery =
+                        " select " +
+                        " da.attribute_id as attribute_id," +
+                        " sa.woo_id as attribute_woo_id, " +            // aka id
+                        " coalesce(NULLIF(translator_a.name, ''), pa.name) as attribute_name, " + // aka name
+                        " coalesce(NULLIF(translator_t.name, ''), (select name from product_attribute_terms where id=da.term_id)) as term_name " + // aka option (can be NULL if selected "ANY")
+                        " from  default_attributes da" +
+                        " inner join product_attributes pa on pa.id = da.attribute_id" +
+                        " inner join stores_attributes sa on pa.id = sa.attribute_id and sa.woo_id is not null" +
+                        " LEFT OUTER JOIN store_translate_attributes translator_a ON da.attribute_id = translator_a.attribute_id and translator_a.lang_code = (select coalesce(lang_code,'EN') from stores where id="+storeId+") " +
+                        " LEFT OUTER JOIN store_translate_terms translator_t      ON da.term_id =      translator_t.term_id      and translator_t.lang_code = (select coalesce(lang_code,'EN') from stores where id="+storeId+") " +
+                        " where da.product_id = " + productId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<DefaultAttributes> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                if(!Objects.isNull(obj[3])){ // if Attribute has not selected option "-Any-"
+                    DefaultAttributes doc=new DefaultAttributes();
+                    doc.setCrm_attribute_id(Long.parseLong(             obj[0].toString()));
+                    doc.setWoo_attribute_id((Integer)                   obj[1]);
+                    doc.setName((String)                                obj[2]);
+                    doc.setOption((String)                              obj[3]);
+                    returnList.add(doc);
+                }
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDefaultAttributes. SQL query:" + stringQuery, e);
+            throw new Exception();
+        }
+    }
     private List<String> GetTermsOfProductAttribute(String attributeId, List<List<String>> mapOfAttributesAndTerms){
         List<String> returnList = new ArrayList<>();
         mapOfAttributesAndTerms.forEach(innerList -> {
@@ -423,6 +477,7 @@ public class StoreProductsRepository {
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
 
             stringQuery=
             " select " +
@@ -430,7 +485,7 @@ public class StoreProductsRepository {
             " from " +
                 " stores_products sp_ " +
             " where " +
-                " sp_.woo_id is not null and sp_.product_id not in " +
+                " sp_.woo_id is not null and sp_.store_id ="+storeId+" and sp_.product_id not in " +
                 "( " +
                     " select p.id from products p " +
                     " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id " +
@@ -446,6 +501,8 @@ public class StoreProductsRepository {
 
                     " and s.id = " + storeId +
 
+                    " and p.id not in (select variation_product_id from product_variations where master_id = " + masterId + ")" + // product is not used as variation
+
                     " and coalesce(s.is_deleted, false) = false " +
 
                 " ) ";
@@ -457,11 +514,11 @@ public class StoreProductsRepository {
             }
             return productIds;
         }catch (WrongCrmSecretKeyException e) {
-            logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductsRepository/syncProductsIds. Key:"+key, e);
+            logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductsRepository/getProductWooIdsToDeleteInStore. Key:"+key, e);
             e.printStackTrace();
             return null;
         }catch (Exception e) {
-            logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
+            logger.error("Exception in method woo/v3/StoreProductsRepository/getProductWooIdsToDeleteInStore. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -481,7 +538,7 @@ public class StoreProductsRepository {
                 "     master_id = " + masterId +
                 " and company_id = "+ companyId +
                 " and store_id = " + storeId +
-                " and coalesce(woo_id,0) in "+wooIds;
+                " and coalesce(woo_id, 0) in " + wooIds;
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -494,6 +551,38 @@ public class StoreProductsRepository {
             logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private List<Integer> getUpsellCrosssells(Long productId, String tableName, Long storeId) throws Exception {
+        String stringQuery =
+                "select woo_id from stores_products where store_id = " + storeId + " and product_id in (" +
+                    "select p.child_id from "+tableName+" p where p.product_id= " + productId +
+                ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (List<Integer>) query.getResultList();
+        } catch (Exception e) {
+            logger.error("Exception in method geUpsellCrosssells. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+
+    private List<Integer> getVariationsWooIds(Long productId, Long storeId) throws Exception {
+        String stringQuery =
+                " select sv.woo_id from stores_variations sv " +
+                " inner join product_variations pv on sv.product_id = pv.variation_product_id" +
+                " where sv.store_id = " + storeId +
+                " and pv.product_id="+productId+" and sv.woo_id is not null";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (List<Integer>) query.getResultList();
+        } catch (Exception e) {
+            logger.error("Exception in method getVariationsWooIds. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
         }
     }
 }

@@ -27,6 +27,33 @@ public class ProductJSON {
     private List<ImageJSON>     images;
     private List<AttributeJSON> attributes;
     private List<DefaultAttributes> defaultAttributes;
+    private List<Integer>       upsells;
+    private List<Integer>       crosssells;
+    private List<Integer>       variations_woo_ids;
+
+    public List<Integer> getVariations_woo_ids() {
+        return variations_woo_ids;
+    }
+
+    public void setVariations_woo_ids(List<Integer> variations_woo_ids) {
+        this.variations_woo_ids = variations_woo_ids;
+    }
+
+    public List<Integer> getUpsells() {
+        return upsells;
+    }
+
+    public void setUpsells(List<Integer> upsells) {
+        this.upsells = upsells;
+    }
+
+    public List<Integer> getCrosssells() {
+        return crosssells;
+    }
+
+    public void setCrosssells(List<Integer> crosssells) {
+        this.crosssells = crosssells;
+    }
 
     public List<DefaultAttributes> getDefaultAttributes() {
         return defaultAttributes;
