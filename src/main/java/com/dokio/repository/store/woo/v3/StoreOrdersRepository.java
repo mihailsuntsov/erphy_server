@@ -276,15 +276,19 @@ public class StoreOrdersRepository {
         if (productsList!=null && productsList.size() > 0) {//если есть что сохранять
 
             boolean reserve = settings.getStore_auto_reserve();
-
+            boolean productIsVariation = false;
             Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products that will have reserves and need to be synchronised,
                                                               // as a reserve is decrease available quantity of product in department
+
             try{
 
                 for (ProductForm wooProductRow : productsList) {
                     CustomersOrdersProductTableForm crmProductRow = new CustomersOrdersProductTableForm();
+                    productIsVariation = false;
                     if(wooProductRow.getProduct_id()>0){ // if there is woo_id (woo_id can be = 0 if product that there is in a order was manually deleted in WooCommerce)
-                        ProductsJSON currentProductInfo = getProductInfoByWooId(wooProductRow.getProduct_id(), companyId, storeId);
+                        if(wooProductRow.getVariation_id()>0) // if variation_id>0 then this is variation of variable product, and should use variation_id
+                            productIsVariation=true;
+                        ProductsJSON currentProductInfo = getProductInfoByWooId(productIsVariation?wooProductRow.getVariation_id():wooProductRow.getProduct_id(), companyId, storeId, productIsVariation);
                         if(!Objects.isNull(currentProductInfo)){ //if the product is found
                             crmProductRow.setProduct_id(currentProductInfo.getId());
                             crmProductRow.setCustomers_orders_id(parentDocId);
@@ -313,7 +317,6 @@ public class StoreOrdersRepository {
                             saveCustomersOrdersProductTable(crmProductRow, companyId, myMasterId, reserve);
                         }
                     }
-
                 }
                 if(productsIdsToSyncWoo.size()>0) productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo,myMasterId);
             } catch (Exception e) {
@@ -381,13 +384,13 @@ public class StoreOrdersRepository {
         }
     }
 
-    private ProductsJSON getProductInfoByWooId(int wooId, Long companyId, Long storeId) throws Exception {
+    private ProductsJSON getProductInfoByWooId(int wooId, Long companyId, Long storeId, boolean productIsVariation) throws Exception {
         String stringQuery="select " +
                 " p.id as id, " +
                 " p.edizm_id as edizm_id," +
                 " p.nds_id as nds_id" +
                 " from products p" +
-                " inner join stores_products sp on sp.product_id=p.id" +
+                (productIsVariation?(" inner join stores_variations sp on sp.product_id=p.id"):(" inner join stores_products sp on sp.product_id=p.id")) +
                 " where p.company_id="+companyId+" and sp.woo_id="+wooId+" and sp.store_id="+storeId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);

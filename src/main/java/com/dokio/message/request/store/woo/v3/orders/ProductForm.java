@@ -6,8 +6,8 @@ public class ProductForm {
 
     private int id;                 // ID of order in WooCommerce
     private String name;
-    private int product_id;         // Product's woo id
-    private int variation_id;
+    private int product_id;         // Product's woo_id
+    private int variation_id;       // Variation woo_id
     private int quantity;
     private String tax_class;
     private String subtotal;

@@ -1026,29 +1026,51 @@ public class UserRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);
     }
+
+    @Transactional
     public void createMasterUserPlanOptions(Long userId, int planId){
-        String stringQuery= "insert into plans_add_options set " +
-                "user_id="+userId + ", " +
-                "n_companies = 0," +
-                "n_departments=0," +
-                "n_users=0," +
-                "n_products=0," +
-                "n_counterparties=0," +
-                "n_megabytes=0," +
-                "n_stores=0," +
-                "n_stores_woo=0," +
-                "companies_ppu = (select companies_ppu from plans where id="+planId+")," +
-                "departments_ppu = (select departments_ppu from plans where id="+planId+")," +
-                "users_ppu = (select users_ppu from plans where id="+planId+")," +
-                "products_ppu = (select products_ppu from plans where id="+planId+")," +
-                "counterparties_ppu = (select counterparties_ppu from plans where id="+planId+")," +
-                "megabytes_ppu = (select megabytes_ppu from plans where id="+planId+")," +
-                "stores_ppu = (select stores_ppu from plans where id="+planId+")," +
-                "stores_woo_ppu = (select stores_woo_ppu from plans where id="+planId+")" +
-                "";
+        String stringQuery=
+                "insert into plans_add_options (" +
+                    "user_id, " +
+                    "n_companies," +
+                    "n_departments," +
+                    "n_users," +
+                    "n_products," +
+                    "n_counterparties," +
+                    "n_megabytes," +
+                    "n_stores," +
+                    "n_stores_woo," +
+                    "companies_ppu," +
+                    "departments_ppu," +
+                    "users_ppu," +
+                    "products_ppu," +
+                    "counterparties_ppu," +
+                    "megabytes_ppu," +
+                    "stores_ppu," +
+                    "stores_woo_ppu" +
+                ")" +
+                " values " +
+                "("+userId + ", " +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "0," +
+                    "(select ppu from plans_add_options_prices where name='companies')," +
+                    "(select ppu from plans_add_options_prices where name='departments')," +
+                    "(select ppu from plans_add_options_prices where name='users')," +
+                    "(select ppu from plans_add_options_prices where name='products')," +
+                    "(select ppu from plans_add_options_prices where name='counterparties')," +
+                    "(select ppu from plans_add_options_prices where name='megabytes')," +
+                    "(select ppu from plans_add_options_prices where name='stores')," +
+                    "(select ppu from plans_add_options_prices where name='stores_woo')" +
+                ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
-           query.executeUpdate();
+            query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method createMasterUserPlanOptions. SQL = "+stringQuery, e);

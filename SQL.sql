@@ -4571,12 +4571,11 @@ create table stores_variations (
 );
 alter table stores_variations add constraint stores_variations_uq unique (store_id, product_id);
 
+update plans set is_default = (CASE WHEN id=2 THEN true ELSE false END);
 
-
-
-
-
-
+insert into _dictionary (key, tr_ru, tr_en) values
+('black',    'чёрный','black'),
+('white',     'белый','white');
 
 
 

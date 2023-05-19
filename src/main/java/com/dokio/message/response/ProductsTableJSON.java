@@ -1,18 +1,5 @@
 /*
-Приложение Dokio-server - учет продаж, управление складскими остатками, документооборот.
-Copyright © 2020 Сунцов Михаил Александрович. mihail.suntsov@yandex.ru
-Эта программа является свободным программным обеспечением: Вы можете распространять ее и (или) изменять,
-соблюдая условия Генеральной публичной лицензии GNU редакции 3, опубликованной Фондом свободного
-программного обеспечения;
-Эта программа распространяется в расчете на то, что она окажется полезной, но
-БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ, включая подразумеваемую гарантию КАЧЕСТВА либо
-ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННЫХ ЦЕЛЕЙ. Ознакомьтесь с Генеральной публичной
-лицензией GNU для получения более подробной информации.
-Вы должны были получить копию Генеральной публичной лицензии GNU вместе с этой
-программой. Если Вы ее не получили, то перейдите по адресу:
-<http://www.gnu.org/licenses/>
- *//*
-        Dokio CRM - server part. Sales, finance and warehouse management system
+        DokioCRM - server part. Sales, finance and warehouse management system
         Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
 
         This program is free software: you can redistribute it and/or modify
@@ -49,8 +36,7 @@ public class ProductsTableJSON {
     private String      changer_id;
     private String      date_time_created;
     private String      date_time_changed;
-    private String      productgroup_id;
-    private String      productgroup;
+    private String      type;
     private String      product_code;
     private String      ppr_id;
     private Boolean     by_weight;
@@ -290,20 +276,11 @@ public class ProductsTableJSON {
         this.date_time_changed = date_time_changed;
     }
 
-    public String getProductgroup_id() {
-        return productgroup_id;
+    public String getType() {
+        return type;
     }
 
-    public void setProductgroup_id(String productgroup_id) {
-        this.productgroup_id = productgroup_id;
+    public void setType(String type) {
+        this.type = type;
     }
-
-    public String getProductgroup() {
-        return productgroup;
-    }
-
-    public void setProductgroup(String productgroup) {
-        this.productgroup = productgroup;
-    }
-
 }

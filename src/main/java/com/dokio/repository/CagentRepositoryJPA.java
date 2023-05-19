@@ -1340,7 +1340,9 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             " coalesce((select SUM(    p4.summ_in-p4.summ_out)  from history_cagent_summ p4 where p4.master_id="+myMasterId+" and p4.company_id="+companyId+" and p4.is_completed=true and p4.object_id = cg.id and p4.date_time_created at time zone '"+myTimeZone+"' <= to_timestamp(:dateTo  ||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS')),0) as summ_on_end " +
             " from history_cagent_summ p " +
             " INNER JOIN cagents cg ON p.object_id=cg.id "+
-            " where p.master_id="+myMasterId+" and p.company_id="+companyId;
+            " where p.master_id="+myMasterId+
+            " and p.company_id="+companyId+
+            " and coalesce(cg.is_deleted,false) = false";
 
     if (searchString != null && !searchString.isEmpty()) {
         stringQuery = stringQuery + " and (" + " upper(cg.name)  like upper(CONCAT('%',:sg,'%'))"+")";
@@ -1387,7 +1389,9 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 " cg.name as cagent " +
                 " from history_cagent_summ p " +
                 " INNER JOIN cagents cg ON p.object_id=cg.id " +
-                " where p.master_id="+myMasterId+" and p.company_id="+companyId;
+                " where p.master_id="+myMasterId+" and p.company_id="+companyId+
+                " and coalesce(cg.is_deleted,false) = false";
+
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" + " upper(cg.name)  like upper(CONCAT('%',:sg,'%'))"+")";
         }

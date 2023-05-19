@@ -58,3 +58,5 @@ null                            Ошибка выполнения
 -280                            Variation can't be variable product (thrown when trying to make a product variable if it is already used as a variation in another variable product) (VariationCantBeVariableProduct)
                                 Вариация не может быть вариативным товаром (бросается при попытке сделать товар вариативным, если он уже используется как вариация в другом вариативном товаре)
 
+-290                            Попытка изменить тип товара с уже имеющимися операциями на "Вариативный"
+                                You cannot change a product type that already has a warehouse history to "variable".

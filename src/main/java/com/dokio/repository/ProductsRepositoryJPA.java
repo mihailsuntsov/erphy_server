@@ -116,10 +116,9 @@ public class ProductsRepositoryJPA {
                     "           p.markable_group_id as markable_group_id, " +
                     "           coalesce(p.excizable,false) as excizable, " +
                     "           p.article as article, " +
-                    "           p.group_id as productgroup_id, " +
                     "           us.name as creator, " +
                     "           uc.name as changer, " +
-                    "           pg.name as productgroup, " +
+                    "           p.type as type, " +
                     "           p.master_id as master_id, " +
                     "           p.creator_id as creator_id, " +
                     "           p.changer_id as changer_id, " +
@@ -138,7 +137,7 @@ public class ProductsRepositoryJPA {
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
+//                    "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (categoryId != 0 ? " and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id=" + categoryId + ") " : "");
@@ -155,7 +154,7 @@ public class ProductsRepositoryJPA {
                         "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
                         "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
-                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
+                        "upper(coalesce(p.type,'simple')) like upper(CONCAT('%',:sg,'%')))";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -194,10 +193,10 @@ public class ProductsRepositoryJPA {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             boolean showDeleted = Objects.isNull(filterOptionsIds)?false:filterOptionsIds.contains(1);// Показывать только удаленные
-            stringQuery = "select  p.id as id, " +
-                    "           pg.name as productgroup " +
+            stringQuery = "select  p.id as id " +
+//                    "           pg.name as productgroup " +
                     "           from products p " +
-                    "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
+//                    "           LEFT OUTER JOIN product_groups pg ON p.group_id=pg.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted +
                     (categoryId != 0 ? " and p.id in (select ppg.product_id from product_productcategories ppg where ppg.category_id=" + categoryId + ") " : "");
@@ -214,7 +213,7 @@ public class ProductsRepositoryJPA {
                         "upper(p.article) like upper(CONCAT('%',:sg,'%')) or " +
                         "(upper(CONCAT('%',:sg,'%')) in (select upper(value) from product_barcodes where product_id=p.id))  or " +
                         "to_char(p.product_code_free,'fm0000000000') like upper(CONCAT('%',:sg,'%')) or " +
-                        "upper(pg.name) like upper(CONCAT('%',:sg,'%'))" + ")";
+                        "upper(coalesce(p.type,'simple')) like upper(CONCAT('%',:sg,'%')))";
             }
             if (companyId > 0) {
                 stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -436,13 +435,16 @@ public class ProductsRepositoryJPA {
 
                 int subjOfTradeInDB = (Integer)commonUtilites.getFieldValueFromTableById("products","ppr_id",myMasterId,request.getId());
                 int subjOfTradeIncome = Integer.parseInt(request.getPpr_id().toString());
-                if(subjOfTradeInDB!=subjOfTradeIncome && wasOperationsOnProduct(request.getId()))
+                boolean wasOperationsOnProduct = wasOperationsOnProduct(request.getId());
+
+                // Subject of trade was changed (from Service to Commodity or from Commodity to Service)
+                // If this product (or service) is already has the history of operations - Reject this update
+                // because it will produce discrepancy of product quantity in warehouse / negative quantity / fraud opportunities
+                if(subjOfTradeInDB != subjOfTradeIncome && wasOperationsOnProduct)
                     return -230;
-                    // Subject of trade was changed (from Service to Commodity or from Commodity to Service)
-                    // If this product (or service) is already has the history of operations - Reject this update
-                    // because it will produce discrepancy of product quantity in warehouse / negative quantity / fraud opportunities
 
                 //non-unique sku check
+                // не уникальный Артикул
                 if(!Objects.isNull(request.getArticle()) && !request.getArticle().equals("") && isThereProductWithSameSku(request.getArticle(),request.getId(), request.getCompany_id()))
                     return -250;
 
@@ -451,6 +453,11 @@ public class ProductsRepositoryJPA {
                 // Вариация не может быть вариативным товаром!
                 if(request.getType().equals("variable") && isProductUsedAsVariation(request.getId()))
                     return -280;
+
+                // Нельзя изменить тип товара, у которого уже есть история складских операций, на «Вариативный».
+                // You cannot change a product type that already has a warehouse history to "variable".
+                if(request.getType().equals("variable") && wasOperationsOnProduct)
+                    return -290;
 
                 // no matter - variable product or not - because can be that it was Variable and now selected as Simple
                 // at this place method running for deleted variations (here they are still belongs to product)
@@ -1649,6 +1656,7 @@ public class ProductsRepositoryJPA {
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " where  p.master_id=" + myMasterId +
                 " and coalesce(p.is_deleted,false) = false " +
+                " and coalesce(p.type, 'simple') != 'variable'" +
                 (!showRemovedFromSale?" and coalesce(p.not_sell,false) = false ":" ") +
                 (!showNotPurchased?" and coalesce(p.not_buy,false) = false ":" ") +
                 (!showServices?" and p.ppr_id != 4":" ")  // if  showServices=false
@@ -2924,6 +2932,7 @@ public class ProductsRepositoryJPA {
             stringQuery=stringQuery+"   and customers_orders_id!=" + document_id;//зарезервировано в других документах Заказ покупателя
         }
         stringQuery=stringQuery+"  ) as reserved";//зарезервировано в других документах Заказ покупателя
+
         if(price_type_id!=0) {//если тип цены был выбран
             stringQuery=stringQuery+", coalesce((select price_value from product_prices where product_id = " + product_id + " and price_type_id = " + price_type_id + " and company_id = d.company_id),0) as price ";// цена по типу цены
         }
@@ -4014,8 +4023,12 @@ public class ProductsRepositoryJPA {
 //                        " coalesce(avg_purchase_price,0)    as avg_purchase_price,  "+
                         " coalesce((select avg_netcost_price from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as avg_netcost_price,   "+
                         " coalesce(price,0)  as price,"+
-                        " coalesce((select quantity from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as quantity,   "+                       " coalesce(change,0)                as change               "+
-                        "          from product_history                "+
+                        " coalesce((select quantity from product_quantity where department_id="+department_id+" and product_id="+product_id+"),0)     as quantity,   "+
+                        " coalesce(change,0)                as change,               "+
+                        "coalesce((select ph.price from product_history ph  where ph.department_id = " + department_id +" and ph.product_id = "+product_id+" and ph.doc_type_id= 15 and ph.is_completed=true order by ph.date_time_created desc limit 1),0) as lastPurchasePrice "+
+
+
+        "          from product_history                "+
                         "          where                                "+
                         "          product_id="+product_id;
         if(!Objects.isNull(department_id))
@@ -4028,7 +4041,7 @@ public class ProductsRepositoryJPA {
 
             ProductHistoryJSON returnObj=new ProductHistoryJSON();
             if(queryList.size()==0){//если записей истории по данному товару ещё нет
-//                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
+                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
 //                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
                 returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
                 returnObj.setPrice(                     (new BigDecimal(0)));
@@ -4042,6 +4055,7 @@ public class ProductsRepositoryJPA {
                     returnObj.setPrice((BigDecimal)                 obj[1]);
                     returnObj.setQuantity((BigDecimal)              obj[2]);
                     returnObj.setChange((BigDecimal)                obj[3]);
+                    returnObj.setLast_purchase_price((BigDecimal)   obj[4]);
                 }
             }
             return returnObj;
@@ -4079,6 +4093,11 @@ public class ProductsRepositoryJPA {
                 returnObj.setQuantity((BigDecimal) queryList);
             }
             return returnObj;
+        }
+        catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method getProductQuantityAndNetcost->recountProductNetcost. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
         }
         catch (Exception e) {
             logger.error("Exception in method getProductQuantityAndNetcost. SQL query:"+stringQuery, e);

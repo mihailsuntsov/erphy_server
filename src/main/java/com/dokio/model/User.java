@@ -163,7 +163,7 @@ public class User{
     private Integer freeTrialDays;
 
     @Column(name = "is_blocked_master_id")  // Master user and all its child accounts has been blocked (out of money, out of terms etc.)
-    private Integer isBlockedMasterId;
+    private Boolean isBlockedMasterId;
 
     public User() {}
 
@@ -190,12 +190,12 @@ public class User{
         this.freeTrialDays = freeTrialDays;
     }
 
-    public Integer getIsBlockedMasterId() {
+    public Boolean getBlockedMasterId() {
         return isBlockedMasterId;
     }
 
-    public void setIsBlockedMasterId(Integer isBlockedMasterId) {
-        this.isBlockedMasterId = isBlockedMasterId;
+    public void setBlockedMasterId(Boolean blockedMasterId) {
+        isBlockedMasterId = blockedMasterId;
     }
 
     public Integer getPlanId() {

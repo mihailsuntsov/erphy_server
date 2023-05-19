@@ -306,7 +306,7 @@ public class ProductsController {
     public ResponseEntity<?> getProductsList(
             @RequestParam("searchString") String searchString,
             @RequestParam("companyId") Long companyId,
-            @RequestParam("departmentId") Long departmentId,
+            @RequestParam(name="departmentId", required = false) Long departmentId,
             @RequestParam("priceTypeId")  Long priceTypeId,
             @RequestParam("document_id") Long document_id,
             @RequestParam("showRemovedFromSale") Boolean showRemovedFromSale,
