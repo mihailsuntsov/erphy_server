@@ -17,6 +17,8 @@
 */
 package com.dokio.controller;
 
+import com.dokio.message.request.PlanAdditionalOptionsForm;
+import com.dokio.repository.SubscriptionRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -33,17 +35,40 @@ import javax.persistence.PersistenceContext;
 public class Subscription {
     Logger logger = Logger.getLogger(Subscription.class);
     @Autowired
-    UserRepositoryJPA userRepository;
+    SubscriptionRepositoryJPA subscriptionRepository;
 
     @RequestMapping(value = "/api/auth/getMasterAccountInfo",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getMasterAccountInfo() {
         logger.info("Processing get request for path /api/auth/getMasterAccountInfo with no params");
-        try {return new ResponseEntity<>(userRepository.getMasterAccountInfo(), HttpStatus.OK);}
+        try {return new ResponseEntity<>(subscriptionRepository.getMasterAccountInfo(), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getMasterAccountInfo error", e);
             return new ResponseEntity<>("Error query of getting master account information", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @RequestMapping(value = "/api/auth/getPlansList",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPlansList() {
+        logger.info("Processing get request for path /api/auth/getPlansList with no params");
+        try {return new ResponseEntity<>(subscriptionRepository.getPlansList(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getMasterAccountInfo error", e);
+            return new ResponseEntity<>("Error query of getting plans list", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
+    @RequestMapping(value = "/api/auth/stopTrialPeriod",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> stopTrialPeriod() {
+        logger.info("Processing get request for path /api/auth/stopTrialPeriod with no params");
+        try {return new ResponseEntity<>(subscriptionRepository.stopTrialPeriod(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller stopTrialPeriod error", e);
+            return new ResponseEntity<>("Error query of trying to stop trial period", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/updateAddOptions")
+    public ResponseEntity<?> updateAddOptions(@RequestBody PlanAdditionalOptionsForm request){
+        logger.info("Processing post request for path /api/auth/updateAddOptions: " + request.toString());
+        try {return new ResponseEntity<>(subscriptionRepository.updateAddOptions(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error saving plan additional options", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }
 

@@ -25,7 +25,6 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
-import com.dokio.message.response.additional.MasterAccountInfoJSON;
 import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Departments;
@@ -33,7 +32,6 @@ import com.dokio.model.User;
 import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
-import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -42,7 +40,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import javax.persistence.*;
 
 import java.io.File;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -79,15 +76,6 @@ public class UserRepositoryJPA {
     private SecurityRepositoryJPA securityRepositoryJPA;
 
     @Autowired
-    private UserRepositoryJPA userRepositoryJPA;
-
-    @Autowired
-    private CommonUtilites commonUtilites;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
     private StorageService storageService;
 
     @Autowired
@@ -101,28 +89,6 @@ public class UserRepositoryJPA {
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
-
-//    public boolean putUserToCompany(Long userId, Long companyId){
-//        EntityManager em = emf.createEntityManager();
-//        em.getTransaction().begin();
-//        User usr = em.find(User.class, userId);
-//        Companies company = em.find(Companies.class, companyId);
-//        usr.setCompany(company);
-//        em.getTransaction().commit();
-//        em.close();
-//        return true;
-//    }
-//
-//    public User getUserById(Long userId){
-//        EntityManager em = emf.createEntityManager();
-//        User usr = em.find(User.class, userId);
-//        return usr;
-//    }
-//    // меняет пароль пользователя
-//    public void changeUserPassword(final User user, final String password) {
-//        user.setPassword(passwordEncoder.encode(password));
-//        userRepository.save(user);
-//    }
 
     //сравнивает пароль oldPassword с паролем пользователя
     public boolean checkIfValidOldPassword(final User user, final String oldPassword) {
@@ -226,12 +192,7 @@ public class UserRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (String) query.getSingleResult();
     }
-//    public String getMasterIdByCompanyId(Long companyId) {
-//        String stringQuery;
-//        stringQuery="select u.username from users u where u.id = "+userId;
-//        Query query = entityManager.createNativeQuery(stringQuery);
-//        return (String) query.getSingleResult();
-//    }
+
     public List<String> getUserDepartmentsNames(int id) {
         String stringQuery="select dep.name||' '||dep.address as name " +
                 "from departments dep where dep.id in (select p.department_id from user_department p where p.user_id= "+id+")"+
@@ -431,7 +392,7 @@ public class UserRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
         {
 //            Long myId = userDetailService.getUserId();
-            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            UserSettingsJSON userSettings = getMySettings();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
@@ -553,7 +514,7 @@ public class UserRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "25,24"))// Пользователи: "Меню - таблица - пользователи всех предприятий","Меню - таблица - пользователи только своего предприятия","Меню - таблица - только свой документ"
         {
             String stringQuery;
-            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            UserSettingsJSON userSettings = getMySettings();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
@@ -657,10 +618,10 @@ public class UserRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(5L,"23") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("users",delNumbers)))
         {
             //plan limit check
-            Long masterId =  userRepositoryJPA.getMyMasterId();
+            Long masterId =  getMyMasterId();
             long amountToRepair = delNumbers.split(",").length;
-            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
-                if((userRepositoryJPA.getMyConsumedResources().getUsers()+amountToRepair)>userRepositoryJPA.getMyMaxAllowedResources().getUsers())
+            if(!isPlanNoLimits(getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if((getMyConsumedResources().getUsers()+amountToRepair)>getMyMaxAllowedResources().getUsers())
                     return -120; // number of users is out of bounds of tariff plan
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = getMyId();
@@ -719,39 +680,6 @@ public class UserRepositoryJPA {
             return null;
         }
     }
-//    @SuppressWarnings("Duplicates")
-//    public UserSettingsJSON getUserSettings(Long userId) {
-//        String stringQuery;
-//        stringQuery = "select " +
-//                "   p.time_zone_id as time_zone_id, " +
-//                "   p.language_id as language_id, " +
-//                "   p.locale_id as locale_id, " +
-//                "   sslc.code as locale, " +
-//                "   sslg.suffix as suffix " +
-//                "   from    user_settings p, " +
-//                "           sprav_sys_languages sslg, " +
-//                "           sprav_sys_locales sslc " +
-//                "   where   p.user_id=" + userId +
-//                "   and     p.language_id=sslg.id" +
-//                "   and     p.locale_id=sslc.id";
-//        try{
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            List<Object[]> queryList = query.getResultList();
-//            UserSettingsJSON doc = new UserSettingsJSON();
-//            if(queryList.size()>0) {
-//                doc.setTime_zone_id((Integer)   queryList.get(0)[0]);
-//                doc.setLanguage_id((Integer)    queryList.get(0)[1]);
-//                doc.setLocale_id((Integer)      queryList.get(0)[2]);
-//                doc.setLocale((String)          queryList.get(0)[3]);
-//                doc.setSuffix((String)          queryList.get(0)[4]);
-//            }
-//            return doc;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.error("Exception in method getUserSettings. SQL query:" + stringQuery, e);
-//            return null;
-//        }
-//    }
 
     @SuppressWarnings("Duplicates")
     public UserSettingsJSON getMySettings() {
@@ -922,7 +850,7 @@ public class UserRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public UserResources getMyConsumedResources(){
         String BASE_FILES_FOLDER;
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        Long myMasterId = getMyMasterId();
         try{
             if(storageService.isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде (dev mode)
             } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux (prod mode)
@@ -962,7 +890,7 @@ public class UserRepositoryJPA {
     // Counting maximal allowed user resources
     @SuppressWarnings("Duplicates")
     public UserResources getMyMaxAllowedResources(){
-        Long myMasterId=userRepositoryJPA.getMyMasterId();
+        Long myMasterId=getMyMasterId();
         try{
             int plan_id = getMasterUserPlan(myMasterId);
             String stringQuery =
@@ -1027,162 +955,8 @@ public class UserRepositoryJPA {
         return (query.getResultList().size() > 0);
     }
 
-    @Transactional
-    public void createMasterUserPlanOptions(Long userId, int planId){
-        String stringQuery=
-                "insert into plans_add_options (" +
-                    "user_id, " +
-                    "n_companies," +
-                    "n_departments," +
-                    "n_users," +
-                    "n_products," +
-                    "n_counterparties," +
-                    "n_megabytes," +
-                    "n_stores," +
-                    "n_stores_woo," +
-                    "companies_ppu," +
-                    "departments_ppu," +
-                    "users_ppu," +
-                    "products_ppu," +
-                    "counterparties_ppu," +
-                    "megabytes_ppu," +
-                    "stores_ppu," +
-                    "stores_woo_ppu" +
-                ")" +
-                " values " +
-                "("+userId + ", " +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "0," +
-                    "(select ppu from plans_add_options_prices where name='companies')," +
-                    "(select ppu from plans_add_options_prices where name='departments')," +
-                    "(select ppu from plans_add_options_prices where name='users')," +
-                    "(select ppu from plans_add_options_prices where name='products')," +
-                    "(select ppu from plans_add_options_prices where name='counterparties')," +
-                    "(select ppu from plans_add_options_prices where name='megabytes')," +
-                    "(select ppu from plans_add_options_prices where name='stores')," +
-                    "(select ppu from plans_add_options_prices where name='stores_woo')" +
-                ")";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method createMasterUserPlanOptions. SQL = "+stringQuery, e);
-        }
-    }
 
-    public MasterAccountInfoJSON getMasterAccountInfo(){
-        Long masterId=userRepositoryJPA.getMyMasterId();
-        MasterAccountInfoJSON accInfo = new MasterAccountInfoJSON();
-        String suffix = userRepositoryJPA.getMySuffix();
-        int planId = getMasterUserPlan(masterId);
-        String stringQuery="";
-        try{
 
-            // get the info about tariff plan
 
-            stringQuery = "select coalesce(sum(operation_sum),0) from _saas_billing_history u where master_account_id = "+masterId;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            accInfo.setMoney(((BigDecimal) query.getSingleResult()).setScale(2, BigDecimal.ROUND_HALF_UP));
-
-            stringQuery = "select " +
-                    " n_companies as n_companies, " +
-                    " n_departments as n_departments, " +
-                    " n_users as n_users, " +
-                    " n_products as n_products, " +
-                    " n_counterparties as n_counterparties, " +
-                    " n_megabytes as n_megabytes, " +
-                    " n_stores as n_stores, " +
-                    " n_stores_woo as n_stores_woo, " +
-                    " name_"+suffix+" as name, " +
-                    " version as version, " +
-                    " daily_price as daily_price," +
-                    " is_nolimits as is_nolimits "+
-                    " from plans u where id = "+planId;
-
-            query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-
-            accInfo.setN_companies(Long.valueOf(queryList.get(0)[0].toString()));
-            accInfo.setN_departments(Long.valueOf(queryList.get(0)[1].toString()));
-            accInfo.setN_users(Long.valueOf(queryList.get(0)[2].toString()));
-            accInfo.setN_products(Long.valueOf(queryList.get(0)[3].toString()));
-            accInfo.setN_counterparties(Long.valueOf(queryList.get(0)[4].toString()));
-            accInfo.setN_megabytes(Integer.valueOf(queryList.get(0)[5].toString()));
-            accInfo.setN_stores(Long.valueOf(queryList.get(0)[6].toString()));
-            accInfo.setN_stores_woo(Long.valueOf(queryList.get(0)[7].toString()));
-            accInfo.setPlan_name((String) queryList.get(0)[8]);
-            accInfo.setPlan_version((Integer) queryList.get(0)[9]);
-            accInfo.setPlan_price((BigDecimal) queryList.get(0)[10]);
-            accInfo.setPlan_no_limits((Boolean) queryList.get(0)[11]);
-
-            // get the info about an additional options
-
-            stringQuery = "select " +
-                    "n_companies as n_companies, " +
-                    "n_departments as n_departments, " +
-                    "n_users as n_users, " +
-                    "n_products as n_products, " +
-                    "n_counterparties as n_counterparties, " +
-                    "n_megabytes as n_megabytes, " +
-                    "n_stores as n_stores, " +
-                    "n_stores_woo as n_stores_woo, " +
-                    "companies_ppu as companies_ppu, " +
-                    "departments_ppu as departments_ppu, " +
-                    "users_ppu as users_ppu, " +
-                    "products_ppu as products_ppu, " +
-                    "counterparties_ppu as counterparties_ppu, " +
-                    "megabytes_ppu as megabytes_ppu, " +
-                    "stores_ppu as stores_ppu, " +
-                    "stores_woo_ppu as stores_woo_ppu " +
-                    " from plans_add_options u where user_id = "+masterId;
-
-            query = entityManager.createNativeQuery(stringQuery);
-            queryList = query.getResultList();
-
-            accInfo.setN_companies_add(Long.valueOf(queryList.get(0)[0].toString()));
-            accInfo.setN_departments_add(Long.valueOf(queryList.get(0)[1].toString()));
-            accInfo.setN_users_add(Long.valueOf(queryList.get(0)[2].toString()));
-            accInfo.setN_products_add(Long.valueOf(queryList.get(0)[3].toString()));
-            accInfo.setN_counterparties_add(Long.valueOf(queryList.get(0)[4].toString()));
-            accInfo.setN_megabytes_add(Integer.valueOf(queryList.get(0)[5].toString()));
-            accInfo.setN_stores_add(Long.valueOf(queryList.get(0)[6].toString()));
-            accInfo.setN_stores_woo_add(Long.valueOf(queryList.get(0)[7].toString()));
-            accInfo.setCompanies_ppu((BigDecimal)       queryList.get(0)[8]);
-            accInfo.setDepartments_ppu((BigDecimal)     queryList.get(0)[9]);
-            accInfo.setUsers_ppu((BigDecimal)           queryList.get(0)[10]);
-            accInfo.setProducts_ppu((BigDecimal)        queryList.get(0)[11]);
-            accInfo.setCounterparties_ppu((BigDecimal)  queryList.get(0)[12]);
-            accInfo.setMegabytes_ppu((BigDecimal)       queryList.get(0)[13]);
-            accInfo.setStores_ppu((BigDecimal)          queryList.get(0)[14]);
-            accInfo.setStores_woo_ppu((BigDecimal)      queryList.get(0)[15]);
-
-            // get the info about consumed resources
-            UserResources userResources = getMyConsumedResources();
-
-            accInfo.setN_companies_fact(userResources.getCompanies());
-            accInfo.setN_departments_fact(userResources.getDepartments());
-            accInfo.setN_users_fact(userResources.getUsers());
-            accInfo.setN_products_fact(userResources.getProducts());
-            accInfo.setN_counterparties_fact(userResources.getCounterparties());
-            accInfo.setN_megabytes_fact(userResources.getMegabytes());
-            accInfo.setN_stores_fact(userResources.getStores());
-            accInfo.setN_stores_woo_fact(userResources.getStores_woo());
-
-            return accInfo;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getMasterAccountInfo. SQL = "+stringQuery, e);
-            return null;
-        }
-
-    }
 
 }

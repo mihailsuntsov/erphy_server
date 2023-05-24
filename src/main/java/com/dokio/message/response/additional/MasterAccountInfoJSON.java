@@ -22,10 +22,13 @@ import java.math.BigDecimal;
 public class MasterAccountInfoJSON {
 
     private BigDecimal money;               // how much money on main account
+    private int        plan_id;              // id of tariff plan
     private String     plan_name;           // the name of tariff plan
     private int        plan_version;        // the version of tariff plan
     private BigDecimal plan_price;          // how much writeoff per day for tariff plan
     private boolean    plan_no_limits;      // tariff plan has no limits
+    private boolean    plan_free;           // for free plans the billing is not applied, also this users can't use an additional options
+    private int        free_trial_days;     // free trial period (days) when user have all possibilities
     private BigDecimal companies_ppu;       // writeoff per day for 1 additional company
     private BigDecimal departments_ppu;     // writeoff per day for 1 additional department
     private BigDecimal users_ppu;           // writeoff per day for 1 additional user
@@ -35,13 +38,33 @@ public class MasterAccountInfoJSON {
     private BigDecimal stores_ppu;          // writeoff per day for 1 additional WooCommerce store connection (document "Store")
     private BigDecimal stores_woo_ppu;      // writeoff per day for 1 additional WooCommerce hosting
 
+    // steps
+    private int        step_companies;
+    private int        step_departments;
+    private int        step_users;
+    private int        step_products;
+    private int        step_counterparties;
+    private int        step_megabytes;
+    private int        step_stores;
+    private int        step_stores_woo;
+
+    // quantity limit
+    private int        quantity_limit_companies;
+    private int        quantity_limit_departments;
+    private int        quantity_limit_users;
+    private int        quantity_limit_products;
+    private int        quantity_limit_counterparties;
+    private int        quantity_limit_megabytes;
+    private int        quantity_limit_stores;
+    private int        quantity_limit_stores_woo;
+
     // plan
     private Long n_companies;
     private Long n_departments;
     private Long n_users;
     private Long n_products;
     private Long n_counterparties;
-    private int n_megabytes;
+    private int  n_megabytes;
     private Long n_stores;
     private Long n_stores_woo;
 
@@ -51,10 +74,9 @@ public class MasterAccountInfoJSON {
     private Long n_users_add;
     private Long n_products_add;
     private Long n_counterparties_add;
-    private int n_megabytes_add;
+    private int  n_megabytes_add;
     private Long n_stores_add;
     private Long n_stores_woo_add;
-    private Long free_trial_days;
 
     // using in fact
     private Long n_companies_fact;
@@ -62,9 +84,153 @@ public class MasterAccountInfoJSON {
     private Long n_users_fact;
     private Long n_products_fact;
     private Long n_counterparties_fact;
-    private int n_megabytes_fact;
+    private int  n_megabytes_fact;
     private Long n_stores_fact;
     private Long n_stores_woo_fact;
+
+    public int getPlan_id() {
+        return plan_id;
+    }
+
+    public void setPlan_id(int plan_id) {
+        this.plan_id = plan_id;
+    }
+
+    public int getStep_companies() {
+        return step_companies;
+    }
+
+    public void setStep_companies(int step_companies) {
+        this.step_companies = step_companies;
+    }
+
+    public int getStep_departments() {
+        return step_departments;
+    }
+
+    public void setStep_departments(int step_departments) {
+        this.step_departments = step_departments;
+    }
+
+    public int getStep_users() {
+        return step_users;
+    }
+
+    public void setStep_users(int step_users) {
+        this.step_users = step_users;
+    }
+
+    public int getStep_products() {
+        return step_products;
+    }
+
+    public void setStep_products(int step_products) {
+        this.step_products = step_products;
+    }
+
+    public int getStep_counterparties() {
+        return step_counterparties;
+    }
+
+    public void setStep_counterparties(int step_counterparties) {
+        this.step_counterparties = step_counterparties;
+    }
+
+    public int getStep_megabytes() {
+        return step_megabytes;
+    }
+
+    public void setStep_megabytes(int step_megabytes) {
+        this.step_megabytes = step_megabytes;
+    }
+
+    public int getStep_stores() {
+        return step_stores;
+    }
+
+    public void setStep_stores(int step_stores) {
+        this.step_stores = step_stores;
+    }
+
+    public int getStep_stores_woo() {
+        return step_stores_woo;
+    }
+
+    public void setStep_stores_woo(int step_stores_woo) {
+        this.step_stores_woo = step_stores_woo;
+    }
+
+    public int getQuantity_limit_companies() {
+        return quantity_limit_companies;
+    }
+
+    public void setQuantity_limit_companies(int quantity_limit_companies) {
+        this.quantity_limit_companies = quantity_limit_companies;
+    }
+
+    public int getQuantity_limit_departments() {
+        return quantity_limit_departments;
+    }
+
+    public void setQuantity_limit_departments(int quantity_limit_departments) {
+        this.quantity_limit_departments = quantity_limit_departments;
+    }
+
+    public int getQuantity_limit_users() {
+        return quantity_limit_users;
+    }
+
+    public void setQuantity_limit_users(int quantity_limit_users) {
+        this.quantity_limit_users = quantity_limit_users;
+    }
+
+    public int getQuantity_limit_products() {
+        return quantity_limit_products;
+    }
+
+    public void setQuantity_limit_products(int quantity_limit_products) {
+        this.quantity_limit_products = quantity_limit_products;
+    }
+
+    public int getQuantity_limit_counterparties() {
+        return quantity_limit_counterparties;
+    }
+
+    public void setQuantity_limit_counterparties(int quantity_limit_counterparties) {
+        this.quantity_limit_counterparties = quantity_limit_counterparties;
+    }
+
+    public int getQuantity_limit_megabytes() {
+        return quantity_limit_megabytes;
+    }
+
+    public void setQuantity_limit_megabytes(int quantity_limit_megabytes) {
+        this.quantity_limit_megabytes = quantity_limit_megabytes;
+    }
+
+    public int getQuantity_limit_stores() {
+        return quantity_limit_stores;
+    }
+
+    public void setQuantity_limit_stores(int quantity_limit_stores) {
+        this.quantity_limit_stores = quantity_limit_stores;
+    }
+
+    public int getQuantity_limit_stores_woo() {
+        return quantity_limit_stores_woo;
+    }
+
+    public void setQuantity_limit_stores_woo(int quantity_limit_stores_woo) {
+        this.quantity_limit_stores_woo = quantity_limit_stores_woo;
+    }
+
+    public boolean isPlan_free() {
+        return plan_free;
+    }
+
+    public void setPlan_free(boolean plan_free) {
+        this.plan_free = plan_free;
+    }
 
     public BigDecimal getMoney() {
         return money;
@@ -298,11 +464,11 @@ public class MasterAccountInfoJSON {
         this.n_stores_woo_add = n_stores_woo_add;
     }
 
-    public Long getFree_trial_days() {
+    public int getFree_trial_days() {
         return free_trial_days;
     }
 
-    public void setFree_trial_days(Long free_trial_days) {
+    public void setFree_trial_days(int free_trial_days) {
         this.free_trial_days = free_trial_days;
     }
 

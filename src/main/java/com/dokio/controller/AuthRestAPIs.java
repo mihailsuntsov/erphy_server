@@ -109,6 +109,8 @@ public class AuthRestAPIs {
 	DocumentsRepositoryJPA documentsRepository;
 	@Autowired
 	SpravProductAttributeRepository spravProductAttributes;
+	@Autowired
+	SubscriptionRepositoryJPA subscriptionRepository;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -175,7 +177,7 @@ public class AuthRestAPIs {
 		userRepository.save(user);// сохраняем чтобы применился язык
 		Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'","'my_department'","'role_admins'"});
 		// set plan options with current prices to master user
-		userRepositoryJPA.createMasterUserPlanOptions(createdUserId, settingsGeneral.getPlanDefaultId());
+		subscriptionRepository.createMasterUserPlanOptions(createdUserId);
 		// создадим пользователю предприятие
 		CompaniesForm company = new CompaniesForm();
 		company.setName(map.get("my_company"));

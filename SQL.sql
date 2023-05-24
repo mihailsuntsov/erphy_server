@@ -4374,7 +4374,7 @@ insert into _dictionary (key, tr_ru, tr_en) values
 
 update version set value = '1.2.2', date = '16-04-2023';
 ------------------------------------------------  end of 1.2.2  ------------------------------------------------------
------------------------------------------------  start of 1.2.3  -----------------------------------------------------
+----------------------------------------------s-  start of 1.2.3  -----------------------------------------------------
 
 alter table users add column  plan_price           numeric (20,10);
 alter table users add column  free_trial_days      int;
@@ -4397,24 +4397,31 @@ insert into permissions (id,name_ru,name_en,document_id,output_order) values
 (681,'Просмотр','View',55,50),
 (682,'Редактирование','Editing',55,90);
 update plans set n_stores_woo=0;
+
 insert into plans_add_options (user_id,n_companies,n_departments,n_users,n_products,n_counterparties,n_megabytes,n_stores,n_stores_woo,companies_ppu,departments_ppu,users_ppu,products_ppu,counterparties_ppu,megabytes_ppu,stores_ppu,stores_woo_ppu)
 select u.id,0,0,0,0,0,0,0,0,0.166,0.166,0.166,0.166,0.166,0.166,0.166,0.233 from users u where id=master_id;
+
 create table plans_add_options_prices (
                                         name            varchar(100) not null,
-                                        ppu             numeric (10,3) not null,
+                                        ppu             numeric (15,10) not null,
                                         step            int not null,
                                         quantity_limit  int not null,
                                         is_active       boolean not null
                                       );
+
 insert into plans_add_options_prices  (name, ppu, step, quantity_limit, is_active) values
-                                      ('companies',      0.166, 1,    1000,   true),
-                                      ('departments',    0.166, 1,    1000,   true),
-                                      ('users',          0.166, 1,    100,    true),
-                                      ('products',       0.166, 1000, 100000, true),
-                                      ('counterparties', 0.166, 1000, 100000, true),
-                                      ('megabytes',      0.166, 500,  5000,   true),
-                                      ('stores',         0.166, 1,    10,     true),
-                                      ('stores_woo',     0.233, 1,    10,     true);
+                                      ('companies',      0.166,         1,    1000,   true),
+                                      ('departments',    0.166,         1,    1000,   true),
+                                      ('users',          0.166,         1,    100,    true),
+                                      ('products',       0.000166,      1000, 100000, true),
+                                      ('counterparties', 0.000166,      1000, 100000, true),
+                                      ('megabytes',      0.0003333333,  500,  5000,   true),
+                                      ('stores',         0.166,         1,    10,     true),
+                                      ('stores_woo',     0.233,         1,    10,     true);
+
+
+
+
 
 alter table companies add column vat varchar(100);
 alter table cagents add column vat varchar(100);
@@ -4577,6 +4584,98 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('black',    'чёрный','black'),
 ('white',     'белый','white');
 
+alter table plans_add_options_prices add constraint name_uq unique (name);
+create table _saas_billing_history
+(id bigserial primary key not null,
+ date_time_created timestamp with time zone not null,
+ for_what_date date not null,
+ master_account_id  bigint not null,
+ operation_type varchar(100) not null, -- i.e. depositing, withdrawal_plan, withdrawal_plan_option, correction etc.
+ plan_id int, -- plan id
+ option_name  varchar(100), -- additional option name like "department", "store_connection"
+ option_ppu  numeric (20,10), -- price per unit of option
+ option_quantity int, -- quantity of option like  "plan_option_name = Store connection,  plan_option_quantity = 2"
+ operation_sum numeric (20,10) not null,
+ additional varchar(10000), --additional info
+ foreign key (master_account_id) references users(id),
+ foreign key (plan_id) references plans(id),
+ foreign key (option_name) references plans_add_options_prices(name)
+);
+
+alter table plans drop column is_default; -- it is not need because default plan is in settings_general->plan_default_id
+alter table plans add column is_free boolean; -- for free plans the billing is not applied, also this users can't use an additional options
+update plans set is_free = true;
+alter table plans alter column is_free set not null;
+alter table plans alter column n_stores_woo set not null;
+-- insert into plans (
+--   name_en,
+--   name_ru,
+--   version,
+--   daily_price,
+--   is_free,
+--   is_nolimits,
+--   is_archive,
+--   date_time_created,
+--   output_order,
+--   n_companies,
+--   n_departments,
+--   n_users,
+--   n_products,
+--   n_counterparties,
+--   n_megabytes,
+--   n_stores,
+--   n_stores_woo) values
+-- ('Starter','Старт', 1, 0.333, false, false,  false, now(), 300, 1, 1, 1, 1000, 1000, 500, 0, 0);
+
+alter table plans_add_options_prices alter column ppu type numeric (20,10);
+alter table plans_add_options alter column stores_ppu type numeric(20,10);
+alter table plans_add_options alter column stores_woo_ppu type numeric(20,10);
+alter table plans_add_options alter column companies_ppu type numeric (20,10);
+alter table plans_add_options alter column departments_ppu type numeric (20,10);
+alter table plans_add_options alter column users_ppu type numeric (20,10);
+alter table plans_add_options alter column products_ppu type numeric (20,10);
+alter table plans_add_options alter column counterparties_ppu type numeric (20,10);
+alter table plans_add_options alter column megabytes_ppu type numeric (20,10);
+update plans_add_options set megabytes_ppu = 0.0003333333;
+update plans_add_options_prices set ppu=0.0003333333 where name='megabytes';
+
+-- update plans_add_options_prices set quantity_limit=5 where name='companies';
+-- update plans_add_options_prices set quantity_limit=5 where name='departments';
+-- update plans_add_options_prices set quantity_limit=5 where name='users';
+-- update plans_add_options_prices set quantity_limit=5000 where name='products';
+-- update plans_add_options_prices set quantity_limit=5000 where name='counterparties';
+-- update plans_add_options_prices set quantity_limit=1050 where name='megabytes';
+-- update plans_add_options_prices set quantity_limit=5 where name='stores';
+-- update plans_add_options_prices set quantity_limit=5 where name='stores_woo';
+
+-- insert into _saas_billing_history(
+--   date_time_created,
+--   for_what_date,
+--   master_account_id,
+--   operation_type,
+--   plan_id,
+--   option_name,
+--   option_ppu,
+--   option_quantity,
+--   operation_sum,
+--   additional
+-- ) values (now(),to_date('23.05.2023','DD.MM.YYYY'),4,'depositing',null,null,null,null,20,'First depositing')
+
+alter table plans add column is_available_for_user_switching boolean; --  Can user switch its current plan to this plan?
+update plans set is_available_for_user_switching = true where is_nolimits = false;
+update plans set is_available_for_user_switching = false where is_nolimits = true;
+alter table plans alter column is_available_for_user_switching set not null;
+
+alter table plans_add_options_prices add column quantity_trial_limit int;
+update plans_add_options_prices set quantity_trial_limit = 1 where name = 'companies';
+update plans_add_options_prices set quantity_trial_limit = 4 where name = 'departments';
+update plans_add_options_prices set quantity_trial_limit = 5 where name = 'users';
+update plans_add_options_prices set quantity_trial_limit = 0 where name = 'products';
+update plans_add_options_prices set quantity_trial_limit = 0 where name = 'counterparties';
+update plans_add_options_prices set quantity_trial_limit = 0 where name = 'megabytes';
+update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores';
+update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores_woo';
+alter table plans_add_options_prices alter column quantity_trial_limit set not null;
 
 
 
@@ -4597,91 +4696,25 @@ insert into _dictionary (key, tr_ru, tr_en) values
 
 
 
-  WITH
-  credit as (
-    selectgetProductHistoryTableReport
-        (select coalesce(sum(acp.product_sumprice),0) from acceptance_product acp where acp.acceptance_id in
-          (select ac.id from acceptance ac where ac.master_id=4 and ac.company_id=1 and coalesce(ac.is_completed,false)=true and ac.cagent_id=1))
-        +
-        (select coalesce(sum(rcp.product_sumprice),0) from return_product rcp where rcp.return_id in
-          (select rc.id from return rc where rc.master_id=4 and rc.company_id=1 and coalesce(rc.is_completed,false)=true and rc.cagent_id=1))
-        +
-        (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and pi.cagent_id=1 and coalesce(pi.is_completed,false)=true)
-        +
-        (select coalesce(sum(oi.summ),0) from orderin oi where oi.master_id=4 and oi.company_id=1 and oi.cagent_id=1 and coalesce(oi.is_completed,false)=true)
-  ),
-  debet as (
-    select
-        (select coalesce(sum(shp.product_sumprice),0) from shipment_product shp where shp.shipment_id in
-          (select sh.id from shipment sh where sh.master_id=4 and sh.company_id=1 and coalesce(sh.is_completed,false)=true and sh.cagent_id=1))
-        +
-        (select coalesce(sum(rsp.product_sumprice),0) from returnsup_product rsp where rsp.returnsup_id in
-          (select rs.id from returnsup rs where rs.master_id=4 and rs.company_id=1 and coalesce(rs.is_completed,false)=true and rs.cagent_id=1))
-        +
-        (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and po.cagent_id=1 and coalesce(po.is_completed,false)=true)
-        +
-        (select coalesce(sum(oo.summ),0) from orderout oo where oo.master_id=4 and oo.company_id=1 and oo.cagent_id=1 and coalesce(oo.is_completed,false)=true)
-  )
-select
-  (select * from credit) as credit,
-  (select * from debet) as debet,
-  ((select * from credit)-(select * from debet)) as balance;
-
-
-WITH
-  income as (
-    select
-      (select coalesce(sum(oi.summ),0) from orderin oi where oi.master_id=4 and oi.company_id=1 and boxoffice_id=1 and coalesce(oi.is_completed,false)=true)
-  ),
-  outcome as (
-    select
-      (select coalesce(sum(oo.summ),0) from orderout oo where oo.master_id=4 and oo.company_id=1 and boxoffice_id=1 and coalesce(oo.is_completed,false)=true)
-  )
-select
-  (select * from income) as income,
-  (select * from outcome) as outcome,
-  ((select * from income)-(select * from outcome)) as balance;
-
-WITH
-  income as (
-    select
-      (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and payment_account_id=4 and coalesce(pi.is_completed,false)=true)
-  ),
-  outcome as(
-    select
-      (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and payment_account_id=4 and coalesce(po.is_completed,false)=true)
-  )
-select
-  (select * from income) as income,
-  (select * from outcome) as outcome,
-  ((select * from income)-(select * from outcome)) as balance;
-
-
-WITH
-  income as (
-    select
-      (select coalesce(sum(pi.summ),0) from paymentin pi where pi.master_id=4 and pi.company_id=1 and payment_account_id=4 and coalesce(pi.is_completed,false)=true)
-  ),
-  outcome as(
-    select
-      (select coalesce(sum(po.summ),0) from paymentout po where po.master_id=4 and po.company_id=1 and payment_account_id=4 and coalesce(po.is_completed,false)=true)
-  ),
-  correction as(
-    select
-      (select coalesce(sum(co.summ),0) from correction co where co.master_id=4 and co.company_id=1 and payment_account_id=4 and coalesce(co.is_completed,false)=true)
-  )
-select
-  (select * from income) as income,
-  (select * from outcome) as outcome,
-  ((select * from income)-(select * from outcome)+(select * from correction)) as balance;
 
 
 
 
 
 
-delete from user_roles where user_id=141;
-delete from users where id=141;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

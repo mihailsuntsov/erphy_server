@@ -69,7 +69,7 @@ public class StoreVariationsRepository {
         ProductCountJSON result = new ProductCountJSON();
         try{
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
-//            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
 
@@ -85,21 +85,28 @@ public class StoreVariationsRepository {
 
             stringQuery =
            // " select pv.variation_product_id from product_variations pv" +
-            "select count(*) from product_variations pv" +
+            " select count(*) from product_variations pv" +
                                                               " WHERE " +
 
             " pv.variation_product_id in ( "+
                 " select p.id from products p "+
+                " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id "+
+                " INNER JOIN product_categories pc ON pc.id=ppc.category_id "+
+                " INNER JOIN stores_productcategories spc ON pc.id=spc.category_id "+
+                " INNER JOIN stores s on s.id=spc.store_id "+
                 " LEFT OUTER JOIN stores_variations sp ON sp.product_id = p.id and sp.store_id = " + storeId +
                 " where"+
                 " p.company_id =  " + companyId +
                 " and coalesce(p.is_deleted, false) = false " +
-                " and ("+
-                    "(coalesce(sp.need_to_syncwoo,true) = true) or " +
-                    "(sp.date_time_syncwoo is null) or"+
-                    "(p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo) " +
-                ") " +
-            ") "
+                " and coalesce(pc.is_store_category,false)=true " +
+                " and p.id in (select variation_product_id from product_variations where master_id = "+masterId+") " +
+                " and s.id = "+storeId+" and " +
+                "("+
+                    " (coalesce(sp.need_to_syncwoo,true) = true) or " +
+                    " (sp.date_time_syncwoo is null) or"+
+                    " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo) " +
+                " ) " +
+            " ) "
             ;
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -180,11 +187,18 @@ public class StoreVariationsRepository {
 
                 " pv.variation_product_id in ( " +
                     " select p.id from products p " +
+                    " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id "+
+                    " INNER JOIN product_categories pc ON pc.id=ppc.category_id "+
+                    " INNER JOIN stores_productcategories spc ON pc.id=spc.category_id "+
+                    " INNER JOIN stores s on s.id=spc.store_id "+
                     " LEFT OUTER JOIN stores_variations sp ON sp.product_id = p.id and sp.store_id = " + storeId +
                     " where " +
-                    " p.company_id = "  + companyId +
+                    " p.company_id =  " + companyId +
                     " and coalesce(p.is_deleted, false) = false " +
-                    " and ( " +
+                    " and coalesce(pc.is_store_category,false)=true " +
+                    " and p.id in (select variation_product_id from product_variations where master_id = "+masterId+") " +
+                    " and s.id = "+storeId+" and " +
+                    " ( " +
                         "(coalesce(sp.need_to_syncwoo,true) = true) or " +
                         "(sp.date_time_syncwoo is null) or " +
                         "(p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo) " +
