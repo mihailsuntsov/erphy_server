@@ -60,3 +60,6 @@ null                            Ошибка выполнения
 
 -290                            Попытка изменить тип товара с уже имеющимися операциями на "Вариативный"
                                 You cannot change a product type that already has a warehouse history to "variable".
+
+-300                            Нельзя изменить тариф на платный при нулевом или отрицательном балансе
+                                You can not change the plan to a paid one with a zero or negative balance

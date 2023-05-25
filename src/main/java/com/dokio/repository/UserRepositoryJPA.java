@@ -32,6 +32,7 @@ import com.dokio.model.User;
 import com.dokio.model.UserGroup;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -80,6 +81,9 @@ public class UserRepositoryJPA {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private SubscriptionRepositoryJPA subscriptionRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -893,6 +897,7 @@ public class UserRepositoryJPA {
         Long myMasterId=getMyMasterId();
         try{
             int plan_id = getMasterUserPlan(myMasterId);
+            boolean isPlanFree = (Boolean)subscriptionRepository.isPlanFree(plan_id);
             String stringQuery =
                     "select   sum(companies) as companies, " +
                             " sum(departments) as departments, " +
@@ -912,7 +917,12 @@ public class UserRepositoryJPA {
                             " n_stores as stores, " +
                             " n_stores_woo as n_stores_woo " +
                             " from plans " +
-                            " where id = "+plan_id+")" +
+                            " where id = "+plan_id+")";
+
+            // on free plans there is no additional options
+            if(!isPlanFree)
+                stringQuery = stringQuery +
+
                             " UNION " +
                             " (select " +
                             " n_companies as companies, " +
@@ -923,7 +933,8 @@ public class UserRepositoryJPA {
                             " n_stores as stores, " +
                             " n_stores_woo as n_stores_woo " +
                             " from plans_add_options " +
-                            " where user_id="+myMasterId+")" +
+                            " where user_id="+myMasterId+")";
+            stringQuery = stringQuery +
                             ") AS result ";
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

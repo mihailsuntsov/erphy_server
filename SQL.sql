@@ -4374,7 +4374,7 @@ insert into _dictionary (key, tr_ru, tr_en) values
 
 update version set value = '1.2.2', date = '16-04-2023';
 ------------------------------------------------  end of 1.2.2  ------------------------------------------------------
-----------------------------------------------s-  start of 1.2.3  -----------------------------------------------------
+------------------------------------------------  start of 1.2.3  -----------------------------------------------------
 
 alter table users add column  plan_price           numeric (20,10);
 alter table users add column  free_trial_days      int;
@@ -4659,7 +4659,7 @@ update plans_add_options_prices set ppu=0.0003333333 where name='megabytes';
 --   option_quantity,
 --   operation_sum,
 --   additional
--- ) values (now(),to_date('23.05.2023','DD.MM.YYYY'),4,'depositing',null,null,null,null,20,'First depositing')
+-- ) values (now(),to_date('23.05.2023','DD.MM.YYYY'),4,'correction',null,null,null,null,20,'Just a correction ')
 
 alter table plans add column is_available_for_user_switching boolean; --  Can user switch its current plan to this plan?
 update plans set is_available_for_user_switching = true where is_nolimits = false;
@@ -4677,7 +4677,9 @@ update plans_add_options_prices set quantity_trial_limit = 1 where name = 'store
 update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores_woo';
 alter table plans_add_options_prices alter column quantity_trial_limit set not null;
 
-
+alter table settings_general add column free_plan_id int;
+update settings_general set free_plan_id = 2;
+alter table settings_general alter column free_plan_id set not null;
 
 
 

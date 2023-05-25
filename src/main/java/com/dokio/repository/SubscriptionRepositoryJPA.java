@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
@@ -174,8 +175,6 @@ public class SubscriptionRepositoryJPA {
                     "(select step from plans_add_options_prices where name = 'stores') as stores_step," +
                     "(select step from plans_add_options_prices where name = 'stores_woo') as stores_woo_step," +
 
-
-
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'companies') as companies_quantity_limit," +
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'departments') as departments_quantity_limit," +
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'users') as users_quantity_limit," +
@@ -183,8 +182,9 @@ public class SubscriptionRepositoryJPA {
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'counterparties') as counterparties_quantity_limit," +
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'megabytes') as megabytes_quantity_limit," +
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores') as stores_quantity_limit," +
-                    "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores_woo') as stores_woo_quantity_limit" +
+                    "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores_woo') as stores_woo_quantity_limit," +
 
+                    "(select is_saas from settings_general) as is_saas" +
                     " from plans_add_options u where user_id = "+masterId;
 
             query = entityManager.createNativeQuery(stringQuery);
@@ -226,6 +226,7 @@ public class SubscriptionRepositoryJPA {
             accInfo.setQuantity_limit_stores((Integer)          queryList.get(0)[30]);
             accInfo.setQuantity_limit_stores_woo((Integer)      queryList.get(0)[31]);
 
+            accInfo.setIs_saas((Boolean)                        queryList.get(0)[32]);
 
 
             // get the info about consumed resources
@@ -254,6 +255,13 @@ public class SubscriptionRepositoryJPA {
 
         Long masterId=userRepositoryJPA.getMyMasterId();
         int planId = userRepositoryJPA.getMasterUserPlan(masterId);
+
+        MasterAccountInfoJSON masterAccountInfo = getMasterAccountInfo();
+
+        // if trial period is over and no money and user wants to change its plan to non-free - DENY operations
+        if((masterAccountInfo.getFree_trial_days()==0) && masterAccountInfo.getMoney().compareTo(new BigDecimal("0")) <= 0 && !(Boolean)isPlanFree(options.getPlan_id()))
+            return -300; //You can not change the plan to a paid one with a zero or negative balance
+
         //Если есть право на "Редактирование"
         if(securityRepositoryJPA.userHasPermissions_OR(55L,"682")) {
 
@@ -337,7 +345,18 @@ public class SubscriptionRepositoryJPA {
         Long masterId=userRepositoryJPA.getMyMasterId();
         //Если есть право на "Редактирование"
         if(securityRepositoryJPA.userHasPermissions_OR(55L,"682")) {
-            String stringQuery = " update users set free_trial_days = 0 where id =" + masterId;
+            String stringQuery = " update users set free_trial_days = 0 where id =" + masterId +";" +
+
+
+        //changing from a pay-plan to the free plan of users who has 0 trial days and has no money
+        " update users set plan_id = (select free_plan_id from settings_general) " +
+            " where id in ( " +
+            " select id from users u " +
+            " where " +
+            " u.master_id = " + masterId + " and u.free_trial_days=0 and  u.plan_id in (select id from plans where is_free=false) and " +
+            " (select coalesce(sum(operation_sum),0) from _saas_billing_history where master_account_id=u.id) <=0 and " +
+            " u.plan_id != (select free_plan_id from settings_general) " +
+            " );";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -350,5 +369,16 @@ public class SubscriptionRepositoryJPA {
         } else return -1;// no permissions
     }
 
+    public Object isPlanFree(int id) {
+        String stringQuery = " select is_free from plans where id = " + id;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method UserRepositoryJPA->isPlanFree. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 }

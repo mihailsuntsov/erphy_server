@@ -29,6 +29,7 @@ public class MasterAccountInfoJSON {
     private boolean    plan_no_limits;      // tariff plan has no limits
     private boolean    plan_free;           // for free plans the billing is not applied, also this users can't use an additional options
     private int        free_trial_days;     // free trial period (days) when user have all possibilities
+    private boolean    is_saas;
     private BigDecimal companies_ppu;       // writeoff per day for 1 additional company
     private BigDecimal departments_ppu;     // writeoff per day for 1 additional department
     private BigDecimal users_ppu;           // writeoff per day for 1 additional user
@@ -87,6 +88,14 @@ public class MasterAccountInfoJSON {
     private int  n_megabytes_fact;
     private Long n_stores_fact;
     private Long n_stores_woo_fact;
+
+    public boolean isIs_saas() {
+        return is_saas;
+    }
+
+    public void setIs_saas(boolean is_saas) {
+        this.is_saas = is_saas;
+    }
 
     public int getPlan_id() {
         return plan_id;
