@@ -23,6 +23,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
 import com.dokio.message.response.additional.FilesCompaniesJSON;
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -749,7 +750,7 @@ public class CompanyRepositoryJPA {
         }catch (Exception e) {
             logger.error("Error of updateCompanyBaseFields. SQL:" + stringQuery + ", params: " + query.getParameters().toString(), e);
             e.printStackTrace();
-            throw new Exception();
+            throw new Exception(e);
         }
     }
 
@@ -777,7 +778,7 @@ public class CompanyRepositoryJPA {
         }
     }
 
-    private Boolean insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) {
+    private void insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) throws Exception {
         String stringQuery;
         try {
             stringQuery =   " insert into companies_payment_accounts (" +
@@ -806,43 +807,45 @@ public class CompanyRepositoryJPA {
             query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
             query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of insertCompanyPaymentAccounts", e);
             e.printStackTrace();
-            return false;
+            throw new Exception(e);
         }
 
     }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Long insertCompany(CompaniesForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(3L,"3"))//  Предприятия : "Создание" (см. файл Permissions Id)
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
             //plan limit check
-            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) // if plan with limits - checking limits
-                if(userRepositoryJPA.getMyConsumedResources().getCompanies()>=userRepositoryJPA.getMyMaxAllowedResources().getCompanies())
+            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) { // if plan with limits - checking limits
+                UserResources consumedResources = userRepositoryJPA.getMyConsumedResources();
+                UserResources allowedResources = userRepositoryJPA.getMyMaxAllowedResources();
+                if(
+                    consumedResources.getCompanies() >= allowedResources.getCompanies()||
+                            //because Company creates Department
+                    consumedResources.getDepartments()>= allowedResources.getDepartments()
+                )
                     return -120L; // number of companies is out of bounds of tariff plan
+            }
             Long createdCompanyId;
             try
             {   //Сначала создаём документ без банковских счетов
                 createdCompanyId = insertCompanyBaseFields(request,myMasterId);
-                if(createdCompanyId!=null){
-                    try {//если создалась..
-                        //Сохраняем банковские реквизиты
-                        for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
-                            insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
-                        }
-                        return createdCompanyId;
-                    } catch (Exception e){
-                        e.printStackTrace();
-                        return null;
-                    }
-                } else return null;
+                //Сохраняем банковские реквизиты
+                for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
+                    insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
+                }
+                return createdCompanyId;
+
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method insertCompany.", e);
                 e.printStackTrace();
                 return null;
             }
@@ -851,7 +854,7 @@ public class CompanyRepositoryJPA {
     }
 
 
-    public Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId){
+    public Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId) throws Exception {
         String stringQuery;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         Long myId = userRepository.getUserId();
@@ -1022,7 +1025,7 @@ public class CompanyRepositoryJPA {
         } catch (Exception e) {
             logger.error("Exception in method insertCompanyBaseFields. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return null;
+            throw new Exception(e);
         }
     }
 

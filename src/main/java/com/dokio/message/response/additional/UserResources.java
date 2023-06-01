@@ -93,4 +93,18 @@ public class UserResources {
     public void setMegabytes(int megabytes) {
         this.megabytes = megabytes;
     }
+
+    @Override
+    public String toString() {
+        return "UserResources{" +
+                "companies=" + companies +
+                ", departments=" + departments +
+                ", users=" + users +
+                ", products=" + products +
+                ", counterparties=" + counterparties +
+                ", stores=" + stores +
+                ", stores_woo=" + stores_woo +
+                ", megabytes=" + megabytes +
+                '}';
+    }
 }

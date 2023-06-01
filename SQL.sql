@@ -4510,7 +4510,7 @@ alter table settings_vatinvoiceout add column date_time_update timestamp with ti
 alter table settings_writeoff add column date_time_update timestamp with time zone;
 alter table settings_dashboard add column date_time_update timestamp with time zone;
 
-alter table stores add column is_rent_store_exists boolean;
+-- alter table stores add column is_rent_store_exists boolean;
 -- this table describes the field "Default Form Values" in WooCommerce
 create table default_attributes(
                                  master_id     bigint not null,
@@ -4681,28 +4681,129 @@ alter table settings_general add column free_plan_id int;
 update settings_general set free_plan_id = 2;
 alter table settings_general alter column free_plan_id set not null;
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('withdrawal_plan',            'Списание за тариф',     'Plan write-off'),
+('withdrawal_plan_option',     'Списание за доп. опции','Additional options write-off');
 
+alter table settings_general add column let_woo_plugin_to_sync boolean;
+update settings_general set let_woo_plugin_to_sync=true;
+alter table settings_general alter column let_woo_plugin_to_sync set not null;
+alter table settings_general add column woo_plugin_oldest_acceptable_ver varchar(10);
+update settings_general set woo_plugin_oldest_acceptable_ver='1.3.0';
+alter table settings_general alter column woo_plugin_oldest_acceptable_ver set not null;
+alter table stores add column is_let_sync boolean;
+update stores set is_let_sync=true;
+alter table stores alter column is_let_sync set not null;
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('withdrawal_add_service',     'Списание за доп. сервис','Additional service write-off');
 
+alter table settings_general add column is_sites_distribution boolean; -- in this SaaS there is a sites distribution
+update settings_general set is_sites_distribution=false;
+alter table settings_general alter column is_sites_distribution set not null;
 
+create table stores_for_ordering (
+                                id                    bigserial primary key not null,
 
+                                date_time_created     timestamp with time zone not null,
+                                ready_to_distribute   boolean not null,
+                                distributed           boolean not null,
+                                is_deleted            boolean not null,
 
+                                client_no             varchar(100),
+                                client_name           varchar(100),
+                                client_login          varchar(100),
+                                client_password       varchar(256),
+                                site_domain           varchar(100),
+                                site_root             varchar(100),
+                                ftp_user              varchar(100),
+                                ftp_password          varchar(256),
+                                db_user               varchar(100),
+                                db_password           varchar(256),
+                                db_name               varchar(100),
+                                wp_login              varchar(100),
+                                wp_password           varchar(256),
+                                wp_server_ip          varchar(16) ,
+                                dokio_secret_key      varchar(100),
+                                record_creator_name   varchar(100), -- name of employee who created this record
 
+                                date_time_ordered     timestamp with time zone,
+                                date_time_distributed timestamp with time zone,
+                                date_time_deleted     timestamp with time zone,
+                                master_id             bigint,
+                                company_id            bigint,
+                                store_id              bigint,
+                                orderer_id            bigint,           -- who ordered (who is clicked on the button "Order store")
+                                deleter_id            bigint,           -- who deleted (who is clicked on the button "Delete store")
 
+                                foreign key (master_id) references users(id),
+                                foreign key (company_id) references companies(id),
+                                foreign key (orderer_id) references users(id),
+                                foreign key (deleter_id) references users(id),
+                                foreign key (store_id) references stores(id)
+);
 
+alter table settings_general add column   stores_alert_email    varchar(100);
+alter table settings_general add column   min_qtt_stores_alert  int;
+update      settings_general set          min_qtt_stores_alert  = 0;
+alter table settings_general alter column min_qtt_stores_alert  set not null;
 
+create table _saas_agreements(
+                               id                    bigserial primary key not null,
+                               type                  varchar(100) not null,
+                               version               varchar(100) not null,
+                               version_date          date not null,
+                               name_en               varchar(300) not null,
+                               text_en               varchar(2000000) not null,
+                               name_ru               varchar(300) not null,
+                               text_ru               varchar(2000000) not null
+);
 
-
-
-
-
-
-
-
-
-
-
-
+-- insert into _saas_agreements(
+--   type,
+--   version,
+--   version_date,
+--   name_en,
+--   text_en,
+--   name_ru,
+--   text_ru
+-- ) values (
+--            'site_hosting',
+--            '1',
+--            to_date('01.01.2023','DD.MM.YYYY'),
+--            'Site hosting',
+--            '<p>
+--          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus suscipit lacus vitae nunc suscipit feugiat. Aliquam vehicula feugiat dui, in ullamcorper nunc bibendum in. Nam sed ante elementum, porttitor tortor a, tempus diam. Maecenas nec augue placerat, vehicula nibh sit amet, eleifend enim. Sed sed dui nisi. Praesent dolor erat, cursus ac leo ac, cursus pulvinar lacus. Donec fringilla scelerisque augue, quis vulputate urna tincidunt eget. Nam eu nisl et mauris interdum imperdiet ac porttitor turpis. Ut pharetra elit nec blandit varius. Morbi ante sem, gravida finibus consectetur ac, facilisis ut ligula. Maecenas mattis varius justo eu gravida.
+--          </p>
+--          <p>
+--          Curabitur eu ex non dui lobortis feugiat. Suspendisse nec neque vel nunc facilisis lacinia a id urna. Pellentesque nec tellus neque. Fusce ultricies dictum blandit. Vestibulum ultrices mattis vestibulum. Vestibulum ac sollicitudin tortor. Vestibulum ut libero ac lacus feugiat varius. Nunc tempus vel odio nec blandit. Aliquam eu libero tempus, vestibulum arcu at, varius lectus. Fusce dapibus, leo sed pretium pharetra, ex nisi consequat purus, ut accumsan tortor dolor nec risus. Nunc quis nisi tristique, semper turpis et, cursus tortor. Nam ac turpis enim. Donec eget felis ut diam placerat dignissim. Cras eu ipsum non nulla iaculis ullamcorper. Nullam lacinia justo eu arcu porttitor varius. In consectetur dolor in leo consequat ullamcorper.
+--          </p>
+--          <p>
+--          Sed malesuada nulla sit amet odio pharetra, at placerat enim facilisis. Sed et faucibus velit, eu maximus odio. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Suspendisse lobortis, odio eu faucibus scelerisque, dolor dolor porta turpis, eget molestie ligula magna a purus. Nullam condimentum sed enim vitae semper. Sed suscipit erat nulla, ac auctor magna cursus eget. Nunc hendrerit accumsan risus, eu blandit arcu egestas nec. Proin tempus metus purus. Integer et lobortis lorem. Proin condimentum efficitur dignissim. Praesent accumsan mauris scelerisque diam aliquam scelerisque. Pellentesque dignissim ex eget efficitur placerat. Morbi euismod elementum ornare. Curabitur quis ligula at dolor vehicula posuere. Vestibulum gravida eget leo sed efficitur. Sed enim felis, dignissim ac tortor at, ultricies suscipit augue.
+--          </p>
+--          <p>
+--          In bibendum consectetur leo, in scelerisque enim interdum eget. Nam nec hendrerit nunc, id efficitur enim. Aliquam tempus metus ut massa vulputate, id ultrices augue ornare. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Cras a finibus magna, et tempor orci. Maecenas lobortis diam eu felis commodo, in tristique lorem auctor. Praesent enim ante, sagittis vel rhoncus ac, suscipit sit amet leo. Sed volutpat, nisi ac fermentum placerat, ligula augue ultricies nisi, non pulvinar elit neque in mauris. Suspendisse elementum pharetra velit, non luctus arcu volutpat vel. Fusce ac consectetur mauris, eu feugiat eros. Donec dictum vestibulum lacus eget feugiat. In commodo augue eget lobortis pharetra. Duis finibus tincidunt risus a viverra.
+--          </p>
+--          <p>
+--          Nunc ultricies et orci sit amet ultricies. In laoreet, ante non venenatis faucibus, turpis erat convallis lacus, in laoreet neque velit ut sapien. Maecenas massa diam, scelerisque nec vestibulum non, pulvinar sit amet mi. Sed sit amet ultricies mauris. Fusce nec porttitor est, vitae scelerisque ante. Nullam tempor tincidunt auctor. Duis eros magna, dictum ac purus quis, luctus congue arcu. Nulla urna ipsum, imperdiet id efficitur nec, egestas nec sapien.
+--          </p>',
+--            'Хостинг сайта',
+--            '<p>
+--          Lorem ipsum dolor sit amet, consectetur adipiscing elit. In eget fermentum ipsum, quis efficitur quam. Cras quis convallis quam. Integer in lacinia tortor. Phasellus finibus diam tincidunt ante convallis tempus. Fusce consequat feugiat elit nec vulputate. Pellentesque lorem est, lacinia ac aliquet sit amet, ullamcorper ac leo. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus eros ante, ultricies id condimentum non, finibus id purus. Phasellus ac hendrerit arcu.
+--          </p>
+--          <p>
+--          Sed leo massa, tempor sed facilisis et, mollis ac dui. Fusce sollicitudin lacus eu pellentesque imperdiet. Aliquam pharetra nunc sit amet cursus aliquet. Sed accumsan viverra tellus, egestas consequat sem volutpat sit amet. Vestibulum pretium, risus sed vestibulum scelerisque, nisi massa porttitor nunc, ultrices pellentesque felis sem vel diam. Nullam neque ante, lacinia a nibh quis, sagittis gravida diam. Praesent ornare metus sed turpis vulputate eleifend. Nam vulputate nibh eget quam facilisis auctor. Aenean vitae accumsan neque. Morbi ut eros semper, sagittis massa et, accumsan justo. Fusce lacus magna, consequat sit amet lorem in, posuere gravida enim. Ut quis massa quam. Donec fermentum dui vel sem commodo, et sodales augue fermentum.
+--          </p>
+--          <p>
+--          Pellentesque fringilla felis mattis fermentum cursus. Maecenas leo sapien, ornare elementum arcu et, mattis blandit tellus. Sed consectetur, lacus non laoreet blandit, velit justo ornare sapien, at tristique eros lorem vel magna. Donec quis augue sit amet leo placerat vehicula ut non ex. Aliquam volutpat, risus ac viverra bibendum, dui lectus finibus nulla, ac fringilla lectus ex et nisl. Aenean sagittis euismod mi at placerat. In finibus libero et est congue, sed euismod libero tempor. Suspendisse malesuada pulvinar nulla, id consequat dui semper sed. Donec tempor a lacus ac ullamcorper. Nullam a lectus malesuada, consequat elit non, suscipit libero. Phasellus et luctus lorem. Nam a dictum turpis, non sollicitudin augue. Aliquam eget massa ultrices, porttitor mauris ut, lobortis mi. Etiam feugiat, ligula ac tempus tincidunt, risus nunc venenatis libero, mollis gravida nunc risus nec nunc. Donec feugiat velit nisl, ultricies ornare augue tincidunt vulputate. Aliquam erat volutpat.
+--          </p>
+--          <p>
+--          Mauris urna nulla, euismod non felis id, rhoncus blandit leo. Phasellus varius odio posuere, consectetur ante id, hendrerit ex. Integer hendrerit purus est, suscipit efficitur quam facilisis vel. Aenean neque lorem, mattis in nisl varius, aliquam accumsan justo. Vestibulum et egestas ligula. Vivamus vitae enim leo. Nam laoreet, enim a iaculis lacinia, elit elit tristique est, eget interdum nunc ligula vitae tortor.
+--          </p>
+--          <p>
+--          Nulla malesuada interdum porttitor. Nam sollicitudin tincidunt tortor sed pretium. Nam mattis mi id neque ultricies, consectetur laoreet justo varius. Mauris quis justo nunc. Etiam consequat sed libero id ornare. Suspendisse quis semper tortor, in commodo leo. Phasellus efficitur vestibulum turpis, vitae laoreet ipsum bibendum ac. In iaculis tristique sem et bibendum. Aenean blandit facilisis nibh, non elementum elit suscipit non.
+--          </p>'
+--          )
 
 
 

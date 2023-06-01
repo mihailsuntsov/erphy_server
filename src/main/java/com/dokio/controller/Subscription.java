@@ -18,6 +18,7 @@
 package com.dokio.controller;
 
 import com.dokio.message.request.PlanAdditionalOptionsForm;
+import com.dokio.message.request.additional.UserPaymentsTableForm;
 import com.dokio.repository.SubscriptionRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.util.CommonUtilites;
@@ -29,6 +30,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
 @Repository
@@ -36,6 +39,8 @@ public class Subscription {
     Logger logger = Logger.getLogger(Subscription.class);
     @Autowired
     SubscriptionRepositoryJPA subscriptionRepository;
+    @Autowired
+    CommonUtilites commonUtilites;
 
     @RequestMapping(value = "/api/auth/getMasterAccountInfo",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
@@ -69,6 +74,42 @@ public class Subscription {
         logger.info("Processing post request for path /api/auth/updateAddOptions: " + request.toString());
         try {return new ResponseEntity<>(subscriptionRepository.updateAddOptions(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Error saving plan additional options", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/getUserPaymentsPagesList")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getUserPaymentsPagesList(@RequestBody UserPaymentsTableForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getUserPaymentsPagesList: " + searchRequest.toString());
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        int size = subscriptionRepository.getUserPaymentsSize(searchRequest.getDateFrom(), searchRequest.getDateTo());//  - общее количество записей выборки
+        return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
+    }
+    @PostMapping("/api/auth/getUserPaymentsTable")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> getUserPaymentsTable(@RequestBody UserPaymentsTableForm searchRequest) {
+        logger.info("Processing post request for path /api/auth/getUserPaymentsTable: " + searchRequest.toString());
+        String sortColumn = searchRequest.getSortColumn();
+        String sortAsc;
+        if (searchRequest.getSortColumn() != null && !searchRequest.getSortColumn().isEmpty() && searchRequest.getSortColumn().trim().length() > 0) {
+            sortAsc = searchRequest.getSortAsc();// если SortColumn определена, значит и sortAsc есть.
+        } else {
+            sortColumn = "for_what_date_sort";
+            sortAsc = "asc";
+        }
+        int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
+        int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
+        int offsetreal = offset * result;//создана переменная с номером страницы
+        return new ResponseEntity(subscriptionRepository.getUserPaymentsTable(result, offsetreal, sortColumn, sortAsc, searchRequest.getDateFrom(), searchRequest.getDateTo()), HttpStatus.OK);
+    }
+    @RequestMapping(
+            value = "/api/auth/getLastVersionAgreement",
+            params = {"type"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getLastVersionAgreement(
+            @RequestParam("type") String type){
+        logger.info("Processing get request for path /api/auth/getLastVersionAgreement with parameters: " + "type: " + type);
+        try {return new ResponseEntity<>(subscriptionRepository.getLastVersionAgreement(type), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error loading agreement object", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }
 

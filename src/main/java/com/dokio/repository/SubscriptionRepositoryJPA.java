@@ -2,23 +2,26 @@ package com.dokio.repository;
 
 
 import com.dokio.message.request.PlanAdditionalOptionsForm;
-import com.dokio.message.response.additional.MasterAccountInfoJSON;
-import com.dokio.message.response.additional.PlanJSON;
-import com.dokio.message.response.additional.UserResources;
+import com.dokio.message.response.additional.*;
+import com.dokio.repository.Exceptions.UsedResourcesExceedTotalLimits;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
+//import org.apache.commons.jexl3.JxltEngine;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
+//import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository("SubscriptionRepositoryJPA")
 public class SubscriptionRepositoryJPA {
@@ -34,12 +37,23 @@ public class SubscriptionRepositoryJPA {
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+    @Autowired
+    private UserDetailsServiceImpl userRepository;
 //
-//    @Autowired
-//    private CommonUtilites commonUtilites;
+    @Autowired
+    private CommonUtilites commonUtilites;
 //
 //    @Autowired
 //    private UserDetailsServiceImpl userDetailsService;
+
+    private static final Set VALID_COLUMNS_FOR_ORDER_BY
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("for_what_date","for_what_date_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_COLUMNS_FOR_ASC
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("asc","desc")
+            .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
     public void createMasterUserPlanOptions(Long userId){
@@ -250,7 +264,7 @@ public class SubscriptionRepositoryJPA {
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Integer updateAddOptions(PlanAdditionalOptionsForm options){
 
         Long masterId=userRepositoryJPA.getMyMasterId();
@@ -277,16 +291,52 @@ public class SubscriptionRepositoryJPA {
                     " where user_id      =" + masterId                          + "; ";
             if (options.getPlan_id() != planId)
                 stringQuery = stringQuery + " update users set plan_id = " + options.getPlan_id() + " where id = " + masterId;
-            try{
+            try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
+
+
+                if(isUsedResourcesExceedTotalLimits())
+                    throw new UsedResourcesExceedTotalLimits();
+
+
+
+            } catch (UsedResourcesExceedTotalLimits e){
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.warn("UsedResourcesExceedTotalLimits exception", e);
+                return -310;
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 e.printStackTrace();
                 logger.error("Exception in method updateAddOptions. SQL = "+stringQuery, e);
                 return null;
             }
             return 1;
         } else return -1;// no permissions
+    }
+
+    public boolean isUsedResourcesExceedTotalLimits() throws Exception {
+        UserResources consumedResources = userRepositoryJPA.getMyConsumedResources();
+        UserResources allowedResources = userRepositoryJPA.getMyMaxAllowedResources();
+        try{
+            // if at least 1 consumed resource more than allowed - true
+            if(
+                consumedResources.getCompanies()>allowedResources.getCompanies() ||
+                consumedResources.getDepartments()>allowedResources.getDepartments() ||
+                consumedResources.getUsers()>allowedResources.getUsers() ||
+                consumedResources.getProducts()>allowedResources.getProducts() ||
+                consumedResources.getCounterparties()>allowedResources.getCounterparties() ||
+                consumedResources.getMegabytes()>allowedResources.getMegabytes() ||
+                consumedResources.getStores()>allowedResources.getStores() ||
+                consumedResources.getStores_woo()>allowedResources.getStores_woo()
+             ) return true;
+            else return false;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isUsedResourcesExceedTotalLimits. consumedResources: "+consumedResources.toString()+", allowedResources: "+allowedResources.toString(), e);
+            throw new Exception (e);
+        }
     }
 
     public List<PlanJSON> getPlansList(){
@@ -377,6 +427,119 @@ public class SubscriptionRepositoryJPA {
         } catch (Exception e) {
             logger.error("Exception in method UserRepositoryJPA->isPlanFree. SQL: " + stringQuery, e);
             e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public Integer getUserPaymentsSize(String dateFrom, String dateTo) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+
+        stringQuery =   " select to_char(for_what_date, 'DD.MM.YYYY')  as for_date, " +
+        " sum(operation_sum) as operation_sum,  " +
+        " operation_type as operation_type " +
+        " from _saas_billing_history " +
+        " where master_account_id = " + masterId +
+        " and for_what_date  >= to_date(:dateFrom,'DD.MM.YYYY') " +
+        " and for_what_date  <= to_date(:dateTo,'DD.MM.YYYY') " +
+        " group by for_what_date, operation_type " +
+        " order by  for_what_date";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("dateFrom", dateFrom);
+            query.setParameter("dateTo", dateTo);
+            return query.getResultList().size();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserPaymentsPagesList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public List<UserPayments> getUserPaymentsTable(int result, int offsetreal, String sortColumn, String sortAsc, String dateFrom, String dateTo) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
+            throw new IllegalArgumentException("Invalid query parameters");
+        String dateFormat=userRepositoryJPA.getMyDateFormat();
+
+        stringQuery =   " select to_char(for_what_date, '"+dateFormat+"') as for_date, " +
+                        " ROUND(sum(operation_sum),2) as operation_sum, " +
+                        " operation_type as operation_type, " +
+                        " for_what_date as for_what_date_sort " +
+                        " from _saas_billing_history " +
+                        " where master_account_id = " + masterId +
+                        " and for_what_date  >= to_date(:dateFrom,'DD.MM.YYYY') " +
+                        " and for_what_date  <= to_date(:dateTo,'DD.MM.YYYY') " +
+                        " group by for_what_date, operation_type, for_what_date_sort " +
+                        " order by " + sortColumn + " " + sortAsc;
+        try{
+            Map<String, String> map = commonUtilites.translateForUser(masterId, new String[]{"'depositing'","'correction'","'withdrawal_plan'","'withdrawal_plan_option'"});
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("dateFrom", dateFrom);
+            query.setParameter("dateTo", dateTo);
+
+            query.setFirstResult(offsetreal).setMaxResults(result);
+
+            List<Object[]> queryList = query.getResultList();
+            List<UserPayments> returnList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                UserPayments doc=new UserPayments();
+                doc.setFor_what_date((String)                               obj[0]);
+                doc.setOperation_sum((BigDecimal)                           obj[1]);
+                doc.setOperation_type(map.get((String)                      obj[2]));
+                returnList.add(doc);
+            }
+
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserPaymentsTable. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+//    public List<UserPayments> getUserPaymentsTable{
+//
+//
+//
+//    }
+
+    public AgreementJSON getLastVersionAgreement(String type){
+
+        String stringQuery="";
+        AgreementJSON agreement = new AgreementJSON();
+        String suffix = userRepositoryJPA.getMySuffix();
+
+        try {
+
+            // get the info about tariff plan
+
+            stringQuery = "select" +
+                    " version as version," +
+                    " to_char(version_date,'DD-MM-YYYY') as version_date," +
+                    " name_"+suffix+" as name, " +
+                    " text_"+suffix+" as text, " +
+                    " id as id " +
+                    " from _saas_agreements where type = '" + type +
+                    "' order by version_date, version desc limit 1";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            agreement.setVersion((String) queryList.get(0)[0]);
+            agreement.setVersion_date((String) queryList.get(0)[1]);
+            agreement.setName((String) queryList.get(0)[2]);
+            agreement.setText((String) queryList.get(0)[3]);
+            agreement.setId(Integer.valueOf(queryList.get(0)[4].toString()));
+            agreement.setType(type);
+
+            return agreement;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getLastVersionAgreement. SQL query:" + stringQuery, e);
             return null;
         }
     }

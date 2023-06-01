@@ -22,13 +22,22 @@ public class StoresForm {
     private List<Long> storeDepartments;         // IDs of the departments in which calculated the amount of products for the online store
     private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
     private String  store_ip;                    // internet-store ip address
-//
+    private Boolean is_let_sync;                 // synchronization is allowed
+
 //    private Boolean store_auto_reserve;
 //    private int store_days_for_esd;
 //    private Long store_default_creator_id;
 //    private Long store_default_customer_id;
 //    private String store_if_customer_not_found varchar(11);
 //    private Long store_orders_department_id;
+
+    public Boolean getIs_let_sync() {
+        return is_let_sync;
+    }
+
+    public void setIs_let_sync(Boolean is_let_sync) {
+        this.is_let_sync = is_let_sync;
+    }
 
     public Long getId() {
         return id;

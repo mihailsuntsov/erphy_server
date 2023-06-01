@@ -17,10 +17,8 @@
 */
 package com.dokio.controller.store.woo.v3;
 
-import com.dokio.message.request.store.woo.v3.IntListForm;
 import com.dokio.message.request.store.woo.v3.SyncIdsForm;
 import com.dokio.message.response.store.woo.v3.products.ProductCountJSON;
-import com.dokio.repository.store.woo.v3.StoreProductsRepository;
 import com.dokio.repository.store.woo.v3.StoreVariationsRepository;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -50,7 +48,7 @@ public class VariationsController {
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> countVariationsToStoreSync(HttpServletRequest httpServletRequest,
                                                       @RequestParam("key") String key){
-        logger.info("Processing post request for path /api/public/woo_v3/countVariationsToStoreSync");
+        logger.info("Processing get request for path /api/public/woo_v3/countVariationsToStoreSync");
         try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
             ProductCountJSON ret = storeVariationsRepository.countVariationsToStoreSync(key);
             ResponseEntity response = new ResponseEntity<>(ret, HttpStatus.OK);
@@ -70,7 +68,7 @@ public class VariationsController {
                                                  @RequestParam("key") String key,
             @RequestParam("first_result") Integer firstResult,
             @RequestParam("max_results") Integer maxResults){
-        logger.info("Processing post request for path /api/public/woo_v3/syncVariationsToStore");
+        logger.info("Processing get request for path /api/public/woo_v3/syncVariationsToStore");
         try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(),key);
             return new ResponseEntity<>(storeVariationsRepository.syncVariationsToStore(key,firstResult,maxResults), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncVariationsToStore error", e);

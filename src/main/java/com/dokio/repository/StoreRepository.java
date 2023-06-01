@@ -67,7 +67,7 @@ public class StoreRepository {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name","company","creator","lang_code","date_time_created_sort")
+            .of("name","company","creator","is_let_sync","lang_code","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -99,6 +99,7 @@ public class StoreRepository {
                     "           p.name as name, " +
                     "           p.lang_code as lang_code, " +
                     "           p.is_deleted as is_deleted, " +
+                    "           p.is_let_sync as is_let_sync, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort  " +
                     "           from stores p " +
@@ -155,6 +156,7 @@ public class StoreRepository {
                 doc.setName((String)                                obj[11]);
                 doc.setLang_code((String)                           obj[12]);
                 doc.setIs_deleted((Boolean)                         obj[13]);
+                doc.setIs_let_sync((Boolean)                        obj[14]);
                 returnList.add(doc);
             }
             return returnList;
@@ -235,8 +237,13 @@ public class StoreRepository {
                     "           p.store_days_for_esd, " +           // number of days for ESD of created store order. Default is 0
                     "           coalesce(p.store_auto_reserve,false), " +// auto reserve product after getting internet store order
                     "           p.store_ip, " +                     // internet-store ip address
-                    "           cag.name as store_default_customer," +
-                    "           uoc.name as store_default_creator" +
+                    "           cag.name as store_default_customer," + // customer_id if store_if_customer_not_found="use_default"
+                    "           uoc.name as store_default_creator," +// user-creator of orders that incoming from the online store
+                    "           p.is_let_sync," + // synchronization allowed
+                    "           (select is_saas from settings_general) as is_saas," + // is this SaaS? (getting from settings_general)
+                    "           (select is_sites_distribution from settings_general) as is_sites_distribution," + // is there possibility to order sites in this SaaS? (getting from settings_general)
+                    "           (select count(*) from stores_for_ordering where store_id="+id+" and is_deleted=false)=0 as can_order_store," + // can user order the store at this moment
+                    "           p.is_deleted as is_deleted" +
                     "           from stores p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -287,6 +294,20 @@ public class StoreRepository {
                     doc.setStore_ip((String)                            obj[24]);
                     doc.setStore_default_customer(obj[25]!=null?(String)obj[25]:"");
                     doc.setStore_default_creator((String)               obj[26]);
+                    doc.setIs_let_sync((Boolean)                        obj[27]);
+                    doc.setIs_saas((Boolean)                            obj[28]);
+                    doc.setIs_sites_distribution((Boolean)              obj[29]);
+                    doc.setCan_order_store((Boolean)                    obj[30]);
+                    doc.setIs_deleted((Boolean)                         obj[31]);
+//                    doc.setStore_ordered((Boolean)                      obj[30]);
+//                    doc.setStore_ordered_user((String)                  obj[31]);
+//                    doc.setStore_distributed((Boolean)                  obj[32]);
+//                    doc.setDate_time_store_ordered((String)             obj[33]);
+//                    doc.setDate_time_store_distributed((String)         obj[34]);
+
+
+
+
                     doc.setStoreDepartments(getStoreDepartmentsIds(id, doc.getCompany_id()));
 
                 }
@@ -328,7 +349,8 @@ public class StoreRepository {
                     " store_default_customer_id = " + request.getStore_default_customer_id() + ", " +
                     " store_default_creator_id = " + request.getStore_default_creator_id() + ", " +
                     " store_days_for_esd = " + request.getStore_days_for_esd() + ", " +
-                    " store_auto_reserve = " + request.getStore_auto_reserve() +
+                    " store_auto_reserve = " + request.getStore_auto_reserve() + ", " +
+                    " is_let_sync = " + request.getIs_let_sync() +
                     " where " +
                     " master_id = " + myMasterId +
                     " and id= "+request.getId();
@@ -397,7 +419,8 @@ public class StoreRepository {
                             " store_default_creator_id, " +     // default user that will be marked as a creator of store order. Default is master user
                             " store_days_for_esd, " +           // number of days for ESD of created store order. Default is 0
                             " store_auto_reserve, " +           // auto reserve product after getting internet store order
-                            " is_deleted" +                     // deleted
+                            " is_deleted," +                     // deleted
+                            " is_let_sync" +
                             ") values ("+
                             myMasterId + ", "+//мастер-аккаунт
                             myId + ", "+ //создатель
@@ -417,9 +440,9 @@ public class StoreRepository {
                             request.getStore_default_creator_id() + ", " +
                             request.getStore_days_for_esd() + ", " +
                             request.getStore_auto_reserve() + ", " +
-                            "false" +
+                            "false" + ", " +
+                            request.getIs_let_sync() +
                             ")";// уникальный идентификатор документа
-
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());

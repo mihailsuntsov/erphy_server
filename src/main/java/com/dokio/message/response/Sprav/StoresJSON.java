@@ -32,6 +32,46 @@ public class StoresJSON {
     private String      store_ip;                    // internet-store ip address
     private String      store_default_creator;       // Name of default user that will be marked as a creator of store order.
     private String      store_default_customer;      // the name of default customer
+    private Boolean     is_let_sync;                 // synchronization is allowed
+    private Boolean     is_saas;                     // is this SaaS? (getting from settings_general)
+    private Boolean     is_sites_distribution;       // is there sites (stores) distribution in this SaaS? (getting from settings_general)
+    private Boolean     can_order_store;             // is there possibility to order a store in current store connection? (there is no previously ordered stores or all these stores are deleted)
+//    private String      store_ordered_user;          // who is clicked on the button "Order store"
+//    private Boolean     store_distributed;           // the ordered store was successfully distributed
+//    private String      date_time_store_ordered;     // date-time of store ordered
+//    private String      date_time_store_distributed; // date-time of store distributed
+
+    public Boolean getIs_saas() {
+        return is_saas;
+    }
+
+    public void setIs_saas(Boolean is_saas) {
+        this.is_saas = is_saas;
+    }
+
+    public Boolean getIs_sites_distribution() {
+        return is_sites_distribution;
+    }
+
+    public void setIs_sites_distribution(Boolean is_sites_distribution) {
+        this.is_sites_distribution = is_sites_distribution;
+    }
+
+    public Boolean getCan_order_store() {
+        return can_order_store;
+    }
+
+    public void setCan_order_store(Boolean can_order_store) {
+        this.can_order_store = can_order_store;
+    }
+
+    public Boolean      getIs_let_sync() {
+        return is_let_sync;
+    }
+
+    public void         setIs_let_sync(Boolean is_let_sync) {
+        this.is_let_sync = is_let_sync;
+    }
 
     public String getStore_default_creator() {
         return store_default_creator;

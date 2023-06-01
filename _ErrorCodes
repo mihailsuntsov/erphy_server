@@ -63,3 +63,6 @@ null                            Ошибка выполнения
 
 -300                            Нельзя изменить тариф на платный при нулевом или отрицательном балансе
                                 You can not change the plan to a paid one with a zero or negative balance
+
+-310                            Нельзя сохранить, если используемые ресурсы будут выходить за суммарные лимиты
+                                Cannot be saved if the used resources will exceed the total limits

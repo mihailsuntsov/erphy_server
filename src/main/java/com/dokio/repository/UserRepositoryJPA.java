@@ -865,13 +865,14 @@ public class UserRepositoryJPA {
                 size = storageService.getDirectorySize(folder);
             String stringQuery =
                 "   select" +
-                "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as companies," +
-                "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as departments," +
-                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as users," +
-                "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as products," +
-                "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as counterparties," +
-                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false) as stores," +
-                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_rent_store_exists,false)=true) as stores_woo";
+                "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as companies," +
+                "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as departments," +
+                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as users," +
+                "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
+                "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
+                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +
+                "   (select count(*) from stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
+
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserResources doc = new UserResources();

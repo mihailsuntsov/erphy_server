@@ -98,7 +98,7 @@ public class CommonUtilites {
 //            return Long.parseLong(query.getSingleResult().toString());
             return query.getSingleResult();
         }catch (NoResultException nre) {
-            logger.error("NoResultException in method getByCrmSecretKey.", nre);
+            logger.error("NoResultException in method getByCrmSecretKey. subj="+subj+", secretKey="+secretKey, nre);
             throw new WrongCrmSecretKeyException();// because nno result only can be if data not found by secret key
         }catch (Exception e){
             logger.error("Exception in method getByCrmSecretKey.", e);
@@ -630,7 +630,13 @@ public class CommonUtilites {
                         " p.plan_default_id as plan_default_id," +
                         " (select coalesce(daily_price, 0.0) from plans where id=(select plan_default_id from settings_general)) as daily_price," +
                         " p.free_trial_days as free_trial_days," +
-                        " coalesce(p.is_saas, false) as is_saas" +
+                        " coalesce(p.is_saas, false) as is_saas," +
+                        " coalesce(p.let_woo_plugin_to_sync, false) as let_woo_plugin_to_sync," +
+                        " coalesce(p.woo_plugin_oldest_acceptable_ver, '1000.1.1') as woo_plugin_oldest_acceptable_ver," +
+                        " is_sites_distribution as is_sites_distribution, " +  //in this SaaS there is a sites distribution
+                        " stores_alert_email as stores_alert_email, " +     //email for messages about no more free stores or stores quantity less than min_qtt_stores
+                        " min_qtt_stores_alert as min_qtt_stores_alert" + //quantity of stores to sent email to stores_alert_email
+
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -650,6 +656,11 @@ public class CommonUtilites {
                 doc.setPlanPrice((BigDecimal) queryList.get(0)[8]);
                 doc.setFreeTrialDays((Integer) queryList.get(0)[9]);
                 doc.setSaas((Boolean) queryList.get(0)[10]);
+                doc.setLet_woo_plugin_to_sync((Boolean) queryList.get(0)[11]);
+                doc.setWoo_plugin_oldest_acceptable_ver((String) queryList.get(0)[12]);
+                doc.setIs_sites_distribution((Boolean) queryList.get(0)[13]);
+                doc.setStores_alert_email((String) queryList.get(0)[14]);
+                doc.setMin_qtt_stores_alert((Integer) queryList.get(0)[15]);
             }
             return doc;
         } catch (Exception e) {

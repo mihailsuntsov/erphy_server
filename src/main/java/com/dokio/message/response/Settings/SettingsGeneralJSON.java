@@ -33,7 +33,52 @@ public class SettingsGeneralJSON {
     private int     planDefaultId;
     private int     freeTrialDays;
     private BigDecimal planPrice;
-    private boolean isSaas;
+    private boolean isSaas;                 // id DokioCRM using as a SaaS
+    private boolean let_woo_plugin_to_sync;
+    private String  woo_plugin_oldest_acceptable_ver; // most old supported by DokioCRM plugin version
+    private boolean is_sites_distribution; //in this SaaS there is a sites distribution
+    private String  stores_alert_email;    //email for messages about no more free stores or stores quantity less than min_qtt_stores
+    private int     min_qtt_stores_alert;  //quantity of stores to sent email to stores_alert_email
+
+    public boolean isIs_sites_distribution() {
+        return is_sites_distribution;
+    }
+
+    public void setIs_sites_distribution(boolean is_sites_distribution) {
+        this.is_sites_distribution = is_sites_distribution;
+    }
+
+    public String getStores_alert_email() {
+        return stores_alert_email;
+    }
+
+    public void setStores_alert_email(String stores_alert_email) {
+        this.stores_alert_email = stores_alert_email;
+    }
+
+    public int getMin_qtt_stores_alert() {
+        return min_qtt_stores_alert;
+    }
+
+    public void setMin_qtt_stores_alert(int min_qtt_stores_alert) {
+        this.min_qtt_stores_alert = min_qtt_stores_alert;
+    }
+
+    public boolean isLet_woo_plugin_to_sync() {
+        return let_woo_plugin_to_sync;
+    }
+
+    public void setLet_woo_plugin_to_sync(boolean let_woo_plugin_to_sync) {
+        this.let_woo_plugin_to_sync = let_woo_plugin_to_sync;
+    }
+
+    public String getWoo_plugin_oldest_acceptable_ver() {
+        return woo_plugin_oldest_acceptable_ver;
+    }
+
+    public void setWoo_plugin_oldest_acceptable_ver(String woo_plugin_oldest_acceptable_ver) {
+        this.woo_plugin_oldest_acceptable_ver = woo_plugin_oldest_acceptable_ver;
+    }
 
     public boolean isSaas() {
         return isSaas;
