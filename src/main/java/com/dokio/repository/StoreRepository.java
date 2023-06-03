@@ -19,16 +19,20 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.StoresForm;
+import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.Sprav.StoresJSON;
 import com.dokio.message.response.Sprav.StoresListJSON;
+import com.dokio.message.response.additional.StoreForOrderingJSON;
+import com.dokio.message.response.additional.StoreOrderingResultJSON;
 import com.dokio.message.response.additional.StoreTranslationCategoryJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +50,9 @@ public class StoreRepository {
 
     Logger logger = Logger.getLogger(StoreRepository.class);
 
+    @Value("${stores.secret}")
+    private String stores_secret;
+
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -62,6 +69,8 @@ public class StoreRepository {
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserDetailsServiceImpl userService;
+    @Autowired
+    MailRepository mailRepository;
     @Autowired
     CommonUtilites cu;
 
@@ -325,7 +334,7 @@ public class StoreRepository {
     public Integer updateStores(StoresForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",request.getId().toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(54L,"679") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores",request.getId().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -799,6 +808,380 @@ public class StoreRepository {
             logger.error("Exception in method getStoresValues on selecting from stores. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public StoreOrderingResultJSON getMyRentSite(String user_ip, boolean iagree, Long companyId, Long storeId, String agreementType, String agreementVer){
+                //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        StoreOrderingResultJSON storeOrderingResult = new StoreOrderingResultJSON();
+        if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",storeId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(54L,"679") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores",storeId.toString())))
+        {
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            Long myId=userRepository.getUserId();
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+            Long agreementId;
+
+
+            if(!iagree) {
+                storeOrderingResult.setResult(-320);
+                return storeOrderingResult; // Не получено согласие на предоставление услуги
+                                            // Consent to the service agreement not received
+            }
+
+            try{
+
+                if(settingsGeneral.getMax_store_orders_per_24h_1_account()<=getQttOfStoreOrdersOnPeriodFromAccount(24, masterId)){
+                    storeOrderingResult.setResult(-350);
+                    return storeOrderingResult; // Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного аккаунта
+                                                // Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one account
+                }
+                if(settingsGeneral.getMax_store_orders_per_24h_1_ip()<=getQttOfStoreOrdersOnPeriodFromIp(24, user_ip)){
+                    storeOrderingResult.setResult(-351);
+                    return storeOrderingResult; // Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного IP-адреса
+                                                // Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one IP address
+                }
+
+
+
+
+                if(!cu.isCanOrderStoreForRent(storeId)){//This online store connection already has an active online store linked to it
+                    storeOrderingResult.setResult(-340);
+                    return storeOrderingResult;
+                }
+
+                Long rentStoreId = cu.getFreeStoreToRentId();
+
+
+
+                if(!Objects.isNull(rentStoreId)){// there are free stores for rent
+
+                    //getting email address of master user
+                    String masterUserEmail = (String)cu.getFieldValueFromTableById("users", "email", masterId, masterId);
+
+
+                    cu.SetStoreRentAgreementUnit(masterId, myId, storeId, rentStoreId, agreementType, agreementVer, timestamp);
+
+                    // set free online store to user
+                    distributeOnlineStoreToUser(rentStoreId, timestamp, user_ip, companyId, storeId, masterId, myId);
+
+                    // getting distributed store data
+                    StoreForOrderingJSON orderedStoreFullData = getStoreForOrderingData(rentStoreId);
+                    StoreForOrderingJSON orderedStoreReturnData = new StoreForOrderingJSON();
+                    orderedStoreReturnData.setSite_domain(orderedStoreFullData.getSite_domain());
+
+                    //updating Store (connection) - setting store IP address and DokioCRM secret key
+                    setIpAndSecretKeyToStoreConnection(orderedStoreFullData.getWp_server_ip(), orderedStoreFullData.getDokio_secret_key(), masterId, storeId);
+
+                            //info to return:
+                    storeOrderingResult.setStoreInfo(orderedStoreReturnData);
+                    storeOrderingResult.setResult(1);
+
+                    if(!settingsGeneral.getStores_alert_email().equals(""))
+                        alarmLowFreeStoresToRent(settingsGeneral.getStores_alert_email(), settingsGeneral.getMin_qtt_stores_alert());
+
+                    if(!settingsGeneral.getStore_ordered_email().equals(""))
+                        storesToRentOrderedSuccessfully(settingsGeneral.getStores_alert_email(), masterUserEmail, orderedStoreFullData.toString());
+
+                    String subj = "Thank you for ordering online store!";
+                        String body =
+                            "Store this information securely: \n\n  \n\n"+
+
+                            "Site domain:               "   + orderedStoreFullData.getSite_domain() + "\n\n "+
+                            "Site admin panel:          "   + orderedStoreFullData.getSite_domain() + "/wp-admin\n\n "+
+                            "Site admin panel login:    "   + orderedStoreFullData.getWp_login() + "\n\n "+
+                            "Site admin panel password: "   + orderedStoreFullData.getWp_password() + "\n\n "+
+
+                            "FTP login:                 "   + orderedStoreFullData.getClient_login() + "\n\n "+
+                            "FTP password:              "   + orderedStoreFullData.getClient_password() + "\n\n "+
+
+                            "Panel domain:              "   + orderedStoreFullData.getPanel_domain() + "\n\n "+
+                            "Panel login:               "   + orderedStoreFullData.getClient_login() + "\n\n "+
+                            "Panel password:            "   + orderedStoreFullData.getClient_password() + "\n\n "+
+
+                            "Site DB user:              "   + orderedStoreFullData.getPanel_domain() + "\n\n "+
+                            "Site DB password:          "   + orderedStoreFullData.getPanel_domain() + "\n\n \n\n"+
+
+                            "Best regards, DokioCRM team!";
+
+                    mailRepository.sentMessage(masterUserEmail,subj,body);
+
+                } else {    // there are no free stores for rent
+
+                    agreementId = cu.SetStoreRentAgreementUnit(masterId, myId, storeId, null, agreementType, agreementVer, timestamp);
+                    //1. creating a waiting store record
+                    Long recordId = addNewWaitingRecordForOnlineStore(timestamp, user_ip, masterId, companyId, storeId, myId);
+                    //2. sending e-mail to the employee who responsible for online stores
+                    if(!settingsGeneral.getStores_alert_email().equals("")){
+                        String subj = "There is store order, but no free stores";
+                        String body =   "Record ID = " + recordId + "\n\n "+
+                                        "Master ID = " + masterId + "\n\n "+
+                                        "Company ID = " + companyId + "\n\n "+
+                                        "Store ID = " + storeId + "\n\n "+
+                                        "Orderer ID = " + myId + "\n\n "+
+                                        "Created at = " + timestamp + "\n\n "+
+                                        "Agreement ID = " + agreementId;
+                        mailRepository.sentMessage(settingsGeneral.getStores_alert_email(),subj,body);
+
+                        //info to return:
+                        storeOrderingResult.setResult(-330);
+
+                    }
+                }
+
+                return storeOrderingResult;
+
+            } catch (Exception e) {
+                logger.error("Exception in method getMyRentSite.", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            storeOrderingResult.setResult(-1);
+            return storeOrderingResult;
+        }
+    }
+
+
+    private void alarmLowFreeStoresToRent(String alarmEmail, int alarmQtt) throws Exception {
+        String stringQuery =
+                "select count(*) from stores_for_ordering where ready_to_distribute=true and distributed=false";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            int storesQtt = ((BigInteger)query.getSingleResult()).intValue();
+            if(storesQtt<alarmQtt){
+                String subj = "Low level of free stores!";
+                String body = "Only "+storesQtt+" stores left!";
+                mailRepository.sentMessage(alarmEmail,subj,body);
+            }
+        } catch (Exception e) {
+            logger.error("Exception in method alarmLowFreeStoresToRent. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void storesToRentOrderedSuccessfully(String succEmail, String ordererEmail, String storeShortData) throws Exception {
+        try {
+                String subj = "Store distributed successfully!";
+                String body = "Customer email: "+ordererEmail+ "\n\n \n\n" +
+                        "Store short data: "+ "\n\n \n\n"+
+                        storeShortData;
+                mailRepository.sentMessage(succEmail,subj,body);
+        } catch (Exception e) {
+            logger.error("Exception in method storesToRentOrderedSuccessfully.", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private void distributeOnlineStoreToUser(Long rentedStoreRecordId, String timestamp, String ordererIp, Long companyId, Long storeId, Long masterId, Long ordererId) throws Exception {
+
+        String stringQuery = " update stores_for_ordering set "+
+                " date_time_ordered =     to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                " date_time_distributed = to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                " master_id = " + masterId + ", " +
+                " company_id = " + companyId + ", " +
+                " store_id = "  + storeId + ", " +
+                " orderer_ip = "  + ordererIp + ", " +
+                " orderer_id = "  + ordererId +
+                " where id = " + rentedStoreRecordId;
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method distributeOnlineStoreToUser. SQL: "+stringQuery, e);
+            throw new Exception();
+        }
+
+    }
+
+    private void setIpAndSecretKeyToStoreConnection(String serverIp, String secretKey, Long masterId, Long storeId) throws Exception {
+        String stringQuery =
+                " update stores set" +
+                " crm_secret_key='"+secretKey+"'," +
+                " store_ip='"+serverIp+"'" +
+                " where master_id="+masterId+
+                " and id="+storeId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method setIpAndSecretKeyToStoreConnection. SQL: "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+
+    private StoreForOrderingJSON getStoreForOrderingData(Long storeId) throws Exception {
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String myTimeZone = userSettings.getTime_zone();
+        String dateFormat = userSettings.getDateFormat();
+        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
+
+        String stringQuery = "select " +
+
+                "           id as id," +
+                "           date_time_created as date_time_created," +
+                "           ready_to_distribute as ready_to_distribute," +
+                "           distributed as distributed," +
+                "           is_deleted as is_deleted," +
+                "           client_no as client_no," +
+                "           client_name as client_name," +
+                "           client_login as client_login," +
+                "           pgp_sym_decrypt(\"client_password\",'"+stores_secret+"') as client_password"+
+                "           site_domain as site_domain," +
+                "           site_root as site_root," +
+                "           ftp_user as ftp_user," +
+                "           pgp_sym_decrypt(\"ftp_password\",'"+stores_secret+"') as ftp_password"+
+                "           db_user as db_user," +
+                "           pgp_sym_decrypt(\"db_password\",'"+stores_secret+"') as db_password"+
+                "           db_name as db_name," +
+                "           wp_login as wp_login," +
+                "           pgp_sym_decrypt(\"wp_password\",'"+stores_secret+"') as wp_password"+
+                "           wp_server_ip as wp_server_ip," +
+                "           dokio_secret_key as dokio_secret_key," +
+                "           record_creator_name as record_creator_name," + // name of employee who created this record
+                "           to_char(p.date_time_ordered at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_ordered, " +
+                "           to_char(p.date_time_distributed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_distributed, " +
+                "           to_char(p.date_time_deleted at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_deleted, " +
+                "           master_id  as master_id," +
+                "           company_id as company_id," +
+                "           store_id   as store_id," +           // online store connection
+                "           orderer_id as orderer_id," +          // who ordered (who is clicked on the button "Order store")
+                "           deleter_id as deleter_id," +
+                "           panel_domail as panel_domail," +
+                "           is_queried_to_delete as is_queried_to_delete," +
+                "           to_char(p.date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete, " +
+                "           orderer_ip as orderer_ip" +
+                "           from stores_for_ordering " +
+                "           where  p.id= " + storeId;
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            StoreForOrderingJSON doc = new StoreForOrderingJSON();
+
+            for (Object[] obj : queryList) {
+
+                doc.setId(Long.parseLong(                           obj[0].toString()));
+                doc.setDate_time_created((String)                   obj[1]);
+                doc.setReady_to_distribute((Boolean)                obj[2]);
+                doc.setDistributed((Boolean)                        obj[3]);
+                doc.setIs_deleted((Boolean)                         obj[4]);
+                doc.setClient_no((String)                           obj[5]);
+                doc.setClient_name((String)                         obj[6]);
+                doc.setClient_login((String)                        obj[7]);
+                doc.setClient_password((String)                     obj[8]);
+                doc.setSite_domain((String)                         obj[9]);
+                doc.setSite_root((String)                           obj[10]);
+                doc.setFtp_user((String)                            obj[11]);
+                doc.setFtp_password((String)                        obj[12]);
+                doc.setDb_user((String)                             obj[13]);
+                doc.setDb_password((String)                         obj[14]);
+                doc.setDb_name((String)                             obj[15]);
+                doc.setWp_login((String)                            obj[16]);
+                doc.setWp_password((String)                         obj[17]);
+                doc.setWp_server_ip((String)                        obj[18]);
+                doc.setDokio_secret_key((String)                    obj[19]);
+                doc.setRecord_creator_name((String)                 obj[20]);
+                doc.setDate_time_ordered((String)                   obj[21]);
+                doc.setDate_time_distributed((String)               obj[22]);
+                doc.setDate_time_deleted((String)                   obj[23]);
+                doc.setMaster_id(Long.parseLong(                    obj[24].toString()));
+                doc.setCompany_id(Long.parseLong(                   obj[25].toString()));
+                doc.setStore_id(Long.parseLong(                     obj[26].toString()));
+                doc.setOrderer_id(Long.parseLong(                   obj[27].toString()));
+                doc.setDeleter_id(Long.parseLong(                   obj[28].toString()));
+                doc.setPanel_domain((String)                        obj[29]);
+                doc.setIs_queried_to_delete((Boolean)               obj[30]);
+                doc.setDate_time_query_to_delete((String)           obj[31]);
+                doc.setOrderer_ip((String)                          obj[32]);
+            }
+            return doc;
+        } catch (Exception e) {
+            logger.error("Exception in method getStoreForOrderingData. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+
+    }
+
+    public Long addNewWaitingRecordForOnlineStore(String timestamp, String ipAddress, Long masterId, Long companyId, Long storeId, Long ordererId) throws Exception{
+
+        String stringQuery;
+
+        stringQuery= " insert into stores_for_ordering ("+
+                                " date_time_created,"+
+                                " date_time_ordered,"+
+                                " master_id,"+
+                                " company_id,"+
+                                " store_id,"+
+                                " orderer_id,"+
+                                " orderer_ip," +
+                                " ready_to_distribute,"+
+                                " distributed,"+
+                                " is_queried_to_delete,"+
+                                " is_deleted" +
+                            ") values ("+
+                                " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                                " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                                masterId+", " +
+                                "(select id from companies where master_id="+masterId+" and id="+companyId+")," +
+                                storeId+", " +
+                                ordererId+", " +
+                                "'"+ipAddress+"', " +
+                                " false,"+
+                                " false,"+
+                                " false,"+
+                                " false"+
+                            ");";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            stringQuery="select id from stores where master_id = "+masterId+" and store_id="+storeId+" and date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS'))";
+            query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        } catch (Exception e) {
+            logger.error("Exception in method addNewWaitingRecordForOnlineStore. SQL = "+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private int getQttOfStoreOrdersOnPeriodFromIp(int hours, String ipAddress) throws Exception {
+        String stringQuery =
+                "select count(*) from stores_for_ordering where " +
+                        " orderer_ip = '"+ipAddress+"'" +
+                        " and date_time_ordered >= NOW() - INTERVAL '"+hours+" HOURS'";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).intValue();
+        } catch (Exception e) {
+            logger.error("Exception in method getQttOfStoreOrdersOnPeriodFromIp. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private int getQttOfStoreOrdersOnPeriodFromAccount(int hours, Long accId) throws Exception {
+        String stringQuery =
+                "select count(*) from stores_for_ordering where " +
+                        " master_id = "+accId+
+                        " and date_time_ordered >= NOW() - INTERVAL '"+hours+" HOURS'";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).intValue();
+        } catch (Exception e) {
+            logger.error("Exception in method getQttOfStoreOrdersOnPeriodFromAccount. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
         }
     }
 

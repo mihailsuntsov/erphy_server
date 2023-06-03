@@ -104,6 +104,17 @@ public class MailRepository {
         };
     }
 
+    public Integer sentMessage(String emailTo, String subject, String message){
+        try{
+            String mailBody=message;
+            MimeMessagePreparator preparator = getMessagePreparator(from_email,emailTo,subject,mailBody);
+            mailSender.send(preparator);
+            return 1;
+        } catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 
 

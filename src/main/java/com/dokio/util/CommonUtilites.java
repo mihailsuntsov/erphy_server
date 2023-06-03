@@ -33,6 +33,7 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.*;
 import java.io.File;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -635,8 +636,10 @@ public class CommonUtilites {
                         " coalesce(p.woo_plugin_oldest_acceptable_ver, '1000.1.1') as woo_plugin_oldest_acceptable_ver," +
                         " is_sites_distribution as is_sites_distribution, " +  //in this SaaS there is a sites distribution
                         " stores_alert_email as stores_alert_email, " +     //email for messages about no more free stores or stores quantity less than min_qtt_stores
-                        " min_qtt_stores_alert as min_qtt_stores_alert" + //quantity of stores to sent email to stores_alert_email
-
+                        " min_qtt_stores_alert as min_qtt_stores_alert," + //quantity of stores to sent email to stores_alert_email
+                        " max_store_orders_per_24h_1_account as mqtt24acc, " + // max quantity of online stores that can be ordered in 24h from one account
+                        " max_store_orders_per_24h_1_ip as mqtt24ip, " + //  max quantity of online stores that can be ordered in 24h from one IP address
+                        " store_ordered_email as store_ordered_email" + //  email to sent message of store ordered successfully
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -661,6 +664,9 @@ public class CommonUtilites {
                 doc.setIs_sites_distribution((Boolean) queryList.get(0)[13]);
                 doc.setStores_alert_email((String) queryList.get(0)[14]);
                 doc.setMin_qtt_stores_alert((Integer) queryList.get(0)[15]);
+                doc.setMax_store_orders_per_24h_1_account((Integer) queryList.get(0)[16]);
+                doc.setMax_store_orders_per_24h_1_ip((Integer) queryList.get(0)[17]);
+                doc.setStore_ordered_email((String) queryList.get(0)[18]);
             }
             return doc;
         } catch (Exception e) {
@@ -700,4 +706,91 @@ public class CommonUtilites {
             throw new Exception("The store remote address in query is not equals to store remote address in CRM. Query remote address: " + storeRemoteAddr + ", CRM remote address: " + crmRemoteAddress);
         }
     }
+
+    public Long SetStoreRentAgreementUnit(Long masterId, Long myId, Long storeId, Long storeWooId, String agreementType, String agreementVer, String timestamp) throws Exception {
+        String stringQuery;
+        stringQuery =
+            " insert into _saas_agreements_units (" +
+                " date_time_agree," +
+                " master_user," +
+                " user_who_agree," +
+                " agreement_id," +
+                " store_id," +
+                " store_woo_id" +
+            ") values (" +
+                " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                masterId + ", " +
+                myId + ", " +
+                "(select id from _saas_agreements where type=:agreementType and version = :agreementVer)," +
+                storeId + ", " +
+                storeWooId +
+            " ) ";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("agreementType",agreementType);
+            query.setParameter("agreementVer",agreementVer);
+            query.executeUpdate();
+            stringQuery="select id from _saas_agreements_units where master_user = "+masterId+" and store_id="+storeId+" and date_time_agree=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS'))";
+            query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method SetAgreementUnit. agreementType = "+agreementType+", agreementVer="+agreementVer+", SQL: "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+
+//    public boolean isThereFreeStoresForRent() throws Exception {
+//
+//        String stringQuery;
+//        stringQuery = "select(select count(*) from stores_for_ordering where ready_to_distribute=true and distributed=false) >0";
+//
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            return (Boolean)query.getSingleResult();
+//
+//        }catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method isThereFreeStoresForRent. SQL: "+stringQuery, e);
+//            throw new Exception();
+//        }
+//    }
+
+    public Long getFreeStoreToRentId() throws Exception {
+        String stringQuery;
+        stringQuery = "select id from stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created limit 1";
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        }catch (NoResultException nre) {
+            logger.error("NoResultException in method getFreeStoreToRentId. sSQL="+stringQuery, nre);
+            return null;
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getFreeStoreToRentId. SQL: "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+
+    public boolean isCanOrderStoreForRent(Long storeId) throws Exception {
+
+        String stringQuery;
+        stringQuery = "(select count(*) from stores_for_ordering where store_id="+storeId+" and is_deleted=false)=0";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (Boolean)query.getSingleResult();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method isCanOrderStoreForRent. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+
+
+
+
+
 }

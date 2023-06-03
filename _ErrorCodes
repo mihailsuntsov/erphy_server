@@ -66,3 +66,18 @@ null                            Ошибка выполнения
 
 -310                            Нельзя сохранить, если используемые ресурсы будут выходить за суммарные лимиты
                                 Cannot be saved if the used resources will exceed the total limits
+
+-320                            Не получено согласие на предоставление услуги
+                                Consent to the service agreement not received
+
+-330                            Нет свободных сайтов для аренды
+                                No free sites to rent
+
+-340                            Данное подключение уже имеет привязанный к нему действующий интернет-магазин
+                                This connection already has an active online store linked to it
+
+-350                            Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного аккаунта
+                                Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one account
+
+-351                            Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного IP-адреса
+                                Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one IP address

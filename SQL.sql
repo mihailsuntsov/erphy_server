@@ -4703,38 +4703,42 @@ update settings_general set is_sites_distribution=false;
 alter table settings_general alter column is_sites_distribution set not null;
 
 create table stores_for_ordering (
-                                id                    bigserial primary key not null,
+                                id                            bigserial primary key not null,
 
-                                date_time_created     timestamp with time zone not null,
-                                ready_to_distribute   boolean not null,
-                                distributed           boolean not null,
-                                is_deleted            boolean not null,
+                                date_time_created             timestamp with time zone not null,
+                                ready_to_distribute           boolean not null,
+                                distributed                   boolean not null,
+                                is_queried_to_delete          boolean not null, -- user sent query to delete
+                                is_deleted                    boolean not null, -- site was physically deleted from server
 
-                                client_no             varchar(100),
-                                client_name           varchar(100),
-                                client_login          varchar(100),
-                                client_password       varchar(256),
-                                site_domain           varchar(100),
-                                site_root             varchar(100),
-                                ftp_user              varchar(100),
-                                ftp_password          varchar(256),
-                                db_user               varchar(100),
-                                db_password           varchar(256),
-                                db_name               varchar(100),
-                                wp_login              varchar(100),
-                                wp_password           varchar(256),
-                                wp_server_ip          varchar(16) ,
-                                dokio_secret_key      varchar(100),
-                                record_creator_name   varchar(100), -- name of employee who created this record
+                                panel_domain                  varchar(100),
+                                client_no                     varchar(100),
+                                client_name                   varchar(100),
+                                client_login                  varchar(100),
+                                client_password               bytea,
+                                site_domain                   varchar(100),
+                                site_root                     varchar(100),
+                                ftp_user                      varchar(100),
+                                ftp_password                  bytea,
+                                db_user                       varchar(100),
+                                db_password                   bytea,
+                                db_name                       varchar(100),
+                                wp_login                      varchar(100),
+                                wp_password                   bytea,
+                                wp_server_ip                  varchar(16) ,
+                                dokio_secret_key              varchar(100),
+                                record_creator_name           varchar(100), -- name of employee who created this record
 
-                                date_time_ordered     timestamp with time zone,
-                                date_time_distributed timestamp with time zone,
-                                date_time_deleted     timestamp with time zone,
-                                master_id             bigint,
-                                company_id            bigint,
-                                store_id              bigint,
-                                orderer_id            bigint,           -- who ordered (who is clicked on the button "Order store")
-                                deleter_id            bigint,           -- who deleted (who is clicked on the button "Delete store")
+                                date_time_ordered             timestamp with time zone, -- when user sent query to get site
+                                date_time_distributed         timestamp with time zone, -- when user got the site
+                                date_time_query_to_delete     timestamp with time zone, -- when user sent query to delete - store mark as "is_queried_to_delete=true"
+                                date_time_deleted             timestamp with time zone, -- when site was physically deleted from server
+                                master_id                     bigint,
+                                company_id                    bigint,
+                                store_id                      bigint,           -- online store connection
+                                orderer_id                    bigint,           -- who ordered (who is clicked on the button "Order store")
+                                deleter_id                    bigint,           -- who deleted (who is clicked on the button "Delete store")
+                                orderer_ip                    varchar(100),     -- ip address from which store ordered
 
                                 foreign key (master_id) references users(id),
                                 foreign key (company_id) references companies(id),
@@ -4744,6 +4748,13 @@ create table stores_for_ordering (
 );
 
 alter table settings_general add column   stores_alert_email    varchar(100);
+update settings_general set stores_alert_email = '';
+alter table settings_general alter column stores_alert_email  set not null;
+
+alter table settings_general add column   store_ordered_email    varchar(100);
+update settings_general set store_ordered_email = '';
+alter table settings_general alter column store_ordered_email  set not null;
+
 alter table settings_general add column   min_qtt_stores_alert  int;
 update      settings_general set          min_qtt_stores_alert  = 0;
 alter table settings_general alter column min_qtt_stores_alert  set not null;
@@ -4805,15 +4816,40 @@ create table _saas_agreements(
 --          </p>'
 --          )
 
+create table _saas_agreements_units(
+                               id                    bigserial primary key not null,
+                               date_time_agree       timestamp with time zone not null,
+                               master_user           bigint not null,
+                               user_who_agree        bigint not null,
+                               agreement_id          bigint not null,
+                               store_id              bigint,
+                               store_woo_id          bigint,
+                               foreign key (agreement_id) references _saas_agreements(id),
+                               foreign key (master_user) references users(id),
+                               foreign key (user_who_agree) references users(id),
+                               foreign key (store_id) references stores(id),
+                               foreign key (store_woo_id) references stores_for_ordering(id)
+);
+-- insert into stores_for_ordering (
+--   date_time_created ,
+--   ready_to_distribute,
+--   distributed,
+--   is_deleted) values(
+--                       now(),
+--                       true,
+--                       false,
+--                       false
+--                     );
 
 
+CREATE EXTENSION pgcrypto;
 
-
-
-
-
-
-
+alter table settings_general add column max_store_orders_per_24h_1_account int;
+update settings_general  set max_store_orders_per_24h_1_account =1;
+alter table settings_general alter column max_store_orders_per_24h_1_account set not null;
+alter table settings_general add column max_store_orders_per_24h_1_ip int;
+update settings_general  set max_store_orders_per_24h_1_ip=1;
+alter table settings_general alter column max_store_orders_per_24h_1_ip set not null;
 
 
 

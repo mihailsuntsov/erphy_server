@@ -37,8 +37,35 @@ public class SettingsGeneralJSON {
     private boolean let_woo_plugin_to_sync;
     private String  woo_plugin_oldest_acceptable_ver; // most old supported by DokioCRM plugin version
     private boolean is_sites_distribution; //in this SaaS there is a sites distribution
-    private String  stores_alert_email;    //email for messages about no more free stores or stores quantity less than min_qtt_stores
+    private String  stores_alert_email;    // email of rent-stores responsible employee.
+    private String  store_ordered_email;   // email to sent message of store ordered successfully
     private int     min_qtt_stores_alert;  //quantity of stores to sent email to stores_alert_email
+    private int     max_store_orders_per_24h_1_account; // max quantity of online stores that can be ordered in 24h from one account
+    private int     max_store_orders_per_24h_1_ip;      // max quantity of online stores that can be ordered in 24h from one IP address
+
+    public String getStore_ordered_email() {
+        return store_ordered_email;
+    }
+
+    public void setStore_ordered_email(String store_ordered_email) {
+        this.store_ordered_email = store_ordered_email;
+    }
+
+    public int getMax_store_orders_per_24h_1_account() {
+        return max_store_orders_per_24h_1_account;
+    }
+
+    public void setMax_store_orders_per_24h_1_account(int max_store_orders_per_24h_1_account) {
+        this.max_store_orders_per_24h_1_account = max_store_orders_per_24h_1_account;
+    }
+
+    public int getMax_store_orders_per_24h_1_ip() {
+        return max_store_orders_per_24h_1_ip;
+    }
+
+    public void setMax_store_orders_per_24h_1_ip(int max_store_orders_per_24h_1_ip) {
+        this.max_store_orders_per_24h_1_ip = max_store_orders_per_24h_1_ip;
+    }
 
     public boolean isIs_sites_distribution() {
         return is_sites_distribution;
