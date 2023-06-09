@@ -618,6 +618,28 @@ public class CommonUtilites {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    public Map<String, String> translateHTMLmessage(Long userId, String[] keys){
+        String suffix = userRepositoryJPA.getUserSuffix(userId);
+        String stringQuery =            "select key, tr_"+suffix+" from _saas_messages ";
+        if(keys.length>0)
+            stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+
+            List<Object[]> queryList = query.getResultList();
+            Map<String, String> map = new HashMap<>();
+            for(Object[] obj:queryList){
+                map.put((String)obj[0], (String)obj[1]);
+            }
+            return map;
+        } catch (Exception e) {
+            logger.error("Exception in method translateHTMLmessage. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public SettingsGeneralJSON getSettingsGeneral() {
         String stringQuery =
                 "select " +
@@ -639,7 +661,7 @@ public class CommonUtilites {
                         " min_qtt_stores_alert as min_qtt_stores_alert," + //quantity of stores to sent email to stores_alert_email
                         " max_store_orders_per_24h_1_account as mqtt24acc, " + // max quantity of online stores that can be ordered in 24h from one account
                         " max_store_orders_per_24h_1_ip as mqtt24ip, " + //  max quantity of online stores that can be ordered in 24h from one IP address
-                        " store_ordered_email as store_ordered_email" + //  email to sent message of store ordered successfully
+                        " saas_payment_currency as saas_payment_currency" +
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -666,7 +688,7 @@ public class CommonUtilites {
                 doc.setMin_qtt_stores_alert((Integer) queryList.get(0)[15]);
                 doc.setMax_store_orders_per_24h_1_account((Integer) queryList.get(0)[16]);
                 doc.setMax_store_orders_per_24h_1_ip((Integer) queryList.get(0)[17]);
-                doc.setStore_ordered_email((String) queryList.get(0)[18]);
+                doc.setSaas_payment_currency((String) queryList.get(0)[18]);
             }
             return doc;
         } catch (Exception e) {
@@ -744,7 +766,7 @@ public class CommonUtilites {
 //    public boolean isThereFreeStoresForRent() throws Exception {
 //
 //        String stringQuery;
-//        stringQuery = "select(select count(*) from stores_for_ordering where ready_to_distribute=true and distributed=false) >0";
+//        stringQuery = "select(select count(*) from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false) >0";
 //
 //        try {
 //            Query query = entityManager.createNativeQuery(stringQuery);
@@ -759,7 +781,7 @@ public class CommonUtilites {
 
     public Long getFreeStoreToRentId() throws Exception {
         String stringQuery;
-        stringQuery = "select id from stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created limit 1";
+        stringQuery = "select id from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created limit 1";
 
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -777,7 +799,7 @@ public class CommonUtilites {
     public boolean isCanOrderStoreForRent(Long storeId) throws Exception {
 
         String stringQuery;
-        stringQuery = "(select count(*) from stores_for_ordering where store_id="+storeId+" and is_deleted=false)=0";
+        stringQuery = "select (select count(*) from _saas_stores_for_ordering where store_id="+storeId+" and is_deleted=false)=0";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return (Boolean)query.getSingleResult();

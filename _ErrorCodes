@@ -1,6 +1,6 @@
 null                            Ошибка выполнения
 1                               Операция выполнена без ошибок
--1                              Недостаточно прав для данной операции
+    -1                              Недостаточно прав для данной операции
 -10                             Пользователь с таким логином уже есть в системе
 -11                             Пользователь с таким e-mail уже есть в системе
 -20                             Расчётный счёт не определен
@@ -73,11 +73,14 @@ null                            Ошибка выполнения
 -330                            Нет свободных сайтов для аренды
                                 No free sites to rent
 
--340                            Данное подключение уже имеет привязанный к нему действующий интернет-магазин
-                                This connection already has an active online store linked to it
+-340                            Данное подключение уже имеет подключенный к нему действующий интернет-магазин (или заявку на подключение)
+                                This connection already has an active online store linked to it (or an order for online store)
 
 -350                            Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного аккаунта
                                 Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one account
 
 -351                            Превышено максимально допустимое количество интернет-магазинов, которые можно заказать за 24 часа с одного IP-адреса
                                 Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one IP address
+
+-360                            С одним из удаляемых интернет-магазинов связан сайт, который не был удален. Сначала нужно удалить сайт
+                                One of the online stores to be deleted has a site linked to it that has not been deleted. First you need to delete the site

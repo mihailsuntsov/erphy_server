@@ -4702,7 +4702,7 @@ alter table settings_general add column is_sites_distribution boolean; -- in thi
 update settings_general set is_sites_distribution=false;
 alter table settings_general alter column is_sites_distribution set not null;
 
-create table stores_for_ordering (
+create table _saas_stores_for_ordering (
                                 id                            bigserial primary key not null,
 
                                 date_time_created             timestamp with time zone not null,
@@ -4750,10 +4750,6 @@ create table stores_for_ordering (
 alter table settings_general add column   stores_alert_email    varchar(100);
 update settings_general set stores_alert_email = '';
 alter table settings_general alter column stores_alert_email  set not null;
-
-alter table settings_general add column   store_ordered_email    varchar(100);
-update settings_general set store_ordered_email = '';
-alter table settings_general alter column store_ordered_email  set not null;
 
 alter table settings_general add column   min_qtt_stores_alert  int;
 update      settings_general set          min_qtt_stores_alert  = 0;
@@ -4828,15 +4824,17 @@ create table _saas_agreements_units(
                                foreign key (master_user) references users(id),
                                foreign key (user_who_agree) references users(id),
                                foreign key (store_id) references stores(id),
-                               foreign key (store_woo_id) references stores_for_ordering(id)
+                               foreign key (store_woo_id) references _saas_stores_for_ordering(id)
 );
--- insert into stores_for_ordering (
+-- insert into _saas_stores_for_ordering (
 --   date_time_created ,
 --   ready_to_distribute,
 --   distributed,
+--   is_queried_to_delete
 --   is_deleted) values(
 --                       now(),
 --                       true,
+--                       false,
 --                       false,
 --                       false
 --                     );
@@ -4851,9 +4849,58 @@ alter table settings_general add column max_store_orders_per_24h_1_ip int;
 update settings_general  set max_store_orders_per_24h_1_ip=1;
 alter table settings_general alter column max_store_orders_per_24h_1_ip set not null;
 
+create table _saas_messages
+(
+  key               varchar(200)  PRIMARY KEY not null,
+  tr_en             text,
+  tr_ru             text
+);
+alter table _saas_messages add constraint _saas_messages_key_uq unique (key);
+insert into _saas_messages (key, tr_ru, tr_en) values (
+  'success_online_store_order',
+  '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Спасибо за заказ сайта!</strong></span></span></h1>
+  <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>Желаем удачи в бизнесе!</strong></span></span></p>
+  ',
+  '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+  <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>We wish you good luck in business!</strong></span></span></p>
+');
+insert into _saas_messages (key, tr_ru, tr_en) values (
+'online_store_no_free_but_ordered',
+'<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+<p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">К сожалению, свободных сайтов нет.</span></span></p>
+<span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">Благодарим за понимание!</span></span></p>
+',
+'<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+<p style="text-align:center"><span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Unfortunately, there are no free slots with sites at the moment.</span></span></p>
+<span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Thank you for understanding!</span></span></p>
+'
+);
+alter table _saas_stores_for_ordering add constraint _saas_stores_for_ordering_dokio_secret_key_uq unique (dokio_secret_key);
 
+alter table stores drop constraint store_crm_secret_key_uq;
+CREATE UNIQUE INDEX stores_crm_secret_key_uq ON stores (crm_secret_key) WHERE crm_secret_key !='';
+alter table settings_general drop column if exists email_rent_stores_responsible_employee ;
 
+insert into _saas_messages (key, tr_ru, tr_en) values (
+      'delete_online_store_request',
+      'Зравствуйте.
+       Поступил запрос на удаление сайта с интернет-магазином.
+      Если запрос верен и вы на самом деле хотите удалить сайт с интернет-магазином, пожалуйста, подтвердите данное намерение, отправив фразу "Да, я хочу удалить сайт" на указанный ниже email:
+      ',
+      'Hello!
+      Received a request to delete a site with an online store.
+      If the request is correct and you really want to delete the site with an online store, please confirm this intention by sending the phrase "Yes, I want to delete the site" to the email below:
+      ');
 
+insert into _dictionary (key, tr_ru, tr_en) values
+('site_data',              'Данные о сайте',          'Site data'),
+('site_address',           'Адрес сайта',             'Site address'),
+('site_name',              'Найименование сайта',     'Site name'),
+('who_requested_removal',  'Кто запросил удаление',   'Who requested removal'),
+('confirmation_email',     'Email для подтверждения', 'Confirmation email');
+insert into _dictionary (key, tr_ru, tr_en) values
+('os_req_rcvd',              'Запрос на удаление сайта с интернет-магазинтм',          'Online store deletion request received');
 
-
-
+alter table settings_general add column saas_payment_currency varchar(100);
+update settings_general set saas_payment_currency = 'USD';
+alter table settings_general alter column saas_payment_currency set not null;

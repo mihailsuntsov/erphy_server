@@ -25,6 +25,7 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.Sprav.StoresJSON;
 import com.dokio.message.response.Sprav.StoresListJSON;
 import com.dokio.message.response.additional.StoreForOrderingJSON;
+import com.dokio.message.response.additional.StoreForOrderingShortInfoJSON;
 import com.dokio.message.response.additional.StoreOrderingResultJSON;
 import com.dokio.message.response.additional.StoreTranslationCategoryJSON;
 import com.dokio.model.Companies;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -202,7 +204,7 @@ public class StoreRepository {
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
 
-            return query.getResultList().size();
+            return ((BigInteger)query.getSingleResult()).intValue();
         } else return 0;
     }
 
@@ -251,7 +253,7 @@ public class StoreRepository {
                     "           p.is_let_sync," + // synchronization allowed
                     "           (select is_saas from settings_general) as is_saas," + // is this SaaS? (getting from settings_general)
                     "           (select is_sites_distribution from settings_general) as is_sites_distribution," + // is there possibility to order sites in this SaaS? (getting from settings_general)
-                    "           (select count(*) from stores_for_ordering where store_id="+id+" and is_deleted=false)=0 as can_order_store," + // can user order the store at this moment
+                    "           (select count(*) from _saas_stores_for_ordering where store_id="+id+" and is_deleted=false)=0 as can_order_store," + // can user order the store at this moment
                     "           p.is_deleted as is_deleted" +
                     "           from stores p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -483,25 +485,46 @@ public class StoreRepository {
             //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
             (securityRepositoryJPA.userHasPermissions_OR(54L, "675") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores", delNumbers)))
         {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myId = userRepositoryJPA.getMyId();
+
             String stringQuery =
                     " update stores p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
-                    " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
+                    " where p.master_id=" + masterId +
+                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")" +
+                    " and p.id not in (select store_id from _saas_stores_for_ordering where coalesce(master_id,0)="+masterId+" and distributed=true and is_deleted=false)";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                return 1;
+                if(storesHaveNonDeletedSites(delNumbers,masterId))
+                    return -360;//С одним из удаляемых интернет-магазинов связан сайт, который не был удален. Сначала нужно удалить сайт
+                else            //One of the online stores to be deleted has a site linked to it that has not been deleted. First you need to delete the site
+                    return 1;
             } catch (Exception e) {
                 logger.error("Exception in method deleteStores on updating stores. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
         } else return -1;
+    }
+
+    private boolean storesHaveNonDeletedSites(String delNumbers, Long masterId) throws Exception {
+        String stringQuery =
+                " select count(*) from _saas_stores_for_ordering where coalesce(master_id,0)="+masterId+" and" +
+                        " distributed=true and " +
+                        " is_deleted=false and " +
+                        " store_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger) query.getSingleResult()).intValue()>0;
+        } catch (Exception e) {
+            logger.error("Exception in method storesHaveNonDeletedSites on updating stores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
     }
 
     @Transactional
@@ -876,14 +899,18 @@ public class StoreRepository {
                     //updating Store (connection) - setting store IP address and DokioCRM secret key
                     setIpAndSecretKeyToStoreConnection(orderedStoreFullData.getWp_server_ip(), orderedStoreFullData.getDokio_secret_key(), masterId, storeId);
 
-                            //info to return:
+                    //get message for user
+                    Map<String, String> map = cu.translateHTMLmessage(myId, new String[]{"'success_online_store_order'"});
+
+                    //info to return:
                     storeOrderingResult.setStoreInfo(orderedStoreReturnData);
                     storeOrderingResult.setResult(1);
+                    storeOrderingResult.setMessage(map.get("success_online_store_order"));
 
                     if(!settingsGeneral.getStores_alert_email().equals(""))
                         alarmLowFreeStoresToRent(settingsGeneral.getStores_alert_email(), settingsGeneral.getMin_qtt_stores_alert());
 
-                    if(!settingsGeneral.getStore_ordered_email().equals(""))
+                    if(!settingsGeneral.getStores_alert_email().equals(""))
                         storesToRentOrderedSuccessfully(settingsGeneral.getStores_alert_email(), masterUserEmail, orderedStoreFullData.toString());
 
                     String subj = "Thank you for ordering online store!";
@@ -895,15 +922,15 @@ public class StoreRepository {
                             "Site admin panel login:    "   + orderedStoreFullData.getWp_login() + "\n\n "+
                             "Site admin panel password: "   + orderedStoreFullData.getWp_password() + "\n\n "+
 
-                            "FTP login:                 "   + orderedStoreFullData.getClient_login() + "\n\n "+
-                            "FTP password:              "   + orderedStoreFullData.getClient_password() + "\n\n "+
+                            "FTP login:                 "   + orderedStoreFullData.getFtp_user() + "\n\n "+
+                            "FTP password:              "   + orderedStoreFullData.getFtp_password() + "\n\n "+
 
                             "Panel domain:              "   + orderedStoreFullData.getPanel_domain() + "\n\n "+
                             "Panel login:               "   + orderedStoreFullData.getClient_login() + "\n\n "+
                             "Panel password:            "   + orderedStoreFullData.getClient_password() + "\n\n "+
 
-                            "Site DB user:              "   + orderedStoreFullData.getPanel_domain() + "\n\n "+
-                            "Site DB password:          "   + orderedStoreFullData.getPanel_domain() + "\n\n \n\n"+
+                            "Site DB user:              "   + orderedStoreFullData.getDb_user() + "\n\n "+
+                            "Site DB password:          "   + orderedStoreFullData.getDb_password() + "\n\n \n\n"+
 
                             "Best regards, DokioCRM team!";
 
@@ -925,19 +952,25 @@ public class StoreRepository {
                                         "Created at = " + timestamp + "\n\n "+
                                         "Agreement ID = " + agreementId;
                         mailRepository.sentMessage(settingsGeneral.getStores_alert_email(),subj,body);
-
-                        //info to return:
-                        storeOrderingResult.setResult(-330);
-
                     }
+                    //get message for user
+                    Map<String, String> map = cu.translateHTMLmessage(myId, new String[]{"'online_store_no_free_but_ordered'"});
+
+                    //info to return:
+                    storeOrderingResult.setMessage(map.get("online_store_no_free_but_ordered"));
+                    storeOrderingResult.setResult(-330);
+
                 }
 
                 return storeOrderingResult;
 
             } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method getMyRentSite.", e);
                 e.printStackTrace();
-                return null;
+
+                storeOrderingResult.setResult(null);
+                return storeOrderingResult;
             }
         } else {
             storeOrderingResult.setResult(-1);
@@ -948,7 +981,7 @@ public class StoreRepository {
 
     private void alarmLowFreeStoresToRent(String alarmEmail, int alarmQtt) throws Exception {
         String stringQuery =
-                "select count(*) from stores_for_ordering where ready_to_distribute=true and distributed=false";
+                "select count(*) from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             int storesQtt = ((BigInteger)query.getSingleResult()).intValue();
@@ -980,31 +1013,36 @@ public class StoreRepository {
 
     private void distributeOnlineStoreToUser(Long rentedStoreRecordId, String timestamp, String ordererIp, Long companyId, Long storeId, Long masterId, Long ordererId) throws Exception {
 
-        String stringQuery = " update stores_for_ordering set "+
+        String stringQuery = " update _saas_stores_for_ordering set "+
+                " distributed = true, " +
                 " date_time_ordered =     to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
                 " date_time_distributed = to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
                 " master_id = " + masterId + ", " +
                 " company_id = " + companyId + ", " +
                 " store_id = "  + storeId + ", " +
-                " orderer_ip = "  + ordererIp + ", " +
+                " orderer_ip = '"  + ordererIp + "', " +
                 " orderer_id = "  + ordererId +
-                " where id = " + rentedStoreRecordId;
-
+                " where id = " + rentedStoreRecordId +
+                " and distributed = false"; // just for unlikely case - when in the one moment two users gets the same id of store
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
+            // check that onlone store was realy distributed (that unlikely case is not happened)
+            stringQuery = "select count(*) from _saas_stores_for_ordering where id = "+rentedStoreRecordId+" and store_id = "+storeId+" and distributed = true";
+            query = entityManager.createNativeQuery(stringQuery);
+            if(((BigInteger)query.getSingleResult()).intValue()!=1) throw new Exception();
         }catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method distributeOnlineStoreToUser. SQL: "+stringQuery, e);
             throw new Exception();
         }
-
     }
 
     private void setIpAndSecretKeyToStoreConnection(String serverIp, String secretKey, Long masterId, Long storeId) throws Exception {
         String stringQuery =
                 " update stores set" +
                 " crm_secret_key='"+secretKey+"'," +
+                " is_let_sync=true," +
                 " store_ip='"+serverIp+"'" +
                 " where master_id="+masterId+
                 " and id="+storeId;
@@ -1018,6 +1056,143 @@ public class StoreRepository {
         }
     }
 
+    @Transactional
+    public Integer deleteRentStore(Long recordId, Long storeId){
+        if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",storeId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(54L,"679") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores",storeId.toString()))) {
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery;
+            Long myId = userRepository.getUserId();
+
+            try {
+                stringQuery = " update _saas_stores_for_ordering set " +
+                        " date_time_query_to_delete = now(), " +
+                        " deleter_id = " + myId + ", " +
+                        " is_queried_to_delete = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and id = " + recordId +
+                        " and store_id = " + storeId +
+                        " and is_queried_to_delete = false " +
+                        " and is_deleted = false " +
+                        " and deleter_id is null ";
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+                String masterEmail = (String)cu.getFieldValueFromTableById("users","email", masterId, masterId);
+                String whoRequestDelete=(String)cu.getFieldValueFromTableById("users","name", masterId, myId);
+                String emailRequestDelete=(String)cu.getFieldValueFromTableById("users","email", masterId, myId);
+
+                StoreForOrderingJSON storeForOrderingData = getStoreForOrderingData(recordId);
+
+                // sending email to "Online stores support team of CRM"
+                String subj = "Online store deletion request received"+ "\n\n";
+                String body =
+                        "Master customer email: "+masterEmail+ "\n\n\n" +
+                        "Date and time query for delete: "  + storeForOrderingData.getDate_time_query_to_delete() + "\n" +
+                        "Who requested removal: "  + whoRequestDelete + "\n" +
+                        "Email of the person who requested deletion: "  + emailRequestDelete + "\n\n" +
+                        "Store data: "+ "\n\n"+
+                        "Online store connection Id: " + storeId + "\n" +
+                        "Rent store record Id: " + recordId + "\n" +
+                        "Site domain: "                     + storeForOrderingData.getSite_domain() + "\n" +
+                        "Site root: "                       + storeForOrderingData.getSite_root() + "\n" +
+                        "Site server IP: "                  + storeForOrderingData.getWp_server_ip() + "\n" +
+                        "FTP user: "                        + storeForOrderingData.getFtp_user() + "\n" +
+                        "MySQL DB name: "                     + storeForOrderingData.getDb_name() + "\n" +
+                        "Site domain: "                     + storeForOrderingData.getClient_no() + "\n";
+                mailRepository.sentMessage(settingsGeneral.getStores_alert_email(), subj,body);
+
+
+                // sending email to master-account owner for confirmation of delete online store
+                Map<String, String> map_h = cu.translateHTMLmessage(myId, new String[]{"'delete_online_store_request'"});
+                Map<String, String> map =   cu.translateForMe(new String[]{"'site_data'","'site_address'","'site_name'","'who_requested_removal'","'confirmation_email'","'os_req_rcvd'"});
+
+                subj =  map.get("os_req_rcvd")+ "\n\n"; // Subj: Received a request to delete a site with an online store
+                body =  map_h.get("delete_online_store_request")+ "\n\n" +
+                        map.get("confirmation_email")+ ": "+ settingsGeneral.getStores_alert_email() +"\n\n"+
+                        map.get("who_requested_removal")+ ": "+ whoRequestDelete +"\n\n"+
+//                        map.get("site_data")+ "\n"+
+                        map.get("site_address")+ ": "+ storeForOrderingData.getSite_domain() +"\n\n"+
+                        map.get("site_name")+ ": "+ cu.getFieldValueFromTableById("stores","name", masterId, storeId) +"\n\n";
+
+                mailRepository.sentMessage(masterEmail,subj,body);
+
+                return 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method deleteRentStore.", e);
+                return null;
+            }
+        }else return -1;
+    }
+
+    public List<StoreForOrderingShortInfoJSON> getRentStoresShortInfo(Long storeId){
+        try{
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
+            stringQuery = "select " +
+
+                "           p.id as id," +
+                "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                "           p.ready_to_distribute as ready_to_distribute," +
+                "           p.distributed as distributed," +
+                "           p.is_deleted as is_deleted," +
+                "           p.site_domain as site_domain," +
+                "           p.record_creator_name as record_creator_name," + // name of employee who created this record
+                "           to_char(p.date_time_ordered at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_ordered, " +
+                "           to_char(p.date_time_distributed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_distributed, " +
+                "           to_char(p.date_time_deleted at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_deleted, " +
+                "           uo.name as orderer," +          // who ordered (who is clicked on the button "Order store")
+                "           coalesce(ud.name,'') as deleter_id," +
+                "           p.panel_domain as panel_domain," +
+                "           p.is_queried_to_delete as is_queried_to_delete," +
+                "           to_char(p.date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete " +
+                "           from _saas_stores_for_ordering p" +
+                "           inner join users uo on p.orderer_id = uo.id"+
+                "           left outer join users ud on p.deleter_id = ud.id"+
+                "           where p.store_id = " + storeId +
+                "           and p.master_id = " + masterId +
+                "           order by p.date_time_distributed desc limit 1";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<StoreForOrderingShortInfoJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                StoreForOrderingShortInfoJSON doc = new StoreForOrderingShortInfoJSON();
+
+                doc.setId(Long.parseLong(                           obj[0].toString()));
+                doc.setDate_time_created((String)                   obj[1]);
+                doc.setReady_to_distribute((Boolean)                obj[2]);
+                doc.setDistributed((Boolean)                        obj[3]);
+                doc.setIs_deleted((Boolean)                         obj[4]);
+                doc.setSite_domain((String)                         obj[5]);
+                doc.setRecord_creator_name((String)                 obj[6]);
+                doc.setDate_time_ordered((String)                   obj[7]);
+                doc.setDate_time_distributed((String)               obj[8]);
+                doc.setDate_time_deleted((String)                   obj[9]);
+                doc.setOrderer((String)                             obj[10]);
+                doc.setDeleter((String)                             obj[11]);
+                doc.setPanel_domain((String)                        obj[12]);
+                doc.setIs_queried_to_delete((Boolean)               obj[13]);
+                doc.setDate_time_query_to_delete((String)           obj[14]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getRentStoresShortInfo.", e);
+            return null;
+        }
+    }
+
+
     private StoreForOrderingJSON getStoreForOrderingData(Long storeId) throws Exception {
         UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
         String myTimeZone = userSettings.getTime_zone();
@@ -1027,40 +1202,40 @@ public class StoreRepository {
         String stringQuery = "select " +
 
                 "           id as id," +
-                "           date_time_created as date_time_created," +
+                "           to_char(date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                 "           ready_to_distribute as ready_to_distribute," +
                 "           distributed as distributed," +
                 "           is_deleted as is_deleted," +
                 "           client_no as client_no," +
                 "           client_name as client_name," +
                 "           client_login as client_login," +
-                "           pgp_sym_decrypt(\"client_password\",'"+stores_secret+"') as client_password"+
+                "           pgp_sym_decrypt(\"client_password\",'"+stores_secret+"') as client_password,"+
                 "           site_domain as site_domain," +
                 "           site_root as site_root," +
                 "           ftp_user as ftp_user," +
-                "           pgp_sym_decrypt(\"ftp_password\",'"+stores_secret+"') as ftp_password"+
+                "           pgp_sym_decrypt(\"ftp_password\",'"+stores_secret+"') as ftp_password,"+
                 "           db_user as db_user," +
-                "           pgp_sym_decrypt(\"db_password\",'"+stores_secret+"') as db_password"+
+                "           pgp_sym_decrypt(\"db_password\",'"+stores_secret+"') as db_password,"+
                 "           db_name as db_name," +
                 "           wp_login as wp_login," +
-                "           pgp_sym_decrypt(\"wp_password\",'"+stores_secret+"') as wp_password"+
+                "           pgp_sym_decrypt(\"wp_password\",'"+stores_secret+"') as wp_password,"+
                 "           wp_server_ip as wp_server_ip," +
                 "           dokio_secret_key as dokio_secret_key," +
                 "           record_creator_name as record_creator_name," + // name of employee who created this record
-                "           to_char(p.date_time_ordered at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_ordered, " +
-                "           to_char(p.date_time_distributed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_distributed, " +
-                "           to_char(p.date_time_deleted at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_deleted, " +
+                "           to_char(date_time_ordered at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_ordered, " +
+                "           to_char(date_time_distributed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_distributed, " +
+                "           to_char(date_time_deleted at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_deleted, " +
                 "           master_id  as master_id," +
                 "           company_id as company_id," +
                 "           store_id   as store_id," +           // online store connection
                 "           orderer_id as orderer_id," +          // who ordered (who is clicked on the button "Order store")
                 "           deleter_id as deleter_id," +
-                "           panel_domail as panel_domail," +
+                "           panel_domain as panel_domain," +
                 "           is_queried_to_delete as is_queried_to_delete," +
-                "           to_char(p.date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete, " +
+                "           to_char(date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete, " +
                 "           orderer_ip as orderer_ip" +
-                "           from stores_for_ordering " +
-                "           where  p.id= " + storeId;
+                "           from _saas_stores_for_ordering " +
+                "           where  id= " + storeId;
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1098,7 +1273,7 @@ public class StoreRepository {
                 doc.setCompany_id(Long.parseLong(                   obj[25].toString()));
                 doc.setStore_id(Long.parseLong(                     obj[26].toString()));
                 doc.setOrderer_id(Long.parseLong(                   obj[27].toString()));
-                doc.setDeleter_id(Long.parseLong(                   obj[28].toString()));
+                doc.setDeleter_id(obj[28] != null ? Long.parseLong(  obj[28].toString()) : null);
                 doc.setPanel_domain((String)                        obj[29]);
                 doc.setIs_queried_to_delete((Boolean)               obj[30]);
                 doc.setDate_time_query_to_delete((String)           obj[31]);
@@ -1117,36 +1292,36 @@ public class StoreRepository {
 
         String stringQuery;
 
-        stringQuery= " insert into stores_for_ordering ("+
-                                " date_time_created,"+
-                                " date_time_ordered,"+
-                                " master_id,"+
-                                " company_id,"+
-                                " store_id,"+
-                                " orderer_id,"+
-                                " orderer_ip," +
-                                " ready_to_distribute,"+
-                                " distributed,"+
-                                " is_queried_to_delete,"+
-                                " is_deleted" +
-                            ") values ("+
-                                " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
-                                " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
-                                masterId+", " +
-                                "(select id from companies where master_id="+masterId+" and id="+companyId+")," +
-                                storeId+", " +
-                                ordererId+", " +
-                                "'"+ipAddress+"', " +
-                                " false,"+
-                                " false,"+
-                                " false,"+
-                                " false"+
-                            ");";
+        stringQuery= " insert into _saas_stores_for_ordering ("+
+                        " date_time_created,"+
+                        " date_time_ordered,"+
+                        " master_id,"+
+                        " company_id,"+
+                        " store_id,"+
+                        " orderer_id,"+
+                        " orderer_ip," +
+                        " ready_to_distribute,"+
+                        " distributed,"+
+                        " is_queried_to_delete,"+
+                        " is_deleted" +
+                    ") values ("+
+                        " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                        " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                        masterId+", " +
+                        "(select id from companies where master_id="+masterId+" and id="+companyId+")," +
+                        storeId+", " +
+                        ordererId+", " +
+                        "'"+ipAddress+"', " +
+                        " false,"+
+                        " false,"+
+                        " false,"+
+                        " false"+
+                    ");";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            stringQuery="select id from stores where master_id = "+masterId+" and store_id="+storeId+" and date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS'))";
+            stringQuery="select id from _saas_stores_for_ordering where master_id = "+masterId+" and store_id="+storeId+" and date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS'))";
             query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
         } catch (Exception e) {
@@ -1158,7 +1333,7 @@ public class StoreRepository {
 
     private int getQttOfStoreOrdersOnPeriodFromIp(int hours, String ipAddress) throws Exception {
         String stringQuery =
-                "select count(*) from stores_for_ordering where " +
+                "select count(*) from _saas_stores_for_ordering where " +
                         " orderer_ip = '"+ipAddress+"'" +
                         " and date_time_ordered >= NOW() - INTERVAL '"+hours+" HOURS'";
         try {
@@ -1172,7 +1347,7 @@ public class StoreRepository {
     }
     private int getQttOfStoreOrdersOnPeriodFromAccount(int hours, Long accId) throws Exception {
         String stringQuery =
-                "select count(*) from stores_for_ordering where " +
+                "select count(*) from _saas_stores_for_ordering where " +
                         " master_id = "+accId+
                         " and date_time_ordered >= NOW() - INTERVAL '"+hours+" HOURS'";
         try {

@@ -871,7 +871,7 @@ public class UserRepositoryJPA {
                 "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
                 "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
                 "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +
-                "   (select count(*) from stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
+                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

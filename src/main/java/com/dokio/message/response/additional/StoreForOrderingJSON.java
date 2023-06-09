@@ -39,6 +39,7 @@ public class StoreForOrderingJSON {
     private Long deleter_id;                      // who deleted (who is clicked on the button "Delete store")
     private String orderer_ip;                    // ip address from which store ordered
 
+
     public String getOrderer_ip() {
         return orderer_ip;
     }

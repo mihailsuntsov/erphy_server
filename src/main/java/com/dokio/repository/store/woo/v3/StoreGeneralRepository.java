@@ -1,8 +1,10 @@
 package com.dokio.repository.store.woo.v3;
 
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
+import com.dokio.message.response.additional.UserResources;
 import com.dokio.message.response.store.woo.v3.IsLetSyncJSON;
 import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ public class StoreGeneralRepository {
     CommonUtilites cu;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private UserRepositoryJPA userRepository;
 
     public IsLetSyncJSON isLetSync(String pluginVersion, String crmSecretKey) {
         String stringQuery="";
@@ -58,6 +62,23 @@ public class StoreGeneralRepository {
                 isLetSyncJSON.setReason("Plugin version is too old. Plugin version is "+pluginVersion+", but oldest allowed version is " + settingsGeneral.getWoo_plugin_oldest_acceptable_ver());
                 return isLetSyncJSON;
             }
+
+            if(settingsGeneral.isSaas()){
+                Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",crmSecretKey).toString());
+                Long planId=(Long)cu.getFieldValueFromTableById("users","plan_id",masterId, masterId);
+                boolean isPlanNoLimits = (Boolean)cu.getFieldValueFromTableById("plans","is_nolimits",masterId, planId);
+                if(!isPlanNoLimits){
+                    UserResources consumedRes = userRepository.getMyConsumedResources();
+                    UserResources maxAllowed = userRepository.getMyMaxAllowedResources();
+
+                    if(consumedRes.getStores() > maxAllowed.getStores()){
+                        isLetSyncJSON.setIs_sync_allowed(false);
+                        isLetSyncJSON.setReason("Consumed quantity of online store connections more than allowed quantity. Consumed is "+consumedRes.getStores()+", allowed is " + maxAllowed.getStores());
+                        return isLetSyncJSON;
+                    }
+                }
+            }
+
             isLetSyncJSON.setIs_sync_allowed(true);
             isLetSyncJSON.setReason("Synchronization allowed");
             return isLetSyncJSON;

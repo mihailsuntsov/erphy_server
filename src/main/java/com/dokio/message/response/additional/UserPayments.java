@@ -8,6 +8,15 @@ public class UserPayments {
     private String for_what_date;
     private BigDecimal operation_sum;
     private String  operation_type;
+    private String additional;
+
+    public String getAdditional() {
+        return additional;
+    }
+
+    public void setAdditional(String additional) {
+        this.additional = additional;
+    }
 
     public String getOperation_type() {
         return operation_type;

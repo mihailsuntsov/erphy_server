@@ -198,7 +198,8 @@ public class SubscriptionRepositoryJPA {
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores') as stores_quantity_limit," +
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores_woo') as stores_woo_quantity_limit," +
 
-                    "(select is_saas from settings_general) as is_saas" +
+                    "(select is_saas from settings_general) as is_saas," +
+                    "(select saas_payment_currency from settings_general) as saas_payment_currency" +
                     " from plans_add_options u where user_id = "+masterId;
 
             query = entityManager.createNativeQuery(stringQuery);
@@ -241,6 +242,7 @@ public class SubscriptionRepositoryJPA {
             accInfo.setQuantity_limit_stores_woo((Integer)      queryList.get(0)[31]);
 
             accInfo.setIs_saas((Boolean)                        queryList.get(0)[32]);
+            accInfo.setSaas_payment_currency((String)           queryList.get(0)[33]);
 
 
             // get the info about consumed resources
@@ -453,7 +455,7 @@ public class SubscriptionRepositoryJPA {
 
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getUserPaymentsPagesList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getUserPaymentsSize. SQL query:" + stringQuery, e);
             return null;
         }
     }
@@ -468,12 +470,13 @@ public class SubscriptionRepositoryJPA {
         stringQuery =   " select to_char(for_what_date, '"+dateFormat+"') as for_date, " +
                         " ROUND(sum(operation_sum),2) as operation_sum, " +
                         " operation_type as operation_type, " +
-                        " for_what_date as for_what_date_sort " +
+                        " for_what_date as for_what_date_sort, " +
+                        " additional as additional" +
                         " from _saas_billing_history " +
                         " where master_account_id = " + masterId +
                         " and for_what_date  >= to_date(:dateFrom,'DD.MM.YYYY') " +
                         " and for_what_date  <= to_date(:dateTo,'DD.MM.YYYY') " +
-                        " group by for_what_date, operation_type, for_what_date_sort " +
+                        " group by for_what_date, operation_type, for_what_date_sort,additional " +
                         " order by " + sortColumn + " " + sortAsc;
         try{
             Map<String, String> map = commonUtilites.translateForUser(masterId, new String[]{"'depositing'","'correction'","'withdrawal_plan'","'withdrawal_plan_option'"});
@@ -490,6 +493,7 @@ public class SubscriptionRepositoryJPA {
                 doc.setFor_what_date((String)                               obj[0]);
                 doc.setOperation_sum((BigDecimal)                           obj[1]);
                 doc.setOperation_type(map.get((String)                      obj[2]));
+                doc.setAdditional((String)                                  obj[4]);
                 returnList.add(doc);
             }
 

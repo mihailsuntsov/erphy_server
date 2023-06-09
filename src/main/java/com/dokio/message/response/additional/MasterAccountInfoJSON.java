@@ -21,23 +21,24 @@ import java.math.BigDecimal;
 
 public class MasterAccountInfoJSON {
 
-    private BigDecimal money;               // how much money on main account
+    private BigDecimal money;                // how much money on main account
     private int        plan_id;              // id of tariff plan
-    private String     plan_name;           // the name of tariff plan
-    private int        plan_version;        // the version of tariff plan
-    private BigDecimal plan_price;          // how much writeoff per day for tariff plan
-    private boolean    plan_no_limits;      // tariff plan has no limits
-    private boolean    plan_free;           // for free plans the billing is not applied, also this users can't use an additional options
-    private int        free_trial_days;     // free trial period (days) when user have all possibilities
+    private String     plan_name;            // the name of tariff plan
+    private int        plan_version;         // the version of tariff plan
+    private BigDecimal plan_price;           // how much writeoff per day for tariff plan
+    private boolean    plan_no_limits;       // tariff plan has no limits
+    private boolean    plan_free;            // for free plans the billing is not applied, also this users can't use an additional options
+    private int        free_trial_days;      // free trial period (days) when user have all possibilities
     private boolean    is_saas;
-    private BigDecimal companies_ppu;       // writeoff per day for 1 additional company
-    private BigDecimal departments_ppu;     // writeoff per day for 1 additional department
-    private BigDecimal users_ppu;           // writeoff per day for 1 additional user
-    private BigDecimal products_ppu;        // writeoff per day for 1 additional product or service
-    private BigDecimal counterparties_ppu;  // writeoff per day for 1 additional counterparty
-    private BigDecimal megabytes_ppu;       // writeoff per day for 1 additional Mb
-    private BigDecimal stores_ppu;          // writeoff per day for 1 additional WooCommerce store connection (document "Store")
-    private BigDecimal stores_woo_ppu;      // writeoff per day for 1 additional WooCommerce hosting
+    private BigDecimal companies_ppu;        // writeoff per day for 1 additional company
+    private BigDecimal departments_ppu;      // writeoff per day for 1 additional department
+    private BigDecimal users_ppu;            // writeoff per day for 1 additional user
+    private BigDecimal products_ppu;         // writeoff per day for 1 additional product or service
+    private BigDecimal counterparties_ppu;   // writeoff per day for 1 additional counterparty
+    private BigDecimal megabytes_ppu;        // writeoff per day for 1 additional Mb
+    private BigDecimal stores_ppu;           // writeoff per day for 1 additional WooCommerce store connection (document "Store")
+    private BigDecimal stores_woo_ppu;       // writeoff per day for 1 additional WooCommerce hosting
+    private String     saas_payment_currency;// currency of SaaS subscription accounting
 
     // steps
     private int        step_companies;
@@ -88,6 +89,14 @@ public class MasterAccountInfoJSON {
     private int  n_megabytes_fact;
     private Long n_stores_fact;
     private Long n_stores_woo_fact;
+
+    public String getSaas_payment_currency() {
+        return saas_payment_currency;
+    }
+
+    public void setSaas_payment_currency(String saas_payment_currency) {
+        this.saas_payment_currency = saas_payment_currency;
+    }
 
     public boolean isIs_saas() {
         return is_saas;

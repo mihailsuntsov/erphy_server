@@ -38,17 +38,17 @@ public class SettingsGeneralJSON {
     private String  woo_plugin_oldest_acceptable_ver; // most old supported by DokioCRM plugin version
     private boolean is_sites_distribution; //in this SaaS there is a sites distribution
     private String  stores_alert_email;    // email of rent-stores responsible employee.
-    private String  store_ordered_email;   // email to sent message of store ordered successfully
     private int     min_qtt_stores_alert;  //quantity of stores to sent email to stores_alert_email
     private int     max_store_orders_per_24h_1_account; // max quantity of online stores that can be ordered in 24h from one account
     private int     max_store_orders_per_24h_1_ip;      // max quantity of online stores that can be ordered in 24h from one IP address
+    private String  saas_payment_currency; // currency of SaaS subscription accounting
 
-    public String getStore_ordered_email() {
-        return store_ordered_email;
+    public String getSaas_payment_currency() {
+        return saas_payment_currency;
     }
 
-    public void setStore_ordered_email(String store_ordered_email) {
-        this.store_ordered_email = store_ordered_email;
+    public void setSaas_payment_currency(String saas_payment_currency) {
+        this.saas_payment_currency = saas_payment_currency;
     }
 
     public int getMax_store_orders_per_24h_1_account() {

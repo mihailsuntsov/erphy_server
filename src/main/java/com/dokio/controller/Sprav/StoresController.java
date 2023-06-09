@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 
@@ -129,5 +131,52 @@ public class StoresController {
         try {return new ResponseEntity<>(storesRepository.getStoreCategoryTranslationsList(category_id), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+    @RequestMapping(
+            value = "/api/auth/getMyRentSite",
+            params = {"iagree", "companyId", "storeId", "agreementType", "agreementVer"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getMyRentSite(HttpServletRequest httpServletRequest,
+                   @RequestParam("iagree") boolean iagree,
+                   @RequestParam("companyId") Long companyId,
+                   @RequestParam("storeId") Long storeId,
+                   @RequestParam("agreementType") String agreementType,
+                   @RequestParam("agreementVer") String agreementVer
+            ){
+        logger.info("Processing get request for path /api/auth/getMyRentSite with parameters: " +
+        "iagree:"+iagree+", companyId:"+companyId+", storeId:"+storeId+", agreementType:"+agreementType+", agreementVer:"+agreementVer);
+        try {
+            String ip=httpServletRequest.getRemoteAddr();
+            return new ResponseEntity<>(storesRepository.getMyRentSite(ip, iagree, companyId, storeId, agreementType, agreementVer), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error getting site", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getRentStoresShortInfo",
+            params = {"store_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getRentStoresShortInfo(
+               @RequestParam("store_id") Long store_id){
+        logger.info("Processing get request for path /api/auth/getRentStoresShortInfo with parameters: store_id:"+store_id);
+        try {
+            return new ResponseEntity<>(storesRepository.getRentStoresShortInfo(store_id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error getting rent stores info", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @RequestMapping(
+            value = "/api/auth/deleteRentStore",
+            params = {"store_id","record_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteRentStore(
+            @RequestParam("store_id") Long store_id,@RequestParam("record_id") Long record_id){
+        logger.info("Processing get request for path /api/auth/deleteRentStore with parameters: store_id:"+store_id+", record_id:"+record_id);
+        try {
+            return new ResponseEntity<>(storesRepository.deleteRentStore(record_id, store_id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error deleting rent store", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+
+
 
 }
