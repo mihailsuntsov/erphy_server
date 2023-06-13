@@ -568,6 +568,10 @@ public class AcceptanceRepository {
                     ":uid)";
             try {
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -729,6 +733,8 @@ public class AcceptanceRepository {
                             " id= " + request.getId();
 
             try {
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+                commonUtilites.idBelongsMyMaster("acceptance", request.getId(), myMasterId);
                 // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
                 if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "acceptance"))
                     throw new DocumentAlreadyDecompletedException();
@@ -738,7 +744,7 @@ public class AcceptanceRepository {
 
 
                 //сохранение истории движения товара
-                Long myMasterId = userRepositoryJPA.getMyMasterId();
+
                 request.setIs_completed(false);
                 BigDecimal docProductsSum = new BigDecimal(0); // для накопления итоговой суммы по всем товарам документа
                 for (AcceptanceProductForm row : request.getAcceptanceProductTable()) {
@@ -802,6 +808,7 @@ public class AcceptanceRepository {
                 " and master_id="+myMasterId;
         try
         {
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
             query.setParameter("acceptance_date", (request.getAcceptance_date() == "" ? null :request.getAcceptance_date()));
@@ -867,6 +874,8 @@ public class AcceptanceRepository {
                 " nds_id = " + row.getNds_id() +"," +
                 " edizm_id = "+ row.getEdizm_id();
         try {
+            commonUtilites.idBelongsMyMaster("sprav_taxes", row.getNds_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", row.getEdizm_id(), myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1200,8 +1209,11 @@ public class AcceptanceRepository {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select acceptance_id from acceptance_files where acceptance_id=" + acceptanceId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -1348,6 +1360,10 @@ public class AcceptanceRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusOnFinishId(), myMasterId);
 
             stringQuery =
                     " insert into settings_acceptance (" +

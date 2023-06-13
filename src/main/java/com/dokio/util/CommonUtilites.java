@@ -20,6 +20,7 @@ package com.dokio.util;
 import com.dokio.controller._Info;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
+import com.dokio.message.response.additional.TranslateHTMLmessageResult;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.SecurityRepositoryJPA;
@@ -27,11 +28,8 @@ import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import javax.persistence.*;
-import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParsePosition;
@@ -177,7 +175,26 @@ public class CommonUtilites {
             return true;
         }
     }
-
+    @SuppressWarnings("Duplicates")
+    public Boolean isSiteNameAllowed(String name)
+    {
+        String stringQuery;
+        stringQuery = "select count(*) from _saas_stores_for_ordering where third_lvl_user_domain = :name "+// there is no checking on deleted, because third_lvl_user_domain_uq
+        " or :name in ('mail','dokio')" +
+        " or :name like('ns%')" +
+        " or :name like('site%')";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name", name);
+            return !(((BigInteger)query.getSingleResult()).intValue()>0); // >0 - false, name is not uniuqe, !>0 - true, unique
+        }
+        catch (Exception e) {
+            logger.error("Exception in method isSiteNameAllowed. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return true;
+        }
+    }
     @SuppressWarnings("Duplicates") // проверка на проведённость документа
     public Boolean isDocumentCompleted(Long company_id, Long doc_id, String docTableName) throws Exception {
         String stringQuery;
@@ -619,7 +636,7 @@ public class CommonUtilites {
     }
 
     @SuppressWarnings("Duplicates")
-    public Map<String, String> translateHTMLmessage(Long userId, String[] keys){
+    public Map<String, String> translateHTMLmessages(Long userId, String[] keys){
         String suffix = userRepositoryJPA.getUserSuffix(userId);
         String stringQuery =            "select key, tr_"+suffix+" from _saas_messages ";
         if(keys.length>0)
@@ -633,6 +650,24 @@ public class CommonUtilites {
                 map.put((String)obj[0], (String)obj[1]);
             }
             return map;
+        } catch (Exception e) {
+            logger.error("Exception in method translateHTMLmessages. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    public TranslateHTMLmessageResult translateHTMLmessage(String key){
+        String suffix = userRepositoryJPA.getUserSuffix(userRepository.getUserId());
+        String stringQuery =
+        "select tr_"+suffix+" from _saas_messages where key = :key";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("key",key);
+            TranslateHTMLmessageResult res = new TranslateHTMLmessageResult();
+            res.setResult((String)query.getSingleResult());
+            return res;
         } catch (Exception e) {
             logger.error("Exception in method translateHTMLmessage. SQL: " + stringQuery, e);
             e.printStackTrace();
@@ -661,7 +696,11 @@ public class CommonUtilites {
                         " min_qtt_stores_alert as min_qtt_stores_alert," + //quantity of stores to sent email to stores_alert_email
                         " max_store_orders_per_24h_1_account as mqtt24acc, " + // max quantity of online stores that can be ordered in 24h from one account
                         " max_store_orders_per_24h_1_ip as mqtt24ip, " + //  max quantity of online stores that can be ordered in 24h from one IP address
-                        " saas_payment_currency as saas_payment_currency" +
+                        " saas_payment_currency as saas_payment_currency," +
+                        " url_terms_and_conditions as url_terms_and_conditions, " +
+                        " url_privacy_policy as url_privacy_policy, " +
+                        " url_data_processing_agreement as url_data_processing_agreement," +
+                        " root_domain as root_domain" +
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -689,6 +728,10 @@ public class CommonUtilites {
                 doc.setMax_store_orders_per_24h_1_account((Integer) queryList.get(0)[16]);
                 doc.setMax_store_orders_per_24h_1_ip((Integer) queryList.get(0)[17]);
                 doc.setSaas_payment_currency((String) queryList.get(0)[18]);
+                doc.setUrl_terms_and_conditions((String) queryList.get(0)[19]);
+                doc.setUrl_privacy_policy((String) queryList.get(0)[20]);
+                doc.setUrl_data_processing_agreement((String) queryList.get(0)[21]);
+                doc.setRoot_domain((String) queryList.get(0)[22]);
             }
             return doc;
         } catch (Exception e) {
@@ -811,8 +854,33 @@ public class CommonUtilites {
         }
     }
 
+    @SuppressWarnings("Duplicates")
+    public void idBelongsMyMaster(String tableName, Long id, Long masterId) throws Exception {
+        String stringQuery;
+        stringQuery = "select ((select count(*) from "+tableName+" where id="+id+" and master_id="+masterId+")=0)";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (!Objects.isNull(id) && (Boolean)query.getSingleResult()) throw new Exception("Id's of the object don't belong to its master Id. Object of table "+tableName+", id="+id+", masterId="+masterId);
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method idBelongsMyMaster. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
 
-
+    @SuppressWarnings("Duplicates")
+    public void idBelongsMyMaster(String tableName, Integer id, Long masterId) throws Exception {
+        String stringQuery;
+        stringQuery = "select ((select count(*) from "+tableName+" where id="+id+" and master_id="+masterId+")=0)";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (!Objects.isNull(id) && (Boolean)query.getSingleResult()) throw new Exception("Id's of the object don't belong to its master Id. Object of table "+tableName+", id="+id+", masterId="+masterId);
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method idBelongsMyMaster. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
 
 
 }

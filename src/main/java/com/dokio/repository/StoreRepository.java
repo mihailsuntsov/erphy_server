@@ -835,7 +835,7 @@ public class StoreRepository {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public StoreOrderingResultJSON getMyRentSite(String user_ip, boolean iagree, Long companyId, Long storeId, String agreementType, String agreementVer){
+    public StoreOrderingResultJSON getMyRentSite(String user_ip, boolean iagree, Long companyId, Long storeId, String agreementType, String agreementVer, String thirdLvlName){
                 //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         StoreOrderingResultJSON storeOrderingResult = new StoreOrderingResultJSON();
         if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",storeId.toString())) ||
@@ -889,7 +889,7 @@ public class StoreRepository {
                     cu.SetStoreRentAgreementUnit(masterId, myId, storeId, rentStoreId, agreementType, agreementVer, timestamp);
 
                     // set free online store to user
-                    distributeOnlineStoreToUser(rentStoreId, timestamp, user_ip, companyId, storeId, masterId, myId);
+                    distributeOnlineStoreToUser(rentStoreId, timestamp, user_ip, companyId, storeId, masterId, myId,thirdLvlName);
 
                     // getting distributed store data
                     StoreForOrderingJSON orderedStoreFullData = getStoreForOrderingData(rentStoreId);
@@ -900,7 +900,7 @@ public class StoreRepository {
                     setIpAndSecretKeyToStoreConnection(orderedStoreFullData.getWp_server_ip(), orderedStoreFullData.getDokio_secret_key(), masterId, storeId);
 
                     //get message for user
-                    Map<String, String> map = cu.translateHTMLmessage(myId, new String[]{"'success_online_store_order'"});
+                    Map<String, String> map = cu.translateHTMLmessages(myId, new String[]{"'success_online_store_order'"});
 
                     //info to return:
                     storeOrderingResult.setStoreInfo(orderedStoreReturnData);
@@ -954,7 +954,7 @@ public class StoreRepository {
                         mailRepository.sentMessage(settingsGeneral.getStores_alert_email(),subj,body);
                     }
                     //get message for user
-                    Map<String, String> map = cu.translateHTMLmessage(myId, new String[]{"'online_store_no_free_but_ordered'"});
+                    Map<String, String> map = cu.translateHTMLmessages(myId, new String[]{"'online_store_no_free_but_ordered'"});
 
                     //info to return:
                     storeOrderingResult.setMessage(map.get("online_store_no_free_but_ordered"));
@@ -1011,7 +1011,7 @@ public class StoreRepository {
         }
     }
 
-    private void distributeOnlineStoreToUser(Long rentedStoreRecordId, String timestamp, String ordererIp, Long companyId, Long storeId, Long masterId, Long ordererId) throws Exception {
+    private void distributeOnlineStoreToUser(Long rentedStoreRecordId, String timestamp, String ordererIp, Long companyId, Long storeId, Long masterId, Long ordererId, String thirdLvlName) throws Exception {
 
         String stringQuery = " update _saas_stores_for_ordering set "+
                 " distributed = true, " +
@@ -1021,11 +1021,14 @@ public class StoreRepository {
                 " company_id = " + companyId + ", " +
                 " store_id = "  + storeId + ", " +
                 " orderer_ip = '"  + ordererIp + "', " +
-                " orderer_id = "  + ordererId +
+                " orderer_id = "  + ordererId + ", " +
+                " third_lvl_user_domain = :third_lvl_user_domain" +
                 " where id = " + rentedStoreRecordId +
                 " and distributed = false"; // just for unlikely case - when in the one moment two users gets the same id of store
         try {
+
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("third_lvl_user_domain",thirdLvlName.equals("")?null:thirdLvlName);
             query.executeUpdate();
             // check that onlone store was realy distributed (that unlikely case is not happened)
             stringQuery = "select count(*) from _saas_stores_for_ordering where id = "+rentedStoreRecordId+" and store_id = "+storeId+" and distributed = true";
@@ -1107,7 +1110,7 @@ public class StoreRepository {
 
 
                 // sending email to master-account owner for confirmation of delete online store
-                Map<String, String> map_h = cu.translateHTMLmessage(myId, new String[]{"'delete_online_store_request'"});
+                Map<String, String> map_h = cu.translateHTMLmessages(myId, new String[]{"'delete_online_store_request'"});
                 Map<String, String> map =   cu.translateForMe(new String[]{"'site_data'","'site_address'","'site_name'","'who_requested_removal'","'confirmation_email'","'os_req_rcvd'"});
 
                 subj =  map.get("os_req_rcvd")+ "\n\n"; // Subj: Received a request to delete a site with an online store

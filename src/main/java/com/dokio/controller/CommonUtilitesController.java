@@ -65,4 +65,35 @@ public class CommonUtilitesController {
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @RequestMapping(value = "/api/auth/isSiteNameAllowed",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> isSiteNameAllowed(
+            @RequestParam("name") String name)
+    {
+        logger.info("Processing get request for path /api/auth/isSiteNameAllowed with parameters: " +
+                "name: "+ name);
+        try {return new ResponseEntity<>(commonUtilites.isSiteNameAllowed(name), HttpStatus.OK);}
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller isSiteNameAllowed error", e);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(value = "/api/auth/translateHTMLmessage",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> translateHTMLmessage(
+            @RequestParam("key") String key)
+    {
+        logger.info("Processing get request for path /api/auth/translateHTMLmessage with parameters: " +
+                "key: "+ key);
+        try {return new ResponseEntity<>(commonUtilites.translateHTMLmessage(key), HttpStatus.OK);}
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller translateHTMLmessage error", e);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

@@ -199,7 +199,8 @@ public class SubscriptionRepositoryJPA {
                     "(select "+limitColumnName+" from plans_add_options_prices where name = 'stores_woo') as stores_woo_quantity_limit," +
 
                     "(select is_saas from settings_general) as is_saas," +
-                    "(select saas_payment_currency from settings_general) as saas_payment_currency" +
+                    "(select saas_payment_currency from settings_general) as saas_payment_currency," +
+                    "(select root_domain from settings_general) as root_domain" +
                     " from plans_add_options u where user_id = "+masterId;
 
             query = entityManager.createNativeQuery(stringQuery);
@@ -243,7 +244,7 @@ public class SubscriptionRepositoryJPA {
 
             accInfo.setIs_saas((Boolean)                        queryList.get(0)[32]);
             accInfo.setSaas_payment_currency((String)           queryList.get(0)[33]);
-
+            accInfo.setRoot_domain((String)                     queryList.get(0)[34]);
 
             // get the info about consumed resources
             UserResources userResources = userRepositoryJPA.getMyConsumedResources();
@@ -527,7 +528,7 @@ public class SubscriptionRepositoryJPA {
                     " text_"+suffix+" as text, " +
                     " id as id " +
                     " from _saas_agreements where type = '" + type +
-                    "' order by version_date, version desc limit 1";
+                    "' order by version_date desc, version desc limit 1";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

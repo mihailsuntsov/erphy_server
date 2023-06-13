@@ -43,6 +43,45 @@ public class SettingsGeneralJSON {
     private int     max_store_orders_per_24h_1_ip;      // max quantity of online stores that can be ordered in 24h from one IP address
     private String  saas_payment_currency; // currency of SaaS subscription accounting
 
+    // URLs of Legal information
+    private String  url_terms_and_conditions;
+    private String  url_privacy_policy;
+    private String  url_data_processing_agreement;
+    private String  root_domain;                   // like dokio.me
+
+    public String getRoot_domain() {
+        return root_domain;
+    }
+
+    public void setRoot_domain(String root_domain) {
+        this.root_domain = root_domain;
+    }
+
+
+    public String getUrl_terms_and_conditions() {
+        return url_terms_and_conditions;
+    }
+
+    public void setUrl_terms_and_conditions(String url_terms_and_conditions) {
+        this.url_terms_and_conditions = url_terms_and_conditions;
+    }
+
+    public String getUrl_privacy_policy() {
+        return url_privacy_policy;
+    }
+
+    public void setUrl_privacy_policy(String url_privacy_policy) {
+        this.url_privacy_policy = url_privacy_policy;
+    }
+
+    public String getUrl_data_processing_agreement() {
+        return url_data_processing_agreement;
+    }
+
+    public void setUrl_data_processing_agreement(String url_data_processing_agreement) {
+        this.url_data_processing_agreement = url_data_processing_agreement;
+    }
+
     public String getSaas_payment_currency() {
         return saas_payment_currency;
     }

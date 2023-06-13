@@ -3997,8 +3997,9 @@ public class ProductsRepositoryJPA {
                     Objects.isNull(commonUtilites.getFieldValueFromTableById("products","id", masterId, product_id)) )
                 throw new Exception("id's of the objects don't belong to their master_id. master_id="+masterId+", company_id="+company_id+", product_id="+product_id);
 
-
-
+            // additional safety checks
+            commonUtilites.idBelongsMyMaster("departments", department_id, masterId);
+            commonUtilites.idBelongsMyMaster("products", product_id, masterId);
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

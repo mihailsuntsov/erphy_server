@@ -4776,40 +4776,12 @@ create table _saas_agreements(
 --   text_ru
 -- ) values (
 --            'site_hosting',
---            '1',
---            to_date('01.01.2023','DD.MM.YYYY'),
+--            '3',
+--            to_date('13.06.2023','DD.MM.YYYY'),
 --            'Site hosting',
---            '<p>
---          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus suscipit lacus vitae nunc suscipit feugiat. Aliquam vehicula feugiat dui, in ullamcorper nunc bibendum in. Nam sed ante elementum, porttitor tortor a, tempus diam. Maecenas nec augue placerat, vehicula nibh sit amet, eleifend enim. Sed sed dui nisi. Praesent dolor erat, cursus ac leo ac, cursus pulvinar lacus. Donec fringilla scelerisque augue, quis vulputate urna tincidunt eget. Nam eu nisl et mauris interdum imperdiet ac porttitor turpis. Ut pharetra elit nec blandit varius. Morbi ante sem, gravida finibus consectetur ac, facilisis ut ligula. Maecenas mattis varius justo eu gravida.
---          </p>
---          <p>
---          Curabitur eu ex non dui lobortis feugiat. Suspendisse nec neque vel nunc facilisis lacinia a id urna. Pellentesque nec tellus neque. Fusce ultricies dictum blandit. Vestibulum ultrices mattis vestibulum. Vestibulum ac sollicitudin tortor. Vestibulum ut libero ac lacus feugiat varius. Nunc tempus vel odio nec blandit. Aliquam eu libero tempus, vestibulum arcu at, varius lectus. Fusce dapibus, leo sed pretium pharetra, ex nisi consequat purus, ut accumsan tortor dolor nec risus. Nunc quis nisi tristique, semper turpis et, cursus tortor. Nam ac turpis enim. Donec eget felis ut diam placerat dignissim. Cras eu ipsum non nulla iaculis ullamcorper. Nullam lacinia justo eu arcu porttitor varius. In consectetur dolor in leo consequat ullamcorper.
---          </p>
---          <p>
---          Sed malesuada nulla sit amet odio pharetra, at placerat enim facilisis. Sed et faucibus velit, eu maximus odio. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Suspendisse lobortis, odio eu faucibus scelerisque, dolor dolor porta turpis, eget molestie ligula magna a purus. Nullam condimentum sed enim vitae semper. Sed suscipit erat nulla, ac auctor magna cursus eget. Nunc hendrerit accumsan risus, eu blandit arcu egestas nec. Proin tempus metus purus. Integer et lobortis lorem. Proin condimentum efficitur dignissim. Praesent accumsan mauris scelerisque diam aliquam scelerisque. Pellentesque dignissim ex eget efficitur placerat. Morbi euismod elementum ornare. Curabitur quis ligula at dolor vehicula posuere. Vestibulum gravida eget leo sed efficitur. Sed enim felis, dignissim ac tortor at, ultricies suscipit augue.
---          </p>
---          <p>
---          In bibendum consectetur leo, in scelerisque enim interdum eget. Nam nec hendrerit nunc, id efficitur enim. Aliquam tempus metus ut massa vulputate, id ultrices augue ornare. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Cras a finibus magna, et tempor orci. Maecenas lobortis diam eu felis commodo, in tristique lorem auctor. Praesent enim ante, sagittis vel rhoncus ac, suscipit sit amet leo. Sed volutpat, nisi ac fermentum placerat, ligula augue ultricies nisi, non pulvinar elit neque in mauris. Suspendisse elementum pharetra velit, non luctus arcu volutpat vel. Fusce ac consectetur mauris, eu feugiat eros. Donec dictum vestibulum lacus eget feugiat. In commodo augue eget lobortis pharetra. Duis finibus tincidunt risus a viverra.
---          </p>
---          <p>
---          Nunc ultricies et orci sit amet ultricies. In laoreet, ante non venenatis faucibus, turpis erat convallis lacus, in laoreet neque velit ut sapien. Maecenas massa diam, scelerisque nec vestibulum non, pulvinar sit amet mi. Sed sit amet ultricies mauris. Fusce nec porttitor est, vitae scelerisque ante. Nullam tempor tincidunt auctor. Duis eros magna, dictum ac purus quis, luctus congue arcu. Nulla urna ipsum, imperdiet id efficitur nec, egestas nec sapien.
---          </p>',
+--            '',
 --            'Хостинг сайта',
---            '<p>
---          Lorem ipsum dolor sit amet, consectetur adipiscing elit. In eget fermentum ipsum, quis efficitur quam. Cras quis convallis quam. Integer in lacinia tortor. Phasellus finibus diam tincidunt ante convallis tempus. Fusce consequat feugiat elit nec vulputate. Pellentesque lorem est, lacinia ac aliquet sit amet, ullamcorper ac leo. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Phasellus eros ante, ultricies id condimentum non, finibus id purus. Phasellus ac hendrerit arcu.
---          </p>
---          <p>
---          Sed leo massa, tempor sed facilisis et, mollis ac dui. Fusce sollicitudin lacus eu pellentesque imperdiet. Aliquam pharetra nunc sit amet cursus aliquet. Sed accumsan viverra tellus, egestas consequat sem volutpat sit amet. Vestibulum pretium, risus sed vestibulum scelerisque, nisi massa porttitor nunc, ultrices pellentesque felis sem vel diam. Nullam neque ante, lacinia a nibh quis, sagittis gravida diam. Praesent ornare metus sed turpis vulputate eleifend. Nam vulputate nibh eget quam facilisis auctor. Aenean vitae accumsan neque. Morbi ut eros semper, sagittis massa et, accumsan justo. Fusce lacus magna, consequat sit amet lorem in, posuere gravida enim. Ut quis massa quam. Donec fermentum dui vel sem commodo, et sodales augue fermentum.
---          </p>
---          <p>
---          Pellentesque fringilla felis mattis fermentum cursus. Maecenas leo sapien, ornare elementum arcu et, mattis blandit tellus. Sed consectetur, lacus non laoreet blandit, velit justo ornare sapien, at tristique eros lorem vel magna. Donec quis augue sit amet leo placerat vehicula ut non ex. Aliquam volutpat, risus ac viverra bibendum, dui lectus finibus nulla, ac fringilla lectus ex et nisl. Aenean sagittis euismod mi at placerat. In finibus libero et est congue, sed euismod libero tempor. Suspendisse malesuada pulvinar nulla, id consequat dui semper sed. Donec tempor a lacus ac ullamcorper. Nullam a lectus malesuada, consequat elit non, suscipit libero. Phasellus et luctus lorem. Nam a dictum turpis, non sollicitudin augue. Aliquam eget massa ultrices, porttitor mauris ut, lobortis mi. Etiam feugiat, ligula ac tempus tincidunt, risus nunc venenatis libero, mollis gravida nunc risus nec nunc. Donec feugiat velit nisl, ultricies ornare augue tincidunt vulputate. Aliquam erat volutpat.
---          </p>
---          <p>
---          Mauris urna nulla, euismod non felis id, rhoncus blandit leo. Phasellus varius odio posuere, consectetur ante id, hendrerit ex. Integer hendrerit purus est, suscipit efficitur quam facilisis vel. Aenean neque lorem, mattis in nisl varius, aliquam accumsan justo. Vestibulum et egestas ligula. Vivamus vitae enim leo. Nam laoreet, enim a iaculis lacinia, elit elit tristique est, eget interdum nunc ligula vitae tortor.
---          </p>
---          <p>
---          Nulla malesuada interdum porttitor. Nam sollicitudin tincidunt tortor sed pretium. Nam mattis mi id neque ultricies, consectetur laoreet justo varius. Mauris quis justo nunc. Etiam consequat sed libero id ornare. Suspendisse quis semper tortor, in commodo leo. Phasellus efficitur vestibulum turpis, vitae laoreet ipsum bibendum ac. In iaculis tristique sem et bibendum. Aenean blandit facilisis nibh, non elementum elit suscipit non.
---          </p>'
+--            ''
 --          )
 
 create table _saas_agreements_units(
@@ -4904,3 +4876,34 @@ insert into _dictionary (key, tr_ru, tr_en) values
 alter table settings_general add column saas_payment_currency varchar(100);
 update settings_general set saas_payment_currency = 'USD';
 alter table settings_general alter column saas_payment_currency set not null;
+
+alter table settings_general add column url_terms_and_conditions varchar(1000);
+update settings_general  set url_terms_and_conditions = '';
+alter table settings_general alter column url_terms_and_conditions set not null;
+
+alter table settings_general add column url_privacy_policy varchar(1000);
+update settings_general  set url_privacy_policy = '';
+alter table settings_general alter column url_privacy_policy set not null;
+
+alter table settings_general add column url_data_processing_agreement varchar(1000);
+update settings_general  set url_data_processing_agreement = '';
+alter table settings_general alter column url_data_processing_agreement set not null;
+
+alter table _saas_stores_for_ordering add column third_lvl_user_domain varchar(100);
+
+CREATE UNIQUE INDEX third_lvl_user_domain_uq ON _saas_stores_for_ordering (third_lvl_user_domain) WHERE third_lvl_user_domain IS NOT NULL;
+
+alter table settings_general add column root_domain varchar(255);               --like dokio.me
+update settings_general set root_domain = '';
+alter table settings_general alter column root_domain set not null;
+
+insert into _saas_messages (key, tr_ru, tr_en) values (
+    'site_name_access',
+    '<p style="text-align:center"><strong>ВНИМАНИЕ</strong></p>
+    <p><span style="font-size:14px">Сначала сайт будет доступен по сгенерированному системой имени.<br />
+    По выбранному Вами имени сайт будет доступен в течение 24 часов.
+    </span></p>',
+    '<p style="text-align:center"><strong>NOTE</strong></p>
+    <p><span style="font-size:14px">At first the site will be accessible with a system-generated name.<br />
+    It will be available at your choosen name within 24h.
+    </span></p>');

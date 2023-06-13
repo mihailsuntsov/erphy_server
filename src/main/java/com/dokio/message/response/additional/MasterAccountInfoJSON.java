@@ -39,6 +39,7 @@ public class MasterAccountInfoJSON {
     private BigDecimal stores_ppu;           // writeoff per day for 1 additional WooCommerce store connection (document "Store")
     private BigDecimal stores_woo_ppu;       // writeoff per day for 1 additional WooCommerce hosting
     private String     saas_payment_currency;// currency of SaaS subscription accounting
+    private String     root_domain;          // like "dokio.me"
 
     // steps
     private int        step_companies;
@@ -89,6 +90,14 @@ public class MasterAccountInfoJSON {
     private int  n_megabytes_fact;
     private Long n_stores_fact;
     private Long n_stores_woo_fact;
+
+    public String getRoot_domain() {
+        return root_domain;
+    }
+
+    public void setRoot_domain(String root_domain) {
+        this.root_domain = root_domain;
+    }
 
     public String getSaas_payment_currency() {
         return saas_payment_currency;

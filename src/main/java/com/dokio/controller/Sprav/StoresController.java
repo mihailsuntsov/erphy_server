@@ -142,13 +142,14 @@ public class StoresController {
                    @RequestParam("companyId") Long companyId,
                    @RequestParam("storeId") Long storeId,
                    @RequestParam("agreementType") String agreementType,
+                   @RequestParam("thirdLvlName") String thirdLvlName,
                    @RequestParam("agreementVer") String agreementVer
             ){
         logger.info("Processing get request for path /api/auth/getMyRentSite with parameters: " +
-        "iagree:"+iagree+", companyId:"+companyId+", storeId:"+storeId+", agreementType:"+agreementType+", agreementVer:"+agreementVer);
+        "iagree:"+iagree+", companyId:"+companyId+", storeId:"+storeId+", agreementType:"+agreementType+", agreementVer:"+agreementVer+", thirdLvlName:"+thirdLvlName);
         try {
             String ip=httpServletRequest.getRemoteAddr();
-            return new ResponseEntity<>(storesRepository.getMyRentSite(ip, iagree, companyId, storeId, agreementType, agreementVer), HttpStatus.OK);}
+            return new ResponseEntity<>(storesRepository.getMyRentSite(ip, iagree, companyId, storeId, agreementType, agreementVer,thirdLvlName), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Error getting site", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

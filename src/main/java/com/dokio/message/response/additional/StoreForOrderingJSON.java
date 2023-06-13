@@ -38,7 +38,15 @@ public class StoreForOrderingJSON {
     private Long orderer_id;                      // who ordered (who is clicked on the button "Order store")
     private Long deleter_id;                      // who deleted (who is clicked on the button "Delete store")
     private String orderer_ip;                    // ip address from which store ordered
+    private String third_lvl_user_domain;         // 3rd level domain that user desired when ordering the site. For example, "flowers" for flowers.dokio.me
 
+    public String getThird_lvl_user_domain() {
+        return third_lvl_user_domain;
+    }
+
+    public void setThird_lvl_user_domain(String third_lvl_user_domain) {
+        this.third_lvl_user_domain = third_lvl_user_domain;
+    }
 
     public String getOrderer_ip() {
         return orderer_ip;
