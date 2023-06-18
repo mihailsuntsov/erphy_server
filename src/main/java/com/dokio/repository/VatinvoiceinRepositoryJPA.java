@@ -456,6 +456,14 @@ public class VatinvoiceinRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("paymentout", request.getPaymentout_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("acceptance", request.getAcceptance_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -524,6 +532,8 @@ public class VatinvoiceinRepositoryJPA {
                     " id= "+request.getId()+" and master_id="+myMasterId;
             try
             {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "vatinvoicein"))
                     throw new DocumentAlreadyCompletedException();
@@ -603,6 +613,8 @@ public class VatinvoiceinRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_vatinvoicein (" +
                             "master_id, " +
@@ -764,8 +776,10 @@ public class VatinvoiceinRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select vatinvoicein_id from vatinvoicein_files where vatinvoicein_id=" + vatinvoiceinId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);

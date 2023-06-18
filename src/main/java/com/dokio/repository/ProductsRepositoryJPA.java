@@ -459,6 +459,8 @@ public class ProductsRepositoryJPA {
                 if(request.getType().equals("variable") && wasOperationsOnProduct)
                     return -290;
 
+                commonUtilites.idBelongsMyMaster("products", request.getId(), myMasterId);
+
                 // no matter - variable product or not - because can be that it was Variable and now selected as Simple
                 // at this place method running for deleted variations (here they are still belongs to product)
                 markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
@@ -502,7 +504,7 @@ public class ProductsRepositoryJPA {
                 // сохранение выбранных категорий
                 Set<Long> categories = request.getSelectedProductCategories();
                 if (!categories.isEmpty()) { //если есть выбранные чекбоксы категорий
-                    saveCategories(request.getId(), categories);
+                    saveCategories(request.getId(), categories, myMasterId);
                 }
                 // deleting categories that not in selected categories
                 deleteCategories(myMasterId, request.getId(), categories);
@@ -656,6 +658,7 @@ public class ProductsRepositoryJPA {
         BigInteger cnt;
         try{
             for(Long childId : childs){
+
                 //check that this pair (category and product) is not in table
                 stringQuery=
                         "select count(*) from "+tableName+" where product_id = " + productId + " and child_id = " + childId + " and master_id=" + masterId;
@@ -671,6 +674,7 @@ public class ProductsRepositoryJPA {
                 }
                 //if there is no the pair like this
                 if(cnt.equals(new BigInteger("0"))){
+                    commonUtilites.idBelongsMyMaster("products", childId, masterId);
                     stringQuery="insert into "+tableName+" (" +
                             "master_id, product_id, child_id) values ("+masterId+", "+productId+", "+childId+")";
                     try {
@@ -685,7 +689,7 @@ public class ProductsRepositoryJPA {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method saveUpsells.", e);
+            logger.error("Exception in method saveUpsellCrosssells.", e);
             throw new Exception(e);
         }
     }
@@ -713,11 +717,14 @@ public class ProductsRepositoryJPA {
         }
     }
     @SuppressWarnings("Duplicates")
-    private void saveCategories(Long productId, Set<Long> categories) throws Exception {
+    private void saveCategories(Long productId, Set<Long> categories, Long masterId) throws Exception {
         String stringQuery;
         BigInteger cnt;
         try{
             for(Long categoryId : categories){
+
+                commonUtilites.idBelongsMyMaster("product_categories", categoryId, masterId);
+
                 //check that this pair (category and product) is not in table
                 stringQuery=
                     "select count(*) from product_productcategories where product_id = " + productId + " and category_id = " + categoryId;
@@ -797,6 +804,11 @@ public class ProductsRepositoryJPA {
 //                        "price_value = " + (priceValue==null?"-1":priceValue.toString());
                         "price_value = " + priceValue;
         try{
+
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", priceTypeId, myMasterId);
+            commonUtilites.idBelongsMyMaster("products", productId, myMasterId);
+            commonUtilites.idBelongsMyMaster("companies", companyId, myMasterId);
+
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
@@ -813,6 +825,13 @@ public class ProductsRepositoryJPA {
             String stringQuery;
         try
         {
+
+            commonUtilites.idBelongsMyMaster("sprav_taxes", request.getNds_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getEdizm_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getWeight_edizm_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("products", request.getParent_id(), myMasterId);
+
+
             stringQuery = " update products set " +
                     " changer_id = " + myId + ", "+
                     " date_time_changed= now()," +
@@ -955,6 +974,14 @@ public class ProductsRepositoryJPA {
                     return -120L; // number of products is out of bounds of tariff plan
             try {
 
+
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getEdizm_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_taxes", request.getNds_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getWeight_edizm_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getVolume_edizm_id(), myMasterId);
+
                 EntityManager emgr = emf.createEntityManager();
                 Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
                 Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
@@ -971,10 +998,7 @@ public class ProductsRepositoryJPA {
                         User creator = userRepository.getUserByUsername(userRepository.getUserName());
                         newDocument.setCreator(creator);//создателя
                         //владелец
-                        User master = userRepository.getUserByUsername(
-                                userRepositoryJPA.getUsernameById(
-                                        userRepositoryJPA.getUserMasterIdByUsername(
-                                                userRepository.getUserName())));
+                        User master = userRepository.getUserById(myMasterId);
                         newDocument.setMaster(master);
                         //дата и время создания
                         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -992,13 +1016,17 @@ public class ProductsRepositoryJPA {
                         newDocument.setProduct_code_free(generateFreeProductCode(request.getCompany_id()));
 
                         //группа товаров
-                        if (request.getProductgroup_id() != null) {
-                            ProductGroups pg = emgr.find(ProductGroups.class, request.getProductgroup_id());
-                            newDocument.setProductGroup(pg);
-                        }
+//                        if (request.getProductgroup_id() != null) {
+//                            ProductGroups pg = emgr.find(ProductGroups.class, request.getProductgroup_id());
+//                            newDocument.setProductGroup(pg);
+//                        }
 
                         Set<Long> categories = request.getSelectedProductCategories();
                         if (!categories.isEmpty()) {
+
+                            for(Long categoryId:categories){
+                                commonUtilites.idBelongsMyMaster("product_categories", categoryId, myMasterId);
+                            }
                             Set<ProductCategories> setCategoriesOfProduct = getCategoriesSetBySetOfCategoriesId(categories);
                             newDocument.setProductCategories(setCategoriesOfProduct);
                         }
@@ -1044,13 +1072,13 @@ public class ProductsRepositoryJPA {
                             SpravSysEdizm ed = emgr.find(SpravSysEdizm.class, request.getVolume_edizm_id());
                             newDocument.setVolume_edizm(ed);
                         }
-                        //маркированный товар (Boolean)
-                        newDocument.setMarkable(request.isMarkable());
-                        //группа маркированных товаров
-                        if (request.getMarkable_group_id() != null) {
-                            SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
-                            newDocument.setMarkable_group(ed);
-                        }
+//                        //маркированный товар (Boolean)
+//                        newDocument.setMarkable(request.isMarkable());
+//                        //группа маркированных товаров
+//                        if (request.getMarkable_group_id() != null) {
+//                            SpravSysMarkableGroup ed = emgr.find(SpravSysMarkableGroup.class, request.getMarkable_group_id());
+//                            newDocument.setMarkable_group(ed);
+//                        }
                         //не закупаемый товар (Boolean)
                         newDocument.setNot_buy(request.isNot_buy());
                         //неделимый товар (Boolean)
@@ -1345,11 +1373,11 @@ public class ProductsRepositoryJPA {
                 }
             }
             //копирование доп. полей
-            List<Object[]> listOfProductFields = getListOfProductFields(origProductId);
-            for (Object[] val : listOfProductFields) {
-                //            Long product_id,       Long field_id,                    String value
-                createCustomField(newProductId, Long.parseLong(String.valueOf(val[1])), String.valueOf(val[2]));
-            }
+//            List<Object[]> listOfProductFields = getListOfProductFields(origProductId);
+//            for (Object[] val : listOfProductFields) {
+//                //            Long product_id,       Long field_id,                    String value
+//                createCustomField(newProductId, Long.parseLong(String.valueOf(val[1])), String.valueOf(val[2]));
+//            }
         } catch (Exception e) {
             logger.error("Exception in method copyProduct.", e);
             e.printStackTrace();
@@ -2018,6 +2046,7 @@ public class ProductsRepositoryJPA {
             } else {
                 String stringQuery;
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+
                 Long myId = userRepository.getUserId();
                 stringQuery = "insert into product_categories (" +
                         "name," +
@@ -2047,6 +2076,7 @@ public class ProductsRepositoryJPA {
                         "(select coalesce(max(output_order)+1,1) from product_categories where company_id = " + request.getCompanyId() + " and parent_id " + (request.getParentCategoryId() > 0 ?(" = " + request.getParentCategoryId() ): " is null") + ")" +
                         ")";
                 try {
+                    commonUtilites.idBelongsMyMaster("product_categories",(request.getParentCategoryId()>0?request.getParentCategoryId():null),myMasterId);
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("name", request.getName());
                     query.setParameter("description", request.getDescription());
@@ -2067,6 +2097,7 @@ public class ProductsRepositoryJPA {
                         //Saving list of online stores that category belongs to
                         if (request.getIsStoreCategory() && !Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
                             for (Long storeId : request.getStoresIds()) {
+                                commonUtilites.idBelongsMyMaster("stores",storeId,myMasterId);
                                 saveCategoryStore(newCategoryId, storeId, myMasterId, request.getCompanyId());
                             }
                             // Now need to mark all products of this category as need to be synchronized
@@ -2145,6 +2176,12 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             try {
+                commonUtilites.idBelongsMyMaster("product_categories", request.getId(),myMasterId);
+                commonUtilites.idBelongsMyMaster("product_categories",(request.getParentCategoryId()>0?request.getParentCategoryId():null),myMasterId);
+                commonUtilites.idBelongsMyMaster("files",(Objects.isNull(request.getImage())?null:request.getImage().getId()),myMasterId);
+                commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
+
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name", request.getName());
                 query.setParameter("slug", (request.getSlug().trim().equals("") ? null : request.getSlug()));
@@ -2153,6 +2190,11 @@ public class ProductsRepositoryJPA {
 
                 // if it wasn't a store category but now it will be - we need to mark all products of this category as need to be synchronized
                 // !!! category is online-store category if it marked as "is_store_category" and it has selected internet stores !!!
+                if(request.getStoresIds().size()>0)
+                    for(Long storeId:request.getStoresIds()){
+                        commonUtilites.idBelongsMyMaster("stores",storeId,myMasterId);
+                    }
+
                 if (!isStoreCategory(request.getId()) && request.getIsStoreCategory() && request.getStoresIds().size()>0)
                     markProductsOfCategoryAsNeedToSyncWoo(request.getId(), myMasterId, request.getStoresIds());
 
@@ -2405,6 +2447,7 @@ public class ProductsRepositoryJPA {
     }
 
     public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
+
         String stringQuery =
                 " update stores_products " +
                         " set need_to_syncwoo = true " +
@@ -3102,151 +3145,151 @@ public class ProductsRepositoryJPA {
 //*****************************************************************************************************************************************************
 //***********************************************   Product Custom Fields   ***************************************************************************
 //*****************************************************************************************************************************************************
-
-    @SuppressWarnings("Duplicates")
-    @Transactional
-    public boolean updateProductCustomFields(List<ProductCustomFieldsSaveForm> request) {
-        //log.info("in updateProductCustomFields class");
-        if (request.size() > 0) { //если поля на сохранение есть
-            Long productId = request.get(0).getProduct_id();//за id товара берем productId из первого же объекта (т.к. они ДОЛЖНЫ быть все одинаковы)
-            //log.info("productId="+productId.toString());
-            //log.info("Поля на сохранение есть ");
-            for (ProductCustomFieldsSaveForm custumField : request) {
-                if (!productId.equals(custumField.getProduct_id())) {
-                    //log.info("В листе не одинаковые productId!");
-                    return false; //проверяю что в листе все productId одинаковые
-                }
-            }
-            //log.info("Прошли цикл, перед проверкой прав.");
-            // проверка на то, что все поля принадлежат к тем документам Товары, на которые есть соответствующие права:
-            //Если есть право на "Изменение по всем предприятиям" и все id для изменения принадлежат владельцу аккаунта (с которого изменяют), ИЛИ
-            if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", productId.toString())) ||
-                    //Если есть право на "Изменение по своему предприятияю" и все id для изменения принадлежат владельцу аккаунта (с которого изменяют) и предприятию аккаунта
-                    (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", productId.toString()))) {
-                //log.info("Права есть!");
-                try {
-                    for (ProductCustomFieldsSaveForm custumField : request) {
-                        //log.info("В цикле: поле "+custumField.getName());
-                        if (isThereThisField(custumField.getProduct_id(), custumField.getId())) { // если поле уже есть в product_fields
-                            //log.info("поле уже есть в product_fields");
-                            updateCustomField(custumField.getProduct_id(), custumField.getId(), custumField.getValue()); //то апдейтим
-                        } else {
-                            //log.info("поля нет в product_fields");
-                            if (custumField.getValue() != null && !custumField.getValue().isEmpty() && custumField.getValue().trim().length() > 0) {
-                                //если поля нет в product_fields, и в нём есть текст, то инсертим (чтобы пустые строки в product_fields не разводить)
-                                //log.info("поля нет в product_fields, и в нём есть текст - инсертим");
-                                createCustomField(custumField.getProduct_id(), custumField.getId(), custumField.getValue()); // нет - то инсертим
-                                //log.info("после инсерта");
-                            }
-                        }
-                    }
-                    return true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    logger.error("Exception in method updateProductCustomFields. ", e);
-                    return false;
-                }
-            } else {
-                //log.info("НЕТ ПРАВ! ");
-                return false;
-            }
-        } else return true;// тут true чтобы не было ошибки в консоли браузера.
-    }
-
-    private List<Object[]> getListOfProductFields(Long productId) {
-        List<Object[]> a;
-        String stringQuery = "select  product_id as product_id, field_id as id, field_value as value, '1' as name, '1' as parent_set_id from product_fields p where p.product_id=" + productId;
-        Query query = entityManager.createNativeQuery(stringQuery);
-        a = query.getResultList();
-        return a;
-    }
-
-    public boolean isThereThisField(Long product_id, Long field_id) {
-        String stringQuery = "select 1 from product_fields p where p.product_id=" + product_id + " and p.field_id =" + field_id;
-        Query query = entityManager.createNativeQuery(stringQuery);
-        return (query.getResultList().size() > 0);
-    }
-
-    @SuppressWarnings("Duplicates")
-    public boolean updateCustomField(Long product_id, Long field_id, String value) {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String stringQuery;
-        stringQuery = "update product_fields set " +
-                " field_value=:value_ " +
-                " where product_id=" + product_id +
-                " and field_id=" + field_id +
-                " and (select master_id from products where id=" + product_id + ") = " + myMasterId; //для безопасности, чтобы не кидали json на авось у кого-то что-то проапдейтить
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("value_", value);
-            int i = query.executeUpdate();
-            return true;
-        } catch (Exception e) {
-            logger.error("Exception in method updateCustomField. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    public boolean createCustomField(Long product_id, Long field_id, String value) {
-        String stringQuery;
-        stringQuery = "insert into product_fields (product_id, field_id, field_value) values (" + product_id + "," + field_id + ", :value_)";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("value_", value);
-            if (query.executeUpdate() == 1) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            logger.error("Exception in method createCustomField. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public List<ProductGroupFieldTableJSON> getProductGroupFieldsListWithValues(int field_type, int productId) {
-        if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168,169,170"))//просмотр или редактирование (см. файл Permissions Id)
-        {
-            String stringQuery;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-
-
-            stringQuery = "select " +
-                    " pgf.id as id, " +
-                    " pgf.name as name, " +
-                    " pgf.description as description, " +
-                    " pgf.field_type as field_type, " +
-                    " pgf.group_id as group_id, " +
-                    " pgf.output_order as output_order, " +
-                    //field_type: 1 - сеты (наборы) полей, 2 - поля
-                    (field_type == 1 ? "''" : "(select coalesce (pf.field_value,'') from product_fields pf where pf.field_id=pgf.id and pf.product_id=p.id limit 1)") + " as value, " +
-                    " pgf.parent_set_id as parent_set_id " +
-                    " from  " +
-                    " product_group_fields pgf," +
-                    " product_groups pg," +
-                    " products p " +
-                    " where pgf.group_id=pg.id " +
-                    " and p.group_id=pg.id " +
-                    " and pgf.field_type = " + field_type +// тип: 1 - сеты (наборы) полей, 2 - поля
-                    " and p.id=" + productId +
-                    " and pgf.master_id=" + myMasterId;
-
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167,169")) //Если нет прав на просм. или редактир. по всем предприятиям"
-            {
-                //остается только на своё предприятие
-                stringQuery = stringQuery + " and pgf.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-            }
-            stringQuery = stringQuery + " order by pgf.output_order asc ";
-            Query query = entityManager.createNativeQuery(stringQuery, ProductGroupFieldTableJSON.class);
-            return query.getResultList();
-        } else return null;
-    }
+//
+//    @SuppressWarnings("Duplicates")
+//    @Transactional
+//    public boolean updateProductCustomFields(List<ProductCustomFieldsSaveForm> request) {
+//        //log.info("in updateProductCustomFields class");
+//        if (request.size() > 0) { //если поля на сохранение есть
+//            Long productId = request.get(0).getProduct_id();//за id товара берем productId из первого же объекта (т.к. они ДОЛЖНЫ быть все одинаковы)
+//            //log.info("productId="+productId.toString());
+//            //log.info("Поля на сохранение есть ");
+//            for (ProductCustomFieldsSaveForm custumField : request) {
+//                if (!productId.equals(custumField.getProduct_id())) {
+//                    //log.info("В листе не одинаковые productId!");
+//                    return false; //проверяю что в листе все productId одинаковые
+//                }
+//            }
+//            //log.info("Прошли цикл, перед проверкой прав.");
+//            // проверка на то, что все поля принадлежат к тем документам Товары, на которые есть соответствующие права:
+//            //Если есть право на "Изменение по всем предприятиям" и все id для изменения принадлежат владельцу аккаунта (с которого изменяют), ИЛИ
+//            if ((securityRepositoryJPA.userHasPermissions_OR(14L, "169") && securityRepositoryJPA.isItAllMyMastersDocuments("products", productId.toString())) ||
+//                    //Если есть право на "Изменение по своему предприятияю" и все id для изменения принадлежат владельцу аккаунта (с которого изменяют) и предприятию аккаунта
+//                    (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", productId.toString()))) {
+//                //log.info("Права есть!");
+//                try {
+//                    for (ProductCustomFieldsSaveForm custumField : request) {
+//                        //log.info("В цикле: поле "+custumField.getName());
+//                        if (isThereThisField(custumField.getProduct_id(), custumField.getId())) { // если поле уже есть в product_fields
+//                            //log.info("поле уже есть в product_fields");
+//                            updateCustomField(custumField.getProduct_id(), custumField.getId(), custumField.getValue()); //то апдейтим
+//                        } else {
+//                            //log.info("поля нет в product_fields");
+//                            if (custumField.getValue() != null && !custumField.getValue().isEmpty() && custumField.getValue().trim().length() > 0) {
+//                                //если поля нет в product_fields, и в нём есть текст, то инсертим (чтобы пустые строки в product_fields не разводить)
+//                                //log.info("поля нет в product_fields, и в нём есть текст - инсертим");
+//                                createCustomField(custumField.getProduct_id(), custumField.getId(), custumField.getValue()); // нет - то инсертим
+//                                //log.info("после инсерта");
+//                            }
+//                        }
+//                    }
+//                    return true;
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    logger.error("Exception in method updateProductCustomFields. ", e);
+//                    return false;
+//                }
+//            } else {
+//                //log.info("НЕТ ПРАВ! ");
+//                return false;
+//            }
+//        } else return true;// тут true чтобы не было ошибки в консоли браузера.
+//    }
+//
+//    private List<Object[]> getListOfProductFields(Long productId) {
+//        List<Object[]> a;
+//        String stringQuery = "select  product_id as product_id, field_id as id, field_value as value, '1' as name, '1' as parent_set_id from product_fields p where p.product_id=" + productId;
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        a = query.getResultList();
+//        return a;
+//    }
+//
+//    public boolean isThereThisField(Long product_id, Long field_id) {
+//        String stringQuery = "select 1 from product_fields p where p.product_id=" + product_id + " and p.field_id =" + field_id;
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        return (query.getResultList().size() > 0);
+//    }
+//
+//    @SuppressWarnings("Duplicates")
+//    public boolean updateCustomField(Long product_id, Long field_id, String value) {
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        String stringQuery;
+//        stringQuery = "update product_fields set " +
+//                " field_value=:value_ " +
+//                " where product_id=" + product_id +
+//                " and field_id=" + field_id +
+//                " and (select master_id from products where id=" + product_id + ") = " + myMasterId; //для безопасности, чтобы не кидали json на авось у кого-то что-то проапдейтить
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.setParameter("value_", value);
+//            int i = query.executeUpdate();
+//            return true;
+//        } catch (Exception e) {
+//            logger.error("Exception in method updateCustomField. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
+//
+//    @SuppressWarnings("Duplicates")
+//    public boolean createCustomField(Long product_id, Long field_id, String value) {
+//        String stringQuery;
+//        stringQuery = "insert into product_fields (product_id, field_id, field_value) values (" + product_id + "," + field_id + ", :value_)";
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.setParameter("value_", value);
+//            if (query.executeUpdate() == 1) {
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        } catch (Exception e) {
+//            logger.error("Exception in method createCustomField. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            return false;
+//        }
+//    }
+//
+//    @Transactional
+//    @SuppressWarnings("Duplicates")
+//    public List<ProductGroupFieldTableJSON> getProductGroupFieldsListWithValues(int field_type, int productId) {
+//        if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168,169,170"))//просмотр или редактирование (см. файл Permissions Id)
+//        {
+//            String stringQuery;
+//            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//
+//
+//            stringQuery = "select " +
+//                    " pgf.id as id, " +
+//                    " pgf.name as name, " +
+//                    " pgf.description as description, " +
+//                    " pgf.field_type as field_type, " +
+//                    " pgf.group_id as group_id, " +
+//                    " pgf.output_order as output_order, " +
+//                    //field_type: 1 - сеты (наборы) полей, 2 - поля
+//                    (field_type == 1 ? "''" : "(select coalesce (pf.field_value,'') from product_fields pf where pf.field_id=pgf.id and pf.product_id=p.id limit 1)") + " as value, " +
+//                    " pgf.parent_set_id as parent_set_id " +
+//                    " from  " +
+//                    " product_group_fields pgf," +
+//                    " product_groups pg," +
+//                    " products p " +
+//                    " where pgf.group_id=pg.id " +
+//                    " and p.group_id=pg.id " +
+//                    " and pgf.field_type = " + field_type +// тип: 1 - сеты (наборы) полей, 2 - поля
+//                    " and p.id=" + productId +
+//                    " and pgf.master_id=" + myMasterId;
+//
+//
+//            if (!securityRepositoryJPA.userHasPermissions_OR(14L, "167,169")) //Если нет прав на просм. или редактир. по всем предприятиям"
+//            {
+//                //остается только на своё предприятие
+//                stringQuery = stringQuery + " and pgf.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+//            }
+//            stringQuery = stringQuery + " order by pgf.output_order asc ";
+//            Query query = entityManager.createNativeQuery(stringQuery, ProductGroupFieldTableJSON.class);
+//            return query.getResultList();
+//        } else return null;
+//    }
 
 //*****************************************************************************************************************************************************
 //******************************************************   C A G E N T S    ***************************************************************************
@@ -3255,6 +3298,7 @@ public class ProductsRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public boolean addCagentsToProduct(UniversalForm request) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         String stringQuery="";
         Set<Long> Ids = request.getSetOfLongs1();
         Long prouctId = request.getId1();
@@ -3269,7 +3313,7 @@ public class ProductsRepositoryJPA {
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких поставщиков еще нет у товара
                         entityManager.close();
-                        manyToMany_productId_CagentId(prouctId, Id);
+                        manyToMany_productId_CagentId(prouctId, Id, myMasterId);
                     }
                 }
                 return true;
@@ -3283,8 +3327,10 @@ public class ProductsRepositoryJPA {
 
     @Transactional//права не нужны, внутренниЙ вызов
     @SuppressWarnings("Duplicates")
-    boolean manyToMany_productId_CagentId(Long prouctId, Long cagentId) {
+    boolean manyToMany_productId_CagentId(Long prouctId, Long cagentId, Long masterId) {
         try {
+            commonUtilites.idBelongsMyMaster("cagents", cagentId, masterId);
+            commonUtilites.idBelongsMyMaster("products", prouctId, masterId);
             entityManager.createNativeQuery("" +
                     "insert into product_cagents " +
                     "(product_id,cagent_id,output_order) " +
@@ -3605,6 +3651,9 @@ public class ProductsRepositoryJPA {
                 //Если есть право на "Изменение по своему предприятияю" и id товара принадлежит владельцу аккаунта (с которого изменяют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getId2().toString()))) {
             try {
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+                commonUtilites.idBelongsMyMaster("products", request.getId2(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(
                         "insert into product_barcodes " +
                         "(product_id,barcode_id,value, description) " +
@@ -3674,9 +3723,10 @@ public class ProductsRepositoryJPA {
             stringQuery = "Update product_barcodes p" +
                     " set  value= :value_" +
                     "    , description= :description" +
-                    " where p.id=" + request.getId1() +
-                    " and (select master_id from products where id=p.product_id)=" + myMasterId; //контроль того, что лицо, имеющее доступ к редактированию документа, не может через сторонние сервисы типа postman изменить документы других аккаунтов
+                    " where p.id=" + request.getId1();
             try {
+                commonUtilites.idBelongsMyMaster("product_barcodes",request.getId1(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("value_",(request.getString1() != null ? (request.getString1()) : ""));
                 query.setParameter("description",(request.getString2() != null ? (request.getString2()) : ""));
@@ -3700,12 +3750,12 @@ public class ProductsRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             //int myCompanyId = userRepositoryJPA.getMyCompanyId();
-            stringQuery = " delete from product_barcodes " +
-                    " where id=" + request.getId1() +
-                    " and (select master_id from products where id=" + request.getId2() + ")=" + myMasterId;
+            stringQuery = " delete from product_barcodes where id=" + request.getId1();
             try {
+                commonUtilites.idBelongsMyMaster("product_barcodes",request.getId1(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
-                int i = query.executeUpdate();
+                query.executeUpdate();
                 return true;
             } catch (Exception e) {
                 logger.error("Exception in method deleteProductBarcode. SQL query:"+stringQuery, e);
@@ -3724,8 +3774,6 @@ public class ProductsRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(14L, "170") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("products", request.getId1().toString()))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
-            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-
 
             stringQuery = "update products set " +
                     " product_code=(select coalesce(max(product_code)+1,1) from products where company_id=" + request.getId2() + " and master_id=" + myMasterId + ")" +
@@ -3824,6 +3872,8 @@ public class ProductsRepositoryJPA {
     @SuppressWarnings("Duplicates")
         //используется при копировании (создании дубликата) документа
     boolean addBarcodeToProduct(ProductBarcodesJSON request, Long newProductId) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
         String stringQuery =
                 "insert into product_barcodes " +
                         "(product_id, barcode_id, value, description) " +
@@ -3831,6 +3881,8 @@ public class ProductsRepositoryJPA {
                         "(" + newProductId + ", " +
                         request.getBarcode_id() + ", :value_, :description)";
         try {
+            commonUtilites.idBelongsMyMaster("products", newProductId, myMasterId);
+
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("value_",request.getValue());
             query.setParameter("description",request.getDescription());
@@ -4280,6 +4332,7 @@ public class ProductsRepositoryJPA {
     // Mass addind categories to products
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds, Boolean save) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         try{
             String products = commonUtilites.SetOfLongToString(productsIds, ",", "", "");
             //поверка на то, что присланные id товаров действительно являются товарами мастер-аккаунта
@@ -4288,7 +4341,7 @@ public class ProductsRepositoryJPA {
                     //удаляем все категории у всех запрашиваемых товаров
                     if (deleteAllProductsCategories(products)) {
                         //назначаем товарам категории
-                        if(setCategoriesToProducts(productsIds,categoriesIds))
+                        if(setCategoriesToProducts(productsIds,categoriesIds,myMasterId))
                             return true;
                         else return null; // ошибка на прописывании категорий у товаров
                     } else return null; // ошибка на стадии удаления категорий товаров в deleteAllProductsCategories
@@ -4306,7 +4359,7 @@ public class ProductsRepositoryJPA {
                             Set<Long> prod = new HashSet<>();
                             prod.add(p);
                             //назначаем текущему товару категории
-                            if(!setCategoriesToProducts(prod,productCategoriesIds))
+                            if(!setCategoriesToProducts(prod,productCategoriesIds,myMasterId))
                                 return null; // ошибка на прописывании категорий у товара
                         } else return null; // ошибка на стадии удаления категорий текущего товара в deleteAllProductsCategories
                     }
@@ -4320,18 +4373,21 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
-    private Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds) throws Exception {
+    private Boolean setCategoriesToProducts(Set<Long> productsIds, Set<Long> categoriesIds, Long myMasterId) throws Exception {
         if(categoriesIds.size()>0) {//если категории есть
             //прописываем их у всех запрашиваемых товаров
             StringBuilder stringQuery = new StringBuilder("insert into product_productcategories (product_id, category_id) values ");
             int i = 0;
-            for (Long p : productsIds) {
-                for (Long c : categoriesIds) {
-                    stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
-                    i++;
-                }
-            }
             try {
+                for (Long p : productsIds) {
+                    for (Long c : categoriesIds) {
+                        commonUtilites.idBelongsMyMaster("products", p, myMasterId);
+                        commonUtilites.idBelongsMyMaster("product_categories", c, myMasterId);
+                        stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
+                        i++;
+                    }
+                }
+
                 entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
                 markProductsAsNeedToSyncWoo(productsIds, userRepositoryJPA.getMyMasterId());
                 return true;
@@ -4412,6 +4468,10 @@ public class ProductsRepositoryJPA {
             int i = 0;
             for (Long p : categoriesIds) {
                 for (Long c : storesIds) {
+
+                    commonUtilites.idBelongsMyMaster("products", p, masterId);
+                    commonUtilites.idBelongsMyMaster("product_categories", c, masterId);
+
                     stringQuery.append(i > 0 ? "," : "")
                             .append("(")
                             .append(p).append(",")
@@ -4473,6 +4533,7 @@ public class ProductsRepositoryJPA {
             int i = 1;
             for (ProductProductAttributeForm attribute : attributesList) {
 
+
                 stringQuery=
                         " insert into product_productattributes (" +
                         " master_id, " +
@@ -4495,6 +4556,8 @@ public class ProductsRepositoryJPA {
                         " visible = " + attribute.isVisible() + ", " +
                         " variation = " + attribute.isVariation();
                 try{
+                    commonUtilites.idBelongsMyMaster("product_attributes", attribute.getAttribute_id(), masterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.executeUpdate();
                     if(!Objects.isNull(attribute.getTerms_ids())) {
@@ -4572,6 +4635,8 @@ public class ProductsRepositoryJPA {
                             " ON CONFLICT " +// "upsert"
                             " DO NOTHING ";
             try {
+                commonUtilites.idBelongsMyMaster("product_attributes", attributeId, masterId);
+                commonUtilites.idBelongsMyMaster("products", productId, masterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
             } catch (Exception e) {
@@ -4703,6 +4768,7 @@ public class ProductsRepositoryJPA {
         Set<Long>existingAttributes = new HashSet<>();
         try{
             for (DefaultAttributesForm attribute : attributesList) {
+                commonUtilites.idBelongsMyMaster("product_attribute_terms", (attribute.getTerm_id()==0L?null:attribute.getTerm_id()), masterId);
                 stringQuery=
                         " insert into default_attributes (" +
                                 " master_id, " +
@@ -4909,6 +4975,8 @@ public class ProductsRepositoryJPA {
         String stringQuery="";
         try {
             List<Long> itemsIds = new ArrayList<>();
+            commonUtilites.idBelongsMyMaster("product_variations", variationId, masterId);
+
             for (ProductVariationsRowItemsForm rowItems : productVariationsRowItems) {
 
                  stringQuery =

@@ -467,6 +467,13 @@ public class VatinvoiceoutRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         ":uid)";// уникальный идентификатор документа
                 try{
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("orderin", request.getOrderin_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("paymentin", request.getPaymentin_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("shipment", request.getShipment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -537,6 +544,9 @@ public class VatinvoiceoutRepositoryJPA {
                     " id= "+request.getId()+" and master_id="+myMasterId;
             try
             {
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent2_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "vatinvoiceout"))
                     throw new DocumentAlreadyCompletedException();
@@ -619,6 +629,10 @@ public class VatinvoiceoutRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagent2Id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_vatinvoiceout (" +
                             "master_id, " +
@@ -796,8 +810,10 @@ public class VatinvoiceoutRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select vatinvoiceout_id from vatinvoiceout_files where vatinvoiceout_id=" + vatinvoiceoutId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);

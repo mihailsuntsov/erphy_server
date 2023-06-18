@@ -446,6 +446,13 @@ public class CorrectionRepositoryJPA {
                         request.getBoxoffice_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -497,6 +504,7 @@ public class CorrectionRepositoryJPA {
             }
 
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
 
             String stringQuery;
             stringQuery =   " update correction set " +
@@ -511,9 +519,21 @@ public class CorrectionRepositoryJPA {
                     " is_completed = " + request.getIs_completed() + "," +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId();
+                    " id= "+request.getId() + " and master_id = " + myMasterId;
+
+
+
+
+
             try
             {
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+
                 // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "correction"))
                     throw new DocumentAlreadyCompletedException();
@@ -564,15 +584,23 @@ public class CorrectionRepositoryJPA {
             (securityRepositoryJPA.userHasPermissions_OR(41L,"549") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("correction",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery =
                     " update correction set " +
                             " changer_id = " + myId + ", "+
                             " date_time_changed= now()," +
                             " is_completed = false" +
                             " where " +
-                            " id= " + request.getId();
+                            " id= " + request.getId() + " and master_id = " + myMasterId;
 
             try {
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+
                 // проверим, не снят ли он уже спроведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
                 if(!commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "correction"))
                     throw new DocumentAlreadyDecompletedException();
@@ -619,6 +647,10 @@ public class CorrectionRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
+
             stringQuery =
                     " insert into settings_correction (" +
                             "master_id, " +
@@ -693,6 +725,7 @@ public class CorrectionRepositoryJPA {
         {
             // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
             List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "correction");
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             if(!Objects.isNull(checkChilds)) { //если нет ошибки
 
@@ -704,7 +737,7 @@ public class CorrectionRepositoryJPA {
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
                             " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
-                            " and coalesce(p.is_completed,false) !=true";
+                            " and coalesce(p.is_completed,false) !=true and master_id = " + myMasterId;
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
                         //удалим документы из группы связанных документов
@@ -743,12 +776,13 @@ public class CorrectionRepositoryJPA {
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "Update correction p" +
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+") and master_id = " + myMasterId;
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -779,9 +813,10 @@ public class CorrectionRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select correction_id from correction_files where correction_id=" + correctionId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
@@ -891,6 +926,7 @@ public class CorrectionRepositoryJPA {
                     " and (select master_id from correction where id="+request.getAny_id()+")="+myMasterId ;
             try
             {
+                commonUtilites.idBelongsMyMaster("files", request.getId(), myMasterId);
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return true;
             }

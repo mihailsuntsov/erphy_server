@@ -673,6 +673,14 @@ public class ShipmentRepositoryJPA {
                         linkedDocsGroupId+"," + // id группы связанных документов
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("customers_orders", request.getCustomers_orders_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("shifts", request.getShift_id(), myMasterId);
+
                     Date dateNow = new Date();
                     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                     DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -810,6 +818,7 @@ public class ShipmentRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
 
                 // если документ проводится и нет товаров - ошибка
                 if(request.isIs_completed()!=null && request.isIs_completed() && request.getShipmentProductTable().size()==0)
@@ -1029,6 +1038,10 @@ public class ShipmentRepositoryJPA {
 
 //                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("shipment", "date_time_created", masterId, request.getId())).getTime());
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), masterId);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), masterId);
+
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
@@ -1104,6 +1117,12 @@ public class ShipmentRepositoryJPA {
         customersOrdersId = customersOrdersId==null?0L:customersOrdersId;//  на случай если у отгрузки нет родительского Заказа покупателя
         BigDecimal available;   // Если есть постановка в резерв - узнаём, есть ли свободные товары (пока мы редактировали таблицу, кто-то мог поставить эти же товары в свой резерв, и чтобы
         try {
+
+            commonUtilites.idBelongsMyMaster("products",    row.getProduct_id(), master_id);
+            commonUtilites.idBelongsMyMaster("shipment",    row.getShipment_id(), master_id);
+            commonUtilites.idBelongsMyMaster("sprav_taxes", row.getNds_id(), master_id);
+            commonUtilites.idBelongsMyMaster("companies",   company_id, master_id);
+
             if(row.getIs_material()) //если номенклатура материальна (т.е. это товар, а не услуга и не работа)
                 //вычисляем доступное количество товара на складе
                 available = productsRepository.getAvailableExceptMyDoc(row.getProduct_id(), row.getDepartment_id(), customersOrdersId);
@@ -1186,6 +1205,12 @@ public class ShipmentRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCustomerId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
+
             stringQuery =
                     " insert into settings_shipment (" +
                             "master_id, " +
@@ -1271,6 +1296,8 @@ public class ShipmentRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
             stringQuery =
                     " insert into settings_shipment (" +
                             "master_id, " +

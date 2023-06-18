@@ -200,7 +200,9 @@ public class SubscriptionRepositoryJPA {
 
                     "(select is_saas from settings_general) as is_saas," +
                     "(select saas_payment_currency from settings_general) as saas_payment_currency," +
-                    "(select root_domain from settings_general) as root_domain" +
+                    "(select root_domain from settings_general) as root_domain," +
+                    "(select (select jr_legal_form from users where id="+masterId+") is not null as legal_info_filled)"+
+
                     " from plans_add_options u where user_id = "+masterId;
 
             query = entityManager.createNativeQuery(stringQuery);
@@ -245,6 +247,7 @@ public class SubscriptionRepositoryJPA {
             accInfo.setIs_saas((Boolean)                        queryList.get(0)[32]);
             accInfo.setSaas_payment_currency((String)           queryList.get(0)[33]);
             accInfo.setRoot_domain((String)                     queryList.get(0)[34]);
+            accInfo.setMasterAccountLegalInfoFilled((Boolean)   queryList.get(0)[35]);
 
             // get the info about consumed resources
             UserResources userResources = userRepositoryJPA.getMyConsumedResources();

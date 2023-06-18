@@ -3,6 +3,7 @@ package com.dokio.controller.Sprav;
 import com.dokio.message.request.Search2Form;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.Sprav.StoresForm;
+import com.dokio.message.request.additional.RentStoreOrderForm;
 import com.dokio.repository.StoreRepository;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -133,25 +134,40 @@ public class StoresController {
     }
 
 
-    @RequestMapping(
-            value = "/api/auth/getMyRentSite",
-            params = {"iagree", "companyId", "storeId", "agreementType", "agreementVer"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getMyRentSite(HttpServletRequest httpServletRequest,
-                   @RequestParam("iagree") boolean iagree,
-                   @RequestParam("companyId") Long companyId,
-                   @RequestParam("storeId") Long storeId,
-                   @RequestParam("agreementType") String agreementType,
-                   @RequestParam("thirdLvlName") String thirdLvlName,
-                   @RequestParam("agreementVer") String agreementVer
-            ){
-        logger.info("Processing get request for path /api/auth/getMyRentSite with parameters: " +
-        "iagree:"+iagree+", companyId:"+companyId+", storeId:"+storeId+", agreementType:"+agreementType+", agreementVer:"+agreementVer+", thirdLvlName:"+thirdLvlName);
-        try {
-            String ip=httpServletRequest.getRemoteAddr();
-            return new ResponseEntity<>(storesRepository.getMyRentSite(ip, iagree, companyId, storeId, agreementType, agreementVer,thirdLvlName), HttpStatus.OK);}
+
+    @PostMapping("/api/auth/getMyRentSite")
+    @SuppressWarnings("Duplicates")
+    public  ResponseEntity<?> getMyRentSite(HttpServletRequest httpServletRequest, @RequestBody RentStoreOrderForm request) {
+        request.setUserIp(httpServletRequest.getRemoteAddr());
+        logger.info("Processing post request for path /api/auth/getMyRentSite: " + request.toString());
+        try {return new ResponseEntity<>(storesRepository.getMyRentSite(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Error getting site", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+//    @PostMapping(
+//            value = "/api/auth/getMyRentSite",
+//            params = {"iagree", "companyId", "storeId", "agreementType", "agreementVer"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> getMyRentSite(HttpServletRequest httpServletRequest,
+//                   @RequestParam("iagree") boolean iagree,
+//                   @RequestParam("companyId") Long companyId,
+//                   @RequestParam("storeId") Long storeId,
+//                   @RequestParam("agreementType") String agreementType,
+//                   @RequestParam("thirdLvlName") String thirdLvlName,
+//                   @RequestParam("agreementVer") String agreementVer,
+//                   @RequestParam("isVar") Boolean isVar,
+//                   @RequestParam("parentVarSiteId") Long parentVarSiteId,
+//                   @RequestParam("position") String position,
+//                   @RequestParam("varName") String varName
+//            ){
+//        logger.info("Processing get request for path /api/auth/getMyRentSite with parameters: " +
+//        "iagree:"+iagree+", companyId:"+companyId+", storeId:"+storeId+", agreementType:"+agreementType+", agreementVer:"+agreementVer+", thirdLvlName:"+thirdLvlName);
+//        try {
+//            String ip=httpServletRequest.getRemoteAddr();
+//            return new ResponseEntity<>(storesRepository.getMyRentSite(ip, iagree, companyId, storeId, agreementType, agreementVer,thirdLvlName), HttpStatus.OK);}
+//        catch (Exception e){return new ResponseEntity<>("Error getting site", HttpStatus.INTERNAL_SERVER_ERROR);}
+//    }
 
     @RequestMapping(
             value = "/api/auth/getRentStoresShortInfo",
@@ -178,6 +194,17 @@ public class StoresController {
     }
 
 
+    @RequestMapping(
+            value = "/api/auth/getExistedRentSitesList",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getExistedRentSitesList(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getExistedRentSitesList with parameters: company_id:"+company_id);
+        try {
+            return new ResponseEntity<>(storesRepository.getExistedRentSitesList(company_id), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Error getting rent stores list", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
 
 }

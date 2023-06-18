@@ -343,6 +343,7 @@ public class SpravCurrenciesRepository {
                     " false, " +
                     " false)";
             try{
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name_short",request.getName_short());
                 query.setParameter("name_full",request.getName_full());

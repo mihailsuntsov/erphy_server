@@ -476,7 +476,6 @@ public class CompaniesPaymentAccountsRepositoryJPA {
     }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public Integer undeletePaymentAccount(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(52L, "656") && securityRepositoryJPA.isItAllMyMastersDocuments("companies_payment_accounts", delNumbers)) ||
@@ -505,7 +504,6 @@ public class CompaniesPaymentAccountsRepositoryJPA {
     }
 
 
-    @SuppressWarnings("Duplicates")
     @Transactional
     public Integer setMainPaymentAccount(UniversalForm request) {// id : предприятие, id3 : id расхода
         EntityManager emgr = emf.createEntityManager();

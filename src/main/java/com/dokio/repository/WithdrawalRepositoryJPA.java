@@ -428,6 +428,13 @@ public class WithdrawalRepositoryJPA {
                         "true ," +  // проведено (выемка всегда проведена)
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("users", request.getCreator_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("kassa", request.getKassa_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());

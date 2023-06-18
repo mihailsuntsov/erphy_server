@@ -536,6 +536,14 @@ public class PaymentoutRepositoryJPA {
                         request.getPayment_account_to_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_to_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_expenditure_items", expenditureId, myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -590,6 +598,8 @@ public class PaymentoutRepositoryJPA {
             }
 
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+
             String stringQuery;
             stringQuery =   " update paymentout set " +
                     " changer_id = " + myId + ", "+
@@ -611,6 +621,12 @@ public class PaymentoutRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_expenditure_items", request.getExpenditure_id(), myMasterId);
                 //  проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "paymentout"))
                     throw new DocumentAlreadyCompletedException();
@@ -733,6 +749,9 @@ public class PaymentoutRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_paymentout (" +
                             "master_id, " +
@@ -939,8 +958,11 @@ public class PaymentoutRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select paymentout_id from paymentout_files where paymentout_id=" + paymentoutId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);

@@ -320,11 +320,9 @@ public class SpravStatusDocRepository {
                 {//сохранение порядка вывода статусов
                     if (request.getStatusesIdsInOrderOfList().size() > 1) {
                         int c = 0;
-                        for (Long field : request.getStatusesIdsInOrderOfList()) {
+                        for (Long statusId : request.getStatusesIdsInOrderOfList()) {
                             c++;
-                            if (!saveChangesStatusesOrder(field, c)) {
-                                break;
-                            }
+                            saveChangesStatusesOrder(statusId, c, myMasterId);
                         }
                     }
                 } catch (Exception e) {
@@ -362,7 +360,7 @@ public class SpravStatusDocRepository {
             Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
             Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
             if ((!securityRepositoryJPA.userHasPermissions_OR(22L, "271") &&
                     Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
@@ -374,10 +372,7 @@ public class SpravStatusDocRepository {
                     User creator = userRepository.getUserByUsername(userRepository.getUserName());
                     newDocument.setCreator(creator);//создателя
                     //владелец
-                    User master = userRepository.getUserByUsername(
-                            userRepositoryJPA.getUsernameById(
-                                    userRepositoryJPA.getUserMasterIdByUsername(
-                                            userRepository.getUserName())));
+                    User master = userRepository.getUserById(myMasterId);
                     newDocument.setMaster(master);
                     //дата и время создания
                     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -503,7 +498,7 @@ public class SpravStatusDocRepository {
 //*******************************************************************  U T I L S **********************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
-    public int getNextOutputOrder(int docId, Long companyId) {
+    private int getNextOutputOrder(int docId, Long companyId) {
         String stringQuery = "select coalesce(max(output_order)+1,1) from sprav_status_dock where dock_id=" + docId + " and company_id =  " + companyId;
         Query query = entityManager.createNativeQuery(stringQuery);
         int output_order = 0;
@@ -511,21 +506,17 @@ public class SpravStatusDocRepository {
         return output_order;
     }
 
-
-    @SuppressWarnings("Duplicates")
-
-    public boolean saveChangesStatusesOrder(Long statusId, int order) {
+    private void saveChangesStatusesOrder(Long statusId, int order, Long masterId) throws Exception {
         String stringQuery;
         try {
             stringQuery = " update sprav_status_dock set " +
                     " output_order=" + order +
-                    " where id=" + statusId;
+                    " where id=" + statusId + " and master_id=" + masterId;
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 

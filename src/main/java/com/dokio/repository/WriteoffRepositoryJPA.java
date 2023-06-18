@@ -188,7 +188,7 @@ public class WriteoffRepositoryJPA {
                     doc.setDepartment_id(Long.parseLong(          obj[8].toString()));
                     doc.setDepartment((String)                    obj[9]);
                     doc.setDoc_number(Long.parseLong(             obj[10].toString()));
-                    doc.setWriteoff_date((String)(                 obj[11]));
+                    doc.setWriteoff_date((String)(                obj[11]));
                     doc.setCompany((String)                       obj[12]);
                     doc.setDate_time_created((String)             obj[13]);
                     doc.setDate_time_changed((String)             obj[14]);
@@ -518,6 +518,11 @@ public class WriteoffRepositoryJPA {
                     "to_timestamp(CONCAT(:writeoff_date,' ',:writeoff_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"')";// дата списания
 //                    " to_date(:writeoff_date,'DD.MM.YYYY')) ";// дата списания
             try {
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -585,7 +590,7 @@ public class WriteoffRepositoryJPA {
             if(productsRepository.isThereServicesInProductsList(productIds))
                 throw new ThereIsServicesInProductsListException();
         }
-        if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)){
+        if (!deleteWriteoffProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId, myMasterId)){
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
@@ -785,6 +790,11 @@ public class WriteoffRepositoryJPA {
 
 //                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("writeoff", "date_time_created", masterId, request.getId())).getTime());
 
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), masterId);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), masterId);
+
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
@@ -860,6 +870,7 @@ public class WriteoffRepositoryJPA {
                 " and master_id="+myMasterId;
         try
         {
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
             Date dateNow = new Date();
             DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
             dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
@@ -891,7 +902,7 @@ public class WriteoffRepositoryJPA {
                             "reason_id," +
                             "additional" +
                             ") values ("
-                            + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
+                            + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"
                             + "(select id from writeoff where id="+row.getWriteoff_id() +" and master_id="+myMasterId+"),"
                             + row.getProduct_count() + ","
                             + row.getProduct_price() + ","
@@ -918,12 +929,13 @@ public class WriteoffRepositoryJPA {
         }
     }
 
-    private Boolean deleteWriteoffProductTableExcessRows(String productIds, Long writeoff_id) {
+    private Boolean deleteWriteoffProductTableExcessRows(String productIds, Long writeoff_id, Long myMasterId) {
         String stringQuery;
         stringQuery =   " delete from writeoff_product " +
                     " where writeoff_id=" + writeoff_id +
                     " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
+            commonUtilites.idBelongsMyMaster("writeoff", writeoff_id, myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1093,8 +1105,10 @@ public class WriteoffRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select writeoff_id from writeoff_files where writeoff_id=" + writeoffId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);

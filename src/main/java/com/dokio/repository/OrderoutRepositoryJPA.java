@@ -529,6 +529,18 @@ public class OrderoutRepositoryJPA {
                         request.getKassa_department_id()+"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_to_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_to_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("kassa", request.getKassa_to_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getKassa_department_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_expenditure_items", expenditureId, myMasterId);
+
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("moving_type",request.getMoving_type());
@@ -581,6 +593,7 @@ public class OrderoutRepositoryJPA {
 
 
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
             String stringQuery;
             stringQuery =   " update orderout set " +
@@ -603,6 +616,15 @@ public class OrderoutRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_expenditure_items", request.getExpenditure_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("kassa", request.getKassa_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getKassa_department_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderout"))
                     throw new DocumentAlreadyCompletedException();
@@ -739,6 +761,9 @@ public class OrderoutRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_orderout (" +
                             "master_id, " +
@@ -908,9 +933,10 @@ public class OrderoutRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select orderout_id from orderout_files where orderout_id=" + orderoutId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа

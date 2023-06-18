@@ -522,6 +522,12 @@ public class MovingRepository {
                     ":uid," +
                     request.getStatus_id() + ")";// статус
             try {
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_from_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
                 query.setParameter("uid", request.getUid());
@@ -876,6 +882,7 @@ public class MovingRepository {
                 " and master_id="+myMasterId;
         try
         {
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
             query.executeUpdate();
@@ -918,6 +925,7 @@ public class MovingRepository {
     private Boolean saveMovingProductTable(MovingProductForm row, Long myMasterId, Long companyId, Long departmentFromId, Long departmentToId, boolean is_completed, boolean decompletion) throws CantInsertProductRowCauseErrorException {
         String stringQuery="";
         try {
+            commonUtilites.idBelongsMyMaster("companies", companyId, myMasterId);
             // Если есть постановка в резерв - узнаём, есть ли свободные товары на складе,
             // для этого вычисляем доступное количество товара.
             // Если идет отмена проведения (decompletion=true) - на складе на который переместили (потому что с него будет вычитаться товар),
@@ -978,11 +986,13 @@ public class MovingRepository {
 
     private Boolean deleteMovingProductTableExcessRows(String productIds, Long moving_id) {
         String stringQuery;
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery =   " delete from moving_product " +
                 " where moving_id=" + moving_id +
                 " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
+            commonUtilites.idBelongsMyMaster("moving", moving_id, myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1341,9 +1351,10 @@ public class MovingRepository {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select moving_id from moving_files where moving_id=" + movingId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
@@ -1490,6 +1501,11 @@ public class MovingRepository {
         Long myId=userRepository.getUserId();
         try {
 
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentToId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentFromId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusOnFinishId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
             stringQuery =
                     " insert into settings_moving (" +
                             "master_id, " +

@@ -21,6 +21,7 @@ package com.dokio.controller;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.additional.LegalMasterUserInfoForm;
 import com.dokio.message.response.ResponseMessage;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
@@ -478,4 +479,23 @@ public class UsersController {
             return new ResponseEntity<>("Operation of the synchronization error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @PostMapping("/api/auth/updateLegalMasterUserInfo")
+    public ResponseEntity<?> updateLegalMasterUserInfo(@RequestBody LegalMasterUserInfoForm request){
+        logger.info("Processing post request for path /api/auth/updateLegalMasterUserInfo: " + request.toString());
+        try {return new ResponseEntity<>(userRepositoryJPA.updateLegalMasterUserInfo(request), HttpStatus.OK);}
+        catch (Exception e){
+            e.printStackTrace();
+            logger.error("Controller updateLegalMasterUserInfo error", e);
+            return new ResponseEntity<>("Error of updating master user legal information", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(value = "/api/auth/getLegalMasterUserInfo",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getLegalMasterUserInfo() {
+        logger.info("Processing get request for path /api/auth/getLegalMasterUserInfo with no params");
+        try {return new ResponseEntity<>(userRepositoryJPA.getLegalMasterUserInfo(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getLegalMasterUserInfo error", e);
+            return new ResponseEntity<>("Error query of getting master user legal information", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

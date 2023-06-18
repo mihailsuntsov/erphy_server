@@ -296,6 +296,8 @@ public class SpravProductAttributeRepository {
                     " and master_id="+myMasterId;
             try
             {
+                commonUtilites.idBelongsMyMaster("product_attributes", request.getId(), myMasterId); // check because even if here won't update, after this id will use in another transactions
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("type",request.getType());
@@ -316,6 +318,7 @@ public class SpravProductAttributeRepository {
                 deleteNonSelectedAttributeStores(request.getStoresIds(), request.getId(), myMasterId);
                 if (!Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
                     for (Long storeId : request.getStoresIds()) {
+                        commonUtilites.idBelongsMyMaster("stores", storeId, myMasterId);
                         saveAttributeStore(request.getId(), storeId, myMasterId, request.getCompany_id());
                     }
                 }
@@ -326,6 +329,8 @@ public class SpravProductAttributeRepository {
                 if (!Objects.isNull(attributeTermsList) && attributeTermsList.size() > 0 && !Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
                     for (Long storeId : request.getStoresIds()) {
                         for (ProductAttributeTermJSON termRow : attributeTermsList) {
+                            commonUtilites.idBelongsMyMaster("stores", storeId, myMasterId);
+                            commonUtilites.idBelongsMyMaster("product_attribute_terms", termRow.getId(), myMasterId);
                             saveTermStore(termRow.getId(), storeId, myMasterId, request.getCompany_id());
                         }
                     }
@@ -412,6 +417,8 @@ public class SpravProductAttributeRepository {
                     request.getHas_archives() + ", " +
                     " false)";
             try{
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("type",request.getType());
@@ -432,6 +439,7 @@ public class SpravProductAttributeRepository {
 //                //Saving the list of online stores that attribute belongs to
                 if (!Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
                     for (Long storeId : request.getStoresIds()) {
+                        commonUtilites.idBelongsMyMaster("stores", storeId, myMasterId);
                         saveAttributeStore(newAttributeId, storeId, myMasterId, request.getCompany_id());
                     }
                 }
@@ -594,7 +602,7 @@ public class SpravProductAttributeRepository {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(53L, "666") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myId = userRepositoryJPA.getMyId();
+//            Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
 //            stringQuery = "Update product_attributes p" +
 //                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
@@ -824,6 +832,9 @@ public class SpravProductAttributeRepository {
                             " (select coalesce(max(menu_order),0)+1 from product_attribute_terms where attribute_id=" + request.getAttribute_id() + ")" +
                             ")";
             try {
+                commonUtilites.idBelongsMyMaster("product_attributes",  request.getAttribute_id(),  myMasterId);
+                commonUtilites.idBelongsMyMaster("companies",           request.getCompanyId(),     myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name", request.getName());
                 query.setParameter("description", request.getDescription());
@@ -846,6 +857,7 @@ public class SpravProductAttributeRepository {
                 List<Long> storesIds = getAttributeStoresIds(request.getAttribute_id(), myMasterId);
                 if (!Objects.isNull(storesIds) && storesIds.size() > 0) {
                     for (Long storeId : storesIds) {
+                        commonUtilites.idBelongsMyMaster("stores", storeId, myMasterId);
                         saveTermStore(newTermId, storeId, myMasterId, request.getCompanyId());
                     }
                 }
@@ -906,6 +918,7 @@ public class SpravProductAttributeRepository {
                         " and id = " + request.getId() +
                         " and attribute_id = " + request.getAttribute_id();
             try{
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("description",request.getDescription());

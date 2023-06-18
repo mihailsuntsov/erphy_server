@@ -586,6 +586,7 @@ public class InvoiceinRepositoryJPA {
                     }
                 }
 
+
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 stringQuery =
                         " insert into invoicein (" +
@@ -625,6 +626,12 @@ public class InvoiceinRepositoryJPA {
                         ":name,"+ //наименование заказа поставщику
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                     Date dateNow = new Date();
                     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                     DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -740,6 +747,7 @@ public class InvoiceinRepositoryJPA {
                     " id= "+request.getId()+" and master_id="+myMasterId;
             try
             {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "invoicein"))
                     throw new DocumentAlreadyCompletedException();
@@ -844,6 +852,10 @@ public class InvoiceinRepositoryJPA {
         String stringQuery="";
         try {
 
+
+            commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), master_id);
+            commonUtilites.idBelongsMyMaster("invoicein", row.getInvoicein_id(), master_id);
+
             // ПРОВЕРКИ НА КОЛИЧЕСТВО ТОВАРА НЕ ДЕЛАЕМ, Т.К. ДЛЯ ДАННОГО ДОКУМЕНТА ОНО НЕ ВАЖНО.
             // ЗАКАЗ ПОСТАВЩИКУ НЕ ВЛИЯЕТ НА КОЛИЧЕСТВО ТОВАРА НА СКЛАДЕ, И НЕ УЧАСТВУЕТ В РЕЗЕРВИРОВАНИИ ТОВАРА
 
@@ -887,11 +899,13 @@ public class InvoiceinRepositoryJPA {
     }
 
     private Boolean deleteInvoiceinProductTableExcessRows(String productIds, Long invoicein_id) {
+        Long masterId = userRepositoryJPA.getMyMasterId();
         String stringQuery;
         stringQuery =   " delete from invoicein_product " +
                 " where invoicein_id=" + invoicein_id +
                 " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
+            commonUtilites.idBelongsMyMaster("invoicein", invoicein_id, masterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -911,6 +925,12 @@ public class InvoiceinRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
+
             stringQuery =
                     " insert into settings_invoicein (" +
                             "master_id, " +
@@ -1118,9 +1138,10 @@ public class InvoiceinRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select invoicein_id from invoicein_files where invoicein_id=" + invoiceinId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа

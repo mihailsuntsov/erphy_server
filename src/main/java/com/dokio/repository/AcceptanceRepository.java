@@ -501,7 +501,7 @@ public class AcceptanceRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public Long insertAcceptance(AcceptanceForm request) {
 
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
         Boolean iCan = securityRepositoryJPA.userHasPermissionsToCreateDoc( request.getCompany_id(), request.getDepartment_id(), 15L, "184", "185", "192");
         if(iCan==Boolean.TRUE)
@@ -562,7 +562,7 @@ public class AcceptanceRepository {
                     doc_number + ", "+//номер заказа
                     " :description, " +//описание
                     request.getStatus_id() + ", "+//статус
-//                    " to_date(:acceptance_date,'DD.MM.YYYY'), " +
+//   /                " to_date(:acceptance_date,'DD.MM.YYYY'), " +
                     "to_timestamp(CONCAT(:acceptance_date,' ',:acceptance_time),'DD.MM.YYYY HH24:MI') at time zone 'GMT' at time zone '"+myTimeZone+"'," +
                     linkedDocsGroupId+","+
                     ":uid)";
@@ -934,6 +934,11 @@ public class AcceptanceRepository {
 
 //                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("acceptance", "date_time_created", masterId, request.getId())).getTime());
 
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), masterId);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), masterId);
+
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
@@ -1014,7 +1019,7 @@ public class AcceptanceRepository {
     public List<LinkedDocsJSON> getAcceptanceLinkedDocsList(Long docId, String docName) {
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
 //        String tableName=(docName.equals("return")?"return":"");
         stringQuery =   " select " +
                 " ap.id," +

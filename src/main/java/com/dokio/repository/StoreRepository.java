@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.StoresForm;
+import com.dokio.message.request.additional.RentStoreOrderForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -29,9 +30,11 @@ import com.dokio.message.response.additional.StoreForOrderingShortInfoJSON;
 import com.dokio.message.response.additional.StoreOrderingResultJSON;
 import com.dokio.message.response.additional.StoreTranslationCategoryJSON;
 import com.dokio.model.Companies;
+import com.dokio.repository.Exceptions.LanguageVersionOfSiteIsNotUniqueException;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
@@ -310,14 +313,6 @@ public class StoreRepository {
                     doc.setIs_sites_distribution((Boolean)              obj[29]);
                     doc.setCan_order_store((Boolean)                    obj[30]);
                     doc.setIs_deleted((Boolean)                         obj[31]);
-//                    doc.setStore_ordered((Boolean)                      obj[30]);
-//                    doc.setStore_ordered_user((String)                  obj[31]);
-//                    doc.setStore_distributed((Boolean)                  obj[32]);
-//                    doc.setDate_time_store_ordered((String)             obj[33]);
-//                    doc.setDate_time_store_distributed((String)         obj[34]);
-
-
-
 
                     doc.setStoreDepartments(getStoreDepartmentsIds(id, doc.getCompany_id()));
 
@@ -367,6 +362,14 @@ public class StoreRepository {
                     " and id= "+request.getId();
             try
             {
+                cu.idBelongsMyMaster("sprav_type_prices", request.getStore_price_type_regular(), myMasterId);
+                cu.idBelongsMyMaster("sprav_type_prices", request.getStore_price_type_sale(), myMasterId);
+                cu.idBelongsMyMaster("departments", request.getStore_orders_department_id(), myMasterId);
+                cu.idBelongsMyMaster("cagents", request.getStore_default_customer_id(), myMasterId);
+                cu.idBelongsMyMaster("users", request.getStore_default_creator_id(), myMasterId);
+                cu.idBelongsMyMaster("stores", request.getId(), myMasterId);
+                cu.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+
                 //сохранение полей документа
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name", (request.getName() == null ? "" : request.getName()));
@@ -455,6 +458,14 @@ public class StoreRepository {
                             request.getIs_let_sync() +
                             ")";// уникальный идентификатор документа
             try{
+
+                cu.idBelongsMyMaster("sprav_type_prices", request.getStore_price_type_regular(), myMasterId);
+                cu.idBelongsMyMaster("sprav_type_prices", request.getStore_price_type_sale(), myMasterId);
+                cu.idBelongsMyMaster("departments", request.getStore_orders_department_id(), myMasterId);
+                cu.idBelongsMyMaster("cagents", request.getStore_default_customer_id(), myMasterId);
+                cu.idBelongsMyMaster("users", request.getStore_default_creator_id(), myMasterId);
+                cu.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("lang_code",request.getLang_code());
@@ -593,6 +604,7 @@ public class StoreRepository {
         try{
             if (request.getStoreDepartments()!=null && request.getStoreDepartments().size() > 0) {
                 for (Long departId : request.getStoreDepartments()) {
+                    cu.idBelongsMyMaster("departments", departId, masterId);
                     saveStoreDepartment(departId,request.getCompany_id(), masterId, request.getId(), i);
                     departsIds.add(departId);
                     i++;
@@ -835,19 +847,31 @@ public class StoreRepository {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public StoreOrderingResultJSON getMyRentSite(String user_ip, boolean iagree, Long companyId, Long storeId, String agreementType, String agreementVer, String thirdLvlName){
+    public StoreOrderingResultJSON getMyRentSite(RentStoreOrderForm request){
                 //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         StoreOrderingResultJSON storeOrderingResult = new StoreOrderingResultJSON();
-        if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",storeId.toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(54L,"679") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores",storeId.toString())))
+        if(     (securityRepositoryJPA.userHasPermissions_OR(54L,"678") && securityRepositoryJPA.isItAllMyMastersDocuments("stores",request.getStoreId().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(54L,"679") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("stores",request.getStoreId().toString())))
         {
+            String  user_ip =           request.getUserIp();
+            boolean iagree =            request.getIagree();
+            Long    companyId =         request.getCompanyId();
+            Long    storeId =           request.getStoreId();
+            String  agreementType =     request.getAgreementType();
+            String  agreementVer =      request.getAgreementVer();
+            String  thirdLvlName =      request.getThirdLvlName();
+            Boolean isVar =             request.getExistedStoreVariation();   // site is a language variation of the existed site
+            Long    parentVarSiteId =   request.getParentVarSiteId(); // parent site of variation site
+            String  position =          request.getPosition(); // position of variation name in a domain name "after" or "before". before:"es.mysite.com" or after:"mysite.com/es"
+            String  varName =           request.getVarName(); // like es, fr, it ...
+
             Long masterId = userRepositoryJPA.getMyMasterId();
             Long myId=userRepository.getUserId();
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+            String siteUrl;
             Long agreementId;
-
 
             if(!iagree) {
                 storeOrderingResult.setResult(-320);
@@ -856,6 +880,10 @@ public class StoreRepository {
             }
 
             try{
+
+                cu.idBelongsMyMaster("stores", storeId, masterId);
+                cu.idBelongsMyMaster("companies", companyId, masterId);
+                cu.idBelongsMyMaster("_saas_stores_for_ordering", parentVarSiteId, masterId);
 
                 if(settingsGeneral.getMax_store_orders_per_24h_1_account()<=getQttOfStoreOrdersOnPeriodFromAccount(24, masterId)){
                     storeOrderingResult.setResult(-350);
@@ -868,33 +896,33 @@ public class StoreRepository {
                                                 // Exceeded the maximum allowable quantity of online stores that can be ordered in 24h from one IP address
                 }
 
-
-
-
                 if(!cu.isCanOrderStoreForRent(storeId)){//This online store connection already has an active online store linked to it
                     storeOrderingResult.setResult(-340);
                     return storeOrderingResult;
                 }
 
-                Long rentStoreId = cu.getFreeStoreToRentId();
+                Long rentSiteId = cu.getFreeSiteToRentId();
+                StoreForOrderingJSON orderedStoreReturnData = new StoreForOrderingJSON();
 
+                siteUrl = thirdLvlName+"."+settingsGeneral.getRoot_domain();
 
-
-                if(!Objects.isNull(rentStoreId)){// there are free stores for rent
+                if(!Objects.isNull(rentSiteId)){// there are free sites(stores) for rent
 
                     //getting email address of master user
                     String masterUserEmail = (String)cu.getFieldValueFromTableById("users", "email", masterId, masterId);
 
 
-                    cu.SetStoreRentAgreementUnit(masterId, myId, storeId, rentStoreId, agreementType, agreementVer, timestamp);
+                    cu.SetStoreRentAgreementUnit(masterId, myId, storeId, rentSiteId, agreementType, agreementVer, timestamp);
+                    // in this case the URL of site is equivalent to site domain name:
+                    //siteUrl=(String)cu.getFieldValueFromTableById("_saas_stores_for_ordering","site_domain",masterId, rentSiteId);
+
 
                     // set free online store to user
-                    distributeOnlineStoreToUser(rentStoreId, timestamp, user_ip, companyId, storeId, masterId, myId,thirdLvlName);
+                    distributeOnlineStoreToUser(rentSiteId, timestamp, user_ip, companyId, storeId, masterId, myId, thirdLvlName, isVar, parentVarSiteId, position, varName);
 
                     // getting distributed store data
-                    StoreForOrderingJSON orderedStoreFullData = getStoreForOrderingData(rentStoreId);
-                    StoreForOrderingJSON orderedStoreReturnData = new StoreForOrderingJSON();
-                    orderedStoreReturnData.setSite_domain(orderedStoreFullData.getSite_domain());
+                    StoreForOrderingJSON orderedStoreFullData = getStoreForOrderingData(rentSiteId);
+                    orderedStoreReturnData.setSite_url(orderedStoreFullData.getSite_url());
 
                     //updating Store (connection) - setting store IP address and DokioCRM secret key
                     setIpAndSecretKeyToStoreConnection(orderedStoreFullData.getWp_server_ip(), orderedStoreFullData.getDokio_secret_key(), masterId, storeId);
@@ -903,7 +931,6 @@ public class StoreRepository {
                     Map<String, String> map = cu.translateHTMLmessages(myId, new String[]{"'success_online_store_order'"});
 
                     //info to return:
-                    storeOrderingResult.setStoreInfo(orderedStoreReturnData);
                     storeOrderingResult.setResult(1);
                     storeOrderingResult.setMessage(map.get("success_online_store_order"));
 
@@ -915,10 +942,14 @@ public class StoreRepository {
 
                     String subj = "Thank you for ordering online store!";
                         String body =
-                            "Store this information securely: \n\n  \n\n"+
 
-                            "Site domain:               "   + orderedStoreFullData.getSite_domain() + "\n\n "+
-                            "Site admin panel:          "   + orderedStoreFullData.getSite_domain() + "/wp-admin\n\n "+
+                            "At first the site will be accessible with a system-generated url: " + orderedStoreFullData.getSite_domain() + "\n"+
+                            "It will be available at your chosen name "+siteUrl+" within 24h.\n\n"+
+
+                            "Store this information securely: \n\n\n"+
+
+                            "Site url:                  "   + siteUrl + "\n\n "+
+                            "Site admin panel url:      "   + siteUrl + "/wp-admin\n\n "+
                             "Site admin panel login:    "   + orderedStoreFullData.getWp_login() + "\n\n "+
                             "Site admin panel password: "   + orderedStoreFullData.getWp_password() + "\n\n "+
 
@@ -930,7 +961,9 @@ public class StoreRepository {
                             "Panel password:            "   + orderedStoreFullData.getClient_password() + "\n\n "+
 
                             "Site DB user:              "   + orderedStoreFullData.getDb_user() + "\n\n "+
-                            "Site DB password:          "   + orderedStoreFullData.getDb_password() + "\n\n \n\n"+
+                            "Site DB password:          "   + orderedStoreFullData.getDb_password() + "\n\n\n"+
+
+
 
                             "Best regards, DokioCRM team!";
 
@@ -940,11 +973,27 @@ public class StoreRepository {
 
                     agreementId = cu.SetStoreRentAgreementUnit(masterId, myId, storeId, null, agreementType, agreementVer, timestamp);
                     //1. creating a waiting store record
-                    Long recordId = addNewWaitingRecordForOnlineStore(timestamp, user_ip, masterId, companyId, storeId, myId);
+                    String siteDomain = null;
+                    if(isVar) { // if there the site is an variation of another site
+                        String parentSiteDomain = (String)cu.getFieldValueFromTableById("_saas_stores_for_ordering","site_domain", masterId, parentVarSiteId);
+                        siteDomain = varName+"."+parentSiteDomain;
+                        siteUrl = position.equals("before")?siteDomain:(parentSiteDomain+"/"+varName);
+                        thirdLvlName = null;
+                    } else {
+                        siteDomain = thirdLvlName+"."+settingsGeneral.getRoot_domain();
+                        siteUrl = siteDomain;
+                    }
+
+
+
+                    rentSiteId = addNewWaitingRecordForOnlineStore(timestamp, user_ip, masterId, companyId, storeId, myId, siteDomain, thirdLvlName, isVar, parentVarSiteId, position, varName, siteUrl);
+
+
+
                     //2. sending e-mail to the employee who responsible for online stores
                     if(!settingsGeneral.getStores_alert_email().equals("")){
                         String subj = "There is store order, but no free stores";
-                        String body =   "Record ID = " + recordId + "\n\n "+
+                        String body =   "Record ID = " + rentSiteId + "\n\n "+
                                         "Master ID = " + masterId + "\n\n "+
                                         "Company ID = " + companyId + "\n\n "+
                                         "Store ID = " + storeId + "\n\n "+
@@ -957,13 +1006,24 @@ public class StoreRepository {
                     Map<String, String> map = cu.translateHTMLmessages(myId, new String[]{"'online_store_no_free_but_ordered'"});
 
                     //info to return:
+
                     storeOrderingResult.setMessage(map.get("online_store_no_free_but_ordered"));
                     storeOrderingResult.setResult(-330);
 
                 }
 
+                // getting store data
+                StoreForOrderingJSON orderedStoreFullData = getStoreForOrderingData(rentSiteId);
+                orderedStoreReturnData.setSite_url(orderedStoreFullData.getSite_url());
+                storeOrderingResult.setStoreInfo(orderedStoreReturnData);
                 return storeOrderingResult;
 
+            } catch (LanguageVersionOfSiteIsNotUniqueException e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("-370: The same site cannot have the same language versions", e);
+                e.printStackTrace();
+                storeOrderingResult.setResult(-370);
+                return storeOrderingResult;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method getMyRentSite.", e);
@@ -1000,8 +1060,8 @@ public class StoreRepository {
     private void storesToRentOrderedSuccessfully(String succEmail, String ordererEmail, String storeShortData) throws Exception {
         try {
                 String subj = "Store distributed successfully!";
-                String body = "Customer email: "+ordererEmail+ "\n\n \n\n" +
-                        "Store short data: "+ "\n\n \n\n"+
+                String body = "Customer email: "+ordererEmail+ "\n\n" +
+                        "Store short data: "+ "\n\n"+
                         storeShortData;
                 mailRepository.sentMessage(succEmail,subj,body);
         } catch (Exception e) {
@@ -1011,7 +1071,20 @@ public class StoreRepository {
         }
     }
 
-    private void distributeOnlineStoreToUser(Long rentedStoreRecordId, String timestamp, String ordererIp, Long companyId, Long storeId, Long masterId, Long ordererId, String thirdLvlName) throws Exception {
+    private void distributeOnlineStoreToUser(Long rentedStoreRecordId,
+                                             String timestamp,
+                                             String ordererIp,
+                                             Long companyId,
+                                             Long storeId,
+                                             Long masterId,
+                                             Long ordererId,
+                                             String thirdLvlName,
+                                             Boolean isVar,
+                                             Long parentVarSiteId,
+                                             String position,
+                                             String varName
+//            ,                                String siteUrl
+    ) throws Exception {
 
         String stringQuery = " update _saas_stores_for_ordering set "+
                 " distributed = true, " +
@@ -1022,35 +1095,66 @@ public class StoreRepository {
                 " store_id = "  + storeId + ", " +
                 " orderer_ip = '"  + ordererIp + "', " +
                 " orderer_id = "  + ordererId + ", " +
-                " third_lvl_user_domain = :third_lvl_user_domain" +
+                " third_lvl_user_domain = :third_lvl_user_domain," +
+                " is_existed_store_variation = " + isVar + ", " +
+                " parent_variation_store_id = " + parentVarSiteId + ", " +
+                " variation_name_position = :position," +
+                " variation_name = :variation_name" +
+//                " site_url = :site_url" +
                 " where id = " + rentedStoreRecordId +
                 " and distributed = false"; // just for unlikely case - when in the one moment two users gets the same id of store
         try {
 
             Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("third_lvl_user_domain",thirdLvlName.equals("")?null:thirdLvlName);
+            query.setParameter("third_lvl_user_domain",thirdLvlName);
+            query.setParameter("position",position);
+            query.setParameter("variation_name",varName);
+//            query.setParameter("site_url",siteUrl);
+
             query.executeUpdate();
             // check that onlone store was realy distributed (that unlikely case is not happened)
             stringQuery = "select count(*) from _saas_stores_for_ordering where id = "+rentedStoreRecordId+" and store_id = "+storeId+" and distributed = true";
             query = entityManager.createNativeQuery(stringQuery);
             if(((BigInteger)query.getSingleResult()).intValue()!=1) throw new Exception();
-        }catch (Exception e) {
+
+        } catch (Exception e) {
+            //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             e.printStackTrace();
-            logger.error("Exception in method distributeOnlineStoreToUser. SQL: "+stringQuery, e);
-            throw new Exception();
+            Throwable t = e.getCause();
+            while ((t != null) && !(t instanceof ConstraintViolationException)) {
+                t = t.getCause();
+            }
+            if (t != null) {
+                String message = ((ConstraintViolationException) t).getSQLException().getMessage();
+                if(message.contains("_saas_stores_for_ordering_var_uq")) { // store can't have the same languages(e.g. mystore.me/fr is already existed, & mystore.me/fr creation -> error)
+                    logger.error("ConstraintViolationException (_saas_stores_for_ordering_var_uq) in method StoreRepositoryJPA/distributeOnlineStoreToUser.", e);
+                    throw new LanguageVersionOfSiteIsNotUniqueException();
+                } else {
+                    logger.error("Exception in method distributeOnlineStoreToUser. SQL query:" + stringQuery, e);
+                    e.printStackTrace();
+                    throw new Exception();
+                }
+            } else {
+                logger.error("Exception in method distributeOnlineStoreToUser. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
         }
     }
 
     private void setIpAndSecretKeyToStoreConnection(String serverIp, String secretKey, Long masterId, Long storeId) throws Exception {
         String stringQuery =
                 " update stores set" +
-                " crm_secret_key='"+secretKey+"'," +
+                " crm_secret_key=:crm_secret_key," +
                 " is_let_sync=true," +
-                " store_ip='"+serverIp+"'" +
+                " store_ip=:store_ip" +
                 " where master_id="+masterId+
                 " and id="+storeId;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("store_ip",serverIp);
+            query.setParameter("crm_secret_key",secretKey);
             query.executeUpdate();
         }catch (Exception e) {
             e.printStackTrace();
@@ -1156,7 +1260,8 @@ public class StoreRepository {
                 "           coalesce(ud.name,'') as deleter_id," +
                 "           p.panel_domain as panel_domain," +
                 "           p.is_queried_to_delete as is_queried_to_delete," +
-                "           to_char(p.date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete " +
+                "           to_char(p.date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete," +
+                "           p.site_url as site_url" +
                 "           from _saas_stores_for_ordering p" +
                 "           inner join users uo on p.orderer_id = uo.id"+
                 "           left outer join users ud on p.deleter_id = ud.id"+
@@ -1185,6 +1290,7 @@ public class StoreRepository {
                 doc.setPanel_domain((String)                        obj[12]);
                 doc.setIs_queried_to_delete((Boolean)               obj[13]);
                 doc.setDate_time_query_to_delete((String)           obj[14]);
+                doc.setSite_url((String)                            obj[15]);
                 returnList.add(doc);
             }
             return returnList;
@@ -1196,7 +1302,7 @@ public class StoreRepository {
     }
 
 
-    private StoreForOrderingJSON getStoreForOrderingData(Long storeId) throws Exception {
+    private StoreForOrderingJSON getStoreForOrderingData(Long siteId) throws Exception {
         UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
         String myTimeZone = userSettings.getTime_zone();
         String dateFormat = userSettings.getDateFormat();
@@ -1236,9 +1342,14 @@ public class StoreRepository {
                 "           panel_domain as panel_domain," +
                 "           is_queried_to_delete as is_queried_to_delete," +
                 "           to_char(date_time_query_to_delete at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_query_to_delete, " +
-                "           orderer_ip as orderer_ip" +
+                "           orderer_ip as orderer_ip," +
+                "           is_existed_store_variation, " +
+                "           parent_variation_store_id, " +
+                "           variation_name_position," +
+                "           variation_name," +
+                "           site_url" +
                 "           from _saas_stores_for_ordering " +
-                "           where  id= " + storeId;
+                "           where  id= " + siteId;
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1276,11 +1387,16 @@ public class StoreRepository {
                 doc.setCompany_id(Long.parseLong(                   obj[25].toString()));
                 doc.setStore_id(Long.parseLong(                     obj[26].toString()));
                 doc.setOrderer_id(Long.parseLong(                   obj[27].toString()));
-                doc.setDeleter_id(obj[28] != null ? Long.parseLong(  obj[28].toString()) : null);
+                doc.setDeleter_id(obj[28] != null ? Long.parseLong( obj[28].toString()) : null);
                 doc.setPanel_domain((String)                        obj[29]);
                 doc.setIs_queried_to_delete((Boolean)               obj[30]);
                 doc.setDate_time_query_to_delete((String)           obj[31]);
                 doc.setOrderer_ip((String)                          obj[32]);
+                doc.setVar((Boolean)                                obj[33]);
+                doc.setParentVarSiteId(obj[34]!=null?Long.parseLong(obj[34].toString()) : null);
+                doc.setPosition((String)                            obj[35]);
+                doc.setVarName((String)                             obj[36]);
+                doc.setSite_url((String)                            obj[37]);
             }
             return doc;
         } catch (Exception e) {
@@ -1291,8 +1407,19 @@ public class StoreRepository {
 
     }
 
-    public Long addNewWaitingRecordForOnlineStore(String timestamp, String ipAddress, Long masterId, Long companyId, Long storeId, Long ordererId) throws Exception{
-
+    private Long addNewWaitingRecordForOnlineStore(String timestamp,
+                                                   String ipAddress,
+                                                   Long masterId,
+                                                   Long companyId,
+                                                   Long storeId,
+                                                   Long ordererId,
+                                                   String siteDomain,
+                                                   String thirdLvlName,
+                                                   Boolean isVar,
+                                                   Long parentVarSiteId,
+                                                   String position,
+                                                   String varName,
+                                                   String siteUrl) throws Exception{
         String stringQuery;
 
         stringQuery= " insert into _saas_stores_for_ordering ("+
@@ -1306,7 +1433,14 @@ public class StoreRepository {
                         " ready_to_distribute,"+
                         " distributed,"+
                         " is_queried_to_delete,"+
-                        " is_deleted" +
+                        " is_deleted," +
+                        " is_existed_store_variation," +
+                        " parent_variation_store_id," +
+                        " variation_name_position," +
+                        " variation_name," +
+                        " site_domain," +
+                        " third_lvl_user_domain," +
+                        " site_url" +
                     ") values ("+
                         " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
                         " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
@@ -1315,22 +1449,51 @@ public class StoreRepository {
                         storeId+", " +
                         ordererId+", " +
                         "'"+ipAddress+"', " +
-                        " false,"+
-                        " false,"+
-                        " false,"+
-                        " false"+
+                        " false," +
+                        " false," +
+                        " false," +
+                        " false," +
+                        isVar+", " +
+                        parentVarSiteId+", " +
+                        ":position," +
+                        ":varName," +
+                        ":site_domain,"+
+                        ":third_lvl_user_domain," +
+                        ":site_url"+
                     ");";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("position", position);
+            query.setParameter("varName", varName);
+            query.setParameter("site_domain", siteDomain);
+            query.setParameter("third_lvl_user_domain", thirdLvlName);
+            query.setParameter("site_url", siteUrl);
             query.executeUpdate();
             stringQuery="select id from _saas_stores_for_ordering where master_id = "+masterId+" and store_id="+storeId+" and date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS'))";
             query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
         } catch (Exception e) {
-            logger.error("Exception in method addNewWaitingRecordForOnlineStore. SQL = "+stringQuery, e);
+            //ConstraintViolationException напрямую не отлавливается, она обернута в родительские классы, и нужно определить, есть ли она в Exception
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             e.printStackTrace();
-            throw new Exception();
+            Throwable t = e.getCause();
+            while ((t != null) && !(t instanceof ConstraintViolationException)) {
+                t = t.getCause();
+            }
+            if (t != null) {
+                String message = ((ConstraintViolationException) t).getSQLException().getMessage();
+                if(message.contains("_saas_stores_for_ordering_var_uq")) { // store can't have the same languages(e.g. mystore.me/fr is already existed, & mystore.me/fr creation -> error)
+                    logger.error("ConstraintViolationException (_saas_stores_for_ordering_var_uq) in method StoreRepositoryJPA/distributeOnlineStoreToUser.", e);
+                    throw new LanguageVersionOfSiteIsNotUniqueException();
+                } else {
+                    logger.error("Exception in method addNewWaitingRecordForOnlineStore. SQL query:" + stringQuery, e);
+                    throw new Exception();
+                }
+            } else {
+                logger.error("Exception in method addNewWaitingRecordForOnlineStore. SQL query:" + stringQuery, e);
+                throw new Exception();
+            }
         }
     }
 
@@ -1363,5 +1526,37 @@ public class StoreRepository {
         }
     }
 
+    public List<IdAndName> getExistedRentSitesList(Long companyId){
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery;
+        stringQuery = "select " +
+                "           p.id as id," +
+                "           p.site_domain as site_domain" +
+                "           from _saas_stores_for_ordering p" +
+                "           where p.master_id = " + masterId +
+                "           and p.company_id = " + companyId +
+                "           and p.distributed = true" +
+                "           and p.is_queried_to_delete = false" +
+                "           and p.is_deleted = false" +
+                "           and coalesce(p.is_existed_store_variation, false) = false " +
+                "           order by p.date_time_distributed ";
 
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndName> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                IdAndName doc = new IdAndName();
+
+                doc.setId(Long.parseLong(                           obj[0].toString()));
+                doc.setName((String)                                obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getExistedRentSitesList. SQL: "+stringQuery, e);
+            return null;
+        }
+    }
 }

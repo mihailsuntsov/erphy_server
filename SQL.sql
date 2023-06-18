@@ -4799,17 +4799,53 @@ create table _saas_agreements_units(
                                foreign key (store_woo_id) references _saas_stores_for_ordering(id)
 );
 -- insert into _saas_stores_for_ordering (
---   date_time_created ,
+--   date_time_created,
+--   panel_domain,
+--   client_no,
+--   client_name,
+--   client_login,
+--   client_password,
+--   site_domain,
+--   site_root,
+--   ftp_user,
+--   ftp_password,
+--   db_user,
+--   db_password,
+--   db_name,
+--   wp_login,
+--   wp_password,
+--   wp_server_ip,
+--   dokio_secret_key,
+--   record_creator_name,
 --   ready_to_distribute,
 --   distributed,
---   is_queried_to_delete
---   is_deleted) values(
---                       now(),
---                       true,
---                       false,
---                       false,
---                       false
---                     );
+--   is_queried_to_delete,
+--   is_deleted,
+--   site_url) values(
+--                     now(),
+--                     'panel.s1.dokio.me',
+--                     'c101',
+--                     'Mikhail Suntsov',
+--                     'mslogin',
+--                     pgp_sym_encrypt('password', 'secret'),
+--                     'c101.s1.dokio.me',
+--                     '/var/www/clients/c100/web3',
+--                     'c101',
+--                     pgp_sym_encrypt('password', 'secret'),
+--                     'c101',
+--                     pgp_sym_encrypt('password', 'secret'),
+--                     'db_name',
+--                     'c101',
+--                     pgp_sym_encrypt('password', 'secret'),
+--                     '1.1.1.1',
+--                     '42b5-uh5vg-88dd765h-6576-dg67',
+--                     'Mikhail',
+--                     true,
+--                     false,
+--                     false,
+--                     false,
+--                     'c101.s1.dokio.me'
+--                   );
 
 
 CREATE EXTENSION pgcrypto;
@@ -4907,3 +4943,29 @@ insert into _saas_messages (key, tr_ru, tr_en) values (
     <p><span style="font-size:14px">At first the site will be accessible with a system-generated name.<br />
     It will be available at your choosen name within 24h.
     </span></p>');
+
+alter table users add column jr_legal_form varchar(10);
+alter table users add column jr_jur_name varchar(100);
+alter table users add column jr_name varchar(100);
+alter table users add column jr_surname varchar(100);
+alter table users add column jr_country_id int;
+alter table users add column jr_vat varchar(100);
+alter table users add constraint jr_country_id_fkey foreign key (jr_country_id) references sprav_sys_countries(id);
+alter table users add column jr_changer_id bigint;
+alter table users add constraint jr_changer_id_fkey foreign key (jr_changer_id) references users(id);
+alter table users add column jr_date_time_changed timestamp with time zone;
+alter table users alter column jr_jur_name type varchar(500);
+
+update users set plan_id=2 where plan_id is null;
+alter table users alter column plan_id set not null;
+
+alter table _saas_stores_for_ordering add column is_existed_store_variation boolean;
+alter table _saas_stores_for_ordering add column parent_variation_store_id bigint;
+alter table _saas_stores_for_ordering add column variation_name_position varchar(6); -- "after" or "before"
+alter table _saas_stores_for_ordering add column variation_name varchar(100);
+alter table _saas_stores_for_ordering add constraint parent_variation_store_id_fkey foreign key (parent_variation_store_id) references _saas_stores_for_ordering(id);
+CREATE UNIQUE INDEX _saas_stores_for_ordering_var_uq ON _saas_stores_for_ordering (parent_variation_store_id, variation_name) WHERE variation_name IS NOT NULL and variation_name!='';
+alter table _saas_stores_for_ordering add column site_url varchar(256);
+update _saas_stores_for_ordering set site_url=null;
+alter table _saas_stores_for_ordering alter column site_url set not null;
+CREATE UNIQUE INDEX _saas_stores_for_ordering_site_url_uq ON _saas_stores_for_ordering (site_url) WHERE site_url !='' and is_deleted = false;

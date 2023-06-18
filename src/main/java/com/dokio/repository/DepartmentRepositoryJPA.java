@@ -27,6 +27,7 @@ import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.model.Sprav.SpravSysDepartmentsList;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,6 +58,8 @@ public class DepartmentRepositoryJPA {
 
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
@@ -247,8 +250,13 @@ public class DepartmentRepositoryJPA {
                     request.getPrice_id() + ", " +
                     ":additional)";
             try{
-                Query query = entityManager.createNativeQuery(stringQuery);
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPrice_id(), myMasterId);
+
+                Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("address",request.getAddress());
                 query.setParameter("additional",request.getAdditional());
@@ -280,6 +288,7 @@ public class DepartmentRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
 
             String stringQuery;
             stringQuery =   " update departments set " +
@@ -292,9 +301,14 @@ public class DepartmentRepositoryJPA {
                             " changer_id = " + myId + ","+
                             " date_time_changed= now()" +
                             " where " +
-                            " id= "+request.getId();
+                            " id= "+request.getId()+" and master_is = " + myMasterId;
             try
             {
+
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPrice_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("address",request.getAddress());
@@ -316,8 +330,6 @@ public class DepartmentRepositoryJPA {
         return d;
     }
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
     public List<Departments> getDeptChildrens(int parentDeptId){
         String stringQuery;
         Long departmentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
@@ -389,25 +401,27 @@ public class DepartmentRepositoryJPA {
     }
 
     public List<IdAndName> getDepartmentsList(Long company_id) {
+
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         String stringQuery="select " +
                 "           p.id as id, " +
                 "           p.name as name " +
                 "           from departments p " +
                 "           where  p.company_id = "+company_id+
-                "           and coalesce(p.is_deleted, false) = false" +
+                "           and coalesce(p.is_deleted, false) = false and master_id = " + myMasterId +
                 "           order by p.name asc";
 
         try{
-        Query query =  entityManager.createNativeQuery(stringQuery);
-        List<Object[]> queryList = query.getResultList();
-        List<IdAndName> returnList = new ArrayList<>();
-        for(Object[] obj:queryList) {
-            IdAndName doc = new IdAndName();
-            doc.setId(Long.parseLong(       obj[0].toString()));
-            doc.setName((String)            obj[1]);
-            returnList.add(doc);
-        }
-        return returnList;
+            Query query =  entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndName> returnList = new ArrayList<>();
+            for(Object[] obj:queryList) {
+                IdAndName doc = new IdAndName();
+                doc.setId(Long.parseLong(       obj[0].toString()));
+                doc.setName((String)            obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getDepartmentsList. SQL query:" + stringQuery, e);
@@ -415,7 +429,7 @@ public class DepartmentRepositoryJPA {
         }
     }
 
-    @Transactional
+
     @SuppressWarnings("Duplicates")
     public List<DepartmentsListJSON> getMyDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         String stringQuery;
@@ -453,33 +467,32 @@ public class DepartmentRepositoryJPA {
         }
         return returnList;
     }
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public List<Departments> getMyDepartmentsList() {
-        String stringQuery;
+//    @Transactional
+//    @SuppressWarnings("Duplicates")
+//    public List<Departments> getMyDepartmentsList() {
+//        String stringQuery;
+//
+//        Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        List<Integer>param=userRepositoryJPA.getMyDepartmentsId();
+//        String ids="";
+//        for (int i:param){ids=ids+i+",";}ids=ids+"0";//Костыли, т.к. хз почему не отрабатывает query.setParameter("param"...)
+//
+//        stringQuery="select " +
+//                "           p.id as id, " +
+//                "           p.name as name " +
+//                "           from departments p " +
+//                "           where  p.master_id="+companyOwnerId+
+//                "           and p.id in ("+ids+")";
+//
+//        stringQuery = stringQuery+" order by p.name asc";
+//        Query query =  entityManager.createNativeQuery(stringQuery, SpravSysDepartmentsList.class);
+//        return query.getResultList();
+//    }
 
-        Long companyOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        List<Integer>param=userRepositoryJPA.getMyDepartmentsId();
-        String ids="";
-        for (int i:param){ids=ids+i+",";}ids=ids+"0";//Костыли, т.к. хз почему не отрабатывает query.setParameter("param"...)
 
-        stringQuery="select " +
-                "           p.id as id, " +
-                "           p.name as name " +
-                "           from departments p " +
-                "           where  p.master_id="+companyOwnerId+
-                "           and p.id in ("+ids+")";
-
-        stringQuery = stringQuery+" order by p.name asc";
-        Query query =  entityManager.createNativeQuery(stringQuery, SpravSysDepartmentsList.class);
-        return query.getResultList();
-    }
-
-    @Transactional
-    @SuppressWarnings("Duplicates")
     public DepartmentsJSON getDepartmentValuesById(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(4L, "13,14") &&// Отделения: "Просмотр своего" "Просмотр всех"
-                securityRepositoryJPA.isItMyMastersDepartment(id))//принадлежит к отделениям моего родителя
+            securityRepositoryJPA.isItMyMastersDepartment(id))//принадлежит к отделениям моего родителя
         {
             String stringQuery;
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
@@ -614,7 +627,7 @@ public class DepartmentRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
+                    " where  p.master_id=" + masterId + " and p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {

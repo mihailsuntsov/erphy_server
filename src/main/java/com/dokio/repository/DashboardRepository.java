@@ -19,6 +19,7 @@ package com.dokio.repository;
 import com.dokio.message.request.Settings.SettingsDashboardForm;
 import com.dokio.message.response.Settings.SettingsDashboardJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,8 @@ public class DashboardRepository {
     private UserDetailsServiceImpl userRepository;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 
     //сохраняет настройки документа "Розничные продажи"
     @SuppressWarnings("Duplicates")
@@ -52,6 +55,7 @@ public class DashboardRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
             stringQuery =
                     " insert into settings_dashboard (" +
                             "master_id, " +

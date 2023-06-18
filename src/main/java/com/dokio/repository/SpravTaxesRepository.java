@@ -72,7 +72,6 @@ public class SpravTaxesRepository {
             .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public List<SpravTaxesJSON> getTaxesTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(50L, "640,641"))// (см. файл Permissions Id)
         {
@@ -169,7 +168,6 @@ public class SpravTaxesRepository {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")
     @Transactional
     public int getTaxesSize(String searchString, Long companyId, Set<Integer> filterOptionsIds) {
         if (securityRepositoryJPA.userHasPermissions_OR(50L, "640,641"))//"Статусы документов" (см. файл Permissions Id)
@@ -209,7 +207,6 @@ public class SpravTaxesRepository {
 //*****************************************************************************************************************************************************
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public SpravTaxesJSON getTaxesValues(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(50L,"640,641"))//"Статусы документов" (см. файл Permissions Id)
         {
@@ -289,8 +286,6 @@ public class SpravTaxesRepository {
         } else return null;
     }
 
-
-    @SuppressWarnings("Duplicates")
     @Transactional
     public Integer updateTaxes(SpravTaxesForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
@@ -348,7 +343,6 @@ public class SpravTaxesRepository {
         } else return -1;
     }
 
-    @SuppressWarnings("Duplicates")
     @Transactional
     public Long insertTaxes(SpravTaxesForm request) {
         EntityManager emgr = emf.createEntityManager();
@@ -413,7 +407,6 @@ public class SpravTaxesRepository {
     }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public Integer deleteTaxes(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(50L, "638") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_taxes", delNumbers)) ||
@@ -441,7 +434,6 @@ public class SpravTaxesRepository {
     }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public Integer undeleteTaxes(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if ((securityRepositoryJPA.userHasPermissions_OR(50L, "638") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_taxes", delNumbers)) ||
@@ -471,7 +463,7 @@ public class SpravTaxesRepository {
 //*****************************************************************************************************************************************************
 //*******************************************************************  U T I L S **********************************************************************
 //*****************************************************************************************************************************************************
-    @SuppressWarnings("Duplicates")
+
     private Integer getNextOutputOrder(Long companyId) {
         String stringQuery = "select coalesce(max(output_order)+1,1) from sprav_taxes where company_id =  " + companyId;
         try{
@@ -486,8 +478,6 @@ public class SpravTaxesRepository {
         }
     }
 
-
-    @SuppressWarnings("Duplicates")
     private boolean saveChangesStatusesOrder(Long statusId, int order, Long masterId) {
         String stringQuery;
 

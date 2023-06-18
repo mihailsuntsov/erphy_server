@@ -249,20 +249,20 @@ public class ProductsController {
 
     }
 
-    @PostMapping("/api/auth/updateProductCustomFields")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> updateProductCustomFields(@RequestBody List<ProductCustomFieldsSaveForm> request) throws ParseException{
-        logger.info("Processing post request for path /api/auth/updateProductCustomFields: [" + request.stream().
-                map(ProductCustomFieldsSaveForm::toString).collect(Collectors.joining(", ")) + "]");
-
-        if(productsRepositoryJPA.updateProductCustomFields(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
-    }
+//    @PostMapping("/api/auth/updateProductCustomFields")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> updateProductCustomFields(@RequestBody List<ProductCustomFieldsSaveForm> request) throws ParseException{
+//        logger.info("Processing post request for path /api/auth/updateProductCustomFields: [" + request.stream().
+//                map(ProductCustomFieldsSaveForm::toString).collect(Collectors.joining(", ")) + "]");
+//
+//        if(productsRepositoryJPA.updateProductCustomFields(request)){
+//            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
+//            return responseEntity;
+//        } else {
+//            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.INTERNAL_SERVER_ERROR);
+//            return responseEntity;
+//        }
+//    }
 
     @PostMapping("/api/auth/deleteProducts")
     public  ResponseEntity<?> deleteProducts(@RequestBody SignUpForm request) {
@@ -327,29 +327,29 @@ public class ProductsController {
         return new ResponseEntity<>(returnList, HttpStatus.OK);
     }
 
-    @PostMapping("/api/auth/getProductGroupFieldsListWithValues")
-    // аналогично getProductGroupFieldsList, но отдает поля со значениями (если есть). Используется в документе Товары и услуги
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getProductGroupFieldsListWithValues(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getProductGroupFieldsListWithValues: " + searchRequest.toString());
-
-        int field_type; // тип: 1 - сеты (наборы) полей, 2 - поля
-        int productId;// id товара, значения полей которого хотим получить
-
-        List<ProductGroupFieldTableJSON> returnList;
-
-        if (searchRequest.getField_type() != null && !searchRequest.getField_type().isEmpty() && searchRequest.getField_type().trim().length() > 0) {
-            field_type = Integer.parseInt(searchRequest.getField_type());
-        } else {  field_type = 0;  }
-
-        if (searchRequest.getDocumentId() != null && !searchRequest.getDocumentId().isEmpty() && searchRequest.getDocumentId().trim().length() > 0) {
-            productId = Integer.parseInt(searchRequest.getDocumentId());
-        } else {  productId = 0;  }
-
-        returnList = productsRepositoryJPA.getProductGroupFieldsListWithValues(field_type, productId);//
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
-        return responseEntity;
-    }
+//    @PostMapping("/api/auth/getProductGroupFieldsListWithValues")
+//    // аналогично getProductGroupFieldsList, но отдает поля со значениями (если есть). Используется в документе Товары и услуги
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> getProductGroupFieldsListWithValues(@RequestBody SearchForm searchRequest) {
+//        logger.info("Processing post request for path /api/auth/getProductGroupFieldsListWithValues: " + searchRequest.toString());
+//
+//        int field_type; // тип: 1 - сеты (наборы) полей, 2 - поля
+//        int productId;// id товара, значения полей которого хотим получить
+//
+//        List<ProductGroupFieldTableJSON> returnList;
+//
+//        if (searchRequest.getField_type() != null && !searchRequest.getField_type().isEmpty() && searchRequest.getField_type().trim().length() > 0) {
+//            field_type = Integer.parseInt(searchRequest.getField_type());
+//        } else {  field_type = 0;  }
+//
+//        if (searchRequest.getDocumentId() != null && !searchRequest.getDocumentId().isEmpty() && searchRequest.getDocumentId().trim().length() > 0) {
+//            productId = Integer.parseInt(searchRequest.getDocumentId());
+//        } else {  productId = 0;  }
+//
+//        returnList = productsRepositoryJPA.getProductGroupFieldsListWithValues(field_type, productId);//
+//        ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
+//        return responseEntity;
+//    }
 
     @RequestMapping(
             value = "/api/auth/getProductCategoryChildIds",

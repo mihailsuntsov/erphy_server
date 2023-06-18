@@ -113,7 +113,7 @@ public class DocumentsRepositoryJPA {
 //            "is_show"
 //            "output_order"
 //            "name"
-//            "user_id"
+//            "user_id" /
 
     @Transactional
     public void createPrintMenus(List<BaseFiles> baseFilesList, Long masterId, Long userId, Long companyId){

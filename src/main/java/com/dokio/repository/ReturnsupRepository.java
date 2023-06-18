@@ -512,6 +512,8 @@ public class ReturnsupRepository {
                     " id= "+request.getId();
             try
             {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "returnsup"))
                     throw new DocumentAlreadyCompletedException();
@@ -685,6 +687,10 @@ public class ReturnsupRepository {
 
 //                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("returnsup", "date_time_created", masterId, request.getId())).getTime());
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), masterId);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), masterId);
+
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
@@ -817,6 +823,11 @@ public class ReturnsupRepository {
                     ":uid, "+// уникальный идентификатор документа
                     request.getNds()+")";
             try{
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -901,6 +912,10 @@ public class ReturnsupRepository {
     private Boolean saveReturnsupProductTable(ReturnsupProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
         try {
+            commonUtilites.idBelongsMyMaster("products",    row.getProduct_id(), master_id);
+            commonUtilites.idBelongsMyMaster("returnsup",   row.getReturnsup_id(), master_id);
+            commonUtilites.idBelongsMyMaster("sprav_taxes", row.getNds_id(), master_id);
+            commonUtilites.idBelongsMyMaster("companies",   company_id, master_id);
             stringQuery =
                     " insert into returnsup_product (" +
                             "master_id, " +
@@ -966,6 +981,11 @@ public class ReturnsupRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusOnFinishId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
 
             stringQuery =
                     " insert into settings_returnsup (" +
@@ -1287,9 +1307,10 @@ public class ReturnsupRepository {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select returnsup_id from returnsup_files where returnsup_id=" + returnsupId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа

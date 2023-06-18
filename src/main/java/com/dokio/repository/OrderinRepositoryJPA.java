@@ -557,6 +557,18 @@ public class OrderinRepositoryJPA {
                         request.getOrderout_id() +"," +
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_from_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("kassa", request.getKassa_from_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("withdrawal", request.getWithdrawal_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("paymentout", request.getPaymentout_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_from_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
@@ -662,6 +674,17 @@ public class OrderinRepositoryJPA {
                     " and master_id="+myMasterId;
             try
             {
+
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_from_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("kassa", request.getKassa_from_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("withdrawal", request.getWithdrawal_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("paymentout", request.getPaymentout_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_from_id(), myMasterId);
+
                 // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderin"))
                     throw new DocumentAlreadyCompletedException();
@@ -826,6 +849,9 @@ public class OrderinRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_orderin (" +
                             "master_id, " +
@@ -995,8 +1021,11 @@ public class OrderinRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select orderin_id from orderin_files where orderin_id=" + orderinId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);

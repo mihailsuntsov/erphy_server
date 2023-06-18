@@ -165,17 +165,17 @@ public class SecurityController {
         ResponseEntity<IsItMy_Sprav_JSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
         return responseEntity;
     }
-    //Возвращает набор проверок на документ (документ моего предприятия?/документ предприятий мастер-аккаунта?)
-    @PostMapping("/api/auth/getIsItMy_ProductGroups_JSON")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getIsItMy_ProductGroups_JSON(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/getIsItMy_ProductGroups_JSON: " + request.toString());
-
-        Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
-        IsItMy_Sprav_JSON response;
-        response=securityRepositoryJPA.getIsItMy_ProductGroups_JSON(id);
-        ResponseEntity<IsItMy_Sprav_JSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
-        return responseEntity;
-    }
+//    //Возвращает набор проверок на документ (документ моего предприятия?/документ предприятий мастер-аккаунта?)
+//    @PostMapping("/api/auth/getIsItMy_ProductGroups_JSON")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> getIsItMy_ProductGroups_JSON(@RequestBody SearchForm request) {
+//        logger.info("Processing post request for path api/auth/getIsItMy_ProductGroups_JSON: " + request.toString());
+//
+//        Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
+//        IsItMy_Sprav_JSON response;
+//        response=securityRepositoryJPA.getIsItMy_ProductGroups_JSON(id);
+//        ResponseEntity<IsItMy_Sprav_JSON> responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
+//        return responseEntity;
+//    }
 
 }

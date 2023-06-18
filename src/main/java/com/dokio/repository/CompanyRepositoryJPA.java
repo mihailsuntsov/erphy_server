@@ -613,6 +613,17 @@ public class CompanyRepositoryJPA {
                 && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
             try{
+
+                cu.idBelongsMyMaster("companies", request.getId(), myMasterId);
+                cu.idBelongsMyMaster("files", request.getDirector_signature_id(), myMasterId);
+                cu.idBelongsMyMaster("files", request.getGlavbuh_signature_id(), myMasterId);
+                cu.idBelongsMyMaster("files", request.getStamp_id(), myMasterId);
+                cu.idBelongsMyMaster("files", request.getCard_template_id(), myMasterId);
+                cu.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
+//                if(!securityRepositoryJPA.isItAllMyMastersDocuments("cagent_categories",request.getCa()))
+//                    throw new Exception();
+
                 // if Is store field is "on" and before it was "off", and plan with limits - checking limits for internet stores
 //                if(request.getIs_store() && (!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) && !isCompanyWithStore(request.getId()))
 //                    if(userRepositoryJPA.getMyConsumedResources().getStores() >= userRepositoryJPA.getMyMaxAllowedResources().getStores())
@@ -835,7 +846,9 @@ public class CompanyRepositoryJPA {
             }
             Long createdCompanyId;
             try
-            {   //Сначала создаём документ без банковских счетов
+            {
+                cu.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                //Сначала создаём документ без банковских счетов
                 createdCompanyId = insertCompanyBaseFields(request,myMasterId);
                 //Сохраняем банковские реквизиты
                 for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
@@ -1261,10 +1274,11 @@ public class CompanyRepositoryJPA {
     @Transactional
     public boolean addFilesToCompany(UniversalForm request){
         Long companyId = request.getId1();
+        Long masterId = userRepositoryJPA.getMyMasterId();
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if( (securityRepositoryJPA.userHasPermissions_OR(3L,"8") && securityRepositoryJPA.isItAllMyMastersDocuments("companies",companyId.toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(3L,"7") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("companies",companyId.toString())))
+            //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+            (securityRepositoryJPA.userHasPermissions_OR(3L,"7") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("companies",companyId.toString())))
         {
             try
             {
@@ -1276,6 +1290,8 @@ public class CompanyRepositoryJPA {
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
                         entityManager.close();
+
+                        cu.idBelongsMyMaster("files", fileId, masterId);
                         manyToMany_CompanyId_FileId(companyId,fileId);
                     }
                 }
@@ -1284,6 +1300,7 @@ public class CompanyRepositoryJPA {
             catch (Exception ex)
             {
                 ex.printStackTrace();
+                logger.error("Error of addFilesToCompany", ex);
                 return false;
             }
         } else return false;

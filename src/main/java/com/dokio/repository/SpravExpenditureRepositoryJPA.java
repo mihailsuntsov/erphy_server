@@ -355,6 +355,8 @@ public class SpravExpenditureRepositoryJPA {
                     " false, " +
                     " :type)";
             try{
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("type",request.getType());

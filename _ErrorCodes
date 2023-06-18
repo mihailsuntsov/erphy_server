@@ -84,3 +84,9 @@ null                            Ошибка выполнения
 
 -360                            С одним из удаляемых интернет-магазинов связан сайт, который не был удален. Сначала нужно удалить сайт
                                 One of the online stores to be deleted has a site linked to it that has not been deleted. First you need to delete the site
+
+-370                            Один и тот же сайт не может иметь одинаковые языковые версии
+                                The same site cannot have the same language versions (e.g. mystore.me/fr is already existed, & mystore.me/fr creation -> error) (LanguageVersionOfSiteIsNotUniqueException by _saas_stores_for_ordering_var_uq)
+
+-380                            Cайт с таким адресом уже есть
+                                The site with this URL is already exists (URLOfSiteIsNotUniqueException by _saas_stores_for_ordering_site_url_uq)

@@ -15,9 +15,18 @@ public class StoreForOrderingShortInfoJSON {
     private boolean is_deleted;             //site was physically deleted from server
     private String panel_domain;
     private String site_domain;
+    private String site_url;
     private String record_creator_name;         // name of employee who created this record
     private String orderer;                      // who ordered (who is clicked on the button "Order store")
     private String deleter;                      // who deleted (who is clicked on the button "Delete store")
+
+    public String getSite_url() {
+        return site_url;
+    }
+
+    public void setSite_url(String site_url) {
+        this.site_url = site_url;
+    }
 
     public boolean isReady_to_distribute() {
         return ready_to_distribute;

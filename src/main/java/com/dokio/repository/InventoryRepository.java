@@ -469,7 +469,7 @@ public class InventoryRepository {
                 ) return -1;
             }
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery =   " update inventory set " +
                     " changer_id = " + myId + ", "+
@@ -479,9 +479,12 @@ public class InventoryRepository {
                     " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId();
+                    " id= "+request.getId()+" and  p.master_id=" + myMasterId;
             try
             {
+
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "inventory"))
                     throw new DocumentAlreadyCompletedException();
@@ -536,13 +539,14 @@ public class InventoryRepository {
         {
             if(request.getInventoryProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery =
                     " update inventory set " +
                             " changer_id = " + myId + ", "+
                             " date_time_changed= now()," +
                             " is_completed = false" +
                             " where " +
-                            " id= " + request.getId();
+                            " id= " + request.getId()+" and  p.master_id=" + myMasterId;
 
             try {
                 // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
@@ -616,6 +620,11 @@ public class InventoryRepository {
                     request.getStatus_id() +//статус инвентаризации
                     ", :uid)";
             try{
+
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                 Query query = entityManager.createNativeQuery(stringQuery);
 
                 query.setParameter("description", (request.getDescription() == null ? "" : request.getDescription()));
@@ -661,6 +670,7 @@ public class InventoryRepository {
 
             for (InventoryProductTableForm row : request.getInventoryProductTable()) {
                 row.setInventory_id(newDocId);
+
                 insertProductRowResult = saveInventoryProductTable(row, request.getCompany_id(), myMasterId);  //сохранение таблицы товаров
                 if (insertProductRowResult==null) {
                     throw new CantInsertProductRowCauseErrorException();//кидаем исключение чтобы произошла отмена транзакции из-за ошибки записи строки в таблицу товаров inventory_product
@@ -702,6 +712,10 @@ public class InventoryRepository {
     private Boolean saveInventoryProductTable(InventoryProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
         try {
+                commonUtilites.idBelongsMyMaster("companies", company_id, master_id);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), master_id);
+                commonUtilites.idBelongsMyMaster("inventory", row.getInventory_id(), master_id);
+
                 stringQuery =
                         " insert into inventory_product (" +
                                 "master_id, " +
@@ -764,7 +778,9 @@ public class InventoryRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
-
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusOnFinishId(), myMasterId);
             stringQuery =
                     " insert into settings_inventory (" +
                             "master_id, " +
@@ -902,12 +918,13 @@ public class InventoryRepository {
                     if(checkChilds.size()==0) { //если связи с дочерними документами отсутствуют
                         String stringQuery;// (на MasterId не проверяю , т.к. выше уже проверено)
                         Long myId = userRepositoryJPA.getMyId();
+                        Long myMasterId = userRepositoryJPA.getMyMasterId();
                         stringQuery = "Update inventory p" +
                         " set is_deleted=true, " + //удален
                         " changer_id="+ myId + ", " + // кто изменил (удалил)
                         " date_time_changed = now() " +//дату и время изменения
                         " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
-                        " and coalesce(p.is_completed,false) !=true";
+                        " and coalesce(p.is_completed,false) !=true and master_id = "+myMasterId;
                         try {
                             entityManager.createNativeQuery(stringQuery).executeUpdate();
                             //удалим документы из группы связанных документов
@@ -948,12 +965,13 @@ public class InventoryRepository {
             {
                 // на MasterId не проверяю , т.к. выше уже проверено
                 Long myId = userRepositoryJPA.getMyId();
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
                 String stringQuery;
                 stringQuery = "Update inventory p" +
                         " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                         " date_time_changed = now(), " +//дату и время изменения
                         " is_deleted=false " + //не удалена
-                        " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "")+")";
+                        " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "")+") and master_id = "+myMasterId;
                 try{
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -1103,8 +1121,10 @@ public class InventoryRepository {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select inventory_id from inventory_files where inventory_id=" + inventoryId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -1221,7 +1241,7 @@ public class InventoryRepository {
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
                 (securityRepositoryJPA.userHasPermissions_OR(27L,"343") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("inventory",String.valueOf(request.getAny_id()))))
         {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery  =  " delete from inventory_files "+
                     " where inventory_id=" + request.getAny_id()+

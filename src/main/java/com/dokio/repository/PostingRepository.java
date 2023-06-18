@@ -507,6 +507,11 @@ public class PostingRepository {
 //                    " to_date(:posting_date,'DD.MM.YYYY')) ";// дата оприходования
             try {
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("inventory", request.getInventory_id(), myMasterId);
+
                 Date dateNow = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                 DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -572,7 +577,7 @@ public class PostingRepository {
             if(productsRepository.isThereServicesInProductsList(productIds))
                 throw new ThereIsServicesInProductsListException();
         }
-        if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId)) {
+        if (!deletePostingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", parentDocId, myMasterId)) {
             throw new CantInsertProductRowCauseErrorException();
         } else return true;
     }
@@ -766,6 +771,10 @@ public class PostingRepository {
 
 //                Timestamp timestamp = new Timestamp(((Date) commonUtilites.getFieldValueFromTableById("posting", "date_time_created", masterId, request.getId())).getTime());
 
+                commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+                commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), masterId);
+                commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), masterId);
+
                 productsRepository.setProductHistory(
                         masterId,
                         request.getCompany_id(),
@@ -849,6 +858,8 @@ public class PostingRepository {
                 " and master_id="+myMasterId;
         try
         {
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
             Date dateNow = new Date();
             DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
             DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -877,7 +888,7 @@ public class PostingRepository {
                 "product_price," +
                 "product_sumprice" +
                 ") values ("
-                + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"//Проверки, что никто не шалит
+                + "(select id from products where id="+row.getProduct_id() +" and master_id="+myMasterId+"),"
                 + "(select id from posting where id="+row.getPosting_id() +" and master_id="+myMasterId+"),"
                 + row.getProduct_count() + ","
                 + row.getProduct_price() +","
@@ -890,6 +901,7 @@ public class PostingRepository {
                 " product_price = " + row.getProduct_price() + "," +
                 " product_sumprice = " + row.getProduct_sumprice();
         try {
+
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -901,13 +913,14 @@ public class PostingRepository {
         }
     }
 
-    private Boolean deletePostingProductTableExcessRows(String productIds, Long posting_id) {
+    private Boolean deletePostingProductTableExcessRows(String productIds, Long posting_id, Long myMasterId) {
         String stringQuery;
 
         stringQuery =   " delete from posting_product " +
                 " where posting_id=" + posting_id +
                 " and product_id not in (" + productIds.replaceAll("[^0-9\\,]", "") + ")";
         try {
+            commonUtilites.idBelongsMyMaster("posting", posting_id, myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;
@@ -1097,8 +1110,10 @@ public class PostingRepository {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
 
                     stringQuery = "select posting_id from posting_files where posting_id=" + postingId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -1243,6 +1258,11 @@ public class PostingRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusOnFinishId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
 
             stringQuery =
                     " insert into settings_posting (" +

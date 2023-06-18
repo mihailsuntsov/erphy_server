@@ -77,7 +77,6 @@ public class SpravSysEdizmJPA {
             .collect(Collectors.toCollection(HashSet::new)));
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public List<SpravSysEdizmTableJSON> getSpravSysEdizmTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//типы цен (см. файл Permissions Id)
         {
@@ -138,7 +137,7 @@ public class SpravSysEdizmJPA {
             return query.getResultList();
         } else return null;
     }
-    @SuppressWarnings("Duplicates")
+
     @Transactional
     public int getSpravSysEdizmSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
         if(securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//типы цен (см. файл Permissions Id)
@@ -176,7 +175,6 @@ public class SpravSysEdizmJPA {
         } else return 0;
     }
 
-    @SuppressWarnings("Duplicates")
     @Transactional
     public SpravSysEdizmJSON getSpravSysEdizmValuesById (int id) {
         if (securityRepositoryJPA.userHasPermissions_OR(11L, "122,123"))//Типы цен: см. _Permissions Id.txt
@@ -228,7 +226,6 @@ public class SpravSysEdizmJPA {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")
     public boolean updateSpravSysEdizm(SpravSysEdizmForm request) {
         boolean perm_AllCompaniesUpdate=securityRepositoryJPA.userHasPermissions_OR(11L, "124"); // Типы цен:"Редактирование документов по всем предприятиям" (в пределах родительского аккаунта)
         boolean perm_MyCompanyUpdate=securityRepositoryJPA.userHasPermissions_OR(11L, "125"); // Типы цен:"Редактирование документов своего предприятия"
@@ -275,7 +272,6 @@ public class SpravSysEdizmJPA {
         } else return false;
     }
 
-    @SuppressWarnings("Duplicates")
     @Transactional
     public Long insertSpravSysEdizm(SpravSysEdizmForm request) {
         if(securityRepositoryJPA.userHasPermissions_OR(11L,"120"))//  Типы цен : "Создание"

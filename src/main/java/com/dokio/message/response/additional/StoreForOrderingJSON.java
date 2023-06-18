@@ -15,7 +15,8 @@ public class StoreForOrderingJSON {
     private String client_name;
     private String client_login;
     private String client_password;
-    private String site_domain;
+    private String site_domain;                 // e.g.  "mysite.com"
+    private String site_url;                    // e.g.  "fr.mysite.com" or "mysite.com/fr" or "mysite.com"
     private String site_root;
     private String ftp_user;
     private String ftp_password;
@@ -39,6 +40,50 @@ public class StoreForOrderingJSON {
     private Long deleter_id;                      // who deleted (who is clicked on the button "Delete store")
     private String orderer_ip;                    // ip address from which store ordered
     private String third_lvl_user_domain;         // 3rd level domain that user desired when ordering the site. For example, "flowers" for flowers.dokio.me
+    private Boolean isVar;
+    private Long    parentVarSiteId;
+    private String  position;
+    private String  varName;
+
+    public String getSite_url() {
+        return site_url;
+    }
+
+    public void setSite_url(String site_url) {
+        this.site_url = site_url;
+    }
+
+    public Boolean getVar() {
+        return isVar;
+    }
+
+    public void setVar(Boolean var) {
+        isVar = var;
+    }
+
+    public Long getParentVarSiteId() {
+        return parentVarSiteId;
+    }
+
+    public void setParentVarSiteId(Long parentVarSiteId) {
+        this.parentVarSiteId = parentVarSiteId;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public String getVarName() {
+        return varName;
+    }
+
+    public void setVarName(String varName) {
+        this.varName = varName;
+    }
 
     public String getThird_lvl_user_domain() {
         return third_lvl_user_domain;
@@ -330,6 +375,10 @@ public class StoreForOrderingJSON {
                 ", store_id=" + store_id +
                 ", orderer_id=" + orderer_id +
                 ", orderer_ip='" + orderer_ip + '\'' +
+                ", isVar=" + isVar +
+                ", parentVarSiteId=" + parentVarSiteId +
+                ", position='" + position + '\'' +
+                ", varName='" + varName + '\'' +
                 '}';
     }
 }

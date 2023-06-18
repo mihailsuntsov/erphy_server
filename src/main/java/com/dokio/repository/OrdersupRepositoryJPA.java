@@ -606,6 +606,13 @@ public class OrdersupRepositoryJPA {
                         ":name,"+ //наименование заказа поставщику
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+
+
                     Date dateNow = new Date();
                     DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
                     DateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -721,6 +728,7 @@ public class OrdersupRepositoryJPA {
                     " id= "+request.getId();
             try
             {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "ordersup"))
                     throw new DocumentAlreadyCompletedException();
@@ -817,6 +825,11 @@ public class OrdersupRepositoryJPA {
     private Boolean saveOrdersupProductTable(OrdersupProductTableForm row, Long company_id, Long master_id) {
         String stringQuery="";
         try {
+
+            commonUtilites.idBelongsMyMaster("sprav_taxes", row.getNds_id(), master_id);
+            commonUtilites.idBelongsMyMaster("ordersup", row.getOrdersup_id(), master_id);
+            commonUtilites.idBelongsMyMaster("products", row.getProduct_id(), master_id);
+
             // ПРОВЕРКИ НА КОЛИЧЕСТВО ТОВАРА НЕ ДЕЛАЕМ, Т.К. ДЛЯ ЗАКАЗА ПОСТАВЩИКУ ОНО НЕ ВАЖНО.
             // ЗАКАЗ ПОСТАВЩИКУ НЕ ВЛИЯЕТ НА КОЛИЧЕСТВО ТОВАРА НА СКЛАДЕ, И НЕ УЧАСТВУЕТ В РЕЗЕРВИРОВАНИИ ТОВАРА
             stringQuery =
@@ -883,6 +896,10 @@ public class OrdersupRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCagentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnComplete(), myMasterId);
             stringQuery =
                     " insert into settings_ordersup (" +
                             "master_id, " +
@@ -1089,10 +1106,12 @@ public class OrdersupRepositoryJPA {
         {
             try
             {
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 String stringQuery;
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
 
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select ordersup_id from ordersup_files where ordersup_id=" + ordersupId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа

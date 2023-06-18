@@ -147,20 +147,25 @@ public class TemplateRepositoryJPA {
         Set<Long> templateIds=new HashSet<>();
         try {
 
+            commonUtilites.idBelongsMyMaster("companies", companyId, myMasterId);
             // Сначала удалим темплейты, которые были удалены на фронете.
             // Собираем List из id оставшихся темплейтов, и удаляем все что не входит в этот List
             for (TemplatesForm template : templatesList) {
                 if(!Objects.isNull(template.getId()))
+                    commonUtilites.idBelongsMyMaster("template_docs", template.getId(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies",     template.getCompany_id(), myMasterId);
                     templateIds.add(template.getId());
             }
             deleteTemplatesExcessRows(templateIds.size()>0?(commonUtilites.SetOfLongToString(templateIds,",","","")):"0", myMasterId, companyId, documentId, myId);
 
             // Затем в зависимости от того, есть или нет такой темплейт в БД, делаем соответственно update или insert
             for (TemplatesForm template : templatesList) {
-                if(Objects.isNull(template.getId()))
+                if(Objects.isNull(template.getId())) {
+                    commonUtilites.idBelongsMyMaster("files", template.getFile_id(), myMasterId);
                     insertTemplate(template, myMasterId, myId);
-                else
+                }else {
                     updateTemplate(template, myMasterId, myId);
+                }
             }
 
         } catch (Exception e){

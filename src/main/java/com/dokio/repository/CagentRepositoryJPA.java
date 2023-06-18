@@ -608,9 +608,18 @@ public class CagentRepositoryJPA {
                 ||(!updatingDocumentOfMyCompany && userHasPermissions_AllUpdate))//или если сохраняю документ не своего предприятия, и есть на это права)
                 && isItMyMastersDoc) //и сохраняемый документ под юрисдикцией главного аккаунта
         {
-            if(updateCagentBaseFields(request)){//Сначала сохраняем документ без контактных лиц и банковских счетов
+
                 try
-                {   //если сохранился...
+                {
+                    commonUtilites.idBelongsMyMaster("cagents", request.getId(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    if(!securityRepositoryJPA.isItAllMyMastersDocuments("cagent_categories",request.getSelectedCagentCategories()))
+                        throw new Exception();
+
+                    updateCagentBaseFields(request);//Сначала сохраняем документ без контактных лиц и банковских счетов
+
+                    //если сохранился...
                     //Сохраняем контактные лица
                     //удаление лишних контактных лиц(которые удалили в фронтэнде)
                     String ids = "";
@@ -622,16 +631,16 @@ public class CagentRepositoryJPA {
                         }
                     }
                     ids=(!ids.equals("")?ids:"0");
-                    if(deleteCagentContactsExcessRows(ids, request.getId())){
-                        //если удаление прошло успешно...
-                        for (CagentsContactsForm row : request.getCagentsContactsTable()) {
-                            if(row.getId()!=null){//контакт содержит id, значит он есть в БД, и нужно его апдейтить
-                                updateCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
-                            }else{//контакт не содержит id, значит его нет в БД, и нужно его инсертить
-                                insertCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
-                            }
+                    deleteCagentContactsExcessRows(ids, request.getId());
+                    //если удаление прошло успешно...
+                    for (CagentsContactsForm row : request.getCagentsContactsTable()) {
+                        if(row.getId()!=null){//контакт содержит id, значит он есть в БД, и нужно его апдейтить
+                            updateCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
+                        }else{//контакт не содержит id, значит его нет в БД, и нужно его инсертить
+                            insertCagentContacts(row, myMasterId, request.getCompany_id(),request.getId());
                         }
                     }
+
 
                     //удаление лишних банковских счетов (которые удалили в фронтэнде)
                     ids = "";
@@ -642,16 +651,16 @@ public class CagentRepositoryJPA {
                         }
                     }
                     ids=(!ids.equals("")?ids:"0");
-                    if(deleteCagentPaymentAccountsExcessRows(ids, request.getId())){
-                        //если удаление прошло успешно...
-                        for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
-                            if(row.getId()!=null){//счет содержит id, значит он есть в БД, и нужно его апдейтить
-                                updateCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
-                            }else{//счет не содержит id, значит его нет в БД, и нужно его инсертить
-                                insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
-                            }
+                    deleteCagentPaymentAccountsExcessRows(ids, request.getId());
+                    //если удаление прошло успешно...
+                    for (CagentsPaymentAccountsForm row : request.getCagentsPaymentAccountsTable()) {
+                        if(row.getId()!=null){//счет содержит id, значит он есть в БД, и нужно его апдейтить
+                            updateCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
+                        }else{//счет не содержит id, значит его нет в БД, и нужно его инсертить
+                            insertCagentPaymentAccounts(row, myMasterId, request.getCompany_id(),request.getId());
                         }
                     }
+
                     deleteAllCagentCategories(request.getId());
                     Set<Long> categories = request.getSelectedCagentCategories();
                     if (categories!=null && categories.size()>0) { //если есть выбранные чекбоксы категорий
@@ -664,13 +673,13 @@ public class CagentRepositoryJPA {
                     e.printStackTrace();
                     return null;
                 }
-            } else return null;
+
         } else return -1;
     }
 
     @SuppressWarnings("Duplicates")
     //удаление лишних расчетных счетов (которые удалили в фронтэнде)
-    private Boolean deleteCagentPaymentAccountsExcessRows(String accountsIds, Long cagent_id) {
+    private void deleteCagentPaymentAccountsExcessRows(String accountsIds, Long cagent_id) throws Exception {
         String stringQuery;
         try {
             stringQuery =   " delete from cagents_payment_accounts " +
@@ -678,18 +687,17 @@ public class CagentRepositoryJPA {
                     " and id not in (" + accountsIds + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of deleteCagentPaymentAccountsExcessRows", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
     @SuppressWarnings("Duplicates")
     //удаление лишних контактных лиц (которые удалили в фронтэнде)
-    private Boolean deleteCagentContactsExcessRows(String contactsIds, Long cagent_id) {
+    private void deleteCagentContactsExcessRows(String contactsIds, Long cagent_id) throws Exception {
         String stringQuery;
         try {
             stringQuery =   " delete from cagents_contacts " +
@@ -697,17 +705,16 @@ public class CagentRepositoryJPA {
                     " and id not in (" + contactsIds + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of deleteCagentContactsExcessRows", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean insertCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) {
+    private void insertCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) throws Exception {
 
         String stringQuery;
         try {
@@ -739,21 +746,17 @@ public class CagentRepositoryJPA {
             query.setParameter("email",(row.getEmail()!=null?row.getEmail():""));
             query.setParameter("additional",(row.getAdditional()!=null?row.getAdditional():""));
             query.setParameter("output_order",row.getOutput_order());
-
-
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of insertCagentContacts", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
-
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) {
+    private void updateCagentContacts(CagentsContactsForm row, Long master_id, Long company_id, Long cagent_id) throws Exception {
 
         String stringQuery;
         try {
@@ -778,17 +781,16 @@ public class CagentRepositoryJPA {
             query.setParameter("additional",(row.getAdditional()!=null?row.getAdditional():""));
             query.setParameter("output_order",row.getOutput_order());
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of updateCagentContacts", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean insertCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) {
+    private void insertCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) throws Exception {
 
         String stringQuery;
         try {
@@ -831,19 +833,17 @@ public class CagentRepositoryJPA {
 
 
             query.executeUpdate();
-
-            return true;
         }
         catch (Exception e) {
             logger.error("Error of insertCagentPaymentAccounts", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
 
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) {
+    private void updateCagentPaymentAccounts(CagentsPaymentAccountsForm row, Long master_id, Long company_id, Long cagent_id) throws Exception {
 
         String stringQuery;
         try {
@@ -874,17 +874,17 @@ public class CagentRepositoryJPA {
             query.setParameter("swift", (row.getSwift()!=null?row.getSwift():""));
             query.setParameter("iban", (row.getIban()!=null?row.getIban():""));
             query.executeUpdate();
-            return true;
+
         }
         catch (Exception e) {
             logger.error("Error of updateCagentPaymentAccounts", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 
     @SuppressWarnings("Duplicates")
-    private Boolean updateCagentBaseFields(CagentsForm request){//Апдейт документа без контактных лиц и банковских счетов
+    private void updateCagentBaseFields(CagentsForm request) throws Exception {//Апдейт документа без контактных лиц и банковских счетов
         EntityManager emgr = emf.createEntityManager();
         Long myId = userRepositoryJPA.getMyId();
 //        Long myMasterId = userRepositoryJPA.getMyMasterId();
@@ -985,13 +985,11 @@ public class CagentRepositoryJPA {
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
             query.executeUpdate();
-            return true;
         }catch (Exception e) {
             logger.error("Error of updateCagentBaseFields", e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
-
     }
 
     @SuppressWarnings("Duplicates")
@@ -1020,6 +1018,10 @@ public class CagentRepositoryJPA {
             {
                 try
                 {
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPrice_type_id(), myMasterId);
+
                     createdCagentId = insertCagentBaseFields(request,myMasterId);
                     if(createdCagentId!=null){//Сначала создаём документ без контактных лиц и банковских счетов
                         try {//если создался...
@@ -1228,8 +1230,8 @@ public class CagentRepositoryJPA {
     public Integer deleteCagents(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
         if((securityRepositoryJPA.userHasPermissions_OR(12L,"131") && securityRepositoryJPA.isItAllMyMastersDocuments("cagents",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
+        //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+        (securityRepositoryJPA.userHasPermissions_OR(12L,"132") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("cagents",delNumbers)))
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
@@ -1656,7 +1658,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     }
 
     //права не нужны т.к. не вызывается по API, только из контроллера
-    public List<Integer> getCagentsCategoriesIdsByCagentId(Long id) {
+    private List<Integer> getCagentsCategoriesIdsByCagentId(Long id) {
         String stringQuery="select p.category_id from cagent_cagentcategories p where p.cagent_id= "+id;
         Query query = entityManager.createNativeQuery(stringQuery);
         List<Integer> depIds = query.getResultList();
@@ -1807,6 +1809,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                         "(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')))";
                 try
                 {
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("name",request.getName());
                     if(query.executeUpdate()==1){

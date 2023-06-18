@@ -669,6 +669,11 @@ public class CustomersOrdersRepositoryJPA {
                         }
                     }
 
+                    commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+
                     String timestamp = new Timestamp(System.currentTimeMillis()).toString();
 
                     stringQuery =
@@ -838,6 +843,10 @@ public class CustomersOrdersRepositoryJPA {
                 if(request.getIs_completed()!=null && request.getIs_completed() && request.getCustomersOrdersProductTable().size()==0) throw new CantInsertProductRowCauseErrorException();
 
                 Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+
+                commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
 
                 // сохранение всего кроме таблицы товаров
                 updateCustomersOrdersWithoutTable(request);
@@ -1114,6 +1123,12 @@ public class CustomersOrdersRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("cagents", row.getCustomerId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnAutocreateOnCheque(), myMasterId);
+
             stringQuery =
             " insert into settings_customers_orders (" +
                     "master_id, " +
@@ -1193,6 +1208,10 @@ public class CustomersOrdersRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
+
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+
             stringQuery =
                     " insert into settings_customers_orders (" +
                             "master_id, " +
@@ -1356,6 +1375,9 @@ public class CustomersOrdersRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             try {
+
+                commonUtilites.idBelongsMyMaster("products", id, myMasterId);
+
                 stringQuery = " delete from customers_orders_product " +
                 " where id="+id+" and master_id="+myMasterId;
                 Query query = entityManager.createNativeQuery(stringQuery);
@@ -1531,6 +1553,7 @@ public class CustomersOrdersRepositoryJPA {
         {
             // сначала проверим, не имеет ли какой-либо из документов связанных с ним дочерних документов
             List<LinkedDocsJSON> checkChilds = linkedDocsUtilites.checkDocHasLinkedChilds(delNumbers, "customers_orders");
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
 
             if(!Objects.isNull(checkChilds)) { //если нет ошибки
 
@@ -1542,7 +1565,7 @@ public class CustomersOrdersRepositoryJPA {
                             " changer_id="+ myId + ", " + // кто изменил (удалил)
                             " date_time_changed = now() " +//дату и время изменения
                             " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")" +
-                            " and coalesce(p.is_completed,false) !=true";
+                            " and coalesce(p.is_completed,false) !=true and master_id="+ myMasterId;
                     try {
                         entityManager.createNativeQuery(stringQuery).executeUpdate();
                         //удалим документы из группы связанных документов
@@ -1584,12 +1607,13 @@ public class CustomersOrdersRepositoryJPA {
         {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery = "Update customers_orders p" +
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+")";
+                    " where p.id in ("+delNumbers.replaceAll("[^0-9\\,]", "")+") and master_id="+ myMasterId;
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -1693,9 +1717,10 @@ public class CustomersOrdersRepositoryJPA {
             try
             {
                 String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 Set<Long> filesIds = request.getSetOfLongs1();
                 for (Long fileId : filesIds) {
-
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
                     stringQuery = "select customers_orders_id from customers_orders_files where customers_orders_id=" + customers_ordersId + " and file_id=" + fileId;
                     Query query = entityManager.createNativeQuery(stringQuery);
                     if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа

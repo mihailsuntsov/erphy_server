@@ -20,11 +20,13 @@ package com.dokio.repository;
 
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.additional.LegalMasterUserInfoForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.additional.LegalMasterUserInfoJSON;
 import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Departments;
@@ -397,6 +399,7 @@ public class UserRepositoryJPA {
         {
 //            Long myId = userDetailService.getUserId();
             UserSettingsJSON userSettings = getMySettings();
+            Long myMasterId =   getMyMasterId();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
@@ -424,7 +427,7 @@ public class UserRepositoryJPA {
                     "           to_char(p.date_birthday,'DD.MM.YYYY') as date_birthday, " +
                     "           p.additional as additional " +
                     "           from users p" +
-                    " where p.id= " + id;
+                    "           where master_id="+myMasterId+" and p.id= " + id;
             stringQuery = stringQuery + " and p.master_id="+getMyMasterId();//принадлежит к предприятиям моего родителя
             if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
             {
@@ -593,7 +596,7 @@ public class UserRepositoryJPA {
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
                 (securityRepositoryJPA.userHasPermissions_OR(5L, "23") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("users", delNumbers)))
         {
-            Long myMasterId = getUserMasterIdByUsername(userDetailService.getUserName());
+            Long myMasterId = getMyMasterId();
             Long myId = getMyId();
             String stringQuery = "update users p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
@@ -634,7 +637,7 @@ public class UserRepositoryJPA {
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
+                    " where p.master_id=" + masterId +" and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -685,7 +688,6 @@ public class UserRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     public UserSettingsJSON getMySettings() {
         String stringQuery;
         Long myId = userDetailService.getUserId();
@@ -967,8 +969,104 @@ public class UserRepositoryJPA {
         return (query.getResultList().size() > 0);
     }
 
+    @Transactional
+    public Integer updateLegalMasterUserInfo(LegalMasterUserInfoForm userInfo){
+        Long myId = getMyId();
+        Long masterId = getMyMasterId();
+        boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
+        boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "27"); // Пользователи:"Редактирование всех"
+        boolean myIdIsMasterId=(myId.equals(masterId));
+        if(((myIdIsMasterId && userHasPermissions_OwnUpdate)//(если пользователь сохраняет свой аккаунт и у него есть на это права
+            ||(!myIdIsMasterId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
+            ) //и сохраняемый аккаунт под юрисдикцией главного аккаунта
+        {
+            String stringQuery =
+            " update users set " +
+            " jr_legal_form = :jr_legal_form, " +
+            " jr_jur_name = :jr_jur_name, " +
+            " jr_name = :jr_name, " +
+            " jr_surname = :jr_surname, " +
+            " jr_country_id = " + userInfo.getJr_country_id() + ", " +
+            " jr_vat = :jr_vat, " +
+            " jr_changer_id = " + myId + ", " +
+            " jr_date_time_changed = now()" +
+            " where id = " + masterId;
+           try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("jr_legal_form", userInfo.getJr_legal_form());
+                query.setParameter("jr_jur_name",userInfo.getJr_jur_name());
+                query.setParameter("jr_name",userInfo.getJr_name());
+                query.setParameter("jr_vat",userInfo.getJr_vat());
+                query.setParameter("jr_surname",userInfo.getJr_surname());
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method updateLegalMasterUserInfo", e);
+                return null;
+            }
+        } else return -1;
+    }
 
+    public LegalMasterUserInfoJSON getLegalMasterUserInfo(){
+        Long masterId = getMyMasterId();
+        if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25")){
 
+            UserSettingsJSON userSettings = getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String suffix=getMySuffix();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
 
+            String stringQuery = "select" +
+                    "           coalesce(p.jr_legal_form,'') as  jr_legal_form, " +
+                    "           coalesce(p.jr_jur_name,'') as    jr_jur_name, " +
+                    "           coalesce(p.jr_name,'') as        jr_name, " +
+                    "           coalesce(p.jr_surname,'') as     jr_surname, " +
+                    "           p.jr_country_id as               jr_country_id, " +
+                    "           coalesce(p.jr_vat,'') as         jr_vat, " +
+                    "           p.jr_changer_id as               jr_changer_id, " +
+                    "           to_char(p.jr_date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as jr_date_time_changed, " +
+                    "           (select name_"+suffix+" from sprav_sys_countries where id=p.jr_country_id) as jr_country, " +
+                    "           (select name from users where id=p.jr_changer_id) as jr_changer " +
+                    "           from users p" +
+                    "           where p.id= " + masterId;
+
+            if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
+            {
+                //остается только на своё предприятие 24
+                stringQuery = stringQuery + " and p.company_id=" + getMyCompanyId();
+            }
+
+            try {
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                LegalMasterUserInfoJSON doc = new LegalMasterUserInfoJSON();
+
+                if(queryList.size()>0) {
+
+                    doc.setJr_legal_form((String) queryList.get(0)[0]);
+                    doc.setJr_jur_name((String) queryList.get(0)[1]);
+                    doc.setJr_name((String) queryList.get(0)[2]);
+                    doc.setJr_surname((String) queryList.get(0)[3]);
+                    doc.setJr_country_id((Integer) queryList.get(0)[4]);
+                    doc.setJr_vat((String) queryList.get(0)[5]);
+                    doc.setJr_changer_id(queryList.get(0)[6] != null ? Long.parseLong(queryList.get(0)[6].toString()) : null);
+                    doc.setJr_date_time_changed((String) queryList.get(0)[7]);
+                    doc.setJr_country((String) queryList.get(0)[8]);
+                    doc.setJr_changer((String) queryList.get(0)[9]);
+
+                }
+                return doc;
+            } catch(NoResultException nre){
+                return null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method updateLegalMasterUserInfo", e);
+                return null;
+            }
+        } else return null;
+    }
 
 }

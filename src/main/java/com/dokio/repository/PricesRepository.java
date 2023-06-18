@@ -21,10 +21,14 @@ import com.dokio.message.request.*;
 import com.dokio.message.response.*;
 //import com.dokio.message.response.additional.ProductPricesJSON;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -50,6 +54,8 @@ public class PricesRepository {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
+    @Autowired
+    private CommonUtilites commonUtilites;
 //    @Autowired
 //    private UserDetailsServiceImpl userService;
 
@@ -285,45 +291,61 @@ public class PricesRepository {
 //    }
 
     @SuppressWarnings("Duplicates")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class})
     public boolean savePrices(PricesForm request) {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long userId = userRepository.getUserId();
         //Если есть право на "Установка цен по всем предприятиям", ИЛИ
-        if(canSetPricesOfAllTheseDepartments(request, myMasterId))
-        {
-            if (clearProductPrices(request, myMasterId))
+        try{
+
+            commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
+
+            if(canSetPricesOfAllTheseDepartments(request, myMasterId))
             {
-                if (request.getPriceTypeId()==0) //если 0 значит были выбраны все типы цен, и нужно установить цены по всем типам цен во всех товарах.
+                if (clearProductPrices(request, myMasterId))
                 {
-                    for (Long priceType : request.getPriceTypesIds()) {
+                    if (request.getPriceTypeId()==0) //если 0 значит были выбраны все типы цен, и нужно установить цены по всем типам цен во всех товарах.
+                    {
+                        for (Long priceType : request.getPriceTypesIds()) {
+                            commonUtilites.idBelongsMyMaster("sprav_type_prices", priceType, myMasterId);
+                            for (Long product : request.getProductsIds()) {
+                                commonUtilites.idBelongsMyMaster("products", product, myMasterId);
+                                if (!insertPrice(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
+                                    break;
+                                }
+                                if (!insertPriceHistory(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
+                                    break;
+                                }
+                            }
+                        }
+                    }else{// если не 0 значит был выбран какой-то определенный тип цены, и нужно установить цены только по этому типу
+                        commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPriceTypeId(), myMasterId);
                         for (Long product : request.getProductsIds()) {
-                            if (!insertPrice(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
+                            commonUtilites.idBelongsMyMaster("products", product, myMasterId);
+                            if (!insertPrice(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
                                 break;
                             }
-                            if (!insertPriceHistory(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
+                            if (!insertPriceHistory(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
                                 break;
                             }
                         }
                     }
-                }else{// если не 0 значит был выбран какой-то определенный тип цены, и нужно установить цены только по этому типу
-                    for (Long product : request.getProductsIds()) {
-                        if (!insertPrice(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
-                            break;
-                        }
-                        if (!insertPriceHistory(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
-                            break;
-                        }
-                    }
-                }
-                return true;
+                    return true;
+                } else return false;
             } else return false;
-        } else return false;
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            e.printStackTrace();
+            log.error("ERROR: ", e);
+            return false;
+        }
+
     }
 
     @SuppressWarnings("Duplicates")
     private boolean clearProductPrices(PricesForm request,Long myMasterId) {
         String stringQuery;
+
         stringQuery=
                 "       delete from product_prices " +
                         "       where" +
@@ -334,6 +356,7 @@ public class PricesRepository {
                         "       and product_id in (select id from products where id in ("+request.getProductsIdsList().replaceAll("[^0-9\\,]", "")+") and master_id=" +myMasterId+") "+//Проверки, что никто не шалит, и идёт запись того, чего надо туда, куда надо
                         "       and master_id="+myMasterId;
         try{
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", (request.getPriceTypeId()==0)?null:request.getPriceTypeId(), myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
@@ -360,6 +383,7 @@ public class PricesRepository {
                         priceValue.toString() + "," +
                         myMasterId + ", "+ companyId + ")";
         try{
+
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
             return true;

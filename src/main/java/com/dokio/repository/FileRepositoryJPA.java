@@ -457,6 +457,7 @@ public class FileRepositoryJPA {
             try
             {
                 Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+                commonUtilites.idBelongsMyMaster("companies", CompanyId, myMasterId);
                 List<String> filesToBeDeleted=getPathsInTrash(CompanyId);//массив путей к файлам на диске
                 String stringQuery;
                 stringQuery = "delete from files" +
@@ -490,14 +491,14 @@ public class FileRepositoryJPA {
         if(myPermissions.contains(150) || (myPermissions.contains(151)))
 //        if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
         {
-//            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery = "select " +
                     "           p.original_name as original_name, " +
                     "           p.path as path " +
                     "           from files p " +
-//                    "           where  p.master_id = :myMasterId and p.name = :filename";
-            "           where p.name = :filename";
+                    "           where  p.master_id = :myMasterId and p.name = :filename";
+//            "           where p.name = :filename";
             if (!myPermissions.contains(150)) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
                 //остается только на своё предприятие (151)
@@ -505,18 +506,18 @@ public class FileRepositoryJPA {
             }
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("filename",filename);
-//            query.setParameter("myMasterId",myMasterId);
+            query.setParameter("myMasterId",myMasterId);
             List<Object[]> queryList = query.getResultList();
-            if(queryList.size()>0) {//есть права на просмотр и скачивание файла
+//            if(queryList.size()>0) {//есть права на просмотр и скачивание файла
                 FileInfoJSON doc = new FileInfoJSON();
                 doc.setOriginal_name((String) queryList.get(0)[0]);
                 doc.setPath((String) queryList.get(0)[1]);
                 return doc;
-            }
-            else { // нет прав на файл, но может он открыт на общий доступ? Данный случай может наступить,
+//            }
+//            else { // нет прав на файл, но может он открыт на общий доступ? Данный случай может наступить,
                    // если файл не входит в предприятие пользователя, а прав на все предприятия нет, либо файл вне зоны ответственности мастер-аккаунта
-                return getFilePublic(filename);
-            }
+//                return getFilePublic(filename);
+//            }
         } else return null;
     }
 
@@ -724,6 +725,7 @@ public class FileRepositoryJPA {
     }
 
     private Long insertFileCategoryCore(FileCategoriesForm request, Long masterId, Long creatorId, Integer outputOrder){
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         String stringQuery = "insert into file_categories (" +
                 "name," +
@@ -742,6 +744,8 @@ public class FileRepositoryJPA {
                 "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))," +
                 outputOrder+")";
         try {
+            commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("file_categories", request.getParentCategoryId()>0L?request.getParentCategoryId():null, myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name",request.getName());
             if (query.executeUpdate() == 1) {
@@ -867,6 +871,8 @@ public class FileRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean setCategoriesToFiles(Set<Long> filesIds, Set<Long> categoriesIds, Boolean save) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
         if(securityRepositoryJPA.userHasPermissions_OR(13L,"152,153"))//  "Редактирование файлов"
         {
             try {
@@ -877,7 +883,7 @@ public class FileRepositoryJPA {
                         //удаляем все категории у всех запрашиваемых файлов
                         if (deleteAllFilesCategories(files)) {
                             //назначаем файлам категории
-                            if(setCategoriesToFiles(filesIds,categoriesIds))
+                            if(setCategoriesToFiles(filesIds,categoriesIds,myMasterId))
                                 return true;
                             else return null; // ошибка на прописывании категорий у файла
                         } else return null; // ошибка на стадии удаления категорий файлов в deleteAllFilesCategories
@@ -894,7 +900,7 @@ public class FileRepositoryJPA {
                                 Set<Long> prod = new HashSet<>();
                                 prod.add(p);
                                 //назначаем текущему файлу категории
-                                if(!setCategoriesToFiles(prod,fileCategoriesIds))
+                                if(!setCategoriesToFiles(prod,fileCategoriesIds,myMasterId))
                                     return null; // ошибка на прописывании категорий у файла
                             } else return null; // ошибка на стадии удаления категорий текущего файла в deleteAllFilesCategories
                         }
@@ -909,13 +915,14 @@ public class FileRepositoryJPA {
         } else return null; // не прошли по безопасности
     }
 
-    private Boolean setCategoriesToFiles(Set<Long> filesIds, Set<Long> categoriesIds) throws Exception {
+    private Boolean setCategoriesToFiles(Set<Long> filesIds, Set<Long> categoriesIds, Long myMasterId) throws Exception {
         if(categoriesIds.size()>0) {//если категории есть
             //прописываем их у всех запрашиваемых файлов
             StringBuilder stringQuery = new StringBuilder("insert into file_filecategories (file_id, category_id) values ");
             int i = 0;
-            for (Long p : filesIds) {
+            for (Long p : filesIds) { // files are checked to belonging to MasterId
                 for (Long c : categoriesIds) {
+                    commonUtilites.idBelongsMyMaster("file_categories", c, myMasterId);
                     stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
                     i++;
                 }

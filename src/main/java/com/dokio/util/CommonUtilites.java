@@ -180,7 +180,7 @@ public class CommonUtilites {
     {
         String stringQuery;
         stringQuery = "select count(*) from _saas_stores_for_ordering where third_lvl_user_domain = :name "+// there is no checking on deleted, because third_lvl_user_domain_uq
-        " or :name in ('mail','dokio')" +
+        " or :name in ('mail','dokio','panel')" +
         " or :name like('ns%')" +
         " or :name like('site%')";
         try
@@ -822,7 +822,7 @@ public class CommonUtilites {
 //        }
 //    }
 
-    public Long getFreeStoreToRentId() throws Exception {
+    public Long getFreeSiteToRentId() throws Exception {
         String stringQuery;
         stringQuery = "select id from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created limit 1";
 

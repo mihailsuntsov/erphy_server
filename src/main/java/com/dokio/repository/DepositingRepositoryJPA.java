@@ -439,6 +439,16 @@ public class DepositingRepositoryJPA {
                         "true ," +  // проведено (внесение всегда проведено)
                         ":uid)";// уникальный идентификатор документа
                 try{
+
+
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("kassa", request.getKassa_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
+
+
+
                     Query query = entityManager.createNativeQuery(stringQuery);
                     query.setParameter("description",request.getDescription());
                     query.setParameter("uid",request.getUid());
