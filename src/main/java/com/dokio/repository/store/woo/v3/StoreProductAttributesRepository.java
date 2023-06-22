@@ -55,14 +55,14 @@ public class StoreProductAttributesRepository {
 
     public ProductAttributesJSON syncProductAttributesToStore(String key) {
         String stringQuery="";
+        String stringQuery2="";
         ProductAttributesJSON result = new ProductAttributesJSON();
         try{
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
 
-            stringQuery =
-                " select " +
+            stringQuery = " select " +
                 " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
                 " coalesce(p.type, 'select') as type," +
                 " coalesce(NULLIF(translator.slug, ''), coalesce(p.slug,'')) as slug, " +
@@ -76,10 +76,21 @@ public class StoreProductAttributesRepository {
                 " LEFT OUTER JOIN store_translate_attributes translator ON p.id = translator.attribute_id and translator.lang_code = '" + langCode + "'" +
                 " where p.company_id = " + companyId +
                 " and str.id = " + storeId +
-                " and p.is_deleted = false " +
-                " and str.is_deleted=false";
+                " and (" +
+                    " (coalesce(spc.need_to_syncwoo,true) = true) or " + // if the attribute need to be synchronized
+                    " (spc.date_time_syncwoo is null) or " + // if the attribute is created recently, or changed, but still not synchronized
+                    " (p.date_time_changed is not null and spc.date_time_syncwoo is not null and p.date_time_changed > spc.date_time_syncwoo)" +
+                " ) ";
+//                " and p.is_deleted = false " + // now attribute is deleting permanently
+//                " and str.is_deleted=false"; // now if store is deleted - sync procedure will rejected
 
-
+            stringQuery2 =  " select " +
+                " spc.woo_id as woo_id " +
+                " from product_attributes p" +
+                " INNER JOIN stores_attributes spc ON spc.attribute_id = p.id  " +
+                " INNER JOIN stores str ON spc.store_id = str.id " +
+                " where p.company_id = " + companyId +
+                " and str.id = " + storeId;
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             List<ProductAttributeJSON> returnList = new ArrayList<>();
@@ -94,8 +105,13 @@ public class StoreProductAttributesRepository {
                 doc.setWoo_id((Integer)                             obj[6]);
                 returnList.add(doc);
             }
+
+            query = entityManager.createNativeQuery(stringQuery2);
+            List<Integer> allStoreWooIds = (List<Integer>)query.getResultList();
+
             result.setQueryResultCode(1);
             result.setProductAttributes(returnList);
+            result.setAllProductAttributesWooIds(allStoreWooIds);
             return result;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductAttributesRepository/syncProductAttributesToStore. Key:"+key, e);
@@ -120,12 +136,12 @@ public class StoreProductAttributesRepository {
             // if attribute was deleted in the store side, its products will lost their belonging to this attribute.
             // And if this attribute recreated, these products will not be assigned to this attribute.
             // So, need to mark this products as need to be resynchronized
-            Set<Long> setOfAttributesdIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
+//            Set<Long> setOfAttributesdIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductAttributeId(row, companyId, storeId, masterId);
-                setOfAttributesdIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
+//                setOfAttributesdIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
             }
-            productsRepository.markProductsOfAttributesAsNeedToSyncWoo(setOfAttributesdIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
+//            productsRepository.markProductsOfAttributesAsNeedToSyncWoo(setOfAttributesdIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductAttributesRepository/syncProductAttributesIds. Key:"+request.getCrmSecretKey(), e);
@@ -147,16 +163,22 @@ public class StoreProductAttributesRepository {
                     " company_id, " +
                     " store_id, " +
                     " attribute_id, " +
-                    " woo_id" +
+                    " woo_id," +
+                    " need_to_syncwoo, " +
+                    " date_time_syncwoo " +
                     " ) values (" +
                     masterId + ", " +
                     companyId + ", " +
                     storeId + ", " +
                     "(select id from product_attributes where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
-                    ids.getId() + ") " +
+                    ids.getId() + "," +
+                    " false, " +
+                    " now()) " +
                     " ON CONFLICT ON CONSTRAINT stores_attributes_uq " +// "upsert"
                     " DO update set " +
-                    " woo_id = "+ids.getId();
+                    " woo_id = " + ids.getId() + ", " +
+                    " need_to_syncwoo = false, " +
+                    " date_time_syncwoo = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

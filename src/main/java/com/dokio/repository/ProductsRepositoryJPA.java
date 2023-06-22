@@ -30,7 +30,6 @@ import com.dokio.message.response.Sprav.StoresListJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.model.Sprav.SpravSysEdizm;
-import com.dokio.model.Sprav.SpravSysMarkableGroup;
 import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.repository.Exceptions.*;
@@ -1546,7 +1545,7 @@ public class ProductsRepositoryJPA {
         if(departmentsIds.size()==0) return new BigDecimal("0");
         // всего единиц товара в отделении (складе):
         String stringQuery = " select " +
-                "  (select coalesce(quantity,0) from product_quantity where " +
+                "  (select sum(coalesce(quantity,0)) from product_quantity where " +
                 "  department_id in "+ commonUtilites.ListOfLongToString(departmentsIds,",","(",")") +" and product_id = "+product_id+") as total, " +
                 "  (select sum(coalesce(reserved_current,0)) " +
                 "   from customers_orders_product " +
@@ -2101,8 +2100,11 @@ public class ProductsRepositoryJPA {
                                 saveCategoryStore(newCategoryId, storeId, myMasterId, request.getCompanyId());
                             }
                             // Now need to mark all products of this category as need to be synchronized
-                            markProductsOfCategoryAsNeedToSyncWoo(newCategoryId, myMasterId, request.getStoresIds());
+                            markProductsOfCategoriesAndStoresAsNeedToSyncWoo(new HashSet<>(Arrays.asList(newCategoryId)) , myMasterId, request.getStoresIds());
+
+                            markAllCategoriesAsNeedToSyncWoo(request.getCompanyId(),myMasterId);
                         }
+
                         return newCategoryId;
                     } else return (0L);
                 } catch (TranslatedCategoryNameIsNotUniqueOnSameLevel e){
@@ -2156,6 +2158,8 @@ public class ProductsRepositoryJPA {
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long changer = userRepository.getUserIdByUsername(userRepository.getUserName());
+            boolean markAllCategoriesAsNeedToSyncWoo = false;
+
             String stringQuery;
             stringQuery = "update product_categories set " +
                     " name = :name, " +
@@ -2176,11 +2180,13 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             try {
+
                 commonUtilites.idBelongsMyMaster("product_categories", request.getId(),myMasterId);
                 commonUtilites.idBelongsMyMaster("product_categories",(request.getParentCategoryId()>0?request.getParentCategoryId():null),myMasterId);
                 commonUtilites.idBelongsMyMaster("files",(Objects.isNull(request.getImage())?null:request.getImage().getId()),myMasterId);
                 commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
 
+                boolean isStoreCategory = isStoreCategory(request.getId()); // is it store category on this moment
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name", request.getName());
@@ -2188,30 +2194,36 @@ public class ProductsRepositoryJPA {
                 query.setParameter("description", request.getDescription());
                 query.setParameter("display", request.getDisplay());
 
-                // if it wasn't a store category but now it will be - we need to mark all products of this category as need to be synchronized
-                // !!! category is online-store category if it marked as "is_store_category" and it has selected internet stores !!!
                 if(request.getStoresIds().size()>0)
                     for(Long storeId:request.getStoresIds()){
                         commonUtilites.idBelongsMyMaster("stores",storeId,myMasterId);
                     }
 
-                if (!isStoreCategory(request.getId()) && request.getIsStoreCategory() && request.getStoresIds().size()>0)
-                    markProductsOfCategoryAsNeedToSyncWoo(request.getId(), myMasterId, request.getStoresIds());
+
+                // if it wasn't a store category but now it will be, and it has a stores - we need to mark all products of this category as need to be synchronized
+                // !!! category is online-store category if it marked as "is_store_category" and it has selected internet stores !!!
+                if (!isStoreCategory && request.getIsStoreCategory() && request.getStoresIds().size()>0)
+                    markProductsOfCategoriesAndStoresAsNeedToSyncWoo(new HashSet<>(Arrays.asList(request.getId())), myMasterId, request.getStoresIds());
+
+                // if it was a store category, or it is a store category, or it'll be a store category
+                if (isStoreCategory || request.getIsStoreCategory())
+                    markAllCategoriesAsNeedToSyncWoo=true;
 
                 //При сохранении категории у неё появился новый магазин
                 //When saving a category, it has a new store
 
                 // If it STILL a store category and has a selected internet stores
                 // then need to check on the new added stores by comparing an old list of stores with a new list
-                if (isStoreCategory(request.getId()) && request.getIsStoreCategory() && request.getStoresIds().size()>0){
+                if (isStoreCategory && request.getIsStoreCategory() && request.getStoresIds().size()>0) {
 
                     List<Long> categoryOldStoresIds = new ArrayList<>(getCategoryStoresIds(request.getId()));
                     List<Long> categoryNewStoresIds = new ArrayList<>(request.getStoresIds());
                     categoryNewStoresIds.removeAll(categoryOldStoresIds);
-                    if(categoryNewStoresIds.size()>0)
-                        markProductsOfCategoryAsNeedToSyncWoo(request.getId(), myMasterId, categoryNewStoresIds);
+                    if (categoryNewStoresIds.size() > 0) {
+                        markProductsOfCategoriesAndStoresAsNeedToSyncWoo(new HashSet<>(Arrays.asList(request.getId())), myMasterId, categoryNewStoresIds);
+                        markAllCategoriesAsNeedToSyncWoo=true;
+                    }
                 }
-
 
 
                 query.executeUpdate();
@@ -2232,6 +2244,10 @@ public class ProductsRepositoryJPA {
                         saveCategoryStore(request.getId(), storeId, myMasterId, request.getCompanyId());
                     }
                 }
+
+                if(markAllCategoriesAsNeedToSyncWoo)
+                    markAllCategoriesAsNeedToSyncWoo(request.getCompanyId(),myMasterId);
+
                 return 1;
             } catch (TranslatedCategoryNameIsNotUniqueOnSameLevel e){
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -2275,6 +2291,7 @@ public class ProductsRepositoryJPA {
             }
         } else return -1;
     }
+
     private void saveCategoryStore(Long category_id, Long store_id, Long master_id, Long company_id) throws Exception {
         String stringQuery = "insert into stores_productcategories (" +
                 "   master_id," +
@@ -2295,6 +2312,24 @@ public class ProductsRepositoryJPA {
             e.printStackTrace();
             logger.error("Exception in method saveCategoryStore. SQL query:" + stringQuery, e);
             throw new Exception(e);
+        }
+    }
+
+    private void markAllCategoriesAsNeedToSyncWoo(Long companyId, Long masterId) throws Exception {
+
+        String stringQuery =
+                " update stores_productcategories " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        "       master_id = " + masterId +
+                        " and   company_id =" + companyId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markAllCategoriesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
         }
     }
 
@@ -2431,8 +2466,13 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             try {
+                commonUtilites.idBelongsMyMaster("companies",request.getId(),myMasterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
+
+                if(isStoreCategories(request.getSetOfLongs1(), myMasterId))
+                    markAllCategoriesAsNeedToSyncWoo(request.getId(), myMasterId);
+
                 // If category is deleted - do not need to mark products of this category as need to sync woo.
                 // The set of product categories on the store side will be automatically corrected by WooCommerce on a stage of categories synchronization.
                 // The products that lost all they categories on the CRM side will be deleted in the woo-store on a synchronization stage "getProductWooIdsToDeleteInStore"
@@ -2446,17 +2486,68 @@ public class ProductsRepositoryJPA {
         } else return -1;
     }
 
-    public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
+    private boolean isStoreCategories(Set<Long> categoriesIds, Long masterId) throws Exception {
 
+        String stringQuery = "select count(*) from product_categories where " +
+                " master_id=" + masterId +
+                " and id in "+commonUtilites.SetOfLongToString(categoriesIds,",","(",")") +
+                " and coalesce(is_store_category, false) = true ";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger)query.getSingleResult()).longValue() > 0L;
+        } catch (Exception e) {
+            logger.error("Exception in method areCategoriesHaveStores. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+
+
+    private void clearUpsellCrosssellsFromVariations(Long productId, Long masterId) throws Exception {
         String stringQuery =
-                " update stores_products " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
+
+                " delete from product_upsell where " +
                         " master_id = " + masterId +
-                        " and product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",")");
+                        " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
+                        "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));" +
+
+                        " delete from product_crosssell where " +
+                        " master_id = " + masterId +
+                        " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
+                        "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method clearUpsellCrosssellsFromVariations. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    //--------------------------------------  MARKING AS NEED TO SYNC WOO ----------------------------------------------
+
+    //*
+    public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
+
+        String stringQuery = " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",");")+
+
+                        " update stores_variations " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id in (select variation_product_id from product_variations where product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",");");
+
+        try {
+            if(productsIds.size()>0) {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+            }
         } catch (Exception e) {
             logger.error("Exception in method markProductsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
             e.printStackTrace();
@@ -2464,6 +2555,7 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    //*
     private void markProductVariationsAsNeedToSyncWoo(Long productId, Long masterId) throws Exception {
         String stringQuery =
                 " update stores_variations " +
@@ -2487,47 +2579,78 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    private void clearUpsellCrosssellsFromVariations(Long productId, Long masterId) throws Exception {
+
+//    public void markProductsOfStoresAsNeedToSyncWoo(List<Long> storesIds, Long masterId) throws Exception {
+//        String stringQuery =
+//                " update stores_products " +
+//                " set need_to_syncwoo = true " +
+//                " where " +
+//                " master_id = " + masterId +
+//                " and product_id in ("+
+//                    " select pc.product_id " +
+//                    " from product_productcategories pc where " +
+//                    " pc.category_id in ( " +
+//                        " select category_id from stores_productcategories where master_id="+masterId+" and store_id in (" +
+//                            commonUtilites.ListOfLongToString(storesIds,",","","") +
+//                        " )" +
+//                    " ) and " +
+//                    " pc.category_id in ( " +
+//                        " select id from product_categories where master_id="+masterId+" and is_store_category=true" +
+//                    " )  "+
+//                " )";
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.executeUpdate();
+//        } catch (Exception e) {
+//            logger.error("Exception in method markProductsOfStoresAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new Exception();
+//        }
+//    }
+
+
+
+    //*
+    void markProductsOfStoresAndAttributesAsNeedToSyncWoo(List<Long> storesIds, List<Long> attributesIds, Long masterId) throws Exception {
         String stringQuery =
+                "   select pc.product_id" +
+                "   from product_productcategories pc" +
+                "   where" +
+                "   pc.product_id in (" +
+                "       select product_id from product_productattributes where attribute_id in ("+commonUtilites.ListOfLongToString(attributesIds,",","","")+")" +
+                "   ) and" +
+                "   pc.category_id in (" +
+                "       select category_id from stores_productcategories where master_id="+masterId+" and store_id in ("+commonUtilites.ListOfLongToString(storesIds,",","","")+")" +
+                "   ) and" +
+                "   pc.category_id in (" +
+                "       select id from product_categories where master_id="+masterId+" and is_store_category=true" +
+                "   )";
 
-                " delete from product_upsell where " +
-                " master_id = " + masterId +
-                " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
-                "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));" +
-
-                " delete from product_crosssell where " +
-                " master_id = " + masterId +
-                " and (product_id in (select variation_product_id from product_variations where product_id = "+productId+") or " +
-                "     child_id in   (select variation_product_id from product_variations where product_id = "+productId+"));";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
+            List<Long> productIdsList = new ArrayList<>();
+            for (Object i : query.getResultList()) {
+                productIdsList.add(new Long(i.toString()));
+            }
+            if(productIdsList.size()>0) {
+                stringQuery =
+                        " update stores_products   set need_to_syncwoo = true where product_id in (" + commonUtilites.ListOfLongToString(productIdsList, ",", "", "") + ");" +
+                        " update stores_variations set need_to_syncwoo = true where product_id in (" +
+                            "select variation_product_id from product_variations where product_id in (" + commonUtilites.ListOfLongToString(productIdsList, ",", "", "") + ")" +
+                        ")";
+
+                query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+            }
         } catch (Exception e) {
-            logger.error("Exception in method clearUpsellCrosssellsFromVariations. SQL query:"+stringQuery, e);
+            logger.error("Exception in method markProductsOfStoresAndAttributesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }
     }
 
-    private void markProductsOfCategoryAsNeedToSyncWoo(Long categoryId, Long masterId, List<Long> storesIds) throws Exception {
-
-        String stringQuery =
-                " update stores_products " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
-                        " master_id = " + masterId +
-                        " and product_id in (select product_id from product_productcategories where category_id = " + categoryId + ")" +
-                        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        } catch (Exception e) {
-            logger.error("Exception in method markProductsOfCategoryAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();
-        }
-    }
-    public void markProductsOfCategoriesAsNeedToSyncWoo(Set<Long> categoriesIds, Long masterId, List<Long> storesIds) throws Exception {
+    //*
+    public void markProductsOfCategoriesAndStoresAsNeedToSyncWoo(Set<Long> categoriesIds, Long masterId, List<Long> storesIds) throws Exception {
 
         String stringQuery =
                 " update stores_products " +
@@ -2535,52 +2658,63 @@ public class ProductsRepositoryJPA {
                 " where " +
                 " master_id = " + masterId +
                 " and product_id in (select product_id from product_productcategories where category_id in " +  commonUtilites.SetOfLongToString(categoriesIds, ",","(",")") + ")" +
+                " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")") + ";" +
+
+                " update stores_variations " +
+                " set need_to_syncwoo = true " +
+                " where " +
+                " master_id = " + masterId +
+                " and product_id in (" +
+                    " select variation_product_id from product_variations where product_id in (" +
+                        "select product_id from product_productcategories where category_id in " +  commonUtilites.SetOfLongToString(categoriesIds, ",","(",")") +
+                    " )"+
+                " )" +
                 " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
-            logger.error("Exception in method markProductsOfCategoriesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            logger.error("Exception in method markProductsOfCategoriesAndStoresAsNeedToSyncWoo. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }
     }
-    public void markProductsOfAttributesAsNeedToSyncWoo(Set<Long> attributesIds, Long masterId, List<Long> storesIds) throws Exception {
-        String stringQuery =
-        " update stores_products " +
-        " set need_to_syncwoo = true " +
-        " where " +
-        " master_id = " + masterId +
-        " and product_id in (select product_id from product_productattributes where attribute_id in "+ commonUtilites.SetOfLongToString(attributesIds,",","(",")") + ")" +
-        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        } catch (Exception e) {
-            logger.error("Exception in method markProductsOfAttributesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();
-        }
-    }
-    public void markProductsOfTermsAsNeedToSyncWoo(Set<Long> termsIds, Long masterId, List<Long> storesIds) throws Exception {
-        String stringQuery =
-        " update stores_products " +
-        " set need_to_syncwoo = true " +
-        " where " +
-        " master_id = " + masterId +
-        " and product_id in (select product_id from product_terms where term_id in "+ commonUtilites.SetOfLongToString(termsIds,",","(",")") + ")" +
-        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        } catch (Exception e) {
-            logger.error("Exception in method markProductsOfTermsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception();
-        }
-    }
+//    public void markProductsOfAttributesAsNeedToSyncWoo(Set<Long> attributesIds, Long masterId, List<Long> storesIds) throws Exception {
+//        String stringQuery =
+//        " update stores_products " +
+//        " set need_to_syncwoo = true " +
+//        " where " +
+//        " master_id = " + masterId +
+//        " and product_id in (select product_id from product_productattributes where attribute_id in "+ commonUtilites.SetOfLongToString(attributesIds,",","(",")") + ")" +
+//        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.executeUpdate();
+//        } catch (Exception e) {
+//            logger.error("Exception in method markProductsOfAttributesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new Exception();
+//        }
+//    }
+//    public void markProductsOfTermsAsNeedToSyncWoo(Set<Long> termsIds, Long masterId, List<Long> storesIds) throws Exception {
+//        String stringQuery =
+//        " update stores_products " +
+//        " set need_to_syncwoo = true " +
+//        " where " +
+//        " master_id = " + masterId +
+//        " and product_id in (select product_id from product_terms where term_id in "+ commonUtilites.SetOfLongToString(termsIds,",","(",")") + ")" +
+//        " and store_id in " + commonUtilites.ListOfLongToString(storesIds, ",","(",")");
+//        try {
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.executeUpdate();
+//        } catch (Exception e) {
+//            logger.error("Exception in method markProductsOfTermsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new Exception();
+//        }
+//    }
 
-    private Boolean isStoreCategory(Long categoryId) throws Exception {
+    private boolean isStoreCategory(Long categoryId) throws Exception {
         // category is online-store category if it marked as "is_store_category" and it has selected internet stores
         String stringQuery = "select count(*) from product_categories where id="+categoryId+" and coalesce(is_store_category,false) = true " +
                 " and " +categoryId+ " in (select category_id from stores_productcategories)";
@@ -4063,9 +4197,7 @@ public class ProductsRepositoryJPA {
             throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
         }
     }
-    //*****************************************************************************************************************************************************
-//***************************************************      UTILS      *********************************************************************************
-//*****************************************************************************************************************************************************
+
     @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара в отделении (если department_id = null то не зависимо от отделения)
     public ProductHistoryJSON  getLastProductHistoryRecord(Long product_id, Long department_id)
     {
@@ -4446,7 +4578,8 @@ public class ProductsRepositoryJPA {
 
                 // Now need to mark all products of these categories as need to be synchronized
                 if (storesIds.size() > 0)
-                    markProductsOfCategoriesAsNeedToSyncWoo(new HashSet<>(categoriesIds), masterId, new ArrayList<>(storesIds));
+                    markProductsOfCategoriesAndStoresAsNeedToSyncWoo(new HashSet<>(categoriesIds), masterId, new ArrayList<>(storesIds));
+                markAllCategoriesAsNeedToSyncWoo(companyId, masterId);
 
                 return true;
             } else {
@@ -4469,8 +4602,8 @@ public class ProductsRepositoryJPA {
             for (Long p : categoriesIds) {
                 for (Long c : storesIds) {
 
-                    commonUtilites.idBelongsMyMaster("products", p, masterId);
-                    commonUtilites.idBelongsMyMaster("product_categories", c, masterId);
+                    commonUtilites.idBelongsMyMaster("stores", c, masterId);
+                    commonUtilites.idBelongsMyMaster("product_categories", p, masterId);
 
                     stringQuery.append(i > 0 ? "," : "")
                             .append("(")

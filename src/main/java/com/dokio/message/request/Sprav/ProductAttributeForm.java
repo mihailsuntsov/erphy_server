@@ -30,10 +30,19 @@ public class ProductAttributeForm {
     private String type;
     private String slug;
     private String order_by;
+    private String description;
     private Boolean has_archives;
     private List<ProductAttributeTermForm> terms;
     private List<StoreTranslationAttributeJSON> storeAttributeTranslations;
     private List<Long>      storesIds;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public List<StoreTranslationAttributeJSON> getStoreAttributeTranslations() {
         return storeAttributeTranslations;

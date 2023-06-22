@@ -1,0 +1,89 @@
+
+When automatic marking as need to sync with WooCommerce:
+
+
+CATEGORIES
+
+-- when saving selected stores for multiple categories
+   при сохранении выбранных магазинов для нескольких категорий
+   ProductsRepositoryJPA->markAllCategoriesAsNeedToSyncWoo
+
+-- when update category, if it was/is/become a store category - mark all categories
+   при сохранении категории, если она была/есть/стала категорией магазина(ов) - отметить все категории
+   ProductsRepositoryJPA->markAllCategoriesAsNeedToSyncWoo
+
+-- when creating category that marked as "online store category" and has store(s)
+   при создании категории, в которой включено "Категория интернет-магазина" и имеет магазин(ы)
+   ProductsRepositoryJPA->markAllCategoriesAsNeedToSyncWoo
+
+-- when deleting categories that marked as "online store category"
+   при удалении категорий, в которых включено "Категория интернет-магазина"
+   ProductsRepositoryJPA->markAllCategoriesAsNeedToSyncWoo
+
+
+ATTRIBUTES
+
+-- when saving Attribute - mark this attribute
+   при сохранении атрибута - отметить даннный атрибут
+
+TERMS
+
+-- when saving Term - mark this term
+   при сохранении значения - отметить данное значение
+
+-- when update Attribute -> save Terms order -> mark all attribute's terms
+   при обновлении атрибута -> сохранение порядка значений -> отметить все значения атрибута
+
+
+PRODUCTS
+
+-- when saving selected stores for multiple categories - all products of these stores in these categories
+   при сохранении выбранных магазинов для нескольких категорий - все товары этих магазинов в этих категориях
+   ProductsRepositoryJPA->markProductsOfCategoriesAndStoresAsNeedToSyncWoo
+
+-- when saving Attribute - if there are new added stores to this attribute - mark products that have this stores and attributes
+   при сохранении Атрибута - если к этому атрибуту добавлены новые магазины - отметить товары, у которых есть этот атрибут и магазины
+   ProductsRepositoryJPA->markProductsOfStoresAndAttributesAsNeedToSyncWoo
+
+-- when saving Product that was represented as a Variation of another product, but now is a Simple
+   при сохранении Товара, который был вариацией другого товара, но после сохранения стал обычным
+   ProductsRepositoryJPA->markProductVariationsAsNeedToSyncWoo
+
+-- when set categories to multiple products - all these products
+   при назначении категорий множеству товаров - все эти товары
+   setCategoriesToProducts call ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
+
+-- when completing or decompleting any document that affects on product qtt or its reserves - all products of this document
+   при проведении или отмене проведения любого документа, который влияет на количество товара или его резервы - все товары этого документа
+   ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
+
+-- when saving store and language / price types / departments was changed - all store's products
+   при сохранении магазинa язык или типы цен или отделения были изменены - все товары магазина
+   StoreRepository->markAllStoreProductsAsNeedToSyncWoo
+
+
+VARIATIONS
+
+-- when saving selected stores for multiple categories - all variations belonging to the products of these stores in these categories
+   при сохранении выбранных магазинов для нескольких категорий - все вариации, принадлежащие товарам этих магазинов в этих категориях
+   ProductsRepositoryJPA->markProductsOfCategoriesAndStoresAsNeedToSyncWoo
+
+-- when saving Attribute - if there are new added stores to this attribute - mark variations of products that have this stores and attributes
+   при сохранении Атрибута - если к этому атрибуту добавлены новые магазины - отметить вариации товаров, у которых есть этот атрибут и магазины
+   ProductsRepositoryJPA->markProductsOfStoresAndAttributesAsNeedToSyncWoo
+
+-- when saving Product that represented as a variation
+   при сохранении Товара, являющегося вариацией
+   ProductsRepositoryJPA->markProductVariationsAsNeedToSyncWoo
+
+-- when set categories to multiple products - all these products
+   при назначении категорий множеству товаров - все эти товары
+   setCategoriesToProducts call ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
+
+-- when completing or decompleting any document that affects on product qtt or its reserves - variations of all products of this document
+   при проведении или отмене проведения любого документа, который влияет на количество товара или его резервы - вариации всех товаров этого документа
+   ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
+
+-- when saving store and language / price types / departments was changed - all store's variations
+   при сохранении магазинa язык или типы цен или отделения были изменены - все вариации товаров магазина
+   StoreRepository->markAllStoreProductsAsNeedToSyncWoo

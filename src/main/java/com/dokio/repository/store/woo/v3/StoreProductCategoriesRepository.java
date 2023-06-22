@@ -60,6 +60,7 @@ public class StoreProductCategoriesRepository {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
 
+            String stringQuery2;
             String stringQuery =
             " select " +
             " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
@@ -87,7 +88,22 @@ public class StoreProductCategoriesRepository {
             " LEFT OUTER JOIN store_translate_categories translator ON p.id = translator.category_id and translator.lang_code = '" + langCode + "'" +
             " where p.company_id = " + companyId +
             " and str.id = " + storeId +
-            " and coalesce(p.is_store_category, false) = true ";
+            " and coalesce(p.is_store_category, false) = true " +
+            " and (" +
+                    " (coalesce(spc.need_to_syncwoo,true) = true) or " + // if the category is need to be synchronized
+                    " (spc.date_time_syncwoo is null) or " + // if the category is created recently, or changed, but still not synchronized
+                    " (p.date_time_changed is not null and spc.date_time_syncwoo is not null and p.date_time_changed > spc.date_time_syncwoo)" +
+            " ) ";
+
+            stringQuery2=" select " +
+                    " spc.woo_id as woo_id " +
+                    " from product_categories p " +
+                    " INNER JOIN companies c ON p.company_id = c.id  " +
+                    " INNER JOIN stores_productcategories spc ON spc.category_id = p.id  " +
+                    " INNER JOIN stores str ON spc.store_id = str.id " +
+                    " where p.company_id = " + companyId +
+                    " and str.id = " + storeId +
+                    " and coalesce(p.is_store_category, false) = true ";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             //.setFirstResult(offsetreal)
@@ -111,8 +127,12 @@ public class StoreProductCategoriesRepository {
                 doc.setMenu_order((Integer)                         obj[12]);
                 returnList.add(doc);
             }
+            query = entityManager.createNativeQuery(stringQuery2);
+            List<Integer> allStoreWooIds = (List<Integer>)query.getResultList();
+
             result.setQueryResultCode(1);
             result.setProductCategories(returnList);
+            result.setAllProductCategoriesWooIds(allStoreWooIds);
             return result;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesToStore. Key:"+key, e);
@@ -136,12 +156,12 @@ public class StoreProductCategoriesRepository {
             // if category was deleted in the store side, its products will lost their belonging to this category.
             // And if this category recreated, these products will not be assigned to this category
             // So, need to mark this products as need to be resynchronized
-            Set<Long> setOfCategoriesIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
+            // Set<Long> setOfCategoriesIdsWhoseProductsNeedToBeResynchronized= new HashSet<>();
             for (SyncIdForm row : request.getIdsSet()) {
                 syncProductCategoryId(row, companyId, storeId, masterId);
-                setOfCategoriesIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
+                //setOfCategoriesIdsWhoseProductsNeedToBeResynchronized.add(row.getCrm_id());
             }
-            productsRepository.markProductsOfCategoriesAsNeedToSyncWoo(setOfCategoriesIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
+            //productsRepository.markProductsOfCategoriesAndStoresAsNeedToSyncWoo(setOfCategoriesIdsWhoseProductsNeedToBeResynchronized,masterId, new ArrayList<>(Arrays.asList(storeId)));
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductCategoriesRepository/syncProductCategoriesIds. Key:"+request.getCrmSecretKey(), e);
@@ -162,16 +182,22 @@ public class StoreProductCategoriesRepository {
                             " company_id, " +
                             " store_id, " +
                             " category_id, " +
-                            " woo_id" +
+                            " woo_id," +
+                            " need_to_syncwoo, " +
+                            " date_time_syncwoo " +
                             " ) values (" +
                             masterId + ", " +
                             companyId + ", " +
                             storeId + ", " +
                             "(select id from product_categories where master_id = "+masterId+" and company_id = "+companyId+" and id = " + ids.getCrm_id() + "), " +
-                            ids.getId() + ") " +
+                            ids.getId()+ "," +
+                            " false, " +
+                            " now()) " +
                             " ON CONFLICT ON CONSTRAINT stores_categories_uq " +// "upsert"
                             " DO update set " +
-                            " woo_id = "+ids.getId();
+                            " woo_id = "+ids.getId() + ", " +
+                            " need_to_syncwoo = false, " +
+                            " date_time_syncwoo = now()";
 
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

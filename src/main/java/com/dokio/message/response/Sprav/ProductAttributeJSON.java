@@ -38,6 +38,7 @@ public class ProductAttributeJSON {
     private String name;
     private String type;
     private String slug;
+    private String description;
     private String order_by;
     private Boolean has_archives;
     private List<ProductAttributeTermJSON> terms;
@@ -50,6 +51,14 @@ public class ProductAttributeJSON {
 
     public void setStoreAttributeTranslations(List<StoreTranslationAttributeJSON> storeAttributeTranslations) {
         this.storeAttributeTranslations = storeAttributeTranslations;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<Long> getStoresIds() {

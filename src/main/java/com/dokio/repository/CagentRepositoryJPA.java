@@ -614,7 +614,7 @@ public class CagentRepositoryJPA {
                     commonUtilites.idBelongsMyMaster("cagents", request.getId(), myMasterId);
                     commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
-                    if(!securityRepositoryJPA.isItAllMyMastersDocuments("cagent_categories",request.getSelectedCagentCategories()))
+                    if(request.getSelectedCagentCategories().size()>0 && !securityRepositoryJPA.isItAllMyMastersDocuments("cagent_categories",request.getSelectedCagentCategories()))
                         throw new Exception();
 
                     updateCagentBaseFields(request);//Сначала сохраняем документ без контактных лиц и банковских счетов

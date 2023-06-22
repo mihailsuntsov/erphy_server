@@ -65,8 +65,8 @@ public class StoreGeneralRepository {
 
             if(settingsGeneral.isSaas()){
                 Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",crmSecretKey).toString());
-                Long planId=(Long)cu.getFieldValueFromTableById("users","plan_id",masterId, masterId);
-                boolean isPlanNoLimits = (Boolean)cu.getFieldValueFromTableById("plans","is_nolimits",masterId, planId);
+                int planId = (Integer)cu.getFieldValueFromTableById("users","plan_id",masterId, masterId);
+                boolean isPlanNoLimits = userRepository.isPlanNoLimits(planId);
                 if(!isPlanNoLimits){
                     UserResources consumedRes = userRepository.getMyConsumedResources();
                     UserResources maxAllowed = userRepository.getMyMaxAllowedResources();

@@ -60,6 +60,8 @@ public class SpravProductAttributeRepository {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
+    ProductsRepositoryJPA productsRepository;
+    @Autowired
     CommonUtilites commonUtilites;
 
     private Logger logger = Logger.getLogger("SpravProductAttribute");
@@ -100,6 +102,7 @@ public class SpravProductAttributeRepository {
                     "           p.type as type, " +
                     "           p.order_by as order_by, " +
                     "           p.has_archives as has_archives, " +
+                    "           p.description as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort " +
                     "           from product_attributes p " +
@@ -119,6 +122,7 @@ public class SpravProductAttributeRepository {
                 stringQuery = stringQuery + " and (" +
                         " upper(p.name) like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.slug)  like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.description)  like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.type)   like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.order_by)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
@@ -149,6 +153,7 @@ public class SpravProductAttributeRepository {
                     doc.setType((String)                obj[8]);
                     doc.setOrder_by((String)            obj[9]);
                     doc.setHas_archives((Boolean)       obj[10]);
+                    doc.setDescription((String)         obj[11]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -179,6 +184,7 @@ public class SpravProductAttributeRepository {
                 stringQuery = stringQuery + " and (" +
                         " upper(p.name) like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.slug)  like upper(CONCAT('%',:sg,'%')) or" +
+                        " upper(p.description)  like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.type)   like upper(CONCAT('%',:sg,'%')) or" +
                         " upper(p.order_by)   like upper(CONCAT('%',:sg,'%'))"+ ")";
             }
@@ -231,7 +237,8 @@ public class SpravProductAttributeRepository {
                     "           p.slug as slug, " +
                     "           p.type as type, " +
                     "           p.order_by as order_by, " +
-                    "           p.has_archives as has_archives " +
+                    "           p.has_archives as has_archives, " +
+                    "           p.description as description " +
                     "           from product_attributes p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -264,6 +271,7 @@ public class SpravProductAttributeRepository {
                 doc.setType((String)                obj[13]);
                 doc.setOrder_by((String)            obj[14]);
                 doc.setHas_archives((Boolean)       obj[15]);
+                doc.setDescription((String)         obj[16]);
             }
             doc.setStoresIds(getAttributeStoresIds(id, masterId));
             doc.setStoreAttributeTranslations(getStoreAttributeTranslationsList(doc.getId(), masterId));
@@ -290,6 +298,7 @@ public class SpravProductAttributeRepository {
                     " type = :type, " +
                     " slug = :slug, " +
                     " order_by = :order_by, " +
+                    " description = :description," +
                     " has_archives = " + request.getHas_archives() +
                     " where " +
                     " id= "+request.getId()+
@@ -301,6 +310,7 @@ public class SpravProductAttributeRepository {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("type",request.getType());
+                query.setParameter("description",request.getDescription());
                 query.setParameter("slug",request.getSlug());
                 query.setParameter("order_by",request.getOrder_by());
                 query.executeUpdate();
@@ -315,6 +325,8 @@ public class SpravProductAttributeRepository {
                 }
 
                 //Saving the list of online stores that attribute belongs to
+                List<Long> oldAttributeStoresIds =  getAttributeStoresIds(request.getId(), myMasterId);// getting current stores ids
+                List<Long> newAttributeStoresIds =  request.getStoresIds();// getting new stores ids
                 deleteNonSelectedAttributeStores(request.getStoresIds(), request.getId(), myMasterId);
                 if (!Objects.isNull(request.getStoresIds()) && request.getStoresIds().size() > 0) {
                     for (Long storeId : request.getStoresIds()) {
@@ -335,6 +347,19 @@ public class SpravProductAttributeRepository {
                         }
                     }
                 }
+                //Set this attribute as need to be synchronized with online store(s)
+                markAttributesAsNeedToSyncWoo(new HashSet<>(Arrays.asList(request.getId())),myMasterId);
+
+
+
+                List<Long> storesToMarkTheirProdsForResync = new ArrayList<>();
+                for(Long newSid : newAttributeStoresIds){
+                    if(!Objects.isNull(newSid) && !oldAttributeStoresIds.contains(newSid))
+                        storesToMarkTheirProdsForResync.add(newSid);
+                }
+                if(storesToMarkTheirProdsForResync.size()>0)
+                    productsRepository.markProductsOfStoresAndAttributesAsNeedToSyncWoo(storesToMarkTheirProdsForResync, new ArrayList<>(Arrays.asList(request.getId())), myMasterId);
+
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -402,6 +427,7 @@ public class SpravProductAttributeRepository {
                     " name," +//
                     " type," +//
                     " slug," +//
+                    " description," +
                     " order_by," +//
                     " has_archives," +
                     " is_deleted" +
@@ -413,6 +439,7 @@ public class SpravProductAttributeRepository {
                     " :name, " +
                     " :type, " +
                     " :slug, " +
+                    " :description," +
                     " :order_by, " +
                     request.getHas_archives() + ", " +
                     " false)";
@@ -422,6 +449,7 @@ public class SpravProductAttributeRepository {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("type",request.getType());
+                query.setParameter("description",request.getDescription());
                 query.setParameter("slug",request.getSlug());
                 query.setParameter("order_by",request.getOrder_by());
                 query.executeUpdate();
@@ -628,34 +656,34 @@ public class SpravProductAttributeRepository {
         } else return -1;
     }
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
-    public Integer undeleteProductAttribute(String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(53L, "665") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes", delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(53L, "666") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes", delNumbers))) {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-            Long myId = userRepositoryJPA.getMyId();
-            String stringQuery;
-            stringQuery = "Update product_attributes p" +
-                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
-                    " date_time_changed = now(), " +//дату и время изменения
-                    " is_deleted=false " +
-                    " where p.master_id=" + myMasterId +
-                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
-            try
-            {
-                Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
-                return 1;
-            } catch (Exception e) {
-                logger.error("Exception in method undeleteProductAttribute. SQL query:"+stringQuery, e);
-                e.printStackTrace();
-                return null;
-            }
-        } else return -1;
-    }
+//    @Transactional
+//    @SuppressWarnings("Duplicates")
+//    public Integer undeleteProductAttribute(String delNumbers) {
+//        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают), ИЛИ
+//        if ((securityRepositoryJPA.userHasPermissions_OR(53L, "665") && securityRepositoryJPA.isItAllMyMastersDocuments("product_attributes", delNumbers)) ||
+//                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого восстанавливают) и предприятию аккаунта
+//                (securityRepositoryJPA.userHasPermissions_OR(53L, "666") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("product_attributes", delNumbers))) {
+//            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//            Long myId = userRepositoryJPA.getMyId();
+//            String stringQuery;
+//            stringQuery = "Update product_attributes p" +
+//                    " set changer_id="+ myId + ", " + // кто изменил (удалил)
+//                    " date_time_changed = now(), " +//дату и время изменения
+//                    " is_deleted=false " +
+//                    " where p.master_id=" + myMasterId +
+//                    " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
+//            try
+//            {
+//                Query query = entityManager.createNativeQuery(stringQuery);
+//                query.executeUpdate();
+//                return 1;
+//            } catch (Exception e) {
+//                logger.error("Exception in method undeleteProductAttribute. SQL query:"+stringQuery, e);
+//                e.printStackTrace();
+//                return null;
+//            }
+//        } else return -1;
+//    }
 
     private List<Long> getAttributeStoresIds(Long attributeId, Long masterId){
         String stringQuery = "  select   csd.store_id as id" +
@@ -714,18 +742,23 @@ public class SpravProductAttributeRepository {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             stringQuery =       "select " +
                     "           p.id as id," +
-                    "           p.name as name " +
+                    "           p.name as name, " +
+                    "           coalesce(p.description,'') as description " +
                     "           from product_attributes p " +
-                    "           where  p.master_id=" + myMasterId + " and company_id = " + companyId + " and coalesce(is_deleted,false) = false order by name";
+                    "           where  p.master_id=" + myMasterId + " and company_id = " + companyId + " order by name";
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
 
                 List<Object[]> queryList = query.getResultList();
                 List<ProductAttributesListJSON> returnList = new ArrayList<>();
+                String shortDescriotion;
                 for (Object[] obj : queryList) {
                     ProductAttributesListJSON doc = new ProductAttributesListJSON();
                     doc.setId(Long.parseLong(           obj[0].toString()));
-                    doc.setName((String)                obj[1]);
+                    shortDescriotion=(String)obj[2];
+                    if(shortDescriotion.length()>30)
+                        shortDescriotion=shortDescriotion.substring(0,28)+"...";
+                    doc.setName(obj[1]+(shortDescriotion.length()>0?" ("+shortDescriotion+")":""));
                     doc.setTerms(getProductAttributeTermsList (Long.parseLong(obj[0].toString())));
                     returnList.add(doc);
                 }
@@ -912,7 +945,8 @@ public class SpravProductAttributeRepository {
                     " set " +
                         " name = :name, " +
                         " slug = :slug, " +
-                        " description = :description " +
+                        " description = :description, " +
+                        " date_time_changed = now()" +
                     " where " +
                         " master_id = " + myMasterId +
                         " and id = " + request.getId() +
@@ -930,7 +964,8 @@ public class SpravProductAttributeRepository {
                         saveStoreTermTranslations(row, myMasterId, request.getCompanyId(), request.getAttribute_id(), request.getId());
                     }
                 }
-
+                //Set this term as need to be synchronized with online store(s)
+                markTermsAsNeedToSyncWoo(new HashSet<>(Arrays.asList(request.getId())),myMasterId);
                 return 1;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1032,6 +1067,7 @@ public class SpravProductAttributeRepository {
     public Integer saveProductAttributeTermsOrder(List<ProductAttributeTermForm> request, Long myMasterId) throws Exception{
         String stringQuery="";
         int i = 1;
+        Set<Long> termsIds = new HashSet();
         try {
             for (ProductAttributeTermForm field : request) {
                 stringQuery =
@@ -1047,7 +1083,11 @@ public class SpravProductAttributeRepository {
                 }
                 entityManager.createNativeQuery(stringQuery).executeUpdate();
                 i++;
+                termsIds.add(field.getId());
             }
+            //Set terms as need to be synchronized with online store(s)
+            if(termsIds.size() > 0)
+                markTermsAsNeedToSyncWoo(termsIds, myMasterId);
             return 1;
         } catch (Exception e) {
             logger.error("Exception in method saveProductAttributeTermsOrder. SQL query:"+stringQuery, e);
@@ -1086,6 +1126,39 @@ public class SpravProductAttributeRepository {
         } else return -1;
     }
 
+    private void markAttributesAsNeedToSyncWoo(Set<Long> attributesIds, Long masterId) throws Exception {
 
+        String stringQuery =
+                " update stores_attributes " +
+                " set need_to_syncwoo = true " +
+                " where " +
+                " master_id = " + masterId +
+                " and attribute_id in "+ commonUtilites.SetOfLongToString(attributesIds,",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markAttributesAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+    private void markTermsAsNeedToSyncWoo(Set<Long> termsIds, Long masterId) throws Exception {
+
+        String stringQuery =
+                " update stores_terms " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and term_id in "+ commonUtilites.SetOfLongToString(termsIds,",","(",")");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markTermsAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 
 }

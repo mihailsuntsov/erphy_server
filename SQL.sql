@@ -4969,3 +4969,15 @@ alter table _saas_stores_for_ordering add column site_url varchar(256);
 update _saas_stores_for_ordering set site_url=null;
 alter table _saas_stores_for_ordering alter column site_url set not null;
 CREATE UNIQUE INDEX _saas_stores_for_ordering_site_url_uq ON _saas_stores_for_ordering (site_url) WHERE site_url !='' and is_deleted = false;
+
+alter table stores_attributes add column need_to_syncwoo    boolean;
+alter table stores_attributes add column date_time_syncwoo  timestamp with time zone;
+alter table stores_terms add column need_to_syncwoo    boolean;
+alter table stores_terms add column date_time_syncwoo  timestamp with time zone;
+
+alter table product_attribute_terms add column date_time_changed timestamp with time zone;
+
+alter table stores_productcategories add column need_to_syncwoo    boolean;
+alter table stores_productcategories add column date_time_syncwoo  timestamp with time zone;
+
+alter table product_attributes add column description varchar(250);

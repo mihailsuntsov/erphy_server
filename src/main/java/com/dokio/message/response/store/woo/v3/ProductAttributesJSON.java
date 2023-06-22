@@ -22,7 +22,16 @@ import java.util.List;
 public class ProductAttributesJSON {
 
     private Integer queryResultCode; // look at _ErrorCodes file
-    private List<ProductAttributeJSON> productAttributes;
+    private List<ProductAttributeJSON> productAttributes; // attributes to sync
+    private List<Integer>  allProductAttributesWooIds; // all Woo Ids that there is
+
+    public List<Integer> getAllProductAttributesWooIds() {
+        return allProductAttributesWooIds;
+    }
+
+    public void setAllProductAttributesWooIds(List<Integer> allProductAttributesWooIds) {
+        this.allProductAttributesWooIds = allProductAttributesWooIds;
+    }
 
     public Integer getQueryResultCode() {
         return queryResultCode;

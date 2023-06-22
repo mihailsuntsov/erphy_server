@@ -81,18 +81,18 @@ public class StoreProductsRepository {
             result.setProductCount((BigInteger)query.getSingleResult());
             return result;
         }catch (WrongCrmSecretKeyException e) {
-            logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductsRepository/syncProductsToStore. Key:"+key, e);
+            logger.error("WrongCrmSecretKeyException in method woo/v3/StoreProductsRepository/countProductsToStoreSync. Key:"+key, e);
             e.printStackTrace();
             result.setQueryResultCode(-200);
             return result;
         } catch (NoResultException nre) {
-            logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, nre);
+            logger.error("Exception in method woo/v3/StoreProductsRepository/countProductsToStoreSync. SQL query:"+stringQuery, nre);
             nre.printStackTrace();
             result.setQueryResultCode(1);
             result.setProductCount(new BigInteger("0"));
             return result;
         }catch (Exception e) {
-            logger.error("Exception in method woo/v3/StoreProductsRepository/syncProductsToStore. SQL query:"+stringQuery, e);
+            logger.error("Exception in method woo/v3/StoreProductsRepository/countProductsToStoreSync. SQL query:"+stringQuery, e);
             e.printStackTrace();
             result.setQueryResultCode(null);
             return result;
@@ -150,9 +150,9 @@ public class StoreProductsRepository {
                     " and s.id = " + storeId +
                     " and coalesce(s.is_deleted, false) = false " +
                     " and (" +
-                    " (coalesce(sp.need_to_syncwoo,true) = true) or " +// if the product need to be synchronized
-                    " (sp.date_time_syncwoo is null) or " +// if the product is created recently, or changed, but still not synchronized
-                    " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
+                        " (coalesce(sp.need_to_syncwoo,true) = true) or " +// if the product need to be synchronized
+                        " (sp.date_time_syncwoo is null) or " +// if the product is created recently, or changed, but still not synchronized
+                        " (p.date_time_changed is not null and sp.date_time_syncwoo is not null and p.date_time_changed > sp.date_time_syncwoo)" +
                     " ) " +
                     " group by 1,2,3,4,5,6,7,8,9,10";  // Without grouping will output rows per each product as many categories product has.
                                                        // There is no categories data in output here, but they need to filter products by
@@ -475,6 +475,7 @@ public class StoreProductsRepository {
     public Set<Integer> getProductWooIdsToDeleteInStore(String key) {
         String stringQuery="";
         try {
+
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
             Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
@@ -486,7 +487,7 @@ public class StoreProductsRepository {
                 " stores_products sp_ " +
             " where " +
                 " sp_.woo_id is not null and sp_.store_id ="+storeId+" and sp_.product_id not in " +
-                "( " +
+                " ( " +
                     " select p.id from products p " +
                     " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id " +
                     " INNER JOIN product_categories pc ON pc.id=ppc.category_id " +

@@ -326,7 +326,6 @@ public class StoreRepository {
         } else return null;
     }
 
-    @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Integer updateStores(StoresForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
@@ -336,6 +335,7 @@ public class StoreRepository {
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             Long myId=userRepository.getUserId();
+            boolean needToMarkProducts = false;
             String stringQuery;
             stringQuery =   " update " +
                     " stores " +
@@ -370,6 +370,16 @@ public class StoreRepository {
                 cu.idBelongsMyMaster("stores", request.getId(), myMasterId);
                 cu.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
 
+
+                StoresJSON oldValues = getStoresValues(request.getId());
+
+                boolean isStoreDepartsChanged = isStoreDepartsChanged(request.getStoreDepartments(), myMasterId, request.getCompany_id(), request.getId());
+                boolean isLanguageChanged =     !oldValues.getLang_code().toUpperCase().equals(request.getLang_code().toUpperCase());
+                boolean isRegularPriceChanged = !(oldValues.getStore_price_type_regular()==request.getStore_price_type_regular());
+                boolean isSalePriceChanged =    !(oldValues.getStore_price_type_sale()==request.getStore_price_type_sale());
+
+                needToMarkProducts=isStoreDepartsChanged||isLanguageChanged||isRegularPriceChanged||isSalePriceChanged;
+
                 //сохранение полей документа
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name", (request.getName() == null ? "" : request.getName()));
@@ -378,8 +388,10 @@ public class StoreRepository {
                 query.setParameter("crm_secret_key", request.getCrm_secret_key());
                 query.setParameter("store_if_customer_not_found", request.getStore_if_customer_not_found());
                 query.executeUpdate();
-                if(isStoreDepartsChanged(request.getStoreDepartments(), myMasterId, request.getCompany_id(), request.getId()))
+
+                if(needToMarkProducts)
                     markAllStoreProductsAsNeedToSyncWoo(myMasterId, request.getCompany_id(), request.getId());
+
                 insertStoreDepartments(request, myMasterId);
                 return 1;
             } catch (Exception e) {
@@ -390,7 +402,9 @@ public class StoreRepository {
         } else return -1;
     }
 
-    @SuppressWarnings("Duplicates")
+
+
+
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Long insertStores(StoresForm request) {
         EntityManager emgr = emf.createEntityManager();
@@ -685,13 +699,19 @@ public class StoreRepository {
         }
     }
 
-    @SuppressWarnings("Duplicates")
+
     private void markAllStoreProductsAsNeedToSyncWoo(Long masterId, Long companyId, Long storeId) throws Exception {
         String stringQuery =
+
                 " update stores_products " +
-                " set need_to_syncwoo = true " +
-                " where " +
-                " master_id = " + masterId +" and company_id = " + companyId + " and store_id = " + storeId;
+                    " set need_to_syncwoo = true " +
+                    " where " +
+                    " master_id = " + masterId +" and company_id = " + companyId + " and store_id = " + storeId + ";"+
+
+                " update stores_variations " +
+                    " set need_to_syncwoo = true " +
+                    " where " +
+                    " master_id = " + masterId + " and company_id = " + companyId + " and store_id = " + storeId + ";";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

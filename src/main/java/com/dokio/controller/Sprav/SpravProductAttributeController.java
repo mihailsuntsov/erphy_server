@@ -93,15 +93,15 @@ public class SpravProductAttributeController {
         catch (Exception e){logger.error("Controller deleteProductAttribute error", e);
             return new ResponseEntity<>("Error deleting the document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/undeleteProductAttribute")
-    @SuppressWarnings("Duplicates")
-    public  ResponseEntity<?> undeleteProductAttribute(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/undeleteProductAttribute: " + request.toString());
-        String checked = request.getChecked() == null ? "" : request.getChecked();
-        try {return new ResponseEntity<>(spravProductAttributeRepository.undeleteProductAttribute(checked), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller undeleteProductAttribute error", e);
-            return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
+//    @PostMapping("/api/auth/undeleteProductAttribute")
+//    @SuppressWarnings("Duplicates")
+//    public  ResponseEntity<?> undeleteProductAttribute(@RequestBody SignUpForm request) {
+//        logger.info("Processing post request for path /api/auth/undeleteProductAttribute: " + request.toString());
+//        String checked = request.getChecked() == null ? "" : request.getChecked();
+//        try {return new ResponseEntity<>(spravProductAttributeRepository.undeleteProductAttribute(checked), HttpStatus.OK);}
+//        catch (Exception e){logger.error("Controller undeleteProductAttribute error", e);
+//            return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
+//    }
     //*************************************************************************************************************************************************
     //************************************************************  T E R M S  ************************************************************************
     //*************************************************************************************************************************************************

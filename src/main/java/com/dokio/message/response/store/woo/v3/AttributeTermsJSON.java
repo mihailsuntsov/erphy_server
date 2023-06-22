@@ -23,6 +23,15 @@ public class AttributeTermsJSON {
 
     private Integer queryResultCode; // look at _ErrorCodes file
     private List<AttributeTermJSON> attributeTerms;
+    private List<Integer>  allTermsWooIds; // all Woo Ids that there is
+
+    public List<Integer> getAllTermsWooIds() {
+        return allTermsWooIds;
+    }
+
+    public void setAllTermsWooIds(List<Integer> allTermsWooIds) {
+        this.allTermsWooIds = allTermsWooIds;
+    }
 
     public Integer getQueryResultCode() {
         return queryResultCode;

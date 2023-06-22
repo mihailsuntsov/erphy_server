@@ -24,6 +24,15 @@ public class ProductCategoriesJSON {
 
     private Integer queryResultCode; // look at _ErrorCodes file
     private List<ProductCategoryJSON> productCategories;
+    private List<Integer>  allProductCategoriesWooIds; // all Woo Ids that there is
+
+    public List<Integer> getAllProductCategoriesWooIds() {
+        return allProductCategoriesWooIds;
+    }
+
+    public void setAllProductCategoriesWooIds(List<Integer> allProductCategoriesWooIds) {
+        this.allProductCategoriesWooIds = allProductCategoriesWooIds;
+    }
 
     public Integer getQueryResultCode() {
         return queryResultCode;

@@ -854,7 +854,7 @@ public class CustomersOrdersRepositoryJPA {
                 // сохранение таблицы товаров
                 updateResults=insertCustomersOrdersProducts(request, request.getId(), myMasterId);
 
-                // отмечаем товары как необходимые для синхронизации с WooCommerce
+                // отмечаем товары как необходимые для синхронизации с WooCommerce //???
                 for (CustomersOrdersProductTableForm row : request.getCustomersOrdersProductTable()) {
                     productsIdsToSyncWoo.add(row.getProduct_id());
                 }
