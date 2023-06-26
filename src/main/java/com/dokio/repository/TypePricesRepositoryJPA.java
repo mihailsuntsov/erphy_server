@@ -454,10 +454,11 @@ public class TypePricesRepositoryJPA {
 
     // inserting base set of types of prices for new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertPriceTypesFast(Long mId, Long cId) {
+    public List<Long> insertPriceTypesFast(Long mId, Long cId) {
         String stringQuery;
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'basic_price'","'sale_price'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        List<Long> retList = new ArrayList<>();
         stringQuery = "insert into sprav_type_prices ( master_id,creator_id,company_id,date_time_created,name,is_default,is_deleted) values "+
                 "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("basic_price")+"',true, false)," +
                 "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("sale_price")+"',false, false)";
@@ -468,8 +469,15 @@ public class TypePricesRepositoryJPA {
                     " date_time_created = (to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and " +
                     " creator_id = " + mId + " and " +
                     " is_default = true";
-            Query query2 = entityManager.createNativeQuery(stringQuery);
-            return Long.valueOf(query2.getSingleResult().toString());
+            query = entityManager.createNativeQuery(stringQuery);
+            retList.add(Long.valueOf(query.getSingleResult().toString()));
+            stringQuery="select id from sprav_type_prices where " +
+                    " date_time_created = (to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and " +
+                    " creator_id = " + mId + " and " +
+                    " is_default = false";
+            query = entityManager.createNativeQuery(stringQuery);
+            retList.add(Long.valueOf(query.getSingleResult().toString()));
+            return retList;
         } catch (Exception e) {
             logger.error("Exception in method insertPriceTypesFast. SQL query:"+stringQuery, e);
             e.printStackTrace();

@@ -34,7 +34,6 @@ TERMS
 -- when update Attribute -> save Terms order -> mark all attribute's terms
    при обновлении атрибута -> сохранение порядка значений -> отметить все значения атрибута
 
-
 PRODUCTS
 
 -- when saving selected stores for multiple categories - all products of these stores in these categories
@@ -42,7 +41,7 @@ PRODUCTS
    ProductsRepositoryJPA->markProductsOfCategoriesAndStoresAsNeedToSyncWoo
 
 -- when saving Attribute - if there are new added stores to this attribute - mark products that have this stores and attributes
-   при сохранении Атрибута - если к этому атрибуту добавлены новые магазины - отметить товары, у которых есть этот атрибут и магазины
+   при сохранении Атрибута - если к этому атрибуту добавлены новые магазины - товары, у которых есть этот атрибут и магазины
    ProductsRepositoryJPA->markProductsOfStoresAndAttributesAsNeedToSyncWoo
 
 -- when saving Product that was represented as a Variation of another product, but now is a Simple
@@ -61,6 +60,9 @@ PRODUCTS
    при сохранении магазинa язык или типы цен или отделения были изменены - все товары магазина
    StoreRepository->markAllStoreProductsAsNeedToSyncWoo
 
+-- when batch product prices changing - all products that prices was changed
+   при групповом изменении цен - все выбранные товары
+   ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
 
 VARIATIONS
 
@@ -87,3 +89,7 @@ VARIATIONS
 -- when saving store and language / price types / departments was changed - all store's variations
    при сохранении магазинa язык или типы цен или отделения были изменены - все вариации товаров магазина
    StoreRepository->markAllStoreProductsAsNeedToSyncWoo
+
+-- when batch product prices changing - all these variations or variations of products that prices was changed
+   при групповом изменении цен - все выбранные товары-вариации или вариации выбранных товаров
+   ProductsRepositoryJPA->markProductsAsNeedToSyncWoo

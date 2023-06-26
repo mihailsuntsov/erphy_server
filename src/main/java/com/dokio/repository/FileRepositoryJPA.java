@@ -718,14 +718,22 @@ public class FileRepositoryJPA {
                 return null;
             }
             else {
-                Long myId = userRepository.getUserId();
-                return insertFileCategoryCore(request, myMasterId, myId, 1000);
+                try {
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("file_categories", request.getParentCategoryId() > 0L ? request.getParentCategoryId() : null, myMasterId);
+                    Long myId = userRepository.getUserId();
+                    return insertFileCategoryCore(request, myMasterId, myId, 1000);
+                } catch (Exception e) {
+                    logger.error("Exception in method insertFileCategory. request = "+request.toString(), e);
+                    e.printStackTrace();
+                    return 0L;
+                }
             }
         } else return -1L;
     }
 
     private Long insertFileCategoryCore(FileCategoriesForm request, Long masterId, Long creatorId, Integer outputOrder){
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         String stringQuery = "insert into file_categories (" +
                 "name," +
@@ -744,8 +752,6 @@ public class FileRepositoryJPA {
                 "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))," +
                 outputOrder+")";
         try {
-            commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), myMasterId);
-            commonUtilites.idBelongsMyMaster("file_categories", request.getParentCategoryId()>0L?request.getParentCategoryId():null, myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name",request.getName());
             if (query.executeUpdate() == 1) {

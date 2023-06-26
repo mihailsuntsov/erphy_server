@@ -68,7 +68,7 @@ public class SpravProductAttributeRepository {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("name_short","company","name","creator","date_time_created_sort","code_lit","date_created","slug", "type", "is_default")
+            .of("name_short","company","name","creator","date_time_created_sort","code_lit","date_created","slug", "type", "is_default","description")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -708,9 +708,10 @@ public class SpravProductAttributeRepository {
     // inserting base set of product attributes on register of new user
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertProductAttributeFast(Long mId, Long uId, Long cId) {
+    public Boolean insertProductAttributeFast(Long mId, Long uId, Long cId, Long storeId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
+        List<Long> attrList = new ArrayList<>();
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
                 "'color'","'size'","'black'","'white'"});
         stringQuery = "insert into product_attributes ( master_id,creator_id,company_id,date_time_created,name,type,slug,order_by,has_archives,is_deleted) values "+
@@ -722,11 +723,21 @@ public class SpravProductAttributeRepository {
                 "("+mId+",'S','s',1,'',(select id from product_attributes where company_id="+cId+" and slug='size')),"+
                 "("+mId+",'M','m',2,'',(select id from product_attributes where company_id="+cId+" and slug='size')),"+
                 "("+mId+",'L','l',3,'',(select id from product_attributes where company_id="+cId+" and slug='size'));";
-
-
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
+            stringQuery="select id from product_attributes where " +
+                    " date_time_created = (to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and " +
+                    " creator_id = " + mId + " and " +
+                    " slug = 'color'";
+            query = entityManager.createNativeQuery(stringQuery);
+            saveAttributeStore(Long.valueOf(query.getSingleResult().toString()), storeId, mId, cId);
+            stringQuery="select id from product_attributes where " +
+                    " date_time_created = (to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and " +
+                    " creator_id = " + mId + " and " +
+                    " slug = 'size'";
+            query = entityManager.createNativeQuery(stringQuery);
+            saveAttributeStore(Long.valueOf(query.getSingleResult().toString()), storeId, mId, cId);
             return true;
         } catch (Exception e) {
             logger.error("Exception in method insertProductAttributeFast. SQL query:"+stringQuery, e);

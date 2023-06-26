@@ -1043,11 +1043,13 @@ public class CompanyRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public void setCompanyAdditionals(Long companyId){
+    public void setCompanyAdditionals(Long companyId) throws Exception {
+        try{
+
         Long myId = userRepositoryJPA.getMyId();
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         // типы цен
-        Long price = typePricesRepository.insertPriceTypesFast(myId,companyId);
+        List<Long> prices = typePricesRepository.insertPriceTypesFast(myId,companyId);
         // кассы предприятия (денежные комнаты)
         Long bo = boxofficeRepository.insertBoxofficesFast(myId,companyId);
         // расчетный счет предприятия
@@ -1056,7 +1058,7 @@ public class CompanyRepositoryJPA {
         DepartmentForm department = new DepartmentForm();
         Map<String, String> map = cu.translateForUser(myId, new String[]{"'my_department'","'role_admins'"});
         department.setName(map.get("my_department"));
-        department.setPrice_id(price);
+        department.setPrice_id(prices.get(0));
         department.setBoxoffice_id(bo);
         department.setPayment_account_id(ac);
         departmentRepositoryJPA.insertDepartmentFast(department,companyId,myId);
@@ -1081,6 +1083,11 @@ public class CompanyRepositoryJPA {
         expenditureRepository.insertExpendituresFast(myMasterId, myId,companyId);
         // статусы документов
         statusDocRepository.insertStatusesFast(myMasterId,myId,companyId);
+        } catch (Exception e) {
+            logger.error("Exception in method setCompanyAdditionals. ", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
     }
 
     @SuppressWarnings("Duplicates")// отдаёт список касс предприятия

@@ -166,11 +166,17 @@ public class UserRepositoryJPA {
     //Все аккаунты, созданные дочерними аккаунтами, также являются дочерними к родителю создавшего их аккаунта
     @SuppressWarnings("Duplicates")
     public Long getUserMasterIdByUsername(String username) {
-        Long userId = userDetailService.getUserIdByUsername(userDetailService.getUserName());
-        String stringQuery;
-        stringQuery="select u.master_id from users u where u.id = "+userId;
-        Query query = entityManager.createNativeQuery(stringQuery);
-        return  Long.valueOf((Integer) query.getSingleResult());
+        try{
+            Long userId = userDetailService.getUserIdByUsername(userDetailService.getUserName());
+            String stringQuery;
+            stringQuery="select u.master_id from users u where u.id = "+userId;
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return  Long.valueOf((Integer) query.getSingleResult());
+        }catch (Exception e) {
+            logger.error("Exception in method getUserMasterIdByUsername. username ="+userDetailService.getUserName(), e);
+            e.printStackTrace();
+            return null;
+        }
     }
     public Long getUserMasterIdByUserId(Long userId) {
         String stringQuery;
@@ -873,7 +879,9 @@ public class UserRepositoryJPA {
                 "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
                 "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
                 "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +
-                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
+//                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
+                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and is_deleted=false) as stores_woo";
+
 
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

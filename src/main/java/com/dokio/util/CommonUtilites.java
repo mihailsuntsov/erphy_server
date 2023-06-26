@@ -669,12 +669,25 @@ public class CommonUtilites {
             res.setResult((String)query.getSingleResult());
             return res;
         } catch (Exception e) {
-            logger.error("Exception in method translateHTMLmessage. SQL: " + stringQuery, e);
+            logger.error("Exception in method translateHTMLmessage (key). SQL: " + stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
-
+    @SuppressWarnings("Duplicates")
+    public String translateHTMLmessage(String key, String suffix){
+        String stringQuery =
+                "select tr_"+suffix+" from _saas_messages where key = :key";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("key",key);
+            return (String)query.getSingleResult();
+        } catch (Exception e) {
+            logger.error("Exception in method translateHTMLmessage (key, suffix). SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     public SettingsGeneralJSON getSettingsGeneral() {
         String stringQuery =
                 "select " +
@@ -830,7 +843,7 @@ public class CommonUtilites {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());
         }catch (NoResultException nre) {
-            logger.error("NoResultException in method getFreeStoreToRentId. sSQL="+stringQuery, nre);
+            logger.error("NoResultException in method getFreeStoreToRentId. SQL="+stringQuery, nre);
             return null;
         }catch (Exception e) {
             e.printStackTrace();

@@ -76,6 +76,8 @@ public class UsersController {
     FileRepositoryJPA fileRepository;
     @Autowired
     DocumentsRepositoryJPA documentsRepository;
+    @Autowired
+    SpravStatusDocRepository ssd;
 
     @PostMapping("/api/auth/addUser")
     @SuppressWarnings("Duplicates")
@@ -142,6 +144,8 @@ public class UsersController {
                 // create print menus for user
                 List<BaseFiles> baseFilesList = fileRepository.getFilesIdsByName(fileRepository.assemblyBaseFilesList(masterId), masterId, companyId, null);
                 if(baseFilesList.size()>0) documentsRepository.createPrintMenus(baseFilesList,masterId, createdUserId, companyId);
+                //create settings
+                ssd.insertSettingsFast(masterId,createdUserId,companyId);
                 // ответ сервера при удачном создании юзера
                 ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
                 return responseEntity;

@@ -62,13 +62,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			return null;
 		}
 	}
-	public String getUserShortNameByUsername(String username) {
-		if(!username.equals("anonymousUser")) {
-			return userRepository.findByUsername(username).get().getName();
-		}else{
-			return null;
-		}
-	}
+//	public String getUserShortNameByUsername(String username) {
+//		if(!username.equals("anonymousUser")) {
+//			return userRepository.findByUsername(username).get().getName();
+//		}else{
+//			return null;
+//		}
+//	}
 	public Long getUserIdByUsername(String username) {
 		if(!username.equals("anonymousUser")) {
 			Long id = userRepository.findByUsername(username).get().getId();

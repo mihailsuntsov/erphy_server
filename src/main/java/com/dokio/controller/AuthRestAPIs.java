@@ -25,6 +25,7 @@ import javax.validation.Valid;
 
 import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.request.Sprav.StoresForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.model.*;
@@ -111,6 +112,8 @@ public class AuthRestAPIs {
 	SpravProductAttributeRepository spravProductAttributes;
 	@Autowired
 	SubscriptionRepositoryJPA subscriptionRepository;
+    @Autowired
+    StoreRepository storeRepository;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -140,101 +143,123 @@ public class AuthRestAPIs {
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
 		logger.info("Processing post request for path /signup: " + signUpRequest.toString());
-        EntityManager emgr = emf.createEntityManager();
-		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-			return new ResponseEntity<>(new ResponseMessage("login_registered"),
-					HttpStatus.NOT_ACCEPTABLE);
-		}
+		try {
+			EntityManager emgr = emf.createEntityManager();
+			if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+				return new ResponseEntity<>(new ResponseMessage("login_registered"),
+						HttpStatus.NOT_ACCEPTABLE);
+			}
 
-		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-			return new ResponseEntity<>(new ResponseMessage("email_registered"),
-					HttpStatus.NOT_ACCEPTABLE);
-		}
-		// Если такого логина и емайла нет
-		// Создание аккаунта для нового пользователя
-		User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
-				encoder.encode(signUpRequest.getPassword()));
+			if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+				return new ResponseEntity<>(new ResponseMessage("email_registered"),
+						HttpStatus.NOT_ACCEPTABLE);
+			}
+			// Если такого логина и емайла нет
+			// Создание аккаунта для нового пользователя
+			User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
+					encoder.encode(signUpRequest.getPassword()));
 
-		Set<String> strRoles= new HashSet<>();
-		strRoles.add("admin"); // это "системная" роль, для спринга. Ею наделяются все пользователи. Все их реальные права регулируются Докио
-		Set<Role> roles = new HashSet<>();
-        Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
-        roles.add(adminRole);
+			Set<String> strRoles = new HashSet<>();
+			strRoles.add("admin"); // это "системная" роль, для спринга. Ею наделяются все пользователи. Все их реальные права регулируются Докио
+			Set<Role> roles = new HashSet<>();
+			Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
+			roles.add(adminRole);
 
-		//добавили юзеру сет ролей и сохранили его
-		user.setRoles(roles);
-		user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
-        user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
-		SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(); // чтобы узнать тарифный план по умолчанию
-		user.setPlanId(settingsGeneral.getPlanDefaultId());
-		user.setPlanPrice(settingsGeneral.getPlanPrice());
-		user.setFreeTrialDays(settingsGeneral.getFreeTrialDays());
-		Long createdUserId=userRepository.save(user).getId();// и сохранили его
-		user.setMaster(userDetailsService.getUserById(createdUserId));// в качестве мастера устанавливаем его же
-		userRepository.save(user);// сохраняем чтобы записался master id
-		// уcтановим пользователю часовой пояс (timeZone), язык и локаль
-		userRepositoryJPA.setUserSettings(createdUserId,24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru")?10:4, "24");
-		userRepository.save(user);// сохраняем чтобы применился язык
-		Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'","'my_department'","'role_admins'"});
-		// set plan options with current prices to master user
-		subscriptionRepository.createMasterUserPlanOptions(createdUserId);
-		// создадим пользователю предприятие
-		CompaniesForm company = new CompaniesForm();
-		company.setName(map.get("my_company"));
-		company.setSt_prefix_barcode_packed(20);
-		company.setSt_prefix_barcode_pieced(21);
-		company.setSt_netcost_policy("all");
-		company.setStore_default_lang_code(signUpRequest.getLanguage());
-		Long companyId = companyRepositoryJPA.insertCompanyFast(company,createdUserId);
-        // типы цен
-        Long price = typePricesRepository.insertPriceTypesFast(createdUserId,companyId);
-        // касса предприятия (денежная комната)
-        Long bo = boxofficeRepository.insertBoxofficesFast(createdUserId,companyId);
-		// расчетный счет предприятия
-		Long ac = paymentAccountsRepository.insertPaymentAccountsFast(createdUserId,companyId);
-		// создадим пользователю отделение
-		DepartmentForm department = new DepartmentForm();
-		department.setName(map.get("my_department"));
-        department.setPrice_id(price);
-        department.setBoxoffice_id(bo);
-		department.setPayment_account_id(ac);
-		Long departmentId = departmentRepositoryJPA.insertDepartmentFast(department,companyId,createdUserId);
-        Companies userCompany = emgr.find(Companies.class, companyId);
-        Set<Long> userDepartmentsIds = new HashSet<>(Arrays.asList(departmentId));
-        Set<Departments> userDepartments = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(userDepartmentsIds);
-		user.setCompany(userCompany);
-		user.setDepartments(userDepartments);
-        userRepository.saveAndFlush(user);
-		// создадим пользователю Роль (группу пользователей)
-		Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"),companyId,createdUserId);
-		Set<Long> permissions = getAdminPermissions();
-		userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
-        // зададим пользователю набор валют
-        currenciesRepository.insertCurrenciesFast(createdUserId,createdUserId,companyId);
-        // базовые категоии контрагентов и сами контрагенты
-        cagentRepository.insertCagentCategoriesFast(createdUserId,createdUserId,companyId);
-		// базовые категоии файлов + базовые файлы (шаблоны)
-		Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId,createdUserId,companyId);
-		// now need to put base files into this category in accordance of user language
-		List<BaseFiles> baseFilesList = fileRepository.insertBaseFilesFast(createdUserId, createdUserId, companyId, templateCategoryId);
-		// forming print menu for documents
-		if(!Objects.isNull(baseFilesList)) documentsRepository.createPrintMenus(baseFilesList,createdUserId,createdUserId,companyId);
-        // единицы имерения
-        spravSysEdizm.insertEdizmFast(createdUserId,createdUserId,companyId);
-		// налоги
-		taxesRepository.insertTaxesFast(createdUserId,createdUserId,companyId);
-		// базовые категоии товаров и сами товары
-		productsRepository.insertProductCategoriesFast(createdUserId,createdUserId,companyId);
-        // траты
-        expenditureRepository.insertExpendituresFast(createdUserId,createdUserId,companyId);
-        // статусы документов
-		statusDocRepository.insertStatusesFast(createdUserId,createdUserId,companyId);
-		// базовые аттрибуты товаров (размер, цвет)
-		spravProductAttributes.insertProductAttributeFast(createdUserId,createdUserId,companyId);
-        // отправили письмо для подтверждения e-mail
-        mailRepository.activateAccount(signUpRequest.getEmail(),user.getActivationCode());
+			//добавили юзеру сет ролей и сохранили его
+			user.setRoles(roles);
+			user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
+			user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
+			SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(); // чтобы узнать тарифный план по умолчанию
+			user.setPlanId(settingsGeneral.getPlanDefaultId());
+			user.setPlanPrice(settingsGeneral.getPlanPrice());
+			user.setFreeTrialDays(settingsGeneral.getFreeTrialDays());
+			Long createdUserId = userRepository.save(user).getId();// и сохранили его
+			user.setMaster(userDetailsService.getUserById(createdUserId));// в качестве мастера устанавливаем его же
+			userRepository.save(user);// сохраняем чтобы записался master id
+			// уcтановим пользователю часовой пояс (timeZone), язык и локаль
+			userRepositoryJPA.setUserSettings(createdUserId, 24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru") ? 10 : 4, "24");
+			userRepository.save(user);// сохраняем чтобы применился язык
+			Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'", "'my_department'", "'role_admins'", "'default_store_name'"});
+			// set plan options with current prices to master user
+			subscriptionRepository.createMasterUserPlanOptions(createdUserId);
+			// создадим пользователю предприятие
+			CompaniesForm company = new CompaniesForm();
+			company.setName(map.get("my_company"));
+			company.setSt_prefix_barcode_packed(20);
+			company.setSt_prefix_barcode_pieced(21);
+			company.setSt_netcost_policy("all");
+			company.setStore_default_lang_code(signUpRequest.getLanguage());
+			Long companyId = companyRepositoryJPA.insertCompanyFast(company, createdUserId);
+			// типы цен
+			List<Long> prices = typePricesRepository.insertPriceTypesFast(createdUserId, companyId);
+			// касса предприятия (денежная комната)
+			Long bo = boxofficeRepository.insertBoxofficesFast(createdUserId, companyId);
+			// расчетный счет предприятия
+			Long ac = paymentAccountsRepository.insertPaymentAccountsFast(createdUserId, companyId);
+			// создадим пользователю отделение
+			DepartmentForm department = new DepartmentForm();
+			department.setName(map.get("my_department"));
+			department.setPrice_id(prices.get(0));
+			department.setBoxoffice_id(bo);
+			department.setPayment_account_id(ac);
+			Long departmentId = departmentRepositoryJPA.insertDepartmentFast(department, companyId, createdUserId);
+			Companies userCompany = emgr.find(Companies.class, companyId);
+			Set<Long> userDepartmentsIds = new HashSet<>(Arrays.asList(departmentId));
+			Set<Departments> userDepartments = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(userDepartmentsIds);
+			user.setCompany(userCompany);
+			user.setDepartments(userDepartments);
+			userRepository.saveAndFlush(user);
+			// создадим пользователю Роль (группу пользователей)
+			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), companyId, createdUserId);
+			Set<Long> permissions = getAdminPermissions();
+			userGroupRepository.setPermissionsToUserGroup(permissions, usergroupId);
+			// зададим пользователю набор валют
+			currenciesRepository.insertCurrenciesFast(createdUserId, createdUserId, companyId);
+			// базовые категоии контрагентов и сами контрагенты
+			cagentRepository.insertCagentCategoriesFast(createdUserId, createdUserId, companyId);
+			// базовые категоии файлов + базовые файлы (шаблоны)
+			Long templateCategoryId = fileRepository.insertFileCategoriesFast(createdUserId, createdUserId, companyId);
+			// now need to put base files into this category in accordance of user language
+			List<BaseFiles> baseFilesList = fileRepository.insertBaseFilesFast(createdUserId, createdUserId, companyId, templateCategoryId);
+			// forming print menu for documents
+			if (!Objects.isNull(baseFilesList))
+				documentsRepository.createPrintMenus(baseFilesList, createdUserId, createdUserId, companyId);
+			// единицы имерения
+			spravSysEdizm.insertEdizmFast(createdUserId, createdUserId, companyId);
+			// налоги
+			taxesRepository.insertTaxesFast(createdUserId, createdUserId, companyId);
+			// store connection
+			StoresForm store = new StoresForm();
+            store.setName(map.get("default_store_name"));
+            store.setLang_code(signUpRequest.getLanguage());
+            store.setCompany_id(companyId);
+            store.setStore_ip("");
+            store.setCrm_secret_key("");
+            store.setStore_if_customer_not_found("create_new");
+            store.setStore_price_type_regular(prices.get(0));
+            store.setStore_price_type_sale(prices.get(1));
+            store.setStore_orders_department_id(departmentId);
+            store.setStoreDepartments(new ArrayList<>(Arrays.asList(departmentId)));
+            store.setStore_default_creator_id(createdUserId);
+            store.setStore_days_for_esd(1);
+            store.setStore_auto_reserve(false);
+            store.setIs_let_sync(true);
+            Long storeId=storeRepository.insertStoreFast(store,createdUserId,createdUserId);
 
-		return new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
+			// базовые категоии товаров и сами товары
+			productsRepository.insertProductCategoriesFast(createdUserId, createdUserId, companyId);
+			// траты
+			expenditureRepository.insertExpendituresFast(createdUserId, createdUserId, companyId);
+			// статусы документов
+			statusDocRepository.insertStatusesFast(createdUserId, createdUserId, companyId);
+			// базовые аттрибуты товаров (размер, цвет)
+			spravProductAttributes.insertProductAttributeFast(createdUserId, createdUserId, companyId, storeId);
+			// отправили письмо для подтверждения e-mail
+			mailRepository.activateAccount(signUpRequest.getEmail(), user.getActivationCode(),signUpRequest.getLanguage());
+
+			return new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
+		} catch (Exception e){e.printStackTrace();logger.error("Controller registerUser error", e);
+			return new ResponseEntity<>("User registration error", HttpStatus.INTERNAL_SERVER_ERROR);}
 	}
 
 	public Set<Long> getAdminPermissions(){

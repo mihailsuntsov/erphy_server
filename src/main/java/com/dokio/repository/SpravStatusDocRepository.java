@@ -563,7 +563,7 @@ public class SpravStatusDocRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Boolean insertStatusesFast(Long masterId, Long mId, Long cId) {
+    public boolean insertStatusesFast(Long masterId, Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
@@ -679,45 +679,56 @@ public class SpravStatusDocRepository {
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_prop")+"',12,1,'#8979fb',3,false,false),"+  //Lead - Sent proposal
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_negot")+"',12,1,'#33f1ff',4,false,false),"+ //Lead - Negotiations
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_customer")+"',12,2,'#009e03',5,false,false),"+   //Lead - Out of funnel
-                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false);"+   //Customer
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false);";   //Customer
 
-
-
+        try{
                 // Set the Status of Completed document into settings of each type of documents
-                "insert into settings_acceptance        ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=15 and status_type=2));" +
-                "insert into settings_correction        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=41 and status_type=2));" +
-                "insert into settings_customers_orders  ( master_id,company_id,user_id,status_id_on_autocreate_on_cheque)   values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=23 and status_type=2));" +
-                "insert into settings_inventory         ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=27 and status_type=2));" +
-                "insert into settings_invoicein         ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=32 and status_type=2));" +
-                "insert into settings_invoiceout        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=31 and status_type=2));" +
-                "insert into settings_moving            ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=30 and status_type=2));" +
-                "insert into settings_orderin           ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=35 and status_type=2));" +
-                "insert into settings_orderout          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=36 and status_type=2));" +
-                "insert into settings_ordersup          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=39 and status_type=2));" +
-                "insert into settings_paymentin         ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=33 and status_type=2));" +
-                "insert into settings_paymentout        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=34 and status_type=2));" +
-                "insert into settings_posting           ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=16 and status_type=2));" +
-                "insert into settings_retail_sales      ( master_id,company_id,user_id,status_id_on_autocreate_on_cheque)   values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=25 and status_type=2));" +
-                "insert into settings_return            ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=28 and status_type=2));" +
-                "insert into settings_returnsup         ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=29 and status_type=2));" +
-                "insert into settings_shipment          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=21 and status_type=2));" +
-                "insert into settings_vatinvoicein      ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=38 and status_type=2));" +
-                "insert into settings_vatinvoiceout     ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=37 and status_type=2));" +
-                "insert into settings_writeoff          ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=17 and status_type=2));";
+                insertSettingsFast(masterId, mId, cId);
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return false;
+        } catch (Exception e) {
+            logger.error("Exception in method insertStatusesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return true;
+        }
+    }
+
+    @Transactional
+    public void insertSettingsFast(Long masterId, Long mId, Long cId) throws Exception {
+        String stringQuery=
+                // Set the Status of Completed document into settings of each type of documents
+                "insert into settings_acceptance        ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=15 and status_type=2 limit 1));" +
+                "insert into settings_correction        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=41 and status_type=2 limit 1));" +
+                "insert into settings_customers_orders  ( master_id,company_id,user_id,status_id_on_autocreate_on_cheque)   values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=23 and status_type=2 limit 1));" +
+                "insert into settings_inventory         ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=27 and status_type=2 limit 1));" +
+                "insert into settings_invoicein         ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=32 and status_type=2 limit 1));" +
+                "insert into settings_invoiceout        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=31 and status_type=2 limit 1));" +
+                "insert into settings_moving            ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=30 and status_type=2 limit 1));" +
+                "insert into settings_orderin           ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=35 and status_type=2 limit 1));" +
+                "insert into settings_orderout          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=36 and status_type=2 limit 1));" +
+                "insert into settings_ordersup          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=39 and status_type=2 limit 1));" +
+                "insert into settings_paymentin         ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=33 and status_type=2 limit 1));" +
+                "insert into settings_paymentout        ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=34 and status_type=2 limit 1));" +
+                "insert into settings_posting           ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=16 and status_type=2 limit 1));" +
+                "insert into settings_retail_sales      ( master_id,company_id,user_id,status_id_on_autocreate_on_cheque)   values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=25 and status_type=2 limit 1));" +
+                "insert into settings_return            ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=28 and status_type=2 limit 1));" +
+                "insert into settings_returnsup         ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=29 and status_type=2 limit 1));" +
+                "insert into settings_shipment          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=21 and status_type=2 limit 1));" +
+                "insert into settings_vatinvoicein      ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=38 and status_type=2 limit 1));" +
+                "insert into settings_vatinvoiceout     ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=37 and status_type=2 limit 1));" +
+                "insert into settings_writeoff          ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=17 and status_type=2 limit 1));";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         } catch (Exception e) {
-            logger.error("Exception in method insertStatusesFast. SQL query:"+stringQuery, e);
+            logger.error("Exception in method insertSettingsFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return null;
+            throw new Exception();
         }
     }
-
-
-
 
 
 }

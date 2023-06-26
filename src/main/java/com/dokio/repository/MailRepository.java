@@ -1,30 +1,13 @@
-/*
-        Dokio CRM - server part. Sales, finance and warehouse management system
-        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
-
-        This program is free software: you can redistribute it and/or modify
-        it under the terms of the GNU Affero General Public License as
-        published by the Free Software Foundation, either version 3 of the
-        License, or (at your option) any later version.
-
-        This program is distributed in the hope that it will be useful,
-        but WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-        GNU Affero General Public License for more details.
-
-        You should have received a copy of the GNU Affero General Public License
-        along with this program.  If not, see <https://www.gnu.org/licenses/>
-*/
 package com.dokio.repository;
 import com.dokio.model.User;
+import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -44,13 +27,21 @@ public class MailRepository {
     UserRepository userRepository;
     @Autowired
     PasswordEncoder encoder;
+    @Autowired
+    CommonUtilites cu;
+    @Autowired
+    UserRepositoryJPA userRepositoryJPA;
 
-    public Integer activateAccount(String email, String uuid){
+    public Integer activateAccount(String email, String uuid, String langCode){
         try{
-            String mailLink ="http://"+dokioserver+"/activate/"+ uuid ;
-            String mailBody="\n\n You have registered new account in the DokioCRM application. Please use the below link to confirm your e-mail."+ "\n\n Click on Link: "+mailLink;
-            MimeMessagePreparator preparator = getMessagePreparator(from_email,email,"DokioCRM registration confirm",mailBody);
-            mailSender.send(preparator);
+            String htmlTemplate = cu.translateHTMLmessage("email_template",langCode);
+            String mailLink ="<a href=\"http://"+dokioserver+"/activate/"+ uuid+"\">http://"+dokioserver+"/activate/"+ uuid +"</a>" ;
+            String mailHeader = "Email confirmation";
+            String mailContent="You have registered new account. Please use the below link to confirm your e-mail."+ "<br><br> Click on Link: "+mailLink;
+            final String mailBody = htmlTemplate.replace("{HEADER}", mailHeader).replace("{CONTENT}",mailContent);
+            MimeMessagePreparator messagePreparator = getMessagePreparator(from_email, email, "Email confirmation", mailBody);
+            mailSender.send(messagePreparator);
+
             return 1;
         } catch (Exception e){
             e.printStackTrace();
@@ -65,10 +56,14 @@ public class MailRepository {
             String uuid = UUID.randomUUID().toString();
             user.setRepairPassCode(uuid);
             userRepository.save(user);
-            String mailLink ="http://"+dokioserver+"/newpass/"+ uuid ;
-            String mailBody="\n\n You have requested for a new password from the Dokio application. Please use the below link to set new password."+ "\n\n Click on Link: "+mailLink;
-            MimeMessagePreparator preparator = getMessagePreparator(from_email,email,"Password repairing",mailBody);
-            mailSender.send(preparator);
+            String langCode = userRepositoryJPA.getUserSuffix(user.getId());
+            String htmlTemplate = cu.translateHTMLmessage("email_template",langCode);
+            String mailLink ="<a href=\"http://"+dokioserver+"/newpass/"+ uuid+"\">http://"+dokioserver+"/newpass/"+ uuid +"</a>" ;
+            String mailContent="You have requested for a new password. Please use the below link to set new password."+ "<br><br> Click on Link: "+mailLink;
+            String mailHeader = "Password recovery";
+            final String mailBody = htmlTemplate.replace("{HEADER}", mailHeader).replace("{CONTENT}",mailContent);
+            MimeMessagePreparator messagePreparator = getMessagePreparator(from_email, email, "Password recovery", mailBody);
+            mailSender.send(messagePreparator);
             return 1;
         } catch (Exception e){
             e.printStackTrace();
@@ -91,42 +86,28 @@ public class MailRepository {
         }
     }
 
-
-
     private MimeMessagePreparator getMessagePreparator(String from_email, String to_email, String subject, String text) {
-
         return mimeMessage -> {
-            mimeMessage.setFrom(from_email);
-            mimeMessage.setRecipient(Message.RecipientType.TO,
-                    new InternetAddress(to_email));
-            mimeMessage.setSubject(subject);
-            mimeMessage.setText(text);
+            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage);
+            messageHelper.setTo(to_email);
+            messageHelper.setFrom(from_email);
+            messageHelper.setSubject(subject);
+            messageHelper.setText(text, true);
         };
     }
 
-    public Integer sentMessage(String emailTo, String subject, String message){
+    void sentMessage(String emailTo, String subject, String message, String langCode){
         try{
-            String mailBody=message;
-            MimeMessagePreparator preparator = getMessagePreparator(from_email,emailTo,subject,mailBody);
-            mailSender.send(preparator);
-            return 1;
+            String htmlTemplate = cu.translateHTMLmessage("email_template",langCode);
+            final String mailBody = htmlTemplate.replace("{HEADER}", subject).replace("{CONTENT}",message);
+            MimeMessagePreparator messagePreparator = getMessagePreparator(from_email, emailTo, subject, mailBody);
+            mailSender.send(messagePreparator);
         } catch (Exception e){
             e.printStackTrace();
-            return null;
+            logger.error("Exception in method sentMessage.", e);
         }
     }
 
 
-    public Integer sentMessage(String emailFrom, String emailTo, String subject, String message){
-        try{
-            String mailBody=message;
-            MimeMessagePreparator preparator = getMessagePreparator(emailFrom,emailTo,subject,mailBody);
-            mailSender.send(preparator);
-            return 1;
-        } catch (Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
 
 }

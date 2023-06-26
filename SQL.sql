@@ -4981,3 +4981,108 @@ alter table stores_productcategories add column need_to_syncwoo    boolean;
 alter table stores_productcategories add column date_time_syncwoo  timestamp with time zone;
 
 alter table product_attributes add column description varchar(250);
+
+alter table product_prices_history alter column price_value drop not null;
+  alter table users alter column plan_id drop not null;
+
+insert into _saas_messages (key, tr_ru, tr_en) values (
+                                                        'email_template',
+                                                        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title></title>
+	<style type="text/css">
+		body {
+			margin: 0;
+			background-color: white;
+		}
+		table {
+			border-spacing: 0;
+		}
+		td {
+			padding: 0;
+		}
+		img {
+			border: 0;
+		}
+
+	</style>
+</head>
+<body>
+	<center class="wrapper">
+		<table class="main" width="100%">
+		<tr>
+			<td style="text-align: center;">
+				<h2>
+					{HEADER}
+				</h2>
+			</td>
+		</tr>
+		<tr>
+			<td style="text-align: center;">
+				{CONTENT}
+			</td>
+		</tr>
+		</table>
+	</center>
+</body>
+</html>',
+                                                        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title></title>
+	<style type="text/css">
+		body {
+			margin: 0;
+			background-color: white;
+		}
+		table {
+			border-spacing: 0;
+		}
+		td {
+			padding: 0;
+		}
+		img {
+			border: 0;
+		}
+
+	</style>
+</head>
+<body>
+	<center class="wrapper">
+		<table class="main" width="100%">
+		<tr>
+			<td style="text-align: center;">
+				<h2>
+					{HEADER}
+				</h2>
+			</td>
+		</tr>
+		<tr>
+			<td style="text-align: center;">
+				{CONTENT}
+			</td>
+		</tr>
+		</table>
+	</center>
+</body>
+</html>');
+
+insert into _dictionary (key, tr_ru, tr_en) values
+('default_store_name',              'Мой интернет-магазин',          'My online store');
+
+create table stores_sync_statuses(
+                                   id bigserial primary key not null,
+                                   master_id  bigint not null,
+                                   store_id  bigint not null,
+                                   date_time_start timestamp with time zone not null,
+                                   date_time_end timestamp with time zone not null,
+                                   job varchar(10)
+
+);

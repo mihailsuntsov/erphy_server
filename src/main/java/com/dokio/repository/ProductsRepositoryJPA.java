@@ -256,7 +256,7 @@ public class ProductsRepositoryJPA {
                     "           coalesce(p.markable,false) as markable, " +
                     "           p.markable_group_id as markable_group_id, " +
                     "           coalesce(p.excizable,false) as excizable, " +
-                    "           p.article as article, " +
+                    "           coalesce(p.article,'') as article, " +
                     "           p.product_code_free as product_code_free, " +
                     "           p.group_id as productgroup_id, " +
                     "           us.name as creator, " +
@@ -2468,10 +2468,13 @@ public class ProductsRepositoryJPA {
             try {
                 commonUtilites.idBelongsMyMaster("companies",request.getId(),myMasterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.executeUpdate();
 
                 if(isStoreCategories(request.getSetOfLongs1(), myMasterId))
                     markAllCategoriesAsNeedToSyncWoo(request.getId(), myMasterId);
+
+                query.executeUpdate();
+
+
 
                 // If category is deleted - do not need to mark products of this category as need to sync woo.
                 // The set of product categories on the store side will be automatically corrected by WooCommerce on a stage of categories synchronization.
@@ -2531,17 +2534,27 @@ public class ProductsRepositoryJPA {
     //*
     public void markProductsAsNeedToSyncWoo(Set<Long> productsIds, Long masterId) throws Exception {
 
-        String stringQuery = " update stores_products " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
-                        " master_id = " + masterId +
-                        " and product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",");")+
+        String stringQuery =
+                " update stores_products " +
+                " set need_to_syncwoo = true " +
+                " where " +
+                " master_id = " + masterId +
+                " and product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",");")+
 
-                        " update stores_variations " +
-                        " set need_to_syncwoo = true " +
-                        " where " +
-                        " master_id = " + masterId +
-                        " and product_id in (select variation_product_id from product_variations where product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",");");
+
+                " update stores_variations " +
+                " set need_to_syncwoo = true " +
+                " where " +
+                " master_id = " + masterId +
+                " and (" +
+                        // if productsIds contains Variative product - mark its variations
+                    "product_id in (select variation_product_id from product_variations where product_id in "+ commonUtilites.SetOfLongToString(productsIds,",","(",")")+")"+
+                        // if productsIds contains Variations - mark them
+                    "or " +
+                    "product_id in  "+ commonUtilites.SetOfLongToString(productsIds,",","(",")") +
+                " );";
+
+
 
         try {
             if(productsIds.size()>0) {

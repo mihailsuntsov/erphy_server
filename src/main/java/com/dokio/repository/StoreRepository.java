@@ -522,12 +522,13 @@ public class StoreRepository {
                     " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")" +
                     " and p.id not in (select store_id from _saas_stores_for_ordering where coalesce(master_id,0)="+masterId+" and distributed=true and is_deleted=false)";
             try{
+                if(storesHaveNonDeletedSites(delNumbers,masterId))
+                    //С одним из удаляемых интернет-магазинов связан сайт, который не был удален. Сначала нужно удалить сайт
+                    //One of the online stores to be deleted has a site linked to it that has not been deleted. First you need to delete the site
+                    return -360;
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                if(storesHaveNonDeletedSites(delNumbers,masterId))
-                    return -360;//С одним из удаляемых интернет-магазинов связан сайт, который не был удален. Сначала нужно удалить сайт
-                else            //One of the online stores to be deleted has a site linked to it that has not been deleted. First you need to delete the site
-                    return 1;
+                return 1;
             } catch (Exception e) {
                 logger.error("Exception in method deleteStores on updating stores. SQL query:"+stringQuery, e);
                 e.printStackTrace();
@@ -539,7 +540,7 @@ public class StoreRepository {
     private boolean storesHaveNonDeletedSites(String delNumbers, Long masterId) throws Exception {
         String stringQuery =
                 " select count(*) from _saas_stores_for_ordering where coalesce(master_id,0)="+masterId+" and" +
-                        " distributed=true and " +
+//                        " distributed=true and " +
                         " is_deleted=false and " +
                         " store_id in (" + delNumbers.replaceAll("[^0-9\\,]", "") + ")";
         try{
@@ -888,6 +889,7 @@ public class StoreRepository {
 
             Long masterId = userRepositoryJPA.getMyMasterId();
             Long myId=userRepository.getUserId();
+            String langCode = userRepositoryJPA.getUserSuffix(myId);
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
             String siteUrl;
@@ -987,7 +989,7 @@ public class StoreRepository {
 
                             "Best regards, DokioCRM team!";
 
-                    mailRepository.sentMessage(masterUserEmail,subj,body);
+                    mailRepository.sentMessage(masterUserEmail,subj,body,langCode);
 
                 } else {    // there are no free stores for rent
 
@@ -1020,7 +1022,7 @@ public class StoreRepository {
                                         "Orderer ID = " + myId + "\n\n "+
                                         "Created at = " + timestamp + "\n\n "+
                                         "Agreement ID = " + agreementId;
-                        mailRepository.sentMessage(settingsGeneral.getStores_alert_email(),subj,body);
+                        mailRepository.sentMessage(settingsGeneral.getStores_alert_email(),subj,body,"en");
                     }
                     //get message for user
                     Map<String, String> map = cu.translateHTMLmessages(myId, new String[]{"'online_store_no_free_but_ordered'"});
@@ -1068,7 +1070,7 @@ public class StoreRepository {
             if(storesQtt<alarmQtt){
                 String subj = "Low level of free stores!";
                 String body = "Only "+storesQtt+" stores left!";
-                mailRepository.sentMessage(alarmEmail,subj,body);
+                mailRepository.sentMessage(alarmEmail,subj,body,"en");
             }
         } catch (Exception e) {
             logger.error("Exception in method alarmLowFreeStoresToRent. SQL query:"+stringQuery, e);
@@ -1083,7 +1085,7 @@ public class StoreRepository {
                 String body = "Customer email: "+ordererEmail+ "\n\n" +
                         "Store short data: "+ "\n\n"+
                         storeShortData;
-                mailRepository.sentMessage(succEmail,subj,body);
+                mailRepository.sentMessage(succEmail,subj,body,"en");
         } catch (Exception e) {
             logger.error("Exception in method storesToRentOrderedSuccessfully.", e);
             e.printStackTrace();
@@ -1191,7 +1193,7 @@ public class StoreRepository {
             Long masterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             Long myId = userRepository.getUserId();
-
+            String langCode = userRepositoryJPA.getUserSuffix(masterId);
             try {
                 stringQuery = " update _saas_stores_for_ordering set " +
                         " date_time_query_to_delete = now(), " +
@@ -1215,37 +1217,37 @@ public class StoreRepository {
                 StoreForOrderingJSON storeForOrderingData = getStoreForOrderingData(recordId);
 
                 // sending email to "Online stores support team of CRM"
-                String subj = "Online store deletion request received"+ "\n\n";
+                String subj = "Online store deletion request received";
                 String body =
-                        "Master customer email: "+masterEmail+ "\n\n\n" +
-                        "Date and time query for delete: "  + storeForOrderingData.getDate_time_query_to_delete() + "\n" +
-                        "Who requested removal: "  + whoRequestDelete + "\n" +
-                        "Email of the person who requested deletion: "  + emailRequestDelete + "\n\n" +
-                        "Store data: "+ "\n\n"+
-                        "Online store connection Id: " + storeId + "\n" +
-                        "Rent store record Id: " + recordId + "\n" +
-                        "Site domain: "                     + storeForOrderingData.getSite_domain() + "\n" +
-                        "Site root: "                       + storeForOrderingData.getSite_root() + "\n" +
-                        "Site server IP: "                  + storeForOrderingData.getWp_server_ip() + "\n" +
-                        "FTP user: "                        + storeForOrderingData.getFtp_user() + "\n" +
-                        "MySQL DB name: "                     + storeForOrderingData.getDb_name() + "\n" +
-                        "Site domain: "                     + storeForOrderingData.getClient_no() + "\n";
-                mailRepository.sentMessage(settingsGeneral.getStores_alert_email(), subj,body);
+                        "Master customer email: "+masterEmail+ "<br><br>" +
+                        "Date and time query for delete: "  + storeForOrderingData.getDate_time_query_to_delete() + "<br>" +
+                        "Who requested removal: "  + whoRequestDelete + "<br>" +
+                        "Email of the person who requested deletion: "  + emailRequestDelete + "<br><br>" +
+                        "Store data: "+ "<br><br>"+
+                        "Online store connection Id: " + storeId + "<br>" +
+                        "Rent store record Id: " + recordId + "<br>" +
+                        "Site domain: "                     + storeForOrderingData.getSite_domain() + "<br>" +
+                        "Site root: "                       + storeForOrderingData.getSite_root() + "<br>" +
+                        "Site server IP: "                  + storeForOrderingData.getWp_server_ip() + "<br>" +
+                        "FTP user: "                        + storeForOrderingData.getFtp_user() + "<br>" +
+                        "MySQL DB name: "                     + storeForOrderingData.getDb_name() + "<br>" +
+                        "Site domain: "                     + storeForOrderingData.getClient_no() + "<br>";
+                mailRepository.sentMessage(settingsGeneral.getStores_alert_email(), subj,body,"en");
 
 
                 // sending email to master-account owner for confirmation of delete online store
                 Map<String, String> map_h = cu.translateHTMLmessages(myId, new String[]{"'delete_online_store_request'"});
                 Map<String, String> map =   cu.translateForMe(new String[]{"'site_data'","'site_address'","'site_name'","'who_requested_removal'","'confirmation_email'","'os_req_rcvd'"});
 
-                subj =  map.get("os_req_rcvd")+ "\n\n"; // Subj: Received a request to delete a site with an online store
-                body =  map_h.get("delete_online_store_request")+ "\n\n" +
-                        map.get("confirmation_email")+ ": "+ settingsGeneral.getStores_alert_email() +"\n\n"+
-                        map.get("who_requested_removal")+ ": "+ whoRequestDelete +"\n\n"+
+                subj =  map.get("os_req_rcvd"); // Subj: Received a request to delete a site with an online store
+                body =  map_h.get("delete_online_store_request")+ "<br><br>" +
+                        map.get("confirmation_email")+ ": "+ settingsGeneral.getStores_alert_email() +"<br><br>"+
+                        map.get("who_requested_removal")+ ": "+ whoRequestDelete +"<br><br>"+
 //                        map.get("site_data")+ "\n"+
-                        map.get("site_address")+ ": "+ storeForOrderingData.getSite_domain() +"\n\n"+
-                        map.get("site_name")+ ": "+ cu.getFieldValueFromTableById("stores","name", masterId, storeId) +"\n\n";
+                        map.get("site_address")+ ": "+ storeForOrderingData.getSite_domain() +"<br><br>"+
+                        map.get("site_name")+ ": "+ cu.getFieldValueFromTableById("stores","name", masterId, storeId) +"<br><br>";
 
-                mailRepository.sentMessage(masterEmail,subj,body);
+                mailRepository.sentMessage(masterEmail,subj,body,langCode);
 
                 return 1;
             } catch (Exception e) {
@@ -1577,6 +1579,95 @@ public class StoreRepository {
             e.printStackTrace();
             logger.error("Exception in method getExistedRentSitesList. SQL: "+stringQuery, e);
             return null;
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Long insertStoreFast(StoresForm request, Long mId, Long uId) {
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            String stringQuery =
+                    "insert into stores (" +
+                            " master_id," +                     // мастер-аккаунт
+                            " creator_id," +                    // создатель
+                            " company_id," +                    // предприятие, для которого создается документ
+                            " date_time_created," +             // дата и время создания
+                            " name," +                          // name
+                            " lang_code, " +                    // e.g. EN
+                            " store_ip, " +                     // e.g. 127.0.0.1
+                            " store_type, " +                   // now always = woo
+                            " store_api_version, " +            // now always = v3
+                            " crm_secret_key, " +               // like UUID generated
+                            " store_price_type_regular, " +     // id of regular type price
+                            " store_price_type_sale, " +        // id of sale type price
+                            " store_orders_department_id, " +   // department for creation Customer order from store
+                            " store_if_customer_not_found, " +  // "create_new" or "use_default". Default is "create_new"
+                            " store_default_customer_id, " +    // counterparty id if store_if_customer_not_found=use_default
+                            " store_default_creator_id, " +     // default user that will be marked as a creator of store order. Default is master user
+                            " store_days_for_esd, " +           // number of days for ESD of created store order. Default is 0
+                            " store_auto_reserve, " +           // auto reserve product after getting internet store order
+                            " is_deleted," +                     // deleted
+                            " is_let_sync" +
+                            ") values ("+
+                            mId + ", "+//мастер-аккаунт
+                            uId + ", "+ //создатель
+                            request.getCompany_id() + ", "+//предприятие, для которого создается документ
+                            "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                            ":name," +
+                            "upper(:lang_code)," +
+                            ":store_ip," +
+                            "'woo',"+
+                            "'v3',"+
+                            ":crm_secret_key," +
+                            request.getStore_price_type_regular() + ", " +
+                            request.getStore_price_type_sale() + ", " +
+                            request.getStore_orders_department_id() + ", " +
+                            ":store_if_customer_not_found, " +
+                            request.getStore_default_customer_id() + ", " +
+                            request.getStore_default_creator_id() + ", " +
+                            request.getStore_days_for_esd() + ", " +
+                            request.getStore_auto_reserve() + ", " +
+                            "false" + ", " +
+                            request.getIs_let_sync() +
+                            ")";// уникальный идентификатор документа
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
+                query.setParameter("lang_code",request.getLang_code());
+                query.setParameter("crm_secret_key",request.getCrm_secret_key());
+                query.setParameter("store_if_customer_not_found",request.getStore_if_customer_not_found());
+                query.setParameter("store_ip", request.getStore_ip());
+                query.executeUpdate();
+                stringQuery="select id from stores where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+uId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                Long createdDoc = Long.valueOf(query2.getSingleResult().toString());
+                // saving store departments
+                request.setId(createdDoc);
+                insertStoreDepartmentsFast(request, mId);
+                return createdDoc;
+            } catch (Exception e) {
+                logger.error("Exception in method insertStoreFast on creating new user account. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+    }
+
+
+    private void insertStoreDepartmentsFast(StoresForm request, Long masterId) throws Exception {
+        Set<Long> departsIds=new HashSet<>();
+        int i = 0;
+        try{
+            if (request.getStoreDepartments()!=null && request.getStoreDepartments().size() > 0) {
+                for (Long departId : request.getStoreDepartments()) {
+                    saveStoreDepartment(departId,request.getCompany_id(), masterId, request.getId(), i);
+                    departsIds.add(departId);
+                    i++;
+                }
+            }
+        }catch (Exception e) {
+            logger.error("Error of insertStoreDepartmentsFast.", e);
+            e.printStackTrace();
+            throw new Exception();
         }
     }
 }

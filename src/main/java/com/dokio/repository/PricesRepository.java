@@ -53,6 +53,8 @@ public class PricesRepository {
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
+    ProductsRepositoryJPA productsRepository;
+    @Autowired
     DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     private CommonUtilites commonUtilites;
@@ -293,7 +295,7 @@ public class PricesRepository {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class, RuntimeException.class})
     public boolean savePrices(PricesForm request) {
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         Long userId = userRepository.getUserId();
         //Если есть право на "Установка цен по всем предприятиям", ИЛИ
         try{
@@ -302,36 +304,37 @@ public class PricesRepository {
 
             if(canSetPricesOfAllTheseDepartments(request, myMasterId))
             {
-                if (clearProductPrices(request, myMasterId))
+                clearProductPrices(request, myMasterId);
+
+                if (request.getPriceTypeId()==0) //если 0 значит были выбраны все типы цен, и нужно установить цены по всем типам цен во всех товарах.
                 {
-                    if (request.getPriceTypeId()==0) //если 0 значит были выбраны все типы цен, и нужно установить цены по всем типам цен во всех товарах.
-                    {
-                        for (Long priceType : request.getPriceTypesIds()) {
-                            commonUtilites.idBelongsMyMaster("sprav_type_prices", priceType, myMasterId);
-                            for (Long product : request.getProductsIds()) {
-                                commonUtilites.idBelongsMyMaster("products", product, myMasterId);
-                                if (!insertPrice(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
-                                    break;
-                                }
-                                if (!insertPriceHistory(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
-                                    break;
-                                }
-                            }
-                        }
-                    }else{// если не 0 значит был выбран какой-то определенный тип цены, и нужно установить цены только по этому типу
-                        commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPriceTypeId(), myMasterId);
+                    for (Long priceType : request.getPriceTypesIds()) {
+                        commonUtilites.idBelongsMyMaster("sprav_type_prices", priceType, myMasterId);
                         for (Long product : request.getProductsIds()) {
                             commonUtilites.idBelongsMyMaster("products", product, myMasterId);
-                            if (!insertPrice(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
+                            if (!insertPrice(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
                                 break;
                             }
-                            if (!insertPriceHistory(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
+                            if (!insertPriceHistory(priceType, product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
                                 break;
                             }
                         }
                     }
-                    return true;
-                } else return false;
+                }else{// если не 0 значит был выбран какой-то определенный тип цены, и нужно установить цены только по этому типу
+                    commonUtilites.idBelongsMyMaster("sprav_type_prices", request.getPriceTypeId(), myMasterId);
+                    for (Long product : request.getProductsIds()) {
+                        commonUtilites.idBelongsMyMaster("products", product, myMasterId);
+                        if (!insertPrice(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue())) {
+                            break;
+                        }
+                        if (!insertPriceHistory(request.getPriceTypeId(), product, myMasterId, request.getCompanyId(), request.getPriceValue(),userId)) {
+                            break;
+                        }
+                    }
+                }
+                productsRepository.markProductsAsNeedToSyncWoo(request.getProductsIds(), myMasterId);
+                return true;
+
             } else return false;
         } catch (Exception e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -343,7 +346,7 @@ public class PricesRepository {
     }
 
     @SuppressWarnings("Duplicates")
-    private boolean clearProductPrices(PricesForm request,Long myMasterId) {
+    private boolean clearProductPrices(PricesForm request,Long myMasterId) throws Exception {
         String stringQuery;
 
         stringQuery=
@@ -362,7 +365,7 @@ public class PricesRepository {
         } catch (Exception e) {
             e.printStackTrace();
             log.error("ERROR: ", e);
-            return false;
+            throw new Exception();
         }
         return true;
     }
@@ -380,8 +383,9 @@ public class PricesRepository {
                         "   ) values (" +
                         "(select id from products where id="+productId +" and master_id="+myMasterId+"), "+//Проверки, что никто не шалит, и идёт запись того, чего надо туда, куда надо
                         priceTypeId+", "+
-                        priceValue.toString() + "," +
-                        myMasterId + ", "+ companyId + ")";
+                        priceValue+", " +
+                        myMasterId + ", "+
+                        companyId + ")";
         try{
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -409,7 +413,7 @@ public class PricesRepository {
                         "   ) values (" +
                         "(select id from products where id="+productId +" and master_id="+myMasterId+"), "+//Проверки, что никто не шалит, и идёт запись того, чего надо туда, куда надо
                         priceTypeId+","+
-                        priceValue.toString() + "," +
+                        priceValue + "," +
                         myMasterId + ","+
                         changerId + "," +
                         companyId + ","+
