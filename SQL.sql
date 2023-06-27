@@ -5078,11 +5078,13 @@ insert into _dictionary (key, tr_ru, tr_en) values
 ('default_store_name',              'Мой интернет-магазин',          'My online store');
 
 create table stores_sync_statuses(
-                                   id bigserial primary key not null,
-                                   master_id  bigint not null,
-                                   store_id  bigint not null,
-                                   date_time_start timestamp with time zone not null,
-                                   date_time_end timestamp with time zone not null,
-                                   job varchar(10)
-
-);
+             id bigserial primary key not null,
+             master_id  bigint not null,
+             store_id  bigint not null,
+             date_time_start timestamp with time zone,
+             date_time_end timestamp with time zone,
+             job varchar(10) not null,
+             foreign key (master_id) references users(id),
+             foreign key (store_id) references stores(id)
+                                 );
+alter table stores_sync_statuses add constraint stores_sync_statuses_uq unique (store_id, job);

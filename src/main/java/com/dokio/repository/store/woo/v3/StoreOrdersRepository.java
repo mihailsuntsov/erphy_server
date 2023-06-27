@@ -52,6 +52,8 @@ public class StoreOrdersRepository {
         try {
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
+            storeRepository.saveStoreSyncStatus(storeId, "orders", masterId, "begin");
 
             stringQuery=" select p.woo_gmt_date from customers_orders p  " +
                         " where p.company_id = " + companyId +
@@ -95,6 +97,8 @@ public class StoreOrdersRepository {
             for (OrderForm row : request.getOrders()) {
                 insertOrder(row, masterId, companyId, storeId, settings);
             }
+
+            storeRepository.saveStoreSyncStatus(storeId, "orders", masterId, "end");
             return 1;
         }catch (StoreDefaultCustomerIsNotSet e) {
             logger.error("StoreDefaultCustomerIsNotSet in method woo/v3/StoreOrdersRepository/putOrdersIntoCRM. ", e);

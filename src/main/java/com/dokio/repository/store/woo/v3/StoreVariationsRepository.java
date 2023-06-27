@@ -24,6 +24,7 @@ import com.dokio.message.response.store.woo.v3.products.*;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.repository.StoreRepository;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,8 @@ public class StoreVariationsRepository {
     CompanyRepositoryJPA companyRepository;
     @Autowired
     StoreProductsRepository storeProductsRepository;
+    @Autowired
+    StoreRepository storeRepository;
 
 
 
@@ -304,6 +307,8 @@ public class StoreVariationsRepository {
             for (SyncIdForm row : request.getIdsSet()) {
                 syncVariationId(row, companyId, masterId, storeId );
             }
+
+            storeRepository.saveStoreSyncStatus(storeId, "products", masterId, "end");
             return 1;
         }catch (WrongCrmSecretKeyException e) {
             logger.error("WrongCrmSecretKeyException in method woo/v3/StoreVariationsRepository/syncVariationsIds. Key:"+request.getCrmSecretKey(), e);

@@ -258,8 +258,10 @@ public class AuthRestAPIs {
 			mailRepository.activateAccount(signUpRequest.getEmail(), user.getActivationCode(),signUpRequest.getLanguage());
 
 			return new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
-		} catch (Exception e){e.printStackTrace();logger.error("Controller registerUser error", e);
-			return new ResponseEntity<>("User registration error", HttpStatus.INTERNAL_SERVER_ERROR);}
+		} catch (Exception e){
+			e.printStackTrace();logger.error("Controller registerUser error", e);
+			return new ResponseEntity<>("User registration error", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	public Set<Long> getAdminPermissions(){

@@ -24,6 +24,7 @@ import com.dokio.message.response.store.woo.v3.ProductCategoriesJSON;
 import com.dokio.message.response.store.woo.v3.ProductCategoryJSON;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.ProductsRepositoryJPA;
+import com.dokio.repository.StoreRepository;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,8 @@ public class StoreProductCategoriesRepository {
     CommonUtilites cu;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    StoreRepository storeRepository;
 
     public ProductCategoriesJSON syncProductCategoriesToStore(String key) {
         ProductCategoriesJSON result = new ProductCategoriesJSON();
@@ -59,6 +62,8 @@ public class StoreProductCategoriesRepository {
             Long storeId = Long.valueOf(cu.getByCrmSecretKey("id",key).toString());
             Long companyId = Long.valueOf(cu.getByCrmSecretKey("company_id",key).toString());
             String langCode = (String)cu.getByCrmSecretKey("lang_code", key);
+            Long masterId = Long.valueOf(cu.getByCrmSecretKey("master_id",key).toString());
+            storeRepository.saveStoreSyncStatus(storeId, "products", masterId, "begin");
 
             String stringQuery2;
             String stringQuery =

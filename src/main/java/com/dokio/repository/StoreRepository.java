@@ -43,7 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
@@ -1668,6 +1667,50 @@ public class StoreRepository {
             logger.error("Error of insertStoreDepartmentsFast.", e);
             e.printStackTrace();
             throw new Exception();
+        }
+    }
+
+    @Transactional
+    public void saveStoreSyncStatus(Long storeId, String job, Long masterId, String status) throws Exception {
+        String stringQuery;
+
+        stringQuery =   " insert into stores_sync_statuses (" +
+                " master_id," +
+                " store_id," +
+                " job," +
+                " date_time_start" +
+                ") values (" +
+                masterId + ", " +
+                storeId + ", " +
+                "'"+ job +"', " +
+                (status.equals("begin")?"now()":"null") +
+                ") ON CONFLICT ON CONSTRAINT stores_sync_statuses_uq " +// "upsert"
+                " DO update set " +
+                (status.equals("begin")?" date_time_start = now(),":"") +
+                " date_time_end = "+(status.equals("end")?"now()":"null");
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method StoreRepository/saveStoreSyncStatus. SQL query:"+stringQuery, e);
+        }
+    }
+    @Transactional
+    public void setStoreSyncStatusAsFinished(Long storeId) throws Exception {
+        String stringQuery;
+        stringQuery =   " update stores_sync_statuses set " +
+                        " date_time_end = now() " +
+                        " where " +
+                        " store_id=" +storeId+ " and date_time_end is null";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method StoreRepository/setStoreSyncStatusAsFinished. SQL query:"+stringQuery, e);
         }
     }
 }
