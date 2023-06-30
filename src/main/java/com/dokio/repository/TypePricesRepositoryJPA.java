@@ -454,14 +454,14 @@ public class TypePricesRepositoryJPA {
 
     // inserting base set of types of prices for new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public List<Long> insertPriceTypesFast(Long mId, Long cId) {
+    public List<Long> insertPriceTypesFast(Long mId, Long masterId, Long cId) {
         String stringQuery;
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'basic_price'","'sale_price'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         List<Long> retList = new ArrayList<>();
         stringQuery = "insert into sprav_type_prices ( master_id,creator_id,company_id,date_time_created,name,is_default,is_deleted) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("basic_price")+"',true, false)," +
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("sale_price")+"',false, false)";
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("basic_price")+"',true, false)," +
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("sale_price")+"',false, false)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

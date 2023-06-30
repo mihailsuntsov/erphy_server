@@ -191,11 +191,11 @@ public class AuthRestAPIs {
 			company.setStore_default_lang_code(signUpRequest.getLanguage());
 			Long companyId = companyRepositoryJPA.insertCompanyFast(company, createdUserId);
 			// типы цен
-			List<Long> prices = typePricesRepository.insertPriceTypesFast(createdUserId, companyId);
+			List<Long> prices = typePricesRepository.insertPriceTypesFast(createdUserId, createdUserId, companyId);
 			// касса предприятия (денежная комната)
-			Long bo = boxofficeRepository.insertBoxofficesFast(createdUserId, companyId);
+			Long bo = boxofficeRepository.insertBoxofficesFast(createdUserId, createdUserId, companyId);
 			// расчетный счет предприятия
-			Long ac = paymentAccountsRepository.insertPaymentAccountsFast(createdUserId, companyId);
+			Long ac = paymentAccountsRepository.insertPaymentAccountsFast(createdUserId, createdUserId, companyId);
 			// создадим пользователю отделение
 			DepartmentForm department = new DepartmentForm();
 			department.setName(map.get("my_department"));
@@ -210,7 +210,7 @@ public class AuthRestAPIs {
 			user.setDepartments(userDepartments);
 			userRepository.saveAndFlush(user);
 			// создадим пользователю Роль (группу пользователей)
-			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), companyId, createdUserId);
+			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), companyId, createdUserId, createdUserId);
 			Set<Long> permissions = getAdminPermissions();
 			userGroupRepository.setPermissionsToUserGroup(permissions, usergroupId);
 			// зададим пользователю набор валют

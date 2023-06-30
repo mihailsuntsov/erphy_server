@@ -437,12 +437,12 @@ public class SpravBoxofficeRepositoryJPA {
 
     // inserting base set of cash room for new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertBoxofficesFast(Long mId, Long cId) {
+    public Long insertBoxofficesFast(Long mId, Long masterId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = cu.translateForUser(mId, new String[]{"'main_cash_room'"});
         stringQuery = "insert into sprav_boxoffice ( master_id,creator_id,company_id,date_time_created,name,is_deleted) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("main_cash_room")+"',false)";
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("main_cash_room")+"',false)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

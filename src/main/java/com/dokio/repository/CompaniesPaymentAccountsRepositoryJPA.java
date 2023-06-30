@@ -552,12 +552,12 @@ public class CompaniesPaymentAccountsRepositoryJPA {
 
     // inserting base set of cash room for new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertPaymentAccountsFast(Long mId, Long cId) {
+    public Long insertPaymentAccountsFast(Long mId, Long masterId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = cu.translateForUser(mId, new String[]{"'main_bank_acc'"});
         stringQuery = "insert into companies_payment_accounts ( master_id,creator_id,company_id,date_time_created,name,is_main,is_deleted,output_order) values "+
-                "("+mId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("main_bank_acc")+"',true,false,1)";
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("main_bank_acc")+"',true,false,1)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

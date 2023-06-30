@@ -156,6 +156,7 @@ public class TemplateRepositoryJPA {
                     commonUtilites.idBelongsMyMaster("companies",     template.getCompany_id(), myMasterId);
                     templateIds.add(template.getId());
             }
+
             deleteTemplatesExcessRows(templateIds.size()>0?(commonUtilites.SetOfLongToString(templateIds,",","","")):"0", myMasterId, companyId, documentId, myId);
 
             // Затем в зависимости от того, есть или нет такой темплейт в БД, делаем соответственно update или insert
@@ -244,7 +245,7 @@ public class TemplateRepositoryJPA {
                 " and company_id=" + companyId +
                 " and user_id = " + myId +
                 " and document_id=" + documentId +
-                " and id not in (" + templatesIds.replaceAll("[^0-9\\,]", "") + ")";
+                " and id not in (" + templatesIds + ")";
                 ;
         try {
             Query query = entityManager.createNativeQuery(stringQuery);

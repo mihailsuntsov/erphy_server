@@ -838,9 +838,10 @@ public class CompanyRepositoryJPA {
                 UserResources consumedResources = userRepositoryJPA.getMyConsumedResources();
                 UserResources allowedResources = userRepositoryJPA.getMyMaxAllowedResources();
                 if(
-                    consumedResources.getCompanies() >= allowedResources.getCompanies()||
+                    consumedResources.getCompanies() >= allowedResources.getCompanies()
+//                            ||
                             //because Company creates Department
-                    consumedResources.getDepartments()>= allowedResources.getDepartments()
+                        // consumedResources.getDepartments()>= allowedResources.getDepartments()
                 )
                     return -120L; // number of companies is out of bounds of tariff plan
             }
@@ -1049,20 +1050,21 @@ public class CompanyRepositoryJPA {
         Long myId = userRepositoryJPA.getMyId();
         Long myMasterId = userRepositoryJPA.getMyMasterId();
         // типы цен
-        List<Long> prices = typePricesRepository.insertPriceTypesFast(myId,companyId);
+        List<Long> prices = typePricesRepository.insertPriceTypesFast(myId, myMasterId,companyId);
         // кассы предприятия (денежные комнаты)
-        Long bo = boxofficeRepository.insertBoxofficesFast(myId,companyId);
+        Long bo = boxofficeRepository.insertBoxofficesFast(myId, myMasterId, companyId);
         // расчетный счет предприятия
-        Long ac = paymentAccountsRepository.insertPaymentAccountsFast(myId,companyId);
-        // отделение
-        DepartmentForm department = new DepartmentForm();
+        Long ac = paymentAccountsRepository.insertPaymentAccountsFast(myId,myMasterId,companyId);
+
         Map<String, String> map = cu.translateForUser(myId, new String[]{"'my_department'","'role_admins'"});
-        department.setName(map.get("my_department"));
-        department.setPrice_id(prices.get(0));
-        department.setBoxoffice_id(bo);
-        department.setPayment_account_id(ac);
-        departmentRepositoryJPA.insertDepartmentFast(department,companyId,myId);
-        Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"),companyId,myId);
+        // Department - commented because it is an separated option in plan - user will create it after of a Company creation
+//        DepartmentForm department = new DepartmentForm();
+//        department.setName(map.get("my_department"));
+//        department.setPrice_id(prices.get(0));
+//        department.setBoxoffice_id(bo);
+//        department.setPayment_account_id(ac);
+//        departmentRepositoryJPA.insertDepartmentFast(department,companyId,myMasterId);
+        Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"),companyId,myId,myMasterId);
         Set<Long> permissions = authRestAPIs.getAdminPermissions();
         userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
         // набор валют

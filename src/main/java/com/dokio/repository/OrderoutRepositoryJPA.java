@@ -535,7 +535,7 @@ public class OrderoutRepositoryJPA {
                     commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_to_id(), myMasterId);
-                    commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_to_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_to_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("kassa", request.getKassa_to_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("departments", request.getKassa_department_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("sprav_expenditure_items", expenditureId, myMasterId);
@@ -620,7 +620,7 @@ public class OrderoutRepositoryJPA {
                 commonUtilites.idBelongsMyMaster("sprav_expenditure_items", request.getExpenditure_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("sprav_boxoffice", request.getBoxoffice_to_id(), myMasterId);
-                commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_to_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_to_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("kassa", request.getKassa_to_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("departments", request.getKassa_department_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);

@@ -325,8 +325,9 @@ public class MovingRepository {
                 {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
                     if (!securityRepositoryJPA.userHasPermissions_OR(30L, "386")) //Если нет прав на просмотр всех доков в своих подразделениях
                     {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_from_id in :myDepthsIds and p.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                        stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID+" and a.department_from_id in :myDepthsIds and a.department_to_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();
+                        needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID+" and a.department_from_id in :myDepthsIds and a.department_to_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
                 } else stringQuery = stringQuery + " and a.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
             }
 
@@ -917,9 +918,11 @@ public class MovingRepository {
             if(productsRepository.isThereServicesInProductsList(productIds))
                 throw new ThereIsServicesInProductsListException();
         }
-        if (!deleteMovingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
-            throw new CantInsertProductRowCauseErrorException();
-        } else return true;
+        if(request.getId()>0)
+            if (!deleteMovingProductTableExcessRows(productIds.size()>0?(commonUtilites.SetOfLongToString(productIds,",","","")):"0", request.getId())){
+                throw new CantInsertProductRowCauseErrorException();
+            }
+        return true;
     }
 
     private Boolean saveMovingProductTable(MovingProductForm row, Long myMasterId, Long companyId, Long departmentFromId, Long departmentToId, boolean is_completed, boolean decompletion) throws CantInsertProductRowCauseErrorException {

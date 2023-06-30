@@ -88,11 +88,30 @@ public class UserGroup {
     @Column(name = "is_deleted")
     private Boolean is_deleted;
 
+    @Column(name = "companyId")
+    private Integer companyId;
+
     public UserGroup() {}
 
     public UserGroup(String name, String description) {
         this.name = name;
         this.description = description;
+    }
+
+    public Boolean getIs_deleted() {
+        return is_deleted;
+    }
+
+    public void setIs_deleted(Boolean is_deleted) {
+        this.is_deleted = is_deleted;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 
     public Long getId() {

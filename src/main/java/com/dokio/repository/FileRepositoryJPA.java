@@ -712,8 +712,10 @@ public class FileRepositoryJPA {
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-            if ((!securityRepositoryJPA.userHasPermissions_OR(13L, "154") &&
-                    !Long.valueOf(myCompanyId).equals(request.getCompanyId())) || !DocumentMasterId.equals(myMasterId))
+            boolean notMyCompany = !((Long.valueOf(myCompanyId)).equals(request.getCompanyId()));
+            boolean canCreateAllCompanies = securityRepositoryJPA.userHasPermissions_OR(13L, "154");
+            //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
+            if ((!canCreateAllCompanies && notMyCompany) || !DocumentMasterId.equals(myMasterId))
             {
                 return null;
             }

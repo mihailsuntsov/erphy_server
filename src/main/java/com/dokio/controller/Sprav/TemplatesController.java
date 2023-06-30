@@ -52,7 +52,7 @@ public class TemplatesController {
         logger.info("Processing get request for path /api/auth/getTemplatesList with parameters: " + "company_id: " + company_id +", document_id: "+document_id+", is_show: "+is_show);
         try {return new ResponseEntity<>(templateRepository.getTemplatesList(company_id, document_id, is_show), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getTemplatesList error", e);
-            return new ResponseEntity<>("Ошибка загрузки списка шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Templates list loading error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveTemplates")
@@ -60,7 +60,7 @@ public class TemplatesController {
     public ResponseEntity<?> saveTemplates(@RequestBody TemplatesListForm request){
         logger.info("Processing post request for path /api/auth/saveTemplates: " + request.toString());
         try {return new ResponseEntity<>(templateRepository.saveTemplates(request.getCompany_id(), request.getDocument_id(), request.getTemplatesList()), HttpStatus.OK);}
-        catch (Exception e){return new ResponseEntity<>("Ошибка сохранения шаблонов", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){return new ResponseEntity<>("Templates save error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @RequestMapping("/api/auth/getPrintVersion")

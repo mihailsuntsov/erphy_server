@@ -985,10 +985,10 @@ public class ProductsRepositoryJPA {
                 Integer myCompanyId = userRepositoryJPA.getMyCompanyId();// моё предприятие
                 Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие создаваемого документа
                 Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
-
+                boolean notMyCompany = !((Long.valueOf(myCompanyId)).equals(request.getCompany_id()));
+                boolean canCreateAllCompanies = securityRepositoryJPA.userHasPermissions_OR(14L, "163");
                 //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-                if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "163") &&
-                        Long.valueOf(myCompanyId) != request.getCompany_id()) || !DocumentMasterId.equals(myMasterId)) {
+                if ((!canCreateAllCompanies && notMyCompany) || !DocumentMasterId.equals(myMasterId)) {
                     return null;
                 } else {
 
@@ -1693,8 +1693,9 @@ public class ProductsRepositoryJPA {
                     " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
                     " upper(p.article) like upper (CONCAT('%',:sg,'%')) or " +
                     " to_char(p.product_code_free,'fm0000000000') = :sg or " +
-                    " pb.value = :sg";
-            stringQuery = stringQuery + ")";
+                    " pb.value = :sg" +
+                    ")";
+
         }
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
@@ -2038,9 +2039,10 @@ public class ProductsRepositoryJPA {
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompanyId());//предприятие создаваемого документа
             Long DocumentMasterId = companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            boolean notMyCompany = !((Long.valueOf(myCompanyId)).equals(request.getCompanyId()));
+            boolean canCreateAllCompanies = securityRepositoryJPA.userHasPermissions_OR(14L, "171");
             //(если на создание по всем предприятиям прав нет, а предприятие не своё) или пытаемся создать документ для предприятия не моего владельца
-            if ((!securityRepositoryJPA.userHasPermissions_OR(14L, "171") &&
-                    Long.valueOf(myCompanyId) != request.getCompanyId()) || !DocumentMasterId.equals(myMasterId)) {
+            if ((!canCreateAllCompanies && notMyCompany) || !DocumentMasterId.equals(myMasterId)) {
                 return null;
             } else {
                 String stringQuery;

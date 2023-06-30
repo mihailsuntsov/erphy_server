@@ -87,18 +87,18 @@ public class UserGroupRepositoryJPA {
             String stringQuery = "from UserGroup p where p.master=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            stringQuery = stringQuery + " and coalesce(p.is_archive,false) !=true";
+//            stringQuery = stringQuery + " and coalesce(p.is_delete,false) !=true";
             if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
             {
                 //остается только на своё предприятие 30
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+                stringQuery = stringQuery + " and p.companyId=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
             }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
 
             if (companyId > 0) {
-                stringQuery = stringQuery + " and company=" + companyId;
+                stringQuery = stringQuery + " and  p.companyId=" + companyId;
             }
 
             Query query = entityManager.createQuery(stringQuery, UserGroup.class);
@@ -154,7 +154,7 @@ public class UserGroupRepositoryJPA {
             }
 
             if (companyId > 0) {
-                stringQuery = stringQuery + " and p.company_id=" + companyId;
+                stringQuery = stringQuery + " and  p.company_id=" + companyId;
             }
 
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
@@ -426,7 +426,7 @@ public class UserGroupRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertUsergroupFast(String name, Long companyId, Long myMasterId) {
+    public Long insertUsergroupFast(String name, Long companyId, Long myId, Long myMasterId) {
         String stringQuery;
         Long newDocId;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
@@ -439,7 +439,7 @@ public class UserGroupRepositoryJPA {
                 " name" +
                 ") values ("+
                 myMasterId + ", "+//мастер-аккаунт
-                myMasterId + ", "+ //создатель
+                myId + ", "+ //создатель
                 companyId + ", "+//предприятие, для которого создается документ
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                 "false," +
@@ -449,10 +449,10 @@ public class UserGroupRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name",name);
             query.executeUpdate();
-            stringQuery="select id from usergroup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myMasterId;
+            stringQuery="select id from usergroup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
             newDocId=Long.valueOf(query2.getSingleResult().toString());
-            stringQuery="insert into user_usergroup (user_id, usergroup_id) values ("+myMasterId+", "+newDocId+")";
+            stringQuery="insert into user_usergroup (user_id, usergroup_id) values ("+myId+", "+newDocId+")";
             Query query3 = entityManager.createNativeQuery(stringQuery);
             query3.executeUpdate();
 

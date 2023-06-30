@@ -566,7 +566,7 @@ public class OrderinRepositoryJPA {
                     commonUtilites.idBelongsMyMaster("kassa", request.getKassa_from_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("withdrawal", request.getWithdrawal_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("paymentout", request.getPaymentout_id(), myMasterId);
-                    commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_from_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_from_id(), myMasterId);
                     commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
 
                     Query query = entityManager.createNativeQuery(stringQuery);
@@ -683,7 +683,7 @@ public class OrderinRepositoryJPA {
                 commonUtilites.idBelongsMyMaster("withdrawal", request.getWithdrawal_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("paymentout", request.getPaymentout_id(), myMasterId);
                 commonUtilites.idBelongsMyMaster("orderout", request.getOrderout_id(), myMasterId);
-                commonUtilites.idBelongsMyMaster("paymentout", request.getPayment_account_from_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("companies_payment_accounts", request.getPayment_account_from_id(), myMasterId);
 
                 // проверим, не является ли он уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "orderin"))
