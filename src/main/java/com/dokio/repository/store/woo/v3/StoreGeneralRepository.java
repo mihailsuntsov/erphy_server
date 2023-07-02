@@ -45,7 +45,7 @@ public class StoreGeneralRepository {
         Long storeId = Long.valueOf(cu.getByCrmSecretKey("id", crmSecretKey).toString());
 
             IsLetSyncJSON isLetSyncJSON = new IsLetSyncJSON();
-            SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+            SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
 
             if(!settingsGeneral.isLet_woo_plugin_to_sync()){
                 isLetSyncJSON.setIs_sync_allowed(false);

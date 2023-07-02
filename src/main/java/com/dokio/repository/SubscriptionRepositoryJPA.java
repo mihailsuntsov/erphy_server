@@ -401,16 +401,16 @@ public class SubscriptionRepositoryJPA {
         Long masterId=userRepositoryJPA.getMyMasterId();
         //Если есть право на "Редактирование"
         if(securityRepositoryJPA.userHasPermissions_OR(55L,"682")) {
+
             String stringQuery = " update users set free_trial_days = 0 where id =" + masterId +";" +
 
-
-        //changing from a pay-plan to the free plan of users who has 0 trial days and has no money
-        " update users set plan_id = (select free_plan_id from settings_general) " +
+        //changing from a pay-plan to the free plan if user has no money
+        " update users set plan_id = (select free_plan_id from settings_general limit 1) " +
             " where id in ( " +
             " select id from users u " +
             " where " +
-            " u.master_id = " + masterId + " and u.free_trial_days=0 and  u.plan_id in (select id from plans where is_free=false) and " +
-            " (select coalesce(sum(operation_sum),0) from _saas_billing_history where master_account_id=u.id) <=0 and " +
+            " u.id = " + masterId + " and u.free_trial_days=0 and  u.plan_id in (select id from plans where is_free=false) and " +
+            " (select coalesce(sum(operation_sum),0) from _saas_billing_history where master_account_id=u.master_id) <=0 and " +
             " u.plan_id != (select free_plan_id from settings_general) " +
             " );";
             try{

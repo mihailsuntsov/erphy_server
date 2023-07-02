@@ -49,7 +49,7 @@ public class _Info {
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getSettingsGeneral() {
         logger.info("Processing get request for path /api/auth/getSettingsGeneral with no params");
-        try {return new ResponseEntity<>(cu.getSettingsGeneral(), HttpStatus.OK);}
+        try {return new ResponseEntity<>(cu.getSettingsGeneral(false), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getSettingsGeneral error", e);
             return new ResponseEntity<>("Error query of general settings", HttpStatus.INTERNAL_SERVER_ERROR);}
     }

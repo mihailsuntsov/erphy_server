@@ -688,7 +688,7 @@ public class CommonUtilites {
             return null;
         }
     }
-    public SettingsGeneralJSON getSettingsGeneral() {
+    public SettingsGeneralJSON getSettingsGeneral(boolean withSensitiveInfo) {
         String stringQuery =
                 "select " +
                         " p.show_registration_link as show_registration_link, " +
@@ -736,7 +736,7 @@ public class CommonUtilites {
                 doc.setLet_woo_plugin_to_sync((Boolean) queryList.get(0)[11]);
                 doc.setWoo_plugin_oldest_acceptable_ver((String) queryList.get(0)[12]);
                 doc.setIs_sites_distribution((Boolean) queryList.get(0)[13]);
-                doc.setStores_alert_email((String) queryList.get(0)[14]);
+                doc.setStores_alert_email(withSensitiveInfo?((String) queryList.get(0)[14]):"");
                 doc.setMin_qtt_stores_alert((Integer) queryList.get(0)[15]);
                 doc.setMax_store_orders_per_24h_1_account((Integer) queryList.get(0)[16]);
                 doc.setMax_store_orders_per_24h_1_ip((Integer) queryList.get(0)[17]);

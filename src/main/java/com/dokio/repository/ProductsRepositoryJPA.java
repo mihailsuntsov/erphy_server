@@ -1218,8 +1218,6 @@ public class ProductsRepositoryJPA {
         } else return -1;
     }
 
-
-    @SuppressWarnings("Duplicates")
     public List<ProductHistoryJSON> getProductHistoryTable(Long companyId, Long departmentId, Long productId, String dateFrom, String dateTo, String sortColumn, String sortAsc, int result, List<Long> docTypesIds, int offsetreal) {
         if (securityRepositoryJPA.userHasPermissions_OR(14L, "167,168"))// Просмотр по (всем,своим) предприятиям
         {
@@ -4298,6 +4296,12 @@ public class ProductsRepositoryJPA {
                     availableQuantity=availableQuantity.add(change);
                 }
 
+            // If in a result of recounting there is no products - the Average net cost price >0 is no matter
+            // else can be the situation when you sold all products, but the Average net cost price > 0
+            // because it counting only for operations of adding products (when change>0)
+            if(availableQuantity.compareTo(new BigDecimal(0))==0)
+                return  new BigDecimal(0);
+
             return lastAvgNetcostPrice;
         }
         catch (CalculateNetcostNegativeSumException e) {
@@ -4319,14 +4323,14 @@ public class ProductsRepositoryJPA {
         BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
         BigDecimal change = new BigDecimal(0) ;
         BigDecimal netcost;
-//        int doc_type_id = 0;
-//        Long doc_id = 0L;
+        int doc_type_id = 0;
+        long doc_id = 0L;
         String stringQuery =
                 "   select " +
                         "   change as change, " +
-                        "   netcost as netcost " +
-//                        "   doc_type_id as doc_type_id," +
-//                        "   doc_id as doc_id " +
+                        "   netcost as netcost, " +
+                        "   doc_type_id as doc_type_id," +
+                        "   doc_id as doc_id " +
                         "   from product_history                "+
                         "   where                                "+
                         "   company_id = " + companyId +
@@ -4347,31 +4351,38 @@ public class ProductsRepositoryJPA {
                 for (Object[] obj : queryList) {
                     change = (BigDecimal)obj[0];
                     netcost  = (BigDecimal)obj[1];
-//                    doc_type_id = (Integer) obj[2];
-//                    doc_id = ((BigInteger) obj[3]).longValue();
+                    doc_type_id = (Integer) obj[2];
+                    doc_id = ((BigInteger) obj[3]).longValue();
 
                     if(availableQuantity.compareTo(new BigDecimal(0))>=0) {
 
 
-                        if (change.compareTo(new BigDecimal(0)) > 0) // пересчитываем себестоимость только для документов поступления (Приёмка, Оприходование, Возврат покупателя)
-                            // новая средняя себестоимость = ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
-                            lastAvgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(change.multiply(netcost))).divide(availableQuantity.add(change), 2, BigDecimal.ROUND_HALF_UP);
+
+                            if (change.compareTo(new BigDecimal(0)) > 0) // пересчитываем себестоимость только для документов поступления (Приёмка, Оприходование, Возврат покупателя)
+                                // новая средняя себестоимость = ((ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ИМЕЮЩЕЕСЯ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
+                                lastAvgNetcostPrice = ((availableQuantity.multiply(lastAvgNetcostPrice)).add(change.multiply(netcost))).divide(availableQuantity.add(change), 2, BigDecimal.ROUND_HALF_UP);
 
 
                     }
-                    else return new BigDecimal(0);
-//                    else throw new CalculateNetcostNegativeSumException();
+//                    else return new BigDecimal(0);
+                    else throw new CalculateNetcostNegativeSumException();
 
                     availableQuantity=availableQuantity.add(change);
                 }
 
+            // If in a result of recounting there is no products - the Average net cost price >0 is no matter
+            // else can be the situation when you sold all products, but the Average net cost price > 0
+            // because it counting only for operations of adding products (when change > 0)
+            if(availableQuantity.compareTo(new BigDecimal(0))==0)
+                return  new BigDecimal(0);
+
             return lastAvgNetcostPrice;
         }
-//        catch (CalculateNetcostNegativeSumException e) {
-//            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. companyId: "+companyId+", departmentId: "+departmentId+", productId: "+productId+", doc_type_id: "+doc_type_id+", doc_id: "+doc_id+", availableQuantity: "+availableQuantity+", change: "+change+"SQL query:"+stringQuery, e);
-//            e.printStackTrace();
-//            throw new CalculateNetcostNegativeSumException();
-//        }
+        catch (CalculateNetcostNegativeSumException e) {
+            logger.error("CalculateNetcostNegativeSumException in method recountProductNetcost. companyId: "+companyId+", departmentId: "+departmentId+", productId: "+productId+", doc_type_id: "+doc_type_id+", doc_id: "+doc_id+", availableQuantity: "+availableQuantity+", change: "+change+"SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new CalculateNetcostNegativeSumException();
+        }
         catch (Exception e) {
             logger.error("Exception in method recountProductNetcost. SQL query:"+stringQuery, e);
             e.printStackTrace();

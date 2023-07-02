@@ -169,7 +169,7 @@ public class AuthRestAPIs {
 			user.setRoles(roles);
 			user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
 			user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
-			SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(); // чтобы узнать тарифный план по умолчанию
+			SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true); // чтобы узнать тарифный план по умолчанию
 			user.setPlanId(settingsGeneral.getPlanDefaultId());
 			user.setPlanPrice(settingsGeneral.getPlanPrice());
 			user.setFreeTrialDays(settingsGeneral.getFreeTrialDays());

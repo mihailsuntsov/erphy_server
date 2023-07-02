@@ -890,7 +890,7 @@ public class StoreRepository {
             Long myId=userRepository.getUserId();
             String langCode = userRepositoryJPA.getUserSuffix(myId);
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+            SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
             String siteUrl;
             Long agreementId;
 
@@ -1208,7 +1208,7 @@ public class StoreRepository {
 
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
-                SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral();
+                SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
                 String masterEmail = (String)cu.getFieldValueFromTableById("users","email", masterId, masterId);
                 String whoRequestDelete=(String)cu.getFieldValueFromTableById("users","name", masterId, myId);
                 String emailRequestDelete=(String)cu.getFieldValueFromTableById("users","email", masterId, myId);
