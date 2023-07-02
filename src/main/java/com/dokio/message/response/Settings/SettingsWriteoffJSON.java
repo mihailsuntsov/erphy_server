@@ -32,6 +32,18 @@ public class SettingsWriteoffJSON {
     private String      changePriceType;        // тип наценки/скидки (валюта currency или проценты procents)
     private Boolean     hideTenths;             // убирать десятые (копейки)
 
+    public SettingsWriteoffJSON(Boolean autoAdd, String pricingType, BigDecimal changePrice, String plusMinus, String changePriceType, Boolean hideTenths) {
+        this.autoAdd = autoAdd;
+        this.pricingType = pricingType;
+        this.changePrice = changePrice;
+        this.plusMinus = plusMinus;
+        this.changePriceType = changePriceType;
+        this.hideTenths = hideTenths;
+    }
+
+    public SettingsWriteoffJSON() {
+    }
+
     public String getPricingType() {
         return pricingType;
     }

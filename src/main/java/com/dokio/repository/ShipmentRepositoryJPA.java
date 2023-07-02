@@ -722,7 +722,7 @@ public class ShipmentRepositoryJPA {
                     return 0L;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertShipment on inserting into products_history.", e);
+                    logger.error("Exception in method insertShipment on inserting into product_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
@@ -920,7 +920,7 @@ public class ShipmentRepositoryJPA {
                 return -70; // см. _ErrorCodes
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ShipmentRepository/addShipmentProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method ShipmentRepository/addShipmentProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;// недостаточно товара на складе
             } catch (CantSetHistoryCauseNegativeSumException e) {
@@ -1352,11 +1352,11 @@ public class ShipmentRepositoryJPA {
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.pricing_type as pricing_type, " +
+                "           coalesce(p.pricing_type,'priceType') as pricing_type,"+
                 "           p.price_type_id as price_type_id, " +
-                "           p.change_price as change_price, " +
-                "           p.plus_minus as plus_minus, " +
-                "           p.change_price_type as change_price_type, " +
+                "           coalesce(p.change_price, 0.00) as change_price, " +
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+
                 "           coalesce(p.hide_tenths,false) as hide_tenths, " +
                 "           coalesce(p.save_settings,false) as save_settings, " +
                 "           p.department_id as department_id, " +
@@ -1364,7 +1364,7 @@ public class ShipmentRepositoryJPA {
                 "           cg.name as customer, " +
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +
-                "           p.priority_type_price_side as priority_type_price_side," +
+                "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
                 "           coalesce(p.autocreate,false) as autocreate," +
 //                "           p.name as name, " +
                 "           p.status_id_on_complete as status_id_on_complete, " +

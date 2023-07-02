@@ -82,7 +82,7 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " ugr.company_id=u.company_id and " +
+//                    " ugr.company_id=u.company_id and " +
                     " coalesce(ugr.is_deleted,false) = false and " +
                     " p.id in(" + permissions + ")";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -120,7 +120,7 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " ugr.company_id=u.company_id and " +
+//                    " ugr.company_id=u.company_id and " +
                     " coalesce(ugr.is_deleted,false) = false" +
                     " group by p.id";
 
@@ -144,7 +144,7 @@ public class SecurityRepositoryJPA {
                     " up.usergroup_id =ugr.id and " +
                     " ugr.id=uugr.usergroup_id and " +
                     " up.permission_id=p.id and " +
-                    " ugr.company_id=u.company_id and " +
+//                    " ugr.company_id=u.company_id and " +
                     " coalesce(ugr.is_deleted,false) = false" +
                     " group by p.id";
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -266,12 +266,12 @@ public class SecurityRepositoryJPA {
 //        Query query = entityManager.createNativeQuery(stringQuery);
 //        return (query.getResultList().size() == decArray.size());
 //    }
-    public boolean isItMyUserGroup(Long docId) {
-        Long myId=userRepository.getUserId();
-        int myCompanyId=userRepositoryJPA.getMyCompanyId();
-        String stringQuery = "select p.id from usergroup p where p.id="+docId+" and p.company_id=" + myCompanyId ;
-        Query query = entityManager.createNativeQuery(stringQuery);
-        return (query.getResultList().size() > 0);}
+//    public boolean isItMyUserGroup(Long docId) {
+//        Long myId=userRepository.getUserId();
+//        int myCompanyId=userRepositoryJPA.getMyCompanyId();
+//        String stringQuery = "select p.id from usergroup p where p.id="+docId+" and p.company_id=" + myCompanyId ;
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        return (query.getResultList().size() > 0);}
 
 //***********************************************************************   TradeResults    ****************************
 

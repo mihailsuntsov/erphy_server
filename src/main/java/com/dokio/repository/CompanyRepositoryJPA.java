@@ -1057,6 +1057,7 @@ public class CompanyRepositoryJPA {
         Long ac = paymentAccountsRepository.insertPaymentAccountsFast(myId,myMasterId,companyId);
 
         Map<String, String> map = cu.translateForUser(myId, new String[]{"'my_department'","'role_admins'"});
+
         // Department - commented because it is an separated option in plan - user will create it after of a Company creation
 //        DepartmentForm department = new DepartmentForm();
 //        department.setName(map.get("my_department"));
@@ -1064,9 +1065,10 @@ public class CompanyRepositoryJPA {
 //        department.setBoxoffice_id(bo);
 //        department.setPayment_account_id(ac);
 //        departmentRepositoryJPA.insertDepartmentFast(department,companyId,myMasterId);
-        Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"),companyId,myId,myMasterId);
-        Set<Long> permissions = authRestAPIs.getAdminPermissions();
-        userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
+//        Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"),companyId,myId,myMasterId);
+//        Set<Long> permissions = authRestAPIs.getAdminPermissions();
+//        userGroupRepository.setPermissionsToUserGroup(permissions,usergroupId);
+
         // набор валют
         currenciesRepository.insertCurrenciesFast(myMasterId,myId,companyId);
         // базовые категоии контрагентов

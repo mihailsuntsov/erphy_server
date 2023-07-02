@@ -774,7 +774,7 @@ public class RetailSalesRepository {
                     return 0L;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertRetailSales on inserting into products_history.", e);
+                    logger.error("Exception in method insertRetailSales on inserting into product_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
@@ -1425,6 +1425,6 @@ public class RetailSalesRepository {
 class CantSaveProductHistoryException extends Exception {
     @Override
     public void printStackTrace() {
-        System.err.println("Can't insert products_history table row");
+        System.err.println("Can't insert product_history table row");
     }
 }

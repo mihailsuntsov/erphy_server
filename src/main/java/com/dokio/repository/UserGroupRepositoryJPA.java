@@ -1,21 +1,3 @@
-/*
-        Dokio CRM - server part. Sales, finance and warehouse management system
-        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
-
-        This program is free software: you can redistribute it and/or modify
-        it under the terms of the GNU Affero General Public License as
-        published by the Free Software Foundation, either version 3 of the
-        License, or (at your option) any later version.
-
-        This program is distributed in the hope that it will be useful,
-        but WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-        GNU Affero General Public License for more details.
-
-        You should have received a copy of the GNU Affero General Public License
-        along with this program.  If not, see <https://www.gnu.org/licenses/>
-*/
-
 package com.dokio.repository;
 
 import com.dokio.message.request.UserGroupForm;
@@ -78,49 +60,33 @@ public class UserGroupRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getUserGroupSize(String searchString, int companyId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
+    public int getUserGroupSize(String searchString, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(6L, "29"))
         {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
-            int myCompanyId=userRepositoryJPA.getMyCompanyId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             String stringQuery = "from UserGroup p where p.master=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
-
-//            stringQuery = stringQuery + " and coalesce(p.is_delete,false) !=true";
-            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
-            {
-                //остается только на своё предприятие 30
-                stringQuery = stringQuery + " and p.companyId=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-            }
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
-
-            if (companyId > 0) {
-                stringQuery = stringQuery + " and  p.companyId=" + companyId;
-            }
-
             Query query = entityManager.createQuery(stringQuery, UserGroup.class);
-
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
-
             return query.getResultList().size();
         } else return 0;
     }
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public List<UserGroupTableJSON> getUserGroupTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, Set<Integer> filterOptionsIds) {
-        if(securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
+    public List<UserGroupTableJSON> getUserGroupTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc/*, int companyId*/, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(6L, "29"))// Группы пользователей: "Меню - все Группы пользователей","Меню - только свого предприятия"
         {
             Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
-            int myCompanyId=userRepositoryJPA.getMyCompanyId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             String stringQuery = "select            " +
                     "   p.id as id,            " +
@@ -135,38 +101,23 @@ public class UserGroupRepositoryJPA {
                     "   to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "   p.date_time_created as date_time_created_sort, " +
                     "   p.date_time_changed as date_time_changed_sort, " +
-                    "   coalesce(p.company_id,'0') as company_id,            " +
-                    "   (select name from companies where id=p.company_id) as company,            " +
                     "   p.description as description            " +
                     "   from usergroup p           " +
                     "   where            " +
                     "   p.master_id=" + myMasterId +
                     "   and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
-            {
-                //остается только на своё предприятие 30
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-            }
-
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and upper(p.name) like upper(CONCAT('%',:sg,'%'))";
             }
-
-            if (companyId > 0) {
-                stringQuery = stringQuery + " and  p.company_id=" + companyId;
-            }
-
             if (VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) && VALID_COLUMNS_FOR_ASC.contains(sortAsc)) {
                 stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
             } else {
                 throw new IllegalArgumentException("Invalid query parameters");
             }
-
             Query query = this.entityManager.createNativeQuery(stringQuery, UserGroupTableJSON.class)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
-
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
 
@@ -184,13 +135,12 @@ public class UserGroupRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional
     public UserGroupJSON getUserGroupValuesById (int id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(6L, "29,30"))//Группы пользователей: "Редактирование только документов своего предприятия","Редактирование документов всех предприятий"
+        if (securityRepositoryJPA.userHasPermissions_OR(6L, "29"))//Группы пользователей: "Редактирование только документов своего предприятия","Редактирование документов всех предприятий"
         {
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
-            int myCompanyId=userRepositoryJPA.getMyCompanyId();
             String stringQuery = "select p.id as id, " +
                         "           p.name as name, " +
                         "           p.master_id as master_id, " +
@@ -201,20 +151,10 @@ public class UserGroupRepositoryJPA {
                         "           (select name from users where id=p.changer_id) as changer, " +
                         "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                         "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                        "           coalesce(p.company_id,'0') as company_id, " +
-
-                        "           p.description as description, " +
-                        "           (select name from companies where id=p.company_id) as company " +
+                        "           p.description as description " +
                         "           from usergroup p" +
-                        " where p.id= " + id;
-            stringQuery = stringQuery + " and p.master_id="+userRepositoryJPA.getMyMasterId();//принадлежит к документам моего родителя
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(6L, "29")) //Если нет прав на "Просмотр по всем предприятиям"
-            {
-                //остается только на своё предприятие 30
-                stringQuery = stringQuery + " and p.company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-            }
-
+                        " where p.id= " + id +
+                        " and p.master_id="+userRepositoryJPA.getMyMasterId();//принадлежит к документам моего родителя
             Query query = entityManager.createNativeQuery(stringQuery, UserGroupJSON.class);
             try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
             UserGroupJSON response = (UserGroupJSON) query.getSingleResult();
@@ -230,26 +170,18 @@ public class UserGroupRepositoryJPA {
         {
             try{
                 UserGroup userGroup = new UserGroup(request.getName(), request.getDescription());
-
-                userGroup.setCompany(companyRepositoryJPA.getCompanyById(Long.valueOf(Integer.parseInt(request.getCompany_id()))));//предприятие
-
                 User creator = userService.getUserByUsername(userService.getUserName());
                 userGroup.setCreator(creator);//создателя
-
                 User master = userRepository2.getUserByUsername(
                         userRepositoryJPA.getUsernameById(
                                 userRepositoryJPA.getUserMasterIdByUsername(
                                         userRepository2.getUserName() )));
                 userGroup.setMaster(master);//владельца
-
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 userGroup.setDate_time_created(timestamp);//дату создания
-
                 entityManager.persist(userGroup);
                 entityManager.flush();
-
                 return userGroup.getId();
-
             }catch (Exception e) {
                 logger.error("Exception in method insertUserGroup.", e);
                 e.printStackTrace();
@@ -259,7 +191,6 @@ public class UserGroupRepositoryJPA {
         } else return -1L;
     }
 
-    @SuppressWarnings("Duplicates")
     public Set<UserGroup> getUserGroupSetBySetOfUserGroupId(Set<Long> userGroups) {
         EntityManager em = emf.createEntityManager();
         UserGroup dep = new UserGroup();
@@ -273,15 +204,16 @@ public class UserGroupRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public List<UserGroupListJSON> getUserGroupListByCompanyId(int company_id) {
+    public List<UserGroupListJSON> getUserGroupList() {
         String stringQuery;
-
+        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery="select " +
                 "           p.id as id, " +
                 "           p.description as description, " +
                 "           p.name as name " +
                 "           from usergroup p " +
-                "           where coalesce(p.is_deleted,false) !=true and p.company_id="+company_id;
+//                "           where coalesce(p.is_deleted,false) !=true and p.company_id="+company_id;
+        "           where coalesce(p.is_deleted,false) !=true and p.master_id="+masterId;
 
 
         stringQuery = stringQuery+" order by p.name asc";
@@ -293,9 +225,7 @@ public class UserGroupRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public boolean updateUserGroup(UserGroupForm request) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(6L,"34") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",String.valueOf(request.getId()))) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(6L,"33") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup",String.valueOf(request.getId()))))
+        if(securityRepositoryJPA.userHasPermissions_OR(6L,"34") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",String.valueOf(request.getId())))
         {
             EntityManager emgr = emf.createEntityManager();
 
@@ -350,12 +280,9 @@ public class UserGroupRepositoryJPA {
     @Transactional
     @SuppressWarnings("Duplicates")
     public Integer deleteUserGroups(String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(6L, "32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup", delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(6L, "32") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup", delNumbers)))
+        if (securityRepositoryJPA.userHasPermissions_OR(6L, "32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup", delNumbers))
         {
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery = "update usergroup p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
@@ -378,19 +305,16 @@ public class UserGroupRepositoryJPA {
     @Transactional
     @SuppressWarnings("Duplicates")
     public Integer undeleteUserGroups(String delNumbers) {
-        //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(6L,"32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",delNumbers)) ||
-                //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(6L,"32") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("usergroup",delNumbers)))
+        if(securityRepositoryJPA.userHasPermissions_OR(6L,"32") && securityRepositoryJPA.isItAllMyMastersDocuments("usergroup",delNumbers))
         {
-            // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery = "Update usergroup p" +
                     " set changer_id="+ myId + ", " + // кто изменил (восстановил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " + //не удалена
-                    " where p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
+                    " where  p.master_id = " + myMasterId + " and p.id in (" + delNumbers.replaceAll("[^0-9\\,]", "") +")";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 if (!stringQuery.isEmpty() && stringQuery.trim().length() > 0) {
@@ -426,21 +350,19 @@ public class UserGroupRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertUsergroupFast(String name, Long companyId, Long myId, Long myMasterId) {
+    public Long insertUsergroupFast(String name, Long myId, Long myMasterId) {
         String stringQuery;
         Long newDocId;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into usergroup (" +
                 " master_id," + //мастер-аккаунт
                 " creator_id," + //создатель
-                " company_id," + //предприятие, для которого создается документ
                 " date_time_created," + //дата и время создания
                 " is_deleted," +
                 " name" +
                 ") values ("+
                 myMasterId + ", "+//мастер-аккаунт
                 myId + ", "+ //создатель
-                companyId + ", "+//предприятие, для которого создается документ
                 "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                 "false," +
                 ":name" +

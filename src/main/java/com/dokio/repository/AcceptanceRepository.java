@@ -693,7 +693,7 @@ public class AcceptanceRepository {
                     return null;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method updateAcceptance on inserting into products_history.", e);
+                    logger.error("Exception in method updateAcceptance on inserting into product_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e){
@@ -759,7 +759,7 @@ public class AcceptanceRepository {
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method AcceptanceRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method AcceptanceRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (CalculateNetcostNegativeSumException e) {
@@ -1427,6 +1427,7 @@ public class AcceptanceRepository {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
+            if(queryList.size()==0) throw new NoResultException();
             SettingsAcceptanceJSON acceptanceObj=new SettingsAcceptanceJSON();
 
             for(Object[] obj:queryList){
@@ -1437,6 +1438,9 @@ public class AcceptanceRepository {
                 acceptanceObj.setAutoPrice((Boolean)                            obj[4]);
             }
             return acceptanceObj;
+
+        } catch (NoResultException nre) {
+            return new SettingsAcceptanceJSON(false,false);
         }
         catch (Exception e) {
             logger.error("Exception in method getSettingsAcceptance. SQL query:"+stringQuery, e);

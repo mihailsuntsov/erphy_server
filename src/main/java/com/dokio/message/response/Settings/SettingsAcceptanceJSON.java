@@ -25,6 +25,14 @@ public class SettingsAcceptanceJSON {
     private Boolean     autoAdd;                // автодобавление товара из формы поиска в таблицу
     private Boolean     autoPrice;              // автоподставление последней закупочной цены
 
+    public SettingsAcceptanceJSON(Boolean autoAdd, Boolean autoPrice) {
+        this.autoAdd = autoAdd;
+        this.autoPrice = autoPrice;
+    }
+
+    public SettingsAcceptanceJSON() {
+    }
+
     public Boolean getAutoPrice() {
         return autoPrice;
     }

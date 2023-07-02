@@ -119,16 +119,16 @@ public class SecurityController {
         return responseEntity;
     }
     //Проверяет, что этот документ мой (создатель)
-    @PostMapping("/api/auth/isItMyUserGroup")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> isItMyUserGroup(@RequestBody SearchForm request) {
-        logger.info("Processing post request for path api/auth/isItMyUserGroup: " + request.toString());
-
-        Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
-        boolean isItMyUserGroup =securityRepositoryJPA.isItMyUserGroup(id);
-        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyUserGroup, HttpStatus.OK);
-        return responseEntity;
-    }
+//    @PostMapping("/api/auth/isItMyUserGroup")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> isItMyUserGroup(@RequestBody SearchForm request) {
+//        logger.info("Processing post request for path api/auth/isItMyUserGroup: " + request.toString());
+//
+//        Long id = Long.valueOf(Integer.parseInt(request.getDocumentId()));
+//        boolean isItMyUserGroup =securityRepositoryJPA.isItMyUserGroup(id);
+//        ResponseEntity<Boolean> responseEntity = new ResponseEntity<>(isItMyUserGroup, HttpStatus.OK);
+//        return responseEntity;
+//    }
     //Возвращает набор проверок на документ (документ мой?/документ моих отделений?/документ моего предприятия?)
     @PostMapping("/api/auth/getIsItMy_TradeResults_JSON")
     @SuppressWarnings("Duplicates")

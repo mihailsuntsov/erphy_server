@@ -778,33 +778,6 @@ public class ProductsController {
         }
     }
 
-    //отдает краткую информацию о товаре
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/getShortInfoAboutProduct",
-            params = {"department_id", "product_id"/*, "price_type_id"*/},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getShortInfoAboutProduct(
-            @RequestParam("department_id") Long department_id,
-            @RequestParam("product_id") Long product_id)
-//            @RequestParam("price_type_id") Long price_type_id)
-    {
-        logger.info("Processing get request for path /api/auth/getShortInfoAboutProduct with parameters: " +
-                "department_id: "+ department_id.toString() +
-                ", product_id: " + product_id.toString());
-//                ", price_type_id: "+ price_type_id.toString());
-        try {
-            ShortInfoAboutProductJSON response=productsRepositoryJPA.getShortInfoAboutProduct(department_id,product_id/*,price_type_id*/);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    //отдает краткую информацию о товаре
-    @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/getProductPrice",
             params = {"company_id", "product_id", "price_type_id"},

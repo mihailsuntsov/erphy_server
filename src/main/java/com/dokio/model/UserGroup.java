@@ -1,21 +1,3 @@
-/*
-        Dokio CRM - server part. Sales, finance and warehouse management system
-        Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
-
-        This program is free software: you can redistribute it and/or modify
-        it under the terms of the GNU Affero General Public License as
-        published by the Free Software Foundation, either version 3 of the
-        License, or (at your option) any later version.
-
-        This program is distributed in the hope that it will be useful,
-        but WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-        GNU Affero General Public License for more details.
-
-        You should have received a copy of the GNU Affero General Public License
-        along with this program.  If not, see <https://www.gnu.org/licenses/>
-*/
-
 package com.dokio.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -39,10 +21,6 @@ public class UserGroup {
 
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "company_id")
-    private Companies company;
-
     @ManyToMany(mappedBy = "usergroup")
     private Set<User> users;
 
@@ -55,7 +33,7 @@ public class UserGroup {
     private User master;
 
     @ManyToOne
-    @JoinColumn(name = "changer_id", nullable = true)
+    @JoinColumn(name = "changer_id")
     private User changer;
 
     @Column(name = "date_time_created")
@@ -79,17 +57,8 @@ public class UserGroup {
     @Column(name = "description")
     private String  description;
 
-    @Column(name = "is_system")
-    private Boolean is_system;
-
-    @Column(name = "is_archive")
-    private Boolean is_archive;
-
     @Column(name = "is_deleted")
     private Boolean is_deleted;
-
-    @Column(name = "companyId")
-    private Integer companyId;
 
     public UserGroup() {}
 
@@ -104,14 +73,6 @@ public class UserGroup {
 
     public void setIs_deleted(Boolean is_deleted) {
         this.is_deleted = is_deleted;
-    }
-
-    public Integer getCompanyId() {
-        return companyId;
-    }
-
-    public void setCompanyId(Integer companyId) {
-        this.companyId = companyId;
     }
 
     public Long getId() {
@@ -130,22 +91,6 @@ public class UserGroup {
         this.name = name;
     }
 
-    public Companies getCompany() {
-        return this.company;
-    }
-
-    public Boolean getIs_archive() {
-        return is_archive;
-    }
-
-    public void setIs_archive(Boolean is_archive) {
-        this.is_archive = is_archive;
-    }
-
-    public void setCompany(Companies company) {
-        this.company = company;
-    }
-//
     public Set<User> getUsers() {
         return this.users;
     }
@@ -210,11 +155,4 @@ public class UserGroup {
         this.description = description;
     }
 
-    public Boolean getIs_system() {
-        return this.is_system;
-    }
-
-    public void setIs_system(Boolean is_system) {
-        this.is_system = is_system;
-    }
 }

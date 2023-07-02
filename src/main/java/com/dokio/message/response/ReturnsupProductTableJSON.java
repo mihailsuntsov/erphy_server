@@ -30,10 +30,19 @@ public class ReturnsupProductTableJSON {
     private Integer     nds_id;                     // ндс
     private BigDecimal  remains;                    // остаток на складе
     private BigDecimal  product_sumprice;           // сумма
+    private Boolean is_material;
     private Boolean     indivisible;                // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
     // для печатной версии
     private Integer row_num; // номер строки при выводе печатной версии
     private BigDecimal nds_value; // сколько % НДС у данного товара
+
+    public Boolean getIs_material() {
+        return is_material;
+    }
+
+    public void setIs_material(Boolean is_material) {
+        this.is_material = is_material;
+    }
 
     public Integer getRow_num() {
         return row_num;

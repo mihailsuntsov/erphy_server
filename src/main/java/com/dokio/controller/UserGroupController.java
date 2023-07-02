@@ -39,6 +39,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -81,8 +83,8 @@ public class UserGroupController {
 
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
-        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        int companyId;//по какому предприятию показывать группы/ 0 - по всем
+//        int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
+//        int companyId;//по какому предприятию показывать группы/ 0 - по всем
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
         String sortAsc;
@@ -99,18 +101,18 @@ public class UserGroupController {
         } else {
             result = 10;
         }
-        if (searchRequest.getCompanyId() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
-            companyId = Integer.parseInt(searchRequest.getCompanyId());
-        } else {
-            companyId = 0;
-        }
+//        if (searchRequest.getCompanyId() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
+//            companyId = Integer.parseInt(searchRequest.getCompanyId());
+//        } else {
+//            companyId = 0;
+//        }
         if (searchRequest.getOffset() != null && !searchRequest.getOffset().isEmpty() && searchRequest.getOffset().trim().length() > 0) {
             offset = Integer.parseInt(searchRequest.getOffset());
         } else {
             offset = 0;
         }
         int offsetreal = offset * result;//создана переменная с номером страницы
-        returnList = userGroupRepositoryJPA.getUserGroupTable(result, offsetreal, searchString, sortColumn, sortAsc, companyId, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
+        returnList = userGroupRepositoryJPA.getUserGroupTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getFilterOptionsIds());//запрос списка: взять кол-во rezult, начиная с offsetreal
         ResponseEntity<List> responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
         return responseEntity;
     }
@@ -123,11 +125,11 @@ public class UserGroupController {
         int offset; // номер страницы. Изначально это null
         int result; // количество записей, отображаемых на странице
         int pagenum;// отображаемый в пагинации номер страницы. Всегда на 1 больше чем offset. Если offset не определен то это первая страница
-        int companyId;//по какому предприятию показывать отделения/ 0 - по всем
-        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
+//        int companyId;//по какому предприятию показывать отделения/ 0 - по всем
+//        int disabledLINK;// номер страницы на паджинейшене, на которой мы сейчас. Изначально это 1.
         String searchString = searchRequest.getSearchString();
-        companyId = Integer.parseInt(searchRequest.getCompanyId());
-        String sortColumn = searchRequest.getSortColumn();
+//        companyId = Integer.parseInt(searchRequest.getCompanyId());
+//        String sortColumn = searchRequest.getSortColumn();
 
         if (searchRequest.getResult() != null && !searchRequest.getResult().isEmpty() && searchRequest.getResult().trim().length() > 0) {
             result = Integer.parseInt(searchRequest.getResult());
@@ -138,8 +140,8 @@ public class UserGroupController {
         } else {
             offset = 0;}
         pagenum = offset + 1;
-        int size = userGroupRepositoryJPA.getUserGroupSize(searchString,companyId, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
-        int offsetreal = offset * result;//создана переменная с номером страницы
+        int size = userGroupRepositoryJPA.getUserGroupSize(searchString, searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+//        int offsetreal = offset * result;//создана переменная с номером страницы
         int listsize;//количество страниц пагинации
         if((size%result) == 0){//общее количество выборки делим на количество записей на странице
             listsize= size/result;//если делится без остатка
@@ -228,17 +230,18 @@ public class UserGroupController {
         catch(NullPointerException npe){return null;}
     }
 
-    @PostMapping("/api/auth/getUserGroupListByCompanyId")//возвращает список групп пользователей по id предприятия
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getUserGroupListByCompanyId(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path api/auth/getUserGroupListByCompanyId: " + searchRequest.toString());
-
-        int companyId=Integer.parseInt(searchRequest.getCompanyId());
-        List<UserGroupListJSON> userGroupList;
-        userGroupList = userGroupRepositoryJPA.getUserGroupListByCompanyId(companyId);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(userGroupList, HttpStatus.OK);
-        return responseEntity;
+    @RequestMapping(value = "/api/auth/getUserGroupList",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")//возвращает список групп пользователей (ролей)
+    public ResponseEntity<?> getUserGroupList() {
+        logger.info("Processing get request for path api/auth/getUserGroupList");
+        try {return new ResponseEntity<>(userGroupRepositoryJPA.getUserGroupList(), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller getUserGroupList error", e);
+            return new ResponseEntity<>("Error query of getting roles list", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
     @PostMapping("/api/auth/deleteUserGroups")
     public  ResponseEntity<?> deleteUserGroups(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/deleteUserGroups: " + request.toString());

@@ -565,7 +565,7 @@ public class SpravStatusDocRepository {
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public boolean insertStatusesFast(Long masterId, Long mId, Long cId) {
+    public void insertStatusesFast(Long masterId, Long mId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
@@ -684,16 +684,12 @@ public class SpravStatusDocRepository {
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false);";   //Customer
 
         try{
-                // Set the Status of Completed document into settings of each type of documents
-                insertSettingsFast(masterId, mId, cId);
-
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return false;
+            insertSettingsFast(masterId, mId, cId);// Set the Status of Completed document into settings of each type of documents;
         } catch (Exception e) {
             logger.error("Exception in method insertStatusesFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return true;
         }
     }
 
@@ -721,7 +717,6 @@ public class SpravStatusDocRepository {
                 "insert into settings_vatinvoicein      ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=38 and status_type=2 limit 1));" +
                 "insert into settings_vatinvoiceout     ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=37 and status_type=2 limit 1));" +
                 "insert into settings_writeoff          ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=17 and status_type=2 limit 1));";
-
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

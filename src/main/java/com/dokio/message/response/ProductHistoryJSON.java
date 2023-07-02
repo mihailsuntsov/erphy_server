@@ -33,7 +33,7 @@ public class ProductHistoryJSON {
     private BigDecimal  avg_purchase_price;
     private BigDecimal  avg_netcost_price; // средняя себестоимость единицы товара при его продаже
     private BigDecimal  last_operation_price;
-    private BigDecimal  price; // то же самое что и last_operation_price, для переделки products_history -> product_history
+    private BigDecimal  price; // то же самое что и last_operation_price, для переделки product_history -> product_history
     private BigDecimal  netcost;    // себест. за 1 ед товара в операции
     private String      page_name; // для перехода из таблицы истории товара в карточку товара
 

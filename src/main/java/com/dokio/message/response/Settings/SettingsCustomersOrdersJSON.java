@@ -39,6 +39,20 @@ public class SettingsCustomersOrdersJSON {
     private Boolean     autocreateOnCheque; //автосоздание нового документа, если в текущем успешно напечатан чек
     private Long        statusIdOnAutocreateOnCheque;//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
 
+    public SettingsCustomersOrdersJSON(String pricingType, BigDecimal changePrice, String plusMinus, String changePriceType, Boolean hideTenths, Boolean saveSettings, String priorityTypePriceSide, Boolean autocreateOnStart, Boolean autocreateOnCheque) {
+        this.pricingType = pricingType;
+        this.changePrice = changePrice;
+        this.plusMinus = plusMinus;
+        this.changePriceType = changePriceType;
+        this.hideTenths = hideTenths;
+        this.saveSettings = saveSettings;
+        this.priorityTypePriceSide = priorityTypePriceSide;
+        this.autocreateOnStart = autocreateOnStart;
+        this.autocreateOnCheque = autocreateOnCheque;
+    }
+
+    public SettingsCustomersOrdersJSON() {
+    }
 
     public Long getId() {
         return id;

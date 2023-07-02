@@ -671,12 +671,12 @@ public class WriteoffRepositoryJPA {
                 return null;
             } catch (CantSaveProductHistoryException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateWriteoff on inserting into products_history.", e);
+                logger.error("Exception in method updateWriteoff on inserting into product_history.", e);
                 e.printStackTrace();
                 return null;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateWriteoff on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method updateWriteoff on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             } catch (Exception e) {
@@ -736,7 +736,7 @@ public class WriteoffRepositoryJPA {
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method WriteoffRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (CalculateNetcostNegativeSumException e) {
@@ -1322,11 +1322,11 @@ public class WriteoffRepositoryJPA {
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
                 "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
-                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           coalesce(p.pricing_type,'avgCostPrice') as pricing_type,"+  // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                 "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.change_price, 0.00) as change_price, " +         // наценка/скидка в цифре (например, 50)
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +            // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+// тип наценки/скидки (валюта currency или проценты procents)
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
 
                 "           from settings_writeoff p " +
@@ -1334,6 +1334,9 @@ public class WriteoffRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
+
+            if(queryList.size()==0) throw new NoResultException();
+
             SettingsWriteoffJSON writeoffObj=new SettingsWriteoffJSON();
 
             for(Object[] obj:queryList){
@@ -1349,8 +1352,9 @@ public class WriteoffRepositoryJPA {
                 writeoffObj.setHideTenths((Boolean)                           obj[9]);
             }
             return writeoffObj;
-        }
-        catch (Exception e) {
+        } catch (NoResultException nre) {
+            return new SettingsWriteoffJSON(false,"avgCostPrice",new BigDecimal("0"),"plus","procents",false);
+        } catch (Exception e) {
             logger.error("Exception in method getSettingsWriteoff. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw e;

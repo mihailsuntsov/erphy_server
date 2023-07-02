@@ -1005,6 +1005,8 @@ public class InvoiceinRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
+            if(queryList.size()==0) throw new NoResultException();
+
             SettingsInvoiceinJSON returnObj=new SettingsInvoiceinJSON();
 
             for(Object[] obj:queryList){
@@ -1020,6 +1022,8 @@ public class InvoiceinRepositoryJPA {
                 returnObj.setName((String)                             obj[9]);
             }
             return returnObj;
+        } catch (NoResultException nre) {
+            return new SettingsInvoiceinJSON(false, false, false, "");
         }
         catch (Exception e) {
             logger.error("Exception in method getSettingsInvoicein. SQL query:"+stringQuery, e);

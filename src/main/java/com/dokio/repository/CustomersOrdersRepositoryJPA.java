@@ -1267,11 +1267,11 @@ public class CustomersOrdersRepositoryJPA {
             String stringQuery;
             Long myId=userRepository.getUserId();
             stringQuery = "select " +
-                    "           p.pricing_type as pricing_type, " +
+                    "           coalesce(p.pricing_type,'priceType') as pricing_type,"+
                     "           p.price_type_id as price_type_id, " +
-                    "           p.change_price as change_price, " +
-                    "           p.plus_minus as plus_minus, " +
-                    "           p.change_price_type as change_price_type, " +
+                    "           coalesce(p.change_price, 0.00) as change_price, " +
+                    "           coalesce(p.plus_minus,'plus') as plus_minus, " +
+                    "           coalesce(p.change_price_type,'procents') as change_price_type,"+
                     "           coalesce(p.hide_tenths,false) as hide_tenths, " +
                     "           coalesce(p.save_settings,false) as save_settings, " +
                     "           p.department_id as department_id, " +
@@ -1279,7 +1279,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           cg.name as customer, " +
                     "           p.id as id, " +
                     "           p.company_id as company_id, " +
-                    "           p.priority_type_price_side as priority_type_price_side," +
+                    "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
                     "           coalesce(p.autocreate_on_start,false) as autocreate_on_start," +
                     "           coalesce(p.autocreate_on_cheque,false) as autocreate_on_cheque," +
                     "           p.name as name, " +
@@ -1290,6 +1290,7 @@ public class CustomersOrdersRepositoryJPA {
         try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 List<Object[]> queryList = query.getResultList();
+                if(queryList.size()==0) throw new NoResultException();
 
                 SettingsCustomersOrdersJSON returnObj=new SettingsCustomersOrdersJSON();
 
@@ -1313,6 +1314,9 @@ public class CustomersOrdersRepositoryJPA {
                     returnObj.setStatusIdOnAutocreateOnCheque(obj[16]!=null?Long.parseLong(obj[16].toString()):null);
                 }
                 return returnObj;
+
+            } catch (NoResultException nre) {
+                return new SettingsCustomersOrdersJSON("priceType", new BigDecimal("0"), "plus", "procents", false, false, "defprice", false, false);
             }
             catch (Exception e) {
                 logger.error("Exception in method getSettingsCustomersOrders. SQL query:"+stringQuery, e);
@@ -1483,61 +1487,6 @@ public class CustomersOrdersRepositoryJPA {
         } else return null;
     }
 
-
-
-
-
-/*
-    @SuppressWarnings("Duplicates")
-    private Boolean addCustomersOrdersProductHistory(CustomersOrdersProductForm row, CustomersOrdersForm request , Long masterId) {
-        String stringQuery;
-        ProductHistoryJSON lastProductHistoryRecord =  getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_id());
-        BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-        BigDecimal lastAvgPurchasePrice= lastProductHistoryRecord.getAvg_purchase_price();
-        BigDecimal lastAvgNetcostPrice= lastProductHistoryRecord.getAvg_netcost_price();
-        BigDecimal lastPurchasePrice= lastProductHistoryRecord.getLast_purchase_price();
-
-        try {
-            stringQuery =
-                    " insert into products_history (" +
-                            " master_id," +
-                            " company_id," +
-                            " department_id," +
-                            " doc_type_id," +
-                            " doc_id," +
-                            " product_id," +
-                            " quantity," +
-                            " change," +
-                            " avg_purchase_price," +
-                            " avg_netcost_price," +
-                            " last_purchase_price," +
-                            " last_operation_price," +
-                            " date_time_created"+
-                            ") values ("+
-                            masterId +","+
-                            request.getCompany_id() +","+
-                            request.getDepartment_id() + ","+
-                            21 +","+
-                            row.getCustomers_orders_id() + ","+
-                            row.getProduct_id() + ","+
-                            lastQuantity.subtract(row.getProduct_count())+","+
-                            row.getProduct_count().multiply(new BigDecimal(-1)) +","+
-                            lastAvgPurchasePrice +","+
-                            lastAvgNetcostPrice +","+
-                            lastPurchasePrice+","+
-                            row.getProduct_price()+","+
-                            " now())";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-*/
-
     @Transactional
     @SuppressWarnings("Duplicates")
     public DeleteDocsReport deleteCustomersOrders (String delNumbers) {
@@ -1631,51 +1580,6 @@ public class CustomersOrdersRepositoryJPA {
 //*****************************************************************************************************************************************************
 //***************************************************      UTILS      *********************************************************************************
 //*****************************************************************************************************************************************************
-/*    @SuppressWarnings("Duplicates")  // возвращает значения из последней строки истории изменений товара
-    private ProductHistoryJSON getLastProductHistoryRecord(Long product_id, Long department_id)
-    {
-        String stringQuery;
-        stringQuery =
-                " select                                        "+
-                        " last_purchase_price   as last_purchase_price, "+
-                        " avg_purchase_price    as avg_purchase_price,  "+
-                        " avg_netcost_price     as avg_netcost_price,   "+
-                        " last_operation_price  as last_operation_price,"+
-                        " quantity              as quantity,            "+
-                        " change                as change               "+
-                        "          from products_history                "+
-                        "          where                                "+
-                        "          product_id="+product_id+" and        "+
-                        "          department_id="+department_id         +
-                        "          order by id desc limit 1             ";
-        try
-        {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-
-            ProductHistoryJSON returnObj=new ProductHistoryJSON();
-            if(queryList.size()==0){//если записей истории по данному товару ещё нет
-                returnObj.setLast_purchase_price(       (new BigDecimal(0)));
-                returnObj.setAvg_purchase_price(        (new BigDecimal(0)));
-                returnObj.setAvg_netcost_price(         (new BigDecimal(0)));
-                returnObj.setLast_operation_price(      (new BigDecimal(0)));
-                returnObj.setQuantity(                  (new BigDecimal(0)));
-            }else {
-                for (Object[] obj : queryList) {
-                    returnObj.setLast_purchase_price((BigDecimal)   obj[0]);
-                    returnObj.setAvg_purchase_price((BigDecimal)    obj[1]);
-                    returnObj.setAvg_netcost_price((BigDecimal)     obj[2]);
-                    returnObj.setLast_operation_price((BigDecimal)  obj[3]);
-                    returnObj.setQuantity((BigDecimal)              obj[4]);
-                }
-            }
-            return returnObj;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     @SuppressWarnings("Duplicates") //удаление строки с товаром перед перезаписью
     private Boolean clearCustomersOrdersProductTable(Long product_id, Long customers_orders_id) {
@@ -1695,7 +1599,7 @@ public class CustomersOrdersRepositoryJPA {
             return false;
         }
     }
-*/
+
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************

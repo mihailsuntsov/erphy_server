@@ -974,6 +974,8 @@ public class OrdersupRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
+            if(queryList.size()==0) throw new NoResultException();
+
             SettingsOrdersupJSON returnObj=new SettingsOrdersupJSON();
 
             for(Object[] obj:queryList){
@@ -989,6 +991,8 @@ public class OrdersupRepositoryJPA {
                 returnObj.setName((String)                             obj[9]);
             }
             return returnObj;
+        } catch (NoResultException nre) {
+            return new SettingsOrdersupJSON(false, false, false, "");
         }
         catch (Exception e) {
             logger.error("Exception in method getSettingsOrdersup. SQL query:"+stringQuery, e);

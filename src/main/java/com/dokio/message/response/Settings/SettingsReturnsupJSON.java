@@ -31,6 +31,18 @@ public class SettingsReturnsupJSON {
     private String      changePriceType;        // тип наценки/скидки (валюта currency или проценты procents)
     private Boolean     hideTenths;             // убирать десятые (копейки)
 
+    public SettingsReturnsupJSON() {
+    }
+
+    public SettingsReturnsupJSON(Boolean autoAdd, String pricingType, BigDecimal changePrice, String plusMinus, String changePriceType, Boolean hideTenths) {
+        this.autoAdd = autoAdd;
+        this.pricingType = pricingType;
+        this.changePrice = changePrice;
+        this.plusMinus = plusMinus;
+        this.changePriceType = changePriceType;
+        this.hideTenths = hideTenths;
+    }
+
     public String getPricingType() {
         return pricingType;
     }

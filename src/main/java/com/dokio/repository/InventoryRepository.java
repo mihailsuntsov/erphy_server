@@ -479,7 +479,7 @@ public class InventoryRepository {
                     " is_completed = " + (request.getIs_completed() == null ? false : request.getIs_completed()) + ", " +
                     " status_id = " + request.getStatus_id() +
                     " where " +
-                    " id= "+request.getId()+" and  p.master_id=" + myMasterId;
+                    " id= "+request.getId()+" and master_id=" + myMasterId;
             try
             {
 
@@ -546,7 +546,7 @@ public class InventoryRepository {
                             " date_time_changed= now()," +
                             " is_completed = false" +
                             " where " +
-                            " id= " + request.getId()+" and  p.master_id=" + myMasterId;
+                            " id= " + request.getId()+" and master_id=" + myMasterId;
 
             try {
                 // проверим, не снят ли он уже с проведения (такое может быть если открыть один и тот же документ в 2 окнах и пытаться снять с проведения в каждом из них)
@@ -856,24 +856,27 @@ public class InventoryRepository {
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           coalesce(p.pricing_type,'avgCostPrice') as pricing_type,"+  // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                 "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.change_price, 0.00) as change_price, " +         // наценка/скидка в цифре (например, 50)
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +            // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+               // тип наценки/скидки (валюта currency или проценты procents)
                 "           coalesce(p.hide_tenths,false) as hide_tenths, " +           // убирать десятые (копейки)
                 "           p.department_id as department_id, " +                       // id отделения
                 "           p.company_id as company_id, " +                             // id предприятия
-                "           p.name as name, " +                                         // наименование инвентаризации по-умолчанию
+                "           coalesce(p.name,'') as name, " +                                         // наименование инвентаризации по-умолчанию
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
-                "           p.default_actual_balance as default_actual_balance, " +     // фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
-                "           p.other_actual_balance as other_actual_balance, " +         // "другой" фактический баланс по умолчанию. Например, 1
+                "           coalesce(p.default_actual_balance,'other') as default_actual_balance,"+// фактический баланс по умолчанию. "estimated" - как расчётный, "other" - другой (выбирается в other_actual_balance)
+                "           coalesce(p.other_actual_balance, 0.000) as other_actual_balance,"+// "другой" фактический баланс по умолчанию. Например, 1
                 "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу
                 "           from settings_inventory p " +
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
+
+            if(queryList.size()==0) throw new NoResultException();
+
             SettingsInventoryJSON returnObj=new SettingsInventoryJSON();
 
             for(Object[] obj:queryList){
@@ -892,6 +895,8 @@ public class InventoryRepository {
                 returnObj.setAutoAdd((Boolean)                          obj[12]);
             }
             return returnObj;
+        } catch (NoResultException nre) {
+            return new SettingsInventoryJSON("", "avgCostPrice", new BigDecimal("0"), "plus","procents", false, "other",  new BigDecimal("0"), false);
         }
         catch (Exception e) {
             logger.error("Exception in method getSettingsInventory. SQL query:"+stringQuery, e);
@@ -992,27 +997,25 @@ public class InventoryRepository {
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         stringQuery = "select  p.id as id, " +
                 // наименование товара
-                "           p.name as name, " +
+                " p.name as name, " +
                 // наименование ед. измерения
-                "           ei.short_name as edizm, " +
+                " ei.short_name as edizm, " +
                 // картинка
-                "           f.name as filename, " +
+                " f.name as filename, " +
                 // всего единиц товара в отделении (складе)
-                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
+                " (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
                 // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
-                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
-                // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
-//                (priceTypeId>0?" pp.price_value":null) + " as price_by_typeprice," +
+                " coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // средняя себестоимость
-                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                " (select ph.avg_netcost_price   from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
                 // средняя закупочная цена
-                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
-                // последняя закупочная цена
-                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice, " +
+                " 0.00  as avgPurchasePrice, " +
+                // последняя закупочная цена                                                             // 15 = Acceptance
+                " (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and doc_type_id=15 and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice, " +
                 // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                "           p.indivisible as indivisible" +
+                " p.indivisible as indivisible" +
 
-        " from products p " +
+                " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +

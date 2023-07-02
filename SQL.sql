@@ -5088,3 +5088,10 @@ create table stores_sync_statuses(
              foreign key (store_id) references stores(id)
                                  );
 alter table stores_sync_statuses add constraint stores_sync_statuses_uq unique (store_id, job);
+
+alter table usergroup drop column is_archive;
+alter table usergroup drop column company_id;
+alter table usergroup drop column companyid;
+delete from usergroup_permissions where permission_id in (33,30);
+delete from permissions where id in (33,30);
+drop table products_history; -- now product_history used instead

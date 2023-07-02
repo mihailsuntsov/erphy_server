@@ -26,8 +26,8 @@ public class UserGroupTableJSON {
     @Id
     private Long id;
     private String name;
-    private String company;
-    private String company_id;
+//    private String company;
+//    private String company_id;
     private String master;
     private String master_id;
     private String creator;
@@ -57,21 +57,21 @@ public class UserGroupTableJSON {
         this.name = name;
     }
 
-    public String getCompany() {
-        return this.company;
-    }
+//    public String getCompany() {
+//        return this.company;
+//    }
 
-    public void setCompany(String company) {
-        this.company = company;
-    }
+//    public void setCompany(String company) {
+//        this.company = company;
+//    }
 
-    public String getCompany_id() {
-        return this.company_id;
-    }
+//    public String getCompany_id() {
+//        return this.company_id;
+//    }
 
-    public void setCompany_id(String company_id) {
-        this.company_id = company_id;
-    }
+//    public void setCompany_id(String company_id) {
+//        this.company_id = company_id;
+//    }
 
     public String getMaster() {
         return this.master;

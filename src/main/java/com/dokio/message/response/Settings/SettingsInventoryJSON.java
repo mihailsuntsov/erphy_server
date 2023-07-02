@@ -36,6 +36,21 @@ public class SettingsInventoryJSON {
     private BigDecimal  otherActualBalance;     // другой фактический баланс по умолчанию. Например, 1
     private Boolean     autoAdd;                // автодобавление товара из формы поиска в таблицу
 
+    public SettingsInventoryJSON(String name, String pricingType, BigDecimal changePrice, String plusMinus, String changePriceType, Boolean hideTenths, String defaultActualBalance, BigDecimal otherActualBalance, Boolean autoAdd) {
+        this.name = name;
+        this.pricingType = pricingType;
+        this.changePrice = changePrice;
+        this.plusMinus = plusMinus;
+        this.changePriceType = changePriceType;
+        this.hideTenths = hideTenths;
+        this.defaultActualBalance = defaultActualBalance;
+        this.otherActualBalance = otherActualBalance;
+        this.autoAdd = autoAdd;
+    }
+
+    public SettingsInventoryJSON() {
+    }
+
     public Boolean getAutoAdd() {
         return autoAdd;
     }

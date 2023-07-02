@@ -228,7 +228,17 @@ public class InvoiceoutController {
         }
     }
 
-    @SuppressWarnings("Duplicates")
+    @PostMapping("/api/auth/savePricingSettingsInvoiceout")
+    public ResponseEntity<?> savePricingSettingsInvoiceout(@RequestBody SettingsInvoiceoutForm request) {
+        logger.info("Processing post request for path /api/auth/savePricingSettingsInvoiceout: " + request.toString());
+        try {
+            return new ResponseEntity<>(invoiceoutRepository.savePricingSettingsInvoiceout(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error of saving of Invoice to customers pricing settings", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @RequestMapping(
             value = "/api/auth/getSettingsInvoiceout",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")

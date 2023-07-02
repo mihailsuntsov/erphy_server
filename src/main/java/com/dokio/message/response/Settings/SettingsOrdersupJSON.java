@@ -31,6 +31,16 @@ public class SettingsOrdersupJSON {
     private Boolean     auto_price;                     // автоматическая подстановка цены
     private String      name;                           // наименование заказа по умолчанию
 
+    public SettingsOrdersupJSON(Boolean autocreate, Boolean autoAdd, Boolean auto_price, String name) {
+        this.autocreate = autocreate;
+        this.autoAdd = autoAdd;
+        this.auto_price = auto_price;
+        this.name = name;
+    }
+
+    public SettingsOrdersupJSON() {
+    }
+
     public Long getId() {
         return id;
     }

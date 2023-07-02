@@ -536,7 +536,7 @@ public class MovingRepository {
                 stringQuery = "select id from moving where creator_id=" + myId + " and date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS'))";
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDocId = Long.valueOf(query2.getSingleResult().toString());
-
+                request.setId(newDocId);
                 if(insertMovingProducts(request, newDocId, myMasterId, false)){
                     return newDocId;
                 } else return null;
@@ -642,7 +642,7 @@ public class MovingRepository {
                 return -240;
             } catch (CantSaveProductHistoryException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateMoving on inserting into products_history.", e);
+                logger.error("Exception in method updateMoving on inserting into product_history.", e);
                 e.printStackTrace();
                 return null;
             } catch (Exception e){
@@ -703,7 +703,7 @@ public class MovingRepository {
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method MovingRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method MovingRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (CalculateNetcostNegativeSumException e) {
@@ -1006,218 +1006,6 @@ public class MovingRepository {
             return false;
         }
     }
-
-
-    /*
-    @SuppressWarnings("Duplicates")
-    private Boolean addMovingProductHistory(MovingProductForm row, MovingForm request , Long masterId) throws CantSaveProductHistoryException, CantInsertProductRowCauseOversellException {
-        String stringQuery;
-        try {
-            //берем последнюю запись об истории товара в данном отделении
-            ProductHistoryJSON lastProductHistoryRecordFrom =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_from_id());
-            ProductHistoryJSON lastProductHistoryRecordTo =    productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_to_id());
-            //последнее количество товара
-            BigDecimal lastQuantityFrom= lastProductHistoryRecordFrom.getQuantity();
-            BigDecimal lastQuantityTo= lastProductHistoryRecordTo.getQuantity();
-            //последняя средняя цена закупа
-            BigDecimal lastAvgPurchasePriceFrom= lastProductHistoryRecordFrom.getAvg_purchase_price();
-            BigDecimal lastAvgPurchasePriceTo= lastProductHistoryRecordTo.getAvg_purchase_price();
-            //последняя средняя себестоимость
-            BigDecimal lastAvgNetcostPriceFrom= lastProductHistoryRecordFrom.getAvg_netcost_price();
-//            BigDecimal lastAvgNetcostPriceTo= lastProductHistoryRecordTo.getAvg_netcost_price();
-            //средняя цена закупа = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_ЦЕНА_ЗАКУПА)+СУММА_ПО_НОВОМУ_ТОВАРУ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО+КОЛИЧЕСТВО_ПО_НОВОМУ_ТОВАРУ
-            //Именно поэтому нельзя допускать отрицательных остатков - если знаменатель будет = 0, то возникнет эксепшн деления на 0.
-//            BigDecimal avgPurchasePriceFrom =lastProductHistoryRecordFrom.getLast_purchase_price();
-            BigDecimal avgPurchasePriceTo = ((lastQuantityTo.multiply(lastAvgPurchasePriceTo)).add(row.getProduct_sumprice())).divide(lastQuantityTo.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-            //средняя себестоимость = ((ПОСЛЕДНЕЕ_КОЛИЧЕСТВО*СРЕДНЯЯ_СЕБЕСТОИМОСТЬ) + КОЛ-ВО_НОВОГО_ТОВАРА * ЕГО_СЕБЕСТОИМОСТЬ) / ПОСЛЕДНЕЕ_КОЛИЧЕСТВО + КОЛ-ВО_НОВОГО_ТОВАРА
-//            BigDecimal avgNetcostPriceFrom =  lastProductHistoryRecordFrom.getAvg_netcost_price();
-            BigDecimal avgNetcostPriceTo = ((lastQuantityTo.multiply(lastAvgPurchasePriceTo)).add(row.getProduct_count().multiply(row.getProduct_netcost()))).divide(lastQuantityTo.add(row.getProduct_count()),2,BigDecimal.ROUND_HALF_UP);
-            //последняя закуп. цена
-            BigDecimal lastPurchasePriceFrom= lastProductHistoryRecordFrom.getLast_purchase_price();
-//            BigDecimal lastPurchasePriceTo= lastProductHistoryRecordTo.getLast_purchase_price();
-            //все резервы товара со "склада ИЗ"
-            BigDecimal allReserves = productsRepository.getProductReserves(request.getDepartment_from_id(), row.getProduct_id());
-
-            //необходимо проверить, что списываем количество товара не более доступного количества, которое равно разнице всего количества товара на складе и резервов этого товара на данном складе.
-
-            //  всё кол-во товара  минус ( кол-во к перемещению   +  все резервы) должно быть >= 0
-            if((lastQuantityFrom.subtract(row.getProduct_count().add(allReserves))).compareTo(new BigDecimal("0")) < 0) {
-                logger.error("Для перемещения с id = "+request.getId()+", номер документа "+request.getDoc_number()+", количество товара к перемещению больше доступного количества товара на складе");
-                throw new CantInsertProductRowCauseOversellException();//кидаем исключение чтобы произошла отмена транзакции
-            }
-
-
-            stringQuery =   " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +//                кол-во товара на складе в результате операции
-                    " change," +//1                 кол-во товара в операции
-                    " avg_purchase_price," +//2     средняя цена приобретения
-                    " avg_netcost_price," +//3      средняя себестоимость
-                    " last_purchase_price," +//4    последняя цена приобретения
-                    " last_operation_price," +//5   цена последней операции
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_from_id() + ","+
-                    30 +","+
-                    row.getMoving_id() + ","+
-                    row.getProduct_id() + ","+
-                    lastQuantityFrom.subtract(row.getProduct_count())+","+// в отделении ИЗ от этого товара вычитаем перемещаемое количество товара
-                    row.getProduct_count().negate() +","+//1  negate т.к. в историю операций для "отделения ИЗ" должно записаться отрицательное кол-во товара
-                    lastAvgPurchasePriceFrom +","+//2
-                    lastAvgNetcostPriceFrom +","+//3
-                    lastPurchasePriceFrom+","+//4     в операциях убытия (списания, продажа, перемещение из), последняя цена приобретения остается старой
-                    row.getProduct_price()+","+//5//  в операциях убытия (списания, продажа, перемещение из), цена последней операции равна цене товара в данной операции
-                    " now())";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-
-            stringQuery =   " insert into products_history (" +
-                    " master_id," +
-                    " company_id," +
-                    " department_id," +
-                    " doc_type_id," +
-                    " doc_id," +
-                    " product_id," +
-                    " quantity," +//                кол-во товара на складе в результате операции
-                    " change," +//1                 кол-во товара в операции
-                    " avg_purchase_price," +//2     средняя цена приобретения
-                    " avg_netcost_price," +//3      средняя себестоимость
-                    " last_purchase_price," +//4    последняя цена приобретения
-                    " last_operation_price," +//5   цена последней операции
-                    " date_time_created"+
-                    ") values ("+
-                    masterId +","+
-                    request.getCompany_id() +","+
-                    request.getDepartment_to_id() + ","+
-                    30 +","+
-                    row.getMoving_id() + ","+
-                    row.getProduct_id() + ","+
-                    lastQuantityTo.add(row.getProduct_count())+","+// в отделении В к этому товару прибавляем перемещаемое количество товара
-                    row.getProduct_count() +","+//1
-                    avgPurchasePriceTo +","+//2     средняя цена приобретения
-                    avgNetcostPriceTo +","+//3      средняя себестоимость. В данном случае (при перемещении) расходы на перемещение распределяются по себестоимости товара принимающей стороны
-                    row.getProduct_price()+","+//   в операциях поступления (оприходование, приёмка, перемещение в) последняя цена приобретения last_purchase_price равна цене товара, в отличии от операций убытия (списания, продажа), где цена последнего приобретения остается старой
-                    row.getProduct_price()+","+//   цена последней операции last_operation_price равна цене товара в данной операции
-                    " now())";
-            query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-
-        } catch (CantInsertProductRowCauseOversellException e) {
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            logger.error("Exception in method updateMoving on updating cause oversell.", e);
-            e.printStackTrace();
-            throw new CantInsertProductRowCauseOversellException();// переброска эксепшена о "недостаточно товара на складе"
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method MovingRepository/addMovingProductHistory. ", e);
-            throw new CantSaveProductHistoryException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }
-
-
-    @SuppressWarnings("Duplicates")
-    private Boolean setProductQuantity(MovingProductForm row, MovingForm request , Long masterId) throws CantSaveProductQuantityException {
-        String stringQuery;
-        try {
-            ProductHistoryJSON lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_from_id());
-            BigDecimal lastQuantity= lastProductHistoryRecord.getQuantity();
-            stringQuery =
-                    " insert into product_quantity (" +
-                            " master_id," +
-                            " department_id," +
-                            " product_id," +
-                            " quantity" +
-                            ") values ("+
-                            masterId + ","+
-                            request.getDepartment_from_id() + ","+
-                            row.getProduct_id() + ","+
-                            lastQuantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                            " DO update set " +
-                            " department_id = " + request.getDepartment_from_id() + ","+
-                            " product_id = " + row.getProduct_id() + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ lastQuantity;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-
-            lastProductHistoryRecord =  productsRepository.getLastProductHistoryRecord(row.getProduct_id(),request.getDepartment_to_id());
-            lastQuantity= lastProductHistoryRecord.getQuantity();
-            stringQuery =
-                    " insert into product_quantity (" +
-                            " master_id," +
-                            " department_id," +
-                            " product_id," +
-                            " quantity" +
-                            ") values ("+
-                            masterId + ","+
-                            request.getDepartment_to_id() + ","+
-                            row.getProduct_id() + ","+
-                            lastQuantity +
-                            ") ON CONFLICT ON CONSTRAINT product_quantity_uq " +// "upsert"
-                            " DO update set " +
-                            " department_id = " + request.getDepartment_to_id() + ","+
-                            " product_id = " + row.getProduct_id() + ","+
-                            " master_id = "+ masterId + "," +
-                            " quantity = "+ lastQuantity;
-            query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-            return true;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method MovingRepository/setProductQuantity. ", e);
-            throw new CantSaveProductQuantityException();//кидаем исключение чтобы произошла отмена транзакции
-        }
-    }*/
-
-
-//    @SuppressWarnings("Duplicates")
-//    public List<LinkedDocsJSON> getMovingLinkedDocsList(Long docId, String docName) {
-//        String stringQuery;
-//        String myTimeZone = userRepository.getUserTimeZone();
-//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-////        String tableName=(docName.equals("return")?"return":"");
-//        stringQuery =   " select " +
-//                " ap.id," +
-//                " to_char(ap.date_time_created at time zone '"+myTimeZone+"', 'DD.MM.YYYY HH24:MI'), " +
-//                " ap.description," +
-//                " coalesce(ap.is_completed,false)," +
-//                " ap.doc_number" +
-//                " from "+docName+" ap" +
-//                " where ap.master_id = " + myMasterId +
-//                " and coalesce(ap.is_deleted,false)!=true "+
-//                " and ap.moving_id = " + docId;
-//        stringQuery = stringQuery + " order by ap.date_time_created asc ";
-//        try{
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            List<Object[]> queryList = query.getResultList();
-//            List<LinkedDocsJSON> returnList = new ArrayList<>();
-//            for(Object[] obj:queryList){
-//                LinkedDocsJSON doc=new LinkedDocsJSON();
-//                doc.setId(Long.parseLong(                       obj[0].toString()));
-//                doc.setDate_time_created((String)               obj[1]);
-//                doc.setDescription((String)                     obj[2]);
-//                doc.setIs_completed((Boolean)                   obj[3]);
-//                doc.setDoc_number(Long.parseLong(               obj[4].toString()));
-//                returnList.add(doc);
-//            }
-//            return returnList;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.error("Exception in method getMovingLinkedDocsList. SQL query:" + stringQuery, e);
-//            return null;
-//        }
-//    }
 
     @Transactional
     @SuppressWarnings("Duplicates")
@@ -1582,11 +1370,11 @@ public class MovingRepository {
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
                 "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
-                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           coalesce(p.pricing_type,'avgCostPrice') as pricing_type,"+  // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
                 "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.change_price, 0.00) as change_price, " +         // наценка/скидка в цифре (например, 50)
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +            // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+// тип наценки/скидки (валюта currency или проценты procents)
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +           // убирать десятые (копейки)
                 "           from settings_moving p " +
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";

@@ -674,7 +674,7 @@ public class InvoiceoutRepositoryJPA {
                     return 0L;
                 } catch (CantSaveProductHistoryException e) {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                    logger.error("Exception in method insertInvoiceout on inserting into products_history.", e);
+                    logger.error("Exception in method insertInvoiceout on inserting into product_history.", e);
                     e.printStackTrace();
                     return null;
                 } catch (Exception e) {
@@ -1031,7 +1031,65 @@ public class InvoiceoutRepositoryJPA {
             return null;
         }
     }
+    //сохраняет настройки РАСЦЕНКИ документа "Invoice to customer"
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Boolean savePricingSettingsInvoiceout(SettingsInvoiceoutForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
 
+            commonUtilites.idBelongsMyMaster("sprav_type_prices", row.getPriceTypeId(), myMasterId);
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
+
+            stringQuery =
+                    " insert into settings_invoiceout (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "pricing_type, " +      //тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Себестоимость (costPrice) 3. Вручную (manual))
+                            "price_type_id, " +     //тип цены из справочника Типы цен
+                            "change_price, " +      //наценка/скидка в цифре (например, 50)
+                            "plus_minus, " +        //определят, чем является changePrice - наценкой или скидкой (принимает значения plus или minus)
+                            "change_price_type, " + //тип наценки/скидки. Принимает значения currency (валюта) или procents(проценты)
+                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
+                            "save_settings " +      //сохранять настройки (флажок "Сохранить настройки" будет установлен) - boolean
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + "," +
+                            ":pricing_type," +
+                            row.getPriceTypeId() + ", " +
+                            row.getChangePrice() + "," +
+                            ":plusMinus," +
+                            ":changePriceType," +
+                            row.getHideTenths() + "," +
+                            row.getSaveSettings() +
+                            ") " +
+                            "ON CONFLICT ON CONSTRAINT settings_invoiceout_user_uq " +// "upsert"
+                            " DO update set " +
+                            " pricing_type = :pricing_type"  + ","+
+                            " price_type_id = " + row.getPriceTypeId() + ","+
+                            " change_price = " + row.getChangePrice() + ","+
+                            " plus_minus = :plusMinus"  + ","+
+                            " change_price_type = :changePriceType"  + ","+
+                            " hide_tenths = " + row.getHideTenths() + ","+
+                            " save_settings = " + row.getSaveSettings();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("pricing_type", row.getPricingType());
+            query.setParameter("plusMinus", row.getPlusMinus());
+            query.setParameter("changePriceType", row.getChangePriceType());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method savePricingSettingsInvoiceout. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
     @SuppressWarnings("Duplicates")
     public SettingsInvoiceoutJSON getSettingsInvoiceout() {
@@ -1039,11 +1097,11 @@ public class InvoiceoutRepositoryJPA {
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
-                "           p.pricing_type as pricing_type, " +
+                "           coalesce(p.pricing_type,'priceType') as pricing_type,"+
                 "           p.price_type_id as price_type_id, " +
-                "           p.change_price as change_price, " +
-                "           p.plus_minus as plus_minus, " +
-                "           p.change_price_type as change_price_type, " +
+                "           coalesce(p.change_price, 0.00) as change_price, " +
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+
                 "           coalesce(p.hide_tenths,false) as hide_tenths, " +
                 "           coalesce(p.save_settings,false) as save_settings, " +
                 "           p.department_id as department_id, " +
@@ -1051,7 +1109,7 @@ public class InvoiceoutRepositoryJPA {
                 "           cg.name as customer, " +
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +
-                "           p.priority_type_price_side as priority_type_price_side," +
+                "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
                 "           coalesce(p.autocreate,false) as autocreate," +
                 "           p.status_id_on_complete as status_id_on_complete, " +
                 "           coalesce(p.auto_add,false) as auto_add  " +                 // автодобавление товара из формы поиска в таблицу

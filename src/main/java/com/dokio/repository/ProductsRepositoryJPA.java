@@ -1670,13 +1670,13 @@ public class ProductsRepositoryJPA {
                 " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                 " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
                 // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
-                "   coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
+                " coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // средняя себестоимость
-                "           (select ph.avg_netcost_price   from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
-                // средняя закупочная цена
-                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
-                // последняя закупочная цена
-                "           (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice " +
+                " (select ph.avg_netcost_price   from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                // средняя закупочная цена - deprecated and not used
+                " 0.00  as avgPurchasePrice, " +
+                // последняя закупочная цена                                                                15 = Acceptance
+                " (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and doc_type_id=15 and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice " +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -1908,64 +1908,6 @@ public class ProductsRepositoryJPA {
         }
 
     }
-
-
-
-
-
-
-    @SuppressWarnings("Duplicates")
-    //отдает информацию состоянии товара (кол-во, последняя поставка) в отделении, и средним ценам (закупочной и себестоимости) товара
-    public ShortInfoAboutProductJSON getShortInfoAboutProduct(Long department_id, Long product_id/*, Long price_type_id*/) {
-
-        Long myMasterId = userRepositoryJPA.getMyMasterId();
-        String myTimeZone = userRepository.getUserTimeZone();
-        String stringQuery = "select" +
-                "           p.quantity as quantity," +
-                "           p.change as change," +
-                "           p.avg_purchase_price as avg_purchase_price," +
-                "           p.last_purchase_price as last_purchase_price," +
-                "           p.avg_netcost_price as avg_netcost_price," +
-                "           to_char(p.date_time_created at time zone '" + myTimeZone + "', 'DD.MM.YYYY') as date_time_created " +
-                /*"           '-' as department_type_price, " +
-                "           coalesce((select price_value from product_prices where product_id = "+product_id+" and price_type_id = "+price_type_id+"),0) as department_sell_price " +*/
-
-                "           from" +
-                "           products_history p " +
-                "           left outer join" +
-                "           departments dp " +
-                "           on dp.id= " + department_id +
-                "           where" +
-                "               p.department_id= " + department_id +
-                "           and p.product_id= " + product_id +
-                "           and p.master_id= " + myMasterId +
-                "           order by p.id desc limit 1";
-
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            List<Object[]> queryList = query.getResultList();
-            ShortInfoAboutProductJSON returnObj = new ShortInfoAboutProductJSON();
-
-            for (Object[] obj : queryList) {
-                returnObj.setQuantity((BigDecimal) obj[0]);
-                returnObj.setChange((BigDecimal) obj[1]);
-                returnObj.setAvg_purchase_price((BigDecimal) obj[2]);
-                returnObj.setLast_purchase_price((BigDecimal) obj[3]);
-                returnObj.setAvg_netcost_price((BigDecimal) obj[4]);
-                returnObj.setDate_time_created((String) obj[5]);
-                /*returnObj.setDepartment_type_price((String) obj[6]);
-                returnObj.setDepartment_sell_price((BigDecimal) obj[7]);*/
-            }
-            return returnObj;
-        } catch (Exception e) {
-            logger.error("Exception in method getShortInfoAboutProduct. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
 
 //*****************************************************************************************************************************************************
 //***********************************************   C A T E G O R I E S   *****************************************************************************
@@ -3204,17 +3146,17 @@ public class ProductsRepositoryJPA {
                 // наименование товара
                 "           p.name as name, " +
                 // наименование ед. измерения
-                "           ei.short_name as edizm, " +
+                " ei.short_name as edizm, " +
                 // всего единиц товара в отделении (складе)
-                "           (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
+                " (select coalesce(quantity,0)   from product_quantity     where department_id = "    + departmentId +" and product_id = p.id) as estimated_balance, " +
                 // цена по запрашиваемому типу цены priceTypeId (если тип цены не запрашивается - ставим null в качестве цены по отсутствующему в запросе типу цены)
-                "           coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and  pp.price_type_id = 10),0) as price_by_typeprice, " +
+                " coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // средняя себестоимость
-                "           (select ph.avg_netcost_price   from products_history ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
-                // средняя закупочная цена
-                "           (select ph.avg_purchase_price  from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgPurchasePrice, " +
-                // последняя закупочная цена
-                "           (select ph.last_purchase_price from products_history ph  where ph.department_id = " + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as lastPurchasePrice, " +
+                " (select ph.avg_netcost_price from product_quantity ph where ph.department_id = "  + departmentId +" and ph.product_id = p.id order by ph.id desc limit 1) as avgCostPrice, " +
+                // средняя закупочная цена - deprecated and no more used
+                " 0.00 as avgPurchasePrice, " +
+                // последняя закупочная цена                                                                // 15 = Acceptance
+                " (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and doc_type_id=15 and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice, " +
                 //всего на складе (т.е остаток)
                 "           coalesce((select quantity from product_quantity where product_id = p.id and department_id = " + departmentId + "),0) as remains, " +
                 // id ставки НДС
@@ -4049,44 +3991,6 @@ public class ProductsRepositoryJPA {
 //****************************************************  C O M M O N   U T I L I T E S   ***************************************************************
 //*****************************************************************************************************************************************************
 
-
-    //синхронизирует кол-во товаров в products_history и в product_quantity по предприятию
-    //данная операция для работы Докио не нужна, проводилась 1 раз, при введении таблицы product_quantity,
-    // необходимой для быстрой отдачи кол-ва товара и его средней себестоимости
-//    @Transactional
-//    public boolean syncQuantityProducts(UniversalForm request) {
-//        Long companyId = request.getId();
-//        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-//        String stringQuery = "select id from departments where company_id=" + companyId;
-//
-//        try {
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            List<Integer> queryList = query.getResultList();
-//
-//            for (Integer obj : queryList) { //цикл по id отделений предприятия
-//                Long departmentId = Long.parseLong(obj.toString());
-//
-//                stringQuery = "select id from products where company_id=" + companyId;
-//                query = entityManager.createNativeQuery(stringQuery);
-//                List<Integer> queryList2 = query.getResultList();
-//                for (Integer obj2 : queryList2) {//цикл по всем товарам предприятия
-//                    Long productId = Long.parseLong(obj2.toString());
-//                    BigDecimal quantity = getLastProductHistoryQuantity(productId,departmentId);//получили кол-во товара в текущем предприятии в таблице по истории изменения количества товара
-//
-//                    if (!setProductQuantity(myMasterId, productId, departmentId, quantity)) {// запись о количестве товара в отделении в отдельной таблице
-//                        break;
-//                    }
-//                }
-//            }
-//            return true;
-//        }
-//        catch (Exception e) {
-//            logger.error("Exception in method syncQuantityProducts. SQL query:"+stringQuery, e);
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
-
     // определяет, материален ли товар, по его признаку предмета расчёта
     public Boolean isProductMaterial(Long prodId) throws Exception {
         String stringQuery="";
@@ -4145,7 +4049,7 @@ public class ProductsRepositoryJPA {
         }
     }
     @SuppressWarnings("Duplicates")
-    //products_history - таблица, в которой хранится история операций с товаром в отделении: вид операции (doc_type_id), сколько (change) и по какой цене (price)
+    //product_history - таблица, в которой хранится история операций с товаром в отделении: вид операции (doc_type_id), сколько (change) и по какой цене (price)
     public Boolean setProductHistory(
             Long masterId,
             Long company_id,
@@ -4415,14 +4319,14 @@ public class ProductsRepositoryJPA {
         BigDecimal availableQuantity = new BigDecimal(0); // имеющееся количество
         BigDecimal change = new BigDecimal(0) ;
         BigDecimal netcost;
-        int doc_type_id = 0;
-        Long doc_id = 0L;
+//        int doc_type_id = 0;
+//        Long doc_id = 0L;
         String stringQuery =
                 "   select " +
                         "   change as change, " +
-                        "   netcost as netcost, " +
-                        "   doc_type_id as doc_type_id," +
-                        "   doc_id as doc_id " +
+                        "   netcost as netcost " +
+//                        "   doc_type_id as doc_type_id," +
+//                        "   doc_id as doc_id " +
                         "   from product_history                "+
                         "   where                                "+
                         "   company_id = " + companyId +
@@ -4443,8 +4347,8 @@ public class ProductsRepositoryJPA {
                 for (Object[] obj : queryList) {
                     change = (BigDecimal)obj[0];
                     netcost  = (BigDecimal)obj[1];
-                    doc_type_id = (Integer) obj[2];
-                    doc_id = ((BigInteger) obj[3]).longValue();
+//                    doc_type_id = (Integer) obj[2];
+//                    doc_id = ((BigInteger) obj[3]).longValue();
 
                     if(availableQuantity.compareTo(new BigDecimal(0))>=0) {
 

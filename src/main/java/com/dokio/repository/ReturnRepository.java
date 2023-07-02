@@ -614,7 +614,7 @@ public class ReturnRepository {
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ReturnRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method ReturnRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (CalculateNetcostNegativeSumException e) {

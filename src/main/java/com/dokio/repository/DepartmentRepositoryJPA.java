@@ -301,7 +301,7 @@ public class DepartmentRepositoryJPA {
                             " changer_id = " + myId + ","+
                             " date_time_changed= now()" +
                             " where " +
-                            " id= "+request.getId()+" and master_is = " + myMasterId;
+                            " id= "+request.getId()+" and master_id = " + myMasterId;
             try
             {
 

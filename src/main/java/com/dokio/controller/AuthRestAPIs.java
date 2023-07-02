@@ -209,8 +209,8 @@ public class AuthRestAPIs {
 			user.setCompany(userCompany);
 			user.setDepartments(userDepartments);
 			userRepository.saveAndFlush(user);
-			// создадим пользователю Роль (группу пользователей)
-			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), companyId, createdUserId, createdUserId);
+			// создадим Роль (группу пользователей)
+			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), createdUserId, createdUserId);
 			Set<Long> permissions = getAdminPermissions();
 			userGroupRepository.setPermissionsToUserGroup(permissions, usergroupId);
 			// зададим пользователю набор валют

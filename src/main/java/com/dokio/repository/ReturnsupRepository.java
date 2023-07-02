@@ -295,12 +295,14 @@ public class ReturnsupRepository {
                     " ip.nds_id, " +
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " coalesce((select quantity from product_quantity where product_id = ip.product_id and department_id = i.department_id),0) as remains, "+ //всего на складе (т.е остаток)
-                    " coalesce(nds.value,0) as nds_value" +
+                    " coalesce(nds.value,0) as nds_value, " +
+                    " ppr.is_material as is_material " +
 
                     " from " +
                     " returnsup_product ip " +
                     " INNER JOIN products p ON ip.product_id=p.id " +
                     " INNER JOIN returnsup i ON ip.returnsup_id=i.id " +
+                    " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                     " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ip.nds_id" +
                     " where ip.master_id = " + myMasterId +
                     " and ip.returnsup_id = " + docId;
@@ -340,6 +342,7 @@ public class ReturnsupRepository {
                     doc.setIndivisible((Boolean)                            obj[8]);
                     doc.setRemains((BigDecimal)                             obj[9]);
                     doc.setNds_value((BigDecimal)                           obj[10]);
+                    doc.setIs_material((Boolean)                            obj[11]);
                     returnsupList.add(doc);
                     row_num++;
                 }
@@ -574,7 +577,7 @@ public class ReturnsupRepository {
                 return null;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ReturnsupRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method ReturnsupRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (Exception e) {
@@ -636,7 +639,7 @@ public class ReturnsupRepository {
                 return 1;
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ReturnsupRepository/addProductHistory on inserting into products_history cause oversell.", e);
+                logger.error("Exception in method ReturnsupRepository/addProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;
             }catch (CalculateNetcostNegativeSumException e) {
@@ -1056,11 +1059,11 @@ public class ReturnsupRepository {
                 "           p.company_id as company_id, " +                             // id предприятия
                 "           p.status_on_finish_id as status_on_finish_id, " +           // статус документа при завершении инвентаризации
                 "           coalesce(p.auto_add,false) as auto_add, " +                 // автодобавление товара из формы поиска в таблицу
-                "           p.pricing_type as pricing_type, " +                         // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice) 4. Средняя закупочная цена (avgPurchasePrice))
+                "           coalesce(p.pricing_type,'avgCostPrice') as pricing_type,"+  // тип расценки (радиокнопки: 1. Тип цены (priceType), 2. Ср. себестоимость (avgCostPrice) 3. Последняя закупочная цена (lastPurchasePrice))
                 "           p.price_type_id as price_type_id, " +                       // тип цены из справочника Типы цен
-                "           p.change_price as change_price, " +                         // наценка/скидка в цифре (например, 50)
-                "           p.plus_minus as plus_minus, " +                             // определят, что есть changePrice - наценка или скидка (plus или minus)
-                "           p.change_price_type as change_price_type, " +               // тип наценки/скидки (валюта currency или проценты procents)
+                "           coalesce(p.change_price, 0.00) as change_price, " +         // наценка/скидка в цифре (например, 50)
+                "           coalesce(p.plus_minus,'plus') as plus_minus, " +            // определят, что есть changePrice - наценка или скидка (plus или minus)
+                "           coalesce(p.change_price_type,'procents') as change_price_type,"+// тип наценки/скидки (валюта currency или проценты procents)
                 "           coalesce(p.hide_tenths,false) as hide_tenths " +            // убирать десятые (копейки)
 
                 "           from settings_returnsup p " +
@@ -1068,6 +1071,8 @@ public class ReturnsupRepository {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
+
+            if(queryList.size()==0) throw new NoResultException();
             SettingsReturnsupJSON returnsupObj=new SettingsReturnsupJSON();
 
             for(Object[] obj:queryList){
@@ -1084,6 +1089,8 @@ public class ReturnsupRepository {
 
             }
             return returnsupObj;
+        } catch (NoResultException nre) {
+            return new SettingsReturnsupJSON(false,"avgCostPrice",new BigDecimal("0"),"plus","procents",false);
         }
         catch (Exception e) {
             logger.error("Exception in method getSettingsReturnsup. SQL query:"+stringQuery, e);
