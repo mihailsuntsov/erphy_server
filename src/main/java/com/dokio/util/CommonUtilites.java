@@ -713,7 +713,21 @@ public class CommonUtilites {
                         " url_terms_and_conditions as url_terms_and_conditions, " +
                         " url_privacy_policy as url_privacy_policy, " +
                         " url_data_processing_agreement as url_data_processing_agreement," +
-                        " root_domain as root_domain" +
+                        " root_domain as root_domain," +
+                        " billing_master_id as billing_master_id, " +
+                        " billing_shipment_creator_id as billing_shipment_creator_id, " +
+                        " billing_shipment_company_id as billing_shipment_company_id, " +
+                        " billing_shipment_department_id as billing_shipment_department_id, " +
+                        " billing_cagents_category_id as billing_cagents_category_id, " +
+                        " billing_companies_product_id as billing_companies_product_id, " +
+                        " billing_departments_product_id as billing_departments_product_id, " +
+                        " billing_users_product_id as billing_users_product_id, " +
+                        " billing_products_product_id as billing_products_product_id, " +
+                        " billing_counterparties_product_id as billing_counterparties_product_id, " +
+                        " billing_megabytes_product_id as billing_megabytes_product_id, " +
+                        " billing_stores_product_id as billing_stores_product_id, " +
+                        " billing_stores_woo_product_id as billing_stores_woo_product_id, " +
+                        " billing_plan_product_id as billing_plan_product_id " +
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -745,6 +759,20 @@ public class CommonUtilites {
                 doc.setUrl_privacy_policy((String) queryList.get(0)[20]);
                 doc.setUrl_data_processing_agreement((String) queryList.get(0)[21]);
                 doc.setRoot_domain((String) queryList.get(0)[22]);
+                doc.setBilling_master_id(withSensitiveInfo?(Long.parseLong(                        queryList.get(0)[23].toString())):null);
+                doc.setBilling_shipment_creator_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[24].toString())):null);
+                doc.setBilling_shipment_company_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[25].toString())):null);
+                doc.setBilling_shipment_department_id(withSensitiveInfo?(Long.parseLong(           queryList.get(0)[26].toString())):null);
+                doc.setBilling_cagents_category_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[27].toString())):null);
+                doc.setBilling_companies_product_id(withSensitiveInfo?(Long.parseLong(             queryList.get(0)[28].toString())):null);
+                doc.setBilling_departments_product_id(withSensitiveInfo?(Long.parseLong(           queryList.get(0)[29].toString())):null);
+                doc.setBilling_users_product_id(withSensitiveInfo?(Long.parseLong(                 queryList.get(0)[30].toString())):null);
+                doc.setBilling_products_product_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[31].toString())):null);
+                doc.setBilling_counterparties_product_id(withSensitiveInfo?(Long.parseLong(        queryList.get(0)[32].toString())):null);
+                doc.setBilling_megabytes_product_id(withSensitiveInfo?(Long.parseLong(             queryList.get(0)[33].toString())):null);
+                doc.setBilling_stores_product_id(withSensitiveInfo?(Long.parseLong(                queryList.get(0)[34].toString())):null);
+                doc.setBilling_stores_woo_product_id(withSensitiveInfo?(Long.parseLong(            queryList.get(0)[35].toString())):null);
+                doc.setBilling_plan_product_id(withSensitiveInfo?(Long.parseLong(                  queryList.get(0)[36].toString())):null);
             }
             return doc;
         } catch (Exception e) {
@@ -837,7 +865,7 @@ public class CommonUtilites {
 
     public Long getFreeSiteToRentId() throws Exception {
         String stringQuery;
-        stringQuery = "select id from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created limit 1";
+        stringQuery = "select id from _saas_stores_for_ordering where ready_to_distribute=true and distributed=false order by date_time_created, id limit 1";
 
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -891,6 +919,22 @@ public class CommonUtilites {
         }catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method idBelongsMyMaster. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+
+    public Long getCagentIdByUserId(Long userId) throws Exception {
+        String stringQuery;
+        stringQuery = "select id from cagents where user_id="+userId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        }catch (NoResultException nre) {
+            logger.error("Counterparty id not founded by user_id = " + userId +". SQL="+stringQuery, nre);
+            throw new Exception("Counterparty id not founded by user_id = " + userId);
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getCagentIdByUserId. SQL: "+stringQuery, e);
             throw new Exception();
         }
     }

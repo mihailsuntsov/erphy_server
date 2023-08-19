@@ -435,7 +435,7 @@ public class ProductsRepositoryJPA {
                 int subjOfTradeInDB = (Integer)commonUtilites.getFieldValueFromTableById("products","ppr_id",myMasterId,request.getId());
                 int subjOfTradeIncome = Integer.parseInt(request.getPpr_id().toString());
                 boolean wasOperationsOnProduct = wasOperationsOnProduct(request.getId());
-
+                boolean isProductUsedAsVariation = isProductUsedAsVariation(request.getId());
                 // Subject of trade was changed (from Service to Commodity or from Commodity to Service)
                 // If this product (or service) is already has the history of operations - Reject this update
                 // because it will produce discrepancy of product quantity in warehouse / negative quantity / fraud opportunities
@@ -450,7 +450,7 @@ public class ProductsRepositoryJPA {
                 // Product selected as a variable, but already used as a variation in another variable product
                 // Variation can't be variable product!
                 // Вариация не может быть вариативным товаром!
-                if(request.getType().equals("variable") && isProductUsedAsVariation(request.getId()))
+                if(request.getType().equals("variable") && isProductUsedAsVariation)
                     return -280;
 
                 // Нельзя изменить тип товара, у которого уже есть история складских операций, на «Вариативный».
@@ -463,6 +463,10 @@ public class ProductsRepositoryJPA {
                 // no matter - variable product or not - because can be that it was Variable and now selected as Simple
                 // at this place method running for deleted variations (here they are still belongs to product)
                 markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
+
+                //if variation changed or deleted - mark its parent product to resync (it will delete non-existed or excess variations on the Woo side)
+                if(isProductUsedAsVariation)
+                    markVariableProductAsNeedToSyncWoo(request.getId(), myMasterId);
 
                 // сохранение базовых полей
                 updateProductsWithoutOrders(request, myMasterId);
@@ -547,6 +551,8 @@ public class ProductsRepositoryJPA {
                 // setting variations as need to be synchronized
                 // at this place method running for added variations
                 markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
+
+
 
                 //variation can't be upsell or crosssell product (вариация не может быть upsell or crosssell)
                 clearUpsellCrosssellsFromVariations(request.getId(), myMasterId);
@@ -1126,6 +1132,10 @@ public class ProductsRepositoryJPA {
             // на MasterId не проверяю , т.к. выше уже проверено
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
+
+
+
+
             stringQuery =
 
                     "update products p" +
@@ -1166,6 +1176,14 @@ public class ProductsRepositoryJPA {
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
+                Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+                //if if in deleted products there are variations - mark its parent products to resync
+                List<Long> productsIds = Arrays.asList(delNumbers.split(",")).stream().map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
+                for(Long i: productsIds){
+                    if(isProductUsedAsVariation(i))
+                        markVariableProductAsNeedToSyncWoo(i, myMasterId);
+                }
                 return 1;
             }catch (Exception e) {
                 logger.error("Exception in method deleteProducts. SQL query:"+stringQuery, e);
@@ -2534,7 +2552,23 @@ public class ProductsRepositoryJPA {
         }
     }
 
-
+    //if variation changed or deleted - mark its parent product to resync (it will delete non-existed or excess variations on the Woo side)
+    private void markVariableProductAsNeedToSyncWoo(Long variationId, Long masterId) throws Exception {
+        String stringQuery =
+                        " update stores_products " +
+                        " set need_to_syncwoo = true " +
+                        " where " +
+                        " master_id = " + masterId +
+                        " and product_id = (select product_id from product_variations where variation_product_id = "+variationId+" limit 1)";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method markVariableProductAsNeedToSyncWoo. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 //    public void markProductsOfStoresAsNeedToSyncWoo(List<Long> storesIds, Long masterId) throws Exception {
 //        String stringQuery =
 //                " update stores_products " +

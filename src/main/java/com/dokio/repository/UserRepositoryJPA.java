@@ -21,6 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
+import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UsersJSON;
@@ -37,6 +38,7 @@ import com.dokio.service.StorageService;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,6 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 
 @Repository("UserRepositoryJPA")
@@ -86,6 +89,9 @@ public class UserRepositoryJPA {
 
     @Autowired
     private SubscriptionRepositoryJPA subscriptionRepository;
+
+    @Value("${files_path}")
+    private String files_path;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -708,7 +714,8 @@ public class UserRepositoryJPA {
                 "   cur.name_short," +                      // short name of Accounting currency of user's company (e.g. $ or EUR)
                 "   sslc.date_format," +                    // date format of the user, like DD/MM/YYYY, YYYY-MM-DD e.t.c
                 "   p.time_format as time_format, " +       // 12 or 24
-                "   sst.canonical_id as time_zone " +       // time zone name, e.g. 'CET'
+                "   sst.canonical_id as time_zone, " +      // time zone name, e.g. 'CET'
+                "   coalesce(sidenav_drawer,'open') as sidenav_drawer" +     // "open" or "close"
                 "   from    user_settings p, " +
                 "           sprav_sys_languages sslg, " +
                 "           sprav_sys_locales sslc, " +
@@ -740,6 +747,7 @@ public class UserRepositoryJPA {
                 doc.setDateFormat((String)          queryList.get(0)[8]);
                 doc.setTimeFormat((String)          queryList.get(0)[9]);
                 doc.setTime_zone((String)           queryList.get(0)[10]);
+                doc.setSidenav((String)             queryList.get(0)[11]);
             }
             return doc;
         } catch (Exception e) {
@@ -830,6 +838,23 @@ public class UserRepositoryJPA {
         }
     }
 
+    @Transactional
+    public Boolean setSidenavDrawer(Long userId, String sidenav) {
+        Long myMasterId = getUserMasterIdByUserId(userId);
+        String stringQuery;
+        stringQuery = "update user_settings set sidenav_drawer = :sidenav_drawer where user_id = "+userId+" and master_id = " +myMasterId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("sidenav_drawer", sidenav);
+            query.executeUpdate();
+            return true;
+        }catch (Exception e) {
+            logger.error("Exception in method setSidenavDrawer. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public Integer activateUser(String code) {
         try{
             User user = userRepository.findByActivationCode(code);
@@ -865,24 +890,13 @@ public class UserRepositoryJPA {
         Long myMasterId = getMyMasterId();
         try{
             if(storageService.isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде (dev mode)
-            } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux (prod mode)
+            } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux (prod mode)
             String MY_MASTER_ID_FOLDER = myMasterId.toString();
             File folder = new File(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER);
             long size = 0L;
             if(storageService.isPathExists(folder.getPath()))
                 size = storageService.getDirectorySize(folder);
-            String stringQuery =
-                "   select" +
-                "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as companies," +
-                "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as departments," +
-                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as users," +
-                "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
-                "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
-                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +
-//                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and distributed=true and is_deleted=false) as stores_woo";
-                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and is_deleted=false) as stores_woo";
-
-
+            String stringQuery = getSQLForMyConsumedResources(myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserResources doc = new UserResources();
@@ -901,52 +915,18 @@ public class UserRepositoryJPA {
             return null;
         }
     }
-
-    // Counting maximal allowed user resources
     @SuppressWarnings("Duplicates")
-    public UserResources getMyMaxAllowedResources(){
-        Long myMasterId=getMyMasterId();
+    public UserResources getMyConsumedResources(Long myMasterId){
+        String BASE_FILES_FOLDER;
         try{
-            int plan_id = getMasterUserPlan(myMasterId);
-            boolean isPlanFree = (Boolean)subscriptionRepository.isPlanFree(plan_id);
-            String stringQuery =
-                    "select   sum(companies) as companies, " +
-                            " sum(departments) as departments, " +
-                            " sum(users) as users, " +
-                            " sum(products) as products, " +
-                            " sum(counterparties) as counterparties, " +
-                            " sum(megabytes) as megabytes, " +
-                            " sum(stores) as stores, " +
-                            " sum(n_stores_woo) as n_stores_woo " +
-                            " from (" +
-                            "(select n_companies as companies, " +
-                            " n_departments as departments, " +
-                            " n_users as users, " +
-                            " n_products as products, " +
-                            " n_counterparties as counterparties, " +
-                            " n_megabytes as megabytes, " +
-                            " n_stores as stores, " +
-                            " n_stores_woo as n_stores_woo " +
-                            " from plans " +
-                            " where id = "+plan_id+")";
-
-            // on free plans there is no additional options
-            if(!isPlanFree)
-                stringQuery = stringQuery +
-
-                            " UNION " +
-                            " (select " +
-                            " n_companies as companies, " +
-                            " n_departments as departments, n_users as users, " +
-                            " n_products as products, " +
-                            " n_counterparties as counterparties, " +
-                            " n_megabytes as megabytes, " +
-                            " n_stores as stores, " +
-                            " n_stores_woo as n_stores_woo " +
-                            " from plans_add_options " +
-                            " where user_id="+myMasterId+")";
-            stringQuery = stringQuery +
-                            ") AS result ";
+            if(storageService.isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде (dev mode)
+            } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux (prod mode)
+            String MY_MASTER_ID_FOLDER = myMasterId.toString();
+            File folder = new File(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER);
+            long size = 0L;
+            if(storageService.isPathExists(folder.getPath()))
+                size = storageService.getDirectorySize(folder);
+            String stringQuery = getSQLForMyConsumedResources(myMasterId);
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             UserResources doc = new UserResources();
@@ -955,7 +935,49 @@ public class UserRepositoryJPA {
             doc.setUsers(Long.parseLong(                    queryList.get(0)[2].toString()));
             doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString()));
             doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString()));
-            doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString()));
+            doc.setMegabytes(Math.round(size/1024/1024));
+            doc.setStores(Long.parseLong(                   queryList.get(0)[5].toString()));
+            doc.setStores_woo(Long.parseLong(               queryList.get(0)[6].toString()));
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getConsumedUserResources", e);
+            return null;
+        }
+    }
+    private String getSQLForMyConsumedResources(Long myMasterId){
+        return ("   select" +
+                "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as companies," +
+                "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as departments," +
+                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as users," +
+                "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
+                "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
+                "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +
+                "   (select count(*) from _saas_stores_for_ordering  where master_id="+myMasterId+" and is_deleted=false) as stores_woo");
+    }
+
+    // Counting maximal allowed user resources
+    @SuppressWarnings("Duplicates")
+    public UserResources getMyMaxAllowedResources(){
+        Long myMasterId=getMyMasterId();
+        try{
+            int plan_id = getMasterUserPlan(myMasterId);
+            boolean isPlanFree = (Boolean)subscriptionRepository.isPlanFree(plan_id);
+            String stringQuery =getSQLForMyMaxAllowedResources1(plan_id);
+            // on free plans there is no additional options
+            if(!isPlanFree)
+                stringQuery = stringQuery + getSQLForMyMaxAllowedResources2(myMasterId);
+            else
+                stringQuery = stringQuery + ") AS result ";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserResources doc = new UserResources();
+            doc.setCompanies(Long.parseLong(                queryList.get(0)[0].toString()));
+            doc.setDepartments(Long.parseLong(              queryList.get(0)[1].toString()));
+            doc.setUsers(Long.parseLong(                    queryList.get(0)[2].toString()));
+            doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString().replace(".00","")));
+            doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString().replace(".00","")));
+            doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString().replace(".00","")));
             doc.setStores(        Long.parseLong(           queryList.get(0)[6].toString()));
             doc.setStores_woo(    Long.parseLong(           queryList.get(0)[7].toString()));
             return doc;
@@ -964,6 +986,71 @@ public class UserRepositoryJPA {
             logger.error("Exception in method getMaxAllowedUserResources", e);
             return null;
         }
+    }
+    @SuppressWarnings("Duplicates")
+    public UserResources getMyMaxAllowedResources(Long myMasterId){
+        try{
+            int plan_id = getMasterUserPlan(myMasterId);
+            boolean isPlanFree = (Boolean)subscriptionRepository.isPlanFree(plan_id);
+            String stringQuery =getSQLForMyMaxAllowedResources1(plan_id);
+            // on free plans there is no additional options
+            if(!isPlanFree)
+                stringQuery = stringQuery + getSQLForMyMaxAllowedResources2(myMasterId);
+            else
+                stringQuery = stringQuery + ") AS result ";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            UserResources doc = new UserResources();
+            doc.setCompanies(Long.parseLong(                queryList.get(0)[0].toString()));
+            doc.setDepartments(Long.parseLong(              queryList.get(0)[1].toString()));
+            doc.setUsers(Long.parseLong(                    queryList.get(0)[2].toString()));
+            doc.setProducts(Long.parseLong(                 queryList.get(0)[3].toString().replace(".00","")));
+            doc.setCounterparties(Long.parseLong(           queryList.get(0)[4].toString().replace(".00","")));
+            doc.setMegabytes(              Integer.parseInt(queryList.get(0)[5].toString().replace(".00","")));
+            doc.setStores(        Long.parseLong(           queryList.get(0)[6].toString()));
+            doc.setStores_woo(    Long.parseLong(           queryList.get(0)[7].toString()));
+            return doc;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMaxAllowedUserResources", e);
+            return null;
+        }
+    }
+    private String getSQLForMyMaxAllowedResources1(int plan_id){
+      return("select   sum(companies) as companies, " +
+              " sum(departments) as departments, " +
+              " sum(users) as users, " +
+              " sum(products) as products, " +
+              " sum(counterparties) as counterparties, " +
+              " sum(megabytes) as megabytes, " +
+              " sum(stores) as stores, " +
+              " sum(n_stores_woo) as n_stores_woo " +
+              " from (" +
+              "(select n_companies as companies, " +
+              " n_departments as departments, " +
+              " n_users as users, " +
+              " ROUND(n_products*1000,0) as products, " +  // in plans table 1000 products is 1. ROUND because n_products is decimal
+              " ROUND(n_counterparties*1000) as counterparties, " +// in plans table 1000 counterparties is 1. ROUND because n_counterparties is decimal
+              " ROUND(n_megabytes*1024) as megabytes, " +// in plans table 1024 megabytes is 1. ROUND because n_megabytes is decimal
+              " n_stores as stores, " +
+              " n_stores_woo as n_stores_woo " +
+              " from plans " +
+              " where id = "+plan_id+")");
+    }
+
+    private String getSQLForMyMaxAllowedResources2(Long myMasterId){
+        return( " UNION " +
+                " (select " +
+                " n_companies as companies, " +
+                " n_departments as departments, n_users as users, " +
+                " n_products*1000 as products, " +// in plans_add_options table 1000 products is 1
+                " n_counterparties*1000 as counterparties, " +// in plans_add_options table 1000 counterparties is 1
+                " n_megabytes*1024 as megabytes, " +// in plans_add_options table 1000 megabytes is 1
+                " n_stores as stores, " +
+                " n_stores_woo as n_stores_woo " +
+                " from plans_add_options " +
+                " where user_id="+myMasterId+")"+
+                ") AS result ");
     }
 
     public int getMasterUserPlan(Long userId){
@@ -1075,6 +1162,53 @@ public class UserRepositoryJPA {
                 return null;
             }
         } else return null;
+    }
+
+    @Transactional
+    public void setUserAsCagent(Long userId, String userName, String userEmail, SettingsGeneralJSON settingsGeneral){
+        String stringQuery;
+        stringQuery =
+            " insert into cagents ( " +
+                " master_id, " +
+                " creator_id, " +
+                " company_id, " +
+                " date_time_created, " +
+                " user_id, " +
+                " name, " +
+                " description, " +
+                " email, " +
+                " type," +
+                " legal_form" +
+            ") values ( " +
+                settingsGeneral.getBilling_master_id()           + ", " +
+                settingsGeneral.getBilling_shipment_creator_id() + ", " +
+                settingsGeneral.getBilling_shipment_company_id() + ", " +
+                " now(), " +
+                userId + ", " +
+                " :userName, " +
+                " CONCAT('User with id = ',"+userId+"), " +
+                " :userEmail," +
+                "'individual', " +
+                "''" +
+            "); " +
+
+            " insert into cagent_cagentcategories (" +
+                "category_id, " +
+                "cagent_id" +
+            ") values ( " +
+                settingsGeneral.getBilling_cagents_category_id() + ", " +
+                "(select id from cagents where email='"+userEmail+"')" +
+            ") " +
+            " ON CONFLICT ON CONSTRAINT cagent_cagentcategories_uq DO NOTHING;";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("userEmail",userEmail);
+            query.setParameter("userName",userName);
+            query.executeUpdate();
+        }catch (Exception e) {
+            logger.error("Exception in method setUserAsCagent. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+        }
     }
 
 }

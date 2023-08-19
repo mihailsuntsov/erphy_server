@@ -138,8 +138,9 @@ public class StoresController {
     @PostMapping("/api/auth/getMyRentSite")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> getMyRentSite(HttpServletRequest httpServletRequest, @RequestBody RentStoreOrderForm request) {
-        request.setUserIp(httpServletRequest.getRemoteAddr());
-        logger.info("Processing post request for path /api/auth/getMyRentSite: " + request.toString());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        request.setUserIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress); //ipAddress==null on DEV
+        logger.info("Processing post request for path /api/auth/getMyRentSite: " + request.toString() + ". Remote_IP: " + httpServletRequest.getRemoteAddr() + ", X-FORWARDED-FOR IP: " + ipAddress);
         try {return new ResponseEntity<>(storesRepository.getMyRentSite(request), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Error getting site", HttpStatus.INTERNAL_SERVER_ERROR);}
     }

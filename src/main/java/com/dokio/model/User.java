@@ -135,6 +135,12 @@ public class User{
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
     private Date date_birthday;
 
+
+    @Column(name="repair_pass_code_sent")
+    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
+    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
+    private Timestamp repair_pass_code_sent;
+
     @Column(name = "status_account")
 //    1 E-mail не верифицирован
 //    2 Активный
@@ -412,5 +418,13 @@ public class User{
 
     public void setVatin(String vatin) {
         this.vatin = vatin;
+    }
+
+    public Timestamp getRepair_pass_code_sent() {
+        return repair_pass_code_sent;
+    }
+
+    public void setRepair_pass_code_sent(Timestamp repair_pass_code_sent) {
+        this.repair_pass_code_sent = repair_pass_code_sent;
     }
 }

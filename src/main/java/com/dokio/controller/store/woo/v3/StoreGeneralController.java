@@ -32,7 +32,8 @@ public class StoreGeneralController {
            @RequestParam("key")             String key,
            @RequestParam("plugin_version")  String pluginVersion){
         logger.info("Processing get request for path /api/public/woo_v3/isLetSync");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(),key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeGeneralRepository.isLetSync(pluginVersion,key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller isLetSync error", e);
             return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

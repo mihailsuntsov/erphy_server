@@ -68,7 +68,7 @@ public class CagentRepositoryJPA {
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("p.name","name","company","status_name","creator","contacts","date_time_created_sort","description","cagent","summ_on_start","summ_in","summ_out","summ_on_end")
+            .of("p.name","name","company","status_name","status","doc_name","doc_number","creator","contacts","date_time_created_sort","description","cagent","summ_on_start","summ_in","summ_out","summ_on_end")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream

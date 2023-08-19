@@ -365,20 +365,23 @@ public class StoreForOrderingJSON {
                 ", client_no='" + client_no + '\'' +
                 ", client_name='" + client_name + '\'' +
                 ", site_domain='" + site_domain + '\'' +
+                ", third_lvl_user_domain='" + third_lvl_user_domain + '\'' +
                 ", site_root='" + site_root + '\'' +
+                ", isVar=" + isVar  + '\'' +
+                ", parentVarSiteId=" + parentVarSiteId  + '\'' +
+                ", position='" + position + '\'' +
+                ", varName='" + varName + '\'' +
                 ", wp_server_ip='" + wp_server_ip + '\'' +
                 ", record_creator_name='" + record_creator_name + '\'' +
                 ", date_time_ordered='" + date_time_ordered + '\'' +
                 ", date_time_distributed='" + date_time_distributed + '\'' +
-                ", master_id=" + master_id +
-                ", company_id=" + company_id +
-                ", store_id=" + store_id +
-                ", orderer_id=" + orderer_id +
+                ", master_id=" + master_id  + '\'' +
+                ", company_id=" + company_id  + '\'' +
+                ", store_id=" + store_id  + '\'' +
+                ", orderer_id=" + orderer_id  + '\'' +
                 ", orderer_ip='" + orderer_ip + '\'' +
-                ", isVar=" + isVar +
+                ", isVar=" + isVar  + '\'' +
                 ", parentVarSiteId=" + parentVarSiteId +
-                ", position='" + position + '\'' +
-                ", varName='" + varName + '\'' +
                 '}';
     }
 }

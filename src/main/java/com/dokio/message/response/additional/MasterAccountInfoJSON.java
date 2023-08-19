@@ -66,9 +66,9 @@ public class MasterAccountInfoJSON {
     private Long n_companies;
     private Long n_departments;
     private Long n_users;
-    private Long n_products;
-    private Long n_counterparties;
-    private int  n_megabytes;
+    private BigDecimal n_products;
+    private BigDecimal n_counterparties;
+    private BigDecimal n_megabytes;
     private Long n_stores;
     private Long n_stores_woo;
 
@@ -396,27 +396,27 @@ public class MasterAccountInfoJSON {
         this.n_users = n_users;
     }
 
-    public Long getN_products() {
+    public BigDecimal getN_products() {
         return n_products;
     }
 
-    public void setN_products(Long n_products) {
+    public void setN_products(BigDecimal n_products) {
         this.n_products = n_products;
     }
 
-    public Long getN_counterparties() {
+    public BigDecimal getN_counterparties() {
         return n_counterparties;
     }
 
-    public void setN_counterparties(Long n_counterparties) {
+    public void setN_counterparties(BigDecimal n_counterparties) {
         this.n_counterparties = n_counterparties;
     }
 
-    public int getN_megabytes() {
+    public BigDecimal getN_megabytes() {
         return n_megabytes;
     }
 
-    public void setN_megabytes(int n_megabytes) {
+    public void setN_megabytes(BigDecimal n_megabytes) {
         this.n_megabytes = n_megabytes;
     }
 

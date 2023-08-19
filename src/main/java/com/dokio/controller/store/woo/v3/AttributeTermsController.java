@@ -48,7 +48,8 @@ public class AttributeTermsController {
     public ResponseEntity<?> syncAttributeTermsToStore(HttpServletRequest httpServletRequest,
                                                        @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncAttributeTermsToStore");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsToStore(key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncAttributeTermsToStore error", e);
             return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
@@ -57,7 +58,8 @@ public class AttributeTermsController {
     @PostMapping("/syncAttributeTermsIds")
     public ResponseEntity<?> syncAttributeTermsIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncAttributeTermsIds: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeAttributeTermsRepository.syncAttributeTermsIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncAttributeTermsIds error", e);
             return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

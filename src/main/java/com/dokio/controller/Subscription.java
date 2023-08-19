@@ -68,7 +68,14 @@ public class Subscription {
         catch (Exception e){e.printStackTrace();logger.error("Controller stopTrialPeriod error", e);
             return new ResponseEntity<>("Error query of trying to stop trial period", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @RequestMapping(value = "/api/auth/getPaymentMethodsList",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPaymentMethodsList() {
+        logger.info("Processing get request for path /api/auth/getPaymentMethodsList with no params");
+        try {return new ResponseEntity<>(subscriptionRepository.getPaymentMethodsList(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getPaymentMethodsList error", e);
+            return new ResponseEntity<>("Error query of getting payments list", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @PostMapping("/api/auth/updateAddOptions")
     public ResponseEntity<?> updateAddOptions(@RequestBody PlanAdditionalOptionsForm request){
         logger.info("Processing post request for path /api/auth/updateAddOptions: " + request.toString());

@@ -17,6 +17,7 @@
 */
 package com.dokio.controller;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 import javax.persistence.EntityManager;
@@ -164,7 +165,7 @@ public class AuthRestAPIs {
 			Set<Role> roles = new HashSet<>();
 			Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
 			roles.add(adminRole);
-
+			user.setDate_time_created(new Timestamp(System.currentTimeMillis()));
 			//добавили юзеру сет ролей и сохранили его
 			user.setRoles(roles);
 			user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
@@ -254,6 +255,9 @@ public class AuthRestAPIs {
 			statusDocRepository.insertStatusesFast(createdUserId, createdUserId, companyId);
 			// базовые аттрибуты товаров (размер, цвет)
 			spravProductAttributes.insertProductAttributeFast(createdUserId, createdUserId, companyId, storeId);
+			// Занести пользователя в контрагенты
+			if(settingsGeneral.isSaas() && !Objects.isNull(settingsGeneral.getBilling_cagents_category_id()))
+				userRepositoryJPA.setUserAsCagent(createdUserId, signUpRequest.getName(), signUpRequest.getEmail(), settingsGeneral);
 			// отправили письмо для подтверждения e-mail
 			mailRepository.activateAccount(signUpRequest.getEmail(), user.getActivationCode(),signUpRequest.getLanguage());
 

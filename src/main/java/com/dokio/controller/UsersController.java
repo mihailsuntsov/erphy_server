@@ -128,8 +128,7 @@ public class UsersController {
                 user.setCreator(creator);//создателя
                 User master = userDetailService.getUserById(masterId);
                 user.setMaster(master);//владельца
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                user.setDate_time_created(timestamp);//дату создания
+                user.setDate_time_created(new Timestamp(System.currentTimeMillis()));//дату создания
                 user.setFio_family(signUpRequest.getFio_family());
                 user.setFio_name(signUpRequest.getFio_name());
                 user.setFio_otchestvo(signUpRequest.getFio_otchestvo());
@@ -501,5 +500,17 @@ public class UsersController {
         try {return new ResponseEntity<>(userRepositoryJPA.getLegalMasterUserInfo(), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getLegalMasterUserInfo error", e);
             return new ResponseEntity<>("Error query of getting master user legal information", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @RequestMapping(value = "/api/auth/setSidenavDrawer",
+            params = {"user_id", "sidenav"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> setSidenavDrawer(
+            @RequestParam("user_id") Long user_id,
+            @RequestParam("sidenav") String sidenav) {
+        logger.info("Processing get request for path /api/auth/setSidenavDrawer with no params");
+        try {return new ResponseEntity<>(userRepositoryJPA.setSidenavDrawer(user_id,sidenav), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setSidenavDrawer error", e);
+            return new ResponseEntity<>("Error query of setting sidenav drawer information", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

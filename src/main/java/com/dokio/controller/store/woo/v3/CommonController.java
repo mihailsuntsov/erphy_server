@@ -28,11 +28,12 @@ public class CommonController {
         try {
             if(Objects.isNull(cu.getByCrmSecretKey("id", key)))
                 return new ResponseEntity<>(-200, HttpStatus.OK);
-            cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+            String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+            cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(1, HttpStatus.OK);}
         catch (Exception e){
             e.printStackTrace();
-            logger.error("Controller DokioCrmConnectionTest error", e);
+            logger.error("Controller CrmConnectionTest error", e);
             return new ResponseEntity<>("Connection test controller error! " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 

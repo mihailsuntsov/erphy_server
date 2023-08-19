@@ -2,6 +2,7 @@ package com.dokio.repository;
 
 
 import com.dokio.message.request.PlanAdditionalOptionsForm;
+import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.repository.Exceptions.UsedResourcesExceedTotalLimits;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -39,13 +40,8 @@ public class SubscriptionRepositoryJPA {
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userRepository;
-//
     @Autowired
     private CommonUtilites commonUtilites;
-//
-//    @Autowired
-//    private UserDetailsServiceImpl userDetailsService;
-
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of("for_what_date","for_what_date_sort")
@@ -113,14 +109,11 @@ public class SubscriptionRepositoryJPA {
         String limitColumnName="quantity_trial_limit";
         String stringQuery="";
         try{
-
             // get the info about tariff plan
-
-            stringQuery = "select coalesce(sum(operation_sum),0) from _saas_billing_history u where master_account_id = "+masterId;
-            Query query = entityManager.createNativeQuery(stringQuery);
-            accInfo.setMoney(((BigDecimal) query.getSingleResult()).setScale(2, BigDecimal.ROUND_HALF_UP));
+            SettingsGeneralJSON getSettingsGeneral =  commonUtilites.getSettingsGeneral(true);
+            accInfo.setMoney(commonUtilites.getSummFromHistory("cagent", getSettingsGeneral.getBilling_shipment_company_id(), commonUtilites.getCagentIdByUserId(masterId)));
             stringQuery = "select coalesce(free_trial_days,0) from users u where id = "+masterId;
-            query = entityManager.createNativeQuery(stringQuery);
+            Query query = entityManager.createNativeQuery(stringQuery);
             accInfo.setFree_trial_days(((Integer) query.getSingleResult()));
 
             //there is limits for trial period and for non-trial period.
@@ -130,9 +123,9 @@ public class SubscriptionRepositoryJPA {
                     " n_companies as n_companies, " +
                     " n_departments as n_departments, " +
                     " n_users as n_users, " +
-                    " n_products as n_products, " +
-                    " n_counterparties as n_counterparties, " +
-                    " n_megabytes as n_megabytes, " +
+                    " n_products*1000 as n_products, " +
+                    " n_counterparties*1000 as n_counterparties, " +
+                    " n_megabytes*1024 as n_megabytes, " +
                     " n_stores as n_stores, " +
                     " n_stores_woo as n_stores_woo, " +
                     " name_"+suffix+" as name, " +
@@ -149,9 +142,9 @@ public class SubscriptionRepositoryJPA {
             accInfo.setN_companies(Long.valueOf(queryList.get(0)[0].toString()));
             accInfo.setN_departments(Long.valueOf(queryList.get(0)[1].toString()));
             accInfo.setN_users(Long.valueOf(queryList.get(0)[2].toString()));
-            accInfo.setN_products(Long.valueOf(queryList.get(0)[3].toString()));
-            accInfo.setN_counterparties(Long.valueOf(queryList.get(0)[4].toString()));
-            accInfo.setN_megabytes(Integer.valueOf(queryList.get(0)[5].toString()));
+            accInfo.setN_products((BigDecimal)(queryList.get(0)[3]));
+            accInfo.setN_counterparties((BigDecimal)(queryList.get(0)[4]));
+            accInfo.setN_megabytes((BigDecimal)(queryList.get(0)[5]));
             accInfo.setN_stores(Long.valueOf(queryList.get(0)[6].toString()));
             accInfo.setN_stores_woo(Long.valueOf(queryList.get(0)[7].toString()));
             accInfo.setPlan_name((String) queryList.get(0)[8]);
@@ -166,9 +159,9 @@ public class SubscriptionRepositoryJPA {
                     "n_companies as n_companies, " +
                     "n_departments as n_departments, " +
                     "n_users as n_users, " +
-                    "n_products as n_products, " +
-                    "n_counterparties as n_counterparties, " +
-                    "n_megabytes as n_megabytes, " +
+                    "n_products*1000 as n_products, " +
+                    "n_counterparties*1000 as n_counterparties, " +
+                    "n_megabytes*1024 as n_megabytes, " +
                     "n_stores as n_stores, " +
                     "n_stores_woo as n_stores_woo, " +
                     "companies_ppu as companies_ppu, " +
@@ -286,17 +279,18 @@ public class SubscriptionRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(55L,"682")) {
 
             String stringQuery = " update plans_add_options set " +
-                    " n_companies        =" + options.getN_companies_add()      + ", " +
-                    " n_departments      =" + options.getN_departments_add()    + ", " +
-                    " n_users            =" + options.getN_users_add()          + ", " +
-                    " n_products         =" + options.getN_products_add()       + ", " +
-                    " n_counterparties   =" + options.getN_counterparties_add() + ", " +
-                    " n_megabytes        =" + options.getN_megabytes_add()      + ", " +
-                    " n_stores           =" + options.getN_stores_add()         + ", " +
-                    " n_stores_woo       =" + options.getN_stores_woo_add()     +
-                    " where user_id      =" + masterId                          + "; ";
+                    " n_companies        =" + options.getN_companies_add()              + ", " +
+                    " n_departments      =" + options.getN_departments_add()            + ", " +
+                    " n_users            =" + options.getN_users_add()                  + ", " +
+                    " n_products         =" + options.getN_products_add()/1000          + ", " +
+                    " n_counterparties   =" + options.getN_counterparties_add()/1000    + ", " +
+                    " n_megabytes        =" + options.getN_megabytes_add()/1024         + ", " +
+                    " n_stores           =" + options.getN_stores_add()                 + ", " +
+                    " n_stores_woo       =" + options.getN_stores_woo_add()             +
+                    " where user_id      =" + masterId                                  + "; ";
             if (options.getPlan_id() != planId)
-                stringQuery = stringQuery + " update users set plan_id = " + options.getPlan_id() + " where id = " + masterId;
+                stringQuery = stringQuery + " update users set plan_id = " + options.getPlan_id() + ", plan_price=(select daily_price from plans where id="+options.getPlan_id()+") where id = " + masterId;
+
             try {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
@@ -351,9 +345,9 @@ public class SubscriptionRepositoryJPA {
                 " n_companies as n_companies, " +
                 " n_departments as n_departments, " +
                 " n_users as n_users, " +
-                " n_products as n_products, " +
-                " n_counterparties as n_counterparties, " +
-                " n_megabytes as n_megabytes, " +
+                " n_products*1000.00 as n_products, " +
+                " n_counterparties*1000.00 as n_counterparties, " +
+                " n_megabytes*1024.00 as n_megabytes, " +
                 " n_stores as n_stores, " +
                 " n_stores_woo as n_stores_woo, " +
                 " name_"+suffix+" as name, " +
@@ -375,9 +369,9 @@ public class SubscriptionRepositoryJPA {
                 doc.setN_companies(Long.valueOf(obj[0].toString()));
                 doc.setN_departments(Long.valueOf(obj[1].toString()));
                 doc.setN_users(Long.valueOf(obj[2].toString()));
-                doc.setN_products(Long.valueOf(obj[3].toString()));
-                doc.setN_counterparties(Long.valueOf(obj[4].toString()));
-                doc.setN_megabytes(Integer.valueOf(obj[5].toString()));
+                doc.setN_products((BigDecimal)(obj[3]));
+                doc.setN_counterparties((BigDecimal)(obj[4]));
+                doc.setN_megabytes((BigDecimal)(obj[5]));
                 doc.setN_stores(Long.valueOf(obj[6].toString()));
                 doc.setN_stores_woo(Long.valueOf(obj[7].toString()));
                 doc.setName((String) obj[8]);
@@ -401,24 +395,27 @@ public class SubscriptionRepositoryJPA {
         Long masterId=userRepositoryJPA.getMyMasterId();
         //Если есть право на "Редактирование"
         if(securityRepositoryJPA.userHasPermissions_OR(55L,"682")) {
-
-            String stringQuery = " update users set free_trial_days = 0 where id =" + masterId +";" +
-
-        //changing from a pay-plan to the free plan if user has no money
-        " update users set plan_id = (select free_plan_id from settings_general limit 1) " +
-            " where id in ( " +
-            " select id from users u " +
-            " where " +
-            " u.id = " + masterId + " and u.free_trial_days=0 and  u.plan_id in (select id from plans where is_free=false) and " +
-            " (select coalesce(sum(operation_sum),0) from _saas_billing_history where master_account_id=u.master_id) <=0 and " +
-            " u.plan_id != (select free_plan_id from settings_general) " +
-            " );";
             try{
+                SettingsGeneralJSON getSettingsGeneral =  commonUtilites.getSettingsGeneral(true);
+                BigDecimal money = commonUtilites.getSummFromHistory("cagent", getSettingsGeneral.getBilling_shipment_company_id(), commonUtilites.getCagentIdByUserId(masterId));
+                String stringQuery = " update users set free_trial_days = 0 where id =" + masterId +";" +
+
+                //changing from a pay-plan to the free plan if user has no money
+                " update users set plan_id = (select free_plan_id from settings_general limit 1) " +
+                " where id in ( " +
+                " select id from users u  where " +
+                    " u.id = " + masterId + " and " +
+                    " u.free_trial_days=0 and  " +
+                    " u.plan_id in (select id from plans where is_free=false) and " +
+                    money.toString() + "  <= 0.00 and " +
+                    " u.plan_id != (select free_plan_id from settings_general) " +
+                " );";
+
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.executeUpdate();
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method stopTrialPeriod. SQL = "+stringQuery, e);
+                logger.error("Exception in method stopTrialPeriod.", e);
                 return null;
             }
             return 1;
@@ -442,15 +439,13 @@ public class SubscriptionRepositoryJPA {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
 
-        stringQuery =   " select to_char(for_what_date, 'DD.MM.YYYY')  as for_date, " +
-        " sum(operation_sum) as operation_sum,  " +
-        " operation_type as operation_type " +
-        " from _saas_billing_history " +
-        " where master_account_id = " + masterId +
-        " and for_what_date  >= to_date(:dateFrom,'DD.MM.YYYY') " +
-        " and for_what_date  <= to_date(:dateTo,'DD.MM.YYYY') " +
-        " group by for_what_date, operation_type " +
-        " order by  for_what_date";
+        stringQuery =   " select h.date_time_created as for_what_date_sort " +
+                " from history_cagent_summ h" +
+                " INNER JOIN documents d ON h.doc_table_name=d.table_name " +
+                " where " +
+                " h.object_id = (select id from cagents where user_id="+masterId+")" + //  = cagent_id
+                " and h.date_time_created  >= to_date(:dateFrom,'DD.MM.YYYY') " +
+                " and h.date_time_created  <= to_date(:dateTo,'DD.MM.YYYY') ";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("dateFrom", dateFrom);
@@ -467,23 +462,37 @@ public class SubscriptionRepositoryJPA {
     public List<UserPayments> getUserPaymentsTable(int result, int offsetreal, String sortColumn, String sortAsc, String dateFrom, String dateTo) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String myTimeZone = userRepository.getUserTimeZone();
+        String suffix = userRepositoryJPA.getMySuffix();
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
             throw new IllegalArgumentException("Invalid query parameters");
         String dateFormat=userRepositoryJPA.getMyDateFormat();
 
-        stringQuery =   " select to_char(for_what_date, '"+dateFormat+"') as for_date, " +
-                        " ROUND(sum(operation_sum),2) as operation_sum, " +
-                        " operation_type as operation_type, " +
-                        " for_what_date as for_what_date_sort, " +
-                        " additional as additional" +
-                        " from _saas_billing_history " +
-                        " where master_account_id = " + masterId +
-                        " and for_what_date  >= to_date(:dateFrom,'DD.MM.YYYY') " +
-                        " and for_what_date  <= to_date(:dateTo,'DD.MM.YYYY') " +
-                        " group by for_what_date, operation_type, for_what_date_sort,additional " +
+        stringQuery =   " select " +
+                        " to_char(h.date_time_created, '"+dateFormat+"') as for_date, " +
+                        " CASE WHEN h.summ_in>0.00 THEN h.summ_in WHEN h.summ_out>0.00 THEN h.summ_out ELSE 0.00 END operation_sum, " +
+                        " d.doc_name_"+suffix+" as operation_type, " +
+                        //" to_char(h.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+"') as for_what_date, " +
+                        " CASE " +
+                        "   WHEN h.doc_table_name='shipment'   THEN (select description from shipment where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='paymentin'  THEN (select description from paymentin where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='paymentout' THEN (select description from paymentout where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='orderin'    THEN (select description from orderin where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='orderout'   THEN (select description from orderout where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='correction' THEN (select description from correction where id=h.doc_id) " +
+                        "   WHEN h.doc_table_name='return'     THEN (select description from return where id=h.doc_id) " +
+                        " END as additional," +
+                        " h.date_time_created as for_what_date_sort " +
+                        " from history_cagent_summ h" +
+                        " INNER JOIN documents d ON h.doc_table_name=d.table_name " +
+                        " where " +
+                        " h.object_id = (select id from cagents where user_id="+masterId+")" + //  = cagent_id
+                        " and h.is_completed = true " +
+                        " and h.date_time_created  >= to_date(:dateFrom,'DD.MM.YYYY') " +
+                        " and h.date_time_created  <= to_date(:dateTo,'DD.MM.YYYY') " +
                         " order by " + sortColumn + " " + sortAsc;
         try{
-            Map<String, String> map = commonUtilites.translateForUser(masterId, new String[]{"'depositing'","'correction'","'withdrawal_plan'","'withdrawal_plan_option'"});
+//            Map<String, String> map = commonUtilites.translateForUser(masterId, new String[]{"'depositing'","'correction'","'withdrawal_plan'","'withdrawal_plan_option'"});
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("dateFrom", dateFrom);
             query.setParameter("dateTo", dateTo);
@@ -496,8 +505,8 @@ public class SubscriptionRepositoryJPA {
                 UserPayments doc=new UserPayments();
                 doc.setFor_what_date((String)                               obj[0]);
                 doc.setOperation_sum((BigDecimal)                           obj[1]);
-                doc.setOperation_type(map.get((String)                      obj[2]));
-                doc.setAdditional((String)                                  obj[4]);
+                doc.setOperation_type((String)                              obj[2]);
+                doc.setAdditional((String)                                  obj[3]);
                 returnList.add(doc);
             }
 
@@ -508,11 +517,6 @@ public class SubscriptionRepositoryJPA {
             return null;
         }
     }
-//    public List<UserPayments> getUserPaymentsTable{
-//
-//
-//
-//    }
 
     public AgreementJSON getLastVersionAgreement(String type){
 
@@ -521,9 +525,7 @@ public class SubscriptionRepositoryJPA {
         String suffix = userRepositoryJPA.getMySuffix();
 
         try {
-
             // get the info about tariff plan
-
             stringQuery = "select" +
                     " version as version," +
                     " to_char(version_date,'DD-MM-YYYY') as version_date," +
@@ -552,4 +554,38 @@ public class SubscriptionRepositoryJPA {
         }
     }
 
+    public List<PaymentMethodsJSON> getPaymentMethodsList(){
+        String suffix = userRepositoryJPA.getMySuffix();
+        String stringQuery = "select " +
+                " p.name as name, " +
+                " p.img_address as img_address, " +
+                " p.output_order as output_order, " +
+                " p.link as link, " +
+                " msg.tr_"+suffix+" as description, " +
+                " p.id as id " +
+                " from _saas_payment_select p" +
+                " left outer join _saas_messages msg on msg.key = p.description_msg_key" +
+                " where " +
+                " p.is_active = true ORDER BY p.output_order";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<PaymentMethodsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                PaymentMethodsJSON doc = new PaymentMethodsJSON();
+                doc.setName((String) obj[0]);
+                doc.setImg_address((String) obj[1]);
+                doc.setOutput_order((Integer) obj[2]);
+                doc.setLink((String) obj[3]);
+                doc.setDescription_msg_key((String) obj[4]);
+                doc.setId((Integer) obj[5]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getPaymentMethodsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 }

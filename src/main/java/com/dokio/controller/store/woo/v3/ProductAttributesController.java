@@ -48,7 +48,8 @@ public class ProductAttributesController {
     public ResponseEntity<?> syncProductAttributesToStore(HttpServletRequest httpServletRequest,
         @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesToStore");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesToStore(key), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesToStore error", e);
             return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
@@ -57,7 +58,8 @@ public class ProductAttributesController {
     @PostMapping("/syncProductAttributesIds")
     public ResponseEntity<?> syncProductAttributesIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductAttributesIds: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeProductAttributesRepository.syncProductAttributesIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductAttributesIds error", e);
             return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

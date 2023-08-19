@@ -50,7 +50,8 @@ public class ProductsSyncController {
     public ResponseEntity<?> countProductsToStoreSync(HttpServletRequest httpServletRequest,
                                                       @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/countProductsToStoreSync");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             ProductCountJSON ret = storeProductsRepository.countProductsToStoreSync(key);
             ResponseEntity response = new ResponseEntity<>(ret, HttpStatus.OK);
             return response;
@@ -70,7 +71,8 @@ public class ProductsSyncController {
             @RequestParam("first_result") Integer firstResult,
             @RequestParam("max_results") Integer maxResults){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductsToStore");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(),key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeProductsRepository.syncProductsToStore(key,firstResult,maxResults), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductsToStore error", e);
             return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
@@ -79,7 +81,8 @@ public class ProductsSyncController {
     @PostMapping("/syncProductsIds")
     public ResponseEntity<?> syncProductsIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncProductsIds: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeProductsRepository.syncProductsIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncProductsIds error", e);
             return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
@@ -92,7 +95,8 @@ public class ProductsSyncController {
     public ResponseEntity<?> getProductWooIdsToDeleteInStore(HttpServletRequest httpServletRequest,
                                                              @RequestParam("key") String key){
         logger.info("Processing post request for path /api/public/woo_v3/getProductWooIdsToDeleteInStore");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeProductsRepository.getProductWooIdsToDeleteInStore(key), HttpStatus.OK);}
         catch (Exception e){
             e.printStackTrace();
@@ -103,7 +107,8 @@ public class ProductsSyncController {
     @PostMapping("/deleteWooIdsFromProducts")
     public ResponseEntity<?> deleteWooIdsFromProducts(HttpServletRequest httpServletRequest, @RequestBody IntListForm request){
         logger.info("Processing post request for path /api/public/woo_v3/deleteWooIdsFromProducts: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeProductsRepository.deleteWooIdsFromProducts(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller deleteWooIdsFromProducts error", e);
             return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

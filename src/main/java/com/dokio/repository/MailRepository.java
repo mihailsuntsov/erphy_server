@@ -1,6 +1,7 @@
 package com.dokio.repository;
 import com.dokio.model.User;
 import com.dokio.util.CommonUtilites;
+import org.apache.commons.jexl3.JxltEngine;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -8,8 +9,14 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
+
+import java.sql.Timestamp;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 
 @Repository
 public class MailRepository {
@@ -21,6 +28,9 @@ public class MailRepository {
     @Value("${activate_account.from_email}")
     private String from_email;
 
+
+    @PersistenceContext
+    private EntityManager entityManager;
     @Autowired
     JavaMailSender mailSender;
     @Autowired
@@ -52,9 +62,12 @@ public class MailRepository {
     public Integer forgotPass(String email){
         try{
             User user = userRepository.findByEmail(email.trim());
+            if(lastRepairPassQueryAgo(user.getId())<60)
+                return -105; //Request rate exceeded Превышена частота запросов (more than 1 per 60 sec)
             if(user==null) {logger.warn("User not found in setNewPass on email "+email.trim()); return -100;}
             String uuid = UUID.randomUUID().toString();
             user.setRepairPassCode(uuid);
+            user.setRepair_pass_code_sent(new Timestamp(System.currentTimeMillis()));
             userRepository.save(user);
             String langCode = userRepositoryJPA.getUserSuffix(user.getId());
             String htmlTemplate = cu.translateHTMLmessage("email_template",langCode);
@@ -83,6 +96,19 @@ public class MailRepository {
             logger.error("Exception in method setNewPass.", e);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private Long lastRepairPassQueryAgo(Long userId) throws Exception {
+        try {
+            String stringQuery;
+            stringQuery = "SELECT coalesce(cast(EXTRACT(EPOCH FROM (now() - (select repair_pass_code_sent from users where id="+userId+"))) as bigint),3600)";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.parseLong(query.getSingleResult().toString());
+        }catch (Exception e){
+            e.printStackTrace();
+            logger.error("Exception in method lastRepairPassQueryAgo. User id = " +userId.toString() , e);
+            throw new Exception();
         }
     }
 

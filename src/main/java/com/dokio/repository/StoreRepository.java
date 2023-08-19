@@ -56,6 +56,8 @@ public class StoreRepository {
 
     @Value("${stores.secret}")
     private String stores_secret;
+    @Value("${brand_name}")
+    private String brand_name;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -881,7 +883,7 @@ public class StoreRepository {
             String  agreementType =     request.getAgreementType();
             String  agreementVer =      request.getAgreementVer();
             String  thirdLvlName =      request.getThirdLvlName();
-            Boolean isVar =             request.getExistedStoreVariation();   // site is a language variation of the existed site
+            boolean isVar =             request.getExistedStoreVariation();   // site is a language variation of the existed site
             Long    parentVarSiteId =   request.getParentVarSiteId(); // parent site of variation site
             String  position =          request.getPosition(); // position of variation name in a domain name "after" or "before". before:"es.mysite.com" or after:"mysite.com/es"
             String  varName =           request.getVarName(); // like es, fr, it ...
@@ -891,6 +893,7 @@ public class StoreRepository {
             String langCode = userRepositoryJPA.getUserSuffix(myId);
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
+            String siteDomain = null;
             String siteUrl;
             Long agreementId;
 
@@ -925,18 +928,22 @@ public class StoreRepository {
                 Long rentSiteId = cu.getFreeSiteToRentId();
                 StoreForOrderingJSON orderedStoreReturnData = new StoreForOrderingJSON();
 
-                siteUrl = thirdLvlName+"."+settingsGeneral.getRoot_domain();
-
                 if(!Objects.isNull(rentSiteId)){// there are free sites(stores) for rent
+
+                    if(isVar){
+                        String parentSiteDomain = (String)cu.getFieldValueFromTableById("_saas_stores_for_ordering","site_domain", masterId, parentVarSiteId);
+                        siteDomain = varName+"."+parentSiteDomain;
+                        siteUrl = position.equals("before")?siteDomain:(parentSiteDomain+"/"+varName);
+                        thirdLvlName = null;
+                    } else
+                        siteUrl = thirdLvlName+"."+settingsGeneral.getRoot_domain();
 
                     //getting email address of master user
                     String masterUserEmail = (String)cu.getFieldValueFromTableById("users", "email", masterId, masterId);
 
-
                     cu.SetStoreRentAgreementUnit(masterId, myId, storeId, rentSiteId, agreementType, agreementVer, timestamp);
                     // in this case the URL of site is equivalent to site domain name:
                     //siteUrl=(String)cu.getFieldValueFromTableById("_saas_stores_for_ordering","site_domain",masterId, rentSiteId);
-
 
                     // set free online store to user
                     distributeOnlineStoreToUser(rentSiteId, timestamp, user_ip, companyId, storeId, masterId, myId, thirdLvlName, isVar, parentVarSiteId, position, varName);
@@ -964,29 +971,29 @@ public class StoreRepository {
                     String subj = "Thank you for ordering online store!";
                         String body =
 
-                            "At first the site will be accessible with a system-generated url: " + orderedStoreFullData.getSite_domain() + "\n"+
-                            "It will be available at your chosen name "+siteUrl+" within 24h.\n\n"+
+                            "<p>At first the site will be accessible with a system-generated url: " + orderedStoreFullData.getSite_domain() + "<br>"+
+                            "It will be available at your chosen name "+siteUrl+" within 24h.</p>"+
 
-                            "Store this information securely: \n\n\n"+
+                            "<p><b>Store this information securely: </b></p>"+
 
-                            "Site url:                  "   + siteUrl + "\n\n "+
-                            "Site admin panel url:      "   + siteUrl + "/wp-admin\n\n "+
-                            "Site admin panel login:    "   + orderedStoreFullData.getWp_login() + "\n\n "+
-                            "Site admin panel password: "   + orderedStoreFullData.getWp_password() + "\n\n "+
+                            "<p>Site url:               "   + siteUrl + "<br>"+
+                            "Site admin panel url:      "   + siteUrl + "/wp-admin<br>"+
+                            "Site admin panel login:    "   + orderedStoreFullData.getWp_login() + "<br>"+
+                            "Site admin panel password: "   + orderedStoreFullData.getWp_password() + "</p>"+
 
-                            "FTP login:                 "   + orderedStoreFullData.getFtp_user() + "\n\n "+
-                            "FTP password:              "   + orderedStoreFullData.getFtp_password() + "\n\n "+
+                            "<p>FTP login:                 "   + orderedStoreFullData.getFtp_user() + "<br>"+
+                            "FTP password:              "   + orderedStoreFullData.getFtp_password() + "</p>"+
 
-                            "Panel domain:              "   + orderedStoreFullData.getPanel_domain() + "\n\n "+
-                            "Panel login:               "   + orderedStoreFullData.getClient_login() + "\n\n "+
-                            "Panel password:            "   + orderedStoreFullData.getClient_password() + "\n\n "+
+                            "<p>Panel domain:              "   + orderedStoreFullData.getPanel_domain() + "<br>"+
+                            "Panel login:               "   + orderedStoreFullData.getClient_login() + "<br>"+
+                            "Panel password:            "   + orderedStoreFullData.getClient_password() + "</p>"+
 
-                            "Site DB user:              "   + orderedStoreFullData.getDb_user() + "\n\n "+
-                            "Site DB password:          "   + orderedStoreFullData.getDb_password() + "\n\n\n"+
+                            "<p>Site DB user:              "   + orderedStoreFullData.getDb_user() + "<br>"+
+                            "Site DB password:          "   + orderedStoreFullData.getDb_password() + "</p><br>"+
 
 
 
-                            "Best regards, DokioCRM team!";
+                            "<p>Best regards, "+brand_name+" team!</p>";
 
                     mailRepository.sentMessage(masterUserEmail,subj,body,langCode);
 
@@ -994,7 +1001,7 @@ public class StoreRepository {
 
                     agreementId = cu.SetStoreRentAgreementUnit(masterId, myId, storeId, null, agreementType, agreementVer, timestamp);
                     //1. creating a waiting store record
-                    String siteDomain = null;
+                    siteDomain = null;
                     if(isVar) { // if there the site is an variation of another site
                         String parentSiteDomain = (String)cu.getFieldValueFromTableById("_saas_stores_for_ordering","site_domain", masterId, parentVarSiteId);
                         siteDomain = varName+"."+parentSiteDomain;
@@ -1368,7 +1375,8 @@ public class StoreRepository {
                 "           parent_variation_store_id, " +
                 "           variation_name_position," +
                 "           variation_name," +
-                "           site_url" +
+                "           site_url," +
+                "           third_lvl_user_domain" +
                 "           from _saas_stores_for_ordering " +
                 "           where  id= " + siteId;
 
@@ -1418,6 +1426,7 @@ public class StoreRepository {
                 doc.setPosition((String)                            obj[35]);
                 doc.setVarName((String)                             obj[36]);
                 doc.setSite_url((String)                            obj[37]);
+                doc.setThird_lvl_user_domain((String)               obj[38]);
             }
             return doc;
         } catch (Exception e) {

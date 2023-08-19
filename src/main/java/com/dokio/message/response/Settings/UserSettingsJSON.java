@@ -32,6 +32,15 @@ public class UserSettingsJSON {
     private String  accounting_currency;    // short name of Accounting currency of user's company (e.g. $ or EUR)
     private String  dateFormat;
     private String  timeFormat;
+    private String  sidenav;                // "open" or "close"
+
+    public String getSidenav() {
+        return sidenav;
+    }
+
+    public void setSidenav(String sidenav) {
+        this.sidenav = sidenav;
+    }
 
     public String getTimeFormat() {
         return timeFormat;

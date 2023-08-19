@@ -31,7 +31,8 @@ public class OrdersController {
     public ResponseEntity<?> getLastSynchronizedOrderTime(HttpServletRequest httpServletRequest,
                                                           @RequestParam("key") String key){
         logger.info("Processing get request for path /api/public/woo_v3/getLastSynchronizedOrderTime");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeOrdersRepository.getLastSynchronizedOrderTime(key), HttpStatus.OK);}
         catch (Exception e){
             e.printStackTrace();
@@ -43,7 +44,8 @@ public class OrdersController {
     @PostMapping("/putOrdersIntoCRM")
     public ResponseEntity<?> putOrdersIntoCRM(HttpServletRequest httpServletRequest, @RequestBody OrdersForm request){
         logger.info("Processing post request for path /api/public/woo_v3/putOrdersIntoCRM: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeOrdersRepository.putOrdersIntoCRM(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller putOrdersIntoCRM error", e);
             return new ResponseEntity<>("Operation of the synchronization ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

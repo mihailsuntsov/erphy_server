@@ -49,7 +49,8 @@ public class VariationsController {
     public ResponseEntity<?> countVariationsToStoreSync(HttpServletRequest httpServletRequest,
                                                       @RequestParam("key") String key){
         logger.info("Processing get request for path /api/public/woo_v3/countVariationsToStoreSync");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             ProductCountJSON ret = storeVariationsRepository.countVariationsToStoreSync(key);
             ResponseEntity response = new ResponseEntity<>(ret, HttpStatus.OK);
             return response;
@@ -69,7 +70,8 @@ public class VariationsController {
             @RequestParam("first_result") Integer firstResult,
             @RequestParam("max_results") Integer maxResults){
         logger.info("Processing get request for path /api/public/woo_v3/syncVariationsToStore");
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(),key);
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, key);
             return new ResponseEntity<>(storeVariationsRepository.syncVariationsToStore(key,firstResult,maxResults), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncVariationsToStore error", e);
             return new ResponseEntity<>("Operation of the synchronization error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}
@@ -92,7 +94,8 @@ public class VariationsController {
     @PostMapping("/syncVariationsIds")
     public ResponseEntity<?> syncVariationsIds(HttpServletRequest httpServletRequest, @RequestBody SyncIdsForm request){
         logger.info("Processing post request for path /api/public/woo_v3/syncVariationsIds: " + request.toString());
-        try {cu.checkStoreIp(httpServletRequest.getRemoteAddr(), request.getCrmSecretKey());
+        String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        try{cu.checkStoreIp(ipAddress==null?httpServletRequest.getRemoteAddr():ipAddress, request.getCrmSecretKey());
             return new ResponseEntity<>(storeVariationsRepository.syncVariationsIds(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller syncVariationsIds error", e);
             return new ResponseEntity<>("Operation of the synchronization variations ids error. " + e, HttpStatus.INTERNAL_SERVER_ERROR);}

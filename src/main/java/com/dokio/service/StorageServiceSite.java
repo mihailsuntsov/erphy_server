@@ -22,16 +22,11 @@ import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,18 +34,13 @@ import java.nio.file.Paths;
 @Service
 @Repository
 public class StorageServiceSite extends StorageService{
-//    @PersistenceContext
-//    private EntityManager entityManager;
-//    @Autowired
-//    private EntityManagerFactory emf;
     @Autowired
     private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     private UserDetailsServiceImpl userRepository;
-    @Autowired
-    private ProductsRepositoryJPA productsRepository;
-    @Autowired
-    private FileRepositoryJPA frj;
+
+    @Value("${files_path}")
+    private String files_path;
 
 //***************************************************************************
 //***************************** F I L E S ***********************************
@@ -71,7 +61,7 @@ public class StorageServiceSite extends StorageService{
             this.myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             this.myId = userRepository.getUserId();
             if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
-            } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux
+            } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux
             String MY_MASTER_ID_FOLDER = this.myMasterId + "//";
             String MY_COMPANY_ID_FOLDER = companyId + "//";
             this.UPLOADED_FOLDER= Paths.get(BASE_FILES_FOLDER + MY_MASTER_ID_FOLDER + MY_COMPANY_ID_FOLDER + "sites//" + siteId+"//"+folderPath+"//");
@@ -106,25 +96,25 @@ public class StorageServiceSite extends StorageService{
 
 //    public SiteFilesList getFilesList(),
 
-@SuppressWarnings("Duplicates")
-    public Resource loadSiteFile(String filepath) {
-    String BASE_FILES_FOLDER;
-    if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
-    } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux
-    String fullFilePath=BASE_FILES_FOLDER+filepath;
-        try
-        {
-            Path file = Paths.get(fullFilePath);
-            Resource resource = new UrlResource(file.toUri());
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new RuntimeException("Fail to load from filepath '"+fullFilePath+"'");
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+fullFilePath+"'");
-        }
-    }
+//@SuppressWarnings("Duplicates")
+//    public Resource loadSiteFile(String filepath) {
+//    String BASE_FILES_FOLDER;
+//    if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
+//    } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux
+//    String fullFilePath=BASE_FILES_FOLDER+filepath;
+//        try
+//        {
+//            Path file = Paths.get(fullFilePath);
+//            Resource resource = new UrlResource(file.toUri());
+//            if (resource.exists() || resource.isReadable()) {
+//                return resource;
+//            } else {
+//                throw new RuntimeException("Fail to load from filepath '"+fullFilePath+"'");
+//            }
+//        } catch (MalformedURLException e) {
+//            throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+fullFilePath+"'");
+//        }
+//    }
 
 
 

@@ -4374,7 +4374,7 @@ insert into _dictionary (key, tr_ru, tr_en) values
 
 update version set value = '1.2.2', date = '16-04-2023';
 ------------------------------------------------  end of 1.2.2  ------------------------------------------------------
-------------------------------------------------  start of 1.2.3  -----------------------------------------------------
+------------------------------------------------  start of 1.3.0  -----------------------------------------------------
 
 alter table users add column  plan_price           numeric (20,10);
 alter table users add column  free_trial_days      int;
@@ -4510,7 +4510,6 @@ alter table settings_vatinvoiceout add column date_time_update timestamp with ti
 alter table settings_writeoff add column date_time_update timestamp with time zone;
 alter table settings_dashboard add column date_time_update timestamp with time zone;
 
--- alter table stores add column is_rent_store_exists boolean;
 -- this table describes the field "Default Form Values" in WooCommerce
 create table default_attributes(
                                  master_id     bigint not null,
@@ -4538,7 +4537,6 @@ create table product_variations
                                  foreign key (product_id) references products (id) on delete cascade
 );
 
---alter table product_variations add constraint variation_product_id_uq UNIQUE (product_id, variation_product_id);
 alter table product_variations add constraint variation_product_id_uq UNIQUE (variation_product_id);
 
 create table product_variations_row_items(
@@ -4607,25 +4605,6 @@ alter table plans add column is_free boolean; -- for free plans the billing is n
 update plans set is_free = true;
 alter table plans alter column is_free set not null;
 alter table plans alter column n_stores_woo set not null;
--- insert into plans (
---   name_en,
---   name_ru,
---   version,
---   daily_price,
---   is_free,
---   is_nolimits,
---   is_archive,
---   date_time_created,
---   output_order,
---   n_companies,
---   n_departments,
---   n_users,
---   n_products,
---   n_counterparties,
---   n_megabytes,
---   n_stores,
---   n_stores_woo) values
--- ('Starter','Старт', 1, 0.333, false, false,  false, now(), 300, 1, 1, 1, 1000, 1000, 500, 0, 0);
 
 alter table plans_add_options_prices alter column ppu type numeric (20,10);
 alter table plans_add_options alter column stores_ppu type numeric(20,10);
@@ -4638,28 +4617,6 @@ alter table plans_add_options alter column counterparties_ppu type numeric (20,1
 alter table plans_add_options alter column megabytes_ppu type numeric (20,10);
 update plans_add_options set megabytes_ppu = 0.0003333333;
 update plans_add_options_prices set ppu=0.0003333333 where name='megabytes';
-
--- update plans_add_options_prices set quantity_limit=5 where name='companies';
--- update plans_add_options_prices set quantity_limit=5 where name='departments';
--- update plans_add_options_prices set quantity_limit=5 where name='users';
--- update plans_add_options_prices set quantity_limit=5000 where name='products';
--- update plans_add_options_prices set quantity_limit=5000 where name='counterparties';
--- update plans_add_options_prices set quantity_limit=1050 where name='megabytes';
--- update plans_add_options_prices set quantity_limit=5 where name='stores';
--- update plans_add_options_prices set quantity_limit=5 where name='stores_woo';
-
--- insert into _saas_billing_history(
---   date_time_created,
---   for_what_date,
---   master_account_id,
---   operation_type,
---   plan_id,
---   option_name,
---   option_ppu,
---   option_quantity,
---   operation_sum,
---   additional
--- ) values (now(),to_date('23.05.2023','DD.MM.YYYY'),4,'correction',null,null,null,null,20,'Just a correction ')
 
 alter table plans add column is_available_for_user_switching boolean; --  Can user switch its current plan to this plan?
 update plans set is_available_for_user_switching = true where is_nolimits = false;
@@ -4766,24 +4723,6 @@ create table _saas_agreements(
                                text_ru               varchar(2000000) not null
 );
 
--- insert into _saas_agreements(
---   type,
---   version,
---   version_date,
---   name_en,
---   text_en,
---   name_ru,
---   text_ru
--- ) values (
---            'site_hosting',
---            '3',
---            to_date('13.06.2023','DD.MM.YYYY'),
---            'Site hosting',
---            '',
---            'Хостинг сайта',
---            ''
---          )
-
 create table _saas_agreements_units(
                                id                    bigserial primary key not null,
                                date_time_agree       timestamp with time zone not null,
@@ -4798,55 +4737,6 @@ create table _saas_agreements_units(
                                foreign key (store_id) references stores(id),
                                foreign key (store_woo_id) references _saas_stores_for_ordering(id)
 );
--- insert into _saas_stores_for_ordering (
---   date_time_created,
---   panel_domain,
---   client_no,
---   client_name,
---   client_login,
---   client_password,
---   site_domain,
---   site_root,
---   ftp_user,
---   ftp_password,
---   db_user,
---   db_password,
---   db_name,
---   wp_login,
---   wp_password,
---   wp_server_ip,
---   dokio_secret_key,
---   record_creator_name,
---   ready_to_distribute,
---   distributed,
---   is_queried_to_delete,
---   is_deleted,
---   site_url) values(
---                     now(),
---                     'panel.s1.dokio.me',
---                     'c101',
---                     'Mikhail Suntsov',
---                     'mslogin',
---                     pgp_sym_encrypt('password', 'secret'),
---                     'c101.s1.dokio.me',
---                     '/var/www/clients/c100/web3',
---                     'c101',
---                     pgp_sym_encrypt('password', 'secret'),
---                     'c101',
---                     pgp_sym_encrypt('password', 'secret'),
---                     'db_name',
---                     'c101',
---                     pgp_sym_encrypt('password', 'secret'),
---                     '1.1.1.1',
---                     '42b5-uh5vg-88dd765h-6576-dg67',
---                     'Mikhail',
---                     true,
---                     false,
---                     false,
---                     false,
---                     'c101.s1.dokio.me'
---                   );
-
 
 CREATE EXTENSION pgcrypto;
 
@@ -5091,7 +4981,85 @@ alter table stores_sync_statuses add constraint stores_sync_statuses_uq unique (
 
 alter table usergroup drop column is_archive;
 alter table usergroup drop column company_id;
-alter table usergroup drop column companyid;
 delete from usergroup_permissions where permission_id in (33,30);
 delete from permissions where id in (33,30);
 drop table products_history; -- now product_history used instead
+alter table user_settings add column sidenav_drawer varchar(5);-- "open" or "close"
+update _dictionary set tr_en = 'Purchase order' where key='ordersup';
+
+create table _saas_payment_select(
+                                     id                    serial primary key not null,
+                                     name                  varchar(100) not null,  -- work (technical) name. Not used in user's interface
+                                     img_address           varchar(1000) not null, -- like 'https://mysite.com/assets/img/stripe.jpg'
+                                     output_order          int not null,           -- 1,2,30,100,...
+                                     link                  varchar(2048),          -- link to payment
+                                     is_active             boolean not null,       -- show or hide
+                                     description_msg_key   varchar(200),           -- key of translation in a table _saas_payment_select
+                                     foreign key (description_msg_key) references _saas_messages(key)
+);
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+alter table settings_general add column billing_master_id bigint;
+alter table settings_general add column billing_shipment_creator_id bigint;
+alter table settings_general add column billing_shipment_company_id bigint;
+alter table settings_general add column billing_shipment_department_id bigint;
+alter table settings_general add column billing_cagents_category_id bigint;
+alter table settings_general add column billing_companies_product_id bigint;
+alter table settings_general add column billing_departments_product_id bigint;
+alter table settings_general add column billing_users_product_id bigint;
+alter table settings_general add column billing_products_product_id bigint;
+alter table settings_general add column billing_counterparties_product_id bigint;
+alter table settings_general add column billing_megabytes_product_id bigint;
+alter table settings_general add column billing_stores_product_id bigint;
+alter table settings_general add column billing_stores_woo_product_id bigint;
+alter table settings_general add column billing_plan_product_id bigint;
+
+alter table settings_general add constraint billing_master_id_fkey foreign key (billing_master_id) references users(id);
+alter table settings_general add constraint billing_shipment_creator_id_fkey foreign key (billing_shipment_creator_id) references users(id);
+alter table settings_general add constraint billing_shipment_company_id_fkey foreign key (billing_shipment_company_id) references companies(id);
+alter table settings_general add constraint billing_shipment_department_id_fkey foreign key (billing_shipment_department_id) references departments(id);
+alter table settings_general add constraint billing_cagents_category_id_fkey foreign key (billing_cagents_category_id) references cagent_categories(id);
+alter table settings_general add constraint billing_companies_product_id_fkey foreign key (billing_companies_product_id) references products(id);
+alter table settings_general add constraint billing_departments_product_id_fkey foreign key (billing_departments_product_id) references products(id);
+alter table settings_general add constraint billing_users_product_id_fkey foreign key (billing_users_product_id) references products(id);
+alter table settings_general add constraint billing_products_product_id_fkey foreign key (billing_products_product_id) references products(id);
+alter table settings_general add constraint billing_counterparties_product_id_fkey foreign key (billing_counterparties_product_id) references products(id);
+alter table settings_general add constraint billing_megabytes_product_id_fkey foreign key (billing_megabytes_product_id) references products(id);
+alter table settings_general add constraint billing_stores_product_id_fkey foreign key (billing_stores_product_id) references products(id);
+alter table settings_general add constraint billing_stores_woo_product_id_fkey foreign key (billing_stores_woo_product_id) references products(id);
+alter table settings_general add constraint billing_plan_product_id_fkey foreign key (billing_plan_product_id) references products(id);
+
+
+alter table cagents add column user_id bigint;
+CREATE UNIQUE INDEX cagents_user_id_uq ON cagents (user_id) WHERE user_id IS NOT NULL;
+alter table cagents add constraint user_id_fkey foreign key (user_id) references users(id);
+--DELETE FROM cagent_cagentcategories WHERE ctid NOT IN (SELECT max(ctid) FROM cagent_cagentcategories GROUP BY category_id, cagent_id); run if the next record wont be executed
+alter table cagent_cagentcategories add constraint cagent_cagentcategories_uq unique (category_id, cagent_id);
+
+
+alter table shipment add column is_billing boolean;
+drop table _saas_billing_history;
+
+alter table plans drop column n_products;
+alter table plans drop column n_counterparties;
+alter table plans drop column n_megabytes;
+
+alter table plans add column n_products       numeric(12,2);
+alter table plans add column n_counterparties numeric(12,2);
+alter table plans add column n_megabytes         numeric(12,2);
+
+update plans set n_products=0.1, n_counterparties=0.1, n_megabytes=0.05 where is_nolimits=false and is_free=true;
+update plans set n_products=0.00, n_counterparties=0.00, n_megabytes=0.00 where is_nolimits=true;
+update plans set n_products=1, n_counterparties=1, n_megabytes=1 where is_nolimits=false and is_free=false;
+
+
+--------------------------------------------------
+
+alter table users add column repair_pass_code_sent timestamp with time zone;
+
+
+
+
+update version set value = '1.3.0', date = '03-07-2023';

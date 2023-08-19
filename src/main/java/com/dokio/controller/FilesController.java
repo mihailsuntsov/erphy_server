@@ -329,7 +329,7 @@ public class FilesController {
 
         FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
         if(fileInfo !=null){
-            String filePath=fileInfo.getPath()+"//thumbs//"+filename;
+            String filePath=fileInfo.getPath()+"/thumbs/"+filename;
             String originalFileName = fileInfo.getOriginal_name();
             Resource file = storageService.loadFile(filePath);
             return ResponseEntity.ok()

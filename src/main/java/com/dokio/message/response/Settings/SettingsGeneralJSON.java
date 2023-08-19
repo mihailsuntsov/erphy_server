@@ -43,6 +43,22 @@ public class SettingsGeneralJSON {
     private int     max_store_orders_per_24h_1_ip;      // max quantity of online stores that can be ordered in 24h from one IP address
     private String  saas_payment_currency; // currency of SaaS subscription accounting
 
+    // billing settings
+    private Long    billing_master_id;
+    private Long    billing_shipment_creator_id;
+    private Long    billing_shipment_company_id;
+    private Long    billing_shipment_department_id;
+    private Long    billing_cagents_category_id;
+    private Long    billing_companies_product_id;
+    private Long    billing_departments_product_id;
+    private Long    billing_users_product_id;
+    private Long    billing_products_product_id;
+    private Long    billing_counterparties_product_id;
+    private Long    billing_megabytes_product_id;
+    private Long    billing_stores_product_id;
+    private Long    billing_stores_woo_product_id;
+    private Long    billing_plan_product_id;
+
     // URLs of Legal information
     private String  url_terms_and_conditions;
     private String  url_privacy_policy;
@@ -57,6 +73,117 @@ public class SettingsGeneralJSON {
         this.root_domain = root_domain;
     }
 
+    public Long getBilling_master_id() {
+        return billing_master_id;
+    }
+
+    public void setBilling_master_id(Long billing_master_id) {
+        this.billing_master_id = billing_master_id;
+    }
+
+    public Long getBilling_shipment_creator_id() {
+        return billing_shipment_creator_id;
+    }
+
+    public void setBilling_shipment_creator_id(Long billing_shipment_creator_id) {
+        this.billing_shipment_creator_id = billing_shipment_creator_id;
+    }
+
+    public Long getBilling_shipment_company_id() {
+        return billing_shipment_company_id;
+    }
+
+    public void setBilling_shipment_company_id(Long billing_shipment_company_id) {
+        this.billing_shipment_company_id = billing_shipment_company_id;
+    }
+
+    public Long getBilling_shipment_department_id() {
+        return billing_shipment_department_id;
+    }
+
+    public void setBilling_shipment_department_id(Long billing_shipment_department_id) {
+        this.billing_shipment_department_id = billing_shipment_department_id;
+    }
+
+    public Long getBilling_cagents_category_id() {
+        return billing_cagents_category_id;
+    }
+
+    public void setBilling_cagents_category_id(Long billing_cagents_category_id) {
+        this.billing_cagents_category_id = billing_cagents_category_id;
+    }
+
+    public Long getBilling_companies_product_id() {
+        return billing_companies_product_id;
+    }
+
+    public void setBilling_companies_product_id(Long billing_companies_product_id) {
+        this.billing_companies_product_id = billing_companies_product_id;
+    }
+
+    public Long getBilling_departments_product_id() {
+        return billing_departments_product_id;
+    }
+
+    public void setBilling_departments_product_id(Long billing_departments_product_id) {
+        this.billing_departments_product_id = billing_departments_product_id;
+    }
+
+    public Long getBilling_users_product_id() {
+        return billing_users_product_id;
+    }
+
+    public void setBilling_users_product_id(Long billing_users_product_id) {
+        this.billing_users_product_id = billing_users_product_id;
+    }
+
+    public Long getBilling_products_product_id() {
+        return billing_products_product_id;
+    }
+
+    public void setBilling_products_product_id(Long billing_products_product_id) {
+        this.billing_products_product_id = billing_products_product_id;
+    }
+
+    public Long getBilling_counterparties_product_id() {
+        return billing_counterparties_product_id;
+    }
+
+    public void setBilling_counterparties_product_id(Long billing_counterparties_product_id) {
+        this.billing_counterparties_product_id = billing_counterparties_product_id;
+    }
+
+    public Long getBilling_megabytes_product_id() {
+        return billing_megabytes_product_id;
+    }
+
+    public void setBilling_megabytes_product_id(Long billing_megabytes_product_id) {
+        this.billing_megabytes_product_id = billing_megabytes_product_id;
+    }
+
+    public Long getBilling_stores_product_id() {
+        return billing_stores_product_id;
+    }
+
+    public void setBilling_stores_product_id(Long billing_stores_product_id) {
+        this.billing_stores_product_id = billing_stores_product_id;
+    }
+
+    public Long getBilling_stores_woo_product_id() {
+        return billing_stores_woo_product_id;
+    }
+
+    public void setBilling_stores_woo_product_id(Long billing_stores_woo_product_id) {
+        this.billing_stores_woo_product_id = billing_stores_woo_product_id;
+    }
+
+    public Long getBilling_plan_product_id() {
+        return billing_plan_product_id;
+    }
+
+    public void setBilling_plan_product_id(Long billing_plan_product_id) {
+        this.billing_plan_product_id = billing_plan_product_id;
+    }
 
     public String getUrl_terms_and_conditions() {
         return url_terms_and_conditions;

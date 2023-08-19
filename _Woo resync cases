@@ -64,6 +64,11 @@ PRODUCTS
    при групповом изменении цен - все выбранные товары
    ProductsRepositoryJPA->markProductsAsNeedToSyncWoo
 
+-- if variation changed or deleted - mark its parent product to resync (it will delete non-existed or excess variations on the Woo side)
+   если вариация была изменена или удалена — её родительский товар (это удалит несуществующие или лишние вариации на стороне Woo)
+   ProductsRepositoryJPA->markVariableProductAsNeedToSyncWoo
+
+
 VARIATIONS
 
 -- when saving selected stores for multiple categories - all variations belonging to the products of these stores in these categories

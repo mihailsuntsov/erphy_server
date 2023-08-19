@@ -21,15 +21,14 @@ package com.dokio.service;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
 import com.dokio.repository.FileRepositoryJPA;
-//import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItem;
-import org.apache.commons.jexl3.JxltEngine;
 import org.apache.log4j.Logger;
 import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Repository;
@@ -39,7 +38,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
-//import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.awt.*;
@@ -60,16 +58,11 @@ public class StorageService {
 
     @PersistenceContext
     private EntityManager entityManager;
-//    @Autowired
-//    private EntityManagerFactory emf;
-    @Autowired
-    private UserRepositoryJPA userRepositoryJPA;
-    @Autowired
-    private UserDetailsServiceImpl userRepository;
-//    @Autowired
-//    private ProductsRepositoryJPA productsRepository;
     @Autowired
     private FileRepositoryJPA frj;
+
+    @Value("${files_path}")
+    private String files_path;
 
 //***************************************************************************
 //***************************** F I L E S ***********************************
@@ -87,7 +80,7 @@ public class StorageService {
             fileObj.setMyMasterId(masterId);
             fileObj.setMyId(myId);
             if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
-            } else {                    BASE_FILES_FOLDER = "//usr//dokio//files//";} //запущено в linux
+            } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux
             String MY_MASTER_ID_FOLDER = fileObj.getMyMasterId() + "//";
             String MY_COMPANY_ID_FOLDER = companyId + "//";
             String THUMBS_FOLDER = "thumbs//";
@@ -337,12 +330,12 @@ public class StorageService {
         return originName;
     }
 
-    public String GetImgThumbPathByFileName(String fileName){
-        String stringQuery="select path||'//thumbs//'||name from files where name = '"+fileName+"'";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        return query.getSingleResult().toString();
-
-    }
+//    public String GetImgThumbPathByFileName(String fileName){
+//        String stringQuery="select path||'/thumbs/'||name from files where name = '"+fileName+"'";
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        return query.getSingleResult().toString();
+//
+//    }
 
     private static BufferedImage downscaleImageSize(BufferedImage originalImage, int type, int newImgWidth){
         float ratio = (float)originalImage.getWidth()/originalImage.getHeight();

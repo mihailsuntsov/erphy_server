@@ -76,8 +76,8 @@ public class StoreGeneralRepository {
                 int planId = (Integer)cu.getFieldValueFromTableById("users","plan_id",masterId, masterId);
                 boolean isPlanNoLimits = userRepository.isPlanNoLimits(planId);
                 if(!isPlanNoLimits){
-                    UserResources consumedRes = userRepository.getMyConsumedResources();
-                    UserResources maxAllowed = userRepository.getMyMaxAllowedResources();
+                    UserResources consumedRes = userRepository.getMyConsumedResources(masterId);
+                    UserResources maxAllowed = userRepository.getMyMaxAllowedResources(masterId);
 
                     if(consumedRes.getStores() > maxAllowed.getStores()){
                         isLetSyncJSON.setIs_sync_allowed(false);
