@@ -49,7 +49,7 @@ Once DokioCRM is installed, the installer will ask you if you want to install a 
 A configured and ready-to-use online store will be installed.
 
 
-After the installation the file `/var/dokiocrm.key` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
+After the installation the file `/var/dokio_pwd.txt` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
 The user interface of DokioCRM will be here: `https://yoursite.com/dss`.<br>
 Click `Registration`, and register. After registration you can login into the user interface of DokioCRM.<br>
 When the first account is registered, the ability to register new users will not be available. This is to prevent new unwanted registrations on your server. However, you can create any number of users of your company from the user interface (Settings/Users)
