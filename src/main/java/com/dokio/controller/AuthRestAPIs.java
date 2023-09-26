@@ -32,6 +32,7 @@ import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.model.*;
 import com.dokio.repository.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.service.StorageService;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,6 +116,8 @@ public class AuthRestAPIs {
 	SubscriptionRepositoryJPA subscriptionRepository;
     @Autowired
     StoreRepository storeRepository;
+	@Autowired
+	StorageService storageService;
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
@@ -145,6 +148,16 @@ public class AuthRestAPIs {
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
 		logger.info("Processing post request for path /signup: " + signUpRequest.toString());
 		try {
+			// checking that system allow to register new users:
+			SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
+			if (!settingsGeneral.isAllowRegistration())
+				return new ResponseEntity<>("Registration of new users is not available at the moment", HttpStatus.INTERNAL_SERVER_ERROR);
+
+
+
+
+
+
 			EntityManager emgr = emf.createEntityManager();
 			if (userRepository.existsByUsername(signUpRequest.getUsername())) {
 				return new ResponseEntity<>(new ResponseMessage("login_registered"),
@@ -160,6 +173,8 @@ public class AuthRestAPIs {
 			User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
 					encoder.encode(signUpRequest.getPassword()));
 
+			int cntUsers = cu.getCntRegisteredUsers();
+
 			Set<String> strRoles = new HashSet<>();
 			strRoles.add("admin"); // это "системная" роль, для спринга. Ею наделяются все пользователи. Все их реальные права регулируются Докио
 			Set<Role> roles = new HashSet<>();
@@ -168,15 +183,17 @@ public class AuthRestAPIs {
 			user.setDate_time_created(new Timestamp(System.currentTimeMillis()));
 			//добавили юзеру сет ролей и сохранили его
 			user.setRoles(roles);
-			user.setStatus_account(1); //Статус 1 - e-mail не верифицирован
-			user.setActivationCode(UUID.randomUUID().toString()); // Код активации, высылаемый на e-mail
-			SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true); // чтобы узнать тарифный план по умолчанию
+			user.setStatus_account(cntUsers==0?2:1); //Status = 1: email need to be verified. 2: email verified.
+			// Since the first user may not have a correctly configured mail server (because it vas installed a few minutes ago),
+			// he do not need to verify his email
+			user.setActivationCode(cntUsers>0?UUID.randomUUID().toString():null); // Код активации, высылаемый на e-mail
 			user.setPlanId(settingsGeneral.getPlanDefaultId());
 			user.setPlanPrice(settingsGeneral.getPlanPrice());
 			user.setFreeTrialDays(settingsGeneral.getFreeTrialDays());
 			Long createdUserId = userRepository.save(user).getId();// и сохранили его
 			user.setMaster(userDetailsService.getUserById(createdUserId));// в качестве мастера устанавливаем его же
 			userRepository.save(user);// сохраняем чтобы записался master id
+
 			// уcтановим пользователю часовой пояс (timeZone), язык и локаль
 			userRepositoryJPA.setUserSettings(createdUserId, 24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru") ? 10 : 4, "24");
 			userRepository.save(user);// сохраняем чтобы применился язык
@@ -234,8 +251,8 @@ public class AuthRestAPIs {
             store.setName(map.get("default_store_name"));
             store.setLang_code(signUpRequest.getLanguage());
             store.setCompany_id(companyId);
-            store.setStore_ip("");
-            store.setCrm_secret_key("");
+            store.setStore_ip("127.0.0.1");
+            store.setCrm_secret_key(cntUsers==0?storageService.getSecretKey():"");// first user will get the key from a file, that was created at the end of DokioCRM installation
             store.setStore_if_customer_not_found("create_new");
             store.setStore_price_type_regular(prices.get(0));
             store.setStore_price_type_sale(prices.get(1));
@@ -258,8 +275,15 @@ public class AuthRestAPIs {
 			// Занести пользователя в контрагенты
 			if(settingsGeneral.isSaas() && !Objects.isNull(settingsGeneral.getBilling_cagents_category_id()))
 				userRepositoryJPA.setUserAsCagent(createdUserId, signUpRequest.getName(), signUpRequest.getEmail(), settingsGeneral);
-			// отправили письмо для подтверждения e-mail
-			mailRepository.activateAccount(signUpRequest.getEmail(), user.getActivationCode(),signUpRequest.getLanguage());
+			// отправили письмо для подтверждения e-mail (кроме самого первого зарегистрированного - ему подтверждение не надо, т.к. почта не настроена и он может не получить емайл)
+			// sending email message for email validation (but the first registred user - he do not need to be validated by email as the email server may be not set up correctly)
+			if(cntUsers>0)
+				mailRepository.activateAccount(signUpRequest.getEmail(), user.getActivationCode(),signUpRequest.getLanguage());
+
+			// if it is not a SaaS mode - after the registration of first user need to disallow other registrations
+			if(!settingsGeneral.isSaas()&& cntUsers==0)
+				cu.setLetToRegisterNewUsers(false);
+
 
 			return new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
 		} catch (Exception e){

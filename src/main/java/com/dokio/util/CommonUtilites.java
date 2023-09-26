@@ -26,9 +26,12 @@ import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
 import com.dokio.security.services.UserDetailsServiceImpl;
+import com.dokio.service.StorageService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -759,20 +762,20 @@ public class CommonUtilites {
                 doc.setUrl_privacy_policy((String) queryList.get(0)[20]);
                 doc.setUrl_data_processing_agreement((String) queryList.get(0)[21]);
                 doc.setRoot_domain((String) queryList.get(0)[22]);
-                doc.setBilling_master_id(withSensitiveInfo?(Long.parseLong(                        queryList.get(0)[23].toString())):null);
-                doc.setBilling_shipment_creator_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[24].toString())):null);
-                doc.setBilling_shipment_company_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[25].toString())):null);
-                doc.setBilling_shipment_department_id(withSensitiveInfo?(Long.parseLong(           queryList.get(0)[26].toString())):null);
-                doc.setBilling_cagents_category_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[27].toString())):null);
-                doc.setBilling_companies_product_id(withSensitiveInfo?(Long.parseLong(             queryList.get(0)[28].toString())):null);
-                doc.setBilling_departments_product_id(withSensitiveInfo?(Long.parseLong(           queryList.get(0)[29].toString())):null);
-                doc.setBilling_users_product_id(withSensitiveInfo?(Long.parseLong(                 queryList.get(0)[30].toString())):null);
-                doc.setBilling_products_product_id(withSensitiveInfo?(Long.parseLong(              queryList.get(0)[31].toString())):null);
-                doc.setBilling_counterparties_product_id(withSensitiveInfo?(Long.parseLong(        queryList.get(0)[32].toString())):null);
-                doc.setBilling_megabytes_product_id(withSensitiveInfo?(Long.parseLong(             queryList.get(0)[33].toString())):null);
-                doc.setBilling_stores_product_id(withSensitiveInfo?(Long.parseLong(                queryList.get(0)[34].toString())):null);
-                doc.setBilling_stores_woo_product_id(withSensitiveInfo?(Long.parseLong(            queryList.get(0)[35].toString())):null);
-                doc.setBilling_plan_product_id(withSensitiveInfo?(Long.parseLong(                  queryList.get(0)[36].toString())):null);
+                doc.setBilling_master_id(withSensitiveInfo?(                 queryList.get(0)[23]!=null?Long.parseLong(queryList.get(0)[23].toString()):null):null);
+                doc.setBilling_shipment_creator_id(withSensitiveInfo?(       queryList.get(0)[24]!=null?Long.parseLong(queryList.get(0)[24].toString()):null):null);
+                doc.setBilling_shipment_company_id(withSensitiveInfo?(       queryList.get(0)[25]!=null?Long.parseLong(queryList.get(0)[25].toString()):null):null);
+                doc.setBilling_shipment_department_id(withSensitiveInfo?(    queryList.get(0)[26]!=null?Long.parseLong(queryList.get(0)[26].toString()):null):null);
+                doc.setBilling_cagents_category_id(withSensitiveInfo?(       queryList.get(0)[27]!=null?Long.parseLong(queryList.get(0)[27].toString()):null):null);
+                doc.setBilling_companies_product_id(withSensitiveInfo?(      queryList.get(0)[28]!=null?Long.parseLong(queryList.get(0)[28].toString()):null):null);
+                doc.setBilling_departments_product_id(withSensitiveInfo?(    queryList.get(0)[29]!=null?Long.parseLong(queryList.get(0)[29].toString()):null):null);
+                doc.setBilling_users_product_id(withSensitiveInfo?(          queryList.get(0)[30]!=null?Long.parseLong(queryList.get(0)[30].toString()):null):null);
+                doc.setBilling_products_product_id(withSensitiveInfo?(       queryList.get(0)[31]!=null?Long.parseLong(queryList.get(0)[31].toString()):null):null);
+                doc.setBilling_counterparties_product_id(withSensitiveInfo?( queryList.get(0)[32]!=null?Long.parseLong(queryList.get(0)[32].toString()):null):null);
+                doc.setBilling_megabytes_product_id(withSensitiveInfo?(      queryList.get(0)[33]!=null?Long.parseLong(queryList.get(0)[33].toString()):null):null);
+                doc.setBilling_stores_product_id(withSensitiveInfo?(         queryList.get(0)[34]!=null?Long.parseLong(queryList.get(0)[34].toString()):null):null);
+                doc.setBilling_stores_woo_product_id(withSensitiveInfo?(     queryList.get(0)[35]!=null?Long.parseLong(queryList.get(0)[35].toString()):null):null);
+                doc.setBilling_plan_product_id(withSensitiveInfo?(           queryList.get(0)[36]!=null?Long.parseLong(queryList.get(0)[36].toString()):null):null);
             }
             return doc;
         } catch (Exception e) {
@@ -931,13 +934,46 @@ public class CommonUtilites {
             return Long.valueOf(query.getSingleResult().toString());
         }catch (NoResultException nre) {
             logger.error("Counterparty id not founded by user_id = " + userId +". SQL="+stringQuery, nre);
-            throw new Exception("Counterparty id not founded by user_id = " + userId);
+            return null; // in a case of SaaS it will return cagentId, in a case of opensource install it returns null
+            //throw new Exception("Counterparty id not founded by user_id = " + userId);
         }catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getCagentIdByUserId. SQL: "+stringQuery, e);
             throw new Exception();
         }
     }
+
+    @Transactional
+    public void setLetToRegisterNewUsers(boolean isAllow) throws Exception {
+        String stringQuery = "update settings_general set show_registration_link = "+isAllow+", allow_registration = "+isAllow;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method setLetToRegisterNewUsers. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    // return count of users
+    public int getCntRegisteredUsers() throws Exception {
+        String stringQuery;
+        stringQuery = "select count(*) from users";
+        try
+        {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return ((BigInteger) query.getSingleResult()).intValue();
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getCntRegisteredUsers. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+
+
 
 
 }

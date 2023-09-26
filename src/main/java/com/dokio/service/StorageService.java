@@ -36,6 +36,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -347,4 +351,24 @@ public class StorageService {
         g.dispose();
         return resizedImage;
     }
+
+    public String getSecretKey() throws Exception {
+        try {
+            String BASE_FILES_FOLDER;
+            String line = "";
+            if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//";  //запущено в винде
+            } else {                    BASE_FILES_FOLDER = "//var//";} //запущено в linux
+            String path = BASE_FILES_FOLDER+"dokiocrm.key";
+            if(isPathExists(path)){
+                BufferedReader reader = new BufferedReader(new FileReader(path));
+                line = reader.readLine();
+                reader.close();
+            }
+            return line;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 }

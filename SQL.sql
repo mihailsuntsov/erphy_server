@@ -4998,9 +4998,6 @@ create table _saas_payment_select(
                                      foreign key (description_msg_key) references _saas_messages(key)
 );
 
-
----------------------------------------------------------------------------------------------------------------------------
-
 alter table settings_general add column billing_master_id bigint;
 alter table settings_general add column billing_shipment_creator_id bigint;
 alter table settings_general add column billing_shipment_company_id bigint;
@@ -5054,12 +5051,6 @@ update plans set n_products=0.1, n_counterparties=0.1, n_megabytes=0.05 where is
 update plans set n_products=0.00, n_counterparties=0.00, n_megabytes=0.00 where is_nolimits=true;
 update plans set n_products=1, n_counterparties=1, n_megabytes=1 where is_nolimits=false and is_free=false;
 
-
---------------------------------------------------
-
 alter table users add column repair_pass_code_sent timestamp with time zone;
-
-
-
 
 update version set value = '1.3.0', date = '03-07-2023';

@@ -38,11 +38,11 @@ public class _Info {
     private EntityManager entityManager; // do NOT touch, even if it seems like not active!
 
     public String getBackendVersion() {
-        return "1.3.0";
+        return "1.3.0-2";
     }
 
     public String getBackendVersionDate() {
-        return "03-07-2023";
+        return "24-09-2023";
     }
 
     @RequestMapping(value = "/api/public/getSettingsGeneral",
