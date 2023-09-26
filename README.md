@@ -4,30 +4,28 @@ This is a server part of DokioCRM
 DokioCRM is a free and open source Ecommerce ERP/CRM for small business. You can manage your customers, sales and finances, and get analytics of how your business works.<br>
 It has an integration with WordPress and WooCommerce, and you can put all your goods from CRM to the online store in one click!<br>
 There is a support of a multilingual goods and online stores<br>
-
+All possibilities are described in more detail on the website of project:
 ## Site
 https://dokio.me<br>
 
 ## Examples
-The SaaS version: https://erphy.me/dss<br>
-The simple example with product filters: https://dokio.me/shop/<br>
-Multilingual real estate catalog: https://dokio.me/examples/realestate_en/<br>
-Multilingual food delivery site: http
-
-## Contacts
-Mikhail Suntsov<br>
-E-mail: mihail.suntsov@gmail.com<br>
-Telegram: @eager_beager<br>
-LinkedIn: Mikhail Suntsov<br>
+The SaaS version: https://erphy.me/dss Here you can register and test working with the program interface<br>
+The simple online store example with product filters: https://dokio.me/shop/<br>
+Multilingual real estate online catalog: https://dokio.me/examples/realestate_en/<br>
+Multilingual food delivery site: https://food.erphy.me
 
 ## How to install
-You can install the program on your VPS server using a bash script. 
-Bash script tested on Ubuntu 22.04<br>
+You can install the program on your VPS server using a bash installation script. 
+Bash installation script tested on:<br> 
+* Ubuntu Server 20.04
+* Ubuntu Server 22.04 (recommended)<br>
+
 Minimum requirments of VPS is: 1 Cpu core, 2 Gb RAM, 15 Gb HDD<br>
-Use only clear VPS for the installation<br>
+Use only freshly installed VPS for the installation of DokioCRM<br>
 In order for SSL to install and work correctly, I recommend set the domain name for your VPS.
-1. Login on your VPS as root user
-2. Check the system hostname:
+####1. Login to your VPS
+Use PuTTY or any another SSH client to access to your VPS as a root user
+####2. Check the system hostname:
 ```shell
 hostname -f
 ```
@@ -41,7 +39,7 @@ Then check it again:
 hostname -f
 ```
 NOTE: _In order for the SSL certificate to be obtained successfully, the server must be accessible by domain name. If you have just received a domain name, the VPS server may not be available yet. You can check whether or not the domain is resolving into the correct host IP address by using the ping command in your computer console:`ping yoursite.com`_
-3. Execute:
+####3. Execute:
 ```shell
 wget https://dokio.me/downloads/shell/dokiocrm-install.sh  -O - | sh
 ```
@@ -61,3 +59,11 @@ For some services it can not be enough, and you should set up DKIM, DMARC on you
 
 
 ## How to use
+Detailed instructions for use - in [Knowledge base](https://dokio.me/knowledge-base/)
+
+
+## Contacts
+Mikhail Suntsov<br>
+E-mail: mihail.suntsov@gmail.com<br>
+Telegram: @eager_beager<br>
+LinkedIn: Mikhail Suntsov<br>
