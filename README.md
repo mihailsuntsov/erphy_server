@@ -23,9 +23,9 @@ Bash installation script tested on:<br>
 Minimum requirments of VPS is: 1 Cpu core, 2 Gb RAM, 15 Gb HDD<br>
 Use only freshly installed VPS for the installation of DokioCRM<br>
 In order for SSL to install and work correctly, I recommend set the domain name for your VPS.
-###1. Login to your VPS
+### 1. Login to your VPS
 Use PuTTY or any another SSH client to access to your VPS as a root user
-###2. Check the system hostname:
+### 2. Check the system hostname:
 ```shell
 hostname -f
 ```
@@ -39,7 +39,7 @@ Then check it again:
 hostname -f
 ```
 NOTE: _In order for the SSL certificate to be obtained successfully, the server must be accessible by domain name. If you have just received a domain name, the VPS server may not be available yet. You can check whether or not the domain is resolving into the correct host IP address by using the ping command in your computer console:`ping yoursite.com`_
-###3. Execute installation script:
+### 3. Execute installation script:
 ```shell
 wget https://dokio.me/downloads/shell/dokiocrm-install.sh  -O - | sh
 ```
