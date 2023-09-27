@@ -1,7 +1,7 @@
 # DokioCRM<br>
 This is a server part of DokioCRM
 ## About
-DokioCRM is a free and open source Ecommerce ERP/CRM for small business. You can manage your customers, sales and finances, and get analytics of how your business works.<br>
+DokioCRM is a free and open source Ecommerce ERP/CRM for small business. You can manage your customers, warehouse, sales and finances, and get analytics of how your business works.<br>
 It has an integration with WordPress and WooCommerce, and you can put all your goods from CRM to the online store in one click!<br>
 There is a support of a multilingual goods and online stores<br>
 All possibilities are described in more detail on the website of project:
@@ -55,7 +55,7 @@ Click `Registration`, and register. After registration you can login into the us
 When the first account is registered, the ability to register new users will not be available. This is to prevent new unwanted registrations on your server. However, you can create any number of users of your company from the user interface (Settings/Users)
 
 NOTE: _Some mail services, for example, Gmail, can bounce the emails from your server mailbox. It's because the domain zone of `yoursite.com` has no SPF record. Add a TXT record for `yoursite.com`. It should be like `"v=spf1 +a +mx +ip4:xxx.xxx.xxx.xxx ~all"`, created in a domain zone management on the domain `yoursite.com` registrar website. <br>
-For some services it still can not be enough, and you should set up DKIM and DMARC on your server, and order the creation of a PTR record from your domain name registrar._
+For some services it still can not be enough, and you should set up DKIM and DMARC on your server, and order the creation of a PTR record from your VPS provider company._
 
 
 ## How to use
