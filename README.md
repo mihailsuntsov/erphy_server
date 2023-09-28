@@ -22,7 +22,9 @@ Bash installation script tested on:<br>
 
 Minimum requirments of VPS is: 1 Cpu core, 2 Gb RAM, 15 Gb HDD<br>
 Use only freshly installed VPS for the installation of DokioCRM<br>
-In order for SSL to install and work correctly, I recommend set the domain name for your VPS.
+
+In order for SSL to install and work correctly, you should order and configure a domain name for your VPS.
+
 NOTE: _yoursite.com - the example name of your domain address. Replace it with your real address._
 ### 1. Login to your VPS
 Use PuTTY or any another SSH client to access to your VPS as a root user
@@ -53,7 +55,7 @@ A configured and ready-to-use online store will be installed.
 After the installation the file `/var/dokio_pwd.txt` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
 The user interface of DokioCRM will be available at this address: `https://yoursite.com/dss`.<br>
 Click `Registration`, and create your account. After registration you can login into the user interface of DokioCRM.<br>
-When the first account is registered, the ability to register new users will not be available. This is to prevent new unwanted registrations on your server. However, you can create any number of users of your company from the user interface (Settings/Users). But if you want to allow new registrations on your server, run the following command in the SSH client:
+When the first account is registered, the ability to register new accounts will not be available. This is to prevent new unwanted account registrations on your server. However, you can create any number of users of your company from the user interface (Settings/Users). But if you want to allow new registrations on your server, run the following command in the SSH client:
 ```shell                                                                                                                                                                                                                                                                 
 sudo -Hiu postgres psql -d dokio -c "update settings_general set show_registration_link = true, allow_registration = true;"
 ```
