@@ -1,5 +1,5 @@
 /*
-        Dokio CRM - server part. Sales, finance and warehouse management system
+        DokioCRM - server part. Sales, finance and warehouse management system
         Copyright (C) Mikhail Suntsov /mihail.suntsov@gmail.com/
 
         This program is free software: you can redistribute it and/or modify

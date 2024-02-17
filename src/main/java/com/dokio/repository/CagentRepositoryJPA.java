@@ -491,7 +491,7 @@ public class CagentRepositoryJPA {
 //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-                    "           p.legal_form as legal_form, " +// legal form of individual (ie entrepreneur, ...)
+                    "           coalesce(p.legal_form,'') as legal_form, " +// legal form of individual (ie entrepreneur, ...)
                     "           p.vat as jr_vat" + // VAT identification number
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +

@@ -19,9 +19,12 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.additional.DepartmentPartsJSON;
+import com.dokio.message.response.additional.DepartmentsWithPartsJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
@@ -314,6 +317,7 @@ public class DepartmentRepositoryJPA {
                 query.setParameter("address",request.getAddress());
                 query.setParameter("additional",request.getAdditional());
                 query.executeUpdate();
+                saveDepartmentPartsOrder(request.getParts(),myMasterId);
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -692,5 +696,338 @@ public class DepartmentRepositoryJPA {
             return null;
         }
     }
+//*****************************************************************************************************************************************************
+//****************************************************   P  A  R  T  S   ******************************************************************************
+//*****************************************************************************************************************************************************
 
+    public List<DepartmentPartsJSON> getDepartmentPartsList (Long departmentId) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =       "select " +
+                "           p.id as id," +
+                "           p.name as name, " +
+                "           p.description as description, " +
+                "           coalesce(p.is_active, true) as is_active " +
+                "           from scdl_dep_parts p " +
+                "           INNER JOIN users u ON p.master_id=u.id " +
+                "           where  p.master_id=" + masterId +
+                "           and p.department_id =" + departmentId +
+                "           and coalesce(p.is_deleted, false) = false " +
+                "           order by p.menu_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<DepartmentPartsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+                doc.setId(Long.parseLong(           obj[0].toString()));
+                doc.setName((String)                obj[1]);
+                doc.setDescription((String)         obj[2]);
+                doc.setIs_active((Boolean)          obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentPartsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    // For the "Departments parts" select list in Resources registry
+    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                    "           select" +
+                    "           p.id as id," +
+                    "           p.name as name," +
+                    "           p.description as description," +
+                    "           coalesce(p.is_active, true) as is_active," +
+                    "           d.name as department_name, " +
+                    "           d.id as department_id " +
+                    "           from scdl_dep_parts p" +
+                    "           INNER JOIN users u ON p.master_id=u.id" +
+                    "           INNER JOIN departments d ON p.department_id=d.id" +
+                    "           where  p.master_id=" + masterId +
+                    "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
+                    "           and coalesce(p.is_deleted, false) = false" +
+                    "           order by d.name,p.menu_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<DepartmentsWithPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartsJSON> partsList = new ArrayList<>();
+            Long lastDepId = 0L;
+            Long currentDepId=0L;
+            String lastDepName = "";
+            String currentDepName = "";
+
+
+            for (Object[] obj : queryList) {
+
+                currentDepId = Long.parseLong(obj[5].toString());
+                currentDepName = (String) obj[4];
+
+                DepartmentPartsJSON part = new DepartmentPartsJSON();
+                part.setId(Long.parseLong(           obj[0].toString()));
+                part.setName((String)                obj[1]);
+                part.setDescription((String)         obj[2]);
+                part.setIs_active((Boolean)          obj[3]);
+
+
+                if((!currentDepId.equals(lastDepId)) && lastDepId != 0L ) { // department has been changed
+                    returnList.add(new DepartmentsWithPartsJSON(lastDepId, lastDepName, partsList));
+                    partsList = new ArrayList<>();
+                }
+                partsList.add(part);
+                lastDepId = currentDepId;
+                lastDepName = currentDepName;
+            }
+
+            if(currentDepId>0L)
+                returnList.add(new DepartmentsWithPartsJSON(lastDepId, lastDepName, partsList));
+
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    /*public List<DepartmentsWithPartsJSON> getDepartmentPartsWithResourceQttList_old (Long companyId, Long resource_id) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                "           select" +
+                        "           p.id as id," +
+                        "           p.name as name," +
+                        "           p.description as description," +
+                        "           coalesce(p.is_active, true) as is_active," +
+                        "           d.name as department_name, " +
+                        "           d.id as department_id, " +
+                        "           res_qtt.quantity as res_qtt " +
+                        "           from scdl_dep_parts p" +
+                        "           INNER JOIN users u ON p.master_id=u.id" +
+                        "           INNER JOIN departments d ON p.department_id=d.id" +
+                        "           LEFT OUTER JOIN scdl_resource_dep_parts_qtt res_qtt on res_qtt.dep_part_id=p.id and res_qtt.resource_id="+resource_id+
+                        "           where  p.master_id=" + masterId +
+                        "           and res_qtt.quantity is not null " +
+                        "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
+                        "           and coalesce(p.is_deleted, false) = false" +
+                        "           order by d.name,p.menu_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<DepartmentsWithPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartsJSON> partsList = new ArrayList<>();
+            Long lastDepId = 0L;
+            Long currentDepId=0L;
+            String currentDepName = "";
+
+
+            for (Object[] obj : queryList) {
+
+                currentDepId = Long.parseLong(obj[5].toString());
+                currentDepName = (String) obj[4];
+
+                DepartmentPartsJSON part = new DepartmentPartsJSON();
+                part.setId(Long.parseLong(           obj[0].toString()));
+                part.setName((String)                obj[1]);
+                part.setDescription((String)         obj[2]);
+                part.setIs_active((Boolean)          obj[3]);
+                part.setResource_qtt((Integer)       obj[6]);
+
+
+                if((currentDepId != lastDepId) && lastDepId != 0L ) { // department has been changed
+                    returnList.add(new DepartmentsWithPartsJSON(currentDepId, currentDepName, partsList));
+                    partsList = new ArrayList<>();
+                }
+                partsList.add(part);
+                lastDepId = currentDepId;
+            }
+
+            if(currentDepId>0L)
+                returnList.add(new DepartmentsWithPartsJSON(currentDepId, currentDepName, partsList));
+
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentPartsWithResourceQttList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+*/
+
+    public List<DepartmentPartsJSON> getDepartmentPartsWithResourceQttList (Long resource_id, Long masterId) {
+        String stringQuery;
+        //Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                "           select" +
+                        "           p.id as id," +
+                        "           p.name as name," +
+                        "           p.description as description," +
+                        "           coalesce(p.is_active, true) as is_active," +
+                        "           d.name as department_name, " +
+                        "           d.id as department_id, " +
+                        "           res_qtt.quantity as res_qtt " +
+                        "           from scdl_dep_parts p" +
+                        "           INNER JOIN users u ON p.master_id=u.id" +
+                        "           INNER JOIN departments d ON p.department_id=d.id" +
+                        "           INNER JOIN scdl_resource_dep_parts_qtt res_qtt on res_qtt.dep_part_id=p.id and res_qtt.resource_id="+resource_id+
+                        "           where  p.master_id=" + masterId +
+                        "           and res_qtt.quantity is not null " +
+//                      "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
+                        "           and coalesce(d.is_deleted,false)=false" +
+                        "           and coalesce(p.is_deleted, false) = false" +
+                        "           order by d.name,p.menu_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<DepartmentPartsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+                doc.setId(Long.parseLong(           obj[0].toString()));
+                doc.setName((String)                obj[1]);
+                doc.setDescription((String)         obj[2]);
+                doc.setIs_active((Boolean)          obj[3]);
+                doc.setDepartment_name((String)     obj[4]);
+                doc.setDepartment_id(Long.parseLong(obj[5].toString()));
+                doc.setResource_qtt((Integer)       obj[6]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentPartsWithResourceQttList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    @Transactional
+    public Integer insertDepartmentPart(DepartmentPartsForm request) {
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(4L,"16") && securityRepositoryJPA.isItAllMyMastersDocuments("departments",request.getDepartment_id().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getDepartment_id().toString())))
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery =
+                    " insert into scdl_dep_parts " +
+                            "(" +
+                            "master_id, " +
+                            "name, " +
+                            "description, " +
+                            "department_id, " +
+                            "is_active, " +
+                            "menu_order" +
+                            ") values (" +
+                            myMasterId + "," +
+                            ":name," +
+                            ":description," +
+                            request.getDepartment_id() + ", " +
+                            request.getIs_active() + ", " +
+                            " (select coalesce(max(menu_order),0)+1 from scdl_dep_parts where department_id=" + request.getDepartment_id() + ")" +
+                            ")";
+            try {
+
+                commonUtilites.idBelongsMyMaster("departments",  request.getDepartment_id(),  myMasterId);
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", request.getName());
+                query.setParameter("description", request.getDescription());
+                query.executeUpdate();
+
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method insertDepartmentPart. SQL query:" + stringQuery, e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer updateDepartmentPart(DepartmentPartsForm request) {
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+        if(     (securityRepositoryJPA.userHasPermissions_OR(4L,"16") && securityRepositoryJPA.isItAllMyMastersDocuments("departments",request.getDepartment_id().toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getDepartment_id().toString())))
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery =
+                    " update " +
+                            " scdl_dep_parts " +
+                            " set " +
+                            " name = :name, " +
+                            " description = :description, " +
+                            " is_active = " + request.getIs_active() +
+                            " where " +
+                            " master_id = " + myMasterId +
+                            " and id = " + request.getId() +
+                            " and department_id = " + request.getDepartment_id();
+            try{
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name",request.getName());
+                query.setParameter("description",request.getDescription());
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method updateDepartmentPart. SQL query:" + stringQuery, e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
+    @SuppressWarnings("Duplicates")
+    public Integer saveDepartmentPartsOrder(List<DepartmentPartsForm> request, Long myMasterId) throws Exception{
+        String stringQuery="";
+        int i = 1;
+        try {
+            for (DepartmentPartsForm field : request) {
+                stringQuery =
+                        " update scdl_dep_parts set " +
+                                " menu_order=" + i +
+                                " where id=" + field.getId() +
+                                " and master_id=" + myMasterId;
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                i++;
+            }
+            return 1;
+        } catch (Exception e) {
+            logger.error("Exception in method saveDepartmentPartsOrder. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e); // cancelling the parent transaction
+        }
+    }
+
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    public Integer deleteDepartmentPart(Long termId) {
+        if (securityRepositoryJPA.userHasPermissions_OR(4L, "15,16"))// редактирование Отделений для всех предприятий
+        {
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+            String stringQuery="";
+            try {
+                stringQuery =
+                        "   update scdl_dep_parts set is_deleted=true " +
+                                "   where " +
+                                "   master_id = "   + myMasterId +
+                                "   and id = "            + termId;
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method deleteProductAttributeTerm. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
 }

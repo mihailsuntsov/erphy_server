@@ -146,9 +146,6 @@ public class User{
 //    2 Активный
 //    3 Забанен
     private Integer status_account;
-//
-//    @Column(name = "company_id")
-//    private Long company_id;
 
     @Column(name = "time_zone_id")
     private Integer time_zone_id;
@@ -170,6 +167,9 @@ public class User{
 
     @Column(name = "is_blocked_master_id")  // Master user and all its child accounts has been blocked (out of money, out of terms etc.)
     private Boolean isBlockedMasterId;
+
+    //@Column(name = "is_employee")           // this user is an employee of this company
+    //private Boolean is_employee;
 
     public User() {}
 
@@ -419,6 +419,14 @@ public class User{
     public void setVatin(String vatin) {
         this.vatin = vatin;
     }
+
+    //public Boolean getIs_employee() {
+    //    return is_employee;
+    //}
+
+    //public void setIs_employee(Boolean is_employee) {
+    //    this.is_employee = is_employee;
+    //}
 
     public Timestamp getRepair_pass_code_sent() {
         return repair_pass_code_sent;

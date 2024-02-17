@@ -18,6 +18,10 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.DepartmentPartsForm;
+
+import java.util.List;
+
 public class DepartmentForm {
 
     private Long id;
@@ -34,6 +38,15 @@ public class DepartmentForm {
     private String additional;
     private Long boxoffice_id;
     private Long payment_account_id;
+    private List<DepartmentPartsForm> parts;
+
+    public List<DepartmentPartsForm> getParts() {
+        return parts;
+    }
+
+    public void setParts(List<DepartmentPartsForm> parts) {
+        this.parts = parts;
+    }
 
     public Long getId() {
         return id;

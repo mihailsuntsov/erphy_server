@@ -39,7 +39,7 @@ public class SpravSysTimeZonesController {
 
     private static final Set VALID_SUFFIXES
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("ru","en","es","it","fr","uk","kz","pt")
+            .of("ru","en","es","it","fr","uk","kz","pt","sr")
             .collect(Collectors.toCollection(HashSet::new)));
 
     @RequestMapping(value = "/api/auth/getSpravSysTimeZones",

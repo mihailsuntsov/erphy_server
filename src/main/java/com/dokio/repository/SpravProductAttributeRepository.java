@@ -1121,13 +1121,12 @@ public class SpravProductAttributeRepository {
                             "   where " +
                             "   master_id = "   + myMasterId +
                             "   and id = "            + termId;
-            if (!securityRepositoryJPA.userHasPermissions_OR(53L, "669")) //Если нет прав по всем предприятиям
+            /*if (!securityRepositoryJPA.userHasPermissions_OR(53L, "669")) //Если нет прав по всем предприятиям
                     {
-//            остается только на своё предприятие
                         int myCompanyId = userRepositoryJPA.getMyCompanyId();
                         stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-                    }
-                    entityManager.createNativeQuery(stringQuery).executeUpdate();
+                    }*/
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method deleteProductAttributeTerm. SQL query:"+stringQuery, e);

@@ -21,6 +21,7 @@ package com.dokio.controller;
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.model.*;
@@ -251,5 +252,71 @@ public class DepartmentsController {
         departmentsList = departmentService.getDeptChildrens(parentId);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(departmentsList, HttpStatus.OK);
         return responseEntity;
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getDepartmentPartsList",
+            params = {"department_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentPartsList( @RequestParam("department_id") Long departmentId) {
+        logger.info("Processing get request for path /api/auth/getDepartmentPartsList with department_id=" + departmentId.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getDepartmentPartsList(departmentId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDepartmentPartsList error with department_id=" + departmentId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
+            value = "/api/auth/getDepartmentsWithPartsList",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentsWithPartsList( @RequestParam("company_id") Long companyId) {
+        logger.info("Processing get request for path /api/auth/getDepartmentsWithPartsList with company_id=" + companyId.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getDepartmentsWithPartsList(companyId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDepartmentsWithPartsList error with company_id=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    /*@RequestMapping(
+            value = "/api/auth/getDepartmentPartsWithResourceQttList",
+            params = {"company_id","resource_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentPartsWithResourceQttList( @RequestParam("company_id") Long companyId, @RequestParam("resource_id") Long resourceId) {
+        logger.info("Processing get request for path /api/auth/getDepartmentPartsWithResourceQttList with company_id=" + companyId.toString()+"resource_id=" + resourceId.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getDepartmentPartsWithResourceQttList(companyId,resourceId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDepartmentPartsWithResourceQttList error with company_id=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
+            value = "/api/auth/getDepartmentPartsWithResourceQttList2",
+            params = {"company_id","resource_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentPartsWithResourceQttList2( @RequestParam("company_id") Long companyId, @RequestParam("resource_id") Long resourceId) {
+        logger.info("Processing get request for path /api/auth/getDepartmentPartsWithResourceQttList2 with company_id=" + companyId.toString()+"resource_id=" + resourceId.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getDepartmentPartsWithResourceQttList2(companyId,resourceId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDepartmentPartsWithResourceQttList2 error with company_id=" + companyId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }*/
+    @PostMapping("/api/auth/insertDepartmentPart")
+    public ResponseEntity<?> insertDepartmentPart(@RequestBody DepartmentPartsForm request){
+        logger.info("Processing post request for path /api/auth/insertDepartmentPart: " + request.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.insertDepartmentPart(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertDepartmentPart error", e);
+            return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/updateDepartmentPart")
+    public ResponseEntity<?> updateDepartmentPart(@RequestBody DepartmentPartsForm request){
+        logger.info("Processing post request for path /api/auth/updateDepartmentPart: " + request.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.updateDepartmentPart(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller updateDepartmentPart error", e);
+            return new ResponseEntity<>("Error saving the document", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
+            value = "/api/auth/deleteDepartmentPart",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteDepartmentPart( @RequestParam("id") Long partId) {
+        logger.info("Processing get request for path /api/auth/deleteDepartmentPart with termId=" + partId.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.deleteDepartmentPart(partId), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller deleteDepartmentPart error with termId=" + partId.toString(), e);
+            return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }
