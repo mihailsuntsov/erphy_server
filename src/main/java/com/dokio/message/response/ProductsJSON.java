@@ -18,9 +18,11 @@
 
 package com.dokio.message.response;
 
+import com.dokio.message.request.additional.ProductResourcesForm;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.DefaultAttributesJSON;
 import com.dokio.message.response.additional.ProductVariationsJSON;
+import com.dokio.message.response.additional.ResourcesListJSON;
 import com.dokio.message.response.additional.StoreTranslationProductJSON;
 
 import java.math.BigDecimal;
@@ -107,6 +109,15 @@ public class ProductsJSON {
     private Set<DefaultAttributesJSON> defaultAttributes;
     private List<ProductVariationsJSON> productVariations;
     private boolean isVariation;
+    private List<ResourcesListJSON> productResourcesTable; // resources that used this service
+
+    public List<ResourcesListJSON> getProductResourcesTable() {
+        return productResourcesTable;
+    }
+
+    public void setProductResourcesTable(List<ResourcesListJSON> productResourcesTable) {
+        this.productResourcesTable = productResourcesTable;
+    }
 
     public boolean isVariation() {
         return isVariation;

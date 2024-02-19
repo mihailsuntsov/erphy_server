@@ -19,10 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.*;
-import com.dokio.message.request.additional.DefaultAttributesForm;
-import com.dokio.message.request.additional.LabelsPrintProduct;
-import com.dokio.message.request.additional.ProductVariationsForm;
-import com.dokio.message.request.additional.ProductVariationsRowItemsForm;
+import com.dokio.message.request.additional.*;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -401,7 +398,7 @@ public class ProductsRepositoryJPA {
                     doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
                     doc.setProductVariations(getProductVariations(myMasterId, id));
                     doc.setVariation(isProductUsedAsVariation(doc.getId())); // if this product is a variation of another product
-
+                    doc.setProductResourcesTable(getProductResources(myMasterId, doc.getId()));
                 }
 //                doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
@@ -495,9 +492,6 @@ public class ProductsRepositoryJPA {
                         saveChangeProductFilesOrder(field, request.getId(), i, "product_downloadable_files");
                     }
                 }
-
-
-
                 // сохранение цен
                 if (request.getProductPricesTable().size() > 0) {
                     for (ProductPricesJSON field : request.getProductPricesTable()) {
@@ -532,6 +526,15 @@ public class ProductsRepositoryJPA {
                         saveStoreProductTranslations(row, myMasterId, request.getCompany_id(), request.getId());
                     }
                 }
+
+                // saving resources
+                Set<Long>existingProductResources = new HashSet<>();
+                for (ProductResourcesForm row : request.getProductResourcesTable()) {
+                    saveProductResourcesQtt(myMasterId, row.getResource_id(), request.getId(), row.getResource_qtt());
+                    existingProductResources.add(row.getResource_id());
+                }
+                // deleting resources that was deleted on frontend
+                deleteResourcesThatNoMoreContainedInThisProduct(existingProductResources,request.getId(), myMasterId );
 
                 // deleting attributes that was deleted on frontend
                 deleteAttributesFromProduct(request.getProductAttributes(), request.getId(), myMasterId);
@@ -5231,6 +5234,101 @@ public class ProductsRepositoryJPA {
         }
 
     }
+
+
+    // ********************** R  E  S  O  U  R  C  E  S **********************
+
+
+    private void saveProductResourcesQtt(Long master_id, Long resource_id, Long product_id, int quantity) throws Exception {
+        String stringQuery = "insert into scdl_product_resource_qtt (" +
+                "   master_id," +
+                "   resource_id," +
+                "   product_id," +
+                "   quantity " +
+                "   ) values (" +
+                master_id+", "+
+                resource_id+", "+
+                product_id+", " +
+                quantity +
+                ") ON CONFLICT ON CONSTRAINT scdl_product_resource_qtt_uq " +// "upsert"
+                "   DO update set " +
+                "   quantity = " + quantity;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveProductResourcesQtt. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    // Deleting department parts that no more contain this resource
+    private void deleteResourcesThatNoMoreContainedInThisProduct(Set<Long> existingResources, Long productId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from scdl_product_resource_qtt " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " product_id = " +productId;
+        if(existingResources.size()>0)
+            stringQuery = stringQuery + " and resource_id not in " + commonUtilites.SetOfLongToString(existingResources,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteResourcesThatNoMoreContainedInThisProduct. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private List<ResourcesListJSON> getProductResources(Long masterId, Long productId){
+        String stringQuery =
+                        " select " +
+                        " da.resource_id as id," +
+                        " da.quantity    as resource_qtt," +
+                        " p.name         as resource_name," +
+                        " p.description  as resource_description" +
+                        " from  scdl_product_resource_qtt da" +
+                        " inner join sprav_resources p on p.id = da.resource_id" +
+                        " where da.master_id = " + masterId + " and da.product_id = " + productId + " order by p.name";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<ResourcesListJSON> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                ResourcesListJSON doc=new ResourcesListJSON();
+                doc.setResource_id(Long.parseLong(              obj[0].toString()));
+                doc.setResource_qtt((Integer)                   obj[1]);
+                doc.setName((String)                            obj[2]);
+                doc.setDescription((String)                     obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductResources. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // inserting base set of categories of new account or company
     @SuppressWarnings("Duplicates")

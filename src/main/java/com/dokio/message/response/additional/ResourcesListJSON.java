@@ -2,16 +2,17 @@ package com.dokio.message.response.additional;
 
 public class ResourcesListJSON {
 
-    private Long   id;
+    private Long   resource_id;
     private String name;
     private String description;
+    private int    resource_qtt;// quantity of resource
 
-    public Long getId() {
-        return id;
+    public Long getResource_id() {
+        return resource_id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setResource_id(Long resource_id) {
+        this.resource_id = resource_id;
     }
 
     public String getName() {
@@ -28,5 +29,13 @@ public class ResourcesListJSON {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getResource_qtt() {
+        return resource_qtt;
+    }
+
+    public void setResource_qtt(int resource_qtt) {
+        this.resource_qtt = resource_qtt;
     }
 }

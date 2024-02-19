@@ -19,6 +19,7 @@
 package com.dokio.message.request;
 
 import com.dokio.message.request.additional.DefaultAttributesForm;
+import com.dokio.message.request.additional.ProductResourcesForm;
 import com.dokio.message.request.additional.ProductVariationsForm;
 import com.dokio.message.response.additional.DefaultAttributesJSON;
 import com.dokio.message.response.additional.ProductPricesJSON;
@@ -107,6 +108,15 @@ public class ProductsForm {
 
     public List<ProductVariationsForm> getProductVariations() {
         return productVariations;
+    }
+    private List<ProductResourcesForm> productResourcesTable; // resources that used this service
+
+    public List<ProductResourcesForm> getProductResourcesTable() {
+        return productResourcesTable;
+    }
+
+    public void setProductResourcesTable(List<ProductResourcesForm> productResourcesTable) {
+        this.productResourcesTable = productResourcesTable;
     }
 
     public void setProductVariations(List<ProductVariationsForm> productVariations) {

@@ -480,7 +480,7 @@ public class SpravResourceRepositoryJPA {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             stringQuery = "select   p.id as id, " +
                     "               p.name as name, " +
-                    "               p.description as description, " +
+                    "               p.description as description" +
                     "               from sprav_resources p " +
                     "               where  p.master_id=" + myMasterId +
                     "               and p.company_id=" + companyId +
@@ -491,7 +491,7 @@ public class SpravResourceRepositoryJPA {
                 List<ResourcesListJSON> returnList = new ArrayList<>();
                 for (Object[] obj : queryList) {
                     ResourcesListJSON doc = new ResourcesListJSON();
-                    doc.setId(Long.parseLong(                               obj[0].toString()));
+                    doc.setResource_id(Long.parseLong(                      obj[0].toString()));
                     doc.setName((String)                                    obj[1]);
                     doc.setDescription((String)                             obj[2]);
                     returnList.add(doc);
