@@ -20,6 +20,7 @@ package com.dokio.message.response.Sprav;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
+//import java.math.BigDecimal;
 
 @Entity
 public class SpravSysEdizmTableJSON {
@@ -34,6 +35,24 @@ public class SpravSysEdizmTableJSON {
     private String date_time_created;
     private String date_time_changed;
     private Boolean is_default;
+    private int    type_id;
+    private String equals_si;
+
+    public String getEquals_si() {
+        return equals_si;
+    }
+
+    public void setEquals_si(String equals_si) {
+        this.equals_si = equals_si;
+    }
+
+    public int getType_id() {
+        return type_id;
+    }
+
+    public void setType_id(int type_id) {
+        this.type_id = type_id;
+    }
 
     public Boolean getIs_default() {
         return is_default;

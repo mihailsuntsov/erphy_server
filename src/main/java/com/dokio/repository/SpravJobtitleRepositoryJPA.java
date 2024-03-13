@@ -18,11 +18,12 @@
 
 package com.dokio.repository;
 
-import com.dokio.message.request.Sprav.SpravResourceForm;
-import com.dokio.message.request.additional.ResourceDepPartsForm;
+import com.dokio.message.request.Sprav.SpravJobtitleForm;
+import com.dokio.message.request.additional.JobtitleProductsForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
-import com.dokio.message.response.SpravResourceJSON;
-import com.dokio.message.response.additional.ResourcesListJSON;
+import com.dokio.message.response.Sprav.SpravJobtitleJSON;
+import com.dokio.message.response.additional.JobtitleListJSON;
+import com.dokio.message.response.additional.JobtitleProductsJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
@@ -43,9 +44,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
-public class SpravResourceRepositoryJPA {
+public class SpravJobtitleRepositoryJPA {
 
-    Logger logger = Logger.getLogger("SpravResourceRepositoryJPA");
+    Logger logger = Logger.getLogger("SpravJobtitleRepositoryJPA");
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -59,6 +60,8 @@ public class SpravResourceRepositoryJPA {
     SecurityRepositoryJPA securityRepositoryJPA;
     @Autowired
     CompanyRepositoryJPA companyRepositoryJPA;
+    @Autowired
+    DepartmentRepositoryJPA departmentRepositoryJPA;
     @Autowired
     UserDetailsServiceImpl userService;
     @Autowired
@@ -77,8 +80,8 @@ public class SpravResourceRepositoryJPA {
             .of("asc","desc")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    public List<SpravResourceJSON> getResourceTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, long companyId, Set<Integer> filterOptionsIds) {
-        if (securityRepositoryJPA.userHasPermissions_OR(56L, "688,689"))//(см. файл Permissions Id)
+    public List<SpravJobtitleJSON> getJobtitleTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, long companyId, Set<Integer> filterOptionsIds) {
+        if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))//(см. файл Permissions Id)
         {
             String stringQuery;
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
@@ -100,7 +103,7 @@ public class SpravResourceRepositoryJPA {
                     "           p.description as description, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort  " +
-                    "           from sprav_resources p " +
+                    "           from sprav_jobtitles p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
@@ -108,7 +111,7 @@ public class SpravResourceRepositoryJPA {
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(56L, "688")) //Если нет прав на "Просмотр по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(57L, "697")) //Если нет прав на "Просмотр по всем предприятиям"
             {
                 //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -137,9 +140,9 @@ public class SpravResourceRepositoryJPA {
                 {query.setParameter("sg", searchString);}
 
                 List<Object[]> queryList = query.getResultList();
-                List<SpravResourceJSON> returnList = new ArrayList<>();
+                List<SpravJobtitleJSON> returnList = new ArrayList<>();
                 for (Object[] obj : queryList) {
-                    SpravResourceJSON doc = new SpravResourceJSON();
+                    SpravJobtitleJSON doc = new SpravJobtitleJSON();
 
                     doc.setId(Long.parseLong(                               obj[0].toString()));
                     doc.setCreator((String)                                 obj[1]);
@@ -158,7 +161,7 @@ public class SpravResourceRepositoryJPA {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getResourceTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getJobtitleTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;
@@ -166,18 +169,18 @@ public class SpravResourceRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     @Transactional
-    public int getResourceSize(String searchString, long companyId, Set<Integer> filterOptionsIds) {
-        if (securityRepositoryJPA.userHasPermissions_OR(56L, "688,689"))//"Статусы документов" (см. файл Permissions Id)
+    public int getJobtitleSize(String searchString, long companyId, Set<Integer> filterOptionsIds) {
+        if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))// (см. файл Permissions Id)
         {
             String stringQuery;
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             stringQuery = "select  p.id as id " +
-                    "           from sprav_resources p " +
+                    "           from sprav_jobtitles p " +
                     "           where  p.master_id=" + myMasterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(56L, "688")) //Если нет прав на "Меню - таблица - "Статусы документов" по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(57L, "697")) //Если нет прав на "Меню - таблица -  по всем предприятиям"
             {
                 //остается только на своё предприятие
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
@@ -205,8 +208,8 @@ public class SpravResourceRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public SpravResourceJSON getResourceValues(Long id) {
-        if (securityRepositoryJPA.userHasPermissions_OR(56L, "688,689"))//"Статусы документов" (см. файл Permissions Id)
+    public SpravJobtitleJSON getJobtitleValues(Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))// (см. файл Permissions Id)
         {
             String stringQuery;
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
@@ -226,23 +229,23 @@ public class SpravResourceRepositoryJPA {
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
                     "           p.name as name, " +
                     "           p.description as description " +
-                    "           from sprav_resources p " +
+                    "           from sprav_jobtitles p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           where  p.master_id=" + myMasterId +
                     "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(56L, "688")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            if (!securityRepositoryJPA.userHasPermissions_OR(57L, "697")) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
-                //остается только на своё предприятие (689)
+                //остается только на своё предприятие (698)
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
 
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
 
-            SpravResourceJSON doc = new SpravResourceJSON();
+            SpravJobtitleJSON doc = new SpravJobtitleJSON();
 
             for (Object[] obj : queryList) {
 
@@ -257,7 +260,7 @@ public class SpravResourceRepositoryJPA {
                 doc.setDate_time_changed((String) obj[8]);
                 doc.setName((String) obj[9]);
                 doc.setDescription((String) obj[10]);
-                doc.setDep_parts(departmentRepository.getDepartmentPartsWithResourceQttList (id, myMasterId));
+                doc.setJobtitle_products(getJobtitleServicesList (id, myMasterId));
             }
             return doc;
         } else return null;
@@ -266,41 +269,42 @@ public class SpravResourceRepositoryJPA {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
-    public Integer updateResource(SpravResourceForm request) {
+    public Integer updateJobtitle(SpravJobtitleForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(56L,"690") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_resources",request.getId().toString())) ||
+        if(     (securityRepositoryJPA.userHasPermissions_OR(57L,"699") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_jobtitles",request.getId().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(56L,"691") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_resources",request.getId().toString())))
+                (securityRepositoryJPA.userHasPermissions_OR(57L,"700") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_jobtitles",request.getId().toString())))
         {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             Long myMasterId = userRepositoryJPA.getMyMasterId();
 
             String stringQuery;
-            stringQuery =   " update sprav_resources set " +
-                    " changer_id = " + myId + ", "+
-                    " date_time_changed= now()," +
-                    " name = :name, " +
-                    " description = :description " +
-                    " where " +
-                    " id= "+request.getId()+
-                    " and master_id="+myMasterId;
+            stringQuery =
+                    " update sprav_jobtitles set " +
+                            " changer_id = " + myId + ", "+
+                            " date_time_changed= now()," +
+                            " name = :name, " +
+                            " description = :description " +
+                            " where " +
+                            " id= "+request.getId()+
+                            " and master_id="+myMasterId;
             try
             {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
-                Set<Long>existingDepartmentParts = new HashSet<>();
-                for (ResourceDepPartsForm row : request.getDepartmentPartsTable()) {
-                    saveDepartmentPartsQtt(myMasterId, row.getId(), request.getId(), row.getResource_qtt());
-                    existingDepartmentParts.add(row.getId());
+                Set<Long>existingProducts = new HashSet<>();
+                for (JobtitleProductsForm row : request.getJobtitleProductsFormTable()) {
+                    saveJobtitleProducts(myMasterId, row.getProduct_id(), request.getId());
+                    existingProducts.add(row.getProduct_id());
                 }
-                deleteDepartmentPartsThatNoMoreContainThisResource(existingDepartmentParts,request.getId(), myMasterId );
+                deleteProductsThatNoMoreContainThisJobtitle(existingProducts,request.getId(), myMasterId );
                 return 1;
 
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateResource. SQL query:"+stringQuery, e);
+                logger.error("Exception in method updateJobtitle. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -313,7 +317,7 @@ public class SpravResourceRepositoryJPA {
     // Возвращаем -1 в случае отсутствия прав
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,Exception.class})
-    public Long insertResource(SpravResourceForm request) {
+    public Long insertJobtitle(SpravJobtitleForm request) {
         EntityManager emgr = emf.createEntityManager();
         Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
         Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
@@ -321,9 +325,9 @@ public class SpravResourceRepositoryJPA {
         Long myMasterId = userRepositoryJPA.getMyMasterId();
 
         if ((   //если есть право на создание по всем предприятиям, или
-                (securityRepositoryJPA.userHasPermissions_OR(56L, "684")) ||
+                (securityRepositoryJPA.userHasPermissions_OR(57L, "693")) ||
                         //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                        (securityRepositoryJPA.userHasPermissions_OR(56L, "685") && myCompanyId.equals(request.getCompany_id()))) &&
+                        (securityRepositoryJPA.userHasPermissions_OR(57L, "694") && myCompanyId.equals(request.getCompany_id()))) &&
                 //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                 DocumentMasterId.equals(myMasterId))
         {
@@ -331,7 +335,7 @@ public class SpravResourceRepositoryJPA {
             Long myId = userRepository.getUserId();
 
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-            stringQuery = "insert into sprav_resources (" +
+            stringQuery = "insert into sprav_jobtitles (" +
                     " master_id," + //мастер-аккаунт
                     " creator_id," + //создатель
                     " company_id," + //предприятие, для которого создается документ
@@ -352,16 +356,16 @@ public class SpravResourceRepositoryJPA {
                 query.setParameter("name",request.getName());
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
-                stringQuery="select id from sprav_resources where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                stringQuery="select id from sprav_jobtitles where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 Long newDocId = Long.valueOf(query2.getSingleResult().toString());
-                for (ResourceDepPartsForm row : request.getDepartmentPartsTable()) {
-                    saveDepartmentPartsQtt(myMasterId, row.getId(), newDocId, row.getResource_qtt());
+                for (JobtitleProductsForm row : request.getJobtitleProductsFormTable()) {
+                    saveJobtitleProducts(myMasterId, row.getProduct_id(), newDocId);
                 }
                 return newDocId;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method insertResource on inserting into sprav_resources. SQL query:"+stringQuery, e);
+                logger.error("Exception in method insertJobtitle on inserting into sprav_jobtitles. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -371,15 +375,15 @@ public class SpravResourceRepositoryJPA {
     }
 
     @Transactional
-    public Integer deleteResource(String delNumbers) {
+    public Integer deleteJobtitle(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(56L, "686") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_resources", delNumbers)) ||
+        if ((securityRepositoryJPA.userHasPermissions_OR(57L, "695") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_jobtitles", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(56L, "687") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_resources", delNumbers))) {
+                (securityRepositoryJPA.userHasPermissions_OR(57L, "696") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_jobtitles", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update sprav_resources p" +
+            stringQuery = "Update sprav_jobtitles p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=true " +
@@ -391,7 +395,7 @@ public class SpravResourceRepositoryJPA {
                 query.executeUpdate();
                 return 1;
             } catch (Exception e) {
-                logger.error("Exception in method deleteResource. SQL query:"+stringQuery, e);
+                logger.error("Exception in method deleteJobtitle. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -400,15 +404,15 @@ public class SpravResourceRepositoryJPA {
     }
 
     @Transactional
-    public Integer undeleteResource(String delNumbers) {
+    public Integer undeleteJobtitle(String delNumbers) {
         //Если есть право на "Удаление по всем предприятиям" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if ((securityRepositoryJPA.userHasPermissions_OR(56L, "686") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_resources", delNumbers)) ||
+        if ((securityRepositoryJPA.userHasPermissions_OR(57L, "695") && securityRepositoryJPA.isItAllMyMastersDocuments("sprav_jobtitles", delNumbers)) ||
                 //Если есть право на "Удаление по своему предприятияю" и все id для удаления принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(56L, "687") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_resources", delNumbers))) {
+                (securityRepositoryJPA.userHasPermissions_OR(57L, "696") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("sprav_jobtitles", delNumbers))) {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
             Long myId = userRepositoryJPA.getMyId();
             String stringQuery;
-            stringQuery = "Update sprav_resources p" +
+            stringQuery = "Update sprav_jobtitles p" +
                     " set changer_id="+ myId + ", " + // кто изменил (удалил)
                     " date_time_changed = now(), " +//дату и время изменения
                     " is_deleted=false " +
@@ -420,7 +424,7 @@ public class SpravResourceRepositoryJPA {
                 query.executeUpdate();
                 return 1;
             } catch (Exception e) {
-                logger.error("Exception in method undeleteResource. SQL query:"+stringQuery, e);
+                logger.error("Exception in method undeleteJobtitle. SQL query:"+stringQuery, e);
                 e.printStackTrace();
                 return null;
             }
@@ -429,96 +433,123 @@ public class SpravResourceRepositoryJPA {
     }
 
 
-    private void saveDepartmentPartsQtt(Long master_id, Long dep_part_id, Long resource_id, int quantity) throws Exception {
-        String stringQuery = "insert into scdl_resource_dep_parts_qtt (" +
+    private void saveJobtitleProducts(Long master_id, Long product_id, Long jobtitle_id) throws Exception {
+        String stringQuery = "insert into scdl_jobtitle_products (" +
                 "   master_id," +
-                "   dep_part_id," +
-                "   resource_id," +
-                "   quantity " +
+                "   product_id," +
+                "   jobtitle_id" +
                 "   ) values (" +
-                    master_id+", "+
-                    dep_part_id+", "+
-                    resource_id+", " +
-                    quantity +// чтобы не мочь изменить категорию другого master_id, случайно или намеренно
-                ") ON CONFLICT ON CONSTRAINT scdl_resource_dep_parts_qtt_uq " +// "upsert"
-                "   DO update set " +
-                "   quantity = "+quantity;
+                master_id+", "+
+                product_id+", "+
+                jobtitle_id+
+                ") ON CONFLICT ON CONSTRAINT scdl_jobtitle_products_uq " +// "upsert"
+                "  DO NOTHING ";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method saveDepartmentPartsQtt. SQL query:" + stringQuery, e);
+            logger.error("Exception in method saveJobtitleProducts. SQL query:" + stringQuery, e);
             throw new Exception(e);
         }
     }
 
-    // Deleting department parts that no more contain this resource
-    private void deleteDepartmentPartsThatNoMoreContainThisResource(Set<Long> existingDepartmentParts, Long resourceId, Long masterId) throws Exception  {
+    // Deleting department parts that no more contain this job title
+    private void deleteProductsThatNoMoreContainThisJobtitle(Set<Long> existingProducts, Long jobtitleId, Long masterId) throws Exception  {
         String stringQuery =
-                " delete from scdl_resource_dep_parts_qtt " +
+                " delete from scdl_jobtitle_products " +
                         " where " +
                         " master_id = " + masterId + " and " +
-                        " resource_id = " +resourceId;
-        if(existingDepartmentParts.size()>0)
-            stringQuery = stringQuery + " and dep_part_id not in " + commonUtilites.SetOfLongToString(existingDepartmentParts,",","(",")");
+                        " jobtitle_id = " +jobtitleId;
+        if(existingProducts.size()>0)
+            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingProducts,",","(",")");
         try {
             entityManager.createNativeQuery(stringQuery).executeUpdate();
         } catch (Exception e) {
-            logger.error("Exception in method deleteDepartmentPartsThatNoMoreContainThisResource. SQL query:"+stringQuery, e);
+            logger.error("Exception in method deleteProductsThatNoMoreContainThisJobtitle. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception(e);
         }
     }
 
-    public List<ResourcesListJSON> getResourcesList(long companyId) {
-//        if (securityRepositoryJPA.userHasPermissions_OR(56L, "688,689"))//(см. файл Permissions Id)
+    public List<JobtitleListJSON> getJobtitleList(long companyId) {
+//        if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))//(см. файл Permissions Id)
 //        {
-            String stringQuery;
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-            stringQuery = "select   p.id as id, " +
-                    "               p.name as name, " +
-                    "               p.description as description" +
-                    "               from sprav_resources p " +
-                    "               where  p.master_id=" + myMasterId +
-                    "               and p.company_id=" + companyId +
-                    "               and coalesce(p.is_deleted,false) = false";
-            try{
-                Query query = entityManager.createNativeQuery(stringQuery);
-                List<Object[]> queryList = query.getResultList();
-                List<ResourcesListJSON> returnList = new ArrayList<>();
-                for (Object[] obj : queryList) {
-                    ResourcesListJSON doc = new ResourcesListJSON();
-                    doc.setResource_id(Long.parseLong(                      obj[0].toString()));
-                    doc.setName((String)                                    obj[1]);
-                    doc.setDescription((String)                             obj[2]);
-                    returnList.add(doc);
-                }
-                return returnList;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Exception in method getResourcesList. SQL query:" + stringQuery, e);
-                return null;
+        String stringQuery;
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+        stringQuery = "select   p.id as id, " +
+                "               p.name as name, " +
+                "               p.description as description" +
+                "               from sprav_jobtitles p " +
+                "               where  p.master_id=" + myMasterId +
+                "               and p.company_id=" + companyId +
+                "               and coalesce(p.is_deleted,false) = false";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<JobtitleListJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                JobtitleListJSON doc = new JobtitleListJSON();
+                doc.setJobtitle_id(Long.parseLong(                      obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                doc.setDescription((String)                             obj[2]);
+                returnList.add(doc);
             }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getJobtitleList. SQL query:" + stringQuery, e);
+            return null;
+        }
 //        } else return null;
     }
 
-    // inserting base set of cash room for new user
+    private List<JobtitleProductsJSON> getJobtitleServicesList(long jobtitleId, long myMasterId) {
+
+        String stringQuery;
+        stringQuery = "select   p.id as id, " +
+                "               p.name as name " +
+                "               from scdl_jobtitle_products jp " +
+                "               INNER JOIN products p ON jp.product_id = p.id " +
+                "               where  jp.master_id=" + myMasterId +
+                "               and jp.jobtitle_id="  + jobtitleId +
+                "               and p.ppr_id=4 "      + //service
+                "               and coalesce(p.is_deleted,false) = false" +
+                "               order by p.name";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<JobtitleProductsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                JobtitleProductsJSON doc = new JobtitleProductsJSON();
+                doc.setProduct_id(Long.parseLong(                      obj[0].toString()));
+                doc.setProduct_name((String)                           obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getJobtitleServicesList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    // inserting base set of job titles for new user
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertResourcesFast(Long mId, Long masterId, Long cId) {
+    public Long insertJobtitleFast(Long mId, Long masterId, Long cId) {
         String stringQuery;
         String t = new Timestamp(System.currentTimeMillis()).toString();
-        Map<String, String> map = cu.translateForUser(mId, new String[]{"'work_place'"});
-        stringQuery = "insert into sprav_resources ( master_id,creator_id,company_id,date_time_created,name,is_deleted) values "+
-                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("work_place")+"',false)";
+        Map<String, String> map = cu.translateForUser(mId, new String[]{"'provides_services'"});
+        stringQuery = "insert into sprav_jobtitles ( master_id,creator_id,company_id,date_time_created,name,is_deleted) values "+
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("provides_services")+"',false)";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            stringQuery="select id from sprav_resources where date_time_created=(to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+mId;
+            stringQuery="select id from sprav_jobtitles where date_time_created=(to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+mId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query2.getSingleResult().toString());
         } catch (Exception e) {
-            logger.error("Exception in method insertResourcesFast. SQL query:"+stringQuery, e);
+            logger.error("Exception in method insertJobtitleFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }

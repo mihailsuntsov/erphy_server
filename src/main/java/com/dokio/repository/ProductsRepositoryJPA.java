@@ -23,6 +23,8 @@ import com.dokio.message.request.additional.*;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.Sprav.SpravSysAssignmentsJSON;
+import com.dokio.message.response.Sprav.SpravSysRemindersJSON;
 import com.dokio.message.response.Sprav.StoresListJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
@@ -84,6 +86,10 @@ public class ProductsRepositoryJPA {
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of("docName","price","change","quantity","last_operation_price","ppr_id","description","p.article","p.name","article","name","not_buy","not_sell","last_purchase_price","avg_purchase_price","avg_netcost_price","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .collect(Collectors.toCollection(HashSet::new)));
+    private static final Set VALID_ASSIGNMENT_TYPES
+            = Collections.unmodifiableSet((Set<? extends String>) Stream
+            .of("customer","manually")
             .collect(Collectors.toCollection(HashSet::new)));
     @Transactional
     public List<ProductsTableJSON> getProductsTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, int companyId, int categoryId, Set<Integer> filterOptionsIds) {
@@ -308,7 +314,15 @@ public class ProductsRepositoryJPA {
                     "           coalesce(p.description_html,'') as description_html, " +  // custom HTML description
                     "           coalesce(p.short_description_html,'') as short_description_html, " +  // custom HTML short description
                     "           coalesce(p.description_type,'editor') as description_type, " + // "editor" or "custom"
-                    "           coalesce(p.short_description_type,'editor') as short_description_type " + // "editor" or "custom"
+                    "           coalesce(p.short_description_type,'editor') as short_description_type, " + // "editor" or "custom"
+
+                    "           coalesce(p.is_srvc_by_appointment, false) as is_srvc_by_appointment, " +
+                    "           coalesce(p.scdl_is_only_on_start, false) as scdl_is_only_on_start, " +
+                    "           coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
+                    "           coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
+                    "           coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
+                    "           p.scdl_appointment_atleast_before_unit_id as scdl_appointment_atleast_before_unit_id " +
+
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -395,12 +409,23 @@ public class ProductsRepositoryJPA {
                     doc.setShort_description_html((String)          queryList.get(0)[64]);
                     doc.setDescription_type((String)                queryList.get(0)[65]);
                     doc.setShort_description_type((String)          queryList.get(0)[66]);
+
+                    doc.setIs_srvc_by_appointment((Boolean)         queryList.get(0)[67]);
+                    doc.setScdl_is_only_on_start((Boolean)          queryList.get(0)[68]);
+                    doc.setScdl_max_pers_on_same_time((Integer)     queryList.get(0)[69]);
+                    doc.setScdl_srvc_duration((Integer)             queryList.get(0)[70]);
+                    doc.setScdl_appointment_atleast_before_time((Integer) queryList.get(0)[71]);
+                    doc.setScdl_appointment_atleast_before_unit_id( queryList.get(0)[72]!=null?Long.parseLong(queryList.get(0)[72].toString()):null);
+
                     doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
                     doc.setProductVariations(getProductVariations(myMasterId, id));
                     doc.setVariation(isProductUsedAsVariation(doc.getId())); // if this product is a variation of another product
                     doc.setProductResourcesTable(getProductResources(myMasterId, doc.getId()));
+                    doc.setScdl_customer_reminders(getAppointmentReminders(myMasterId, doc.getId(), "customer"));
+                    doc.setScdl_employee_reminders(getAppointmentReminders(myMasterId, doc.getId(), "employee"));
+                    doc.setScdl_assignments(getAppointmentAssignments(myMasterId, doc.getId()));
                 }
-//                doc.setStoresIds(getProductStoresIds(id, myMasterId));
+//              doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
                 return doc;
             } catch (NoResultException nre) {
@@ -533,6 +558,12 @@ public class ProductsRepositoryJPA {
                     saveProductResourcesQtt(myMasterId, row.getResource_id(), request.getId(), row.getResource_qtt());
                     existingProductResources.add(row.getResource_id());
                 }
+
+                // Reminders and Assignment types
+                saveAppointmentReminders(myMasterId, request.getId(), request.getScdl_customer_reminders(), "customer");
+                saveAppointmentReminders(myMasterId, request.getId(), request.getScdl_employee_reminders(), "employee");
+                saveAppointmentAssignments(myMasterId, request.getId(), request.getScdl_assignments());
+
                 // deleting resources that was deleted on frontend
                 deleteResourcesThatNoMoreContainedInThisProduct(existingProductResources,request.getId(), myMasterId );
 
@@ -827,7 +858,7 @@ public class ProductsRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")
-    public void updateProductsWithoutOrders(ProductsForm request, Long myMasterId) throws Exception {
+    private void updateProductsWithoutOrders(ProductsForm request, Long myMasterId) throws Exception {
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             String myTimeZone = userRepository.getUserTimeZone();
             String stringQuery;
@@ -838,6 +869,7 @@ public class ProductsRepositoryJPA {
             commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getEdizm_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getWeight_edizm_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("products", request.getParent_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getScdl_appointment_atleast_before_unit_id(), myMasterId);
 
 
             stringQuery = " update products set " +
@@ -888,9 +920,14 @@ public class ProductsRepositoryJPA {
                     " description_html = :description_html, "+
                     " short_description_html = :short_description_html, "+
                     " description_type = :description_type, "+
-                    " short_description_type = :short_description_type "+
+                    " short_description_type = :short_description_type, "+
 
-
+                    " is_srvc_by_appointment = " + request.isIs_srvc_by_appointment() + "," +
+                    " scdl_is_only_on_start = " + request.isScdl_is_only_on_start() + "," +
+                    " scdl_max_pers_on_same_time = " + request.getScdl_max_pers_on_same_time() + "," +
+                    " scdl_srvc_duration = " + request.getScdl_srvc_duration() + "," +
+                    " scdl_appointment_atleast_before_time = " + request.getScdl_appointment_atleast_before_time() + "," +
+                    " scdl_appointment_atleast_before_unit_id = " + request.getScdl_appointment_atleast_before_unit_id() +
 
                     " where master_id = " + myMasterId + " and id = " + request.getId();
 
@@ -924,7 +961,6 @@ public class ProductsRepositoryJPA {
                 e.printStackTrace();
                 throw new Exception();
             }
-
     }
 
     // сохранение порядка картинок товара (права не нужны, т.к. вызывается после проверки всех прав)
@@ -1246,6 +1282,7 @@ public class ProductsRepositoryJPA {
             String myTimeZone = userRepository.getUserTimeZone();
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String suffix = userRepositoryJPA.getMySuffix();
+
             stringQuery = "select  " +
                     "           p.id as id, " +
                     "           dep.name as department," +
@@ -1296,6 +1333,7 @@ public class ProductsRepositoryJPA {
                 // загружаем настройки, чтобы узнать политику предприятия по подсчёту себестоимости (по всему предприятию или по каждому отделению отдельно)
                 String netcostPolicy = commonUtilites.getCompanySettings(companyId).getNetcost_policy();
 
+                boolean isMaterial = isProductMaterial(productId);
                 BigDecimal quantity;
                 BigDecimal change;
                 BigDecimal price;
@@ -1319,7 +1357,7 @@ public class ProductsRepositoryJPA {
                     doc.setChange(change);
                     doc.setPrice(price);
                     doc.setNetcost(netcost);
-                    doc.setAvg_netcost_price(recountProductNetcost(companyId, netcostPolicy.equals("each") ? Long.parseLong(obj[12].toString()) : null, productId, (Timestamp) obj[11]));
+                    doc.setAvg_netcost_price(isMaterial?(recountProductNetcost(companyId, netcostPolicy.equals("each") ? Long.parseLong(obj[12].toString()) : null, productId, (Timestamp) obj[11])):new BigDecimal(0));
                     returnList.add(doc);
                 }
                 return returnList;
@@ -5236,7 +5274,7 @@ public class ProductsRepositoryJPA {
     }
 
 
-    // ********************** R  E  S  O  U  R  C  E  S **********************
+    // **********************  A L L   A B O U T   A S S I G N M E N T S  **********************
 
 
     private void saveProductResourcesQtt(Long master_id, Long resource_id, Long product_id, int quantity) throws Exception {
@@ -5263,7 +5301,7 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    // Deleting department parts that no more contain this resource
+    // Deleting resources that no more contain this product
     private void deleteResourcesThatNoMoreContainedInThisProduct(Set<Long> existingResources, Long productId, Long masterId) throws Exception  {
         String stringQuery =
                 " delete from scdl_product_resource_qtt " +
@@ -5310,15 +5348,196 @@ public class ProductsRepositoryJPA {
             return null;
         }
     }
+    public List<SpravSysAssignmentsJSON> getSpravSysAssignmentsList(){
+        try{
+            Map<String, String> map = commonUtilites.translateForMe(new String[]{"'customer_on_website'","'manually'"});
+            List<SpravSysAssignmentsJSON> returnList = new ArrayList<>();
+            returnList.add(new SpravSysAssignmentsJSON("customer", map.get("customer_on_website")));
+            returnList.add(new SpravSysAssignmentsJSON("manually", map.get("manually")));
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getSpravSysAssignmentsList.", e);
+            return null;
+        }
+    }
+
+    public List<SpravSysRemindersJSON> getSpravSysRemindersList(){
+        Map<String, String> map = commonUtilites.translateForMe(new String[]{
+                    "'5_minutes_before_start'",
+                    "'10_minutes_before_start'",
+                    "'15_minutes_before_start'",
+                    "'30_minutes_before_start'",
+                    "'1_hour_before_start'",
+                    "'2_hour_before_start'",
+                    "'4_hour_before_start'",
+                    "'1_day_before_start'"
+        });
+
+        String stringQuery = "select id, type, value_text, value_seconds from sprav_sys_scdl_reminders where is_active=true order by id";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<SpravSysRemindersJSON> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                SpravSysRemindersJSON doc=new SpravSysRemindersJSON();
+                doc.setId((Integer)                             obj[0]);
+                doc.setType((String)                            obj[1]);
+                doc.setValue_text(map.get((String)              obj[2]));
+                doc.setValue_seconds((Integer)                  obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getSpravSysRemindersList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private void saveAppointmentReminders(Long master_id, Long product_id, List<Integer> reminders, String type) throws Exception {
+        // type: "customer" / "employee"
+        String stringQuery = "";
+        Set<Integer> existingRemindersIds = new HashSet<>();
+        for (Integer reminderId : reminders) {
+
+            stringQuery = stringQuery+
+                    "   insert into scdl_reminders (" +
+                    "   master_id," +
+                    "   product_id," +
+                    "   reminder_id," +
+                    "   type " +
+                    "   ) values (" +
+                    master_id+", "+
+                    product_id+", "+
+                    reminderId+", '" +
+                    type + "'" +
+                    "   ) ON CONFLICT ON CONSTRAINT scdl_reminders_uq " +// "upsert"
+                    "   DO NOTHING; ";
+
+            existingRemindersIds.add(reminderId);
+        }
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            deleteAppointmentRemindersThatNoMoreContainedInThisProduct(existingRemindersIds, product_id, master_id, type);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveAppointmentReminders. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    // Deleting reminders that no more contain this product
+    private void deleteAppointmentRemindersThatNoMoreContainedInThisProduct(Set<Integer> existingRemindersIds, Long productId, Long masterId, String type) throws Exception  {
+        String stringQuery =
+                " delete from scdl_reminders " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " product_id = " +productId + " and " +
+                        " type = '" + type +"'";
+        if(existingRemindersIds.size()>0)
+            stringQuery = stringQuery + " and reminder_id not in " + commonUtilites.SetOfIntToString(existingRemindersIds,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAppointmentRemindersThatNoMoreContainedInThisProduct. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private List<Integer> getAppointmentReminders(Long masterId, Long productId, String type) throws Exception {
+        String stringQuery =
+                " select reminder_id from scdl_reminders " +
+                        " where master_id = " + masterId +
+                        " and product_id = " + productId +
+                        " and type = '" + type + "'";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (List<Integer>) query.getResultList();
+        } catch (Exception e) {
+            logger.error("Exception in method getAppointmentReminders. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private void saveAppointmentAssignments(Long master_id, Long product_id, List<String> assignments) throws Exception {
+        // assignments can be: "customer" / "manually"
+        String stringQuery = "";
+        Set<String> existingAssignmentsIds = new HashSet<>();
+        for (String assignment_type : assignments) {
+
+            if (VALID_ASSIGNMENT_TYPES.contains(assignment_type)) {
+
+                stringQuery = stringQuery+
+                        "   insert into scdl_assignments (" +
+                        "   master_id," +
+                        "   product_id," +
+                        "   assignment_type" +
+                        "   ) values (" +
+                        master_id+", "+
+                        product_id+", '"+
+                        assignment_type + "'" +
+                        "   ) ON CONFLICT ON CONSTRAINT scdl_assignments_uq " +// "upsert"
+                        "   DO NOTHING; ";
+
+                existingAssignmentsIds.add(assignment_type);
+
+            } else {
+                throw new IllegalArgumentException("Invalid assignment type '" + assignment_type + "'");
+            }
+
+        }
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            deleteAppointmentAssignmentsThatNoMoreContainedInThisProduct(existingAssignmentsIds, product_id, master_id);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveAppointmentReminders. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    // Deleting reminders that no more contain this product
+    private void deleteAppointmentAssignmentsThatNoMoreContainedInThisProduct(Set<String> existingAssignments, Long productId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from scdl_assignments " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " product_id = " +productId;
+        if(existingAssignments.size()>0)
+            stringQuery = stringQuery + " and assignment_type not in " + commonUtilites.SetOfStringToString(existingAssignments,"','","('","')");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAppointmentAssignmentsThatNoMoreContainedInThisProduct. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
 
 
-
-
-
-
-
-
-
+    private List<String> getAppointmentAssignments(Long masterId, Long productId) throws Exception {
+        String stringQuery =
+                " select assignment_type from scdl_assignments " +
+                        " where master_id = " + masterId +
+                        " and product_id = " + productId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return (List<String>) query.getResultList();
+        } catch (Exception e) {
+            logger.error("Exception in method getAppointmentAssignments. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
 
 
 

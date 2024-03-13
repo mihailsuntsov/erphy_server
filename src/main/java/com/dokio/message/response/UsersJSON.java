@@ -17,6 +17,7 @@
 */
 
 package com.dokio.message.response;
+import com.dokio.message.response.additional.UserProductDeppartsJSON;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 

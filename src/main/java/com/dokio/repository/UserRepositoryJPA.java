@@ -21,27 +21,30 @@ package com.dokio.repository;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
+import com.dokio.message.request.additional.UserProductDeppartsForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
+import com.dokio.message.response.UserJSON_;
 import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
-import com.dokio.message.response.additional.LegalMasterUserInfoJSON;
-import com.dokio.message.response.additional.MyShortInfoJSON;
-import com.dokio.message.response.additional.UserResources;
-import com.dokio.model.Departments;
-import com.dokio.model.User;
-import com.dokio.model.UserGroup;
+import com.dokio.message.response.additional.*;
+import com.dokio.model.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
 import javax.persistence.*;
 
 import java.io.File;
@@ -83,12 +86,26 @@ public class UserRepositoryJPA {
 
     @Autowired
     private StorageService storageService;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
-
     @Autowired
     private SubscriptionRepositoryJPA subscriptionRepository;
+    @Autowired
+    private CommonUtilites commonUtilites;
+    @Autowired
+    PasswordEncoder encoder;
+    @Autowired
+    RoleRepository roleRepository;
+    @Autowired
+    CompanyRepositoryJPA companyRepositoryJPA;
+    @Autowired
+    FileRepositoryJPA fileRepository;
+    @Autowired
+    DocumentsRepositoryJPA documentsRepository;
+    @Autowired
+    SpravStatusDocRepository ssd;
+
+
 
     @Value("${files_path}")
     private String files_path;
@@ -107,8 +124,101 @@ public class UserRepositoryJPA {
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
 
-    //@Transactional
-    @SuppressWarnings("Duplicates")
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class,Exception.class})
+    public Long addUser(SignUpForm signUpRequest){
+        if(securityRepositoryJPA.userHasPermissions_OR(5L, "22"))// Пользователи:"Создание"
+        {
+            if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+                return (-10L); //login like this is already exists
+            }
+            if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+                return (-11L); //e-mail like this is already exists
+            }
+            Long masterId =  getMyMasterId();
+
+            //plan limit check
+            if(!isPlanNoLimits(getMasterUserPlan(masterId))) // if plan with limits - checking limits
+                if(getMyConsumedResources().getUsers()>=getMyMaxAllowedResources().getUsers())
+                    return (-120L); // number of users is out of bounds of tariff plan
+
+            try{
+                // Если такого логина и емайла нет
+                // Создание аккаунта для нового пользователя
+                User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
+                encoder.encode(signUpRequest.getPassword()));
+                Long companyId = Long.valueOf(signUpRequest.getCompany_id());
+                Set<Role> roles = new HashSet<>();
+                Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
+                roles.add(userRole);
+                user.setRoles(roles);//добавили юзеру роль ROLE_USER
+                user.setCompany(companyRepositoryJPA.getCompanyById(companyId));//предприятие
+                Set<Long> departments = signUpRequest.getSelectedUserDepartments();
+                Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
+                user.setDepartments(setDepartmentsOfUser);//сет отделений предприятия
+                Set<Long> userGroups = signUpRequest.getUserGroupList();
+                Set<UserGroup> setUserGroupsOfUser = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
+                user.setUsergroup(setUserGroupsOfUser);//сет групп пользователей
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                String dateBirth = (signUpRequest.getDate_birthday() == null ? "" : signUpRequest.getDate_birthday());
+                try {
+                    user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
+                user.setCreator(creator);//создателя
+                User master = userDetailService.getUserById(masterId);
+                user.setMaster(master);//владельца
+                user.setDate_time_created(new Timestamp(System.currentTimeMillis()));//дату создания
+                user.setFio_family(signUpRequest.getFio_family());
+                user.setFio_name(signUpRequest.getFio_name());
+                user.setFio_otchestvo(signUpRequest.getFio_otchestvo());
+                user.setName(signUpRequest.getName());
+                user.setStatus_account(Integer.parseInt(signUpRequest.getStatus_account()));
+                user.setSex(signUpRequest.getSex());
+                user.setAdditional(signUpRequest.getAdditional());
+                user.setIs_employee(signUpRequest.isIs_employee());
+                user.setIs_currently_employed(signUpRequest.isIs_currently_employed());
+                user.setJob_title_id(signUpRequest.getJob_title_id());
+                user.setCounterparty_id(signUpRequest.getCounterparty_id());
+                user.setIncoming_service_id(signUpRequest.getIncoming_service_id());
+
+//                user.setTime_zone_id(signUpRequest.getTimeZoneId());
+                Long createdUserId = userRepository.save(user).getId();//и сохранили его
+                // create settings (language, locale, time zone)
+                setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId(), "24");
+                // create print menus for user
+                List<BaseFiles> baseFilesList = fileRepository.getFilesIdsByName(fileRepository.assemblyBaseFilesList(masterId), masterId, companyId, null);
+                if(baseFilesList.size()>0) documentsRepository.createPrintMenus(baseFilesList,masterId, createdUserId, companyId);
+                //create settings
+                ssd.insertSettingsFast(masterId,createdUserId,companyId);
+                // ответ сервера при удачном создании юзера
+//                ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
+//                return responseEntity;
+
+                // if user is employee - add services that it can sell
+                for (UserProductDeppartsForm product : signUpRequest.getUserProductsDepparts()) {
+                    Set<Long>existingDepparts = new HashSet<>();
+                    for (Long dep_part_id : product.getDep_parts_ids()) {
+                        saveUserProductDeppart(masterId, product.getProduct_id(), createdUserId, dep_part_id);
+                        existingDepparts.add(dep_part_id);
+                    }
+                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) signUpRequest.getId());
+                }
+                return createdUserId;
+            } catch (Exception e) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                logger.error("Exception in method addUse. Object:"+signUpRequest.toString(), e);
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            return -1L;
+        }
+    }
+
+    @Transactional
     public Integer updateUser(SignUpForm request) {
         boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
         boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "27"); // Пользователи:"Редактирование всех"
@@ -118,59 +228,140 @@ public class UserRepositoryJPA {
                 ||(!requestUserIdEqualMyUserId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
                 && securityRepositoryJPA.isItMyMastersUser(Long.valueOf(request.getId()))) //и сохраняемый аккаунт под юрисдикцией главного аккаунта
         {
-            EntityManager em = emf.createEntityManager();
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+            try{
+                EntityManager em = emf.createEntityManager();
+                Long masterId =   getMyMasterId();
+                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                em.getTransaction().begin();
+                Long id = Long.valueOf(request.getId());
+                String dateBirth = (request.getDate_birthday() == null ? "" : request.getDate_birthday());
 
-            em.getTransaction().begin();
+                User user = em.find(User.class, id);
 
-            Long id = Long.valueOf(request.getId());
-            String dateBirth = (request.getDate_birthday() == null ? "" : request.getDate_birthday());
+                user.setId(id);
+                user.setName(request.getName() == null ? "" : request.getName());
+                user.setFio_name(request.getFio_name() == null ? "" : request.getFio_name());
+                user.setFio_otchestvo(request.getFio_otchestvo() == null ? "" : request.getFio_otchestvo());
+                user.setFio_family(request.getFio_family() == null ? "" : request.getFio_family());
+                user.setAdditional(request.getAdditional() == null ? "" : request.getAdditional());
+                try {
+                    user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                user.setStatus_account(Integer.parseInt(request.getStatus_account()));
+                user.setSex(request.getSex() == null ? "" : request.getSex());
+                user.setAdditional(request.getAdditional() == null ? "" : request.getAdditional());
+                Set<Long> departments = request.getSelectedUserDepartments();
+                Set<Long> userGroups = request.getUserGroupList();
+                Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
+                Set<UserGroup> setUserGroup = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
 
-            User user = em.find(User.class, id);
+                user.setDepartments(setDepartmentsOfUser);
+                user.setUsergroup(setUserGroup);
 
-            user.setId(id);
-            user.setName(request.getName() == null ? "" : request.getName());
-            user.setFio_name(request.getFio_name() == null ? "" : request.getFio_name());
-            user.setFio_otchestvo(request.getFio_otchestvo() == null ? "" : request.getFio_otchestvo());
-            user.setFio_family(request.getFio_family() == null ? "" : request.getFio_family());
-            user.setAdditional(request.getAdditional() == null ? "" : request.getAdditional());
-            try {
-                user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
-            } catch (ParseException e) {
+                User changer = userDetailService.getUserByUsername(userDetailService.getUserName());
+                user.setChanger(changer);//кто изменил
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                user.setDate_time_changed(timestamp);//дату изменения
+
+    //            user.setTime_zone_id(request.getTime_zone_id());
+
+                user.setVatin(request.getVatin());
+
+                user.setIs_employee(request.isIs_employee());
+                user.setIs_currently_employed(request.isIs_currently_employed());
+                user.setJob_title_id(request.getJob_title_id());
+                user.setCounterparty_id(request.getCounterparty_id());
+                user.setIncoming_service_id(request.getIncoming_service_id());
+
+                em.getTransaction().commit();
+                em.close();
+
+                Set<Long>existingUserServices = new HashSet<>();
+                for (UserProductDeppartsForm product : request.getUserProductsDepparts()) {
+                    Set<Long>existingDepparts = new HashSet<>();
+                    for (Long dep_part_id : product.getDep_parts_ids()) {
+                        saveUserProductDeppart(masterId, product.getProduct_id(), (long) request.getId(), dep_part_id);
+                        existingDepparts.add(dep_part_id);
+                    }
+                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) request.getId());
+                    existingUserServices.add(product.getProduct_id());
+                }
+                deleteUserServicesNoMoreContainedInUserCard(existingUserServices, masterId, (long) request.getId());
+                return 1;
+            } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("Exception in method updateUser. request:" + request.toString(), e);
+                return null;
             }
-            user.setStatus_account(Integer.parseInt(request.getStatus_account()));
-            user.setSex(request.getSex() == null ? "" : request.getSex());
-            user.setAdditional(request.getAdditional() == null ? "" : request.getAdditional());
-            Set<Long> departments = request.getSelectedUserDepartments();
-            Set<Long> userGroups = request.getUserGroupList();
-            Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
-            Set<UserGroup> setUserGroup = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
-
-            user.setDepartments(setDepartmentsOfUser);
-            user.setUsergroup(setUserGroup);
-
-            User changer = userDetailService.getUserByUsername(userDetailService.getUserName());
-            user.setChanger(changer);//кто изменил
-
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            user.setDate_time_changed(timestamp);//дату изменения
-
-//            user.setTime_zone_id(request.getTime_zone_id());
-
-            user.setVatin(request.getVatin());
-
-            em.getTransaction().commit();
-            em.close();
-            return 1;
         }else return -1;
     }
 
-    //Находит родительский аккаунт у текущего пользователя.
+    private void saveUserProductDeppart(Long master_id, Long product_id, Long user_id, Long dep_part_id) throws Exception {
+        String stringQuery = "insert into scdl_user_product_dep_parts (" +
+                "   master_id," +
+                "   user_id," +
+                "   product_id," +
+                "   dep_part_id" +
+                "   ) values (" +
+                master_id+", "+
+                user_id+", "+
+                product_id+", "+
+                dep_part_id+
+                ") ON CONFLICT ON CONSTRAINT scdl_user_product_dep_parts_uq " +// "upsert"
+                "  DO NOTHING ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveUserProductDeppart. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+    // Deleting department parts that no more contain this job title
+    private void deleteDeppartsThatNoMoreContainInThisProduct(Set<Long> existingDepparts, Long master_id, Long product_id, Long user_id) throws Exception  {
+        String stringQuery =
+                " delete from scdl_user_product_dep_parts " +
+                        " where " +
+                        " master_id = " + master_id + " and " +
+                        " user_id =   " + user_id + " and " +
+                        " product_id = " +product_id;
+        if(existingDepparts.size()>0)
+            stringQuery = stringQuery + " and dep_part_id not in " + commonUtilites.SetOfLongToString(existingDepparts,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteDeppartsThatNoMoreContainInThisProduct. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+    // Deleting user services that user no more has
+    private void deleteUserServicesNoMoreContainedInUserCard(Set<Long> existingUserServices, Long master_id, Long user_id) throws Exception  {
+        String stringQuery =
+                " delete from scdl_user_product_dep_parts " +
+                        " where " +
+                        " master_id = " + master_id + " and " +
+                        " user_id =   " + user_id;
+        if(existingUserServices.size()>0)
+            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingUserServices,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteUserServicesNoMoreContainedInUserCard. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    //Находит родительский аккаунт у текущего пользователя (masterId)
     //Родительский - аккаунт, который создал текущего пользователя.
-    //Если аккаунт создавался через регистрацию, он сам является своим родителем
-    //Все аккаунты, созданные дочерними аккаунтами, также являются дочерними к родителю создавшего их аккаунта
-    @SuppressWarnings("Duplicates")
+    //masterId один для всех предприятий аккаунта
+    //Если аккаунт создавался через регистрацию, он сам является masterId
+    //Все аккаунты созданные из пользовательского интерфейса системы, также являются дочерними к masterId
     public Long getUserMasterIdByUsername(String username) {
         try{
             Long userId = userDetailService.getUserIdByUsername(userDetailService.getUserName());
@@ -195,7 +386,6 @@ public class UserRepositoryJPA {
         return userDetailService.getUserIdByUsername(userDetailService.getUserName());
     }
 
-    @SuppressWarnings("Duplicates")
     public Long getMyMasterId() {
         Long myId = getMyId();
         String stringQuery;
@@ -211,7 +401,7 @@ public class UserRepositoryJPA {
         return (String) query.getSingleResult();
     }
 
-    public List<String> getUserDepartmentsNames(int id) {
+    public List<String> getUserDepartmentsNames(long id) {
         String stringQuery="select dep.name||' '||dep.address as name " +
                 "from departments dep where dep.id in (select p.department_id from user_department p where p.user_id= "+id+")"+
                 " and coalesce(dep.is_deleted,false)!=true";
@@ -221,7 +411,6 @@ public class UserRepositoryJPA {
     }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public List<UsersListJSON> getUsersListByDepartmentId(int did) {
         String stringQuery;
 
@@ -239,7 +428,6 @@ public class UserRepositoryJPA {
     }
 
     //отдает сотрудников (пользователей) по id отделения
-    @SuppressWarnings("Duplicates")
     public List<UsersListJSON> getEmployeeListByDepartmentId(Long did) {
         String stringQuery;
 
@@ -262,7 +450,6 @@ public class UserRepositoryJPA {
         }
     }
     //поиск пользователей предприятия по подстроке
-    @SuppressWarnings("Duplicates")
     public List<IdAndName> getUsersList(Long companyId, String search_string) {
         String stringQuery="select " +
                 "           u.id as id, " +
@@ -294,8 +481,7 @@ public class UserRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    public List<Integer> getUserDepartmentsId(int id) {
+    public List<Integer> getUserDepartmentsId(long id) {
         String stringQuery="" +
                 "select p.department_id as did" +
                 " from " +
@@ -305,11 +491,17 @@ public class UserRepositoryJPA {
                 " p.user_id= "+id+
                 " and p.department_id=dpts.id " +
                 " and coalesce(dpts.is_deleted,false)!=true";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Integer> depIds = query.getResultList();
-        return depIds;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Integer> depIds = query.getResultList();
+            return depIds;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserDepartmentsId. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
-    @SuppressWarnings("Duplicates")
+
     public List<Integer> getMyDepartmentsId() {
         Long myId = getMyId();
         String stringQuery="" +
@@ -321,11 +513,16 @@ public class UserRepositoryJPA {
                 " p.user_id= "+myId+
                 " and p.department_id=dpts.id " +
                 " and coalesce(dpts.is_deleted,false)!=true";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Integer> depIds = query.getResultList();
-        return depIds;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Integer> depIds = query.getResultList();
+            return depIds;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getMyDepartmentsId. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
-    @SuppressWarnings("Duplicates")
     public List<Long> getMyDepartmentsId_LONG() {
         Long myId = getMyId();
         String stringQuery="select p.department_id as did" +
@@ -343,15 +540,77 @@ public class UserRepositoryJPA {
         }//иначе в этом листе будут интеджеры, хоть он и лонг
         return depIds;
     }
-    @SuppressWarnings("Duplicates")
-    public List<Integer> getUserGroupsId(int id) {
+
+    public List<Integer> getUserGroupsId(long id) {
         String stringQuery="select p.usergroup_id as did from user_usergroup p where p.user_id= "+id;
-        Query query = entityManager.createNativeQuery(stringQuery);
-        List<Integer> ids = query.getResultList();
-        return ids;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Integer> ids = query.getResultList();
+            return ids;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserGroupsId. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 
-    @SuppressWarnings("Duplicates")
+    private List<UserProductDeppartsJSON> getUserProductsDepparts(long userId, long masterId){
+
+        String stringQuery="select " +
+                "   p.product_id as product_id, " +
+                "   pr.name as product_name " +
+                "   from scdl_user_product_dep_parts p " +
+                "   inner join products pr on pr.id=p.product_id " +
+                "   where " +
+                "   p.master_id = " + masterId +
+                "   and p.user_id= " + userId +
+                "   group by p.product_id, p.user_id, pr.name " +
+                "   order by pr.name";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<UserProductDeppartsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                UserProductDeppartsJSON doc = new UserProductDeppartsJSON();
+
+                doc.setProduct_id(Long.parseLong(                      obj[0].toString()));
+                doc.setProduct_name((String)                           obj[1]);
+                doc.setDep_parts_ids(getProductDeppartsIds(userId, doc.getProduct_id(), masterId));
+
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserProductsDepparts. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private List<Long> getProductDeppartsIds(long userId, long productId, long masterId){
+        String stringQuery="select " +
+                "   p.dep_part_id as dep_part_id " +
+                "   from scdl_user_product_dep_parts p " +
+                "   where " +
+                "   p.master_id = " + masterId +
+                "   and p.user_id= " + userId +
+                "   and p.product_id= " + productId;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Long> depIds = new ArrayList<>();
+            for(Object i: query.getResultList()){
+                depIds.add(new Long(i.toString()));
+            }
+            return depIds;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductDeppartsIds. SQL query:" + stringQuery, e);
+            return null;
+        }
+
+    }
+
     public Integer getMyCompanyId(){
         Long userId=userDetailService.getUserId();
         if(userId!=null) {
@@ -360,7 +619,6 @@ public class UserRepositoryJPA {
             return  (Integer) query.getSingleResult();
         }else return null;
     }
-    @SuppressWarnings("Duplicates")
     public Long getMyCompanyId_(){
         Long userId=userDetailService.getUserId();
         if(userId!=null) {
@@ -370,7 +628,6 @@ public class UserRepositoryJPA {
         }else return null;
     }
     //возвращает id предприятия пользователя по его username
-    @SuppressWarnings("Duplicates")
     public Long getUserCompanyId(String username){
         Long userId=userDetailService.getUserIdByUsername(username);
         if(userId!=null) {
@@ -379,7 +636,6 @@ public class UserRepositoryJPA {
             return new Long ((Integer) query.getSingleResult());
         }else return null;
     }
-    @SuppressWarnings("Duplicates")
     public List<Integer> getMyDepartmentsIdWithTheirParents(){
         Long userId=userDetailService.getUserId();
         if(userId!=null) {
@@ -391,25 +647,11 @@ public class UserRepositoryJPA {
             return  query.getResultList();
         }else return null;
     }
-//    @SuppressWarnings("Duplicates")
-//    public List<Long> getMyDepartmentsIdWithTheirParents_Long(){
-//        Long userId=userDetailService.getUserId();
-//        if(userId!=null) {
-//            String stringQuery = "select ud.department_id from user_department ud where ud.user_id="+ userId+
-//                    " UNION " +
-//                    "select d.parent_id from departments d where d.parent_id is not null and d.id in " +
-//                    "(select u.department_id from user_department u where u.user_id="+userId+")";
-//            Query query = entityManager.createNativeQuery(stringQuery);
-//            return  (List<Long>) query.getResultList();
-//        }else return null;
-//    }
 
     @Transactional
-    @SuppressWarnings("Duplicates")
-    public UsersJSON getUserValuesById(int id) {
+    public UserJSON_ getUserValuesById(long id) {
         if(securityRepositoryJPA.userHasPermissions_OR(5L, "24,25")) // Пользователи: "Просмотр своего" "Просмотр всех" "Редактирование своего" "Редактирование всех"
         {
-//            Long myId = userDetailService.getUserId();
             UserSettingsJSON userSettings = getMySettings();
             Long myMasterId =   getMyMasterId();
             String myTimeZone = userSettings.getTime_zone();
@@ -425,7 +667,7 @@ public class UserRepositoryJPA {
                     "           (select name from users where id=p.changer_id) as changer, " +
                     "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
                     "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                    "           coalesce(p.company_id,'0') as company_id, " +
+                    "           coalesce(p.company_id, 0) as company_id, " +
                     "           (select name from companies where id=p.company_id) as company, " +
                     "           p.fio_family as fio_family, " +
                     "           p.fio_name as fio_name, " +
@@ -434,26 +676,89 @@ public class UserRepositoryJPA {
                     "           p.email as email, " +
                     "           p.sex as sex, " +
                     "           p.status_account as status_account, " +
-                    "           p.time_zone_id  as time_zone_id, " +
+                    "           coalesce(p.time_zone_id, 24) as time_zone_id, " +  // CET if null
                     "           coalesce(p.vatin,'')  as vatin, " +
                     "           to_char(p.date_birthday,'DD.MM.YYYY') as date_birthday, " +
-                    "           p.additional as additional " +
+                    "           p.additional as additional, " +
+                    "           coalesce(p.is_employee, false) as is_employee, " +
+                    "           coalesce(p.is_currently_employed, false) as is_currently_employed, " +
+                    "           p.job_title_id as job_title_id, " +
+                    "           p.counterparty_id as counterparty_id, " +
+                    "           p.incoming_service_id as incoming_service_id, " +
+                    "           coalesce(sjt.name,'') as jobtitle_name, " +
+                    "           cg.name as counterparty_name, " +
+                    "           prd.name as service_name " +
                     "           from users p" +
-                    "           where master_id="+myMasterId+" and p.id= " + id;
+
+                    "           left outer join sprav_jobtitles sjt on sjt.id = p.job_title_id " +
+                    "           left outer join cagents cg on cg.id = p.counterparty_id " +
+                    "           left outer join products prd on prd.id = p.incoming_service_id " +
+
+                    "           where p.master_id="+myMasterId+" and p.id= " + id;
             stringQuery = stringQuery + " and p.master_id="+getMyMasterId();//принадлежит к предприятиям моего родителя
             if (!securityRepositoryJPA.userHasPermissions_OR(5L, "25")) //Если нет прав на "Просмотр по всем предприятиям"
             {
                 //остается только на своё предприятие 24
                 stringQuery = stringQuery + " and p.company_id=" + getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
-            Query query = entityManager.createNativeQuery(stringQuery, UsersJSON.class);
+//            Query query = entityManager.createNativeQuery(stringQuery, UsersJSON.class);
             try {// если ничего не найдено, то javax.persistence.NoResultException: No entity found for query
-                UsersJSON userJSON = (UsersJSON) query.getSingleResult();
-                return userJSON;}
-            catch(NoResultException nre){return null;}
 
+
+//                UsersJSON userJSON = (UsersJSON) query.getSingleResult();
+//                return userJSON;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                UserJSON_ doc = new UserJSON_();
+                for(Object[] obj:queryList){
+
+                    doc.setId(id);
+                    doc.setName((String)                        obj[1]);
+                    doc.setFio_family((String)                  obj[12]);
+                    doc.setFio_name((String)                    obj[13]);
+                    doc.setFio_otchestvo((String)               obj[14]);
+                    doc.setUsername((String)                    obj[15]);
+                    doc.setEmail((String)                       obj[16]);
+                    doc.setCompany((String)                     obj[11]);
+                    doc.setCompany_id(Long.parseLong(           obj[10].toString()));
+                    doc.setCreator((String)                     obj[6]);
+                    doc.setChanger((String)                     obj[7]);
+                    doc.setDate_time_created((String)           obj[8]);
+                    doc.setDate_time_changed((String)           obj[9]);
+                    doc.setSex((String)                         obj[17]);
+                    doc.setStatus_account((Integer)             obj[18]);
+                    doc.setDate_birthday((String)               obj[21]);
+                    doc.setAdditional((String)                  obj[22]);
+                    doc.setTime_zone_id(Long.parseLong(         obj[19].toString()));
+                    doc.setVatin((String)                       obj[20]);
+                    doc.setIs_employee((Boolean)                obj[23]);
+                    doc.setIs_currently_employed((Boolean)      obj[24]);
+                    doc.setJob_title_id(obj[25] != null ? Long.parseLong(obj[25].toString()) : null);
+                    doc.setCounterparty_id(obj[26] != null ? Long.parseLong(obj[26].toString()) : null);
+                    doc.setIncoming_service_id(obj[27] != null ? Long.parseLong(obj[27].toString()) : null);
+                    doc.setJob_title_name((String)              obj[28]);
+                    doc.setCounterparty_name((String)           obj[29]);
+                    doc.setIncoming_service_name((String)       obj[30]);
+
+                    doc.setUserDepartmentsNames(getUserDepartmentsNames(id));
+                    doc.setUserDepartmentsId(getUserDepartmentsId(id));
+                    doc.setUserGroupsId(getUserGroupsId(id));
+                    doc.setUserProductsDepparts(getUserProductsDepparts(id, myMasterId));
+
+                }
+                return doc;
+            }
+            catch(NoResultException nre){return null;}
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getUserValuesById. SQL query:" + stringQuery, e);
+                return null;
+            }
         } else return null;
     }
+
+
+
     @SuppressWarnings("Duplicates")
     public MyShortInfoJSON getMyShortInfo() {
         Long myId = userDetailService.getUserId();

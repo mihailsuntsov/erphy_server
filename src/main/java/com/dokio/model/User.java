@@ -168,8 +168,23 @@ public class User{
     @Column(name = "is_blocked_master_id")  // Master user and all its child accounts has been blocked (out of money, out of terms etc.)
     private Boolean isBlockedMasterId;
 
-    //@Column(name = "is_employee")           // this user is an employee of this company
-    //private Boolean is_employee;
+    @Column(name = "is_employee")           // this user is an employee of this company
+    private Boolean is_employee;
+
+    @Column(name = "is_currently_employed") // this user is an employee and currently employed
+    private Boolean is_currently_employed;
+
+    @Column(name = "job_title_id")          // job title of user-employee
+    private Long job_title_id;
+
+    @Column(name = "counterparty_id")       // counterparty card of this user-employee
+    private Long counterparty_id;
+
+    @Column(name = "incoming_service_id")   // service that company gets from user-employee, and for which pay the salary
+    private Long incoming_service_id;
+
+
+
 
     public User() {}
 
@@ -434,5 +449,45 @@ public class User{
 
     public void setRepair_pass_code_sent(Timestamp repair_pass_code_sent) {
         this.repair_pass_code_sent = repair_pass_code_sent;
+    }
+
+    public Boolean getIs_employee() {
+        return is_employee;
+    }
+
+    public void setIs_employee(Boolean is_employee) {
+        this.is_employee = is_employee;
+    }
+
+    public Boolean getIs_currently_employed() {
+        return is_currently_employed;
+    }
+
+    public void setIs_currently_employed(Boolean is_currently_employed) {
+        this.is_currently_employed = is_currently_employed;
+    }
+
+    public Long getJob_title_id() {
+        return job_title_id;
+    }
+
+    public void setJob_title_id(Long job_title_id) {
+        this.job_title_id = job_title_id;
+    }
+
+    public Long getCounterparty_id() {
+        return counterparty_id;
+    }
+
+    public void setCounterparty_id(Long counterparty_id) {
+        this.counterparty_id = counterparty_id;
+    }
+
+    public Long getIncoming_service_id() {
+        return incoming_service_id;
+    }
+
+    public void setIncoming_service_id(Long incoming_service_id) {
+        this.incoming_service_id = incoming_service_id;
     }
 }

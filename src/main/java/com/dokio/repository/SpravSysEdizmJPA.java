@@ -100,7 +100,9 @@ public class SpravSysEdizmJPA {
                     "           p.short_name as short_name, " +
                     "           p.is_default as is_default, " +
                     "           p.date_time_created as date_time_created_sort, " +
-                    "           p.date_time_changed as date_time_changed_sort " +
+                    "           p.date_time_changed as date_time_changed_sort," +
+                    "           p.type_id, " +
+                    "           p.equals_si " +
                     "           from sprav_sys_edizm p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -386,7 +388,9 @@ public class SpravSysEdizmJPA {
                     "           p.date_time_changed as date_time_changed_sort, " +
                     "           p.name as name, " +
                     "           p.short_name as short_name, " +
-                    "           p.is_default as is_default" +
+                    "           p.is_default as is_default," +
+                    "           p.type_id, " +
+                    "           p.equals_si " +
                     "           from sprav_sys_edizm p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
@@ -439,7 +443,7 @@ public class SpravSysEdizmJPA {
         Map<String, String> map = cu.translateForUser(mId, new String[]{
                 "'um_piece'","'um_piece_s'","'um_uncountable'","'um_gramm'","'um_ton'","'um_meter'","'um_centimeter'","'um_litre'"
                 ,"'um_cubic_meter'","'um_square_meter'","'um_kilogramm'","'um_kilogramm_s'","'um_gramm_s'","'um_ton_s'","'um_meter_s'"
-                ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'"});
+                ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'","'second'","'minute'","'hour'","'day'","'second_s'","'minute_s'","'hour_s'","'day_s'"});
         stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si,is_default) values "+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1,true),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_uncountable")+"','',1,null,false),"+
@@ -450,7 +454,11 @@ public class SpravSysEdizmJPA {
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_centimeter")+"','"+map.get("um_centimeter_s")+"',3,0.01,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_litre")+"','"+map.get("um_litre_s")+"',5,0.001,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_cubic_meter")+"','"+map.get("um_cubic_meter_s")+"',5,1,false),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1,false);";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_square_meter")+"','"+map.get("um_square_meter_s")+"',4,1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("second")+"','"+map.get("second_s")+"',6,1,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("minute")+"','"+map.get("minute_s")+"',6,60,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("hour")+"','"+map.get("hour_s")+"',6,3600,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("day")+"','"+map.get("day_s")+"',6,86400,false);";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

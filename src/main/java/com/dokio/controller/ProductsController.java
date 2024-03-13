@@ -965,9 +965,23 @@ public class ProductsController {
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @RequestMapping(value = "/api/auth/getSpravSysAssignmentsList",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSpravSysAssignmentsList() {
+        logger.info("Processing get request for path /api/auth/getSpravSysAssignmentsList with no params");
+        try {return new ResponseEntity<>(productsRepositoryJPA.getSpravSysAssignmentsList(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getSpravSysAssignmentsList error", e);
+            return new ResponseEntity<>("Error of a data request", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
-
-
+    @RequestMapping(value = "/api/auth/getSpravSysRemindersList",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSpravSysRemindersList() {
+        logger.info("Processing get request for path /api/auth/getSpravSysRemindersList with no params");
+        try {return new ResponseEntity<>(productsRepositoryJPA.getSpravSysRemindersList(), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getSpravSysRemindersList error", e);
+            return new ResponseEntity<>("Error of a data request", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
     // печать документов
     @SuppressWarnings("Duplicates")

@@ -22,10 +22,7 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
-import com.dokio.message.response.ResponseMessage;
-import com.dokio.message.response.UsersJSON;
-import com.dokio.message.response.UsersListJSON;
-import com.dokio.message.response.UsersTableJSON;
+import com.dokio.message.response.*;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.MyShortInfoJSON;
 import com.dokio.message.response.additional.UserResources;
@@ -79,85 +76,14 @@ public class UsersController {
     @Autowired
     SpravStatusDocRepository ssd;
 
-    @PostMapping("/api/auth/addUser")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> addUser(@Valid @RequestBody SignUpForm signUpRequest) {
-        logger.info("Processing post request for path api/auth/addUser: " + signUpRequest.toString());
-
-        if(securityRepositoryJPA.userHasPermissions_OR(5L, "22"))// Пользователи:"Создание"
-        {
-            if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-                return new ResponseEntity<>(-10, HttpStatus.OK); //login like this is already exists
-            }
-            if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-                return new ResponseEntity<>(-11, HttpStatus.OK); //e-mail like this is already exists
-            }
-            Long masterId =  userRepositoryJPA.getMyMasterId();
-
-            //plan limit check
-            if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(masterId))) // if plan with limits - checking limits
-                if(userRepositoryJPA.getMyConsumedResources().getUsers()>=userRepositoryJPA.getMyMaxAllowedResources().getUsers())
-                    return new ResponseEntity<>(-120, HttpStatus.OK); // number of users is out of bounds of tariff plan
-
-            try{
-                // Если такого логина и емайла нет
-                // Создание аккаунта для нового пользователя
-                User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
-                        encoder.encode(signUpRequest.getPassword()));
-                Long companyId = Long.valueOf(signUpRequest.getCompany_id());
-                Set<Role> roles = new HashSet<>();
-                Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                        .orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
-                roles.add(userRole);
-                user.setRoles(roles);//добавили юзеру роль ROLE_USER
-                user.setCompany(companyRepositoryJPA.getCompanyById(companyId));//предприятие
-                Set<Long> departments = signUpRequest.getSelectedUserDepartments();
-                Set<Departments> setDepartmentsOfUser = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(departments);
-                user.setDepartments(setDepartmentsOfUser);//сет отделений предприятия
-                Set<Long> userGroups = signUpRequest.getUserGroupList();
-                Set<UserGroup> setUserGroupsOfUser = userGroupRepositoryJPA.getUserGroupSetBySetOfUserGroupId(userGroups);
-                user.setUsergroup(setUserGroupsOfUser);//сет групп пользователей
-                DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                String dateBirth = (signUpRequest.getDate_birthday() == null ? "" : signUpRequest.getDate_birthday());
-                try {
-                    user.setDate_birthday(dateBirth.isEmpty() ? null : dateFormat.parse(dateBirth));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                User creator = userDetailService.getUserByUsername(userDetailService.getUserName());
-                user.setCreator(creator);//создателя
-                User master = userDetailService.getUserById(masterId);
-                user.setMaster(master);//владельца
-                user.setDate_time_created(new Timestamp(System.currentTimeMillis()));//дату создания
-                user.setFio_family(signUpRequest.getFio_family());
-                user.setFio_name(signUpRequest.getFio_name());
-                user.setFio_otchestvo(signUpRequest.getFio_otchestvo());
-                user.setName(signUpRequest.getName());
-                user.setStatus_account(Integer.parseInt(signUpRequest.getStatus_account()));
-                user.setSex(signUpRequest.getSex());
-                user.setAdditional(signUpRequest.getAdditional());
-//                user.setTime_zone_id(signUpRequest.getTimeZoneId());
-                Long createdUserId = userRepository.save(user).getId();//и сохранили его
-                // create settings (language, locale, time zone)
-                userRepositoryJPA.setUserSettings(createdUserId, signUpRequest.getTimeZoneId(), signUpRequest.getLanguageId(), signUpRequest.getLocaleId(), "24");
-                // create print menus for user
-                List<BaseFiles> baseFilesList = fileRepository.getFilesIdsByName(fileRepository.assemblyBaseFilesList(masterId), masterId, companyId, null);
-                if(baseFilesList.size()>0) documentsRepository.createPrintMenus(baseFilesList,masterId, createdUserId, companyId);
-                //create settings
-                ssd.insertSettingsFast(masterId,createdUserId,companyId);
-                // ответ сервера при удачном создании юзера
-                ResponseEntity<String> responseEntity = new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
-                return responseEntity;
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.error("Exception in method UserController/addUser.", e);
-                return null;
-            }
-        }else {
-            return new ResponseEntity<>(-1, HttpStatus.OK);// not enough permissions
-        }
-
-    }
+//    @PostMapping("/api/auth/addUser")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> addUser(@Valid @RequestBody SignUpForm signUpRequest) {
+//        logger.info("Processing post request for path api/auth/addUser: " + signUpRequest.toString());
+//
+//
+//
+//    }
 
     //Отдает ЗНАЧЕНИЯ из таблицы users по id
     @PostMapping("/api/auth/getUserValuesById")
@@ -165,8 +91,8 @@ public class UsersController {
     public ResponseEntity<?> getUserValuesById(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path api/auth/getUserValuesById: " + request.toString());
 
-        UsersJSON user;
-        int id = request.getId();
+        UserJSON_ user;
+        long id = request.getId();
         user=userRepositoryJPA.getUserValuesById(id);//результат запроса помещается в объект
         // нужен try catch т.к. если user возвратит null, то user.setUserDepart... вызовет NullPointerException
         try
@@ -180,7 +106,7 @@ public class UsersController {
             List<Integer> userGroupsListId = userRepositoryJPA.getUserGroupsId(id);
             user.setUserGroupsId(userGroupsListId);
 
-            ResponseEntity<UsersJSON> responseEntity = new ResponseEntity<>(user, HttpStatus.OK);
+            ResponseEntity<UserJSON_> responseEntity = new ResponseEntity<>(user, HttpStatus.OK);
             return responseEntity;
         }
         catch(NullPointerException npe){return null;}
@@ -191,7 +117,7 @@ public class UsersController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUserDepartments(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path api/auth/getUserDepartments: " + request.toString());
-        int id = request.getId();
+        long id = request.getId();
         List<Integer> depList =userRepositoryJPA.getUserDepartmentsId(id);
         ResponseEntity<List> responseEntity = new ResponseEntity<>(depList, HttpStatus.OK);
         return responseEntity;
@@ -205,7 +131,14 @@ public class UsersController {
             e.printStackTrace();
             return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @PostMapping("/api/auth/addUser")
+    public ResponseEntity<?> addUser(@RequestBody SignUpForm request){
+        logger.info("Processing post request for path /api/auth/addUser: " + request.toString());
+        try {return new ResponseEntity<>(userRepositoryJPA.addUser(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Exception in method addUser. " + request.toString(), e);
+            e.printStackTrace();
+            return new ResponseEntity<>("Operation error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @PostMapping("/api/auth/getUsersTable")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> getUsersTable(@RequestBody SearchForm searchRequest) {

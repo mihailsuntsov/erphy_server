@@ -110,6 +110,88 @@ public class ProductsJSON {
     private List<ProductVariationsJSON> productVariations;
     private boolean isVariation;
     private List<ResourcesListJSON> productResourcesTable; // resources that used this service
+    ////////////////// APPOINTMENTS //////////////////////
+    private boolean is_srvc_by_appointment;
+    private boolean scdl_is_only_on_start;
+    private int scdl_max_pers_on_same_time;
+    private int scdl_srvc_duration;
+    private int scdl_appointment_atleast_before_time;
+    private Long scdl_appointment_atleast_before_unit_id;
+    private List<Integer> scdl_customer_reminders;
+    private List<Integer> scdl_employee_reminders;
+    private List<String> scdl_assignments;
+
+    public boolean isIs_srvc_by_appointment() {
+        return is_srvc_by_appointment;
+    }
+
+    public void setIs_srvc_by_appointment(boolean is_srvc_by_appointment) {
+        this.is_srvc_by_appointment = is_srvc_by_appointment;
+    }
+
+    public boolean isScdl_is_only_on_start() {
+        return scdl_is_only_on_start;
+    }
+
+    public void setScdl_is_only_on_start(boolean scdl_is_only_on_start) {
+        this.scdl_is_only_on_start = scdl_is_only_on_start;
+    }
+
+    public int getScdl_max_pers_on_same_time() {
+        return scdl_max_pers_on_same_time;
+    }
+
+    public void setScdl_max_pers_on_same_time(int scdl_max_pers_on_same_time) {
+        this.scdl_max_pers_on_same_time = scdl_max_pers_on_same_time;
+    }
+
+    public int getScdl_srvc_duration() {
+        return scdl_srvc_duration;
+    }
+
+    public void setScdl_srvc_duration(int scdl_srvc_duration) {
+        this.scdl_srvc_duration = scdl_srvc_duration;
+    }
+
+    public int getScdl_appointment_atleast_before_time() {
+        return scdl_appointment_atleast_before_time;
+    }
+
+    public void setScdl_appointment_atleast_before_time(int scdl_appointment_atleast_before_time) {
+        this.scdl_appointment_atleast_before_time = scdl_appointment_atleast_before_time;
+    }
+
+    public Long getScdl_appointment_atleast_before_unit_id() {
+        return scdl_appointment_atleast_before_unit_id;
+    }
+
+    public void setScdl_appointment_atleast_before_unit_id(Long scdl_appointment_atleast_before_unit_id) {
+        this.scdl_appointment_atleast_before_unit_id = scdl_appointment_atleast_before_unit_id;
+    }
+
+    public List<Integer> getScdl_customer_reminders() {
+        return scdl_customer_reminders;
+    }
+
+    public void setScdl_customer_reminders(List<Integer> scdl_customer_reminders) {
+        this.scdl_customer_reminders = scdl_customer_reminders;
+    }
+
+    public List<Integer> getScdl_employee_reminders() {
+        return scdl_employee_reminders;
+    }
+
+    public void setScdl_employee_reminders(List<Integer> scdl_employee_reminders) {
+        this.scdl_employee_reminders = scdl_employee_reminders;
+    }
+
+    public List<String> getScdl_assignments() {
+        return scdl_assignments;
+    }
+
+    public void setScdl_assignments(List<String> scdl_assignments) {
+        this.scdl_assignments = scdl_assignments;
+    }
 
     public List<ResourcesListJSON> getProductResourcesTable() {
         return productResourcesTable;

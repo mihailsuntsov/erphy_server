@@ -18,6 +18,9 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.UserProductDeppartsForm;
+
+import java.util.List;
 import java.util.Set;
 
 public class SignUpForm {
@@ -44,6 +47,60 @@ public class SignUpForm {
     private Integer localeId;
     private Integer languageId;
     private String language;
+    private List<UserProductDeppartsForm> userProductsDepparts;
+    private boolean is_employee;
+    private boolean is_currently_employed;
+    private Long job_title_id;
+    private Long counterparty_id;
+    private Long incoming_service_id;
+
+    public boolean isIs_employee() {
+        return is_employee;
+    }
+
+    public void setIs_employee(boolean is_employee) {
+        this.is_employee = is_employee;
+    }
+
+    public boolean isIs_currently_employed() {
+        return is_currently_employed;
+    }
+
+    public void setIs_currently_employed(boolean is_currently_employed) {
+        this.is_currently_employed = is_currently_employed;
+    }
+
+    public Long getJob_title_id() {
+        return job_title_id;
+    }
+
+    public void setJob_title_id(Long job_title_id) {
+        this.job_title_id = job_title_id;
+    }
+
+    public Long getCounterparty_id() {
+        return counterparty_id;
+    }
+
+    public void setCounterparty_id(Long counterparty_id) {
+        this.counterparty_id = counterparty_id;
+    }
+
+    public Long getIncoming_service_id() {
+        return incoming_service_id;
+    }
+
+    public void setIncoming_service_id(Long incoming_service_id) {
+        this.incoming_service_id = incoming_service_id;
+    }
+
+    public List<UserProductDeppartsForm> getUserProductsDepparts() {
+        return userProductsDepparts;
+    }
+
+    public void setUserProductsDepparts(List<UserProductDeppartsForm> userProductsDepparts) {
+        this.userProductsDepparts = userProductsDepparts;
+    }
 
     public String getLanguage() {
         return language;
@@ -231,6 +288,36 @@ public class SignUpForm {
 
     @Override
     public String toString() {
-        return "SignUpForm: id=" + this.id + ", name" + this.name + ", userName" + this.username;
+        return "SignUpForm{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", role=" + role +
+                ", selectedUserDepartments=" + selectedUserDepartments +
+                ", userGroupList=" + userGroupList +
+                ", master_id='" + master_id + '\'' +
+                ", fio_family='" + fio_family + '\'' +
+                ", fio_name='" + fio_name + '\'' +
+                ", fio_otchestvo='" + fio_otchestvo + '\'' +
+                ", sex='" + sex + '\'' +
+                ", status_account='" + status_account + '\'' +
+                ", date_birthday='" + date_birthday + '\'' +
+                ", additional='" + additional + '\'' +
+                ", company_id='" + company_id + '\'' +
+                ", checked='" + checked + '\'' +
+                ", password='" + password + '\'' +
+                ", timeZoneId=" + timeZoneId +
+                ", vatin='" + vatin + '\'' +
+                ", localeId=" + localeId +
+                ", languageId=" + languageId +
+                ", language='" + language + '\'' +
+                ", userProductsDepparts=" + userProductsDepparts +
+                ", is_employee=" + is_employee +
+                ", is_currently_employed=" + is_currently_employed +
+                ", job_title_id=" + job_title_id +
+                ", counterparty_id=" + counterparty_id +
+                ", incoming_service_id=" + incoming_service_id +
+                '}';
     }
 }
