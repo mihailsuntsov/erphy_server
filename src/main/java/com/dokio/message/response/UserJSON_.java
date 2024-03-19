@@ -1,5 +1,6 @@
 package com.dokio.message.response;
 
+import com.dokio.message.response.additional.IdAndNameJSON;
 import com.dokio.message.response.additional.UserProductDeppartsJSON;
 
 import java.util.List;
@@ -40,7 +41,8 @@ public class UserJSON_ {
         private String counterparty_name;
         private String incoming_service_name;
 
-        private List<UserProductDeppartsJSON> userProductsDepparts; // list of services that employee (this user) can provide, and where (parts of departments) he can provide these services
+//        private List<UserProductDeppartsJSON> userProductsDepparts; // list of services that employee (this user) can provide, and where (parts of departments) he can provide these services
+        private List<IdAndNameJSON> userProductsDepparts; // list of services that employee (this user) can provide
 
     public boolean isIs_employee() {
         return is_employee;
@@ -314,11 +316,18 @@ public class UserJSON_ {
         this.vatin = vatin;
     }
 
-    public List<UserProductDeppartsJSON> getUserProductsDepparts() {
+    public List<IdAndNameJSON> getUserProductsDepparts() {
         return userProductsDepparts;
     }
 
-    public void setUserProductsDepparts(List<UserProductDeppartsJSON> userProductsDepparts) {
+    public void setUserProductsDepparts(List<IdAndNameJSON> userProductsDepparts) {
         this.userProductsDepparts = userProductsDepparts;
     }
+//    public List<UserProductDeppartsJSON> getUserProductsDepparts() {
+//        return userProductsDepparts;
+//    }
+//
+//    public void setUserProductsDepparts(List<UserProductDeppartsJSON> userProductsDepparts) {
+//        this.userProductsDepparts = userProductsDepparts;
+//    }
 }

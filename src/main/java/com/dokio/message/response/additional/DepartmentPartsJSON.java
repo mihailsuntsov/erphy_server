@@ -1,5 +1,7 @@
 package com.dokio.message.response.additional;
 
+import java.util.List;
+
 public class DepartmentPartsJSON {
 
     private Long id;
@@ -10,6 +12,15 @@ public class DepartmentPartsJSON {
     private Boolean is_active;
     private Boolean is_deleted;
     private Integer resource_qtt;
+    private List<IdAndNameJSON> deppart_services; // list of services in this department part
+
+    public List<IdAndNameJSON> getDeppart_services() {
+        return deppart_services;
+    }
+
+    public void setDeppart_services(List<IdAndNameJSON> deppart_services) {
+        this.deppart_services = deppart_services;
+    }
 
     public String getDepartment_name() {
         return department_name;

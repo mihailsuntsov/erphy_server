@@ -734,6 +734,7 @@ public class DepartmentRepositoryJPA {
         }
     }
 
+
     // For the "Departments parts" select list in Resources registry
     public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
         String stringQuery;
@@ -754,6 +755,45 @@ public class DepartmentRepositoryJPA {
                     "           and coalesce(p.is_deleted, false) = false" +
                     "           order by d.name,p.menu_order";
         try {
+            return departmentsPartsListConstruct(stringQuery);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    // returns the list of departments with parts that user belongs to
+    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                    "           select " +
+                    "           p.id as id, " +
+                    "           p.name as name, " +
+                    "           p.description as description, " +
+                    "           coalesce(p.is_active, true) as is_active, " +
+                    "           d.name as department_name, " +
+                    "           d.id as department_id " +
+                    "           from scdl_dep_parts p " +
+                    "           INNER JOIN users u ON p.master_id=u.id " +
+                    "           INNER JOIN departments d ON p.department_id=d.id " +
+                    "           where  p.master_id = " + masterId +
+                    "           and p.department_id in (select id from departments where master_id="+masterId+" and coalesce(is_deleted,false)=false)" +
+                    "           and p.department_id in (select department_id from user_department where user_id="+userId+")"+
+                    "           and coalesce(p.is_deleted, false) = false" +
+                    "           order by d.name,p.menu_order";
+        try {
+            return departmentsPartsListConstruct(stringQuery);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentsWithPartsListOfUser. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private List<DepartmentsWithPartsJSON> departmentsPartsListConstruct(String stringQuery){
+        try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
             List<DepartmentsWithPartsJSON> returnList = new ArrayList<>();
@@ -762,7 +802,6 @@ public class DepartmentRepositoryJPA {
             Long currentDepId=0L;
             String lastDepName = "";
             String currentDepName = "";
-
 
             for (Object[] obj : queryList) {
 
@@ -791,10 +830,12 @@ public class DepartmentRepositoryJPA {
             return returnList;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
+            logger.error("Exception in method departmentsPartsListConstruct. SQL query:" + stringQuery, e);
             return null;
         }
     }
+
+
 
     /*public List<DepartmentsWithPartsJSON> getDepartmentPartsWithResourceQttList_old (Long companyId, Long resource_id) {
         String stringQuery;

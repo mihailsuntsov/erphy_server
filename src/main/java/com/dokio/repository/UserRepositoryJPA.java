@@ -449,6 +449,57 @@ public class UserRepositoryJPA {
             return null;
         }
     }
+
+    //отдает сотрудников по списку отделений
+    public List<EmployeeListJSON> getEmployeeListByDepartmentsIds(List<Long> depIds) {
+        String stringQuery;
+        Long masterId = getMyMasterId();
+        String departmentsIds = commonUtilites.ListOfLongToString(depIds, ",", "(", ")");
+        stringQuery = "     select " +
+                "     u.id as id, " +
+                "     u.name as name, " +
+                "     sj.name as jobtitle, " +
+                "     coalesce(u.is_currently_employed, false) as is_currently_employed " +
+                "     from users u " +
+                "     left outer join sprav_jobtitles sj on sj.id=u.job_title_id " +
+                "     inner join user_department ud on ud.user_id=u.id " +
+                "     where " +
+                "     coalesce(u.is_employee, false)=true and " +
+                "     coalesce(u.is_deleted, false)=false and " +
+                "     ud.department_id in " + commonUtilites.ListOfLongToString(depIds, ",","(",")") +
+                //"     ud.department_id not in (select id from departments where master_id=4 and coalesce(is_deleted, false)=true) " +
+                "     group by u.id, u.name, sj.name " +
+                "     order by u.name asc";
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<EmployeeListJSON> employeeList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                EmployeeListJSON doc = new EmployeeListJSON();
+                doc.setId(Long.parseLong(               obj[0].toString()));
+                doc.setName((String)                    obj[1]);
+                doc.setJob_title((String)               obj[2]);
+                doc.setIs_currently_employed((Boolean)  obj[3]);
+                doc.setDepartments_with_parts(departmentRepositoryJPA.getDepartmentsWithPartsListOfUser(doc.getId()));
+                doc.setEmployee_services(getUserProductsDepparts(doc.getId(), masterId));
+
+
+
+                employeeList.add(doc);
+
+
+
+
+            }
+            return employeeList;
+        } catch (Exception e) {
+            logger.error("Exception in method getEmployeeListByDepartmentsIds. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     //поиск пользователей предприятия по подстроке
     public List<IdAndName> getUsersList(Long companyId, String search_string) {
         String stringQuery="select " +
@@ -553,8 +604,7 @@ public class UserRepositoryJPA {
             return null;
         }
     }
-
-    private List<UserProductDeppartsJSON> getUserProductsDepparts(long userId, long masterId){
+    private List<IdAndNameJSON> getUserProductsDepparts(long userId, long masterId){
 
         String stringQuery="select " +
                 "   p.product_id as product_id, " +
@@ -570,13 +620,12 @@ public class UserRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<UserProductDeppartsJSON> returnList = new ArrayList<>();
+            List<IdAndNameJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                UserProductDeppartsJSON doc = new UserProductDeppartsJSON();
+                IdAndNameJSON doc = new IdAndNameJSON();
 
-                doc.setProduct_id(Long.parseLong(                      obj[0].toString()));
-                doc.setProduct_name((String)                           obj[1]);
-                doc.setDep_parts_ids(getProductDeppartsIds(userId, doc.getProduct_id(), masterId));
+                doc.setId(Long.parseLong(                      obj[0].toString()));
+                doc.setName((String)                           obj[1]);
 
                 returnList.add(doc);
             }
@@ -587,6 +636,39 @@ public class UserRepositoryJPA {
             return null;
         }
     }
+//    private List<UserProductDeppartsJSON> getUserProductsDepparts(long userId, long masterId){
+//
+//        String stringQuery="select " +
+//                "   p.product_id as product_id, " +
+//                "   pr.name as product_name " +
+//                "   from scdl_user_product_dep_parts p " +
+//                "   inner join products pr on pr.id=p.product_id " +
+//                "   where " +
+//                "   p.master_id = " + masterId +
+//                "   and p.user_id= " + userId +
+//                "   group by p.product_id, p.user_id, pr.name " +
+//                "   order by pr.name";
+//
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            List<Object[]> queryList = query.getResultList();
+//            List<UserProductDeppartsJSON> returnList = new ArrayList<>();
+//            for (Object[] obj : queryList) {
+//                UserProductDeppartsJSON doc = new UserProductDeppartsJSON();
+//
+//                doc.setProduct_id(Long.parseLong(                      obj[0].toString()));
+//                doc.setProduct_name((String)                           obj[1]);
+//                doc.setDep_parts_ids(getProductDeppartsIds(userId, doc.getProduct_id(), masterId));
+//
+//                returnList.add(doc);
+//            }
+//            return returnList;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getUserProductsDepparts. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 
     private List<Long> getProductDeppartsIds(long userId, long productId, long masterId){
         String stringQuery="select " +
