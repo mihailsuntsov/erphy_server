@@ -24,7 +24,7 @@ import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsJSON;
 import com.dokio.message.response.DepartmentsListJSON;
-import com.dokio.model.*;
+//import com.dokio.model.*;
 import com.dokio.repository.DepartmentRepositoryJPA;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -242,17 +242,17 @@ public class DepartmentsController {
             return new ResponseEntity<>("Error of recovering", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @PostMapping("/api/auth/getDeptChildrens")
-    @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getDeptChildrens(@RequestBody SearchForm searchRequest) {
-        logger.info("Processing post request for path /api/auth/getDeptChildrens: " + searchRequest.toString());
-
-        int parentId=Integer.parseInt(searchRequest.getParentId());
-        List<Departments> departmentsList;
-        departmentsList = departmentService.getDeptChildrens(parentId);
-        ResponseEntity<List> responseEntity = new ResponseEntity<>(departmentsList, HttpStatus.OK);
-        return responseEntity;
-    }
+//    @PostMapping("/api/auth/getDeptChildrens")
+//    @SuppressWarnings("Duplicates")
+//    public ResponseEntity<?> getDeptChildrens(@RequestBody SearchForm searchRequest) {
+//        logger.info("Processing post request for path /api/auth/getDeptChildrens: " + searchRequest.toString());
+//
+//        int parentId=Integer.parseInt(searchRequest.getParentId());
+//        List<Departments> departmentsList;
+//        departmentsList = departmentService.getDeptChildrens(parentId);
+//        ResponseEntity<List> responseEntity = new ResponseEntity<>(departmentsList, HttpStatus.OK);
+//        return responseEntity;
+//    }
 
     @RequestMapping(
             value = "/api/auth/getDepartmentPartsList",
@@ -318,5 +318,18 @@ public class DepartmentsController {
         try {return new ResponseEntity<>(departmentRepositoryJPA.deleteDepartmentPart(partId), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller deleteDepartmentPart error with termId=" + partId.toString(), e);
             return new ResponseEntity<>("Error when requesting", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
+            value = "/api/auth/getDeppartValues",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDeppartValues(
+            @RequestParam("id") Long id){
+        logger.info("Processing get request for path /api/auth/getDeppartValues with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getDeppartValues(id), HttpStatus.OK);}
+        catch (Exception e){
+            e.printStackTrace();
+            logger.error("Controller getDeppartValues error with id=" + id.toString(), e);
+            return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

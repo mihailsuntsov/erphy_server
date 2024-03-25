@@ -25,6 +25,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.DepartmentPartsJSON;
 import com.dokio.message.response.additional.DepartmentsWithPartsJSON;
+import com.dokio.message.response.additional.IdAndNameJSON;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
@@ -334,39 +335,39 @@ public class DepartmentRepositoryJPA {
         return d;
     }
 
-    public List<Departments> getDeptChildrens(int parentDeptId){
-        String stringQuery;
-        Long departmentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        stringQuery="select " +
-                "           p.id as id, " +
-                "           p.name as name, " +
-                "           u.username as owner, " +
-                "           us.username as creator, " +
-                "           uc.username as changer, " +
-                "           p.master_id as owner_id, " +
-                "           p.creator_id as creator_id, " +
-                "           p.changer_id as changer_id, " +
-                "           p.company_id as company_id, " +
-                "           p.parent_id as parent_id, " +
-                "           p.price_id as price_id, " +
-                "           p.address as address, " +
-                "           p.additional as additional, " +
-                "           (select name from companies where id=p.company_id) as company, " +
-                "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
-                "           (select name from departments where id=p.parent_id) as parent, " +
-                "           p.date_time_created as date_time_created, " +
-                "           p.date_time_changed as date_time_changed " +
-                "           from departments p " +
-                "           INNER JOIN users u ON p.master_id=u.id " +
-                "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
-                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id="+departmentOwnerId;
-
-        stringQuery = stringQuery+" and p.parent_id="+parentDeptId;
-        stringQuery = stringQuery+" order by p.name asc";
-        Query query =  entityManager.createNativeQuery(stringQuery, DepartmentsJSON.class);
-        return query.getResultList();
-    }
+//    public List<Departments> getDeptChildrens(int parentDeptId){
+//        String stringQuery;
+//        Long departmentOwnerId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+//        stringQuery="select " +
+//                "           p.id as id, " +
+//                "           p.name as name, " +
+//                "           u.username as owner, " +
+//                "           us.username as creator, " +
+//                "           uc.username as changer, " +
+//                "           p.master_id as owner_id, " +
+//                "           p.creator_id as creator_id, " +
+//                "           p.changer_id as changer_id, " +
+//                "           p.company_id as company_id, " +
+//                "           p.parent_id as parent_id, " +
+//                "           p.price_id as price_id, " +
+//                "           p.address as address, " +
+//                "           p.additional as additional, " +
+//                "           (select name from companies where id=p.company_id) as company, " +
+//                "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
+//                "           (select name from departments where id=p.parent_id) as parent, " +
+//                "           p.date_time_created as date_time_created, " +
+//                "           p.date_time_changed as date_time_changed " +
+//                "           from departments p " +
+//                "           INNER JOIN users u ON p.master_id=u.id " +
+//                "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+//                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+//                "           where  p.master_id="+departmentOwnerId;
+//
+//        stringQuery = stringQuery+" and p.parent_id="+parentDeptId;
+//        stringQuery = stringQuery+" order by p.name asc";
+//        Query query =  entityManager.createNativeQuery(stringQuery, DepartmentsJSON.class);
+//        return query.getResultList();
+//    }
 
     public List<DepartmentsListJSON> getDepartmentsListByCompanyId(int company_id, boolean has_parent) {
         String stringQuery;
@@ -700,6 +701,74 @@ public class DepartmentRepositoryJPA {
 //****************************************************   P  A  R  T  S   ******************************************************************************
 //*****************************************************************************************************************************************************
 
+    @Transactional
+    public DepartmentPartsJSON getDeppartValues(Long id) {
+        if (securityRepositoryJPA.userHasPermissions_OR(4L, "13,14"))// (см. файл Permissions Id)
+        {
+            String stringQuery;
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String dateFormat = userSettings.getDateFormat();
+            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
+            Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+            stringQuery = "select  p.id as id, " +
+                    "           us.name as creator, " +
+                    "           uc.name as changer, " +
+                    "           p.creator_id as creator_id, " +
+                    "           p.changer_id as changer_id, " +
+                    "           dp.company_id as company_id, " +
+                    "           cmp.name as company, " +
+                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
+                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
+                    "           p.name as name, " +
+                    "           p.description as description, " +
+                    "           coalesce(p.is_active, false) as is_active," +
+                    "           coalesce(p.is_deleted, false) as is_deleted" +
+                    "           from scdl_dep_parts p " +
+                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                    "           INNER JOIN companies cmp ON dp.company_id=cmp.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and p.id= " + id;
+
+            if (!securityRepositoryJPA.userHasPermissions_OR(4L, "14")) //Если нет прав на "Просмотр документов по всем предприятиям"
+            {
+                //остается только на своё предприятие (13)
+                stringQuery = stringQuery + " and dp.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+
+                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+
+                for (Object[] obj : queryList) {
+
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setCreator((String) obj[1]);
+                    doc.setChanger((String) obj[2]);
+                    doc.setCreator_id(obj[3] != null ? Long.parseLong(obj[3].toString()) : null);
+                    doc.setChanger_id(obj[4] != null ? Long.parseLong(obj[4].toString()) : null);
+                    doc.setCompany_id(Long.parseLong(obj[5].toString()));
+                    doc.setCompany((String) obj[6]);
+                    doc.setDate_time_created((String) obj[7]);
+                    doc.setDate_time_changed((String) obj[8]);
+                    doc.setName((String) obj[9]);
+                    doc.setDescription((String) obj[10]);
+                    doc.setIs_active((Boolean) obj[11]);
+                    doc.setIs_deleted((Boolean) obj[12]);
+                    doc.setDeppartProducts(getDeppartProducts(id,myMasterId));
+                }
+                return doc;
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.error("Exception in method getDepartmentPartsList. SQL query:" + stringQuery, e);
+                return null;
+            }
+        } else return null;
+    }
     public List<DepartmentPartsJSON> getDepartmentPartsList (Long departmentId) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
@@ -764,9 +833,8 @@ public class DepartmentRepositoryJPA {
     }
 
     // returns the list of departments with parts that user belongs to
-    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId) {
+    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
         String stringQuery;
-        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery =
                     "           select " +
                     "           p.id as id, " +
@@ -954,10 +1022,15 @@ public class DepartmentRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getDepartment_id().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Long myId = userRepository.getUserId();
+            Long newDocId;
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
             String stringQuery =
                     " insert into scdl_dep_parts " +
                             "(" +
                             "master_id, " +
+                            "creator_id, " +
+                            "date_time_created, " +
                             "name, " +
                             "description, " +
                             "department_id, " +
@@ -965,6 +1038,8 @@ public class DepartmentRepositoryJPA {
                             "menu_order" +
                             ") values (" +
                             myMasterId + "," +
+                            myId + "," +
+                            "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                             ":name," +
                             ":description," +
                             request.getDepartment_id() + ", " +
@@ -979,7 +1054,15 @@ public class DepartmentRepositoryJPA {
                 query.setParameter("name", request.getName());
                 query.setParameter("description", request.getDescription());
                 query.executeUpdate();
-
+                stringQuery="select id from scdl_dep_parts where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDocId=Long.valueOf(query2.getSingleResult().toString());
+                Set<Long>existingDeppartProducts = new HashSet<>();
+                for (IdAndNameJSON product : request.getDeppartProducts()) {
+                    saveDeppartProducts(myMasterId, product.getId(), newDocId);
+                    existingDeppartProducts.add(product.getId());
+                }
+                deleteDeppartProductsNoMoreContainedInDeppart(existingDeppartProducts, myMasterId, request.getId());
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method insertDepartmentPart. SQL query:" + stringQuery, e);
@@ -999,11 +1082,14 @@ public class DepartmentRepositoryJPA {
                 (securityRepositoryJPA.userHasPermissions_OR(4L,"15") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("departments",request.getDepartment_id().toString())))
         {
             Long myMasterId = userRepositoryJPA.getMyMasterId();
+            Long myId = userRepository.getUserId();
             String stringQuery =
                     " update " +
                             " scdl_dep_parts " +
                             " set " +
                             " name = :name, " +
+                            " date_time_changed = now()," +
+                            " changer_id = " + myId + ", " +
                             " description = :description, " +
                             " is_active = " + request.getIs_active() +
                             " where " +
@@ -1016,6 +1102,12 @@ public class DepartmentRepositoryJPA {
                 query.setParameter("name",request.getName());
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
+                Set<Long>existingDeppartProducts = new HashSet<>();
+                for (IdAndNameJSON product : request.getDeppartProducts()) {
+                    saveDeppartProducts(myMasterId, product.getId(), request.getId());
+                    existingDeppartProducts.add(product.getId());
+                }
+                deleteDeppartProductsNoMoreContainedInDeppart(existingDeppartProducts, myMasterId, request.getId());
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method updateDepartmentPart. SQL query:" + stringQuery, e);
@@ -1024,6 +1116,43 @@ public class DepartmentRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+    private void saveDeppartProducts(Long master_id, Long product_id, Long dep_part_id) throws Exception {
+        String stringQuery = "insert into scdl_dep_part_products (" +
+                "   master_id," +
+                "   product_id," +
+                "   dep_part_id" +
+                "   ) values (" +
+                master_id+", "+
+                product_id+", "+
+                dep_part_id+
+                ") ON CONFLICT ON CONSTRAINT scdl_dep_part_products_uq " +// "upsert"
+                "  DO NOTHING ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveDeppartProducts. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+    // Deleting user services that user no more has
+    private void deleteDeppartProductsNoMoreContainedInDeppart(Set<Long> existingDeppartProducts, Long master_id, Long dep_part_id) throws Exception  {
+        String stringQuery =
+                " delete from scdl_dep_part_products " +
+                        " where " +
+                        " master_id = " + master_id + " and " +
+                        " dep_part_id =   " + dep_part_id;
+        if(existingDeppartProducts.size()>0)
+            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingDeppartProducts,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteDeppartProductsNoMoreContainedInDeppart. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
     }
 
     @SuppressWarnings("Duplicates")
@@ -1047,7 +1176,36 @@ public class DepartmentRepositoryJPA {
             throw new Exception(e); // cancelling the parent transaction
         }
     }
+    // returns list of services that employee can provide
+    private List<IdAndNameJSON> getDeppartProducts(long deppartId, long masterId){
+        String stringQuery="select " +
+                "   p.product_id as product_id, " +
+                "   pr.name as product_name " +
+                "   from scdl_dep_part_products p " +
+                "   inner join products pr on pr.id=p.product_id " +
+                "   where " +
+                "   p.master_id = " + masterId +
+                "   and p.dep_part_id= " + deppartId +
+                "   group by p.product_id, pr.name " +
+                "   order by pr.name";
 
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndNameJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                IdAndNameJSON doc = new IdAndNameJSON();
+                doc.setId(Long.parseLong(                      obj[0].toString()));
+                doc.setName((String)                           obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDeppartProducts. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     @SuppressWarnings("Duplicates")
     @Transactional

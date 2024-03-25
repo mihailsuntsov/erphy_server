@@ -17,7 +17,6 @@ public class SpravJobtitleJSON {
     private String description;
     private String date_time_created;
     private String date_time_changed;
-    private List<JobtitleProductsJSON> jobtitle_products;// set of services that job title can provide
 
     public Long getId() {
         return id;
@@ -107,11 +106,4 @@ public class SpravJobtitleJSON {
         this.date_time_changed = date_time_changed;
     }
 
-    public List<JobtitleProductsJSON> getJobtitle_products() {
-        return jobtitle_products;
-    }
-
-    public void setJobtitle_products(List<JobtitleProductsJSON> jobtitle_products) {
-        this.jobtitle_products = jobtitle_products;
-    }
 }

@@ -1,5 +1,9 @@
 package com.dokio.message.request.additional;
 
+import com.dokio.message.response.additional.IdAndNameJSON;
+
+import java.util.List;
+
 public class DepartmentPartsForm {
 
     private Long id;
@@ -8,6 +12,15 @@ public class DepartmentPartsForm {
     private String description;
     private int menu_order;
     private Boolean is_active;
+    private List<IdAndNameJSON> deppartProducts;
+
+    public List<IdAndNameJSON> getDeppartProducts() {
+        return deppartProducts;
+    }
+
+    public void setDeppartProducts(List<IdAndNameJSON> deppartProducts) {
+        this.deppartProducts = deppartProducts;
+    }
 
     public Long getId() {
         return id;

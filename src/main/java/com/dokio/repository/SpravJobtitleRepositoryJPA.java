@@ -207,7 +207,6 @@ public class SpravJobtitleRepositoryJPA {
 //*****************************************************************************************************************************************************
 
     @Transactional
-    @SuppressWarnings("Duplicates")
     public SpravJobtitleJSON getJobtitleValues(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))// (см. файл Permissions Id)
         {
@@ -260,7 +259,6 @@ public class SpravJobtitleRepositoryJPA {
                 doc.setDate_time_changed((String) obj[8]);
                 doc.setName((String) obj[9]);
                 doc.setDescription((String) obj[10]);
-                doc.setJobtitle_products(getJobtitleServicesList (id, myMasterId));
             }
             return doc;
         } else return null;
@@ -294,12 +292,6 @@ public class SpravJobtitleRepositoryJPA {
                 query.setParameter("name",request.getName());
                 query.setParameter("description",request.getDescription());
                 query.executeUpdate();
-                Set<Long>existingProducts = new HashSet<>();
-                for (JobtitleProductsForm row : request.getJobtitleProductsFormTable()) {
-                    saveJobtitleProducts(myMasterId, row.getProduct_id(), request.getId());
-                    existingProducts.add(row.getProduct_id());
-                }
-                deleteProductsThatNoMoreContainThisJobtitle(existingProducts,request.getId(), myMasterId );
                 return 1;
 
             }catch (Exception e) {
@@ -359,9 +351,6 @@ public class SpravJobtitleRepositoryJPA {
                 stringQuery="select id from sprav_jobtitles where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 Long newDocId = Long.valueOf(query2.getSingleResult().toString());
-                for (JobtitleProductsForm row : request.getJobtitleProductsFormTable()) {
-                    saveJobtitleProducts(myMasterId, row.getProduct_id(), newDocId);
-                }
                 return newDocId;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -432,46 +421,6 @@ public class SpravJobtitleRepositoryJPA {
         } else return -1;
     }
 
-
-    private void saveJobtitleProducts(Long master_id, Long product_id, Long jobtitle_id) throws Exception {
-        String stringQuery = "insert into scdl_jobtitle_products (" +
-                "   master_id," +
-                "   product_id," +
-                "   jobtitle_id" +
-                "   ) values (" +
-                master_id+", "+
-                product_id+", "+
-                jobtitle_id+
-                ") ON CONFLICT ON CONSTRAINT scdl_jobtitle_products_uq " +// "upsert"
-                "  DO NOTHING ";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method saveJobtitleProducts. SQL query:" + stringQuery, e);
-            throw new Exception(e);
-        }
-    }
-
-    // Deleting department parts that no more contain this job title
-    private void deleteProductsThatNoMoreContainThisJobtitle(Set<Long> existingProducts, Long jobtitleId, Long masterId) throws Exception  {
-        String stringQuery =
-                " delete from scdl_jobtitle_products " +
-                        " where " +
-                        " master_id = " + masterId + " and " +
-                        " jobtitle_id = " +jobtitleId;
-        if(existingProducts.size()>0)
-            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingProducts,",","(",")");
-        try {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-        } catch (Exception e) {
-            logger.error("Exception in method deleteProductsThatNoMoreContainThisJobtitle. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception(e);
-        }
-    }
-
     public List<JobtitleListJSON> getJobtitleList(long companyId) {
 //        if (securityRepositoryJPA.userHasPermissions_OR(57L, "697,698"))//(см. файл Permissions Id)
 //        {
@@ -499,37 +448,6 @@ public class SpravJobtitleRepositoryJPA {
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getJobtitleList. SQL query:" + stringQuery, e);
-            return null;
-        }
-//        } else return null;
-    }
-
-    private List<JobtitleProductsJSON> getJobtitleServicesList(long jobtitleId, long myMasterId) {
-
-        String stringQuery;
-        stringQuery = "select   p.id as id, " +
-                "               p.name as name " +
-                "               from scdl_jobtitle_products jp " +
-                "               INNER JOIN products p ON jp.product_id = p.id " +
-                "               where  jp.master_id=" + myMasterId +
-                "               and jp.jobtitle_id="  + jobtitleId +
-                "               and p.ppr_id=4 "      + //service
-                "               and coalesce(p.is_deleted,false) = false" +
-                "               order by p.name";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<JobtitleProductsJSON> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                JobtitleProductsJSON doc = new JobtitleProductsJSON();
-                doc.setProduct_id(Long.parseLong(                      obj[0].toString()));
-                doc.setProduct_name((String)                           obj[1]);
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getJobtitleServicesList. SQL query:" + stringQuery, e);
             return null;
         }
     }

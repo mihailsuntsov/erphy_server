@@ -21,7 +21,7 @@ package com.dokio.repository;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
-import com.dokio.message.request.additional.UserProductDeppartsForm;
+//import com.dokio.message.request.additional.UserProductDeppartsForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -30,6 +30,7 @@ import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
 import com.dokio.message.response.additional.*;
+import com.dokio.message.response.additional.eployeescdl.EmployeeScedule;
 import com.dokio.model.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
@@ -198,13 +199,16 @@ public class UserRepositoryJPA {
 //                return responseEntity;
 
                 // if user is employee - add services that it can sell
-                for (UserProductDeppartsForm product : signUpRequest.getUserProductsDepparts()) {
-                    Set<Long>existingDepparts = new HashSet<>();
-                    for (Long dep_part_id : product.getDep_parts_ids()) {
-                        saveUserProductDeppart(masterId, product.getProduct_id(), createdUserId, dep_part_id);
-                        existingDepparts.add(dep_part_id);
-                    }
-                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) signUpRequest.getId());
+//                for (UserProductDeppartsForm product : signUpRequest.getUserProductsDepparts()) {
+                for (IdAndNameJSON product : signUpRequest.getUserProducts()) {
+
+//                    Set<Long>existingDepparts = new HashSet<>();
+//                    for (Long dep_part_id : product.getDep_parts_ids()) {
+//                        saveUserProductDeppart(masterId, product.getProduct_id(), createdUserId, dep_part_id);
+                    saveUserProducts(masterId, product.getId(), createdUserId);
+//                        existingDepparts.add(dep_part_id);
+//                    }
+//                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) signUpRequest.getId());
                 }
                 return createdUserId;
             } catch (Exception e) {
@@ -280,14 +284,16 @@ public class UserRepositoryJPA {
                 em.close();
 
                 Set<Long>existingUserServices = new HashSet<>();
-                for (UserProductDeppartsForm product : request.getUserProductsDepparts()) {
-                    Set<Long>existingDepparts = new HashSet<>();
-                    for (Long dep_part_id : product.getDep_parts_ids()) {
-                        saveUserProductDeppart(masterId, product.getProduct_id(), (long) request.getId(), dep_part_id);
-                        existingDepparts.add(dep_part_id);
-                    }
-                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) request.getId());
-                    existingUserServices.add(product.getProduct_id());
+//                for (UserProductDeppartsForm product : request.getUserProductsDepparts()) {
+                for (IdAndNameJSON product : request.getUserProducts()) {
+//                    Set<Long>existingDepparts = new HashSet<>();
+//                    for (Long dep_part_id : product.getDep_parts_ids()) {
+//                        saveUserProductDeppart(masterId, product.getProduct_id(), (long) request.getId(), dep_part_id);
+                        saveUserProducts(masterId, product.getId(), (long) request.getId());
+//                        existingDepparts.add(dep_part_id);
+//                    }
+//                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) request.getId());
+                    existingUserServices.add(product.getId());
                 }
                 deleteUserServicesNoMoreContainedInUserCard(existingUserServices, masterId, (long) request.getId());
                 return 1;
@@ -299,50 +305,58 @@ public class UserRepositoryJPA {
         }else return -1;
     }
 
-    private void saveUserProductDeppart(Long master_id, Long product_id, Long user_id, Long dep_part_id) throws Exception {
-        String stringQuery = "insert into scdl_user_product_dep_parts (" +
+//    private void saveUserProductDeppart(Long master_id, Long product_id, Long user_id, Long dep_part_id) throws Exception {
+//        String stringQuery = "insert into scdl_user_product_dep_parts (" +
+//                "   master_id," +
+//                "   user_id," +
+//                "   product_id," +
+//                "   dep_part_id" +
+//                "   ) values (" +
+//                master_id+", "+
+//                user_id+", "+
+//                product_id+", "+
+//                dep_part_id+
+//                ") ON CONFLICT ON CONSTRAINT scdl_user_product_dep_parts_uq " +// "upsert"
+//                "  DO NOTHING ";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.executeUpdate();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method saveUserProductDeppart. SQL query:" + stringQuery, e);
+//            throw new Exception(e);
+//        }
+//    }
+
+    private void saveUserProducts(Long master_id, Long product_id, Long user_id) throws Exception {
+        String stringQuery = "insert into scdl_user_products (" +
                 "   master_id," +
                 "   user_id," +
-                "   product_id," +
-                "   dep_part_id" +
+                "   product_id" +
                 "   ) values (" +
                 master_id+", "+
                 user_id+", "+
-                product_id+", "+
-                dep_part_id+
-                ") ON CONFLICT ON CONSTRAINT scdl_user_product_dep_parts_uq " +// "upsert"
+                product_id +
+                ") ON CONFLICT ON CONSTRAINT scdl_user_products_uq " +// "upsert"
                 "  DO NOTHING ";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method saveUserProductDeppart. SQL query:" + stringQuery, e);
+            logger.error("Exception in method saveUserProducts. SQL query:" + stringQuery, e);
             throw new Exception(e);
         }
     }
-    // Deleting department parts that no more contain this job title
-    private void deleteDeppartsThatNoMoreContainInThisProduct(Set<Long> existingDepparts, Long master_id, Long product_id, Long user_id) throws Exception  {
-        String stringQuery =
-                " delete from scdl_user_product_dep_parts " +
-                        " where " +
-                        " master_id = " + master_id + " and " +
-                        " user_id =   " + user_id + " and " +
-                        " product_id = " +product_id;
-        if(existingDepparts.size()>0)
-            stringQuery = stringQuery + " and dep_part_id not in " + commonUtilites.SetOfLongToString(existingDepparts,",","(",")");
-        try {
-            entityManager.createNativeQuery(stringQuery).executeUpdate();
-        } catch (Exception e) {
-            logger.error("Exception in method deleteDeppartsThatNoMoreContainInThisProduct. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception(e);
-        }
-    }
+
+
+
     // Deleting user services that user no more has
     private void deleteUserServicesNoMoreContainedInUserCard(Set<Long> existingUserServices, Long master_id, Long user_id) throws Exception  {
         String stringQuery =
-                " delete from scdl_user_product_dep_parts " +
+//                " delete from scdl_user_product_dep_parts " +
+                        " delete from scdl_user_products " +
+
                         " where " +
                         " master_id = " + master_id + " and " +
                         " user_id =   " + user_id;
@@ -450,55 +464,6 @@ public class UserRepositoryJPA {
         }
     }
 
-    //отдает сотрудников по списку отделений
-    public List<EmployeeListJSON> getEmployeeListByDepartmentsIds(List<Long> depIds) {
-        String stringQuery;
-        Long masterId = getMyMasterId();
-        String departmentsIds = commonUtilites.ListOfLongToString(depIds, ",", "(", ")");
-        stringQuery = "     select " +
-                "     u.id as id, " +
-                "     u.name as name, " +
-                "     sj.name as jobtitle, " +
-                "     coalesce(u.is_currently_employed, false) as is_currently_employed " +
-                "     from users u " +
-                "     left outer join sprav_jobtitles sj on sj.id=u.job_title_id " +
-                "     inner join user_department ud on ud.user_id=u.id " +
-                "     where " +
-                "     coalesce(u.is_employee, false)=true and " +
-                "     coalesce(u.is_deleted, false)=false and " +
-                "     ud.department_id in " + commonUtilites.ListOfLongToString(depIds, ",","(",")") +
-                //"     ud.department_id not in (select id from departments where master_id=4 and coalesce(is_deleted, false)=true) " +
-                "     group by u.id, u.name, sj.name " +
-                "     order by u.name asc";
-
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<EmployeeListJSON> employeeList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                EmployeeListJSON doc = new EmployeeListJSON();
-                doc.setId(Long.parseLong(               obj[0].toString()));
-                doc.setName((String)                    obj[1]);
-                doc.setJob_title((String)               obj[2]);
-                doc.setIs_currently_employed((Boolean)  obj[3]);
-                doc.setDepartments_with_parts(departmentRepositoryJPA.getDepartmentsWithPartsListOfUser(doc.getId()));
-                doc.setEmployee_services(getUserProductsDepparts(doc.getId(), masterId));
-
-
-
-                employeeList.add(doc);
-
-
-
-
-            }
-            return employeeList;
-        } catch (Exception e) {
-            logger.error("Exception in method getEmployeeListByDepartmentsIds. SQL query:" + stringQuery, e);
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     //поиск пользователей предприятия по подстроке
     public List<IdAndName> getUsersList(Long companyId, String search_string) {
@@ -604,12 +569,15 @@ public class UserRepositoryJPA {
             return null;
         }
     }
-    private List<IdAndNameJSON> getUserProductsDepparts(long userId, long masterId){
 
+    // returns list of services that employee can provide
+//    private List<IdAndNameJSON> getUserProductsDepparts(long userId, long masterId){
+    private List<IdAndNameJSON> getUserProducts(long userId, long masterId){
         String stringQuery="select " +
                 "   p.product_id as product_id, " +
                 "   pr.name as product_name " +
-                "   from scdl_user_product_dep_parts p " +
+//                "   from scdl_user_product_dep_parts p " +
+                "   from scdl_user_products p " +
                 "   inner join products pr on pr.id=p.product_id " +
                 "   where " +
                 "   p.master_id = " + masterId +
@@ -825,7 +793,7 @@ public class UserRepositoryJPA {
                     doc.setUserDepartmentsNames(getUserDepartmentsNames(id));
                     doc.setUserDepartmentsId(getUserDepartmentsId(id));
                     doc.setUserGroupsId(getUserGroupsId(id));
-                    doc.setUserProductsDepparts(getUserProductsDepparts(id, myMasterId));
+                    doc.setUserProducts(getUserProducts(id, myMasterId));
 
                 }
                 return doc;
@@ -1597,5 +1565,51 @@ public class UserRepositoryJPA {
             e.printStackTrace();
         }
     }
+
+    //отдает сотрудников по списку должностей и отделений
+    public List<EmployeeScedule> getEmployeeListByDepartmentsAndJobtitles(List<Long> depIds, List<Long> jobttlsIds) {
+        String stringQuery;
+        Long masterId = getMyMasterId();
+        String departmentsIds = commonUtilites.ListOfLongToString(depIds, ",", "(", ")");
+        String jobtitlesIds = commonUtilites.ListOfLongToString(jobttlsIds, ",", "(", ")");
+        stringQuery =   "     select " +
+                "     u.id as id, " +
+                "     u.name as name, " +
+                "     sj.name as jobtitle, " +
+                "     coalesce(u.is_currently_employed, false) as is_currently_employed " +
+                "     from users u " +
+                "     inner join sprav_jobtitles sj on sj.id=u.job_title_id " +
+                "     inner join user_department ud on ud.user_id=u.id " +
+                "     where " +
+                "     coalesce(u.is_employee, false)=true and " +
+                "     coalesce(u.is_deleted, false)=false and " +
+                "     coalesce(u.is_currently_employed, false)=true and " +
+                "     ud.department_id in " + departmentsIds + " and " +
+                "     u.job_title_id in " + jobtitlesIds +
+                "     group by u.id, u.name, sj.name " +
+                "     order by u.name asc";
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<EmployeeScedule> employeeList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                EmployeeScedule doc = new EmployeeScedule();
+                doc.setId(Long.parseLong(               obj[0].toString()));
+                doc.setName((String)                    obj[1]);
+                doc.setJobtitle((String)                obj[2]);
+                doc.setIs_currently_employed((Boolean)  obj[3]);
+                doc.setDepartments_with_parts(departmentRepositoryJPA.getDepartmentsWithPartsListOfUser(doc.getId(),masterId));
+                doc.setEmployee_services(getUserProducts(doc.getId(), masterId));
+                employeeList.add(doc);
+            }
+            return employeeList;
+        } catch (Exception e) {
+            logger.error("Exception in method getEmployeeListByDepartmentsIds. SQL query:" + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
 }

@@ -42,7 +42,7 @@ public class UserJSON_ {
         private String incoming_service_name;
 
 //        private List<UserProductDeppartsJSON> userProductsDepparts; // list of services that employee (this user) can provide, and where (parts of departments) he can provide these services
-        private List<IdAndNameJSON> userProductsDepparts; // list of services that employee (this user) can provide
+        private List<IdAndNameJSON> userProducts; // list of services that employee (this user) can provide
 
     public boolean isIs_employee() {
         return is_employee;
@@ -316,12 +316,12 @@ public class UserJSON_ {
         this.vatin = vatin;
     }
 
-    public List<IdAndNameJSON> getUserProductsDepparts() {
-        return userProductsDepparts;
+    public List<IdAndNameJSON> getUserProducts() {
+        return userProducts;
     }
 
-    public void setUserProductsDepparts(List<IdAndNameJSON> userProductsDepparts) {
-        this.userProductsDepparts = userProductsDepparts;
+    public void setUserProducts(List<IdAndNameJSON> userProducts) {
+        this.userProducts = userProducts;
     }
 //    public List<UserProductDeppartsJSON> getUserProductsDepparts() {
 //        return userProductsDepparts;

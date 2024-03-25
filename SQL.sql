@@ -6272,15 +6272,15 @@ create table sprav_jobtitles ( -- describes job titles and what services they ca
                                foreign key (company_id) references companies(id)
 );
 
-create table scdl_jobtitle_products(  -- describes set of services that job title can provide
-                                         master_id          bigint,
-                                         product_id         bigint not null,
-                                         jobtitle_id        bigint not null,
-                                         foreign key (master_id) references users(id),
-                                         foreign key (product_id) references products(id),
-                                         foreign key (jobtitle_id) references sprav_jobtitles(id)
-);
-alter table scdl_jobtitle_products add constraint scdl_jobtitle_products_uq unique (product_id, jobtitle_id);
+-- create table scdl_jobtitle_products(  -- describes set of services that job title can provide
+--                                          master_id          bigint,
+--                                          product_id         bigint not null,
+--                                          jobtitle_id        bigint not null,
+--                                          foreign key (master_id) references users(id),
+--                                          foreign key (product_id) references products(id),
+--                                          foreign key (jobtitle_id) references sprav_jobtitles(id)
+-- );
+-- alter table scdl_jobtitle_products add constraint scdl_jobtitle_products_uq unique (product_id, jobtitle_id);
 
 insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (57,'Должности','jobtitles',1,'sprav_jobtitles','Должности','Job titles','Звања');
 
@@ -6296,18 +6296,27 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (700,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',57,100);
 
 
-create table scdl_user_product_dep_parts(
-  -- describes set of services that employee can provide, and where (parts of departments) he can provide these services
-                                     master_id          bigint,
-                                     user_id            bigint not null,
-                                     product_id         bigint not null,
-                                     dep_part_id        bigint not null,
-                                     foreign key (master_id)   references users(id),
-                                     foreign key (user_id)     references users(id),
-                                     foreign key (product_id)  references products(id),
-                                     foreign key (dep_part_id) references scdl_dep_parts(id)
+create table scdl_user_products(
+  -- describes list of services that employee can provide
+                                 master_id          bigint,
+                                 user_id            bigint not null,
+                                 product_id         bigint not null,
+                                 foreign key (master_id)   references users(id),
+                                 foreign key (user_id)     references users(id),
+                                 foreign key (product_id)  references products(id)
 );
-alter table scdl_user_product_dep_parts add constraint scdl_user_product_dep_parts_uq unique (user_id, product_id, dep_part_id);
+alter table scdl_user_products add constraint scdl_user_products_uq unique (user_id, product_id);
+
+create table scdl_dep_part_products(
+  -- describes list of services provided in this part of the department
+                                     master_id          bigint,
+                                     dep_part_id        bigint not null,
+                                     product_id         bigint not null,
+                                     foreign key (master_id)   references users(id),
+                                     foreign key (dep_part_id) references scdl_dep_parts(id),
+                                     foreign key (product_id)  references products(id)
+);
+alter table scdl_dep_part_products add constraint scdl_dep_part_products_uq unique (dep_part_id, product_id);
 
 alter table users add column if not exists is_employee boolean;
 alter table users add column is_currently_employed boolean;
@@ -6411,15 +6420,133 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (702,'Просмотр','View','Поглед',58,50),
 (703,'Редактирование','Editing','Уређивање',58,90);
 
+alter table scdl_dep_parts add column date_time_created timestamp with time zone;
+alter table scdl_dep_parts add column date_time_changed timestamp with time zone;
+alter table scdl_dep_parts add column creator_id bigint;
+alter table scdl_dep_parts add column changer_id bigint;
+alter table scdl_dep_parts add constraint creator_id_fkey foreign key (creator_id) references users(id);
+alter table scdl_dep_parts add constraint changer_id_fkey foreign key (changer_id) references users(id);
+alter table scdl_dep_parts alter column date_time_created set not null;
+alter table scdl_dep_parts alter column creator_id set not null;
+
+-- create table scdl_scedule_day(
+--   -- describes one day of employee - workshift or vacation
+--                              id                          int primary key not null,
+--                              master_id                   bigint not null,
+--                              employee_id                 bigint not null,
+--                              day_type                    varchar(9) not null, -- workshift or vacation
+--                              day_date                    date not null,
+--                              workshift_time_from         time,
+--                              workshift_time_to           time,
+--                              vacation_is_paid            boolean,
+--                              vacation_payment_per_day    numeric(12,2),
+--                              foreign key (employee_id)   references users(id),
+--                              foreign key (master_id)     references users(id)
+-- );
+--
+-- alter table scdl_scedule_day add constraint day_type_workshift_check check(day_type != 'workshift' or (workshift_time_from is not null and workshift_time_to is not null));
+-- alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (employee_id, day_type, day_date);
+--
+-- create table scdl_workshift_breaks(
+--   -- describes the breaks of workshift
+--                               id                          int primary key not null,
+--                               master_id                   bigint not null,
+--                               scedule_day_id              bigint not null,
+--                               time_from                   time not null,
+--                               time_to                     time not null,
+--                               is_paid                     boolean,
+--                               precent                     int,
+--                               foreign key (scedule_day_id)references scdl_scedule_day(id),
+--                               foreign key (master_id)     references users(id)
+-- );
+--
+-- create table scdl_scedule_day_deppart
+-- (
+--   -- describes the departments parts where this scedule day is belongs to
+--                               master_id      bigint not null,
+--                               scedule_day_id bigint not null,
+--                               deppart_id     bigint not null,
+--                               foreign key (scedule_day_id) references scdl_scedule_day (id),
+--                               foreign key (deppart_id) references scdl_dep_parts (id)
+-- );
+-- alter table scdl_scedule_day_deppart add constraint scdl_scedule_day_deppart_uq unique (scedule_day_id, deppart_id);
+
+
+--
+-- alter table scdl_scedule_day drop constraint day_type_workshift_check;
+-- alter table scdl_scedule_day drop constraint day_type_for_employee_is_uq;
+-- drop table scdl_workshift_breaks;
+-- alter table scdl_scedule_day_deppart drop constraint scdl_scedule_day_deppart_uq;
+-- drop table scdl_scedule_day_deppart;
+-- drop table scdl_scedule_day;
 
 
 
+create table scdl_scedule_day(
+  -- describes one day of employee
+                                   id                          int primary key not null,
+                                   master_id                   bigint not null,
+                                   employee_id                 bigint not null,
+                                   day_date                    date not null,
+                                   foreign key (employee_id)   references users(id),
+                                   foreign key (master_id)     references users(id)
+);
+alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (employee_id, day_date);
 
+create table scdl_workshift(
+  -- describes the work shift of employee
+                                   id                          int primary key not null,
+                                   master_id                   bigint not null,
+                                   scedule_day_id              bigint not null,
+                                   time_from                   time,
+                                   time_to                     time,
+                                   foreign key (master_id)     references users(id),
+                                   foreign key (scedule_day_id)references scdl_scedule_day(id)
+);
+alter table scdl_workshift add constraint workshift_scedule_day_uq unique (scedule_day_id); -- can be only one workshift per one day
 
+create table scdl_workshift_breaks(
+  -- describes the breaks of workshift
+                                    id                          int primary key not null,
+                                    master_id                   bigint not null,
+                                    workshift_id                bigint not null,
+                                    time_from                   time not null,
+                                    time_to                     time not null,
+                                    is_paid                     boolean,
+                                    precent                     int,
+                                    foreign key (workshift_id)  references scdl_workshift(id),
+                                    foreign key (master_id)     references users(id)
+);
 
+create table scdl_workshift_deppart
+(
+                                    -- describes the departments parts where this workshift is belongs to
+                                    master_id                   bigint not null,
+                                    workshift_id                bigint not null,
+                                    deppart_id                  bigint not null,
+                                    foreign key (workshift_id)  references scdl_scedule_day (id),
+                                    foreign key (deppart_id)    references scdl_dep_parts (id),
+                                    foreign key (master_id)     references users(id)
+);
+alter table scdl_workshift_deppart add constraint scdl_workshift_deppart_uq unique (workshift_id, deppart_id);
 
+create table scdl_vacation(
+  -- describes the any type of vacation of employee
+                                    id                          int primary key not null,
+                                    master_id                   bigint not null,
+                                    scedule_day_id              bigint not null,
+                                    name                        varchar(1000),
+                                    is_paid                     boolean,
+                                    payment_per_day             numeric(12,2),
+                                    foreign key (master_id)     references users(id),
+                                    foreign key (scedule_day_id)references scdl_scedule_day(id)
+);
+alter table scdl_vacation add constraint vacation_scedule_day_uq unique (scedule_day_id); -- can be only one vacation per one day
 
-
+CREATE INDEX scdl_workshift_breaks_workshift_id_index ON public.scdl_workshift_breaks USING btree (workshift_id);
+CREATE INDEX scdl_workshift_breaks_master_id_index ON public.scdl_workshift_breaks USING btree (master_id);
+CREATE INDEX scdl_workshift_deppart_workshift_id_index ON public.scdl_workshift_deppart USING btree (workshift_id);
+CREATE INDEX scdl_workshift_deppart_master_id_index ON public.scdl_workshift_deppart USING btree (master_id);
 
 
 

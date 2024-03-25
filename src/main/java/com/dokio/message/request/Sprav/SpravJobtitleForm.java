@@ -10,7 +10,6 @@ public class SpravJobtitleForm {
     private Long company_id;
     private String name;
     private String description;
-    private List<JobtitleProductsForm> jobtitleProductsFormTable;
 
     public Long getId() {
         return id;
@@ -44,11 +43,4 @@ public class SpravJobtitleForm {
         this.description = description;
     }
 
-    public List<JobtitleProductsForm> getJobtitleProductsFormTable() {
-        return jobtitleProductsFormTable;
-    }
-
-    public void setJobtitleProductsFormTable(List<JobtitleProductsForm> jobtitleProductsFormTable) {
-        this.jobtitleProductsFormTable = jobtitleProductsFormTable;
-    }
 }
