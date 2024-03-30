@@ -6472,19 +6472,16 @@ alter table scdl_dep_parts alter column creator_id set not null;
 -- alter table scdl_scedule_day_deppart add constraint scdl_scedule_day_deppart_uq unique (scedule_day_id, deppart_id);
 
 
---
--- alter table scdl_scedule_day drop constraint day_type_workshift_check;
--- alter table scdl_scedule_day drop constraint day_type_for_employee_is_uq;
+-- drop table scdl_vacation;
+-- drop table scdl_workshift_deppart;
 -- drop table scdl_workshift_breaks;
--- alter table scdl_scedule_day_deppart drop constraint scdl_scedule_day_deppart_uq;
--- drop table scdl_scedule_day_deppart;
+-- drop table scdl_workshift;
 -- drop table scdl_scedule_day;
-
 
 
 create table scdl_scedule_day(
   -- describes one day of employee
-                                   id                          int primary key not null,
+                                   id                          bigserial primary key not null,
                                    master_id                   bigint not null,
                                    employee_id                 bigint not null,
                                    day_date                    date not null,
@@ -6495,51 +6492,51 @@ alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (
 
 create table scdl_workshift(
   -- describes the work shift of employee
-                                   id                          int primary key not null,
+                                   id                          bigserial primary key not null,
                                    master_id                   bigint not null,
                                    scedule_day_id              bigint not null,
                                    time_from                   time,
                                    time_to                     time,
                                    foreign key (master_id)     references users(id),
-                                   foreign key (scedule_day_id)references scdl_scedule_day(id)
+                                   foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
 );
 alter table scdl_workshift add constraint workshift_scedule_day_uq unique (scedule_day_id); -- can be only one workshift per one day
 
 create table scdl_workshift_breaks(
   -- describes the breaks of workshift
-                                    id                          int primary key not null,
+                                    id                          bigserial primary key not null,
                                     master_id                   bigint not null,
                                     workshift_id                bigint not null,
                                     time_from                   time not null,
                                     time_to                     time not null,
                                     is_paid                     boolean,
                                     precent                     int,
-                                    foreign key (workshift_id)  references scdl_workshift(id),
+                                    foreign key (workshift_id)  references scdl_workshift(id) on delete cascade,
                                     foreign key (master_id)     references users(id)
 );
 
 create table scdl_workshift_deppart
 (
-                                    -- describes the departments parts where this workshift is belongs to
+  -- describes the departments parts where this workshift is belongs to
                                     master_id                   bigint not null,
                                     workshift_id                bigint not null,
                                     deppart_id                  bigint not null,
-                                    foreign key (workshift_id)  references scdl_scedule_day (id),
-                                    foreign key (deppart_id)    references scdl_dep_parts (id),
+                                    foreign key (workshift_id)  references scdl_workshift (id) on delete cascade,
+                                    foreign key (deppart_id)    references scdl_dep_parts (id) on delete cascade,
                                     foreign key (master_id)     references users(id)
 );
 alter table scdl_workshift_deppart add constraint scdl_workshift_deppart_uq unique (workshift_id, deppart_id);
 
 create table scdl_vacation(
   -- describes the any type of vacation of employee
-                                    id                          int primary key not null,
+                                    id                          bigserial primary key not null,
                                     master_id                   bigint not null,
                                     scedule_day_id              bigint not null,
                                     name                        varchar(1000),
                                     is_paid                     boolean,
                                     payment_per_day             numeric(12,2),
                                     foreign key (master_id)     references users(id),
-                                    foreign key (scedule_day_id)references scdl_scedule_day(id)
+                                    foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
 );
 alter table scdl_vacation add constraint vacation_scedule_day_uq unique (scedule_day_id); -- can be only one vacation per one day
 

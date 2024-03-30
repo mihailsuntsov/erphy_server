@@ -7,10 +7,11 @@ import java.util.List;
 public class Workshift {
 
     private Long                id;
-    private List<IdAndNameJSON> depparts;                // set of department parts
-    private String              time_from;               // time of work shift start
-    private String              time_to;                 // time of work shift end
-    private List<Break>         breaks;                  // breaks
+//    private List<IdAndNameJSON> depparts;                 // set of department parts
+    private List<Long>          depparts;                   // set of department parts
+    private String              time_from;                  // time of work shift start
+    private String              time_to;                    // time of work shift end
+    private List<Break>         breaks;                     // breaks
 
     public Long getId() {
         return id;
@@ -20,11 +21,19 @@ public class Workshift {
         this.id = id;
     }
 
-    public List<IdAndNameJSON> getDepparts() {
+//    public List<IdAndNameJSON> getDepparts() {
+//        return depparts;
+//    }
+
+//    public void setDepparts(List<IdAndNameJSON> depparts) {
+//        this.depparts = depparts;
+//    }
+
+    public List<Long> getDepparts() {
         return depparts;
     }
 
-    public void setDepparts(List<IdAndNameJSON> depparts) {
+    public void setDepparts(List<Long> depparts) {
         this.depparts = depparts;
     }
 

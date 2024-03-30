@@ -12,21 +12,22 @@ public class EmployeeScedule {
     private String jobtitle;        // Job title of employee
     private Boolean is_currently_employed;
     private Long cagent_id;
-    private List<DepartmentsWithPartsJSON> departments_with_parts;
+//    private List<DepartmentsWithPartsJSON> departments_with_parts;
+    private List<IdAndNameJSON> departments;
     private List<IdAndNameJSON> employee_services;
     private List<SceduleDay> days;  // days array
 
-    public EmployeeScedule(String name, String photo_link, String jobtitle, Boolean is_currently_employed, Long cagent_id, List<DepartmentsWithPartsJSON> departments_with_parts, List<IdAndNameJSON> employee_services, List<SceduleDay> days, Long id) {
-        this.name = name;
-        this.photo_link = photo_link;
-        this.jobtitle = jobtitle;
-        this.is_currently_employed = is_currently_employed;
-        this.cagent_id = cagent_id;
-        this.departments_with_parts = departments_with_parts;
-        this.employee_services = employee_services;
-        this.days = days;
-        this.id=id;
-    }
+//    public EmployeeScedule(String name, String photo_link, String jobtitle, Boolean is_currently_employed, Long cagent_id, List<DepartmentsWithPartsJSON> departments_with_parts, List<IdAndNameJSON> employee_services, List<SceduleDay> days, Long id) {
+//        this.name = name;
+//        this.photo_link = photo_link;
+//        this.jobtitle = jobtitle;
+//        this.is_currently_employed = is_currently_employed;
+//        this.cagent_id = cagent_id;
+//        this.departments_with_parts = departments_with_parts;
+//        this.employee_services = employee_services;
+//        this.days = days;
+//        this.id=id;
+//    }
 
     public Long getId() {
         return id;
@@ -52,12 +53,20 @@ public class EmployeeScedule {
         this.cagent_id = cagent_id;
     }
 
-    public List<DepartmentsWithPartsJSON> getDepartments_with_parts() {
-        return departments_with_parts;
+//    public List<DepartmentsWithPartsJSON> getDepartments_with_parts() {
+//        return departments_with_parts;
+//    }
+//
+//    public void setDepartments_with_parts(List<DepartmentsWithPartsJSON> departments_with_parts) {
+//        this.departments_with_parts = departments_with_parts;
+//    }
+
+    public List<IdAndNameJSON> getDepartments() {
+        return departments;
     }
 
-    public void setDepartments_with_parts(List<DepartmentsWithPartsJSON> departments_with_parts) {
-        this.departments_with_parts = departments_with_parts;
+    public void setDepartments(List<IdAndNameJSON> departments) {
+        this.departments = departments;
     }
 
     public List<IdAndNameJSON> getEmployee_services() {

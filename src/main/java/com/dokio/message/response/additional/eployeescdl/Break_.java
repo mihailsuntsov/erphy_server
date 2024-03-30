@@ -1,22 +1,20 @@
 package com.dokio.message.response.additional.eployeescdl;
 
-public class Break {
+public class Break_ {
 
     private Long    id;
     private String  time_from;          // time of work shift start
     private String  time_to;            // time of work shift end
     private Boolean paid;               // is break paid by employer
     private int     precent;            // 1-100
+    private Long    workshiftId;        // Id of break's workshift
 
-    public Break() {
+    public Long getWorkshiftId() {
+        return workshiftId;
     }
 
-    public Break(Long id, String time_from, String time_to, Boolean paid, int precent) {
-        this.id = id;
-        this.time_from = time_from;
-        this.time_to = time_to;
-        this.paid = paid;
-        this.precent = precent;
+    public void setWorkshiftId(Long workshiftId) {
+        this.workshiftId = workshiftId;
     }
 
     public Long getId() {

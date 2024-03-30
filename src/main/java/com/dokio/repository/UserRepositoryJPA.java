@@ -600,7 +600,7 @@ public class UserRepositoryJPA {
             return returnList;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getUserProductsDepparts. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getUserProducts. SQL query:" + stringQuery, e);
             return null;
         }
     }
@@ -1567,9 +1567,9 @@ public class UserRepositoryJPA {
     }
 
     //отдает сотрудников по списку должностей и отделений
-    public List<EmployeeScedule> getEmployeeListByDepartmentsAndJobtitles(List<Long> depIds, List<Long> jobttlsIds) {
+    public List<EmployeeScedule> getEmployeeListByDepartmentsAndJobtitles(List<Long> depIds, List<Long> jobttlsIds, Long masterId) {
         String stringQuery;
-        Long masterId = getMyMasterId();
+//        Long masterId = getMyMasterId();
         String departmentsIds = commonUtilites.ListOfLongToString(depIds, ",", "(", ")");
         String jobtitlesIds = commonUtilites.ListOfLongToString(jobttlsIds, ",", "(", ")");
         stringQuery =   "     select " +
@@ -1599,13 +1599,14 @@ public class UserRepositoryJPA {
                 doc.setName((String)                    obj[1]);
                 doc.setJobtitle((String)                obj[2]);
                 doc.setIs_currently_employed((Boolean)  obj[3]);
-                doc.setDepartments_with_parts(departmentRepositoryJPA.getDepartmentsWithPartsListOfUser(doc.getId(),masterId));
+//                doc.setDepartments_with_parts(departmentRepositoryJPA.getDepartmentsWithPartsListOfUser(doc.getId(),masterId));
+                doc.setDepartments(departmentRepositoryJPA.getUserDepartmentsList(doc.getId(),masterId));
                 doc.setEmployee_services(getUserProducts(doc.getId(), masterId));
                 employeeList.add(doc);
             }
             return employeeList;
         } catch (Exception e) {
-            logger.error("Exception in method getEmployeeListByDepartmentsIds. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getEmployeeListByDepartmentsAndJobtitles. SQL query:" + stringQuery, e);
             e.printStackTrace();
             return null;
         }

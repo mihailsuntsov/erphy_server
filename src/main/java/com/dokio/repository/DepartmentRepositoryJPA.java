@@ -824,7 +824,7 @@ public class DepartmentRepositoryJPA {
                     "           and coalesce(p.is_deleted, false) = false" +
                     "           order by d.name,p.menu_order";
         try {
-            return departmentsPartsListConstruct(stringQuery);
+            return departmentsPartsListConstruct(stringQuery, masterId);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
@@ -833,34 +833,34 @@ public class DepartmentRepositoryJPA {
     }
 
     // returns the list of departments with parts that user belongs to
-    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
-        String stringQuery;
-        stringQuery =
-                    "           select " +
-                    "           p.id as id, " +
-                    "           p.name as name, " +
-                    "           p.description as description, " +
-                    "           coalesce(p.is_active, true) as is_active, " +
-                    "           d.name as department_name, " +
-                    "           d.id as department_id " +
-                    "           from scdl_dep_parts p " +
-                    "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           INNER JOIN departments d ON p.department_id=d.id " +
-                    "           where  p.master_id = " + masterId +
-                    "           and p.department_id in (select id from departments where master_id="+masterId+" and coalesce(is_deleted,false)=false)" +
-                    "           and p.department_id in (select department_id from user_department where user_id="+userId+")"+
-                    "           and coalesce(p.is_deleted, false) = false" +
-                    "           order by d.name,p.menu_order";
-        try {
-            return departmentsPartsListConstruct(stringQuery);
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getDepartmentsWithPartsListOfUser. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
+//    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
+//        String stringQuery;
+//        stringQuery =
+//                    "           select " +
+//                    "           p.id as id, " +
+//                    "           p.name as name, " +
+//                    "           p.description as description, " +
+//                    "           coalesce(p.is_active, true) as is_active, " +
+//                    "           d.name as department_name, " +
+//                    "           d.id as department_id " +
+//                    "           from scdl_dep_parts p " +
+//                    "           INNER JOIN users u ON p.master_id=u.id " +
+//                    "           INNER JOIN departments d ON p.department_id=d.id " +
+//                    "           where  p.master_id = " + masterId +
+//                    "           and p.department_id in (select id from departments where master_id="+masterId+" and coalesce(is_deleted,false)=false)" +
+//                    "           and p.department_id in (select department_id from user_department where user_id="+userId+")"+
+//                    "           and coalesce(p.is_deleted, false) = false" +
+//                    "           order by d.name,p.menu_order";
+//        try {
+//            return departmentsPartsListConstruct(stringQuery);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.error("Exception in method getDepartmentsWithPartsListOfUser. SQL query:" + stringQuery, e);
+//            return null;
+//        }
+//    }
 
-    private List<DepartmentsWithPartsJSON> departmentsPartsListConstruct(String stringQuery){
+    private List<DepartmentsWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId){
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
@@ -881,7 +881,7 @@ public class DepartmentRepositoryJPA {
                 part.setName((String)                obj[1]);
                 part.setDescription((String)         obj[2]);
                 part.setIs_active((Boolean)          obj[3]);
-
+                part.setDeppartProducts(getDeppartProducts(part.getId(),masterId));
 
                 if((!currentDepId.equals(lastDepId)) && lastDepId != 0L ) { // department has been changed
                     returnList.add(new DepartmentsWithPartsJSON(lastDepId, lastDepName, partsList));
@@ -903,7 +903,34 @@ public class DepartmentRepositoryJPA {
         }
     }
 
+    public List<IdAndNameJSON> getUserDepartmentsList(Long userId, Long masterId) {
 
+        String stringQuery="select " +
+                "           ud.department_id as id, " +
+                "           d.name as name " +
+                "           from user_department ud " +
+                "           inner join departments d on d.id = ud.department_id" +
+                "           where  ud.user_id = "+ userId +
+                "           and coalesce(d.is_deleted, false) = false and d.master_id = " + masterId +
+                "           order by d.name asc";
+
+        try{
+            Query query =  entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<IdAndNameJSON> returnList = new ArrayList<>();
+            for(Object[] obj:queryList) {
+                IdAndNameJSON doc = new IdAndNameJSON();
+                doc.setId(Long.parseLong(       obj[0].toString()));
+                doc.setName((String)            obj[1]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getUserDepartmentsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     /*public List<DepartmentsWithPartsJSON> getDepartmentPartsWithResourceQttList_old (Long companyId, Long resource_id) {
         String stringQuery;

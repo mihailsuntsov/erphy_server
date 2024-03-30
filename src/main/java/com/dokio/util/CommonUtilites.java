@@ -37,6 +37,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -597,7 +599,14 @@ public class CommonUtilites {
         sdf.setLenient(false);
         return sdf.parse(s, new ParsePosition(0)) != null;
     }
-
+    public boolean isTimeValid(String inputTimeString) {
+        try {
+            LocalTime.parse(inputTimeString);
+            return true;
+        } catch (DateTimeParseException | NullPointerException e) {
+            return false;
+        }
+    }
     // returns map of user's language translated words by their keys in format "key - word"
     // example of using:
     // Map<String, String> map = commonUtilites.translateForMe(new String[]{"'all'","'selected'"});
