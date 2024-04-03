@@ -324,26 +324,26 @@ public class CustomersOrdersController {
     }
 
     //удаление 1 строки из таблицы товаров
-    @SuppressWarnings("Duplicates")
-    @RequestMapping(
-            value = "/api/auth/deleteCustomersOrdersProductTableRow",
-            params = {"id"},
-            method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
-            @RequestParam("id") Long id)
-    {
-        logger.info("Processing get request for path /api/auth/deleteCustomersOrdersProductTableRow with parameters: " +
-                "id: " + id);
-        boolean result;
-        try {
-            result=customersOrdersRepositoryJPA.deleteCustomersOrdersProductTableRow(id);
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @SuppressWarnings("Duplicates")
+//    @RequestMapping(
+//            value = "/api/auth/deleteCustomersOrdersProductTableRow",
+//            params = {"id"},
+//            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+//    public ResponseEntity<?> deleteCustomersOrdersProductTableRow(
+//            @RequestParam("id") Long id)
+//    {
+//        logger.info("Processing get request for path /api/auth/deleteCustomersOrdersProductTableRow with parameters: " +
+//                "id: " + id);
+//        boolean result;
+//        try {
+//            result=customersOrdersRepositoryJPA.deleteCustomersOrdersProductTableRow(id);
+//            return new ResponseEntity<>(result, HttpStatus.OK);
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
 /*
     @PostMapping("/api/auth/getListOfCustomersOrdersFiles")

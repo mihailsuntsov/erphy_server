@@ -6339,6 +6339,10 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('hour_s', 'h', 'час', 'сат'),
 ('day_s', 'day', 'сут', 'дан');
 
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('session', 'session', 'сеанс', 'сесија'),
+('session_s', 'session', 'сеанс', 'сесија');
+
 insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units set. Do not need a translation because using only internally
 
 create table sprav_sys_scdl_reminders(
@@ -6544,6 +6548,124 @@ CREATE INDEX scdl_workshift_breaks_workshift_id_index ON public.scdl_workshift_b
 CREATE INDEX scdl_workshift_breaks_master_id_index ON public.scdl_workshift_breaks USING btree (master_id);
 CREATE INDEX scdl_workshift_deppart_workshift_id_index ON public.scdl_workshift_deppart USING btree (workshift_id);
 CREATE INDEX scdl_workshift_deppart_master_id_index ON public.scdl_workshift_deppart USING btree (master_id);
+CREATE INDEX scdl_workshift_master_id_index ON public.scdl_workshift USING btree (master_id);
+CREATE INDEX scdl_workshift_scedule_day_id_index ON public.scdl_workshift USING btree (scedule_day_id);
+CREATE INDEX scdl_vacation_master_id_index ON public.scdl_vacation USING btree (master_id);
+CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING btree (scedule_day_id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create table scdl_appointments(
+  -- describes appointments
+                             id                                 bigserial primary key not null,
+                             master_id                          bigint not null,
+                             creator_id                         bigint not null,
+                             changer_id                         bigint not null,
+                             owner_id                           bigint not null,
+                             date_time_created                  timestamp with time zone not null,
+                             date_time_changed                  timestamp with time zone,
+                             status_id                          bigint,
+                             doc_number                         int not null,
+                             description                        varchar(2048),
+                             nds                                boolean,
+                             nds_included                       boolean,
+                             is_deleted                         boolean,
+                             is_completed                       boolean,
+                             uid                                varchar (36),
+                             linked_docs_group_id               bigint,
+                             dep_part_id                        bigint not null,
+                             date_start                         date not null,
+                             time_start                         time,
+                             date_end                           date not null,
+                             time_end                           time,
+                             foreign key (master_id)            references users(id),
+                             foreign key (owner_id)             references users(id),
+                             foreign key (creator_id)           references users(id),
+                             foreign key (changer_id)           references users(id),
+                             foreign key (status_id)            references sprav_status_dock (id) on delete set null,
+                             foreign key (linked_docs_group_id) references linked_docs_groups(id),
+                             foreign key (dep_part_id)          references scdl_dep_parts(id)
+);
+
+create table scdl_appointment_products(
+                             id                                 bigserial primary key not null,
+                             master_id                          bigint not null,
+                             product_id                         bigint not null,
+                             appointment_id                     bigint not null,
+                             price_type_id                      bigint,
+                             department_id                      bigint not null,
+                             product_count                      numeric(15,3) not null,
+                             product_price                      numeric(12,2) not null,
+                             product_sumprice                   numeric(15,2) not null,
+                             edizm_id                           bigint not null,
+                             nds_id                             bigint not null,
+                             product_price_of_type_price        numeric(12,2),
+                             foreign key (appointment_id)       references scdl_appointments (id),
+                             foreign key (edizm_id)             references sprav_sys_edizm (id),
+                             foreign key (nds_id)               references sprav_taxes (id),
+                             foreign key (price_type_id)        references sprav_type_prices (id),
+                             foreign key (product_id )          references products (id),
+                             foreign key (department_id )       references departments (id),
+                             foreign key (master_id)            references users(id)
+);
+
+create table scdl_appointment_cagents(
+                             id                                 bigserial primary key not null,
+                             master_id                          bigint not null,
+                             cagent_id                          bigint not null,
+                             appointment_id                     bigint not null,
+                             places_ordered                     int not null,
+                             foreign key (appointment_id)       references scdl_appointments (id),
+                             foreign key (cagent_id)            references cagents (id)
+);
+
+
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Планирања');
+insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+(704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
+(705,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',59,20),
+(706,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',59,30),
+(707,'Создание документов своих отделений','Create documents of your departments','Креирање докумената за свог одељења',59,40),
+(708,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',59,50),
+(709,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',59,60),
+(710,'Просмотр документов своих отделений','View documents of your departments','Погледајте документе свог одељења',59,70),
+(711,'Просмотр документов созданных собой','View documents created by yourself','Погледајте документе које сте сами креирали',59,80),
+(712,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',59,90),
+(713,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',59,100),
+(714,'Редактирование документов своих отделений','Editing documents of your departments','Уређивање докумената свог одељења',59,110),
+(715,'Редактирование документов созданных собой','Editing documents created by yourself','Уређивање докумената које сте сами креирали',59,120),
+(716,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',59,130),
+(717,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',59,140),
+(718,'Удаление документов своих отделений','Deleting documents of your departments','Брисање докумената свог одељења',59,150),
+(719,'Удаление документов созданных собой','Deleting documents created by yourself','Брисање докумената које сте сами креирали',59,160),
+(720,'Проведение документов всех предприятий','Completion documents of all companies','Довршавање докумената за сва предузећа',59,170),
+(721,'Проведение документов своего предприятия','Completion your company documents','Довршавање докумената за своје предузеће',59,180),
+(722,'Проведение документов своих отделений','Completion documents of your departments','Довршавање докумената за своје одељење',59,190),
+(723,'Проведение документов созданных собой','Completion documents created by yourself','Довршавање докумената које сте сами креирали',59,200);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

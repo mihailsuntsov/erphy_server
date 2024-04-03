@@ -1372,37 +1372,29 @@ public class CustomersOrdersRepositoryJPA {
     }
 */
     //удаление 1 строки из таблицы товаров
-    @SuppressWarnings("Duplicates")
-    @Transactional
-    public Boolean deleteCustomersOrdersProductTableRow(Long id) {
-        if(canDeleteProductTableRow(id)){
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-            String stringQuery;
-            try {
+//    @SuppressWarnings("Duplicates")
+//    @Transactional
+//    public Boolean deleteCustomersOrdersProductTableRow(Long id) {
+//        if(canDeleteProductTableRow(id)){
+//            Long myMasterId = userRepositoryJPA.getMyMasterId();
+//            String stringQuery;
+//            try {
+//
+//                commonUtilites.idBelongsMyMaster("products", id, myMasterId);
+//
+//                stringQuery = " delete from customers_orders_product " +
+//                " where id="+id+" and master_id="+myMasterId;
+//                Query query = entityManager.createNativeQuery(stringQuery);
+//                return query.executeUpdate() == 1;
+//            }
+//            catch (Exception e) {
+//                e.printStackTrace();
+//                return false;
+//            }
+//        } else return false;
+//    }
 
-                commonUtilites.idBelongsMyMaster("products", id, myMasterId);
-
-                stringQuery = " delete from customers_orders_product " +
-                " where id="+id+" and master_id="+myMasterId;
-                Query query = entityManager.createNativeQuery(stringQuery);
-                return query.executeUpdate() == 1;
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
-        } else return false;
-    }
-
-    @SuppressWarnings("Duplicates")
-        // Нельзя удалять товарные позиции, по которым уже есть Отгрузка, т.к. товар могут сначала отгрузить, а потом завершить (закрыть) Отгрузку.
-        // И если между этими 2 действиями удалить товарную позицию, товар физически уйдет со склада, но будет числисться в системе.
-    private boolean canDeleteProductTableRow(Long row_id){
-//        !!!!!!!!!!!!!!!!!!!!!!!!!  тут вставить проверку того, есть ли данная позиция в Отгрузке
-        return true;
-    }
-
-    @SuppressWarnings("Duplicates")//  удаляет лишние позиции товаров при сохранении заказа (те позиции, которые ранее были в заказе, но потом их удалили)
+    //  удаляет лишние позиции товаров при сохранении заказа (те позиции, которые ранее были в заказе, но потом их удалили)
     private Boolean deleteCustomersOrdersProductTableExcessRows(String rowIds, Long customers_orders_id, Long myMasterId) {
         String stringQuery="";
         try {
