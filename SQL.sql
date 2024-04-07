@@ -6631,10 +6631,12 @@ create table scdl_appointment_cagents(
                              foreign key (cagent_id)            references cagents (id)
 );
 
+-- delete from permissions where document_id=59;
+-- delete from documents where id=59;
 
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Планирања');
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
 insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
+-- (704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
 (705,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',59,20),
 (706,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',59,30),
 (707,'Создание документов своих отделений','Create documents of your departments','Креирање докумената за свог одељења',59,40),
@@ -6655,8 +6657,13 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (722,'Проведение документов своих отделений','Completion documents of your departments','Довршавање докумената за своје одељење',59,190),
 (723,'Проведение документов созданных собой','Completion documents created by yourself','Довршавање докумената које сте сами креирали',59,200);
 
+alter table companies add column booking_doc_name_variation_id int; --variation's id of name of booking document: 1-appointment, 2-reservation
 
+insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (60,'Календарь','calendar',1,'','Календарь','Calendar','Календар');
+insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+(724,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',60,10);
 
+alter table companies add column time_zone_id int; --id of company's main time zone
 
 
 

@@ -85,7 +85,8 @@ public class CompaniesForm {
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
     private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-
+    private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
+    private Integer time_zone_id;
     /*
     private Boolean is_store;            // on off the store
     private String  store_site_address;  // e.g. http://localhost/DokioShop
@@ -121,6 +122,22 @@ public class CompaniesForm {
 
     public void setStore_default_lang_code(String store_default_lang_code) {
         this.store_default_lang_code = store_default_lang_code;
+    }
+
+    public Integer getTime_zone_id() {
+        return time_zone_id;
+    }
+
+    public void setTime_zone_id(Integer time_zone_id) {
+        this.time_zone_id = time_zone_id;
+    }
+
+    public Integer getBooking_doc_name_variation_id() {
+        return booking_doc_name_variation_id;
+    }
+
+    public void setBooking_doc_name_variation_id(Integer booking_doc_name_variation_id) {
+        this.booking_doc_name_variation_id = booking_doc_name_variation_id;
     }
 
     public Boolean getNds_included() {

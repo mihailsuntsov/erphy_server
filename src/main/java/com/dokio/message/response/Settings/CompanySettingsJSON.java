@@ -23,6 +23,10 @@ public class CompanySettingsJSON {
     private Integer st_prefix_barcode_pieced;
     private Integer st_prefix_barcode_packed;
     private String  netcost_policy;
+    private Integer time_zone_id;
+
+    private int     booking_doc_name_variation_id;        // variation's id of name of booking document: 1-appointment, 2-reservation
+    private String     booking_doc_name_variation;        // variation of name of booking document: appointment, reservation
 //    private Long    store_orders_department_id;         // department for creation Customer order from store
 //    private String  store_if_customer_not_found;        // "create_new" or "use_default" customer (counterparty)
 //    private Long    store_default_customer_id;          // counterparty id if store_if_customer_not_found == use_default
@@ -35,6 +39,30 @@ public class CompanySettingsJSON {
 
     public boolean isIs_store() {
         return is_store;
+    }
+
+    public int getBooking_doc_name_variation_id() {
+        return booking_doc_name_variation_id;
+    }
+
+    public void setBooking_doc_name_variation_id(int booking_doc_name_variation_id) {
+        this.booking_doc_name_variation_id = booking_doc_name_variation_id;
+    }
+
+    public Integer getTime_zone_id() {
+        return time_zone_id;
+    }
+
+    public void setTime_zone_id(Integer time_zone_id) {
+        this.time_zone_id = time_zone_id;
+    }
+
+    public String getBooking_doc_name_variation() {
+        return booking_doc_name_variation;
+    }
+
+    public void setBooking_doc_name_variation(String booking_doc_name_variation) {
+        this.booking_doc_name_variation = booking_doc_name_variation;
     }
 
     public void setIs_store(boolean is_store) {

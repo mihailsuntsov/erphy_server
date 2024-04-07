@@ -2,6 +2,7 @@ package com.dokio.controller;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.AppointmentsForm;
+import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.repository.*;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -111,7 +112,15 @@ public class AppointmentsController {
         logger.info("Processing post request for path /api/auth/setCustomersOrdersAsDecompleted: " + request.toString());
         try {return new ResponseEntity<>(appointmentRepositoryJPA.setAppointmentAsDecompleted(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller setCustomersOrdersAsDecompleted error", e);
-            return new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Controller setAppointmentAsDecompleted exception", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @RequestMapping(
+            value = "/api/auth/getSettingsAppointments",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsAppointments()
+    {   logger.info("Processing get request for path /api/auth/getSettingsAppointments without request parameters");
+        try{    return new ResponseEntity<>(appointmentRepositoryJPA.getSettingsAppointments(), HttpStatus.OK);}
+        catch (Exception e) {e.printStackTrace();logger.error("Controller getSettingsAppointments exception", e);
+            return new ResponseEntity<>("Controller getSettingsAppointments exception", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

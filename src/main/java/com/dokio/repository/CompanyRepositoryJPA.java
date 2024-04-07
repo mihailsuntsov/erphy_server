@@ -173,8 +173,9 @@ public class CompanyRepositoryJPA {
                     "           p.glavbuh_signature_id as glavbuh_signature_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           stat.description as status_description " +
-
+                    "           stat.description as status_description, " +
+                    "           coalesce(p.booking_doc_name_variation_id, 1) as booking_doc_name_variation_id," +
+                    "           coalesce(p.time_zone_id,21) as time_zone_id" +
                     "           from companies p " +
                     "           INNER JOIN users u ON p.master_id=u.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -259,6 +260,8 @@ public class CompanyRepositoryJPA {
                     doc.setStatus_name((String)                         obj[51]);
                     doc.setStatus_color((String)                        obj[52]);
                     doc.setStatus_description((String)                  obj[53]);
+                    doc.setBooking_doc_name_variation_id((Integer)      obj[54]);// variation of name of booking document: 1-appointment, 2-reservation
+                    doc.setTime_zone_id((Integer)                       obj[55]);
                     returnList.add(doc);
                 }
                 return returnList;
@@ -373,226 +376,236 @@ public class CompanyRepositoryJPA {
     public CompaniesJSON getCompanyValues(Long id) {
         if(securityRepositoryJPA.userHasPermissions_OR(3L, "6,5"))//"Предприятия" (см. файл Permissions Id)
         {
-            String stringQuery;
+            String stringQuery="";
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
             String suffix = userRepositoryJPA.getMySuffix();
+            try {
+                stringQuery = "select  p.id as id, " +
+                        "           p.master_id as master_id, " +
+                        "           p.creator_id as creator_id, " +
+                        "           p.changer_id as changer_id, " +
+                        "           p.name as name, " +
+                        "           to_char(p.date_time_created at time zone '" + myTimeZone + "', '" + dateFormat + timeFormat + "') as date_time_created, " +
+                        "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', '" + dateFormat + timeFormat + "') as date_time_changed, " +
+                        "           u.name as master, " +
+                        "           us.name as creator, " +
+                        "           uc.name as changer, " +
+                        "           null as currency_id, " + // not use now
+                        "           sso.name as opf, " +
+                        "           p.opf_id as opf_id, " +
+                        // Апдейт Предприятий
+                        "           p.code as code, " +
+                        "           p.telephone as telephone, " +
+                        "           p.site as site, " +
+                        "           p.email as email, " +
+                        "           p.zip_code as zip_code, " +
+                        "           p.country_id as country_id, " +
+                        "           p.region_id as region_id, " +
+                        "           p.city_id as city_id, " +
+                        "           p.street as street, " +
+                        "           p.home as home, " +
+                        "           p.flat as flat, " +
+                        "           p.additional_address as additional_address, " +
+                        "           p.status_id as status_id, " +
+                        "           p.jr_jur_full_name as jr_jur_full_name, " +
+                        "           p.jr_jur_kpp as jr_jur_kpp, " +
+                        "           p.jr_jur_ogrn as jr_jur_ogrn, " +
+                        "           p.jr_zip_code as jr_zip_code, " +
+                        "           p.jr_country_id as jr_country_id, " +
+                        "           p.jr_region_id as jr_region_id, " +
+                        "           p.jr_city_id as jr_city_id, " +
+                        "           p.jr_street as jr_street, " +
+                        "           p.jr_home as jr_home, " +
+                        "           p.jr_flat as jr_flat, " +
+                        "           p.jr_additional_address as jr_additional_address, " +
+                        "           p.jr_inn as jr_inn, " +
+                        "           p.jr_okpo as jr_okpo, " +
+                        "           p.jr_fio_family as jr_fio_family, " +
+                        "           p.jr_fio_name as jr_fio_name, " +
+                        "           p.jr_fio_otchestvo as jr_fio_otchestvo, " +
+                        "           p.jr_ip_ogrnip as jr_ip_ogrnip, " +
+                        "           p.jr_ip_svid_num as jr_ip_svid_num, " +
+                        "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
+                        "           coalesce(p.nds_payer,false) as nds_payer, " +
+                        "           p.fio_director as fio_director, " +
+                        "           p.director_position as director_position, " +
+                        "           p.fio_glavbuh as fio_glavbuh, " +
+                        "           p.director_signature_id as director_signature_id, " +
+                        "           p.glavbuh_signature_id as glavbuh_signature_id, " +
+                        "           stat.name as status_name, " +
+                        "           stat.color as status_color, " +
+                        "           stat.description as status_description, " +
+                        "           ctr.name_" + suffix + " as country, " +
+                        "           jr_ctr.name_" + suffix + " as jr_country, " +
+                        //                    "           reg.name_ru as region, " +
+                        "           coalesce(p.region,'') as region, " +
+                        //                    "           jr_reg.name_ru as jr_region, " +
+                        "           coalesce(p.jr_region,'') as jr_region, " +
+                        //                    "           cty.name_ru as city, " +
+                        "           coalesce(p.city,'') as city, " +
+                        //                    "           jr_cty.name_ru as jr_city, " +
+                        "           coalesce(p.jr_city,'') as jr_city, " +
+                        //                    "           coalesce(cty.area_ru,'') as area, " +
+                        //                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
+                        "           '' as area, " +
+                        "           '' as jr_area," +
+                        "           p.stamp_id as stamp_id, " +
+                        "           (select f.original_name from files f where f.id=p.director_signature_id) as director_signature_filename, " +
+                        "           (select f.original_name from files f where f.id=p.glavbuh_signature_id) as glavbuh_signature_filename, " +
+                        "           (select f.original_name from files f where f.id=p.stamp_id) as stamp_filename, " +
+                        "           p.card_template_id as card_template_id, " +
+                        "           (select f.original_name from files f where f.id=p.card_template_id) as card_template_original_filename, " +
+                        "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename, " +
+                        "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
+                        "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
+                        "           p.st_netcost_policy as st_netcost_policy, " +
+                        "           p.type as type, " +// entity or individual
+                        "           coalesce(p.legal_form,'') as legal_form, " +// legal form of individual (ie entrepreneur, ...)
+                        //                    "           p.reg_country_id as reg_country_id, " + // country of registration
+                        //                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+                        //                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-            stringQuery = "select  p.id as id, " +
-                    "           p.master_id as master_id, " +
-                    "           p.creator_id as creator_id, " +
-                    "           p.changer_id as changer_id, " +
-                    "           p.name as name, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                    "           u.name as master, " +
-                    "           us.name as creator, " +
-                    "           uc.name as changer, " +
-                    "           null as currency_id, " + // not use now
-                    "           sso.name as opf, "+
-                    "           p.opf_id as opf_id, " +
-                    // Апдейт Предприятий
-                    "           p.code as code, " +
-                    "           p.telephone as telephone, " +
-                    "           p.site as site, " +
-                    "           p.email as email, " +
-                    "           p.zip_code as zip_code, " +
-                    "           p.country_id as country_id, " +
-                    "           p.region_id as region_id, " +
-                    "           p.city_id as city_id, " +
-                    "           p.street as street, " +
-                    "           p.home as home, " +
-                    "           p.flat as flat, " +
-                    "           p.additional_address as additional_address, " +
-                    "           p.status_id as status_id, " +
-                    "           p.jr_jur_full_name as jr_jur_full_name, " +
-                    "           p.jr_jur_kpp as jr_jur_kpp, " +
-                    "           p.jr_jur_ogrn as jr_jur_ogrn, " +
-                    "           p.jr_zip_code as jr_zip_code, " +
-                    "           p.jr_country_id as jr_country_id, " +
-                    "           p.jr_region_id as jr_region_id, " +
-                    "           p.jr_city_id as jr_city_id, " +
-                    "           p.jr_street as jr_street, " +
-                    "           p.jr_home as jr_home, " +
-                    "           p.jr_flat as jr_flat, " +
-                    "           p.jr_additional_address as jr_additional_address, " +
-                    "           p.jr_inn as jr_inn, " +
-                    "           p.jr_okpo as jr_okpo, " +
-                    "           p.jr_fio_family as jr_fio_family, " +
-                    "           p.jr_fio_name as jr_fio_name, " +
-                    "           p.jr_fio_otchestvo as jr_fio_otchestvo, " +
-                    "           p.jr_ip_ogrnip as jr_ip_ogrnip, " +
-                    "           p.jr_ip_svid_num as jr_ip_svid_num, " +
-                    "           to_char(p.jr_ip_reg_date, 'DD.MM.YYYY') as jr_ip_reg_date, " +
-                    "           coalesce(p.nds_payer,false) as nds_payer, " +
-                    "           p.fio_director as fio_director, " +
-                    "           p.director_position as director_position, " +
-                    "           p.fio_glavbuh as fio_glavbuh, " +
-                    "           p.director_signature_id as director_signature_id, " +
-                    "           p.glavbuh_signature_id as glavbuh_signature_id, " +
-                    "           stat.name as status_name, " +
-                    "           stat.color as status_color, " +
-                    "           stat.description as status_description, " +
-                    "           ctr.name_"+suffix+" as country, " +
-                    "           jr_ctr.name_"+suffix+" as jr_country, " +
-//                    "           reg.name_ru as region, " +
-                    "           coalesce(p.region,'') as region, " +
-//                    "           jr_reg.name_ru as jr_region, " +
-                    "           coalesce(p.jr_region,'') as jr_region, " +
-//                    "           cty.name_ru as city, " +
-                    "           coalesce(p.city,'') as city, " +
-//                    "           jr_cty.name_ru as jr_city, " +
-                    "           coalesce(p.jr_city,'') as jr_city, " +
-//                    "           coalesce(cty.area_ru,'') as area, " +
-//                    "           coalesce(jr_cty.area_ru,'') as jr_area," +
-                    "           '' as area, " +
-                    "           '' as jr_area," +
-                    "           p.stamp_id as stamp_id, " +
-                    "           (select f.original_name from files f where f.id=p.director_signature_id) as director_signature_filename, " +
-                    "           (select f.original_name from files f where f.id=p.glavbuh_signature_id) as glavbuh_signature_filename, " +
-                    "           (select f.original_name from files f where f.id=p.stamp_id) as stamp_filename, " +
-                    "           p.card_template_id as card_template_id, " +
-                    "           (select f.original_name from files f where f.id=p.card_template_id) as card_template_original_filename, " +
-                    "           (select f.name from files f where f.id=p.card_template_id) as card_template_filename, " +
-                    "           p.st_prefix_barcode_pieced as st_prefix_barcode_pieced, " +
-                    "           p.st_prefix_barcode_packed as st_prefix_barcode_packed, " +
-                    "           p.st_netcost_policy as st_netcost_policy, " +
-                    "           p.type as type, " +// entity or individual
-                    "           coalesce(p.legal_form,'') as legal_form, " +// legal form of individual (ie entrepreneur, ...)
-//                    "           p.reg_country_id as reg_country_id, " + // country of registration
-//                    "           p.tax_number as tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
-//                    "           p.reg_number as reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+                        //                    "           coalesce(p.is_store,false) as is_store, " +// on off the store
+                        //                    "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
+                        //                    "           p.store_key as store_key, " +  // consumer key
+                        //                    "           p.store_secret as store_secret, " + // consumer secret
+                        //                    "           p.store_type as store_type, " + // e.g. woo
+                        //                    "           p.store_api_version as store_api_version, " + // e.g. v3
+                        //                    "           p.crm_secret_key as crm_secret_key, " + // like UUID generated
+                        //                    "           p.store_price_type_regular as store_price_type_regular, " + // id of regular type price
+                        //                    "           p.store_price_type_sale as store_price_type_sale, " + // id of sale type price
 
-//                    "           coalesce(p.is_store,false) as is_store, " +// on off the store
-//                    "           p.store_site_address as store_site_address, " +// e.g. http://localhost/DokioShop
-//                    "           p.store_key as store_key, " +  // consumer key
-//                    "           p.store_secret as store_secret, " + // consumer secret
-//                    "           p.store_type as store_type, " + // e.g. woo
-//                    "           p.store_api_version as store_api_version, " + // e.g. v3
-//                    "           p.crm_secret_key as crm_secret_key, " + // like UUID generated
-//                    "           p.store_price_type_regular as store_price_type_regular, " + // id of regular type price
-//                    "           p.store_price_type_sale as store_price_type_sale, " + // id of sale type price
+                        "           coalesce(p.nds_included,false) as nds_included, " + // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+                        //                    "           p.store_orders_department_id as store_orders_department_id, " + // department for creation Customer order from store
+                        //                    "           coalesce(p.store_if_customer_not_found,'create_new') as store_if_customer_not_found, " + // "create_new" or "use_default"
+                        //                    "           p.store_default_customer_id as store_default_customer_id, " + // counterparty id if store_if_customer_not_found=use_default
+                        //                    "           cag.name as store_default_customer," +
+                        //                    "           uoc.name as store_default_creator," +
+                        //                    "           p.store_default_creator_id as store_default_creator_id," + // ID of default user, that will be marked as a creator of store order. Default is master user
+                        //                    "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
+                        //                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
+                        //                    "           coalesce(p.store_ip,'') as store_ip," +
+                        "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code," +
+                        "           p.vat as jr_vat," + // VAT identification number, " +
+                        "           coalesce(p.booking_doc_name_variation_id, 1) as booking_doc_name_variation_id," +
+                        "           coalesce(p.time_zone_id,21) as time_zone_id" +
+                        "           from companies p " +
+                        "           INNER JOIN users u ON p.master_id=u.id " +
+                        "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                        "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                        "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
+                        "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+                        "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
+                        //                    "           LEFT OUTER JOIN cagents cag ON p.store_default_customer_id=cag.id" +
+                        //                    "           LEFT OUTER JOIN users uoc ON p.store_default_creator_id=uoc.id " +
+                        //                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
+                        //                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
+                        "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
+                        //                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
+                        //                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
+                        "           where p.id= " + id +
+                        "           and  p.master_id=" + myMasterId;
 
-                    "           coalesce(p.nds_included,false) as nds_included, " + // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-//                    "           p.store_orders_department_id as store_orders_department_id, " + // department for creation Customer order from store
-//                    "           coalesce(p.store_if_customer_not_found,'create_new') as store_if_customer_not_found, " + // "create_new" or "use_default"
-//                    "           p.store_default_customer_id as store_default_customer_id, " + // counterparty id if store_if_customer_not_found=use_default
-//                    "           cag.name as store_default_customer," +
-//                    "           uoc.name as store_default_creator," +
-//                    "           p.store_default_creator_id as store_default_creator_id," + // ID of default user, that will be marked as a creator of store order. Default is master user
-//                    "           coalesce(p.store_days_for_esd,0) as store_days_for_esd," + // number of days for ESD of created store order. Default is 0
-//                    "           coalesce(p.store_auto_reserve,false) as store_auto_reserve, " + // auto reserve product after getting internet store order
-//                    "           coalesce(p.store_ip,'') as store_ip," +
-                    "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code," +
-                    "           p.vat as jr_vat" + // VAT identification number
-                    "           from companies p " +
-                    "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
-                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
-                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-//                    "           LEFT OUTER JOIN cagents cag ON p.store_default_customer_id=cag.id" +
-//                    "           LEFT OUTER JOIN users uoc ON p.store_default_creator_id=uoc.id " +
-//                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
-//                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
-                    "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
-//                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
-//                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
-                    "           where p.id= " + id +
-                    "           and  p.master_id=" + myMasterId;
+                if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
+                {
+                    //остается только на своё предприятие (5)
+                    stringQuery = stringQuery + " and p.id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                }
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(3L, "6")) //Если нет прав на "Просмотр документов по всем предприятиям"
-            {
-                //остается только на своё предприятие (5)
-                stringQuery = stringQuery + " and p.id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                Query query = entityManager.createNativeQuery(stringQuery);
+                List<Object[]> queryList = query.getResultList();
+                CompaniesJSON doc = new CompaniesJSON();
+
+                doc.setId(Long.parseLong(queryList.get(0)[0].toString()));
+                doc.setMaster_id(Long.parseLong(queryList.get(0)[1].toString()));
+                doc.setCreator_id(Long.parseLong(queryList.get(0)[2].toString()));
+                doc.setChanger_id(queryList.get(0)[3] != null ? Long.parseLong(queryList.get(0)[3].toString()) : null);
+                doc.setName((String) queryList.get(0)[4]);
+                doc.setDate_time_created((String) queryList.get(0)[5]);
+                doc.setDate_time_changed(queryList.get(0)[6] != null ? (String) queryList.get(0)[6] : "");
+                doc.setMaster((String) queryList.get(0)[7]);
+                doc.setCreator((String) queryList.get(0)[8]);
+                doc.setChanger(queryList.get(0)[9] != null ? (String) queryList.get(0)[9] : "");
+                doc.setCurrency_id((Integer) null);        // not use now
+                doc.setOpf(queryList.get(0)[11] != null ? (String) queryList.get(0)[11] : "");
+                doc.setOpf_id((Integer) queryList.get(0)[12]);
+                doc.setCode(queryList.get(0)[13] != null ? (String) queryList.get(0)[13] : "");
+                doc.setTelephone(queryList.get(0)[14] != null ? (String) queryList.get(0)[14] : "");
+                doc.setSite(queryList.get(0)[15] != null ? (String) queryList.get(0)[15] : "");
+                doc.setEmail(queryList.get(0)[16] != null ? (String) queryList.get(0)[16] : "");
+                doc.setZip_code(queryList.get(0)[17] != null ? (String) queryList.get(0)[17] : "");
+                doc.setCountry_id((Integer) queryList.get(0)[18]);
+                doc.setRegion_id((Integer) queryList.get(0)[19]);
+                doc.setCity_id((Integer) queryList.get(0)[20]);
+                doc.setStreet(queryList.get(0)[21] != null ? (String) queryList.get(0)[21] : "");
+                doc.setHome(queryList.get(0)[22] != null ? (String) queryList.get(0)[22] : "");
+                doc.setFlat(queryList.get(0)[23] != null ? (String) queryList.get(0)[23] : "");
+                doc.setAdditional_address(queryList.get(0)[24] != null ? (String) queryList.get(0)[24] : "");
+                doc.setStatus_id(queryList.get(0)[25] != null ? Long.parseLong(queryList.get(0)[25].toString()) : null);
+                doc.setJr_jur_full_name(queryList.get(0)[26] != null ? (String) queryList.get(0)[26] : "");
+                doc.setJr_jur_kpp(queryList.get(0)[27] != null ? (String) queryList.get(0)[27] : "");
+                doc.setJr_jur_ogrn(queryList.get(0)[28] != null ? (String) queryList.get(0)[28] : "");
+                doc.setJr_zip_code(queryList.get(0)[29] != null ? (String) queryList.get(0)[29] : "");
+                doc.setJr_country_id((Integer) queryList.get(0)[30]);
+                doc.setJr_region_id((Integer) queryList.get(0)[31]);
+                doc.setJr_city_id((Integer) queryList.get(0)[32]);
+                doc.setJr_street(queryList.get(0)[33] != null ? (String) queryList.get(0)[33] : "");
+                doc.setJr_home(queryList.get(0)[34] != null ? (String) queryList.get(0)[34] : "");
+                doc.setJr_flat(queryList.get(0)[35] != null ? (String) queryList.get(0)[35] : "");
+                doc.setJr_additional_address(queryList.get(0)[36] != null ? (String) queryList.get(0)[36] : "");
+                doc.setJr_inn(queryList.get(0)[37] != null ? (String) queryList.get(0)[37] : "");
+                doc.setJr_okpo(queryList.get(0)[38] != null ? (String) queryList.get(0)[38] : "");
+                doc.setJr_fio_family(queryList.get(0)[39] != null ? (String) queryList.get(0)[39] : "");
+                doc.setJr_fio_name(queryList.get(0)[40] != null ? (String) queryList.get(0)[40] : "");
+                doc.setJr_fio_otchestvo(queryList.get(0)[41] != null ? (String) queryList.get(0)[41] : "");
+                doc.setJr_ip_ogrnip(queryList.get(0)[42] != null ? (String) queryList.get(0)[42] : "");
+                doc.setJr_ip_svid_num(queryList.get(0)[43] != null ? (String) queryList.get(0)[43] : "");
+                doc.setJr_ip_reg_date(queryList.get(0)[44] != null ? (String) queryList.get(0)[44] : "");
+                doc.setNds_payer((Boolean) queryList.get(0)[45]);
+                doc.setFio_director(queryList.get(0)[46] != null ? (String) queryList.get(0)[46] : "");
+                doc.setDirector_position(queryList.get(0)[47] != null ? (String) queryList.get(0)[47] : "");
+                doc.setFio_glavbuh(queryList.get(0)[48] != null ? (String) queryList.get(0)[48] : "");
+                doc.setDirector_signature_id(queryList.get(0)[49] != null ? Long.parseLong(queryList.get(0)[49].toString()) : null);
+                doc.setGlavbuh_signature_id(queryList.get(0)[50] != null ? Long.parseLong(queryList.get(0)[50].toString()) : null);
+                doc.setStatus_name(queryList.get(0)[51] != null ? (String) queryList.get(0)[51] : "");
+                doc.setStatus_color(queryList.get(0)[52] != null ? (String) queryList.get(0)[52] : "");
+                doc.setStatus_description(queryList.get(0)[53] != null ? (String) queryList.get(0)[53] : "");
+                doc.setCountry(queryList.get(0)[54] != null ? (String) queryList.get(0)[54] : "");
+                doc.setJr_country(queryList.get(0)[55] != null ? (String) queryList.get(0)[55] : "");
+                doc.setRegion(queryList.get(0)[56] != null ? (String) queryList.get(0)[56] : "");
+                doc.setJr_region(queryList.get(0)[57] != null ? (String) queryList.get(0)[57] : "");
+                doc.setCity(queryList.get(0)[58] != null ? (String) queryList.get(0)[58] : "");
+                doc.setJr_city(queryList.get(0)[59] != null ? (String) queryList.get(0)[59] : "");
+                doc.setArea(queryList.get(0)[60] != null ? (String) queryList.get(0)[60] : "");
+                doc.setJr_area(queryList.get(0)[61] != null ? (String) queryList.get(0)[61] : "");
+                doc.setStamp_id(queryList.get(0)[62] != null ? Long.parseLong(queryList.get(0)[62].toString()) : null);
+                doc.setDirector_signature_filename(queryList.get(0)[63] != null ? (String) queryList.get(0)[63] : "");
+                doc.setGlavbuh_signature_filename(queryList.get(0)[64] != null ? (String) queryList.get(0)[64] : "");
+                doc.setStamp_filename(queryList.get(0)[65] != null ? (String) queryList.get(0)[65] : "");
+                doc.setCard_template_id(queryList.get(0)[66] != null ? Long.parseLong(queryList.get(0)[66].toString()) : null);
+                doc.setCard_template_original_filename(queryList.get(0)[67] != null ? (String) queryList.get(0)[67] : "");
+                doc.setCard_template_filename(queryList.get(0)[68] != null ? (String) queryList.get(0)[68] : "");
+                doc.setSt_prefix_barcode_pieced((Integer) queryList.get(0)[69]);
+                doc.setSt_prefix_barcode_packed((Integer) queryList.get(0)[70]);
+                doc.setSt_netcost_policy((String) queryList.get(0)[71]);
+                doc.setType(queryList.get(0)[72] != null ? (String) queryList.get(0)[72] : "");
+                doc.setLegal_form((String) queryList.get(0)[73]);
+                doc.setNds_included((Boolean) queryList.get(0)[74]);
+                doc.setStore_default_lang_code((String) queryList.get(0)[75]);
+                doc.setJr_vat((String) queryList.get(0)[76]);
+                doc.setBooking_doc_name_variation_id((Integer) queryList.get(0)[77]);// variation of name of booking document: 1-appointment, 2-reservation
+                doc.setTime_zone_id((Integer) queryList.get(0)[78]);// variation of name of booking document: 1-appointment, 2-reservation
+
+                return doc;
+            }catch (Exception e) {
+                logger.error("Error of getCompanyValues. stringQuery="+stringQuery, e);
+                e.printStackTrace();
+                return null;
             }
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            CompaniesJSON doc = new CompaniesJSON();
-
-            doc.setId(Long.parseLong(                            queryList.get(0)[0].toString()));
-            doc.setMaster_id(Long.parseLong(                                queryList.get(0)[1].toString()));
-            doc.setCreator_id(Long.parseLong(                               queryList.get(0)[2].toString()));
-            doc.setChanger_id(queryList.get(0)[3]!=null?Long.parseLong(     queryList.get(0)[3].toString()):null);
-            doc.setName((String)                                            queryList.get(0)[4]);
-            doc.setDate_time_created((String)                               queryList.get(0)[5]);
-            doc.setDate_time_changed(queryList.get(0)[6]!=null?     (String)queryList.get(0)[6]:"");
-            doc.setMaster((String)                                          queryList.get(0)[7]);
-            doc.setCreator((String)                                         queryList.get(0)[8]);
-            doc.setChanger(queryList.get(0)[9]!=null?               (String)queryList.get(0)[9]:"");
-            doc.setCurrency_id((Integer)                                  null);        // not use now
-            doc.setOpf(queryList.get(0)[11]!=null?                  (String)queryList.get(0)[11]:"");
-            doc.setOpf_id((Integer)                                         queryList.get(0)[12]);
-            doc.setCode(queryList.get(0)[13]!=null?                 (String)queryList.get(0)[13]:"");
-            doc.setTelephone(queryList.get(0)[14]!=null?            (String)queryList.get(0)[14]:"");
-            doc.setSite(queryList.get(0)[15]!=null?                 (String)queryList.get(0)[15]:"");
-            doc.setEmail(queryList.get(0)[16]!=null?                (String)queryList.get(0)[16]:"");
-            doc.setZip_code(queryList.get(0)[17]!=null?             (String)queryList.get(0)[17]:"");
-            doc.setCountry_id((Integer)                                     queryList.get(0)[18]);
-            doc.setRegion_id((Integer)                                      queryList.get(0)[19]);
-            doc.setCity_id((Integer)                                        queryList.get(0)[20]);
-            doc.setStreet(queryList.get(0)[21]!=null?               (String)queryList.get(0)[21]:"");
-            doc.setHome(queryList.get(0)[22]!=null?                 (String)queryList.get(0)[22]:"");
-            doc.setFlat(queryList.get(0)[23]!=null?                 (String)queryList.get(0)[23]:"");
-            doc.setAdditional_address(queryList.get(0)[24]!=null?   (String)queryList.get(0)[24]:"");
-            doc.setStatus_id( queryList.get(0)[25]!=null?Long.parseLong(    queryList.get(0)[25].toString()):null);
-            doc.setJr_jur_full_name(queryList.get(0)[26]!=null?     (String)queryList.get(0)[26]:"");
-            doc.setJr_jur_kpp( queryList.get(0)[27]!=null?          (String)queryList.get(0)[27]:"");
-            doc.setJr_jur_ogrn( queryList.get(0)[28]!=null?         (String)queryList.get(0)[28]:"");
-            doc.setJr_zip_code(queryList.get(0)[29]!=null?          (String)queryList.get(0)[29]:"");
-            doc.setJr_country_id((Integer)                                  queryList.get(0)[30]);
-            doc.setJr_region_id((Integer)                                   queryList.get(0)[31]);
-            doc.setJr_city_id((Integer)                                     queryList.get(0)[32]);
-            doc.setJr_street(queryList.get(0)[33]!=null?            (String)queryList.get(0)[33]:"");
-            doc.setJr_home(queryList.get(0)[34]!=null?              (String)queryList.get(0)[34]:"");
-            doc.setJr_flat(queryList.get(0)[35]!=null?              (String)queryList.get(0)[35]:"");
-            doc.setJr_additional_address(queryList.get(0)[36]!=null?(String)queryList.get(0)[36]:"");
-            doc.setJr_inn( queryList.get(0)[37]!=null?              (String)queryList.get(0)[37]:"");
-            doc.setJr_okpo( queryList.get(0)[38]!=null?             (String)queryList.get(0)[38]:"");
-            doc.setJr_fio_family(queryList.get(0)[39]!=null?        (String)queryList.get(0)[39]:"");
-            doc.setJr_fio_name(queryList.get(0)[40]!=null?          (String)queryList.get(0)[40]:"");
-            doc.setJr_fio_otchestvo(queryList.get(0)[41]!=null?     (String)queryList.get(0)[41]:"");
-            doc.setJr_ip_ogrnip( queryList.get(0)[42]!=null?        (String)queryList.get(0)[42]:"");
-            doc.setJr_ip_svid_num(queryList.get(0)[43]!=null?       (String)queryList.get(0)[43]:"");
-            doc.setJr_ip_reg_date(queryList.get(0)[44]!=null?       (String)queryList.get(0)[44]:"");
-            doc.setNds_payer((Boolean)                                      queryList.get(0)[45]);
-            doc.setFio_director(queryList.get(0)[46]!=null?         (String)queryList.get(0)[46]:"");
-            doc.setDirector_position(queryList.get(0)[47]!=null?    (String)queryList.get(0)[47]:"");
-            doc.setFio_glavbuh(queryList.get(0)[48]!=null?          (String)queryList.get(0)[48]:"");
-            doc.setDirector_signature_id( queryList.get(0)[49]!=null?Long.parseLong(  queryList.get(0)[49].toString()):null);
-            doc.setGlavbuh_signature_id( queryList.get(0)[50]!=null?Long.parseLong(   queryList.get(0)[50].toString()):null);
-            doc.setStatus_name(queryList.get(0)[51]!=null?          (String)queryList.get(0)[51]:"");
-            doc.setStatus_color(queryList.get(0)[52]!=null?         (String)queryList.get(0)[52]:"");
-            doc.setStatus_description(queryList.get(0)[53]!=null?   (String)queryList.get(0)[53]:"");
-            doc.setCountry(queryList.get(0)[54]!=null?              (String)queryList.get(0)[54]:"");
-            doc.setJr_country(queryList.get(0)[55]!=null?           (String)queryList.get(0)[55]:"");
-            doc.setRegion(queryList.get(0)[56]!=null?               (String)queryList.get(0)[56]:"");
-            doc.setJr_region(queryList.get(0)[57]!=null?            (String)queryList.get(0)[57]:"");
-            doc.setCity(queryList.get(0)[58]!=null?                 (String)queryList.get(0)[58]:"");
-            doc.setJr_city(queryList.get(0)[59]!=null?              (String)queryList.get(0)[59]:"");
-            doc.setArea(queryList.get(0)[60]!=null?                 (String)queryList.get(0)[60]:"");
-            doc.setJr_area(queryList.get(0)[61]!=null?              (String)queryList.get(0)[61]:"");
-            doc.setStamp_id(queryList.get(0)[62]!=null?Long.parseLong(queryList.get(0)[62].toString()):null);
-            doc.setDirector_signature_filename(queryList.get(0)[63]!=null?(String)queryList.get(0)[63]:"");
-            doc.setGlavbuh_signature_filename(queryList.get(0)[64]!=null?(String)queryList.get(0)[64]:"");
-            doc.setStamp_filename(queryList.get(0)[65]!=null?(String)queryList.get(0)[65]:"");
-            doc.setCard_template_id(queryList.get(0)[66]!=null?Long.parseLong(queryList.get(0)[66].toString()):null);
-            doc.setCard_template_original_filename(queryList.get(0)[67]!=null?(String)queryList.get(0)[67]:"");
-            doc.setCard_template_filename(queryList.get(0)[68]!=null?(String)queryList.get(0)[68]:"");
-            doc.setSt_prefix_barcode_pieced((Integer)                       queryList.get(0)[69]);
-            doc.setSt_prefix_barcode_packed((Integer)                       queryList.get(0)[70]);
-            doc.setSt_netcost_policy((String)                               queryList.get(0)[71]);
-            doc.setType(queryList.get(0)[72]!=null?                 (String)queryList.get(0)[72]:"");
-            doc.setLegal_form((String)                                      queryList.get(0)[73]);
-            doc.setNds_included((Boolean)                                   queryList.get(0)[74]);
-            doc.setStore_default_lang_code((String)                         queryList.get(0)[75]);
-            doc.setJr_vat((String)                                          queryList.get(0)[76]);
-            return doc;
         } else return null;
     }
 
@@ -712,7 +725,9 @@ public class CompanyRepositoryJPA {
 //                    " tax_number =      :tax_number, " + // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //                    " reg_number =      :reg_number" + // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
                     " nds_included = " + request.getNds_included() + ", " + // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-                    " store_default_lang_code = upper(:store_default_lang_code)" +
+                    " store_default_lang_code = upper(:store_default_lang_code)," +
+                    " booking_doc_name_variation_id = " + request.getBooking_doc_name_variation_id() + ", " +
+                    " time_zone_id = " + request.getTime_zone_id() +
                     " where " +
                     " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
         Query query = entityManager.createNativeQuery(stringQuery);
@@ -930,7 +945,9 @@ public class CompanyRepositoryJPA {
                 " legal_form,"+
                 " nds_included, " +
                 " vat, " +// VAT number
-                " store_default_lang_code" +
+                " store_default_lang_code," +
+                " booking_doc_name_variation," +
+                " time_zone_id " +
                 ") values (" +
                 myMasterId + ", "+
                 myId + ", "+
@@ -988,7 +1005,9 @@ public class CompanyRepositoryJPA {
                 ":legal_form,"+
                 request.getNds_included() + ", " +
                 ":jr_vat, " +
-                " upper(:store_default_lang_code) " +
+                " upper(:store_default_lang_code), " +
+                request.getBooking_doc_name_variation_id() + " ," +
+                request.getTime_zone_id() +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);

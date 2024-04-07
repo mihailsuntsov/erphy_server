@@ -103,13 +103,30 @@ public class CompaniesJSON {
     private String  st_netcost_policy;          // policy of netcost calculation for all company or for each department separately
     private String type;                        // entity or individual
     private String legal_form;
-    private Boolean nds_included;                //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+    private Boolean nds_included;               //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+    private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
+    private Integer time_zone_id;
+//    private Integer reg_country_id;           // country of registration
+//    private String tax_number;                // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
+//    private String reg_number;                // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-//    private Integer reg_country_id;             // country of registration
-//    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
-//    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+    public Integer getTime_zone_id() {
+        return time_zone_id;
+    }
+
+    public void setTime_zone_id(Integer time_zone_id) {
+        this.time_zone_id = time_zone_id;
+    }
 
     private String store_default_lang_code;      // internet-store basic language, e.g. EN, RU, UA, ...
+
+    public Integer getBooking_doc_name_variation_id() {
+        return booking_doc_name_variation_id;
+    }
+
+    public void setBooking_doc_name_variation_id(Integer booking_doc_name_variation_id) {
+        this.booking_doc_name_variation_id = booking_doc_name_variation_id;
+    }
 
     public String getStore_default_lang_code() {
         return store_default_lang_code;

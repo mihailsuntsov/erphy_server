@@ -107,7 +107,8 @@ public class AppointmentRepositoryJPA {
                     "           to_char(p.date_start,   'DD.MM.YYYY') as date_start, " +
                     "           to_char(p.time_start,   'HH24:MI')    as time_start, " +
                     "           to_char(p.date_end,     'DD.MM.YYYY') as date_end, " +
-                    "           to_char(p.time_end,     'HH24:MI')    as time_end " +
+                    "           to_char(p.time_end,     'HH24:MI')    as time_end, " +
+                    "           uo.name as owner " +
                     "           from scdl_appointments p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
@@ -189,6 +190,7 @@ public class AppointmentRepositoryJPA {
                 doc.setDate_end((String)                      obj[21]);
                 doc.setTime_start((String)                    obj[22]);
                 doc.setTime_end((String)                      obj[23]);
+                doc.setOwner((String)                         obj[24]);
                 returnList.add(doc);
             }
             return returnList;
@@ -257,7 +259,6 @@ public class AppointmentRepositoryJPA {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             Long myMasterId = userRepositoryJPA.getMyMasterId();
-//            String myDepthsIds = userRepositoryJPA.getMyDepartmentsId().toString().replace("[","").replace("]","");
             stringQuery =   " select " +
                     " ap.product_id," +
                     " ap.appointment_id," +
@@ -284,7 +285,7 @@ public class AppointmentRepositoryJPA {
                     " ap.id  as row_id, " +
                     " ppr.name_api_atol as ppr_name_api_atol, " +
                     " ppr.is_material as is_material, " +
-//                    " 0 as reserved_current, " +//зарезервировано в данном документе (a так как в Записях нет резервирования - то всегда 0)
+//                    " 0 as reserved_current, " +//зарезервировано в данном документе (a так как в Букингах нет резервирования - то всегда 0)
                     " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
                     " coalesce(nds.value,0) as nds_value," +
 

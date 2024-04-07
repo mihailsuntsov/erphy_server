@@ -429,7 +429,9 @@ public class CommonUtilites {
 //                        " coalesce(cmp.store_days_for_esd,0) as store_days_for_esd, " +
                         " coalesce(cmp.nds_payer, false) as nds_payer, " +
                         " coalesce(cmp.nds_included, false) as nds_included, " +
-                        "(select count(*) from stores where company_id="+company_id+" and coalesce(is_deleted,false)=false) > 0 as is_store" +
+                        "(select count(*) from stores where company_id="+company_id+" and coalesce(is_deleted,false)=false) > 0 as is_store," +
+                        " coalesce(cmp.booking_doc_name_variation_id,1) as booking_doc_name_variation, " +
+                        " coalesce(cmp.time_zone_id,21) as time_zone_id" +
 //                        " coalesce(cmp.store_auto_reserve, false) as store_auto_reserve, " +
 //                        " coalesce(cmp.is_store, false) as is_store" +
                         " from companies cmp where cmp.id="+company_id;
@@ -450,8 +452,12 @@ public class CommonUtilites {
 //                    returnObj.setStore_days_for_esd((Integer)               obj[7]);
                     returnObj.setVat((Boolean)                              obj[3]);
                     returnObj.setVat_included((Boolean)                     obj[4]);
-//                    returnObj.setStore_auto_reserve((Boolean)               obj[10]);
+//                    returnObj.setStore_auto_reserve((Boolean)             obj[10]);
                     returnObj.setIs_store((Boolean)                         obj[5]);
+                    returnObj.setBooking_doc_name_variation_id((Integer)    obj[6]);
+                    returnObj.setBooking_doc_name_variation(returnObj.getBooking_doc_name_variation_id()==1?"appointment":"reservation");
+                    returnObj.setTime_zone_id((Integer)                     obj[7]);
+
                 }
 
             return returnObj;
