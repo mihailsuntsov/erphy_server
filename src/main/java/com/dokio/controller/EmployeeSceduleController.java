@@ -1,9 +1,7 @@
 package com.dokio.controller;
 
-import com.dokio.message.request.ProductCategoriesForm;
 import com.dokio.message.request.additional.EmployeeSceduleForm;
 import com.dokio.message.response.additional.eployeescdl.EmployeeScedule;
-import com.dokio.message.response.additional.eployeescdl.SceduleDay;
 import com.dokio.repository.EmployeeSceduleRepository;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 public class EmployeeSceduleController {

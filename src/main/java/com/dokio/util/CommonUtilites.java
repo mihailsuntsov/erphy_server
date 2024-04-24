@@ -994,7 +994,16 @@ public class CommonUtilites {
         }
     }
 
-
+    public String getTimeZoneById(int id){
+        String stringQuery;
+        stringQuery=    " select " +
+                " s.canonical_id " +
+                " from " +
+                " sprav_sys_timezones s" +
+                " where s.id=" + id;
+        Query query = entityManager.createNativeQuery(stringQuery);
+        return query.getSingleResult().toString();
+    }
 
 
 

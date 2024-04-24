@@ -605,7 +605,8 @@ public class EmployeeSceduleRepository {
                 "   ) ON CONFLICT ON CONSTRAINT vacation_scedule_day_uq " +// "upsert"
                 "   DO update set " +
                 "   is_paid = "           + vacation.getIs_paid() + "," +
-                "   payment_per_day = "   + vacation.getPayment_per_day() ;
+                "   payment_per_day = "   + vacation.getPayment_per_day()  + "," +
+                "   name = :name";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("name", vacation.getName());

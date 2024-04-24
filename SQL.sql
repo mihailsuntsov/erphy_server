@@ -6564,7 +6564,9 @@ CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING bt
 
 
 
-
+-- drop table scdl_appointment_cagents;
+-- drop table scdl_appointment_products;
+-- drop table scdl_appointments;
 
 
 create table scdl_appointments(
@@ -6578,7 +6580,8 @@ create table scdl_appointments(
                              date_time_changed                  timestamp with time zone,
                              status_id                          bigint,
                              doc_number                         int not null,
-                             description                        varchar(2048),
+                             name                               varchar(1000),
+                             description                        varchar(2000),
                              nds                                boolean,
                              nds_included                       boolean,
                              is_deleted                         boolean,
@@ -6586,10 +6589,8 @@ create table scdl_appointments(
                              uid                                varchar (36),
                              linked_docs_group_id               bigint,
                              dep_part_id                        bigint not null,
-                             date_start                         date not null,
-                             time_start                         time,
-                             date_end                           date not null,
-                             time_end                           time,
+                             starts_at_time                     timestamp with time zone not null,
+                             ends_at_time                       timestamp with time zone,
                              foreign key (master_id)            references users(id),
                              foreign key (owner_id)             references users(id),
                              foreign key (creator_id)           references users(id),
@@ -6665,7 +6666,9 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 
 alter table companies add column time_zone_id int; --id of company's main time zone
 
-
+insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+(725,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',60,50),
+(726,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',60,60);
 
 
 

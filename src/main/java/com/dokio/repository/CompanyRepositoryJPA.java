@@ -1600,6 +1600,7 @@ public class CompanyRepositoryJPA {
         }
     }
 */
+
     @Transactional
     public Long insertCompanyFast(CompaniesForm request,Long myMasterId){
         String stringQuery;

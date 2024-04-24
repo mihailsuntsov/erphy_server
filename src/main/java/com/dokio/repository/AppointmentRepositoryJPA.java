@@ -108,7 +108,8 @@ public class AppointmentRepositoryJPA {
                     "           to_char(p.time_start,   'HH24:MI')    as time_start, " +
                     "           to_char(p.date_end,     'DD.MM.YYYY') as date_end, " +
                     "           to_char(p.time_end,     'HH24:MI')    as time_end, " +
-                    "           uo.name as owner " +
+                    "           uo.name as owner, " +
+                    "           p.name as name" +
                     "           from scdl_appointments p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           INNER JOIN departments dp ON p.department_id=dp.id " +
