@@ -1,10 +1,13 @@
 package com.dokio.message.response.additional.calendar;
 
+import java.util.Set;
+
 public class Meta {
 
     private CalendarUser user;
     private String docType;
-//    private Boolean isBreak;
+    private Long departmentPartId;
+    private Set<ItemResource> itemResources;
 
     public Meta() {
     }
@@ -12,7 +15,13 @@ public class Meta {
     public Meta(CalendarUser user, String docType) {
         this.user = user;
         this.docType = docType;
-//        this.isBreak = isBreak;
+    }
+
+    public Meta(CalendarUser user, String docType, Long departmentPartId, Set<ItemResource> itemResources) {
+        this.user = user;
+        this.docType = docType;
+        this.departmentPartId = departmentPartId;
+        this.itemResources = itemResources;
     }
 
     public CalendarUser getUser() {
@@ -31,11 +40,19 @@ public class Meta {
         this.docType = docType;
     }
 
-//    public Boolean getBreak() {
-//        return isBreak;
-//    }
+    public Long getDepartmentPartId() {
+        return departmentPartId;
+    }
 
-//    public void setBreak(Boolean aBreak) {
-//        isBreak = aBreak;
-//    }
+    public void setDepartmentPartId(Long departmentPartId) {
+        this.departmentPartId = departmentPartId;
+    }
+
+    public Set<ItemResource> getItemResources() {
+        return itemResources;
+    }
+
+    public void setItemResources(Set<ItemResource> itemResources) {
+        this.itemResources = itemResources;
+    }
 }

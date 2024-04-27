@@ -38,6 +38,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.time.LocalDate.now;
+
 @Repository
 public class CalendarRepositoryJPA {
 
@@ -67,16 +69,47 @@ public class CalendarRepositoryJPA {
 
 
     public List<CalendarEventJSON> getCalendarEventsList(CalendarEventsQueryForm queryForm){
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         List<CalendarEventJSON> events = new ArrayList<>();
+        LocalDate localDate = LocalDate.now();
+        String calendarDate = localDate.format(formatter);
+        String dateTo = localDate.plusDays(10).format(formatter);
 
-        events.add(new CalendarEventJSON(1L, "2024-04-23T08:00:00.000Z","2024-04-23T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(2L, "2024-04-23T08:30:00.000Z","2024-04-23T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(3L, "2024-04-23T14:30:00.000Z","2024-04-23T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(4L, "2024-04-23T08:00:00.000Z","2024-04-23T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(5L, "2024-04-23T10:30:00.000Z","2024-04-23T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(6L, "2024-04-23T11:30:00.000Z","2024-04-23T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(7L, "2024-04-23T10:30:00.000Z","2024-04-23T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
+ /*
+        events.add(new CalendarEventJSON(1L, calendarDate+"T08:00:00.000Z",calendarDate+"T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(2L, calendarDate+"T08:30:00.000Z",calendarDate+"T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(3L, calendarDate+"T14:30:00.000Z",calendarDate+"T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(4L, calendarDate+"T08:00:00.000Z",calendarDate+"T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",calendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(6L, calendarDate+"T11:30:00.000Z",calendarDate+"T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(7L, calendarDate+"T10:30:00.000Z",calendarDate+"T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
+
+       events.add(new CalendarEventJSON(8L, "2024-04-30T08:00:00.000Z","2024-04-30T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(9L, "2024-04-30T08:30:00.000Z","2024-04-30T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(10L, "2024-04-30T14:30:00.000Z","2024-04-30T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(11L, "2024-04-30T08:00:00.000Z","2024-04-30T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(12L, "2024-04-30T10:30:00.000Z","2024-04-30T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(13L, "2024-04-30T11:30:00.000Z","2024-04-30T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(14L, "2024-04-30T10:30:00.000Z","2024-04-30T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
+
+
+        events.add(new CalendarEventJSON(15L, "2024-05-01T08:00:00.000Z","2024-05-01T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(16L, "2024-05-01T08:30:00.000Z","2024-05-01T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(17L, "2024-05-01T14:30:00.000Z","2024-05-01T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+        events.add(new CalendarEventJSON(18L, "2024-05-01T08:00:00.000Z","2024-05-01T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(19L, "2024-05-01T10:30:00.000Z","2024-05-01T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(20L, "2024-05-01T11:30:00.000Z","2024-05-01T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+        events.add(new CalendarEventJSON(21L, "2024-05-01T10:30:00.000Z","2024-05-01T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
+*/
+
+
+
+        events.add(new CalendarEventJSON(22L, calendarDate+"T14:00:00.000Z",dateTo+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+
+
+
+
+
 
         return events;
 
@@ -108,14 +141,16 @@ public class CalendarRepositoryJPA {
                 String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
                 DateTimeFormatter sqlQueryFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
                 DateTimeFormatter calendarFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate dateFrom = LocalDate.parse(queryForm.getDateFrom(),sqlQueryFormatter);
-                LocalDate dateTo = LocalDate.parse(queryForm.getDateTo(),sqlQueryFormatter);
-                // the shift of previous day can be started in the first day of query.
-                // in this case to get the information about start of first break we need to get previous day
-                dateFrom = dateFrom.minusDays(1);
-                // the shift of current day can be finishet before the end of a day.
-                // in this case to get the information about finish of the last break of last query day, we need to get a next day
-                dateTo = dateTo.plusDays(1);
+                LocalDate dateFrom = LocalDate.parse(queryForm.getDateFrom(),sqlQueryFormatter).minusDays(1+7);
+                LocalDate dateTo = LocalDate.parse(queryForm.getDateTo(),sqlQueryFormatter).plusDays(1+7);
+                // The shift of previous day can be started in the first day of query.
+                // In this case to get the information about start of first break we need to get previous day
+                // Also week can contain both of months - this is because we need to include an additional week
+//                dateFrom = LocalDate(dateFrom.minusDays(1+7));
+                // The shift of current day can be finishet before the end of a day.
+                // In this case to get the information about finish of the last break of last query day, we need to get a next day
+                // Also week can contain both of months - this is because we need to include an additional week
+//                dateTo = dateTo.plusDays(1+7);
 
                 if (    !commonUtilites.isDateValid(queryForm.getDateFrom()) ||
                         !commonUtilites.isDateValid(queryForm.getDateTo()) ||
