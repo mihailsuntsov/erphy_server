@@ -6,9 +6,9 @@ public class DepartmentsWithPartsJSON {
 
     private Long   department_id;
     private String department_name;
-    private List<DepartmentPartsJSON> parts;
+    private List<DepartmentPartJSON> parts;
 
-    public DepartmentsWithPartsJSON(Long department_id, String department_name, List<DepartmentPartsJSON> parts) {
+    public DepartmentsWithPartsJSON(Long department_id, String department_name, List<DepartmentPartJSON> parts) {
         this.department_id = department_id;
         this.department_name = department_name;
         this.parts = parts;
@@ -37,11 +37,11 @@ public class DepartmentsWithPartsJSON {
         this.department_name = department_name;
     }
 
-    public List<DepartmentPartsJSON> getParts() {
+    public List<DepartmentPartJSON> getParts() {
         return parts;
     }
 
-    public void setParts(List<DepartmentPartsJSON> parts) {
+    public void setParts(List<DepartmentPartJSON> parts) {
         this.parts = parts;
     }
 }

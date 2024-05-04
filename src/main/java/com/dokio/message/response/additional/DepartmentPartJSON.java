@@ -17,6 +17,9 @@ public class DepartmentPartsJSON {
     private String description;
     private Boolean is_active;
     private Boolean is_deleted;
+
+    // to create table |Department part name|Resource qtt| in the document "Resource"
+    // that describes the qtt of current resource in each department part
     private Long department_id;     // used in    getDepartmentPartsWithResourceQttList
     private String department_name; // used in    getDepartmentPartsWithResourceQttList
     private Integer resource_qtt;   // used in    getDepartmentPartsWithResourceQttList
