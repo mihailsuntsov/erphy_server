@@ -23,13 +23,13 @@ import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
-import com.dokio.message.response.additional.DepartmentPartsJSON;
-import com.dokio.message.response.additional.DepartmentsWithPartsJSON;
+import com.dokio.message.response.additional.DepartmentPartJSON;
+import com.dokio.message.response.additional.DepartmentWithPartsJSON;
 import com.dokio.message.response.additional.IdAndNameJSON;
+import com.dokio.message.response.additional.ResourceDepPart;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
-import com.dokio.model.Sprav.SpravSysDepartmentsList;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -67,6 +67,9 @@ public class DepartmentRepositoryJPA {
 
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+
+    @Autowired
+    SpravResourceRepositoryJPA spravResourceRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -702,7 +705,7 @@ public class DepartmentRepositoryJPA {
 //*****************************************************************************************************************************************************
 
     @Transactional
-    public DepartmentPartsJSON getDeppartValues(Long id) {
+    public DepartmentPartJSON getDeppartValues(Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(4L, "13,14"))// (см. файл Permissions Id)
         {
             String stringQuery;
@@ -742,7 +745,7 @@ public class DepartmentRepositoryJPA {
                 Query query = entityManager.createNativeQuery(stringQuery);
                 List<Object[]> queryList = query.getResultList();
 
-                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+                DepartmentPartJSON doc = new DepartmentPartJSON();
 
                 for (Object[] obj : queryList) {
 
@@ -769,7 +772,7 @@ public class DepartmentRepositoryJPA {
             }
         } else return null;
     }
-    public List<DepartmentPartsJSON> getDepartmentPartsList (Long departmentId) {
+    public List<DepartmentPartJSON> getDepartmentPartsList (Long departmentId) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery =       "select " +
@@ -786,9 +789,9 @@ public class DepartmentRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<DepartmentPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+                DepartmentPartJSON doc = new DepartmentPartJSON();
                 doc.setId(Long.parseLong(           obj[0].toString()));
                 doc.setName((String)                obj[1]);
                 doc.setDescription((String)         obj[2]);
@@ -805,7 +808,7 @@ public class DepartmentRepositoryJPA {
 
 
     // For the "Departments parts" select list in Resources registry
-    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
+    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery =
@@ -824,7 +827,7 @@ public class DepartmentRepositoryJPA {
                     "           and coalesce(p.is_deleted, false) = false" +
                     "           order by d.name,p.menu_order";
         try {
-            return departmentsPartsListConstruct(stringQuery, masterId);
+            return departmentsPartsListConstruct(stringQuery, masterId, companyId);
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
@@ -833,7 +836,7 @@ public class DepartmentRepositoryJPA {
     }
 
     // returns the list of departments with parts that user belongs to
-//    public List<DepartmentsWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
+//    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
 //        String stringQuery;
 //        stringQuery =
 //                    "           select " +
@@ -860,12 +863,13 @@ public class DepartmentRepositoryJPA {
 //        }
 //    }
 
-    private List<DepartmentsWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId){
+    private List<DepartmentWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId, Long companyId){
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<DepartmentsWithPartsJSON> returnList = new ArrayList<>();
-            List<DepartmentPartsJSON> partsList = new ArrayList<>();
+            List<DepartmentWithPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartJSON> partsList = new ArrayList<>();
+            List<ResourceDepPart> resources = spravResourceRepository.getResourcesList(companyId,masterId); // all resources of company
             Long lastDepId = 0L;
             Long currentDepId=0L;
             String lastDepName = "";
@@ -876,15 +880,16 @@ public class DepartmentRepositoryJPA {
                 currentDepId = Long.parseLong(obj[5].toString());
                 currentDepName = (String) obj[4];
 
-                DepartmentPartsJSON part = new DepartmentPartsJSON();
+                DepartmentPartJSON part = new DepartmentPartJSON();
                 part.setId(Long.parseLong(           obj[0].toString()));
                 part.setName((String)                obj[1]);
                 part.setDescription((String)         obj[2]);
                 part.setIs_active((Boolean)          obj[3]);
-                part.setDeppartProducts(getDeppartProducts(part.getId(),masterId));
+                part.setDeppartProducts(getDeppartProducts(part.getId(),masterId)); // in the future need to improve perfomance for not to do separately SQL query for each cycle. Do it like resources (filterResourcesByDepPart) below
+                part.setResources(filterResourcesByDepPart(part.getId(),resources));
 
                 if((!currentDepId.equals(lastDepId)) && lastDepId != 0L ) { // department has been changed
-                    returnList.add(new DepartmentsWithPartsJSON(lastDepId, lastDepName, partsList));
+                    returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, partsList));
                     partsList = new ArrayList<>();
                 }
                 partsList.add(part);
@@ -893,7 +898,7 @@ public class DepartmentRepositoryJPA {
             }
 
             if(currentDepId>0L)
-                returnList.add(new DepartmentsWithPartsJSON(lastDepId, lastDepName, partsList));
+                returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, partsList));
 
             return returnList;
         } catch (Exception e) {
@@ -902,6 +907,16 @@ public class DepartmentRepositoryJPA {
             return null;
         }
     }
+
+    private List<ResourceDepPart> filterResourcesByDepPart(Long partId, List<ResourceDepPart> resources){
+        List<ResourceDepPart> returnList = new ArrayList<>();
+        for(ResourceDepPart resource:resources){
+            if(resource.getDep_part_id().equals(partId))
+                returnList.add(resource);
+        }
+        return returnList;
+    }
+
 
     public List<IdAndNameJSON> getUserDepartmentsList(Long userId, Long masterId) {
 
@@ -932,7 +947,7 @@ public class DepartmentRepositoryJPA {
         }
     }
 
-    /*public List<DepartmentsWithPartsJSON> getDepartmentPartsWithResourceQttList_old (Long companyId, Long resource_id) {
+    /*public List<DepartmentWithPartsJSON> getDepartmentPartsWithResourceQttList_old (Long companyId, Long resource_id) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery =
@@ -956,8 +971,8 @@ public class DepartmentRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<DepartmentsWithPartsJSON> returnList = new ArrayList<>();
-            List<DepartmentPartsJSON> partsList = new ArrayList<>();
+            List<DepartmentWithPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartJSON> partsList = new ArrayList<>();
             Long lastDepId = 0L;
             Long currentDepId=0L;
             String currentDepName = "";
@@ -968,7 +983,7 @@ public class DepartmentRepositoryJPA {
                 currentDepId = Long.parseLong(obj[5].toString());
                 currentDepName = (String) obj[4];
 
-                DepartmentPartsJSON part = new DepartmentPartsJSON();
+                DepartmentPartJSON part = new DepartmentPartJSON();
                 part.setId(Long.parseLong(           obj[0].toString()));
                 part.setName((String)                obj[1]);
                 part.setDescription((String)         obj[2]);
@@ -977,7 +992,7 @@ public class DepartmentRepositoryJPA {
 
 
                 if((currentDepId != lastDepId) && lastDepId != 0L ) { // department has been changed
-                    returnList.add(new DepartmentsWithPartsJSON(currentDepId, currentDepName, partsList));
+                    returnList.add(new DepartmentWithPartsJSON(currentDepId, currentDepName, partsList));
                     partsList = new ArrayList<>();
                 }
                 partsList.add(part);
@@ -985,7 +1000,7 @@ public class DepartmentRepositoryJPA {
             }
 
             if(currentDepId>0L)
-                returnList.add(new DepartmentsWithPartsJSON(currentDepId, currentDepName, partsList));
+                returnList.add(new DepartmentWithPartsJSON(currentDepId, currentDepName, partsList));
 
             return returnList;
         } catch (Exception e) {
@@ -996,7 +1011,7 @@ public class DepartmentRepositoryJPA {
     }
 */
 
-    public List<DepartmentPartsJSON> getDepartmentPartsWithResourceQttList (Long resource_id, Long masterId) {
+    public List<DepartmentPartJSON> getDepartmentPartsWithResourceQttList (Long resource_id, Long masterId) {
         String stringQuery;
         //Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery =
@@ -1021,9 +1036,9 @@ public class DepartmentRepositoryJPA {
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<DepartmentPartsJSON> returnList = new ArrayList<>();
+            List<DepartmentPartJSON> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                DepartmentPartsJSON doc = new DepartmentPartsJSON();
+                DepartmentPartJSON doc = new DepartmentPartJSON();
                 doc.setId(Long.parseLong(           obj[0].toString()));
                 doc.setName((String)                obj[1]);
                 doc.setDescription((String)         obj[2]);

@@ -2,7 +2,7 @@ package com.dokio.message.response.additional;
 
 import java.util.List;
 
-public class DepartmentPartsJSON {
+public class DepartmentPartJSON {
 
     private Long id;
     private Long creator_id;
@@ -24,6 +24,15 @@ public class DepartmentPartsJSON {
     private String department_name; // used in    getDepartmentPartsWithResourceQttList
     private Integer resource_qtt;   // used in    getDepartmentPartsWithResourceQttList
     private List<IdAndNameJSON> deppartProducts; // list of services in this department part
+    private List<ResourceDepPart> resources; // list of resources with quantity in this department part
+
+    public List<ResourceDepPart> getResources() {
+        return resources;
+    }
+
+    public void setResources(List<ResourceDepPart> resources) {
+        this.resources = resources;
+    }
 
     public Long getDepartment_id() {
         return department_id;

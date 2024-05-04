@@ -1,6 +1,6 @@
 package com.dokio.message.response.additional.eployeescdl;
 
-import com.dokio.message.response.additional.DepartmentsWithPartsJSON;
+import com.dokio.message.response.additional.DepartmentWithPartsJSON;
 import com.dokio.message.response.additional.IdAndNameJSON;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public class EmployeeInfo {
     private String jobtitle;        // Job title of employee
     private Boolean is_currently_employed;
     private Long cagent_id;
-    private List<DepartmentsWithPartsJSON> departments_with_parts;
+    private List<DepartmentWithPartsJSON> departments_with_parts;
     private List<IdAndNameJSON> employee_services;
     private List<FreeTimeSlot> freeTimeSlots;  // free time slot
 

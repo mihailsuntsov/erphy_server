@@ -1,11 +1,12 @@
 package com.dokio.message.response.additional;
 
-public class ResourcesListJSON {
+public class ResourceJSON {
 
     private Long   resource_id;
     private String name;
     private String description;
     private int    resource_qtt;// quantity of resource
+
 
     public Long getResource_id() {
         return resource_id;

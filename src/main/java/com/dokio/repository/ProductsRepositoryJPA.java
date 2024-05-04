@@ -5319,7 +5319,7 @@ public class ProductsRepositoryJPA {
         }
     }
 
-    private List<ResourcesListJSON> getProductResources(Long masterId, Long productId){
+    private List<ResourceJSON> getProductResources(Long masterId, Long productId){
         String stringQuery =
                         " select " +
                         " da.resource_id as id," +
@@ -5332,9 +5332,9 @@ public class ProductsRepositoryJPA {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> resultList = query.getResultList();
-            List<ResourcesListJSON> returnList = new ArrayList<>();
+            List<ResourceJSON> returnList = new ArrayList<>();
             for(Object[] obj:resultList){
-                ResourcesListJSON doc=new ResourcesListJSON();
+                ResourceJSON doc=new ResourceJSON();
                 doc.setResource_id(Long.parseLong(              obj[0].toString()));
                 doc.setResource_qtt((Integer)                   obj[1]);
                 doc.setName((String)                            obj[2]);

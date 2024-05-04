@@ -22,7 +22,8 @@ import com.dokio.message.request.Sprav.SpravResourceForm;
 import com.dokio.message.request.additional.ResourceDepPartsForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.SpravResourceJSON;
-import com.dokio.message.response.additional.ResourcesListJSON;
+import com.dokio.message.response.additional.ResourceDepPart;
+import com.dokio.message.response.additional.ResourceJSON;
 import com.dokio.model.Companies;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
@@ -471,7 +472,7 @@ public class SpravResourceRepositoryJPA {
         }
     }
 
-    public List<ResourcesListJSON> getResourcesList(long companyId) {
+    public List<ResourceJSON> getResourcesList(long companyId) {
 //        if (securityRepositoryJPA.userHasPermissions_OR(56L, "688,689"))//(см. файл Permissions Id)
 //        {
             String stringQuery;
@@ -486,9 +487,9 @@ public class SpravResourceRepositoryJPA {
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
                 List<Object[]> queryList = query.getResultList();
-                List<ResourcesListJSON> returnList = new ArrayList<>();
+                List<ResourceJSON> returnList = new ArrayList<>();
                 for (Object[] obj : queryList) {
-                    ResourcesListJSON doc = new ResourcesListJSON();
+                    ResourceJSON doc = new ResourceJSON();
                     doc.setResource_id(Long.parseLong(                      obj[0].toString()));
                     doc.setName((String)                                    obj[1]);
                     doc.setDescription((String)                             obj[2]);
@@ -501,6 +502,47 @@ public class SpravResourceRepositoryJPA {
                 return null;
             }
 //        } else return null;
+    }
+
+    public List<ResourceDepPart> getResourcesList(long companyId, long myMasterId) {
+        String stringQuery;
+        stringQuery =   " select  r.id as resource_id, " +
+                        " r.name as resource_name, " +
+                        " r.description as resource_description, " +
+                        " dpr.quantity as resource_qtt, " +
+                        " dp.id as dep_part_id, " +
+                        " true as is_active" +
+                        " from" +
+                        " sprav_resources r, " +
+                        " scdl_dep_parts dp, " +
+                        " scdl_resource_dep_parts_qtt dpr " +
+                        " where  r.master_id=" + myMasterId +
+                        " and r.company_id=" + companyId +
+                        " and coalesce(r.is_deleted,false) = false " +
+                        " and r.id=dpr.resource_id " +
+                        " and dp.id=dpr.dep_part_id " +
+                        " and coalesce(dpr.quantity,0) > 0 " +
+                        " order by dpr.dep_part_id ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<ResourceDepPart> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                ResourceDepPart doc = new ResourceDepPart();
+                doc.setResource_id(Long.parseLong(                      obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                doc.setDescription((String)                             obj[2]);
+                doc.setResource_qtt((Integer)                           obj[3]);
+                doc.setDep_part_id(Long.parseLong(                      obj[4].toString()));
+                doc.setActive((Boolean)                                 obj[5]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getResourcesList. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 
     // inserting base set of cash room for new user

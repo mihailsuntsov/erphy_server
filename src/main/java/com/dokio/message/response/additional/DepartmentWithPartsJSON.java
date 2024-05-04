@@ -2,13 +2,13 @@ package com.dokio.message.response.additional;
 
 import java.util.List;
 
-public class DepartmentsWithPartsJSON {
+public class DepartmentWithPartsJSON {
 
     private Long   department_id;
     private String department_name;
     private List<DepartmentPartJSON> parts;
 
-    public DepartmentsWithPartsJSON(Long department_id, String department_name, List<DepartmentPartJSON> parts) {
+    public DepartmentWithPartsJSON(Long department_id, String department_name, List<DepartmentPartJSON> parts) {
         this.department_id = department_id;
         this.department_name = department_name;
         this.parts = parts;

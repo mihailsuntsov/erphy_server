@@ -9,7 +9,7 @@ public class EmployeeListJSON {
     private String job_title;
     private Boolean is_currently_employed;
     private Long cagent_id;
-    private List<DepartmentsWithPartsJSON> departments_with_parts;
+    private List<DepartmentWithPartsJSON> departments_with_parts;
     private List<IdAndNameJSON> employee_services;
 
     public Long getId() {
@@ -52,11 +52,11 @@ public class EmployeeListJSON {
         this.cagent_id = cagent_id;
     }
 
-    public List<DepartmentsWithPartsJSON> getDepartments_with_parts() {
+    public List<DepartmentWithPartsJSON> getDepartments_with_parts() {
         return departments_with_parts;
     }
 
-    public void setDepartments_with_parts(List<DepartmentsWithPartsJSON> departments_with_parts) {
+    public void setDepartments_with_parts(List<DepartmentWithPartsJSON> departments_with_parts) {
         this.departments_with_parts = departments_with_parts;
     }
 

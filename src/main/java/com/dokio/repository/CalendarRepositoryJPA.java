@@ -74,13 +74,26 @@ public class CalendarRepositoryJPA {
         LocalDate localDate = LocalDate.now();
         String calendarDate = localDate.format(formatter);
         String dateTo = localDate.plusDays(10).format(formatter);
+        String event1_start = localDate.plusDays(14).format(formatter);
+        String event1_end = localDate.plusDays(19).format(formatter);
+        String event2_start = localDate.plusDays(3).format(formatter);
+        String event2_end = localDate.plusDays(9).format(formatter);
+        String event3_start = localDate.plusDays(4).format(formatter);
+        String event3_end = localDate.plusDays(9).format(formatter);
+        String event4_start = localDate.plusDays(5).format(formatter);
+        String event4_end = localDate.plusDays(8).format(formatter);
+        String event5_start = localDate.plusDays(1).format(formatter);
+        String event5_end = localDate.plusDays(8).format(formatter);
+
+
+
 
  /*
         events.add(new CalendarEventJSON(1L, calendarDate+"T08:00:00.000Z",calendarDate+"T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
         events.add(new CalendarEventJSON(2L, calendarDate+"T08:30:00.000Z",calendarDate+"T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
         events.add(new CalendarEventJSON(3L, calendarDate+"T14:30:00.000Z",calendarDate+"T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
         events.add(new CalendarEventJSON(4L, calendarDate+"T08:00:00.000Z",calendarDate+"T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",calendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",getDepartmentsWithPartsListcalendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
         events.add(new CalendarEventJSON(6L, calendarDate+"T11:30:00.000Z",calendarDate+"T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
         events.add(new CalendarEventJSON(7L, calendarDate+"T10:30:00.000Z",calendarDate+"T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
 
@@ -105,6 +118,12 @@ public class CalendarRepositoryJPA {
 
 
         events.add(new CalendarEventJSON(22L, calendarDate+"T14:00:00.000Z",dateTo+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+        events.add(new CalendarEventJSON(23L, event1_start+"T14:00:00.000Z",event1_end+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+        events.add(new CalendarEventJSON(24L, event3_start+"T14:00:00.000Z",event3_end+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+        events.add(new CalendarEventJSON(25L, event4_start+"T14:00:00.000Z",event4_end+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+        events.add(new CalendarEventJSON(26L, event1_start+"T14:00:00.000Z",event1_end+"T12:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+
+        events.add(new CalendarEventJSON(27L, event2_start+"T14:00:00.000Z",event2_end+"T12:00:00.000Z", "Проживание Люкс", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 21L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(22L,"Кровать люкс", 1, 1))))));
 
 
 
@@ -298,8 +317,8 @@ public class CalendarRepositoryJPA {
         "       select product_id from scdl_dep_part_products where master_id="+masterId+" and dep_part_id in " + depPartsIds_ +
         "       ) as aaa " +
         "   )>0 " +
-        "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('31.03.2024'||' 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
-        "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('30.04.2024'||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
 
         "   union all " +
 
@@ -333,8 +352,8 @@ public class CalendarRepositoryJPA {
         "           select product_id from scdl_dep_part_products where master_id="+masterId+" and dep_part_id in " + depPartsIds_ +
         "       ) as aaa " +
         "   )>0 " +
-        "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('31.03.2024'||' 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
-        "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('30.04.2024'||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
 
         "   union all " +
 
@@ -368,8 +387,8 @@ public class CalendarRepositoryJPA {
         "           select product_id from scdl_dep_part_products where master_id="+masterId+" and dep_part_id in " + depPartsIds_ +
         "       ) as aaa " +
         "   )>0 " +
-        "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('31.03.2024'||' 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
-        "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('30.04.2024'||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
 
         "   union all " +
 
@@ -403,8 +422,8 @@ public class CalendarRepositoryJPA {
         "           select product_id from scdl_dep_part_products where master_id="+masterId+" and dep_part_id in " + depPartsIds_ +
         "       ) as aaa " +
         "   )>0 " +
-        "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('31.03.2024'||' 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
-        "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('30.04.2024'||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
+        "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone '"+companyTimeZone+"' at time zone '"+companyTimeZone+"' " +
 
                 "   order by user_id, point_of_scedule_time, day_date;";
 

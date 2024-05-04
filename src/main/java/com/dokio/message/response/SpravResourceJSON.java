@@ -17,8 +17,8 @@
 */
 package com.dokio.message.response;
 
-import com.dokio.message.response.additional.DepartmentPartsJSON;
-import com.dokio.message.response.additional.ResourceDepPartsJSON;
+import com.dokio.message.response.additional.DepartmentPartJSON;
+//import com.dokio.message.response.additional.ResourceDepPartsJSON;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class SpravResourceJSON {
     private String description;
     private String date_time_created;
     private String date_time_changed;
-    private List<DepartmentPartsJSON> dep_parts;// quantity of this resource in each department part
+    private List<DepartmentPartJSON> dep_parts;// quantity of this resource in each department part
 
     public Long getId() {
         return id;
@@ -125,11 +125,11 @@ public class SpravResourceJSON {
         this.date_time_changed = date_time_changed;
     }
 
-    public List<DepartmentPartsJSON> getDep_parts() {
+    public List<DepartmentPartJSON> getDep_parts() {
         return dep_parts;
     }
 
-    public void setDep_parts(List<DepartmentPartsJSON> dep_parts) {
+    public void setDep_parts(List<DepartmentPartJSON> dep_parts) {
         this.dep_parts = dep_parts;
     }
 }
