@@ -28,7 +28,7 @@ public class AppointmentProductsTableJSON {
     private Integer     row_num;            // номер строки при выводе печатной версии
     private BigDecimal  nds_value;          // сколько % НДС у данного товара
     private Boolean     is_srvc_by_appointment;                  // this service is selling by appointments
-    private Boolean     scdl_is_only_on_start;                   // a service provider is needed only at the start
+    private Boolean     scdl_is_employee_required;                   // a service provider is needed only at the start
     private Integer     scdl_max_pers_on_same_time;              // the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
     private Integer     scdl_srvc_duration;                      // time minimal duration of the service.
     private Integer     scdl_appointment_atleast_before_time;    // minimum time before the start of the service for which customers can make an appointment
@@ -42,12 +42,12 @@ public class AppointmentProductsTableJSON {
         this.is_srvc_by_appointment = is_srvc_by_appointment;
     }
 
-    public Boolean getScdl_is_only_on_start() {
-        return scdl_is_only_on_start;
+    public Boolean getScdl_is_employee_required() {
+        return scdl_is_employee_required;
     }
 
-    public void setScdl_is_only_on_start(Boolean scdl_is_only_on_start) {
-        this.scdl_is_only_on_start = scdl_is_only_on_start;
+    public void setScdl_is_employee_required(Boolean scdl_is_employee_required) {
+        this.scdl_is_employee_required = scdl_is_employee_required;
     }
 
     public Integer getScdl_max_pers_on_same_time() {

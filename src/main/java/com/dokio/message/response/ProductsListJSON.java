@@ -25,8 +25,10 @@ public class ProductsListJSON {
     private Long product_id;                        // и это тоже id товара (так надо)
     private String name;                            // наименование товара
     private Integer nds_id;                         // id ндс
-    private Long edizm_id;                          // id ед. измерения
-    private String edizm;                           // наименование ед. измерения
+    private Long edizm_id;                          // id ед. измерения / unit of measurement's ID
+    private String edizm;                           // наименование ед. измерения / unit of measurement's name
+    private Integer edizm_type_id;                   // 6=time, 2=weight, ...
+    private BigDecimal edizm_multiplier;            // The multiplier tells the system the ratio of your and international units
     private String filename;                        // имя файла
     private BigDecimal total;                       // всего товаров
     private BigDecimal reserved;                    // зарезервировано в других документах Заказ покупателя
@@ -41,6 +43,22 @@ public class ProductsListJSON {
     private BigDecimal  avgCostPrice;               // средняя себестоимость
     private BigDecimal  lastPurchasePrice;          // последняя закупочная цена
     private BigDecimal  avgPurchasePrice ;          // средняя закупочная цена
+
+    public Integer getEdizm_type_id() {
+        return edizm_type_id;
+    }
+
+    public void setEdizm_type_id(Integer edizm_type_id) {
+        this.edizm_type_id = edizm_type_id;
+    }
+
+    public BigDecimal getEdizm_multiplier() {
+        return edizm_multiplier;
+    }
+
+    public void setEdizm_multiplier(BigDecimal edizm_multiplier) {
+        this.edizm_multiplier = edizm_multiplier;
+    }
 
     public BigDecimal getPriceOfTypePrice() {
         return priceOfTypePrice;

@@ -6403,7 +6403,7 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('1_day_before_start', '1 day before start', 'за 1 день до начала', '1 дан пре почетка');
 
 alter table products add column is_srvc_by_appointment boolean;   -- this service is selling by appointments
-alter table products add column scdl_is_only_on_start boolean;    -- a service provider is needed only at the start
+alter table products add column scdl_is_employee_required boolean;    -- a service provider is needed only at the start
 alter table products add column scdl_max_pers_on_same_time int;   -- the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
 alter table products add column scdl_srvc_duration int;           -- time minimal duration of the service.
 alter table products add column scdl_appointment_atleast_before_time int;    -- minimum time before the start of the service for which customers can make an appointment
@@ -6524,7 +6524,7 @@ create table scdl_workshift_deppart
   -- describes the departments parts where this workshift is belongs to
                                     master_id                   bigint not null,
                                     workshift_id                bigint not null,
-                                    deppart_id                  bigint not null,
+                                    scdl_scedule_day                  bigint not null,
                                     foreign key (workshift_id)  references scdl_workshift (id) on delete cascade,
                                     foreign key (deppart_id)    references scdl_dep_parts (id) on delete cascade,
                                     foreign key (master_id)     references users(id)
@@ -6573,9 +6573,12 @@ create table scdl_appointments(
   -- describes appointments
                              id                                 bigserial primary key not null,
                              master_id                          bigint not null,
+                             company_id                         bigint not null,
                              creator_id                         bigint not null,
                              changer_id                         bigint not null,
                              owner_id                           bigint not null,
+                             employee_id                        bigint,
+                             service_id                         bigint not null,
                              date_time_created                  timestamp with time zone not null,
                              date_time_changed                  timestamp with time zone,
                              status_id                          bigint,
@@ -6595,12 +6598,14 @@ create table scdl_appointments(
                              foreign key (owner_id)             references users(id),
                              foreign key (creator_id)           references users(id),
                              foreign key (changer_id)           references users(id),
+                             foreign key (employee_id)          references users(id),
+                             foreign key (company_id)           references companies(id),
                              foreign key (status_id)            references sprav_status_dock (id) on delete set null,
                              foreign key (linked_docs_group_id) references linked_docs_groups(id),
                              foreign key (dep_part_id)          references scdl_dep_parts(id)
 );
 
-create table scdl_appointment_products(
+                    create table scdl_appointment_products(
                              id                                 bigserial primary key not null,
                              master_id                          bigint not null,
                              product_id                         bigint not null,
@@ -6634,6 +6639,9 @@ create table scdl_appointment_cagents(
 
 -- delete from permissions where document_id=59;
 -- delete from documents where id=59;
+-- drop table scdl_appointment_products;
+-- drop table scdl_appointment_cagents;
+-- drop table scdl_appointments;
 
 insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
 insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
@@ -6670,7 +6678,7 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (725,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',60,50),
 (726,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',60,60);
 
-
+alter table users drop column status_employee; -- column is not using
 
 
 
@@ -6690,3 +6698,53 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 
 
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
+
+
+insert into scdl_appointments
+(							 master_id,
+                company_id,
+                creator_id,
+                changer_id,
+                owner_id,
+                employee_id,
+                service_id,
+                date_time_created,
+                date_time_changed,
+                status_id,
+                doc_number,
+                name,
+                description,
+                nds,
+                nds_included,
+                is_deleted,
+                is_completed,
+                uid,
+                linked_docs_group_id,
+                dep_part_id,
+                starts_at_time,
+                ends_at_time)
+values (
+         4,
+         1,
+         4,
+         4,
+         4,
+         4,
+         1008699,
+         now(),
+         now(),
+         null,
+         1,
+         'Лечение кариеса Бабушкин В.Д.',
+         '',
+         true,
+         true,
+         false,
+         false,
+         '',
+         null,
+         12,
+         to_timestamp ('23.05.2024 13:00', 'DD.MM.YYYY HH24:MI'),
+         to_timestamp ('23.05.2024 14:00', 'DD.MM.YYYY HH24:MI')
+       );
+

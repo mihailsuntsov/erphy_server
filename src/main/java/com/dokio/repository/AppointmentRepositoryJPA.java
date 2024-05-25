@@ -291,7 +291,7 @@ public class AppointmentRepositoryJPA {
                     " coalesce(nds.value,0) as nds_value," +
 
                     " coalesce(p.is_srvc_by_appointment, false) as is_srvc_by_appointment, " +
-                    " coalesce(p.scdl_is_only_on_start, false) as scdl_is_only_on_start, " +
+                    " coalesce(p.scdl_is_employee_required, false) as scdl_is_employee_required, " +
                     " coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
                     " coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
                     " coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
@@ -351,7 +351,7 @@ public class AppointmentRepositoryJPA {
                 doc.setIndivisible((Boolean)                            obj[19]);
                 doc.setNds_value((BigDecimal)                           obj[20]);
                 doc.setIs_srvc_by_appointment((Boolean)                 obj[21]);// this service is selling by appointments
-                doc.setScdl_is_only_on_start((Boolean)                  obj[22]);// a service provider is needed only at the start
+                doc.setScdl_is_employee_required((Boolean)              obj[22]);// a service provider is needed only at the start
                 doc.setScdl_max_pers_on_same_time((Integer)             obj[23]);// the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
                 doc.setScdl_srvc_duration((Integer)                     obj[24]);// time minimal duration of the service.
                 doc.setScdl_appointment_atleast_before_time((Integer)   obj[25]);// minimum time before the start of the service for which customers can make an appointment

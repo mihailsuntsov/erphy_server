@@ -317,7 +317,7 @@ public class ProductsRepositoryJPA {
                     "           coalesce(p.short_description_type,'editor') as short_description_type, " + // "editor" or "custom"
 
                     "           coalesce(p.is_srvc_by_appointment, false) as is_srvc_by_appointment, " +
-                    "           coalesce(p.scdl_is_only_on_start, false) as scdl_is_only_on_start, " +
+                    "           coalesce(p.scdl_is_employee_required, false) as scdl_is_employee_required, " +
                     "           coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
                     "           coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
                     "           coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
@@ -411,7 +411,7 @@ public class ProductsRepositoryJPA {
                     doc.setShort_description_type((String)          queryList.get(0)[66]);
 
                     doc.setIs_srvc_by_appointment((Boolean)         queryList.get(0)[67]);
-                    doc.setScdl_is_only_on_start((Boolean)          queryList.get(0)[68]);
+                    doc.setScdl_is_employee_required((Boolean)      queryList.get(0)[68]);
                     doc.setScdl_max_pers_on_same_time((Integer)     queryList.get(0)[69]);
                     doc.setScdl_srvc_duration((Integer)             queryList.get(0)[70]);
                     doc.setScdl_appointment_atleast_before_time((Integer) queryList.get(0)[71]);
@@ -923,7 +923,7 @@ public class ProductsRepositoryJPA {
                     " short_description_type = :short_description_type, "+
 
                     " is_srvc_by_appointment = " + request.isIs_srvc_by_appointment() + "," +
-                    " scdl_is_only_on_start = " + request.isScdl_is_only_on_start() + "," +
+                    " scdl_is_employee_required = " + request.isScdl_is_employee_required() + "," +
                     " scdl_max_pers_on_same_time = " + request.getScdl_max_pers_on_same_time() + "," +
                     " scdl_srvc_duration = " + request.getScdl_srvc_duration() + "," +
                     " scdl_appointment_atleast_before_time = " + request.getScdl_appointment_atleast_before_time() + "," +
@@ -1725,7 +1725,7 @@ public class ProductsRepositoryJPA {
                 "   and department_id=" + departmentId +
                 "   and customers_orders_id="+document_id+") as reserved_current, "+
                 " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                " coalesce((select edizm.short_name from sprav_sys_edizm edizm where edizm.id = coalesce(p.edizm_id,0)),'') as edizm," +
+                " coalesce(edizm.short_name,'') as edizm," +
                 // цена по запрашиваемому типу цены (будет 0 если такой типа цены у товара не назначен)
                 " coalesce((select pp.price_value from product_prices pp where pp.product_id=p.id and pp.price_type_id = "+priceTypeId+"),0) as price_by_typeprice, " +
                 // средняя себестоимость
@@ -1733,11 +1733,15 @@ public class ProductsRepositoryJPA {
                 // средняя закупочная цена - deprecated and not used
                 " 0.00  as avgPurchasePrice, " +
                 // последняя закупочная цена                                                                15 = Acceptance
-                " (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and doc_type_id=15 and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice " +
+                " (select ph.price from product_history ph  where ph.department_id = " + departmentId +" and doc_type_id=15 and ph.product_id = p.id and ph.is_completed=true order by ph.date_time_created desc limit 1) as lastPurchasePrice, " +
+
+                " coalesce(edizm.type_id, 0) as edizm_type_id," +
+                " coalesce(edizm.equals_si, 1.000) as si_multiplier" +
 
                 " from products p " +
                 " left outer join product_barcodes pb on pb.product_id=p.id" +
                 " left outer join files f on f.id=(select file_id from product_files where product_id=p.id and output_order=1 limit 1)" +
+                " left outer join sprav_sys_edizm edizm on edizm.id=p.edizm_id" +
                 " where  p.master_id=" + myMasterId +
                 " and coalesce(p.is_deleted,false) = false " +
                 " and coalesce(p.type, 'simple') != 'variable'" +
@@ -1757,7 +1761,7 @@ public class ProductsRepositoryJPA {
         if (companyId > 0) {
             stringQuery = stringQuery + " and p.company_id=" + companyId;
         }
-        stringQuery = stringQuery + " group by p.id,f.name  order by p.name asc";
+        stringQuery = stringQuery + " group by p.id,f.name,edizm.short_name,edizm.type_id,edizm.equals_si  order by p.name asc";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
 
@@ -1788,6 +1792,10 @@ public class ProductsRepositoryJPA {
                 product.setAvgCostPrice(                                    obj[15]==null?BigDecimal.ZERO:(BigDecimal)obj[15]);
                 product.setAvgPurchasePrice(                                obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
                 product.setLastPurchasePrice(                               obj[17]==null?BigDecimal.ZERO:(BigDecimal)obj[17]);
+                product.setEdizm_type_id((Integer)                          obj[18]);
+                product.setEdizm_multiplier(                                obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
+
+
                 returnList.add(product);
             }
             return returnList;

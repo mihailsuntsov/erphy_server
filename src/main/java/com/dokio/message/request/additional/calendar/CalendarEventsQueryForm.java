@@ -9,7 +9,17 @@ public class CalendarEventsQueryForm {
     private String dateTo;
     private Set<Long> depparts;
     private Set<Long> jobtitles;
-    private Set<Integer> documents;
+
+    public CalendarEventsQueryForm(Long companyId, String dateFrom, String dateTo, Set<Long> depparts, Set<Long> jobtitles) {
+        this.companyId = companyId;
+        this.dateFrom = dateFrom;
+        this.dateTo = dateTo;
+        this.depparts = depparts;
+        this.jobtitles = jobtitles;
+    }
+
+    public CalendarEventsQueryForm() {
+    }
 
     public Long getCompanyId() {
         return companyId;
@@ -51,11 +61,11 @@ public class CalendarEventsQueryForm {
         this.jobtitles = jobtitles;
     }
 
-    public Set<Integer> getDocuments() {
-        return documents;
-    }
-
-    public void setDocuments(Set<Integer> documents) {
-        this.documents = documents;
-    }
+//    public Set<Integer> getDocuments() {
+//        return documents;
+//    }
+//
+//    public void setDocuments(Set<Integer> documents) {
+//        this.documents = documents;
+//    }
 }

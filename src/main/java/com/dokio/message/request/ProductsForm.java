@@ -109,7 +109,7 @@ public class ProductsForm {
 
     ////////////////// APPOINTMENTS //////////////////////
     private boolean is_srvc_by_appointment;
-    private boolean scdl_is_only_on_start;
+    private boolean scdl_is_employee_required;
     private int scdl_max_pers_on_same_time;
     private int scdl_srvc_duration;
     private int scdl_appointment_atleast_before_time;
@@ -126,12 +126,12 @@ public class ProductsForm {
         this.is_srvc_by_appointment = is_srvc_by_appointment;
     }
 
-    public boolean isScdl_is_only_on_start() {
-        return scdl_is_only_on_start;
+    public boolean isScdl_is_employee_required() {
+        return scdl_is_employee_required;
     }
 
-    public void setScdl_is_only_on_start(boolean scdl_is_only_on_start) {
-        this.scdl_is_only_on_start = scdl_is_only_on_start;
+    public void setScdl_is_employee_required(boolean scdl_is_employee_required) {
+        this.scdl_is_employee_required = scdl_is_employee_required;
     }
 
     public int getScdl_max_pers_on_same_time() {
