@@ -9,15 +9,14 @@ public class AppointmentEmployee {
     private Long jobtitle_id;                   // Job title ID of employee
     private List<DepartmentPartWithServicesIds> departmentPartsWithServicesIds; // Department parts, whose services coincide with the services of the employee.
                                                                                 // It contains the set of these services
+    private String state;                       // "free" / "busyByAppointments" / "busyBySchedule"
 
-    public AppointmentEmployee() {
+    public String getState() {
+        return state;
     }
 
-    public AppointmentEmployee(Long id, String name, Long jobtitle_id, List<DepartmentPartWithServicesIds> departmentPartsWithServicesIds) {
-        this.id = id;
-        this.name = name;
-        this.jobtitle_id = jobtitle_id;
-        this.departmentPartsWithServicesIds = departmentPartsWithServicesIds;
+    public void setState(String state) {
+        this.state = state;
     }
 
     public Long getId() {
