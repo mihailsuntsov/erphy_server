@@ -1,6 +1,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
+import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.request.AppointmentsForm;
@@ -10,6 +11,9 @@ import com.dokio.message.response.additional.AppointmentProductsTableJSON;
 import com.dokio.message.response.additional.AppointmentUpdateReportJSON;
 import com.dokio.message.response.additional.DeleteDocsReport;
 import com.dokio.message.response.additional.LinkedDocsJSON;
+import com.dokio.message.response.additional.appointment.AppointmentService;
+import com.dokio.message.response.additional.appointment.DepartmentPartWithResourcesIds;
+import com.dokio.message.response.additional.appointment.ResourceOfDepartmentPart;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
@@ -1085,21 +1089,224 @@ public class AppointmentRepositoryJPA {
     }
 
 
+    public List<AppointmentService> getAppointmentServicesList(AppointmentMainInfoForm reqest) {
+
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String myTimeZone = userRepository.getUserTimeZone();
+
+
+        String stringQuery =
+                " WITH busy_resources AS ( " +
+//              busy_resources - Это выборка с занятыми ресурсами в заданном промежутке времени в виде: / ID ресурса / Название / Используемое количество " +
+                        " select  " +
+                        " r.id as resource_id,  " +
+                        " r.name as resource,  " +
+                        " dp.id as dep_part_id, " +
+                        " dp.name as dep_part, " +
+                        " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
+                        " from   " +
+                        " scdl_appointments a, " +
+                        " scdl_appointment_products ap,  " +
+                        " products p, " +
+                        " scdl_product_resource_qtt pr, " +
+                        " sprav_resources r, " +
+                        " scdl_dep_parts dp, " +
+                        " scdl_resource_dep_parts_qtt rdp " +
+                        " where " +
+                        " p.master_id=" + masterId + " and " +
+                        " p.company_id=" + reqest.getCompanyId() + " and " +
+                        " ap.appointment_id=a.id and " +
+                        " ap.product_id=p.id and " +
+                        " pr.product_id=p.id and " +
+                        " pr.resource_id=r.id and  " +
+                        " dp.id=a.dep_part_id and " +
+                        " rdp.dep_part_id=a.dep_part_id and " +
+                        " 	a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
+                        " rdp.resource_id=r.id and " +
+                        " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
+                        " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
+                        " ) " +
+
+                        " select  " +
+                        " p.id,  " +
+                        " p.name,  " +
+                        " coalesce(d.id,0) as department_id, " +
+                        " coalesce(d.name,'') as department, " +
+                        " coalesce(dp.id,0) as dep_part_id, " +
+                        " coalesce(dp.name,'') as dep_part_name, " +
+                        " r.id as resource_id, " +
+                        " coalesce(r.name,'') as resource_name, " +
+                        " coalesce(prq.quantity,0) as need_res_qtt, " +
+                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
+//                " -- coalesce(br.quantity_now_used,0) as now_used,  " +
+                        " coalesce(rdp.quantity,0) as quantity_in_dep_part  " +
+                        " from " +
+                        " products p " +
+                        " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
+                        " left outer join sprav_resources r on prq.resource_id=r.id " +
+//                " -- left outer join busy_resources br on br.resource_id=r.id " +
+                        " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
+                        " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
+                        " left outer join departments d on d.id=dp.department_id " +
+                        " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
+                        " where " +
+                        " p.name like '%" + reqest.getSearchString() + "%' and  " +
+                        " p.master_id=" + masterId + " and " +
+                        " p.company_id=" + reqest.getCompanyId() + " and " +
+                        " p.ppr_id=4 and  " + //-- this is a service
+                        " coalesce(d.is_deleted,false)=false and  " +
+                        " coalesce(dp.is_deleted,false)=false and  " +
+                        " coalesce(dp.is_active,false)=true and  " +
+                        " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
+                        " and concat(p.id,'_',dp.id) not in ( " +
+
+                        " 	select concat(p.id,'_',dp.id) " +
+                        " 	from " +
+                        " products p " +
+                        " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
+                        " left outer join sprav_resources r on prq.resource_id=r.id " +
+                        //" -- left outer join busy_resources br on br.resource_id=r.id " +
+                        " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
+                        " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
+                        " left outer join departments d on d.id=dp.department_id " +
+                        " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
+                        " where " +
+                        " p.master_id=" + masterId + " and " +
+                        " p.company_id=" + reqest.getCompanyId() + " and " +
+                        " p.ppr_id=4 and  " + //-- this is a service
+                        " coalesce(d.is_deleted,false)=false and  " +
+                        " coalesce(dp.is_deleted,false)=false and  " +
+                        " coalesce(dp.is_active,false)=true and  " +
+                        " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
+                        " and coalesce(rdp.quantity,0)-coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0)<coalesce(prq.quantity,0) " +
+                        " ) " +
+
+                        " order by p.name, d.name, dp.name, r.name ";
+
+
+        Long currentServiceId = 0L;
+        Long currentDepPartId = 0L;
+        AppointmentService appointmentService = new AppointmentService();
+        DepartmentPartWithResourcesIds departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds();
+        List<DepartmentPartWithResourcesIds> departmentPartsWithResourcesIds = new ArrayList<>();
+        Set<ResourceOfDepartmentPart> currentDepPartResources = new HashSet<>();
+        List<AppointmentService> returnList = new ArrayList<>();
+        Query query = entityManager.createNativeQuery(stringQuery);//
+        List<Object[]> queryList = query.getResultList();
+
+        for (Object[] obj : queryList) {
+            Long currentCycleServiceId = Long.parseLong(obj[0].toString());
+            String currentCycleServiceName = obj[1].toString();
+            Long currentCycleDepartmentId = Long.parseLong(obj[2].toString());
+            Long currentCycleDepPartId = Long.parseLong(obj[4].toString());
+            Long currentCycleResourceId = (obj[2] == null ? null : Long.parseLong(obj[4].toString()));
+            String currentCycleResourceName = obj[1].toString();
+            Integer currentCycleNeedRresQtt = Integer.parseInt(obj[4].toString());
+            Integer currentCycleNowUsed = Integer.parseInt(obj[4].toString());
+            Integer currentCycleQuantityInDepPart = Integer.parseInt(obj[4].toString());
+
+            // on this cycle if it is a new user
+            if (!currentCycleServiceId.equals(currentServiceId)) {
+
+                // Если это не первый цикл
+                // If it is not a first cycle
+                if (!currentServiceId.equals(0L)) {
+
+                    // В текущую часть отделения сохранили все накопленные IDs сервисов
+                    departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+
+                    // В список частей отделения текущего пользователя добавили текущее отделение
+                    departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+
+                    // В текущего сотрудника поместили список частей отделений
+                    appointmentService.setDepartmentPartsWithResourcesIds(departmentPartsWithResourcesIds);
+
+                    // В итоговый список сотрудников поместили этого сотрудника
+                    returnList.add(appointmentService);
+
+                    // Cоздали новой услуги
+                    appointmentService = new AppointmentService();
+
+                    // Для новой услуги создаем новую часть отделенияи сбрасываем накопление IDs сервисов
+                    currentDepPartId = currentCycleDepPartId;
+
+                    // Cоздали новую часть отделения, и прописали туда её ID
+                    departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId);
+
+                    // Cбросили текущее накопление ID сервисов для новой части отделения
+                    currentDepPartResources = new HashSet<>();
+
+                }
+
+                currentServiceId = currentCycleServiceId;
+
+                // Для новой услуги задаём её ID, имя и ID её отделения
+                appointmentService.setId(currentCycleServiceId);
+                appointmentService.setName(currentCycleServiceName);
+                appointmentService.setDepartmentId(currentCycleDepartmentId);
+
+                // Cоздали новый лист для накопления частей отделений для новой услуги
+                departmentPartsWithResourcesIds = new ArrayList<>();
+
+            }
+
+            // Если сотрудник не новый, но часть отделения сменилась
+            if (!currentCycleDepPartId.equals(currentDepPartId)) {
+
+                if (!currentDepPartId.equals(0L)) {
+
+                    // В текущую часть отделения сохранили все накопленные IDs сервисов
+                    departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+
+                    // В список частей отделения текущего пользователя добавили текущее отделение
+                    departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+
+                }
+
+                currentDepPartId = currentCycleDepPartId;
+
+                // Cоздали новую часть отделения, и прописали туда её ID
+                departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId);
+
+                // Cбросили текущее накопление ID сервисов для новой части отделения
+                currentDepPartResources = new HashSet<>();
+
+            }
+
+            currentDepPartResources.add(Objects.isNull(currentCycleResourceId) ? new ResourceOfDepartmentPart() : new ResourceOfDepartmentPart(
+                    currentCycleResourceId,
+                    currentCycleResourceName,
+                    currentCycleNeedRresQtt,
+                    currentCycleNowUsed,
+                    currentCycleQuantityInDepPart
+            ));
+        }
+
+        // По окончании цикла, если в ней что-то было
+        // нужно записать последнего сотрудника
+        if (!currentServiceId.equals(0L)) {
+
+            // В текущую часть отделения сохранили все накопленные IDs сервисов
+            departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+
+            // В список частей отделения текущего пользователя добавили текущее отделение
+            departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+
+            // В текущего сотрудника поместили список частей отделений
+            appointmentService.setDepartmentPartsWithResourcesIds(departmentPartsWithResourcesIds);
+
+            // В итоговый список сотрудников поместили этого сотрудника
+            returnList.add(appointmentService);
+        }
+
+
+        return returnList;
+
+
+    }
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-}
+    }

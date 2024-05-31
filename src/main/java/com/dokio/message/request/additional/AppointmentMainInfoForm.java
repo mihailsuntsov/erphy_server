@@ -4,9 +4,11 @@ import java.util.Set;
 
 public class AppointmentMainInfoForm {
 
-    private Boolean isFree;
-    private String kindOfNoFree;  // busyByAppointments or busyBySchedule
-    private Long appointmentId;
+    private String searchString;
+    private Boolean isFree;       // is employee free? (for getting employees list)
+    private String kindOfNoFree;  // employees busyByAppointments or busyBySchedule (for getting employees list)
+    private Long appointmentId;   // parent document's ID
+    private Long employeeId;      // ID of employee (for getting services list)
     private Long companyId;
     private String dateFrom;
     private String timeFrom;
@@ -16,8 +18,24 @@ public class AppointmentMainInfoForm {
     private Set<Long> depPartsIds;
     private Set<Long> jobTitlesIds;
 
+    public String getSearchString() {
+        return searchString;
+    }
+
+    public void setSearchString(String searchString) {
+        this.searchString = searchString;
+    }
+
     public Boolean getFree() {
         return isFree;
+    }
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
     }
 
     public void setFree(Boolean free) {

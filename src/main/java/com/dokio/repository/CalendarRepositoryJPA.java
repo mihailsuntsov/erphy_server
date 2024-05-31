@@ -709,8 +709,8 @@ public class CalendarRepositoryJPA {
         try {
             Long masterId = userRepositoryJPA.getMyMasterId();
             String myTimeZone = userRepository.getUserTimeZone();
-            int companyTimeZoneId = (Integer) commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, request.getCompanyId());
-            String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
+//            int companyTimeZoneId = (Integer) commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, request.getCompanyId());
+//            String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
             List<AppointmentEmployee> returnList = new ArrayList<>();
             Set<Long> employeesIdsList = new HashSet<>();
 
@@ -767,10 +767,7 @@ public class CalendarRepositoryJPA {
                 AppointmentEmployee appointmentEmployee = new AppointmentEmployee();
                 DepartmentPartWithServicesIds departmentPartWithServicesIds = new DepartmentPartWithServicesIds();
                 List<DepartmentPartWithServicesIds> departmentPartsWithServicesIds = new ArrayList<>();
-                boolean isNewUser = false;
                 Set<Long> currentDepPartServicesIds = new HashSet<>();
-                BreakJSON break_ = new BreakJSON();
-                int i = 0; // index
 
                 Query query = entityManager.createNativeQuery(stringQuery);//
                 List<Object[]> queryList = query.getResultList();

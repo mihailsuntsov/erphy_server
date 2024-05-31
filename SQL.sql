@@ -6605,7 +6605,7 @@ create table scdl_appointments(
                              foreign key (dep_part_id)          references scdl_dep_parts(id)
 );
 
-                    create table scdl_appointment_products(
+create table scdl_appointment_products(
                              id                                 bigserial primary key not null,
                              master_id                          bigint not null,
                              product_id                         bigint not null,
@@ -6748,3 +6748,56 @@ values (
          to_timestamp ('23.05.2024 14:00', 'DD.MM.YYYY HH24:MI')
        );
 
+insert into scdl_appointment_products (master_id, product_id, resource_id, quantity) values (4,1008699,2,1);
+
+insert into scdl_appointment_products(
+  master_id,
+  product_id,
+  appointment_id,
+  price_type_id,
+  department_id,
+  product_count,
+  product_price,
+  product_sumprice,
+  edizm_id,
+  nds_id,
+  product_price_of_type_price
+) values (
+           4,
+           1008698,	--product_id (Лечение кариеса)
+           1, 			--appointment_id
+           null,		--price_type_id
+           41,			--department_id
+           1.000,		--product_count
+           3000.00,	--product_price
+           3000.00,	--product_sumprice
+           1851,		--edizm_id (Визит)
+           4,			   --nds_id (Без НДС)
+           3000.00		--product_price_of_type_price
+         );
+
+insert into scdl_appointment_products(
+  master_id,
+  product_id,
+  appointment_id,
+  price_type_id,
+  department_id,
+  product_count,
+  product_price,
+  product_sumprice,
+  edizm_id,
+  nds_id,
+  product_price_of_type_price
+) values (
+           4,
+           1008699,	--product_id (Лечение кариеса с микроскопом)
+           1, 			--appointment_id
+           null,		--price_type_id
+           41,			--department_id
+           1.000,		--product_count
+           3000.00,	--product_price
+           3000.00,	--product_sumprice
+           1851,		--edizm_id (Визит)
+           4,			   --nds_id (Без НДС)
+           3000.00		--product_price_of_type_price
+         );
