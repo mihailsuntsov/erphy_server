@@ -117,6 +117,33 @@ public class ProductsForm {
     private List<Integer> scdl_customer_reminders;
     private List<Integer> scdl_employee_reminders;
     private List<String> scdl_assignments;
+    private Long scdl_srvc_duration_unit_id;
+    private List<Long> depparts;
+    private List<Long> employees;
+
+    public List<Long> getDepparts() {
+        return depparts;
+    }
+
+    public void setDepparts(List<Long> depparts) {
+        this.depparts = depparts;
+    }
+
+    public List<Long> getEmployees() {
+        return employees;
+    }
+
+    public void setEmployees(List<Long> employees) {
+        this.employees = employees;
+    }
+
+    public Long getScdl_srvc_duration_unit_id() {
+        return scdl_srvc_duration_unit_id;
+    }
+
+    public void setScdl_srvc_duration_unit_id(Long scdl_srvc_duration_unit_id) {
+        this.scdl_srvc_duration_unit_id = scdl_srvc_duration_unit_id;
+    }
 
     public boolean isIs_srvc_by_appointment() {
         return is_srvc_by_appointment;

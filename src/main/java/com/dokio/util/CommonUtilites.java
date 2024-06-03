@@ -947,7 +947,30 @@ public class CommonUtilites {
             throw new Exception();
         }
     }
-
+    public void idsBelongMyMaster_Long(String tableName, Set<Long> ids, Long masterId) throws Exception {
+        String stringQuery;
+        stringQuery = "select ((select count(*) from "+tableName+" where id in "+SetOfLongToString(ids,",","(",")")+" and master_id="+masterId+")="+ids.size()+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (ids.size()>0 && !(Boolean)query.getSingleResult()) throw new Exception("Ids don't belong to its master Id. Table of ids: "+tableName+", ids="+ids.toString()+", masterId="+masterId);
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method idsBelongMyMaster_Long. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
+    public void idsBelongMyMaster_Int(String tableName, Set<Integer> ids, Long masterId) throws Exception {
+        String stringQuery;
+        stringQuery = "select ((select count(*) from "+tableName+" where id in "+SetOfIntToString(ids,",","(",")")+" and master_id="+masterId+")="+ids.size()+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            if (ids.size()>0 && !(Boolean)query.getSingleResult()) throw new Exception("Ids don't belong to its master Id. Table of ids: "+tableName+", ids="+ids.toString()+", masterId="+masterId);
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method idsBelongMyMaster_Int. SQL = "+stringQuery, e);
+            throw new Exception();
+        }
+    }
     public Long getCagentIdByUserId(Long userId) throws Exception {
         String stringQuery;
         stringQuery = "select id from cagents where user_id="+userId;

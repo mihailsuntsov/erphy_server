@@ -5,6 +5,7 @@ import java.util.Set;
 public class AppointmentMainInfoForm {
 
     private String searchString;
+    private Boolean isAll;        // Get all (free and not free employees). isAll = "true" when query from Products and services. "false" when from Appointment
     private Boolean isFree;       // is employee free? (for getting employees list)
     private String kindOfNoFree;  // employees busyByAppointments or busyBySchedule (for getting employees list)
     private Long appointmentId;   // parent document's ID
@@ -17,6 +18,32 @@ public class AppointmentMainInfoForm {
     private Set<Long> servicesIds;
     private Set<Long> depPartsIds;
     private Set<Long> jobTitlesIds;
+    private Long priceTypeId;      // price will be returned by this price type
+    private String querySource;// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
+
+    public Boolean getIsAll() {
+        return isAll;
+    }
+
+    public void setIsAll(Boolean all) {
+        isAll = all;
+    }
+
+    public String getQuerySource() {
+        return querySource;
+    }
+
+    public void setQuerySource(String querySource) {
+        this.querySource = querySource;
+    }
+
+    public Long getPriceTypeId() {
+        return priceTypeId;
+    }
+
+    public void setPriceTypeId(Long priceTypeId) {
+        this.priceTypeId = priceTypeId;
+    }
 
     public String getSearchString() {
         return searchString;

@@ -1139,27 +1139,67 @@ public class AppointmentRepositoryJPA {
                         " coalesce(prq.quantity,0) as need_res_qtt, " +
                         " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
 //                " -- coalesce(br.quantity_now_used,0) as now_used,  " +
-                        " coalesce(rdp.quantity,0) as quantity_in_dep_part  " +
+                        " coalesce(rdp.quantity,0) as res_quantity_in_dep_part, " +
+
+                        " coalesce(pqtt.quantity, 0) product_quantity_in_department, " +
+                        " p.nds_id as nds_id, " +
+                        " coalesce(p.edizm_id,0) as edizm_id, " +
+                        " coalesce(edizm.short_name,'') as edizm," +
+                        " coalesce(edizm.type_id, 0) as edizm_type_id," +       // 6=time, 2=weight, ...
+                        " coalesce(edizm.equals_si, 1.000) as si_multiplier," +
+                        " ppr.is_material as is_material, " +
+                        " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                        " coalesce(pp.price_value,0.00) as price_by_typeprice, " +
+                        " coalesce(scdl_is_employee_required, false) as is_employee_required, " +// Whether employee is necessary required to do this service job?
+                        " coalesce(scdl_max_pers_on_same_time,0) as max_pers_on_same_time, " +  // How many persons can get this service in one appointment by the same time
+                        " coalesce(p.scdl_appointment_atleast_before_time * sse_alb.equals_si,0.00)*1.0 as atleast_before_seconds, " + // Minimum time before the start of the service for which customers can make an appointment
+                        " coalesce(p.scdl_srvc_duration * sse_sd.equals_si,0.00)*1.0 as service_duration_seconds " + // Approx. duration time to fininsh this service
                         " from " +
                         " products p " +
                         " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
                         " left outer join sprav_resources r on prq.resource_id=r.id " +
-//                " -- left outer join busy_resources br on br.resource_id=r.id " +
+//                      " -- left outer join busy_resources br on br.resource_id=r.id " +
                         " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
                         " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
                         " left outer join departments d on d.id=dp.department_id " +
                         " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
+                        " left outer join product_prices pp on pp.product_id = p.id " +
+                        " left outer join product_barcodes pb on pb.product_id=p.id" +
+                        " left outer join product_quantity pqtt on pqtt.product_id=p.id and pqtt.department_id = d.id " +
+                        " left outer join sprav_sys_edizm edizm on edizm.id=p.edizm_id" +
+                        " left outer join scdl_assignments asg on asg.product_id=p.id " +// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
+                        " left outer join sprav_sys_edizm sse_alb on sse_alb.id = p.scdl_appointment_atleast_before_unit_id " +
+                        " left outer join sprav_sys_edizm sse_sd on sse_sd.id = p.scdl_srvc_duration_unit_id " +
+                        " inner join sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                         " where " +
-                        " p.name like '%" + reqest.getSearchString() + "%' and  " +
                         " p.master_id=" + masterId + " and " +
                         " p.company_id=" + reqest.getCompanyId() + " and " +
                         " p.ppr_id=4 and  " + //-- this is a service
-                        " coalesce(d.is_deleted,false)=false and  " +
+                        " coalesce(p.is_deleted,false)=false and " +
+                        " p.is_srvc_by_appointment = true and " +
                         " coalesce(dp.is_deleted,false)=false and  " +
-                        " coalesce(dp.is_active,false)=true and  " +
-                        " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
+                        " (dp.is_active is null or coalesce(dp.is_active,false)=true) and " +
+                        " p.is_srvc_by_appointment = true and " + //-- this is a service by appointment
+                        " asg.assignment_type = :asg and " +
+                        " pp.price_type_id = "+reqest.getPriceTypeId();
+
+                        if (reqest.getSearchString() != null && !reqest.getSearchString().isEmpty()) {
+                        stringQuery = stringQuery + " and (" +
+                            " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
+                            " upper(p.article) like upper (CONCAT('%',:sg,'%')) or " +
+                            " to_char(p.product_code_free,'fm0000000000') = :sg or " +
+                            " pb.value = :sg" +
+                            ")";
+                        }
+                        stringQuery = stringQuery +
                         " and concat(p.id,'_',dp.id) not in ( " +
 
+//                      Cписок услуг у которых хотя бы 1 ресурса не достаточно для выполнения этой услуги в данной части отделения
+//                      В данном случае эта часть отделения не будет включена в услугу как часть отделения, где эта услуга выполняется.
+//                      А если это была единственная часть отделения - эта услуга вообще не будет включена в список на выдачу
+//                      List of services for whi    ch at least 1 resource is not sufficient to perform this service in this part of the department
+//                      In this case, this part of the department will not be included in the service as part of the department where this service is performed.
+//                      And if this was the only part of the department, this service will not be included in the list for issue at all
                         " 	select concat(p.id,'_',dp.id) " +
                         " 	from " +
                         " products p " +
@@ -1176,13 +1216,12 @@ public class AppointmentRepositoryJPA {
                         " p.ppr_id=4 and  " + //-- this is a service
                         " coalesce(d.is_deleted,false)=false and  " +
                         " coalesce(dp.is_deleted,false)=false and  " +
-                        " coalesce(dp.is_active,false)=true and  " +
+                        " (dp.is_active is null or coalesce(dp.is_active,false)=true) and " +
                         " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
                         " and coalesce(rdp.quantity,0)-coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0)<coalesce(prq.quantity,0) " +
                         " ) " +
 
                         " order by p.name, d.name, dp.name, r.name ";
-
 
         Long currentServiceId = 0L;
         Long currentDepPartId = 0L;
@@ -1192,19 +1231,36 @@ public class AppointmentRepositoryJPA {
         Set<ResourceOfDepartmentPart> currentDepPartResources = new HashSet<>();
         List<AppointmentService> returnList = new ArrayList<>();
         Query query = entityManager.createNativeQuery(stringQuery);//
+        if (reqest.getSearchString() != null && !reqest.getSearchString().isEmpty())
+        {query.setParameter("sg", reqest.getSearchString());}
+        query.setParameter("asg", reqest.getQuerySource());
         List<Object[]> queryList = query.getResultList();
 
         for (Object[] obj : queryList) {
-            Long currentCycleServiceId = Long.parseLong(obj[0].toString());
-            String currentCycleServiceName = obj[1].toString();
-            Long currentCycleDepartmentId = Long.parseLong(obj[2].toString());
-            Long currentCycleDepPartId = Long.parseLong(obj[4].toString());
-            Long currentCycleResourceId = (obj[2] == null ? null : Long.parseLong(obj[4].toString()));
-            String currentCycleResourceName = obj[1].toString();
-            Integer currentCycleNeedRresQtt = Integer.parseInt(obj[4].toString());
-            Integer currentCycleNowUsed = Integer.parseInt(obj[4].toString());
-            Integer currentCycleQuantityInDepPart = Integer.parseInt(obj[4].toString());
-
+            Long        currentCycleServiceId = Long.parseLong(             obj[0].toString());
+            String      currentCycleServiceName =                           obj[1].toString();
+            Long        currentCycleDepartmentId = Long.parseLong(          obj[2].toString());
+            String      currentCycleDepartmentName =                        obj[3].toString();
+            Long        currentCycleDepPartId = Long.parseLong(             obj[4].toString());
+            String      currentCycleDepPartName =                           obj[5].toString();
+            Long        currentCycleResourceId = (                          obj[6] == null?null:Long.parseLong(obj[6].toString()));
+            String      currentCycleResourceName =                          obj[7].toString();
+            Integer     currentCycleNeedRresQtt = Integer.parseInt(         obj[8].toString());
+            Integer     currentCycleNowUsed = Integer.parseInt(             obj[9].toString());
+            Integer     currentCycleQuantityInDepPart = Integer.parseInt(   obj[10].toString());
+            BigDecimal  currentCycleTotal = (                               obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+            Integer     currentCycleNdsId=((Integer)                        obj[12]);
+            Long        currentCycleEdIzmId = (Long.parseLong(              obj[13].toString()));
+            String      currentCycleEdIzm = ((String)                       obj[14]);
+            Integer     currentCycleEdizm_type_id = ((Integer)              obj[15]);
+            BigDecimal  currentCycleEdizm_multiplier = (                    obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
+            Boolean     currentCycleIs_material = ((Boolean)                obj[17]);
+            Boolean     currentCycleIndivisible = ((Boolean)                obj[18]);
+            BigDecimal  currentCyclePriceOfTypePrice = (                    obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
+            Boolean     currentCycleIsEmployeeRequired=((Boolean)           obj[20]);
+            Integer     currentCycleMaxPersOnSameTime=((Integer)            obj[21]);
+            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)     obj[22]);
+            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)obj[23]);
             // on this cycle if it is a new user
             if (!currentCycleServiceId.equals(currentServiceId)) {
 
@@ -1231,7 +1287,7 @@ public class AppointmentRepositoryJPA {
                     currentDepPartId = currentCycleDepPartId;
 
                     // Cоздали новую часть отделения, и прописали туда её ID
-                    departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId);
+                    departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId, currentCycleDepPartName);
 
                     // Cбросили текущее накопление ID сервисов для новой части отделения
                     currentDepPartResources = new HashSet<>();
@@ -1240,10 +1296,24 @@ public class AppointmentRepositoryJPA {
 
                 currentServiceId = currentCycleServiceId;
 
-                // Для новой услуги задаём её ID, имя и ID её отделения
-                appointmentService.setId(currentCycleServiceId);
-                appointmentService.setName(currentCycleServiceName);
-                appointmentService.setDepartmentId(currentCycleDepartmentId);
+                // Для новой услуги задаём её ID, имя и её отделение
+                appointmentService.setId(                           currentCycleServiceId);
+                appointmentService.setName(                         currentCycleServiceName);
+                appointmentService.setDepartmentId(                 currentCycleDepartmentId);
+                appointmentService.setDepartmentName(               currentCycleDepartmentName);
+                appointmentService.setNds_id(                       currentCycleNdsId);
+                appointmentService.setEdizm_id(                     currentCycleEdIzmId);
+                appointmentService.setEdizm(                        currentCycleEdIzm);
+                appointmentService.setEdizm_multiplier(             currentCycleEdizm_multiplier);
+                appointmentService.setEdizm_type_id(                currentCycleEdizm_type_id);
+                appointmentService.setTotal(                        currentCycleTotal);
+                appointmentService.setIs_material(                  currentCycleIs_material);
+                appointmentService.setIndivisible(                  currentCycleIndivisible);
+                appointmentService.setPriceOfTypePrice(             currentCyclePriceOfTypePrice);
+                appointmentService.setEmployeeRequired(             currentCycleIsEmployeeRequired);
+                appointmentService.setMaxPersOnSameTime(            currentCycleMaxPersOnSameTime);
+                appointmentService.setSrvcDurationInSeconds(        currentCycleSrvcDurationInSeconds);
+                appointmentService.setAtLeastBeforeTimeInSeconds(   currentCycleAtLeastBeforeTimeInSeconds);
 
                 // Cоздали новый лист для накопления частей отделений для новой услуги
                 departmentPartsWithResourcesIds = new ArrayList<>();
@@ -1266,7 +1336,7 @@ public class AppointmentRepositoryJPA {
                 currentDepPartId = currentCycleDepPartId;
 
                 // Cоздали новую часть отделения, и прописали туда её ID
-                departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId);
+                departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId, currentCycleDepPartName);
 
                 // Cбросили текущее накопление ID сервисов для новой части отделения
                 currentDepPartResources = new HashSet<>();

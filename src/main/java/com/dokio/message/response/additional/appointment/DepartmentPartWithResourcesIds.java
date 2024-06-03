@@ -10,8 +10,9 @@ public class DepartmentPartWithResourcesIds {
     public DepartmentPartWithResourcesIds() {
     }
 
-    public DepartmentPartWithResourcesIds(Long id) {
+    public DepartmentPartWithResourcesIds(Long id, String name) {
         this.id = id;
+        this.name = name;
     }
 
     public Long getId() {

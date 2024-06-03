@@ -713,14 +713,15 @@ public class CalendarRepositoryJPA {
 //            String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
             List<AppointmentEmployee> returnList = new ArrayList<>();
             Set<Long> employeesIdsList = new HashSet<>();
+            boolean isAll = request.getIsAll();
 
-            if (request.getIsFree())
+            if (!isAll && request.getIsFree())
                 employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
-            else
+            else if (!isAll && !request.getIsFree())
                 employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
 
 
-            if (employeesIdsList.size() > 0) {
+            if (isAll || employeesIdsList.size() > 0) {
 
                 String depPartsIds_ = commonUtilites.SetOfLongToString(request.getDepPartsIds(), ",", "(", ")");
                 String jobTitlesIds_ = commonUtilites.SetOfLongToString(request.getJobTitlesIds(), ",", "(", ")");
@@ -750,8 +751,8 @@ public class CalendarRepositoryJPA {
                 " u.master_id =  "+masterId+" and " +
                 " u.status_account = 2 and " +
                 " u.is_employee = true and " +
-                " u.is_currently_employed = true and " +
-                " u.id in "+employeesIds+
+                " u.is_currently_employed = true " +
+                (!isAll?(" and u.id in "+employeesIds):"") +
                 (request.getServicesIds(). size() > 0 ? (" and p.id  in " + servicesIds_ ) : "") +
                 (request.getDepPartsIds(). size() > 0 ? (" and dp.id in " + depPartsIds_ ) : "") +
                 (request.getJobTitlesIds().size() > 0 ? (" and jt.id in " + jobTitlesIds_) : "") +
@@ -818,7 +819,7 @@ public class CalendarRepositoryJPA {
                         appointmentEmployee.setId(currentCycleEmployeeId);
                         appointmentEmployee.setName(currentCycleEmployeeName);
                         appointmentEmployee.setJobtitle_id(currentCycleJobTitleId);
-                        appointmentEmployee.setState(request.getFree()?"free":request.getKindOfNoFree());
+                        if(!isAll) appointmentEmployee.setState(request.getFree()?"free":request.getKindOfNoFree());
 
                         // Cоздали новый лист для накопления частей отделений для нового сотрудника
                         departmentPartsWithServicesIds = new ArrayList<>();

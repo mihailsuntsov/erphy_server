@@ -6343,7 +6343,7 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('session', 'session', 'сеанс', 'сесија'),
 ('session_s', 'session', 'сеанс', 'сесија');
 
-insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units set. Do not need a translation because using only internally
+insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units types set. Do not need a translation because using only internally
 
 create table sprav_sys_scdl_reminders(
                                id                          int primary key not null,
@@ -6409,6 +6409,10 @@ alter table products add column scdl_srvc_duration int;           -- time minima
 alter table products add column scdl_appointment_atleast_before_time int;    -- minimum time before the start of the service for which customers can make an appointment
 alter table products add column scdl_appointment_atleast_before_unit_id int; -- the unit of measure of minimum time before the start of the service for which customers can make an appointment
 alter table products add constraint scdl_appointment_atleast_before_unit_id_fkey foreign key (scdl_appointment_atleast_before_unit_id) references sprav_sys_edizm(id);
+alter table products add column scdl_srvc_duration_unit_id int;    -- the unit of measure of time minimal duration of the service
+alter table products add constraint scdl_srvc_duration_unit_id_fkey foreign key (scdl_srvc_duration_unit_id) references sprav_sys_edizm(id);
+
+
 
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('customer_on_website', 'Customer on the website', 'Заказчик на сайте', 'Купац на сајту'),
@@ -6679,6 +6683,7 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (726,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',60,60);
 
 alter table users drop column status_employee; -- column is not using
+insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
 
 
 

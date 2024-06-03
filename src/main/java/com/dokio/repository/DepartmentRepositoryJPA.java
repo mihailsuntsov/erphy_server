@@ -1104,7 +1104,7 @@ public class DepartmentRepositoryJPA {
                     saveDeppartProducts(myMasterId, product.getId(), newDocId);
                     existingDeppartProducts.add(product.getId());
                 }
-                deleteDeppartProductsNoMoreContainedInDeppart(existingDeppartProducts, myMasterId, request.getId());
+                deleteNoMoreContainedDeppartsOrProducts(existingDeppartProducts, myMasterId, request.getId(),"product");
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method insertDepartmentPart. SQL query:" + stringQuery, e);
@@ -1149,7 +1149,7 @@ public class DepartmentRepositoryJPA {
                     saveDeppartProducts(myMasterId, product.getId(), request.getId());
                     existingDeppartProducts.add(product.getId());
                 }
-                deleteDeppartProductsNoMoreContainedInDeppart(existingDeppartProducts, myMasterId, request.getId());
+                deleteNoMoreContainedDeppartsOrProducts(existingDeppartProducts, myMasterId, request.getId(),"product");
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method updateDepartmentPart. SQL query:" + stringQuery, e);
@@ -1159,7 +1159,7 @@ public class DepartmentRepositoryJPA {
             }
         } else return -1;
     }
-    private void saveDeppartProducts(Long master_id, Long product_id, Long dep_part_id) throws Exception {
+    public void saveDeppartProducts(Long master_id, Long product_id, Long dep_part_id) throws Exception {
         String stringQuery = "insert into scdl_dep_part_products (" +
                 "   master_id," +
                 "   product_id," +
@@ -1179,19 +1179,20 @@ public class DepartmentRepositoryJPA {
             throw new Exception(e);
         }
     }
-    // Deleting user services that user no more has
-    private void deleteDeppartProductsNoMoreContainedInDeppart(Set<Long> existingDeppartProducts, Long master_id, Long dep_part_id) throws Exception  {
+    // Deleting services (products) or department parts that no more contained in scdl_dep_part_products
+    public void deleteNoMoreContainedDeppartsOrProducts(Set<Long> existingIds, Long master_id, Long object_id, String type) throws Exception  {
+        String object = (type.equals("product")?"dep_part":"product");
         String stringQuery =
                 " delete from scdl_dep_part_products " +
                         " where " +
                         " master_id = " + master_id + " and " +
-                        " dep_part_id =   " + dep_part_id;
-        if(existingDeppartProducts.size()>0)
-            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingDeppartProducts,",","(",")");
+                        object+"_id =   " + object_id;
+        if(existingIds.size()>0)
+            stringQuery = stringQuery + " and "+type+"_id not in " + commonUtilites.SetOfLongToString(existingIds,",","(",")");
         try {
             entityManager.createNativeQuery(stringQuery).executeUpdate();
         } catch (Exception e) {
-            logger.error("Exception in method deleteDeppartProductsNoMoreContainedInDeppart. SQL query:"+stringQuery, e);
+            logger.error("Exception in method deleteNoMoreContainedDeppartsOrProducts. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception(e);
         }

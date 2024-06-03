@@ -295,7 +295,7 @@ public class UserRepositoryJPA {
 //                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) request.getId());
                     existingUserServices.add(product.getId());
                 }
-                deleteUserServicesNoMoreContainedInUserCard(existingUserServices, masterId, (long) request.getId());
+                deleteNoMoreContainedUserServicesOrEmployees(existingUserServices, masterId, (long) request.getId(),"product");
                 return 1;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -328,7 +328,7 @@ public class UserRepositoryJPA {
 //        }
 //    }
 
-    private void saveUserProducts(Long master_id, Long product_id, Long user_id) throws Exception {
+    public void saveUserProducts(Long master_id, Long product_id, Long user_id) throws Exception {
         String stringQuery = "insert into scdl_user_products (" +
                 "   master_id," +
                 "   user_id," +
@@ -349,23 +349,22 @@ public class UserRepositoryJPA {
         }
     }
 
-
-
-    // Deleting user services that user no more has
-    private void deleteUserServicesNoMoreContainedInUserCard(Set<Long> existingUserServices, Long master_id, Long user_id) throws Exception  {
+    // Deleting user services or products that no more contains in document
+    // type = "product" or "user"
+    public void deleteNoMoreContainedUserServicesOrEmployees(Set<Long> existingIds, Long master_id, Long object_id, String type) throws Exception  {
+        String object = (type.equals("product")?"user":"product");
         String stringQuery =
-//                " delete from scdl_user_product_dep_parts " +
                         " delete from scdl_user_products " +
 
                         " where " +
                         " master_id = " + master_id + " and " +
-                        " user_id =   " + user_id;
-        if(existingUserServices.size()>0)
-            stringQuery = stringQuery + " and product_id not in " + commonUtilites.SetOfLongToString(existingUserServices,",","(",")");
+                        object+"_id =   " + object_id;
+        if(existingIds.size()>0)
+            stringQuery = stringQuery + " and "+type+"_id not in " + commonUtilites.SetOfLongToString(existingIds,",","(",")");
         try {
             entityManager.createNativeQuery(stringQuery).executeUpdate();
         } catch (Exception e) {
-            logger.error("Exception in method deleteUserServicesNoMoreContainedInUserCard. SQL query:"+stringQuery, e);
+            logger.error("Exception in method deleteNoMoreContainedUserServicesOrEmployees. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception(e);
         }

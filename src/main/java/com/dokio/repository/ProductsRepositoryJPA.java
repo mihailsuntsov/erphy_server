@@ -321,7 +321,8 @@ public class ProductsRepositoryJPA {
                     "           coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
                     "           coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
                     "           coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
-                    "           p.scdl_appointment_atleast_before_unit_id as scdl_appointment_atleast_before_unit_id " +
+                    "           p.scdl_appointment_atleast_before_unit_id as scdl_appointment_atleast_before_unit_id, " +
+                    "           p.scdl_srvc_duration_unit_id as scdl_srvc_duration_unit_id " +
 
                     "           from products p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -416,6 +417,7 @@ public class ProductsRepositoryJPA {
                     doc.setScdl_srvc_duration((Integer)             queryList.get(0)[70]);
                     doc.setScdl_appointment_atleast_before_time((Integer) queryList.get(0)[71]);
                     doc.setScdl_appointment_atleast_before_unit_id( queryList.get(0)[72]!=null?Long.parseLong(queryList.get(0)[72].toString()):null);
+                    doc.setScdl_srvc_duration_unit_id(              queryList.get(0)[73]!=null?Long.parseLong(queryList.get(0)[73].toString()):null);
 
                     doc.setDefaultAttributes(getDefaultAttributes(myMasterId, doc.getId()));
                     doc.setProductVariations(getProductVariations(myMasterId, id));
@@ -424,6 +426,8 @@ public class ProductsRepositoryJPA {
                     doc.setScdl_customer_reminders(getAppointmentReminders(myMasterId, doc.getId(), "customer"));
                     doc.setScdl_employee_reminders(getAppointmentReminders(myMasterId, doc.getId(), "employee"));
                     doc.setScdl_assignments(getAppointmentAssignments(myMasterId, doc.getId()));
+                    doc.setEmployees(getProductEmployees(myMasterId, doc.getId()));
+                    doc.setDepparts(getProductDepartmentParts(myMasterId, doc.getId()));
                 }
 //              doc.setStoresIds(getProductStoresIds(id, myMasterId));
                 doc.setStoreProductTranslations(getStoreProductTranslationsList(doc.getId(), myMasterId));
@@ -481,12 +485,30 @@ public class ProductsRepositoryJPA {
                     return -290;
 
                 commonUtilites.idBelongsMyMaster("products", request.getId(), myMasterId);
+                if(!request.isIs_srvc_by_appointment()){
+                    request.setEmployees(new ArrayList<>());
+                    request.setDepparts(new ArrayList<>());
+                    request.setScdl_is_employee_required(false);
+                    request.setScdl_assignments(new ArrayList<>());
+                    request.setProductResourcesTable(new ArrayList<>());
+                }
+                if(!request.isScdl_is_employee_required())
+                    request.setEmployees(new ArrayList<>());
+                if(request.getProductResourcesTable().size()>0){
+                    Set<Long>ids = new HashSet<>();
+                    for (ProductResourcesForm resource: request.getProductResourcesTable()){
+                        ids.add(resource.getResource_id());
+                    }
+                    if(ids.size()>0)commonUtilites.idsBelongMyMaster_Long("sprav_resources", ids, myMasterId);
+                }
+                commonUtilites.idsBelongMyMaster_Long("users", new HashSet<>(request.getEmployees()), myMasterId);
+                commonUtilites.idsBelongMyMaster_Long("scdl_dep_parts", new HashSet<>(request.getDepparts()), myMasterId);
 
                 // no matter - variable product or not - because can be that it was Variable and now selected as Simple
                 // at this place method running for deleted variations (here they are still belongs to product)
                 markProductVariationsAsNeedToSyncWoo(request.getId(), myMasterId);
 
-                //if variation changed or deleted - mark its parent product to resync (it will delete non-existed or excess variations on the Woo side)
+                //if variation changed or deleted - mark its parent product to re-sync (it will delete non-existed or excess variations on the Woo side)
                 if(isProductUsedAsVariation)
                     markVariableProductAsNeedToSyncWoo(request.getId(), myMasterId);
 
@@ -563,6 +585,10 @@ public class ProductsRepositoryJPA {
                 saveAppointmentReminders(myMasterId, request.getId(), request.getScdl_customer_reminders(), "customer");
                 saveAppointmentReminders(myMasterId, request.getId(), request.getScdl_employee_reminders(), "employee");
                 saveAppointmentAssignments(myMasterId, request.getId(), request.getScdl_assignments());
+                // Saving the employees list of employees who can do this service
+                saveEmployees(myMasterId, request.getId(), request.getEmployees());
+                // Saving department parts where this service can be presented
+                saveDepartmentParts(myMasterId, request.getId(), request.getDepparts());
 
                 // deleting resources that was deleted on frontend
                 deleteResourcesThatNoMoreContainedInThisProduct(existingProductResources,request.getId(), myMasterId );
@@ -868,8 +894,10 @@ public class ProductsRepositoryJPA {
             commonUtilites.idBelongsMyMaster("sprav_taxes", request.getNds_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getEdizm_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getWeight_edizm_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getVolume_edizm_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("products", request.getParent_id(), myMasterId);
             commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getScdl_appointment_atleast_before_unit_id(), myMasterId);
+            commonUtilites.idBelongsMyMaster("sprav_sys_edizm", request.getScdl_srvc_duration_unit_id(), myMasterId);
 
 
             stringQuery = " update products set " +
@@ -927,7 +955,8 @@ public class ProductsRepositoryJPA {
                     " scdl_max_pers_on_same_time = " + request.getScdl_max_pers_on_same_time() + "," +
                     " scdl_srvc_duration = " + request.getScdl_srvc_duration() + "," +
                     " scdl_appointment_atleast_before_time = " + request.getScdl_appointment_atleast_before_time() + "," +
-                    " scdl_appointment_atleast_before_unit_id = " + request.getScdl_appointment_atleast_before_unit_id() +
+                    " scdl_appointment_atleast_before_unit_id = " + request.getScdl_appointment_atleast_before_unit_id() + "," +
+                    " scdl_srvc_duration_unit_id = " + request.getScdl_srvc_duration_unit_id() +
 
                     " where master_id = " + myMasterId + " and id = " + request.getId();
 
@@ -5473,6 +5502,46 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    private List<Long> getProductEmployees(Long masterId, Long productId) throws Exception {
+        String stringQuery =
+                " select user_id from scdl_user_products " +
+                        " where master_id = " + masterId +
+                        " and product_id = " + productId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<BigInteger> queryList = query.getResultList();
+            List<Long> returnList = new ArrayList<>();
+            for (BigInteger obj : queryList) {
+                returnList.add(obj.longValue());
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductEmployees. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    private List<Long> getProductDepartmentParts(Long masterId, Long productId) throws Exception {
+        String stringQuery =
+                        " select dep_part_id from scdl_dep_part_products " +
+                        " where master_id = " + masterId +
+                        " and product_id = " + productId;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<BigInteger> queryList = query.getResultList();
+            List<Long> returnList = new ArrayList<>();
+            for (BigInteger obj : queryList) {
+                returnList.add(obj.longValue());
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getProductDepartmentParts. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
     private void saveAppointmentAssignments(Long master_id, Long product_id, List<String> assignments) throws Exception {
         // assignments can be: "customer" / "manually"
         String stringQuery = "";
@@ -5498,7 +5567,6 @@ public class ProductsRepositoryJPA {
             } else {
                 throw new IllegalArgumentException("Invalid assignment type '" + assignment_type + "'");
             }
-
         }
 
         try{
@@ -5513,6 +5581,34 @@ public class ProductsRepositoryJPA {
         }
     }
 
+    private void saveEmployees(Long masterId, Long productId, List<Long> employees) throws Exception {
+        Set<Long> existingEmployeesIds = new HashSet<>();
+        try {
+            for (Long employeeId : employees) {
+                userRepositoryJPA.saveUserProducts(masterId, productId, employeeId);
+                existingEmployeesIds.add(employeeId);
+            }
+            userRepositoryJPA.deleteNoMoreContainedUserServicesOrEmployees(existingEmployeesIds, masterId, productId,"user");
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveEmployees. masterId=" + masterId + ", productId=" + productId + ", employees=" + employees.toString(), e);
+            throw new Exception(e);
+        }
+    }
+    private void saveDepartmentParts(Long masterId, Long productId, List<Long> depparts) throws Exception {
+        Set<Long> existingDeppartsIds = new HashSet<>();
+        try {
+            for (Long deppartId : depparts) {
+                departmentRepositoryJPA.saveDeppartProducts(masterId, productId, deppartId);
+                existingDeppartsIds.add(deppartId);
+            }
+            departmentRepositoryJPA.deleteNoMoreContainedDeppartsOrProducts(existingDeppartsIds, masterId, productId,"dep_part");
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveDepartmentParts. masterId=" + masterId + ", productId=" + productId + ", depparts=" + depparts.toString(), e);
+            throw new Exception(e);
+        }
+    }
     // Deleting reminders that no more contain this product
     private void deleteAppointmentAssignmentsThatNoMoreContainedInThisProduct(Set<String> existingAssignments, Long productId, Long masterId) throws Exception  {
         String stringQuery =
