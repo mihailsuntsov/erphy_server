@@ -27,6 +27,7 @@ import com.dokio.message.response.additional.DepartmentPartJSON;
 import com.dokio.message.response.additional.DepartmentWithPartsJSON;
 import com.dokio.message.response.additional.IdAndNameJSON;
 import com.dokio.message.response.additional.ResourceDepPart;
+import com.dokio.message.response.additional.eployeescdl.DeppartProduct;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
 import com.dokio.message.response.DepartmentsJSON;
@@ -1220,26 +1221,29 @@ public class DepartmentRepositoryJPA {
         }
     }
     // returns list of services that employee can provide
-    private List<IdAndNameJSON> getDeppartProducts(long deppartId, long masterId){
+
+    private List<DeppartProduct> getDeppartProducts(long deppartId, long masterId){
         String stringQuery="select " +
                 "   p.product_id as product_id, " +
-                "   pr.name as product_name " +
+                "   pr.name as product_name, " +
+                "   coalesce(pr.scdl_is_employee_required, false)" +
                 "   from scdl_dep_part_products p " +
                 "   inner join products pr on pr.id=p.product_id " +
                 "   where " +
                 "   p.master_id = " + masterId +
                 "   and p.dep_part_id= " + deppartId +
-                "   group by p.product_id, pr.name " +
+//                "   group by p.product_id, pr.name, pr.scdl_is_employee_required " +
                 "   order by pr.name";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            List<IdAndNameJSON> returnList = new ArrayList<>();
+            List<DeppartProduct> returnList = new ArrayList<>();
             for (Object[] obj : queryList) {
-                IdAndNameJSON doc = new IdAndNameJSON();
+                DeppartProduct doc = new DeppartProduct();
                 doc.setId(Long.parseLong(                      obj[0].toString()));
                 doc.setName((String)                           obj[1]);
+                doc.setEmployeeRequired((Boolean)              obj[2]);
                 returnList.add(doc);
             }
             return returnList;

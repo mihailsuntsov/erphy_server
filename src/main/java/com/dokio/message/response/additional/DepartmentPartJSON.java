@@ -1,5 +1,7 @@
 package com.dokio.message.response.additional;
 
+import com.dokio.message.response.additional.eployeescdl.DeppartProduct;
+
 import java.util.List;
 
 public class DepartmentPartJSON {
@@ -23,7 +25,7 @@ public class DepartmentPartJSON {
     private Long department_id;     // used in    getDepartmentPartsWithResourceQttList
     private String department_name; // used in    getDepartmentPartsWithResourceQttList
     private Integer resource_qtt;   // used in    getDepartmentPartsWithResourceQttList
-    private List<IdAndNameJSON> deppartProducts; // list of services in this department part
+    private List<DeppartProduct> deppartProducts; // list of services in this department part
     private List<ResourceDepPart> resources; // list of resources with quantity in this department part
 
     public List<ResourceDepPart> getResources() {
@@ -162,11 +164,11 @@ public class DepartmentPartJSON {
         this.is_deleted = is_deleted;
     }
 
-    public List<IdAndNameJSON> getDeppartProducts() {
+    public List<DeppartProduct> getDeppartProducts() {
         return deppartProducts;
     }
 
-    public void setDeppartProducts(List<IdAndNameJSON> deppartProducts) {
+    public void setDeppartProducts(List<DeppartProduct> deppartProducts) {
         this.deppartProducts = deppartProducts;
     }
 }
