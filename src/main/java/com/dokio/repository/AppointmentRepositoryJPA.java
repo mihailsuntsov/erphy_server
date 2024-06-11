@@ -1191,37 +1191,41 @@ public class AppointmentRepositoryJPA {
                             " pb.value = :sg" +
                             ")";
                         }
-                        stringQuery = stringQuery +
-                        " and concat(p.id,'_',dp.id) not in ( " +
+                        if(reqest.getQuerySource().equals("customer"))// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
+                            stringQuery = stringQuery +
+                            " and concat(p.id,'_',dp.id) not in ( " +
 
-//                      Cписок услуг у которых хотя бы 1 ресурса не достаточно для выполнения этой услуги в данной части отделения
-//                      В данном случае эта часть отделения не будет включена в услугу как часть отделения, где эта услуга выполняется.
-//                      А если это была единственная часть отделения - эта услуга вообще не будет включена в список на выдачу
-//                      List of services for whi    ch at least 1 resource is not sufficient to perform this service in this part of the department
-//                      In this case, this part of the department will not be included in the service as part of the department where this service is performed.
-//                      And if this was the only part of the department, this service will not be included in the list for issue at all
-                        " 	select concat(p.id,'_',dp.id) " +
-                        " 	from " +
-                        " products p " +
-                        " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
-                        " left outer join sprav_resources r on prq.resource_id=r.id " +
-                        //" -- left outer join busy_resources br on br.resource_id=r.id " +
-                        " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
-                        " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
-                        " left outer join departments d on d.id=dp.department_id " +
-                        " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
-                        " where " +
-                        " p.master_id=" + masterId + " and " +
-                        " p.company_id=" + reqest.getCompanyId() + " and " +
-                        " p.ppr_id=4 and  " + //-- this is a service
-                        " coalesce(d.is_deleted,false)=false and  " +
-                        " coalesce(dp.is_deleted,false)=false and  " +
-                        " (dp.is_active is null or coalesce(dp.is_active,false)=true) and " +
-                        " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
-                        " and coalesce(rdp.quantity,0)-coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0)<coalesce(prq.quantity,0) " +
-                        " ) " +
+    //                      Cписок услуг у которых хотя бы 1 ресурса не достаточно для выполнения этой услуги в данной части отделения
+    //                      В данном случае эта часть отделения не будет включена в услугу как часть отделения, где эта услуга выполняется.
+    //                      А если это была единственная часть отделения - эта услуга вообще не будет включена в список на выдачу.
+    //                      Если запрос идет от администратора сервиса из CRM - данная фильтрация будет проведена на фронтеэнде в CRM, т.к. пользователю нужно объяснить причины не отображения услуге в списке поиска.
+    //                      List of services for whi    ch at least 1 resource is not sufficient to perform this service in this part of the department
+    //                      In this case, this part of the department will not be included in the service as part of the department where this service is performed.
+    //                      And if this was the only part of the department, this service will not be included in the list for issue at all
+    //                      If the request comes from the service administrator from CRM, this filtering will be carried out on the front end in CRM, because the user needs the explanation of the reasons of not displaying the service in the search list.
 
-                        " order by p.name, d.name, dp.name, r.name ";
+                            " 	select concat(p.id,'_',dp.id) " +
+                            " 	from " +
+                            " products p " +
+                            " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
+                            " left outer join sprav_resources r on prq.resource_id=r.id " +
+                            //" -- left outer join busy_resources br on br.resource_id=r.id " +
+                            " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
+                            " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
+                            " left outer join departments d on d.id=dp.department_id " +
+                            " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
+                            " where " +
+                            " p.master_id=" + masterId + " and " +
+                            " p.company_id=" + reqest.getCompanyId() + " and " +
+                            " p.ppr_id=4 and  " + //-- this is a service
+                            " coalesce(d.is_deleted,false)=false and  " +
+                            " coalesce(dp.is_deleted,false)=false and  " +
+                            " (dp.is_active is null or coalesce(dp.is_active,false)=true) and " +
+                            " p.is_srvc_by_appointment = true  " + //-- this is a service by appointment
+                            " and coalesce(rdp.quantity,0)-coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0)<coalesce(prq.quantity,0) " +
+                            " ) ";
+
+                        stringQuery = stringQuery +" order by p.name, d.name, dp.name, r.name ";
 
         Long currentServiceId = 0L;
         Long currentDepPartId = 0L;
@@ -1340,16 +1344,21 @@ public class AppointmentRepositoryJPA {
 
                 // Cбросили текущее накопление ID сервисов для новой части отделения
                 currentDepPartResources = new HashSet<>();
-
             }
-
-            currentDepPartResources.add(Objects.isNull(currentCycleResourceId) ? new ResourceOfDepartmentPart() : new ResourceOfDepartmentPart(
+            if(!Objects.isNull(currentCycleResourceId)) currentDepPartResources.add(new ResourceOfDepartmentPart(
                     currentCycleResourceId,
                     currentCycleResourceName,
                     currentCycleNeedRresQtt,
                     currentCycleNowUsed,
                     currentCycleQuantityInDepPart
             ));
+//            currentDepPartResources.add(Objects.isNull(currentCycleResourceId) ? new ResourceOfDepartmentPart() : new ResourceOfDepartmentPart(
+//                    currentCycleResourceId,
+//                    currentCycleResourceName,
+//                    currentCycleNeedRresQtt,
+//                    currentCycleNowUsed,
+//                    currentCycleQuantityInDepPart
+//            ));
         }
 
         // По окончании цикла, если в ней что-то было
