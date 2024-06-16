@@ -24,8 +24,15 @@ public class AppointmentService {
     private Integer     maxPersOnSameTime;          // How many persons can get this service in one appointment by the same time
     private BigDecimal  srvcDurationInSeconds;      // Approx. duration time to fininsh this service
     private BigDecimal  atLeastBeforeTimeInSeconds; // Minimum time before the start of the service for which customers can make an appointment
+    private BigDecimal  unitOfMeasureTimeInSeconds; // If unit of measure is 'Time' type - it will be as 1 unit in seconds, else 0
 
+    public BigDecimal getUnitOfMeasureTimeInSeconds() {
+        return unitOfMeasureTimeInSeconds;
+    }
 
+    public void setUnitOfMeasureTimeInSeconds(BigDecimal unitOfMeasureTimeInSeconds) {
+        this.unitOfMeasureTimeInSeconds = unitOfMeasureTimeInSeconds;
+    }
 
     public Boolean getEmployeeRequired() {
         return isEmployeeRequired;

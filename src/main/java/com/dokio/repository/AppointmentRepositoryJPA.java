@@ -1153,7 +1153,8 @@ public class AppointmentRepositoryJPA {
                         " coalesce(scdl_is_employee_required, false) as is_employee_required, " +// Whether employee is necessary required to do this service job?
                         " coalesce(scdl_max_pers_on_same_time,0) as max_pers_on_same_time, " +  // How many persons can get this service in one appointment by the same time
                         " coalesce(p.scdl_appointment_atleast_before_time * sse_alb.equals_si,0.00)*1.0 as atleast_before_seconds, " + // Minimum time before the start of the service for which customers can make an appointment
-                        " coalesce(p.scdl_srvc_duration * sse_sd.equals_si,0.00)*1.0 as service_duration_seconds " + // Approx. duration time to fininsh this service
+                        " coalesce(p.scdl_srvc_duration * sse_sd.equals_si,0.00)*1.0 as service_duration_seconds, " + // Approx. duration time to fininsh this service
+                        " case when edizm.type_id=6 then coalesce(sse_tu.equals_si,0.00)*1.0 else 0.0 end as edizm_in_seconds" +
                         " from " +
                         " products p " +
                         " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
@@ -1170,6 +1171,7 @@ public class AppointmentRepositoryJPA {
                         " left outer join scdl_assignments asg on asg.product_id=p.id " +// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
                         " left outer join sprav_sys_edizm sse_alb on sse_alb.id = p.scdl_appointment_atleast_before_unit_id " +
                         " left outer join sprav_sys_edizm sse_sd on sse_sd.id = p.scdl_srvc_duration_unit_id " +
+                        " left outer join sprav_sys_edizm sse_tu on sse_tu.id = p.edizm_id " +
                         " inner join sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
                         " where " +
                         " p.master_id=" + masterId + " and " +
@@ -1241,30 +1243,31 @@ public class AppointmentRepositoryJPA {
         List<Object[]> queryList = query.getResultList();
 
         for (Object[] obj : queryList) {
-            Long        currentCycleServiceId = Long.parseLong(             obj[0].toString());
-            String      currentCycleServiceName =                           obj[1].toString();
-            Long        currentCycleDepartmentId = Long.parseLong(          obj[2].toString());
-            String      currentCycleDepartmentName =                        obj[3].toString();
-            Long        currentCycleDepPartId = Long.parseLong(             obj[4].toString());
-            String      currentCycleDepPartName =                           obj[5].toString();
-            Long        currentCycleResourceId = (                          obj[6] == null?null:Long.parseLong(obj[6].toString()));
-            String      currentCycleResourceName =                          obj[7].toString();
-            Integer     currentCycleNeedRresQtt = Integer.parseInt(         obj[8].toString());
-            Integer     currentCycleNowUsed = Integer.parseInt(             obj[9].toString());
-            Integer     currentCycleQuantityInDepPart = Integer.parseInt(   obj[10].toString());
-            BigDecimal  currentCycleTotal = (                               obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
-            Integer     currentCycleNdsId=((Integer)                        obj[12]);
-            Long        currentCycleEdIzmId = (Long.parseLong(              obj[13].toString()));
-            String      currentCycleEdIzm = ((String)                       obj[14]);
-            Integer     currentCycleEdizm_type_id = ((Integer)              obj[15]);
-            BigDecimal  currentCycleEdizm_multiplier = (                    obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
-            Boolean     currentCycleIs_material = ((Boolean)                obj[17]);
-            Boolean     currentCycleIndivisible = ((Boolean)                obj[18]);
-            BigDecimal  currentCyclePriceOfTypePrice = (                    obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
-            Boolean     currentCycleIsEmployeeRequired=((Boolean)           obj[20]);
-            Integer     currentCycleMaxPersOnSameTime=((Integer)            obj[21]);
-            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)     obj[22]);
-            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)obj[23]);
+            Long        currentCycleServiceId = Long.parseLong(                 obj[0].toString());
+            String      currentCycleServiceName =                               obj[1].toString();
+            Long        currentCycleDepartmentId = Long.parseLong(              obj[2].toString());
+            String      currentCycleDepartmentName =                            obj[3].toString();
+            Long        currentCycleDepPartId = Long.parseLong(                 obj[4].toString());
+            String      currentCycleDepPartName =                               obj[5].toString();
+            Long        currentCycleResourceId = (                              obj[6] == null?null:Long.parseLong(obj[6].toString()));
+            String      currentCycleResourceName =                              obj[7].toString();
+            Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
+            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
+            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[10].toString());
+            BigDecimal  currentCycleTotal = (                                   obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+            Integer     currentCycleNdsId=((Integer)                            obj[12]);
+            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[13].toString()));
+            String      currentCycleEdIzm = ((String)                           obj[14]);
+            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[15]);
+            BigDecimal  currentCycleEdizm_multiplier = (                        obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
+            Boolean     currentCycleIs_material = ((Boolean)                    obj[17]);
+            Boolean     currentCycleIndivisible = ((Boolean)                    obj[18]);
+            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
+            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[20]);
+            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[21]);
+            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[22]);
+            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[23]);
+            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[24]);
             // on this cycle if it is a new user
             if (!currentCycleServiceId.equals(currentServiceId)) {
 
@@ -1318,6 +1321,7 @@ public class AppointmentRepositoryJPA {
                 appointmentService.setMaxPersOnSameTime(            currentCycleMaxPersOnSameTime);
                 appointmentService.setSrvcDurationInSeconds(        currentCycleSrvcDurationInSeconds);
                 appointmentService.setAtLeastBeforeTimeInSeconds(   currentCycleAtLeastBeforeTimeInSeconds);
+                appointmentService.setUnitOfMeasureTimeInSeconds(   currentCycleUnitOfMeasureDurationInSeconds);
 
                 // Cоздали новый лист для накопления частей отделений для новой услуги
                 departmentPartsWithResourcesIds = new ArrayList<>();

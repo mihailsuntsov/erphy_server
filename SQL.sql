@@ -6685,7 +6685,7 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 alter table users drop column status_employee; -- column is not using
 insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
 
-
+alter table scdl_appointments drop column service_id; -- column is no more using because all services are in scdl_appointment_products
 
 
 
@@ -6706,13 +6706,11 @@ insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчисли�
 
 
 insert into scdl_appointments
-(							 master_id,
+(							  master_id,
                 company_id,
                 creator_id,
                 changer_id,
                 owner_id,
-                employee_id,
-                service_id,
                 date_time_created,
                 date_time_changed,
                 status_id,
@@ -6734,13 +6732,11 @@ values (
          4,
          4,
          4,
-         4,
-         1008699,
          now(),
          now(),
          null,
          1,
-         'Лечение кариеса Бабушкин В.Д.',
+         'Проживание Люкс в номере Люкс',
          '',
          true,
          true,
@@ -6748,9 +6744,9 @@ values (
          false,
          '',
          null,
-         12,
-         to_timestamp ('23.05.2024 13:00', 'DD.MM.YYYY HH24:MI'),
-         to_timestamp ('23.05.2024 14:00', 'DD.MM.YYYY HH24:MI')
+         21, -- Номер Люкс
+         to_timestamp ('24.06.2024 13:00', 'DD.MM.YYYY HH24:MI'),
+         to_timestamp ('30.06.2024 11:00', 'DD.MM.YYYY HH24:MI')
        );
 
 insert into scdl_appointment_products (master_id, product_id, resource_id, quantity) values (4,1008699,2,1);
@@ -6769,16 +6765,16 @@ insert into scdl_appointment_products(
   product_price_of_type_price
 ) values (
            4,
-           1008698,	--product_id (Лечение кариеса)
-           1, 			--appointment_id
+           1008703,	--product_id (Проживание Стандарт)
+           2, 			--appointment_id
            null,		--price_type_id
-           41,			--department_id
+           271,			--department_id
            1.000,		--product_count
-           3000.00,	--product_price
-           3000.00,	--product_sumprice
-           1851,		--edizm_id (Визит)
+           5000.00,	--product_price
+           5000.00,	--product_sumprice
+           1849,		--edizm_id (Сутки)
            4,			   --nds_id (Без НДС)
-           3000.00		--product_price_of_type_price
+           5000.00		--product_price_of_type_price
          );
 
 insert into scdl_appointment_products(

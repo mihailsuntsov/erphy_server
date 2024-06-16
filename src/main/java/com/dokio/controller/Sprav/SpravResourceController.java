@@ -4,6 +4,7 @@ import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.Sprav.SpravResourceForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.repository.SpravResourceRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -90,7 +91,6 @@ public class SpravResourceController {
             return new ResponseEntity<>("Error deleting the document", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/undeleteResource")
-    @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> undeleteResource(@RequestBody SignUpForm request) {
         logger.info("Processing post request for path /api/auth/undeleteResource: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
@@ -98,7 +98,13 @@ public class SpravResourceController {
         catch (Exception e){logger.error("Controller undeleteResource error", e);
             return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-
+    @PostMapping("/api/auth/getNowUsedResourcesList")
+    public  ResponseEntity<?> getNowUsedResourcesList(@RequestBody AppointmentMainInfoForm request) {
+        logger.info("Processing post request for path /api/auth/getNowUsedResourcesList: " + request.toString());
+        try {return new ResponseEntity<>(spravResourceRepository.getNowUsedResourcesList(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getNowUsedResourcesList error", e);
+            return new ResponseEntity<>("Controller getNowUsedResourcesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @RequestMapping(
             value = "/api/auth/getResourcesList",
             params = {"company_id"},

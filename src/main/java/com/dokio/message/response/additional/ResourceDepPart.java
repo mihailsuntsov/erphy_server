@@ -2,12 +2,21 @@ package com.dokio.message.response.additional;
 
 public class ResourceDepPart {
 
-    private Long   resource_id;
-    private String name;
-    private String description;
-    private int    resource_qtt;// quantity of resource
-    private Long   dep_part_id; // department part of resource
-    private Boolean isActive;   // for example, room may be under construction, car is on repairing, etc.
+    private Long    resource_id;
+    private String  name;
+    private String  description;
+    private int     resource_qtt;   // quantity of resource
+    private Long    dep_part_id;    // department part of resource
+    private Boolean isActive;       // for example, room may be under construction, car is on repairing, etc.
+    private Long     now_used;       // fill only in getNowUsedResourcesList
+
+    public Long getNow_used() {
+        return now_used;
+    }
+
+    public void setNow_used(Long now_used) {
+        this.now_used = now_used;
+    }
 
     public Boolean getActive() {
         return isActive;

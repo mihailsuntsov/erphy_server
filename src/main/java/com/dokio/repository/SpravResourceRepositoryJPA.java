@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Sprav.SpravResourceForm;
+import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.ResourceDepPartsForm;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.SpravResourceJSON;
@@ -38,6 +39,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -541,6 +543,74 @@ public class SpravResourceRepositoryJPA {
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getResourcesList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public List<ResourceDepPart> getNowUsedResourcesList(AppointmentMainInfoForm request) {
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String myTimeZone = userSettings.getTime_zone();
+        String stringQuery;
+        stringQuery = 	" select  r.id as resource_id, " +
+                        " r.name as resource_name, " +
+                        " r.description as resource_description, " +
+                        " dpr.quantity as resource_qtt, " +
+                        " dp.id as dep_part_id, " +
+                        " true as is_active, " +
+						" (	select  " +
+						"  	coalesce(sum(pr.quantity),0)" +
+						"  	from scdl_product_resource_qtt pr  " +
+						"  	where  " +
+						"  	pr.resource_id=r.id and " +
+						" 	pr.product_id in ( " +
+						" 		select ap.product_id  " +
+						" 		from scdl_appointment_products ap " +
+						" 		where " +
+						" 	 	ap.appointment_id in ( " +
+						" 			select a.id  " +
+						" 			from scdl_appointments a " +
+						" 			where " +
+						" 			a.master_id="+masterId+" and " +
+						" 			a.company_id="+request.getCompanyId() + " and " +
+                        "           a.id != " + request.getAppointmentId() + " and " + //  don't collect resources of current appointment , from which is going this calling
+						" 			coalesce(a.is_deleted,false)=false and " + //The formula of intersection is: A_end > B_start AND A_start < B_end
+                        "           to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+"','DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time and " +
+                        "           to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+"','DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time" +
+                        //  !!! ADD STATUS OF CANCELLED APPOINTMENT WHEN STATUSES WILL BE DONE !!!
+                        " 			) " +
+						" 		) " +
+						" 	) as now_used" +
+                        " from " +
+                        " sprav_resources r, " +
+                        " scdl_dep_parts dp, " +
+                        " scdl_resource_dep_parts_qtt dpr " +
+                        " where  r.master_id=" + masterId +
+                        " and r.company_id=" +request.getCompanyId() +
+                        " and coalesce(r.is_deleted,false) = false " +
+                        " and r.id=dpr.resource_id " +
+                        " and dp.id=dpr.dep_part_id " +
+                        " order by dpr.dep_part_id ";
+
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<ResourceDepPart> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                ResourceDepPart doc = new ResourceDepPart();
+                doc.setResource_id(Long.parseLong(                      obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                doc.setDescription((String)                             obj[2]);
+                doc.setResource_qtt((Integer)                           obj[3]);
+                doc.setDep_part_id(Long.parseLong(                      obj[4].toString()));
+                doc.setActive((Boolean)                                 obj[5]);
+                doc.setNow_used(((BigInteger)                           obj[6]).longValue());
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getNowUsedResourcesList. SQL query:" + stringQuery, e);
             return null;
         }
     }
