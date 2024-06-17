@@ -113,15 +113,16 @@ public class EmployeeSceduleRepository {
                 List<Depparts_> depparts = getDeppartsIdsListBySetWorkshiftIds(workshiftIds, masterId);
                 for (SceduleDay sceduleDay : returnList) {
                     // adding workshift's breaks to all existed workshifts
-                    if (!Objects.isNull(sceduleDay.getWorkshift()) && breaks.size() > 0) {
-                        List<Break> workshiftBreaks = new ArrayList<>();
-                        for (Break_ break_ : breaks) {
-                            if (sceduleDay.getWorkshift().getId().equals(break_.getWorkshiftId()))
-                                workshiftBreaks.add(new Break(break_.getId(), break_.getTime_from(), break_.getTime_to(), break_.getPaid(), break_.getPrecent()));
-                        }
-                        sceduleDay.getWorkshift().setBreaks(workshiftBreaks);
+                    if (!Objects.isNull(sceduleDay.getWorkshift())) {
+                        if (breaks.size() > 0){
+                            List<Break> workshiftBreaks = new ArrayList<>();
+                            for (Break_ break_ : breaks) {
+                                if (sceduleDay.getWorkshift().getId().equals(break_.getWorkshiftId()))
+                                    workshiftBreaks.add(new Break(break_.getId(), break_.getTime_from(), break_.getTime_to(), break_.getPaid(), break_.getPrecent()));
+                            }
+                            sceduleDay.getWorkshift().setBreaks(workshiftBreaks);
+                        } else sceduleDay.getWorkshift().setBreaks(new ArrayList<>());// for breaks be not null but [] in JSON
                     }
-
                     // adding workshift's department parts
                     if (!Objects.isNull(sceduleDay.getWorkshift())) {
                         List<Long> workshiftDepparts = new ArrayList<>();

@@ -546,7 +546,8 @@ public class CalendarRepositoryJPA {
 //        int companyTimeZoneId = (Integer)commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, companyId);
 //        String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
         // get IDs of employees who is free by the time of Appointments (but we do not know whether they free by work shifts scedule)
-            Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,myTimeZone,masterId));
+        // получить ID сотрудников, свободных по времени Записей (но мы не знаем, свободны ли они по графику рабочих смен)
+        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,myTimeZone,masterId));
         DateTimeFormatter ISO8601_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneId.of("UTC"));
         DateTimeFormatter system_formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy' 'HH:mm").withZone(ZoneId.of("UTC"));
         LocalDateTime a_date_start = LocalDateTime.parse(dateFrom+" "+timeFrom, system_formatter);
@@ -554,6 +555,8 @@ public class CalendarRepositoryJPA {
         /*
         If there are employees who are free by the time of Appointments, then we need to get their work shifts schedule
         and find the employee's IDs who is free by it.
+        Если есть сотрудники, свободные по времени Записи, то нам необходимо получить график их рабочих смен.
+        и найти ID сотрудников, которые по нему свободны.
         */
         if(employeesIdsFreeByAppointments.size()>0){
 
@@ -729,9 +732,49 @@ public class CalendarRepositoryJPA {
                 String servicesIds_ = commonUtilites.SetOfLongToString(request.getServicesIds(), ",", "(", ")");
                 String employeesIds = commonUtilites.SetOfLongToString(employeesIdsList, ",", "(", ")");
 
-//                if (request.getIsFree())
-//                stringQuery = getEmployeesListSQL(request, masterId, employeesIds, servicesIds_, depPartsIds_, jobTitlesIds_, myTimeZone, companyTimeZone);
-                stringQuery="select " +
+//              In this "WITH" table of <employee_id>-<deppart_id> is going filtering of employees list by department parts,
+//              contained in work shift of employee
+//              В этой таблице "WITH" со столбцами <employee_id>-<deppart_id> происходит фильтрация списка сотрудников по подразделениям отдела,
+//              содержащимся в рабочей смене сотрудника.
+                stringQuery="" +
+                " WITH employees_workshift_depparts AS " +
+                " ( " +
+                "   select " +
+                "   ssd.employee_id                 as employee_id, " +
+                "   wd.deppart_id 				    as deppart_id " +
+                "   from  scdl_workshift_deppart wd " +
+                "   inner join scdl_workshift ws on ws.id=wd.workshift_id " +
+                "   inner join scdl_scedule_day ssd on ssd.id = ws.scedule_day_id " +
+                "   where  wd.master_id = "+masterId+" and " +
+                "   wd.workshift_id in ( " +
+                "       select " +
+                "       ws.id 						    as workshift_id " +
+                "       from " +
+                "       scdl_scedule_day ssd " +
+                "       left outer join scdl_workshift ws on ws.scedule_day_id=ssd.id " +
+                "       where " +
+                "       ssd.master_id="+masterId+" and " +
+                "       ws.id is not null and " +
+                "       ssd.employee_id in "+employeesIds+" and " +
+//              Сравнение производится по времени пользователя, т.к. запрос идет из UI. По этому нужно адаптировать время начала и окончания смены ко времени пользователя
+//              The comparison is made based on the user's time, because the request comes from the UI. Therefore, it is necessary to adapt the start and end times of the work shift to the user’s time
+
+//              The formula of Entering is:
+//              Start of work shift <= Start of Appointment
+                "       to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_from,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' <= to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS') and " +
+//              AND End of Workshift >= End of Appointment
+                "       case " +
+                "           when " +
+                "               ws.time_to <= ws.time_from " +
+                "           then ( " +
+                "               to_timestamp(concat(to_char(ssd.day_date+1, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
+                "           ) else ( " +
+                "               to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
+                "           ) " +
+                "       end " +
+                "   )" +
+                " )" +
+                " select " +
                 " u.id as u_id, " +
                 " u.name as u_name, " +
                 " jt.id as jt_id, " +
@@ -753,6 +796,7 @@ public class CalendarRepositoryJPA {
                 " u.status_account = 2 and " +
                 " u.is_employee = true and " +
                 " u.is_currently_employed = true " +
+                ((!isAll && request.getIsFree())?" and dp.id in (select deppart_id from employees_workshift_depparts where employee_id = u.id) ":"") +
                 (!isAll?(" and u.id in "+employeesIds):"") +
                 (request.getServicesIds(). size() > 0 ? (" and p.id  in " + servicesIds_ ) : "") +
                 (request.getDepPartsIds(). size() > 0 ? (" and dp.id in " + depPartsIds_ ) : "") +
