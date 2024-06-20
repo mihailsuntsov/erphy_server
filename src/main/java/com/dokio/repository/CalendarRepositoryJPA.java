@@ -732,9 +732,9 @@ public class CalendarRepositoryJPA {
                 String servicesIds_ = commonUtilites.SetOfLongToString(request.getServicesIds(), ",", "(", ")");
                 String employeesIds = commonUtilites.SetOfLongToString(employeesIdsList, ",", "(", ")");
 
-//              In this "WITH" table of <employee_id>-<deppart_id> is going filtering of employees list by department parts,
+//              With the help of this "WITH" table with columns <employee_id>-<deppart_id> is going filtering of employees list by department parts,
 //              contained in work shift of employee
-//              В этой таблице "WITH" со столбцами <employee_id>-<deppart_id> происходит фильтрация списка сотрудников по подразделениям отдела,
+//              С помощью этой таблицы "WITH" со столбцами <employee_id>-<deppart_id> происходит фильтрация списка сотрудников по подразделениям отдела,
 //              содержащимся в рабочей смене сотрудника.
                 stringQuery="" +
                 " WITH employees_workshift_depparts AS " +

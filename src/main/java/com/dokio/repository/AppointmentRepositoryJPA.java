@@ -1125,7 +1125,7 @@ public class AppointmentRepositoryJPA {
                         " rdp.resource_id=r.id and " +
                         " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
                         " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
-                        " ) " +
+                        ") " +
 
                         " select  " +
                         " p.id,  " +
@@ -1154,7 +1154,15 @@ public class AppointmentRepositoryJPA {
                         " coalesce(scdl_max_pers_on_same_time,0) as max_pers_on_same_time, " +  // How many persons can get this service in one appointment by the same time
                         " coalesce(p.scdl_appointment_atleast_before_time * sse_alb.equals_si,0.00)*1.0 as atleast_before_seconds, " + // Minimum time before the start of the service for which customers can make an appointment
                         " coalesce(p.scdl_srvc_duration * sse_sd.equals_si,0.00)*1.0 as service_duration_seconds, " + // Approx. duration time to fininsh this service
-                        " case when edizm.type_id=6 then coalesce(sse_tu.equals_si,0.00)*1.0 else 0.0 end as edizm_in_seconds" +
+                        " case when edizm.type_id=6 then coalesce(sse_tu.equals_si,0.00)*1.0 else 0.0 end as edizm_in_seconds," +
+                        " coalesce(p.is_srvc_by_appointment,false) as srvc_by_appntmnt," +
+                        " case when coalesce(ppr.is_material,true) then (select " +
+                        "   sum(coalesce(reserved_current,0)-0) " +
+                        "   from " +
+                        "   customers_orders_product " +
+                        "   where " +
+                        "   product_id=p.id "+
+                        "   and department_id = d.id) else 0 end as reserved "+//зарезервировано в документах Заказ покупателя
                         " from " +
                         " products p " +
                         " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
@@ -1176,15 +1184,12 @@ public class AppointmentRepositoryJPA {
                         " where " +
                         " p.master_id=" + masterId + " and " +
                         " p.company_id=" + reqest.getCompanyId() + " and " +
-                        " p.ppr_id=4 and  " + //-- this is a service
+                        " p.ppr_id in (1,4) and " + //-- products and services
                         " coalesce(p.is_deleted,false)=false and " +
-                        " p.is_srvc_by_appointment = true and " +
                         " coalesce(dp.is_deleted,false)=false and  " +
-                        " (dp.is_active is null or coalesce(dp.is_active,false)=true) and " +
-                        " p.is_srvc_by_appointment = true and " + //-- this is a service by appointment
-                        " asg.assignment_type = :asg and " +
+                        " case when coalesce(p.is_srvc_by_appointment,false) = true then (coalesce(dp.is_active,false)=true) else true end and " +
+                        " case when coalesce(p.is_srvc_by_appointment,false) = true then asg.assignment_type = :asg else true end and " +
                         " pp.price_type_id = "+reqest.getPriceTypeId();
-
                         if (reqest.getSearchString() != null && !reqest.getSearchString().isEmpty()) {
                         stringQuery = stringQuery + " and (" +
                             " upper(p.name) like upper(CONCAT('%',:sg,'%')) or " +
@@ -1268,6 +1273,9 @@ public class AppointmentRepositoryJPA {
             BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[22]);
             BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[23]);
             BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[24]);
+            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[25]);
+            BigDecimal  currentCycleReserved =  (                               obj[26]==null?BigDecimal.ZERO:(BigDecimal)obj[26]);
+
             // on this cycle if it is a new user
             if (!currentCycleServiceId.equals(currentServiceId)) {
 
@@ -1322,10 +1330,11 @@ public class AppointmentRepositoryJPA {
                 appointmentService.setSrvcDurationInSeconds(        currentCycleSrvcDurationInSeconds);
                 appointmentService.setAtLeastBeforeTimeInSeconds(   currentCycleAtLeastBeforeTimeInSeconds);
                 appointmentService.setUnitOfMeasureTimeInSeconds(   currentCycleUnitOfMeasureDurationInSeconds);
+                appointmentService.setIsServiceByAppointment(       currentCycleServiceByAppointment);
+                appointmentService.setReserved(                     currentCycleReserved);
 
                 // Cоздали новый лист для накопления частей отделений для новой услуги
                 departmentPartsWithResourcesIds = new ArrayList<>();
-
             }
 
             // Если сотрудник не новый, но часть отделения сменилась

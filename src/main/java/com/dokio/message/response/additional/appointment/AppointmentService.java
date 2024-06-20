@@ -25,6 +25,24 @@ public class AppointmentService {
     private BigDecimal  srvcDurationInSeconds;      // Approx. duration time to fininsh this service
     private BigDecimal  atLeastBeforeTimeInSeconds; // Minimum time before the start of the service for which customers can make an appointment
     private BigDecimal  unitOfMeasureTimeInSeconds; // If unit of measure is 'Time' type - it will be as 1 unit in seconds, else 0
+    private Boolean     isServiceByAppointment;     // It's a service and it's a service by appointment
+    private BigDecimal  reserved;
+
+    public BigDecimal getReserved() {
+        return reserved;
+    }
+
+    public void setReserved(BigDecimal reserved) {
+        this.reserved = reserved;
+    }
+
+    public Boolean getIsServiceByAppointment() {
+        return this.isServiceByAppointment;
+    }
+
+    public void setIsServiceByAppointment(Boolean isServiceByAppointment) {
+        this.isServiceByAppointment = isServiceByAppointment;
+    }
 
     public BigDecimal getUnitOfMeasureTimeInSeconds() {
         return unitOfMeasureTimeInSeconds;
