@@ -1,19 +1,22 @@
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.AppointmentCustomer;
+
+import java.util.List;
 import java.util.Set;
 
 public class AppointmentsForm {
 
     private Long id;
     private Long company_id;
-    private Long department_id;
-    private Long dep_part_id;
+    private Long department_part_id;
     private Long status_id;
     private String date_start;
     private String date_end;
     private String time_start;
     private String time_end;
     private String doc_number;
+    private String name;
     private boolean nds;
     private boolean nds_included;
     private String description;
@@ -23,7 +26,16 @@ public class AppointmentsForm {
     private String  parent_uid;// uid исходящего (родительского) документа
     private String  child_uid; // uid дочернего документа. Дочерний - не всегда тот, которого создают из текущего документа. Например, при создании из Отгрузки Счёта покупателю - Отгрузка будет дочерней для него.
     private Boolean is_completed;// проведён
-    private Set<AppointmentProductsTableForm> appointmentProductsTableForm;
+    private List<AppointmentProductsTableForm> appointmentsProductTable; //Все товары и услуги из данного заказа
+    private List<AppointmentCustomer> customersTable;                   // Все покупатели из данного Заказа
+
+    public List<AppointmentProductsTableForm> getAppointmentsProductTable() {
+        return appointmentsProductTable;
+    }
+
+    public void setAppointmentsProductTable(List<AppointmentProductsTableForm> appointmentsProductTable) {
+        this.appointmentsProductTable = appointmentsProductTable;
+    }
 
     public Long getId() {
         return id;
@@ -41,20 +53,12 @@ public class AppointmentsForm {
         this.company_id = company_id;
     }
 
-    public Long getDepartment_id() {
-        return department_id;
+    public Long getDepartment_part_id() {
+        return department_part_id;
     }
 
-    public void setDepartment_id(Long department_id) {
-        this.department_id = department_id;
-    }
-
-    public Long getDep_part_id() {
-        return dep_part_id;
-    }
-
-    public void setDep_part_id(Long dep_part_id) {
-        this.dep_part_id = dep_part_id;
+    public void setDepartment_part_id(Long department_part_id) {
+        this.department_part_id = department_part_id;
     }
 
     public Long getStatus_id() {
@@ -103,6 +107,14 @@ public class AppointmentsForm {
 
     public void setDoc_number(String doc_number) {
         this.doc_number = doc_number;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public boolean isNds() {
@@ -177,11 +189,12 @@ public class AppointmentsForm {
         this.is_completed = is_completed;
     }
 
-    public Set<AppointmentProductsTableForm> getAppointmentProductsTableForm() {
-        return appointmentProductsTableForm;
+
+    public List<AppointmentCustomer> getCustomersTable() {
+        return customersTable;
     }
 
-    public void setAppointmentProductsTableForm(Set<AppointmentProductsTableForm> appointmentProductsTableForm) {
-        this.appointmentProductsTableForm = appointmentProductsTableForm;
+    public void setCustomersTable(List<AppointmentCustomer> customersTable) {
+        this.customersTable = customersTable;
     }
 }

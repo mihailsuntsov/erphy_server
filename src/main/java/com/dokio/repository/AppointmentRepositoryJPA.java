@@ -1,6 +1,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
+import com.dokio.message.request.additional.AppointmentCustomer;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
@@ -31,6 +32,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -481,28 +483,26 @@ public class AppointmentRepositoryJPA {
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public AppointmentUpdateReportJSON insertAppointment(AppointmentsForm request) {
-        if(commonUtilites.isDocumentUidUnical(request.getUid(), "scdl_appointments")){
+        if(commonUtilites.isDocumentUidUnical(request.getUid(), "scdl_appointments"))
+        {
             EntityManager emgr = emf.createEntityManager();
-            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();// моё
+            Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
             String myTimeZone = userRepository.getUserTimeZone();
-            Long docDepartment=request.getDepartment_id();
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
             List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
-            boolean itIsMyDepartment = myDepartmentsIds.contains(docDepartment);
+            boolean itIsMyDepartment = myDepartmentsIds.contains(departmentId);
             Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
             Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
             AppointmentUpdateReportJSON updateResults = new AppointmentUpdateReportJSON();// отчет о создании
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-
             try{
-
-                if ((//если есть право на создание по всем предприятиям, или
-                        (securityRepositoryJPA.userHasPermissions_OR(59L, "705")) ||
-                                //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
-                                (securityRepositoryJPA.userHasPermissions_OR(59L, "706") && myCompanyId.equals(request.getCompany_id())) ||
-                                //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
-                                (securityRepositoryJPA.userHasPermissions_OR(59L, "707") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment)) &&
-                        //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
-                        DocumentMasterId.equals(myMasterId))
+                if(Objects.isNull(departmentId)) throw new Exception("Department part with id = "+request.getDepartment_part_id()+" is not belongs to master Id = "+masterId);
+                if (//если есть право на создание по всем предприятиям, или
+                    (securityRepositoryJPA.userHasPermissions_OR(59L, "705")) ||
+                    //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                    (securityRepositoryJPA.userHasPermissions_OR(59L, "706") && myCompanyId.equals(request.getCompany_id())) ||
+                    //если есть право на создание по своим подразделениям своего предприятия, предприятие своё, и подразделение документа входит в число своих, И
+                    (securityRepositoryJPA.userHasPermissions_OR(59L, "707") && myCompanyId.equals(request.getCompany_id()) && itIsMyDepartment))
                 {
                     String stringQuery;
                     Long myId = userRepository.getUserId();
@@ -514,9 +514,9 @@ public class AppointmentRepositoryJPA {
                         doc_number=Long.valueOf(request.getDoc_number());
                     } else doc_number=commonUtilites.generateDocNumberCode(request.getCompany_id(),"scdl_appointments");
 
-                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
-                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_id(), myMasterId);
-                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), masterId);
+//                    commonUtilites.idBelongsMyMaster("departments", request.getDepartment_part_id(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), masterId);
 
                     String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                     if (!commonUtilites.isTimeValid(request.getTime_start()) || !commonUtilites.isTimeValid(request.getTime_end()))
@@ -529,65 +529,68 @@ public class AppointmentRepositoryJPA {
                                     " creator_id," + //создатель
                                     " owner_id," + //владелец
                                     " company_id," + //предприятие, для которого создается документ
-                                    " department_id," + //отделение, из(для) которого создается документ
+                                    " dep_part_id," + //отделение, из(для) которого создается документ
                                     " date_time_created," + //дата и время создания
-                                    " doc_number," + //номер заказа
-                                    " description," +//доп. информация по заказу
-                                    " date_start," +
-                                    " date_end," +
-                                    " time_start," +
-                                    " time_end," +
+                                    " doc_number," + //номер документа
+                                    " name," +
+                                    " description," +//доп. информация по документe
+                                    " starts_at_time," +
+                                    " ends_at_time," +
                                     " nds," +// НДС
                                     " nds_included," +// НДС включен в цену
-                                    " status_id,"+//статус заказа
+                                    " status_id,"+//статус документа
                                     " uid"+// уникальный идентификатор документа
                                     ") values ("+
-                                    myMasterId + ", "+//мастер-аккаунт
+                                    masterId + ", "+//мастер-аккаунт
                                     myId + ", "+ //создатель
                                     myId + ", "+ //владелец
                                     request.getCompany_id() + ", "+//предприятие, для которого создается документ
-                                    request.getDepartment_id() + ", "+//отделение, из(для) которого создается документ
-                                    "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                                    request.getDepartment_part_id() + ", "+//отделение, из(для) которого создается документ
+                                    " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
                                     doc_number + ", "+//номер документа
-                                    ":description, " +//описание
-                                    "to_date('"+request.getDate_start()+"', 'DD.MM.YYYY')," +
-                                    "to_date('"+request.getDate_end()+"', 'DD.MM.YYYY')," +
-                                    "to_timestamp('"+request.getTime_start()+"', 'HH24:MI')," +
-                                    "to_timestamp('"+request.getTime_end()+"',   'HH24:MI')," +
+                                    " :name, "  +
+                                    " :description, " +//описание
+                                    " to_timestamp ('"+request.getDate_start()+" "+request.getTime_start()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
+                                    " to_timestamp ('"+request.getDate_end()+" "+request.getTime_end()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
                                     request.isNds() + ", "+// НДС
                                     request.isNds_included() + ", "+// НДС включен в цену
-                                    request.getStatus_id() + "," +//статус заказа
+                                    request.getStatus_id() + "," +//статус документа
                                     ":uid"+// уникальный идентификатор документа
                                     ")";
 
                     try{
-                        Date dateNow = new Date();
-                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-                        DateFormat timeFormat = new SimpleDateFormat("HH:mm");
-                        dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+//                        Date dateNow = new Date();
+//                        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+//                        DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+//                        dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
 
                         Query query = entityManager.createNativeQuery(stringQuery);
                         query.setParameter("uid",request.getUid());
-
+                        query.setParameter("name",request.getName());
                         query.setParameter("description",request.getDescription());
                         query.executeUpdate();
                         stringQuery="select id from scdl_appointments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                         Query query2 = entityManager.createNativeQuery(stringQuery);
                         newDocId=Long.valueOf(query2.getSingleResult().toString());
 
+                        //создание новых контрагентов и формирование списка <row_id - id> для контрагентов
+                        Map<Integer,Long> cagentsMap = saveAppointmentCagents(request, myId, masterId);
+
+
+
                         //сохранение таблицы товаров
-                        updateResults=insertAppointmentProducts(request, newDocId, myMasterId);
+                        insertAppointmentProducts(request, cagentsMap, newDocId, masterId);
                         updateResults.setId(newDocId);
                         updateResults.setSuccess(true);
                         return updateResults;
 
-                    } catch (CantInsertProductRowCauseErrorException e) {
-                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                        logger.error("Exception in method insertAppointment on inserting into scdl_appointment_products. ", e);
-                        updateResults.setSuccess(false);
-                        updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
-                        e.printStackTrace();
-                        return updateResults; // ошибка сохранения таблицы товаров
+//                    } catch (CantInsertProductRowCauseErrorException e) {
+//                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//                        logger.error("Exception in method insertAppointment on inserting into scdl_appointment_products. ", e);
+//                        updateResults.setSuccess(false);
+//                        updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
+//                        e.printStackTrace();
+//                        return updateResults; // ошибка сохранения таблицы товаров
                     } catch (Exception e) {
                         logger.error("Exception in method insertAppointment on querying of created document id. SQL query:"+stringQuery, e);
                         e.printStackTrace();
@@ -611,8 +614,73 @@ public class AppointmentRepositoryJPA {
             logger.info("Double UUID found on insertAppointment. UUID: " + request.getUid());
             return null;
         }
+//        return new AppointmentUpdateReportJSON();
     }
 
+    private Map<Integer,Long> saveAppointmentCagents(AppointmentsForm request, Long creatorId, Long masterId) throws Exception {
+        Map<Integer,Long> result = new HashMap<>();
+        try {
+            for (AppointmentCustomer cagent : request.getCustomersTable()) {
+                result.put(cagent.getRow_id(), insertAppointmentCagents(cagent, masterId, creatorId, request.getCompany_id()));
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("Exception in method AppointmentsRepository/saveAppointmentCagents.", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
+    private Long insertAppointmentCagents(AppointmentCustomer cagent, Long masterId, Long creatorId, Long companyId) throws Exception {
+        String stringQuery="";
+        try{
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            stringQuery =
+                    " insert into cagents ( " +
+                            (Objects.isNull(cagent.getId())?"":" id, ") +
+                            " master_id," +
+                            " creator_id, " +
+                            " company_id, " +
+                            " date_time_created, " +
+                            " name, " +
+                            " email, " +
+                            " telephone, " +
+                            " jr_jur_full_name, " +
+                            " type " +
+                            " ) values (" +
+                            (Objects.isNull(cagent.getId())?"":cagent.getId()+",") +
+                            ""+masterId+"," +
+                            ""+creatorId+"," +
+                            ""+companyId+"," +
+                            " to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+                            " :name," +
+                            " :email," +
+                            " :telephone," +
+                            " :name," +
+                            "'individual') " +
+                            " ON CONFLICT ON CONSTRAINT cagents_pkey DO NOTHING";// "upsert"
+//                            " DO update set " +
+//                            " name = :name," +
+//                            " email = :email," +
+//                            " telephone :telephone," +
+//                            " date_time_changed = now()";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",cagent.getName());
+            query.setParameter("email",cagent.getEmail());
+            query.setParameter("telephone",cagent.getTelephone());
+            query.executeUpdate();
+            if(Objects.isNull(cagent.getId())){
+                stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+creatorId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                cagent.setId(Long.valueOf(query2.getSingleResult().toString()));
+            }
+            return cagent.getId();
+        } catch (Exception e) {
+            logger.error("Exception in method AppointmentsRepository/insertAppointmentCagents. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public AppointmentUpdateReportJSON updateAppointment(AppointmentsForm request) throws Exception {
         AppointmentUpdateReportJSON updateResults = new AppointmentUpdateReportJSON();// отчет об апдейте
@@ -652,28 +720,30 @@ public class AppointmentRepositoryJPA {
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "scdl_appointments"))
                     throw new DocumentAlreadyCompletedException();
                 // если документ проводится и нет товаров - ошибка
-                if(request.getIs_completed()!=null && request.getIs_completed() && request.getAppointmentProductsTableForm().size()==0) throw new CantInsertProductRowCauseErrorException();
+                if(request.getIs_completed()!=null && request.getIs_completed() && request.getAppointmentsProductTable().size()==0) throw new CantInsertProductRowCauseErrorException();
 
-                Long myMasterId = userRepositoryJPA.getMyMasterId();
-
+                Long masterId = userRepositoryJPA.getMyMasterId();
+                Long myId = userRepository.getUserId();
 
                 // commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
                 // !!!!!!!!!!!!!!!! Сделать проверку списка клиентов на принадлежность к masterId !!!!!!!!!!!!!
 
-
-                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), masterId);
 
                 // сохранение всего кроме таблицы товаров
                 updateAppointmentWithoutTable(request);
 
+                //сохранение и удаление контрагентов и формирование списка <row_id - id> для контрагентов и товаров
+                Map<Integer,Long> cagentsMap = saveAppointmentCagents(request, myId, masterId);
+
                 // сохранение таблицы товаров
-                updateResults=insertAppointmentProducts(request, request.getId(), myMasterId);
+                insertAppointmentProducts(request, cagentsMap, request.getId(), masterId);
 
                 // отмечаем товары как необходимые для синхронизации с WooCommerce //???
-                for (AppointmentProductsTableForm row : request.getAppointmentProductsTableForm()) {
+                for (AppointmentProductsTableForm row : request.getAppointmentsProductTable()) {
                     productsIdsToSyncWoo.add(row.getProduct_id());
                 }
-                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, myMasterId);
+                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, masterId);
 
                 // возвращаем весть об успешности операции
                 updateResults.setSuccess(true);
@@ -723,7 +793,7 @@ public class AppointmentRepositoryJPA {
                         (securityRepositoryJPA.userHasPermissions_OR(59L,"723") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",request.getId().toString()))
         )
         {
-            if(request.getAppointmentProductsTableForm().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
+            if(request.getAppointmentsProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)
             Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
             String stringQuery =
                     " update scdl_appointments set " +
@@ -760,29 +830,27 @@ public class AppointmentRepositoryJPA {
             }
         } else return -1; // Нет прав на проведение либо отмену проведения документа
     }
+
     //сохранение таблицы товаров
-    @SuppressWarnings("Duplicates")
-    public AppointmentUpdateReportJSON insertAppointmentProducts(AppointmentsForm request, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
+    public void insertAppointmentProducts(AppointmentsForm request, Map<Integer,Long> cagentsMap, Long parentDocId, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         Set<Long> rowIds=new HashSet<>();
-        AppointmentUpdateReportJSON updateResults = new AppointmentUpdateReportJSON();// отчет о сохранении таблицы товаров
-        Integer updateProductRowResult; // отчет о сохранении позиции товара (строки таблицы). 0- успешно с сохранением вкл. резерва. 1 - включенный резерв не был сохранён
-        // перед сохранением таблицы товаров удалим все товары, что удалили на фронтэнде. Для этого накопим id неудалённых товаров и удалим все что не входит в эти id
-        for (AppointmentProductsTableForm row : request.getAppointmentProductsTableForm()) {
-            if(!Objects.isNull(row.getId())) rowIds.add(row.getId());
-        }
-        if (!deleteAppointmentProductsTableExcessRows(rowIds.size()>0?(commonUtilites.SetOfLongToString(rowIds,",","","")):"0", request.getId(), myMasterId))
-            throw new CantInsertProductRowCauseErrorException();
-        if (request.getAppointmentProductsTableForm()!=null && request.getAppointmentProductsTableForm().size() > 0) {//если есть что сохранять
-            for (AppointmentProductsTableForm row : request.getAppointmentProductsTableForm()) {
+        try {
+            for (AppointmentProductsTableForm row : request.getAppointmentsProductTable()) {
                 row.setAppointment_id(parentDocId);// т.к. он может быть неизвестен при создании документа
-                saveAppointmentProductsTable(row, myMasterId);//1 - резерв был и не сохранился, 0 - резерв сохранился, null - ошибка
+                Long cagentId = cagentsMap.get(row.getCustomerRowId());
+                row.setCustomerId(cagentId);
+                saveAppointmentProductsTable(row, myMasterId);
+                rowIds.add(row.getProduct_id());
             }
+            deleteAppointmentProductsTableExcessRows(rowIds.size() > 0 ? (commonUtilites.SetOfLongToString(rowIds, ",", "", "")) : "0", request.getId(), myMasterId);
         }
-        return updateResults;
+        catch (Exception e) {
+            logger.error("Exception in method AppointmentsRepositoryJPA/insertAppointmentProducts.", e);
+            e.printStackTrace();
+            throw new CantInsertProductRowCauseErrorException();
+        }
     }
 
-
-    @SuppressWarnings("Duplicates")
     private void saveAppointmentProductsTable(AppointmentProductsTableForm row, Long master_id) throws CantInsertProductRowCauseErrorException {
         String stringQuery="";
         if(Objects.isNull(row.getReserved_current())) row.setReserved_current(new BigDecimal(0));
@@ -792,6 +860,7 @@ public class AppointmentRepositoryJPA {
                             "master_id, " +
                             "product_id, " +
                             "appointment_id, " +
+                            "cagent_id, " +
                             "product_count, " +
                             "product_price, " +
                             "product_sumprice, " +
@@ -804,6 +873,7 @@ public class AppointmentRepositoryJPA {
                             master_id + "," +
                             row.getProduct_id() + "," +
                             row.getAppointment_id() + "," +
+                            row.getCustomerId() + "," +
                             row.getProduct_count() + "," +
                             row.getProduct_price() + "," +
                             row.getProduct_sumprice() + "," +
@@ -813,10 +883,10 @@ public class AppointmentRepositoryJPA {
                             row.getDepartment_id() + ", " +
                             row.getProduct_price_of_type_price() +
                             " ) " +
-                            "ON CONFLICT ON CONSTRAINT scdl_appointment_products_uq " +// "upsert"
+                            "ON CONFLICT ON CONSTRAINT scdl_appointment_cagent_product_uq " +// "upsert"
                             " DO update set " +
-                            " product_id = " + row.getProduct_id() + ","+
-                            " appointment_id = " + row.getAppointment_id() + ","+
+//                            " product_id = " + row.getProduct_id() + ","+
+//                            " appointment_id = " + row.getAppointment_id() + ","+
                             " product_count = " + row.getProduct_count() + ","+
                             " product_price = " + row.getProduct_price() + ","+
                             " product_sumprice = " + row.getProduct_sumprice() + ","+
@@ -980,7 +1050,7 @@ public class AppointmentRepositoryJPA {
     }
 
     //  удаляет лишние позиции товаров при сохранении документа (те позиции, которые ранее были в документе, но потом их удалили)
-    private Boolean deleteAppointmentProductsTableExcessRows(String rowIds, Long appointment_id, Long myMasterId) {
+    private void deleteAppointmentProductsTableExcessRows(String rowIds, Long appointment_id, Long myMasterId) throws Exception {
         String stringQuery="";
         try {
             stringQuery =   " delete from scdl_appointment_products " +
@@ -989,12 +1059,11 @@ public class AppointmentRepositoryJPA {
                     (rowIds.length()>0?(" and id not in (" + rowIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
-            return true;
         }
         catch (Exception e) {
             logger.error("Exception in method deleteAppointmentProductsTableExcessRows. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return false;
+            throw new Exception();
         }
     }
 

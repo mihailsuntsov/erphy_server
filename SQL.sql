@@ -6579,10 +6579,9 @@ create table scdl_appointments(
                              master_id                          bigint not null,
                              company_id                         bigint not null,
                              creator_id                         bigint not null,
-                             changer_id                         bigint not null,
+                             changer_id                         bigint,
                              owner_id                           bigint not null,
                              employee_id                        bigint,
-                             service_id                         bigint not null,
                              date_time_created                  timestamp with time zone not null,
                              date_time_changed                  timestamp with time zone,
                              status_id                          bigint,
@@ -6621,6 +6620,7 @@ create table scdl_appointment_products(
                              product_sumprice                   numeric(15,2) not null,
                              edizm_id                           bigint not null,
                              nds_id                             bigint not null,
+                             cagent_id                          bigint not null,
                              product_price_of_type_price        numeric(12,2),
                              foreign key (appointment_id)       references scdl_appointments (id),
                              foreign key (edizm_id)             references sprav_sys_edizm (id),
@@ -6628,19 +6628,21 @@ create table scdl_appointment_products(
                              foreign key (price_type_id)        references sprav_type_prices (id),
                              foreign key (product_id )          references products (id),
                              foreign key (department_id )       references departments (id),
+                             foreign key (cagent_id )           references cagents (id),
                              foreign key (master_id)            references users(id)
 );
+alter table scdl_appointment_products add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
+-- create table scdl_appointment_cagents(
+--                              id                                 bigserial primary key not null,
+--                              master_id                          bigint not null,
+--                              cagent_id                          bigint not null,
+--                              appointment_id                     bigint not null,
+--                              places_ordered                     int not null,
+--                              foreign key (appointment_id)       references scdl_appointments (id),
+--                              foreign key (cagent_id)            references cagents (id)
+-- );
 
-create table scdl_appointment_cagents(
-                             id                                 bigserial primary key not null,
-                             master_id                          bigint not null,
-                             cagent_id                          bigint not null,
-                             appointment_id                     bigint not null,
-                             places_ordered                     int not null,
-                             foreign key (appointment_id)       references scdl_appointments (id),
-                             foreign key (cagent_id)            references cagents (id)
-);
-
+-- delete from usergroup_permissions where permission_id in(select id from permissions where document_id=59);
 -- delete from permissions where document_id=59;
 -- delete from documents where id=59;
 -- drop table scdl_appointment_products;
@@ -6684,9 +6686,6 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 
 alter table users drop column status_employee; -- column is not using
 insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
-
-alter table scdl_appointments drop column service_id; -- column is no more using because all services are in scdl_appointment_products
-
 
 
 
