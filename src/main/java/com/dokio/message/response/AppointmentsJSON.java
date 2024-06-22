@@ -1,6 +1,11 @@
 package com.dokio.message.response;
 
+import com.dokio.message.request.AppointmentProductsTableForm;
+import com.dokio.message.request.additional.AppointmentCustomer;
+import com.dokio.message.response.additional.appointment.AppointmentService;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 public class AppointmentsJSON {
 
@@ -14,29 +19,112 @@ public class AppointmentsJSON {
     private Long        department_id;
     private String      department;
     private Long        dep_part_id;
-    private Long        dep_part;
+    private String      dep_part;
+    private Long        jobtitle_id;
+    private String      jobtitle;
     private Long        doc_number;
     private String      date_time_created;
     private String      date_time_changed;
+    private String      name;
     private String      description;
-    private Long        department_type_price_id;//тип цены для отделения в этом appointment
-    private Long        default_type_price_id;//тип цены по умолчанию (устанавливается в Типах цен)
-    private boolean     is_completed;//проведён
+    private boolean     is_completed;
     private boolean     nds;
     private boolean     nds_included;
     private String      uid;
-    private Long        product_count;
     private Long        status_id;
     private String      status_name;
     private String      status_color;
     private String      status_description;
-    private BigDecimal  sum_price;
     private String      date_start;
     private String      date_end;
     private String      time_start;
     private String      time_end;
-    private String      calendar_date_time_start;
-    private String      calendar_date_time_end;
+    private Long        employeeId;
+    private String      employeeName;
+    private List<AppointmentService>  appointmentsProductTable;             // Все товары и услуги из данного Appointment
+    private List<AppointmentCustomer>           customersTable;             // Все покупатели из данного Appointment
+    private String calendar_date_time_start;    // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
+    private String calendar_date_time_end;      // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
+
+    public List<AppointmentService> getAppointmentsProductTable() {
+        return appointmentsProductTable;
+    }
+
+    public void setAppointmentsProductTable(List<AppointmentService> appointmentsProductTable) {
+        this.appointmentsProductTable = appointmentsProductTable;
+    }
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public String getEmployeeName() {
+        return employeeName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
+
+    public Long getJobtitle_id() {
+        return jobtitle_id;
+    }
+
+    public void setJobtitle_id(Long jobtitle_id) {
+        this.jobtitle_id = jobtitle_id;
+    }
+
+    public String getJobtitle() {
+        return jobtitle;
+    }
+
+    public void setJobtitle(String jobtitle) {
+        this.jobtitle = jobtitle;
+    }
+
+    public String getCalendar_date_time_start() {
+        return calendar_date_time_start;
+    }
+
+    public void setCalendar_date_time_start(String calendar_date_time_start) {
+        this.calendar_date_time_start = calendar_date_time_start;
+    }
+
+    public String getCalendar_date_time_end() {
+        return calendar_date_time_end;
+    }
+
+    public void setCalendar_date_time_end(String calendar_date_time_end) {
+        this.calendar_date_time_end = calendar_date_time_end;
+    }
+
+    public String getDep_part() {
+        return dep_part;
+    }
+
+    public void setDep_part(String dep_part) {
+        this.dep_part = dep_part;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<AppointmentCustomer> getCustomersTable() {
+        return customersTable;
+    }
+
+    public void setCustomersTable(List<AppointmentCustomer> customersTable) {
+        this.customersTable = customersTable;
+    }
 
     public String getDepartment() {
         return department;
@@ -118,14 +206,6 @@ public class AppointmentsJSON {
         this.dep_part_id = dep_part_id;
     }
 
-    public Long getDep_part() {
-        return dep_part;
-    }
-
-    public void setDep_part(Long dep_part) {
-        this.dep_part = dep_part;
-    }
-
     public Long getDoc_number() {
         return doc_number;
     }
@@ -156,22 +236,6 @@ public class AppointmentsJSON {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getDepartment_type_price_id() {
-        return department_type_price_id;
-    }
-
-    public void setDepartment_type_price_id(Long department_type_price_id) {
-        this.department_type_price_id = department_type_price_id;
-    }
-
-    public Long getDefault_type_price_id() {
-        return default_type_price_id;
-    }
-
-    public void setDefault_type_price_id(Long default_type_price_id) {
-        this.default_type_price_id = default_type_price_id;
     }
 
     public boolean isIs_completed() {
@@ -206,14 +270,6 @@ public class AppointmentsJSON {
         this.uid = uid;
     }
 
-    public Long getProduct_count() {
-        return product_count;
-    }
-
-    public void setProduct_count(Long product_count) {
-        this.product_count = product_count;
-    }
-
     public Long getStatus_id() {
         return status_id;
     }
@@ -244,14 +300,6 @@ public class AppointmentsJSON {
 
     public void setStatus_description(String status_description) {
         this.status_description = status_description;
-    }
-
-    public BigDecimal getSum_price() {
-        return sum_price;
-    }
-
-    public void setSum_price(BigDecimal sum_price) {
-        this.sum_price = sum_price;
     }
 
     public String getDate_start() {
@@ -286,19 +334,4 @@ public class AppointmentsJSON {
         this.time_end = time_end;
     }
 
-    public String getCalendar_date_time_start() {
-        return calendar_date_time_start;
-    }
-
-    public void setCalendar_date_time_start(String calendar_date_time_start) {
-        this.calendar_date_time_start = calendar_date_time_start;
-    }
-
-    public String getCalendar_date_time_end() {
-        return calendar_date_time_end;
-    }
-
-    public void setCalendar_date_time_end(String calendar_date_time_end) {
-        this.calendar_date_time_end = calendar_date_time_end;
-    }
 }

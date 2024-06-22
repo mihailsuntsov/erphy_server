@@ -27,6 +27,62 @@ public class AppointmentService {
     private BigDecimal  unitOfMeasureTimeInSeconds; // If unit of measure is 'Time' type - it will be as 1 unit in seconds, else 0
     private Boolean     isServiceByAppointment;     // It's a service and it's a service by appointment
     private BigDecimal  reserved;
+    private List<DepartmentPartWithResourcesIds> departmentPartsWithResourcesIds;
+
+    // these are parameters need for return products list for getAppointmentValuesById query
+    private BigDecimal  product_count;
+    private BigDecimal  product_price;
+    private BigDecimal  product_sumprice;
+    private Long        cagent_id;
+    private int         cagent_row_id;
+
+    public int getCagent_row_id() {
+        return cagent_row_id;
+    }
+
+    public void setCagent_row_id(int cagent_row_id) {
+        this.cagent_row_id = cagent_row_id;
+    }
+
+    public Boolean getServiceByAppointment() {
+        return isServiceByAppointment;
+    }
+
+    public void setServiceByAppointment(Boolean serviceByAppointment) {
+        isServiceByAppointment = serviceByAppointment;
+    }
+
+    public BigDecimal getProduct_count() {
+        return product_count;
+    }
+
+    public void setProduct_count(BigDecimal product_count) {
+        this.product_count = product_count;
+    }
+
+    public BigDecimal getProduct_price() {
+        return product_price;
+    }
+
+    public void setProduct_price(BigDecimal product_price) {
+        this.product_price = product_price;
+    }
+
+    public BigDecimal getProduct_sumprice() {
+        return product_sumprice;
+    }
+
+    public void setProduct_sumprice(BigDecimal product_sumprice) {
+        this.product_sumprice = product_sumprice;
+    }
+
+    public Long getCagent_id() {
+        return cagent_id;
+    }
+
+    public void setCagent_id(Long cagent_id) {
+        this.cagent_id = cagent_id;
+    }
 
     public BigDecimal getReserved() {
         return reserved;
@@ -155,8 +211,6 @@ public class AppointmentService {
     public void setPriceOfTypePrice(BigDecimal priceOfTypePrice) {
         this.priceOfTypePrice = priceOfTypePrice;
     }
-
-    private List<DepartmentPartWithResourcesIds> departmentPartsWithResourcesIds;
 
     public String getDepartmentName() {
         return departmentName;

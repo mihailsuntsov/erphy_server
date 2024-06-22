@@ -126,11 +126,11 @@ public class AppointmentsController {
     }
 
 
-    @PostMapping("/api/auth/getAppointmentServicesList")
+    @PostMapping("/api/auth/getAppointmentServicesSearchList")
     public  ResponseEntity<?> getAppointmentServicesList(@RequestBody AppointmentMainInfoForm request) {
-        logger.info("Processing post request for path /api/auth/getAppointmentServicesList: " + request.toString());
-        try {return new ResponseEntity<>(appointmentRepositoryJPA.getAppointmentServicesList(request), HttpStatus.OK);}
-        catch (Exception e){e.printStackTrace();logger.error("Controller getEmployeesList error", e);
-            return new ResponseEntity<>("Controller getAppointmentServicesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        logger.info("Processing post request for path /api/auth/getAppointmentServicesSearchList: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getAppointmentServicesSearchList(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getAppointmentServicesSearchList error", e);
+            return new ResponseEntity<>("Controller getAppointmentServicesSearchList error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

@@ -21,6 +21,18 @@ public class AppointmentMainInfoForm {
     private Long priceTypeId;      // price will be returned by this price type
     private String querySource;// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
 
+    public AppointmentMainInfoForm() {
+    }
+
+    public AppointmentMainInfoForm(Long appointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo) {
+        this.appointmentId = appointmentId;
+        this.companyId = companyId;
+        this.dateFrom = dateFrom;
+        this.timeFrom = timeFrom;
+        this.dateTo = dateTo;
+        this.timeTo = timeTo;
+    }
+
     public Boolean getIsAll() {
         return isAll;
     }

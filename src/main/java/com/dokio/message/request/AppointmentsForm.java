@@ -16,6 +16,7 @@ public class AppointmentsForm {
     private String time_start;
     private String time_end;
     private String doc_number;
+    private Long employeeId;
     private String name;
     private boolean nds;
     private boolean nds_included;
@@ -28,6 +29,14 @@ public class AppointmentsForm {
     private Boolean is_completed;// проведён
     private List<AppointmentProductsTableForm> appointmentsProductTable; //Все товары и услуги из данного заказа
     private List<AppointmentCustomer> customersTable;                   // Все покупатели из данного Заказа
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
 
     public List<AppointmentProductsTableForm> getAppointmentsProductTable() {
         return appointmentsProductTable;

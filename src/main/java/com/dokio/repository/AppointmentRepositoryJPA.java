@@ -110,10 +110,10 @@ public class AppointmentRepositoryJPA {
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from scdl_appointment_products where appointment_id=p.id),0) as sum_price, " +
                     "           (select count(*) from scdl_appointment_products ip where ip.appointment_id=p.id) as product_count," + //подсчет кол-ва услуг или товаров
-                    "           to_char(p.date_start,   'DD.MM.YYYY') as date_start, " +
-                    "           to_char(p.time_start,   'HH24:MI')    as time_start, " +
-                    "           to_char(p.date_end,     'DD.MM.YYYY') as date_end, " +
-                    "           to_char(p.time_end,     'HH24:MI')    as time_end, " +
+                    "           to_char(p.starts_at_time,   'DD.MM.YYYY') as date_start, " +
+                    "           to_char(p.starts_at_time,   'HH24:MI')    as time_start, " +
+                    "           to_char(p.ends_at_time,     'DD.MM.YYYY') as date_end, " +
+                    "           to_char(p.ends_at_time,     'HH24:MI')    as time_end, " +
                     "           uo.name as owner, " +
                     "           p.name as name" +
                     "           from scdl_appointments p " +
@@ -191,8 +191,6 @@ public class AppointmentRepositoryJPA {
                 doc.setStatus_name((String)                   obj[15]);
                 doc.setStatus_color((String)                  obj[16]);
                 doc.setStatus_description((String)            obj[17]);
-                doc.setSum_price((BigDecimal)                 obj[18]);
-                doc.setProduct_count(Long.parseLong(          obj[19].toString()));
                 doc.setDate_start((String)                    obj[20]);
                 doc.setDate_end((String)                      obj[21]);
                 doc.setTime_start((String)                    obj[22]);
@@ -260,114 +258,114 @@ public class AppointmentRepositoryJPA {
         return query.getResultList().size();
     }
 
-    public List<AppointmentProductsTableJSON> getAppointmentsProductTable(Long docId) {
-        if(securityRepositoryJPA.userHasPermissions_OR(59L, "708,709,710,711"))//(см. файл Permissions Id)
-        {
-            String stringQuery;
-            boolean needToSetParameter_MyDepthsIds = false;
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
-            stringQuery =   " select " +
-                    " ap.product_id," +
-                    " ap.appointment_id," +
-                    " ap.product_count," +
-                    " ap.product_price," +
-                    " ap.product_sumprice," +
-                    " ap.edizm_id," +
-                    " p.name as name," +
-                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm," +
-                    " ap.nds_id," +
-                    " nds.name as nds," +
-                    " ap.price_type_id," +
-                    " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
-                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
-                    " (select " +
-                    "   sum(coalesce(reserved_current,0)-0) " +
-                    "   from " +
-                    "   customers_orders_product " +
-                    "   where " +
-                    "   product_id=ap.product_id "+
-                    "   and department_id = ap.department_id) as reserved, "+//зарезервировано в документах Заказ покупателя
-                    " ap.department_id as department_id, " +
-                    " (select name from departments where id= ap.department_id) as department, "+
-                    " ap.id  as row_id, " +
-                    " ppr.name_api_atol as ppr_name_api_atol, " +
-                    " ppr.is_material as is_material, " +
-//                    " 0 as reserved_current, " +//зарезервировано в данном документе (a так как в Букингах нет резервирования - то всегда 0)
-                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-                    " coalesce(nds.value,0) as nds_value," +
-
-                    " coalesce(p.is_srvc_by_appointment, false) as is_srvc_by_appointment, " +
-                    " coalesce(p.scdl_is_employee_required, false) as scdl_is_employee_required, " +
-                    " coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
-                    " coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
-                    " coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
-                    " p.scdl_appointment_atleast_before_unit_id as scdl_appointment_atleast_before_unit_id " +
-
-                    " from " +
-                    " scdl_appointment_products ap " +
-                    " INNER JOIN scdl_appointments a ON ap.appointment_id=a.id " +
-                    " INNER JOIN products p ON ap.product_id=p.id " +
-                    " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
-                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ap.nds_id" +
-                    " where a.master_id = " + myMasterId +
-                    " and ap.appointment_id = " + docId;
-
-            if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(59L, "709")) //Если нет прав на просм по своему предприятию
-                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(59L, "710")) //Если нет прав на просмотр всех доков в своих подразделениях
-                    {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-            }
-
-            stringQuery = stringQuery + " order by p.name asc ";
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            if(needToSetParameter_MyDepthsIds)
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
-            List<Object[]> queryList = query.getResultList();
-            List<AppointmentProductsTableJSON> returnList = new ArrayList<>();
-            int row_num = 1; // номер строки при выводе печатной версии
-            for(Object[] obj:queryList){
-                AppointmentProductsTableJSON doc=new AppointmentProductsTableJSON();
-                doc.setRow_num(row_num);
-                doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
-                doc.setAppointment_id(Long.parseLong(                   obj[1].toString()));
-                doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
-                doc.setProduct_price(                                   obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
-                doc.setProduct_sumprice(                                obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
-                doc.setEdizm_id(obj[7]!=null?Long.parseLong(            obj[5].toString()):null);
-                doc.setName((String)                                    obj[6]);
-                doc.setEdizm((String)                                   obj[7]);
-                doc.setNds_id(Long.parseLong(                           obj[8].toString()));
-                doc.setNds((String)                                     obj[9]);
-                doc.setPrice_type_id(obj[10]!=null?Long.parseLong(      obj[10].toString()):null);
-                doc.setPrice_type((String)                              obj[11]);
-                doc.setTotal(                                           obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
-                doc.setReserved(                                        obj[13]==null?BigDecimal.ZERO:(BigDecimal)obj[13]);
-                doc.setDepartment_id(Long.parseLong(                    obj[14].toString()));
-                doc.setDepartment((String)                              obj[15]);
-                doc.setId(Long.parseLong(                               obj[16].toString()));
-                doc.setPpr_name_api_atol((String)                       obj[17]);
-                doc.setIs_material((Boolean)                            obj[18]);
-                doc.setIndivisible((Boolean)                            obj[19]);
-                doc.setNds_value((BigDecimal)                           obj[20]);
-                doc.setIs_srvc_by_appointment((Boolean)                 obj[21]);// this service is selling by appointments
-                doc.setScdl_is_employee_required((Boolean)              obj[22]);// a service provider is needed only at the start
-                doc.setScdl_max_pers_on_same_time((Integer)             obj[23]);// the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
-                doc.setScdl_srvc_duration((Integer)                     obj[24]);// time minimal duration of the service.
-                doc.setScdl_appointment_atleast_before_time((Integer)   obj[25]);// minimum time before the start of the service for which customers can make an appointment
-                doc.setScdl_appointment_atleast_before_unit_id((Integer)obj[26]);// the unit of measure of minimum time before the start of the service for which customers can make an appointment
-                returnList.add(doc);
-                row_num++;
-            }
-            return returnList;
-        } else return null;
-    }
+//    public List<AppointmentProductsTableJSON> getAppointmentsProductTable(Long docId) {
+//        if(securityRepositoryJPA.userHasPermissions_OR(59L, "708,709,710,711"))//(см. файл Permissions Id)
+//        {
+//            String stringQuery;
+//            boolean needToSetParameter_MyDepthsIds = false;
+//            Long myMasterId = userRepositoryJPA.getMyMasterId();
+//            stringQuery =   " select " +
+//                    " ap.product_id," +
+//                    " ap.appointment_id," +
+//                    " ap.product_count," +
+//                    " ap.product_price," +
+//                    " ap.product_sumprice," +
+//                    " ap.edizm_id," +
+//                    " p.name as name," +
+//                    " (select edizm.short_name from sprav_sys_edizm edizm where edizm.id = ap.edizm_id) as edizm," +
+//                    " ap.nds_id," +
+//                    " nds.name as nds," +
+//                    " ap.price_type_id," +
+//                    " (select pt.name from sprav_type_prices pt where pt.id = ap.price_type_id) as price_type, " +
+//                    " coalesce((select quantity from product_quantity where product_id = ap.product_id and department_id = ap.department_id),0) as total, "+ //всего на складе (т.е остаток)
+//                    " (select " +
+//                    "   sum(coalesce(reserved_current,0)-0) " +
+//                    "   from " +
+//                    "   customers_orders_product " +
+//                    "   where " +
+//                    "   product_id=ap.product_id "+
+//                    "   and department_id = ap.department_id) as reserved, "+//зарезервировано в документах Заказ покупателя
+//                    " ap.department_id as department_id, " +
+//                    " (select name from departments where id= ap.department_id) as department, "+
+//                    " ap.id  as row_id, " +
+//                    " ppr.name_api_atol as ppr_name_api_atol, " +
+//                    " ppr.is_material as is_material, " +
+////                    " 0 as reserved_current, " +//зарезервировано в данном документе (a так как в Букингах нет резервирования - то всегда 0)
+//                    " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+//                    " coalesce(nds.value,0) as nds_value," +
+//
+//                    " coalesce(p.is_srvc_by_appointment, false) as is_srvc_by_appointment, " +
+//                    " coalesce(p.scdl_is_employee_required, false) as scdl_is_employee_required, " +
+//                    " coalesce(p.scdl_max_pers_on_same_time, 1) as scdl_max_pers_on_same_time, " +
+//                    " coalesce(p.scdl_srvc_duration, 1) as scdl_srvc_duration, " +
+//                    " coalesce(p.scdl_appointment_atleast_before_time, 0) as scdl_appointment_atleast_before_time, " +
+//                    " p.scdl_appointment_atleast_before_unit_id as scdl_appointment_atleast_before_unit_id " +
+//
+//                    " from " +
+//                    " scdl_appointment_products ap " +
+//                    " INNER JOIN scdl_appointments a ON ap.appointment_id=a.id " +
+//                    " INNER JOIN products p ON ap.product_id=p.id " +
+//                    " INNER JOIN sprav_sys_ppr ppr ON p.ppr_id=ppr.id " +
+//                    " LEFT OUTER JOIN sprav_taxes nds ON nds.id = ap.nds_id" +
+//                    " where a.master_id = " + myMasterId +
+//                    " and ap.appointment_id = " + docId;
+//
+//            if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
+//            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+//                if (!securityRepositoryJPA.userHasPermissions_OR(59L, "709")) //Если нет прав на просм по своему предприятию
+//                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+//                    if (!securityRepositoryJPA.userHasPermissions_OR(59L, "710")) //Если нет прав на просмотр всех доков в своих подразделениях
+//                    {//остается только на свои документы
+//                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds and a.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+//                    }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and a.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+//                } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+//            }
+//
+//            stringQuery = stringQuery + " order by p.name asc ";
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//
+//            if(needToSetParameter_MyDepthsIds)
+//            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+//
+//            List<Object[]> queryList = query.getResultList();
+//            List<AppointmentProductsTableJSON> returnList = new ArrayList<>();
+//            int row_num = 1; // номер строки при выводе печатной версии
+//            for(Object[] obj:queryList){
+//                AppointmentProductsTableJSON doc=new AppointmentProductsTableJSON();
+//                doc.setRow_num(row_num);
+//                doc.setProduct_id(Long.parseLong(                       obj[0].toString()));
+//                doc.setAppointment_id(Long.parseLong(                   obj[1].toString()));
+//                doc.setProduct_count(                                   obj[2]==null?BigDecimal.ZERO:(BigDecimal)obj[2]);
+//                doc.setProduct_price(                                   obj[3]==null?BigDecimal.ZERO:(BigDecimal)obj[3]);
+//                doc.setProduct_sumprice(                                obj[4]==null?BigDecimal.ZERO:(BigDecimal)obj[4]);
+//                doc.setEdizm_id(obj[7]!=null?Long.parseLong(            obj[5].toString()):null);
+//                doc.setName((String)                                    obj[6]);
+//                doc.setEdizm((String)                                   obj[7]);
+//                doc.setNds_id(Long.parseLong(                           obj[8].toString()));
+//                doc.setNds((String)                                     obj[9]);
+//                doc.setPrice_type_id(obj[10]!=null?Long.parseLong(      obj[10].toString()):null);
+//                doc.setPrice_type((String)                              obj[11]);
+//                doc.setTotal(                                           obj[12]==null?BigDecimal.ZERO:(BigDecimal)obj[12]);
+//                doc.setReserved(                                        obj[13]==null?BigDecimal.ZERO:(BigDecimal)obj[13]);
+//                doc.setDepartment_id(Long.parseLong(                    obj[14].toString()));
+//                doc.setDepartment((String)                              obj[15]);
+//                doc.setId(Long.parseLong(                               obj[16].toString()));
+//                doc.setPpr_name_api_atol((String)                       obj[17]);
+//                doc.setIs_material((Boolean)                            obj[18]);
+//                doc.setIndivisible((Boolean)                            obj[19]);
+//                doc.setNds_value((BigDecimal)                           obj[20]);
+//                doc.setIs_srvc_by_appointment((Boolean)                 obj[21]);// this service is selling by appointments
+//                doc.setScdl_is_employee_required((Boolean)              obj[22]);// a service provider is needed only at the start
+//                doc.setScdl_max_pers_on_same_time((Integer)             obj[23]);// the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
+//                doc.setScdl_srvc_duration((Integer)                     obj[24]);// time minimal duration of the service.
+//                doc.setScdl_appointment_atleast_before_time((Integer)   obj[25]);// minimum time before the start of the service for which customers can make an appointment
+//                doc.setScdl_appointment_atleast_before_unit_id((Integer)obj[26]);// the unit of measure of minimum time before the start of the service for which customers can make an appointment
+//                returnList.add(doc);
+//                row_num++;
+//            }
+//            return returnList;
+//        } else return null;
+//    }
 
     //*****************************************************************************************************************************************************
 //****************************************************      CRUD      *********************************************************************************
@@ -377,110 +375,198 @@ public class AppointmentRepositoryJPA {
     public AppointmentsJSON getAppointmentsValuesById (Long id) {
         if (securityRepositoryJPA.userHasPermissions_OR(59L, "708,709,710,711"))//см. _Permissions Id.txt
         {
-            String stringQuery;
-            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
-            String myTimeZone = userSettings.getTime_zone();
-            String dateFormat = userSettings.getDateFormat();
-            String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
-            boolean needToSetParameter_MyDepthsIds = false;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery = "";
+            try {
+                UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+                String myTimeZone = userSettings.getTime_zone();
+                String dateFormat = userSettings.getDateFormat();
+                String timeFormat = (userSettings.getTimeFormat().equals("12") ? " HH12:MI AM" : " HH24:MI"); // '12' or '24';
+                boolean needToSetParameter_MyDepthsIds = false;
+                Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-            stringQuery = "select " +
-                    "           p.id as id, " +
-                    "           us.name as creator, " +
-                    "           uc.name as changer, " +
-                    "           uo.name as owner, " +
-                    "           p.company_id as company_id, " +
-                    "           p.department_id as department_id, " +
-                    "           p.dep_part_id as dep_part_id, " +
-                    "           p.doc_number as doc_number, " +
-                    "           cmp.name as company, " +
-                    "           to_char(p.date_time_created at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_created, " +
-                    "           to_char(p.date_time_changed at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as date_time_changed, " +
-                    "           p.description as description, " +
-                    "           coalesce(p.is_completed,false) as is_completed, " +
-                    "           coalesce(dp.price_id,0) as department_type_price_id, " +
-                    "           coalesce(p.nds,false) as nds, " +
-                    "           coalesce(p.nds_included,false) as nds_included, " +
-                    "           p.status_id as status_id, " +
-                    "           stat.name as status_name, " +
-                    "           stat.color as status_color, " +
-                    "           stat.description as status_description, " +
-                    "           coalesce((select id from sprav_type_prices where company_id=p.company_id and is_default=true),0) as default_type_price_id, " +
-                    "           p.uid as uid, " +
-                    "           to_char(p.date_start,   'DD.MM.YYYY') as date_start, " +
-                    "           to_char(p.time_start,   'HH24:MI')    as time_start, " +
-                    "           to_char(p.date_end,     'DD.MM.YYYY') as date_end, " +
-                    "           to_char(p.time_end,     'HH24:MI')    as time_end, " +
-                    "           concat(to_char(p.date_start,'YYYY-MM-DD'), 'T', to_char(p.time_start,'HH24:MI:SS.MS'), 'Z')," +
-                    "           concat(to_char(p.date_end,'YYYY-MM-DD'), 'T', to_char(p.time_end,'HH24:MI:SS.MS'), 'Z')" +
-                    "           from scdl_appointments p " +
-                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                    "           INNER JOIN users us ON p.creator_id=us.id " +
-                    "           INNER JOIN users uo ON p.owner_id=uo.id " +
-                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                    "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                    "           where  p.master_id=" + myMasterId +
-                    "           and p.id= " + id;
+                stringQuery =
+                        "           select " +
+                                "           p.id as doc_id, " +
+                                "           us.name as doc_creator, " +
+                                "           uc.name as doc_changer, " +
+                                "           uo.name as doc_owner, " +
+                                "           p.company_id as company_id, " +
+                                "           dp.id as doc_department_id, " +
+                                "           p.dep_part_id as doc_dep_part_id, " +
+                                "           p.doc_number as doc_number, " +
+                                "           cmp.name as company, " +
+                                "           to_char(p.date_time_created at time zone '" + myTimeZone + "', '" + dateFormat + timeFormat + "') as date_time_created, " +
+                                "           to_char(p.date_time_changed at time zone '" + myTimeZone + "', '" + dateFormat + timeFormat + "') as date_time_changed, " +
+                                "           p.description as description, " +
+                                "           coalesce(p.is_completed,false) as is_completed, " +
+                                "           dprts.name as department_part, " +
+                                "           coalesce(p.nds,false) as nds, " +
+                                "           coalesce(p.nds_included,false) as nds_included, " +
+                                "           p.status_id as status_id, " +
+                                "           stat.name as status_name, " +
+                                "           stat.color as status_color, " +
+                                "           stat.description as status_description, " +
+                                "           p.name as appointment_name, " +
+                                "           p.uid as uid, " +
+                                "           to_char(p.starts_at_time,   'DD.MM.YYYY') as date_start, " +
+                                "           to_char(p.starts_at_time,   'HH24:MI')    as time_start, " +
+                                "           to_char(p.ends_at_time,     'DD.MM.YYYY') as date_end, " +
+                                "           to_char(p.ends_at_time,     'HH24:MI')    as time_end, " +
+                                "           concat(to_char(p.starts_at_time,'YYYY-MM-DD'), 'T', to_char(p.starts_at_time,'HH24:MI:SS.MS'), 'Z') as calendar_date_start," +
+                                "           concat(to_char(p.ends_at_time,'YYYY-MM-DD'), 'T', to_char(p.ends_at_time,'HH24:MI:SS.MS'), 'Z') as calendar_date_end," +
+                                "           jt.id as jobtitle_id, " +
+                                "           jt.name as jobtitle," +
+                                "           ue.id as employee_id," +
+                                "           ue.name as employee_name," +
+                                "           dp.name as department_name," +
+                                "           uo.id as owner_id" +
+                                "           from scdl_appointments p " +
+                                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                                "           INNER JOIN scdl_dep_parts dprts ON p.dep_part_id=dprts.id " +
+                                "           INNER JOIN departments dp ON dprts.department_id=dp.id " +
+                                "           INNER JOIN users us ON p.creator_id=us.id " +
+                                "           INNER JOIN users uo ON p.owner_id=uo.id " +
+                                "           LEFT OUTER JOIN users ue ON p.employee_id=ue.id " +
+                                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                                "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
+                                "           LEFT OUTER JOIN sprav_jobtitles jt ON ue.job_title_id=jt.id" +
+                                "           where  p.master_id=" + masterId +
+                                "           and p.id= " + id;
 
-            if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
-            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(59L, "709")) //Если нет прав на просм по своему предприятию
-                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                    if (!securityRepositoryJPA.userHasPermissions_OR(59L, "710")) //Если нет прав на просмотр всех доков в своих подразделениях
-                    {//остается только на свои документы
-                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                    }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-                } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
+                {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(59L, "709")) //Если нет прав на просм по своему предприятию
+                    {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                        if (!securityRepositoryJPA.userHasPermissions_OR(59L, "710")) //Если нет прав на просмотр всех доков в своих подразделениях
+                        {//остается только на свои документы
+                            stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId() + " and p.department_id in :myDepthsIds and p.creator_id =" + userRepositoryJPA.getMyId();
+                            needToSetParameter_MyDepthsIds = true;
+                        } else {
+                            stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId() + " and p.department_id in :myDepthsIds";
+                            needToSetParameter_MyDepthsIds = true;
+                        }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                    } else
+                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+                }
+
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                if (needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+                {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
+
+                List<Object[]> queryList = query.getResultList();
+
+                AppointmentsJSON returnObj = new AppointmentsJSON();
+
+                if(queryList.size()>0) {
+
+                    returnObj.setId(Long.parseLong(                         queryList.get(0)[0].toString()));
+                    returnObj.setCreator((String)                           queryList.get(0)[1]);
+                    returnObj.setChanger((String)                           queryList.get(0)[2]);
+                    returnObj.setOwner((String)                             queryList.get(0)[3]);
+                    returnObj.setCompany_id(Long.parseLong(                 queryList.get(0)[4].toString()));
+                    returnObj.setDepartment_id(Long.parseLong(              queryList.get(0)[5].toString()));
+                    returnObj.setDep_part_id(Long.parseLong(                queryList.get(0)[6].toString()));
+                    returnObj.setDoc_number(Long.parseLong(                 queryList.get(0)[7].toString()));
+                    returnObj.setCompany((String)                           queryList.get(0)[8]);
+                    returnObj.setDate_time_created((String)                 queryList.get(0)[9]);
+                    returnObj.setDate_time_changed((String)                 queryList.get(0)[10]);
+                    returnObj.setDescription((String)                       queryList.get(0)[11]);
+                    returnObj.setIs_completed((Boolean)                     queryList.get(0)[12]);
+                    returnObj.setDep_part((String)                          queryList.get(0)[11]);
+                    returnObj.setNds((Boolean)                              queryList.get(0)[14]);
+                    returnObj.setNds_included((Boolean)                     queryList.get(0)[15]);
+                    returnObj.setStatus_id(                                 queryList.get(0)[16] != null ? Long.parseLong(queryList.get(0)[16].toString()) : null);
+                    returnObj.setStatus_name((String)                       queryList.get(0)[17]);
+                    returnObj.setStatus_color((String)                      queryList.get(0)[18]);
+                    returnObj.setStatus_description((String)                queryList.get(0)[19]);
+                    returnObj.setName((String)                              queryList.get(0)[20]);
+                    returnObj.setUid((String)                               queryList.get(0)[21]);
+                    returnObj.setDate_start((String)                        queryList.get(0)[22]);
+                    returnObj.setTime_start((String)                        queryList.get(0)[23]);
+                    returnObj.setDate_end((String)                          queryList.get(0)[24]);
+                    returnObj.setTime_end((String)                          queryList.get(0)[25]);
+                    returnObj.setCalendar_date_time_start((String)          queryList.get(0)[26]);
+                    returnObj.setCalendar_date_time_end((String)            queryList.get(0)[27]);
+                    returnObj.setJobtitle_id(                               queryList.get(0)[28] != null ? Long.parseLong(queryList.get(0)[28].toString()) : null);
+                    returnObj.setJobtitle((String)                          queryList.get(0)[29]);
+                    returnObj.setEmployeeId(                                queryList.get(0)[30] != null ? Long.parseLong(queryList.get(0)[30].toString()) : null);
+                    returnObj.setEmployeeName((String)                      queryList.get(0)[31]);
+                    returnObj.setDepartment((String)                        queryList.get(0)[32]);
+                    returnObj.setOwner_id(Long.parseLong(                   queryList.get(0)[33].toString()));
+
+                    AppointmentMainInfoForm reqest = new AppointmentMainInfoForm(
+                            returnObj.getId(),
+                            returnObj.getCompany_id(),
+                            returnObj.getDate_start(),
+                            returnObj.getTime_start(),
+                            returnObj.getDate_end(),
+                            returnObj.getTime_end()
+                    );
+                    returnObj.setCustomersTable(                            getAppointmentCustomersTable(returnObj.getId(), masterId));
+                    List<AppointmentService> services = getAppointmentServicesList(reqest, masterId, myTimeZone);
+                    // since we use on frontend row_id instead of id for customers, here need to find and set row_id
+                    for(AppointmentService service : services){
+                        service.setCagent_row_id(getCustomerRowIdByCustomerId(returnObj.getCustomersTable(),service.getCagent_id()));
+                    }
+                    returnObj.setAppointmentsProductTable(                 services);
+                }
+                return returnObj;
+
+            } catch (Exception e) {
+                logger.error("Exception in method getAppointmentsValuesById. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
             }
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
-            List<Object[]> queryList = query.getResultList();
-
-            AppointmentsJSON returnObj=new AppointmentsJSON();
-
-            for(Object[] obj:queryList){
-                returnObj.setId(Long.parseLong(                         obj[0].toString()));
-                returnObj.setCreator((String)                           obj[1]);
-                returnObj.setChanger((String)                           obj[2]);
-                returnObj.setOwner((String)                             obj[3]);
-                returnObj.setCompany_id(Long.parseLong(                 obj[4].toString()));
-                returnObj.setDepartment_id(Long.parseLong(              obj[5].toString()));
-                returnObj.setDep_part_id(Long.parseLong(                obj[6].toString()));
-                returnObj.setDoc_number(Long.parseLong(                 obj[7].toString()));
-                returnObj.setCompany((String)                           obj[8]);
-                returnObj.setDate_time_created((String)                 obj[9]);
-                returnObj.setDate_time_changed((String)                 obj[10]);
-                returnObj.setDescription((String)                       obj[11]);
-                returnObj.setIs_completed((Boolean)                     obj[12]);
-                returnObj.setDepartment_type_price_id(Long.parseLong(   obj[13].toString()));
-                returnObj.setNds((Boolean)                              obj[14]);
-                returnObj.setNds_included((Boolean)                     obj[15]);
-                returnObj.setStatus_id(obj[16]!=null?Long.parseLong(    obj[16].toString()):null);
-                returnObj.setStatus_name((String)                       obj[17]);
-                returnObj.setStatus_color((String)                      obj[18]);
-                returnObj.setStatus_description((String)                obj[19]);
-                returnObj.setDefault_type_price_id(Long.parseLong(      obj[20].toString()));
-                returnObj.setUid((String)                               obj[21]);
-                returnObj.setDate_start((String)                        obj[22]);
-                returnObj.setTime_start((String)                        obj[23]);
-                returnObj.setDate_end((String)                          obj[24]);
-                returnObj.setTime_end((String)                          obj[25]);
-                returnObj.setCalendar_date_time_start((String)          obj[26]);
-                returnObj.setCalendar_date_time_end((String)            obj[27]);
-            }
-            return returnObj;
         } else return null;
     }
 
+    private Integer getCustomerRowIdByCustomerId(List<AppointmentCustomer> customers, Long customerId) throws Exception {
+        for(AppointmentCustomer customer : customers){
+            if(customer.getId().equals(customerId))
+                return customer.getRow_id();
+        }
+        logger.error("Exception in method getCustomerRowIdByCustomerId. Can't find customer with id = " + customerId);
+        throw new Exception("Exception in method getCustomerRowIdByCustomerId. Can't find customer with id = " + customerId);
+    }
 
-    @SuppressWarnings("Duplicates")
+    private List<AppointmentCustomer> getAppointmentCustomersTable(Long appointmentId, Long masterId) throws Exception {
+        String stringQuery =
+                " select " +
+                " id," +
+                " name," +
+                " email," +
+                " telephone " +
+                " from cagents " +
+                " where id in (" +
+                    "select cagent_id from scdl_appointment_products where appointment_id = " + appointmentId + " and master_id = " + masterId +
+                ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            int row_id = 0;
+            List<AppointmentCustomer> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                AppointmentCustomer doc = new AppointmentCustomer();
+                doc.setId(Long.parseLong(               obj[0].toString()));
+                doc.setName((String)                    obj[1]);
+                doc.setEmail((String)                   obj[2]);
+                doc.setTelephone((String)               obj[3]);
+                doc.setRow_id(row_id);
+                returnList.add(doc);
+                row_id++;
+            }
+            return returnList;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getAppointmentCustomersTable. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public AppointmentUpdateReportJSON insertAppointment(AppointmentsForm request) {
         if(commonUtilites.isDocumentUidUnical(request.getUid(), "scdl_appointments"))
@@ -536,6 +622,7 @@ public class AppointmentRepositoryJPA {
                                     " description," +//доп. информация по документe
                                     " starts_at_time," +
                                     " ends_at_time," +
+                                    " employee_id, " +
                                     " nds," +// НДС
                                     " nds_included," +// НДС включен в цену
                                     " status_id,"+//статус документа
@@ -552,6 +639,7 @@ public class AppointmentRepositoryJPA {
                                     " :description, " +//описание
                                     " to_timestamp ('"+request.getDate_start()+" "+request.getTime_start()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
                                     " to_timestamp ('"+request.getDate_end()+" "+request.getTime_end()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
+                                    request.getEmployeeId() + ", "+ // employee
                                     request.isNds() + ", "+// НДС
                                     request.isNds_included() + ", "+// НДС включен в цену
                                     request.getStatus_id() + "," +//статус документа
@@ -1010,7 +1098,7 @@ public class AppointmentRepositoryJPA {
     }
 
     //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
-    public SettingsAppointmentJSON getSettingsAppointments() {
+    public SettingsAppointmentJSON getSettingsAppointments() throws Exception {
         String stringQuery;
         Long myId=userRepository.getUserId();
         stringQuery = "select " +
@@ -1045,7 +1133,7 @@ public class AppointmentRepositoryJPA {
         catch (Exception e) {
             logger.error("Exception in method getSettingsAppointments. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            throw e;
+            throw new Exception();
         }
     }
 
@@ -1157,8 +1245,231 @@ public class AppointmentRepositoryJPA {
         } else return -1;
     }
 
+    private List<AppointmentService> getAppointmentServicesList(AppointmentMainInfoForm reqest, Long masterId, String myTimeZone) {
 
-    public List<AppointmentService> getAppointmentServicesList(AppointmentMainInfoForm reqest) {
+        String stringQuery =
+                " WITH busy_resources AS ( " +
+//              busy_resources - Это выборка с занятыми ресурсами в заданном промежутке времени в виде: / ID ресурса / Название / Используемое количество " +
+                        " select  " +
+                        " r.id as resource_id,  " +
+                        " r.name as resource,  " +
+                        " dp.id as dep_part_id, " +
+                        " dp.name as dep_part, " +
+                        " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
+                        " from   " +
+                        " scdl_appointments a, " +
+                        " scdl_appointment_products ap,  " +
+                        " products p, " +
+                        " scdl_product_resource_qtt pr, " +
+                        " sprav_resources r, " +
+                        " scdl_dep_parts dp, " +
+                        " scdl_resource_dep_parts_qtt rdp " +
+                        " where " +
+                        " p.master_id=" + masterId + " and " +
+                        " p.company_id=" + reqest.getCompanyId() + " and " +
+                        " ap.appointment_id=a.id and " +
+                        " ap.product_id=p.id and " +
+                        " pr.product_id=p.id and " +
+                        " pr.resource_id=r.id and  " +
+                        " dp.id=a.dep_part_id and " +
+                        " rdp.dep_part_id=a.dep_part_id and " +
+                        " a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
+                        " rdp.resource_id=r.id and " +
+                        " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
+                        " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
+                        ") " +
+                        " select  " +
+                        " p.id, " +
+                        " p.name, " +
+                        " coalesce(d.id,0) as department_id, " +
+                        " coalesce(d.name,'') as department, " +
+                        " coalesce(dp.id,0) as dep_part_id, " +
+                        " coalesce(dp.name,'') as dep_part_name, " +
+                        " r.id as resource_id, " +
+                        " coalesce(r.name,'') as resource_name, " +
+                        " coalesce(prq.quantity,0) as need_res_qtt, " +
+                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
+                        " coalesce(rdp.quantity,0) as res_quantity_in_dep_part, " +
+                        " coalesce(pqtt.quantity, 0) product_quantity_in_department, " +
+                        " p.nds_id as nds_id, " +
+                        " coalesce(p.edizm_id,0) as edizm_id, " +
+                        " coalesce(edizm.short_name,'') as edizm, " +
+                        " coalesce(edizm.type_id, 0) as edizm_type_id, " +       // 6=time, 2=weight, ...
+                        " coalesce(edizm.equals_si, 1.000) as si_multiplier, " +
+                        " ppr.is_material as is_material, " +
+                        " p.indivisible as indivisible," +// неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+                        " coalesce(pp.price_value,0.00) as price_by_typeprice, " +
+                        " coalesce(scdl_is_employee_required, false) as is_employee_required, " +// Whether employee is necessary required to do this service job?
+                        " coalesce(scdl_max_pers_on_same_time,0) as max_pers_on_same_time, " +  // How many persons can get this service in one appointment by the same time
+                        " coalesce(p.scdl_appointment_atleast_before_time * sse_alb.equals_si,0.00)*1.0 as atleast_before_seconds, " + // Minimum time before the start of the service for which customers can make an appointment
+                        " coalesce(p.scdl_srvc_duration * sse_sd.equals_si,0.00)*1.0 as service_duration_seconds, " + // Approx. duration time to fininsh this service
+                        " case when edizm.type_id=6 then coalesce(sse_tu.equals_si,0.00)*1.0 else 0.0 end as edizm_in_seconds, " +
+                        " coalesce(p.is_srvc_by_appointment,false) as srvc_by_appntmnt," +
+                        " case when coalesce(ppr.is_material,true) then (select " +
+                        "   sum(coalesce(reserved_current,0)-0) " +
+                        "   from " +
+                        "   customers_orders_product " +
+                        "   where " +
+                        "   product_id=p.id "+
+                        "   and department_id = d.id) else 0 end as reserved, " +//зарезервировано в документах Заказ покупателя
+                        " app.product_count as product_count, " +
+                        " app.product_price as product_price, " +
+                        " app.product_sumprice as product_sumprice, " +
+                        " app.cagent_id as cagent_id "+
+                        " from " +
+                        " scdl_appointment_products app " +
+                        " inner join products p on p.id = app.product_id " +
+                        " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
+                        " left outer join sprav_resources r on prq.resource_id=r.id " +
+                        " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
+                        " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
+                        " left outer join departments d on d.id=dp.department_id " +
+                        " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
+                        " left outer join product_prices pp on pp.product_id = p.id " +
+                        " left outer join product_quantity pqtt on pqtt.product_id=p.id and pqtt.department_id = d.id " +
+                        " left outer join sprav_sys_edizm edizm on edizm.id=p.edizm_id" +
+                        " left outer join sprav_sys_edizm sse_alb on sse_alb.id = p.scdl_appointment_atleast_before_unit_id " +
+                        " left outer join sprav_sys_edizm sse_sd on sse_sd.id = p.scdl_srvc_duration_unit_id " +
+                        " left outer join sprav_sys_edizm sse_tu on sse_tu.id = p.edizm_id " +
+                        " inner join sprav_sys_ppr ppr ON p.ppr_id = ppr.id " +
+                        " where " +
+                        " app.master_id=" + masterId + " and " +
+                        " app.appointment_id = " + reqest.getAppointmentId() + " and " +
+                        " pp.price_type_id = app.price_type_id";
+
+        stringQuery = stringQuery +" order by p.name, d.name, dp.name, r.name ";
+
+        Long currentServiceId = 0L;
+        Long currentDepPartId = 0L;
+        AppointmentService appointmentService = new AppointmentService();
+        DepartmentPartWithResourcesIds departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds();
+        List<DepartmentPartWithResourcesIds> departmentPartsWithResourcesIds = new ArrayList<>();
+        Set<ResourceOfDepartmentPart> currentDepPartResources = new HashSet<>();
+        List<AppointmentService> returnList = new ArrayList<>();
+        Query query = entityManager.createNativeQuery(stringQuery);//
+        List<Object[]> queryList = query.getResultList();
+
+        for (Object[] obj : queryList) {
+            Long        currentCycleServiceId = Long.parseLong(                 obj[0].toString());
+            String      currentCycleServiceName =                               obj[1].toString();
+            Long        currentCycleDepartmentId = Long.parseLong(              obj[2].toString());
+            String      currentCycleDepartmentName =                            obj[3].toString();
+            Long        currentCycleDepPartId = Long.parseLong(                 obj[4].toString());
+            String      currentCycleDepPartName =                               obj[5].toString();
+            Long        currentCycleResourceId = (                              obj[6] == null?null:Long.parseLong(obj[6].toString()));
+            String      currentCycleResourceName =                              obj[7].toString();
+            Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
+            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
+            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[10].toString());
+            BigDecimal  currentCycleTotal = (                                   obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
+            Integer     currentCycleNdsId=((Integer)                            obj[12]);
+            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[13].toString()));
+            String      currentCycleEdIzm = ((String)                           obj[14]);
+            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[15]);
+            BigDecimal  currentCycleEdizm_multiplier = (                        obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
+            Boolean     currentCycleIs_material = ((Boolean)                    obj[17]);
+            Boolean     currentCycleIndivisible = ((Boolean)                    obj[18]);
+            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
+            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[20]);
+            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[21]);
+            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[22]);
+            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[23]);
+            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[24]);
+            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[25]);
+            BigDecimal  currentCycleReserved =  (                               obj[26]==null?BigDecimal.ZERO:(BigDecimal)obj[26]);
+            BigDecimal  currentCycleProductCount =  (                           obj[27]==null?BigDecimal.ZERO:(BigDecimal)obj[27]);
+            BigDecimal  currentCycleProductPrice =  (                           obj[28]==null?BigDecimal.ZERO:(BigDecimal)obj[28]);
+            BigDecimal  currentCycleProductSumprice =  (                        obj[29]==null?BigDecimal.ZERO:(BigDecimal)obj[29]);
+            Long        currentCycleCagentId = (Long.parseLong(                 obj[30].toString()));
+
+            // on this cycle if it is a new user
+            if (!currentCycleServiceId.equals(currentServiceId)) {
+                // If it is not a first cycle// Если это не первый цикл
+                if (!currentServiceId.equals(0L)) {
+                    // В текущую часть отделения сохранили все накопленные IDs сервисов
+                    departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+                    // В список частей отделения текущего пользователя добавили текущее отделение
+                    departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+                    // В текущего сотрудника поместили список частей отделений
+                    appointmentService.setDepartmentPartsWithResourcesIds(departmentPartsWithResourcesIds);
+                    // В итоговый список сотрудников поместили этого сотрудника
+                    returnList.add(appointmentService);
+                    // Cоздали новой услуги
+                    appointmentService = new AppointmentService();
+                    // Для новой услуги создаем новую часть отделенияи сбрасываем накопление IDs сервисов
+                    currentDepPartId = currentCycleDepPartId;
+                    // Cоздали новую часть отделения, и прописали туда её ID
+                    departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId, currentCycleDepPartName);
+                    // Cбросили текущее накопление ID сервисов для новой части отделения
+                    currentDepPartResources = new HashSet<>();
+                }
+                currentServiceId = currentCycleServiceId;
+                // Для новой услуги задаём её ID, имя и её отделение и др..
+                appointmentService.setId(                           currentCycleServiceId);
+                appointmentService.setName(                         currentCycleServiceName);
+                appointmentService.setDepartmentId(                 currentCycleDepartmentId);
+                appointmentService.setDepartmentName(               currentCycleDepartmentName);
+                appointmentService.setNds_id(                       currentCycleNdsId);
+                appointmentService.setEdizm_id(                     currentCycleEdIzmId);
+                appointmentService.setEdizm(                        currentCycleEdIzm);
+                appointmentService.setEdizm_multiplier(             currentCycleEdizm_multiplier);
+                appointmentService.setEdizm_type_id(                currentCycleEdizm_type_id);
+                appointmentService.setTotal(                        currentCycleTotal);
+                appointmentService.setIs_material(                  currentCycleIs_material);
+                appointmentService.setIndivisible(                  currentCycleIndivisible);
+                appointmentService.setPriceOfTypePrice(             currentCyclePriceOfTypePrice);
+                appointmentService.setEmployeeRequired(             currentCycleIsEmployeeRequired);
+                appointmentService.setMaxPersOnSameTime(            currentCycleMaxPersOnSameTime);
+                appointmentService.setSrvcDurationInSeconds(        currentCycleSrvcDurationInSeconds);
+                appointmentService.setAtLeastBeforeTimeInSeconds(   currentCycleAtLeastBeforeTimeInSeconds);
+                appointmentService.setUnitOfMeasureTimeInSeconds(   currentCycleUnitOfMeasureDurationInSeconds);
+                appointmentService.setIsServiceByAppointment(       currentCycleServiceByAppointment);
+                appointmentService.setReserved(                     currentCycleReserved);
+                appointmentService.setProduct_count(                currentCycleProductCount);
+                appointmentService.setProduct_price(                currentCycleProductPrice);
+                appointmentService.setProduct_sumprice(             currentCycleProductSumprice);
+                appointmentService.setCagent_id(                    currentCycleCagentId);
+                // Cоздали новый лист для накопления частей отделений для новой услуги
+                departmentPartsWithResourcesIds = new ArrayList<>();
+            }
+            // Если сотрудник не новый, но часть отделения сменилась
+            if (!currentCycleDepPartId.equals(currentDepPartId)) {
+                if (!currentDepPartId.equals(0L)) {
+                    // В текущую часть отделения сохранили все накопленные IDs сервисов
+                    departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+                    // В список частей отделения текущего пользователя добавили текущее отделение
+                    departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+                }
+                currentDepPartId = currentCycleDepPartId;
+                // Cоздали новую часть отделения, и прописали туда её ID
+                departmentPartWithResourcesIds = new DepartmentPartWithResourcesIds(currentDepPartId, currentCycleDepPartName);
+                // Cбросили текущее накопление ID сервисов для новой части отделения
+                currentDepPartResources = new HashSet<>();
+            }
+            if(!Objects.isNull(currentCycleResourceId)) currentDepPartResources.add(new ResourceOfDepartmentPart(
+                    currentCycleResourceId,
+                    currentCycleResourceName,
+                    currentCycleNeedRresQtt,
+                    currentCycleNowUsed,
+                    currentCycleQuantityInDepPart
+            ));
+        }
+        // По окончании цикла, если в ней что-то было - нужно записать последнего сотрудника
+        if (!currentServiceId.equals(0L)) {
+            // В текущую часть отделения сохранили все накопленные IDs сервисов
+            departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
+            // В список частей отделения текущего пользователя добавили текущее отделение
+            departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
+            // В текущего сотрудника поместили список частей отделений
+            appointmentService.setDepartmentPartsWithResourcesIds(departmentPartsWithResourcesIds);
+            // В итоговый список сотрудников поместили этого сотрудника
+            returnList.add(appointmentService);
+        }
+        return returnList;
+    }
+
+
+    public List<AppointmentService> getAppointmentServicesSearchList(AppointmentMainInfoForm reqest) {
 
         Long masterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
@@ -1434,13 +1745,6 @@ public class AppointmentRepositoryJPA {
                     currentCycleNowUsed,
                     currentCycleQuantityInDepPart
             ));
-//            currentDepPartResources.add(Objects.isNull(currentCycleResourceId) ? new ResourceOfDepartmentPart() : new ResourceOfDepartmentPart(
-//                    currentCycleResourceId,
-//                    currentCycleResourceName,
-//                    currentCycleNeedRresQtt,
-//                    currentCycleNowUsed,
-//                    currentCycleQuantityInDepPart
-//            ));
         }
 
         // По окончании цикла, если в ней что-то было
@@ -1462,12 +1766,5 @@ public class AppointmentRepositoryJPA {
 
 
         return returnList;
-
-
     }
-
-
-
-
-
-    }
+}

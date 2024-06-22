@@ -477,7 +477,7 @@ public class CalendarRepositoryJPA {
         "   )>0 and " +
         "   u.id " +
             (isFree?" not ":"") +
-        "   in ( " +
+        "   in (" +
         "   select sa.employee_id from scdl_appointments sa " +
         "   inner join scdl_appointment_products ap on ap.appointment_id = sa.id" +
         "   inner join products p on p.id = ap.product_id " +
@@ -486,7 +486,8 @@ public class CalendarRepositoryJPA {
         "   sa.company_id = "+companyId+" and " +
 
         // if query runs from existed appointment - its ID must not be matter
-        "   sa.id !="+currentAppointmentId + " and " +
+        "   sa.id != "+currentAppointmentId + " and " +
+        "   sa.employee_id is not null and " +
 
                 // dateFrom & timeFrom                 are in time zone of user
                 // sa.ends_at_time & sa.starts_at_time are in UTC (GMT+0) time zone
@@ -494,8 +495,7 @@ public class CalendarRepositoryJPA {
 
         "   to_timestamp ('"+dateFrom+" "+timeFrom+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < sa.ends_at_time and " +
         "   to_timestamp ('"+dateTo+" "+timeTo+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > sa.starts_at_time and " +
-        "   coalesce(p.scdl_is_employee_required, false) = true " +
-        " ); ";
+        "   coalesce(p.scdl_is_employee_required, false) = true )";
 
 
         try{
