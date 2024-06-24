@@ -1,6 +1,8 @@
 package com.dokio.repository;
 
+import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.request.additional.AppointmentCustomer;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
@@ -8,10 +10,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.request.AppointmentsForm;
 import com.dokio.message.request.AppointmentProductsTableForm;
 import com.dokio.message.response.AppointmentsJSON;
-import com.dokio.message.response.additional.AppointmentProductsTableJSON;
-import com.dokio.message.response.additional.AppointmentUpdateReportJSON;
-import com.dokio.message.response.additional.DeleteDocsReport;
-import com.dokio.message.response.additional.LinkedDocsJSON;
+import com.dokio.message.response.additional.*;
 import com.dokio.message.response.additional.appointment.AppointmentService;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithResourcesIds;
 import com.dokio.message.response.additional.appointment.ResourceOfDepartmentPart;
@@ -367,7 +366,7 @@ public class AppointmentRepositoryJPA {
 //        } else return null;
 //    }
 
-    //*****************************************************************************************************************************************************
+//*****************************************************************************************************************************************************
 //****************************************************      CRUD      *********************************************************************************
 //*****************************************************************************************************************************************************
     @SuppressWarnings("Duplicates")
@@ -718,7 +717,22 @@ public class AppointmentRepositoryJPA {
             throw new Exception();
         }
     }
-
+//    private void deleteCagentsThatNoMoreContainedInThisAppointment(Set<Long> existedCagents, Long appointmentId, Long masterId) throws Exception  {
+//        String stringQuery =
+//                " delete from scdl_product_resource_qtt " +
+//                        " where " +
+//                        " master_id = " + masterId + " and " +
+//                        " product_id = " +productId;
+//        if(existedCagents.size()>0)
+//            stringQuery = stringQuery + " and resource_id not in " + commonUtilites.SetOfLongToString(existingResources,",","(",")");
+//        try {
+//            entityManager.createNativeQuery(stringQuery).executeUpdate();
+//        } catch (Exception e) {
+//            logger.error("Exception in method deleteResourcesThatNoMoreContainedInThisProduct. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new Exception(e);
+//        }
+//    }
     private Long insertAppointmentCagents(AppointmentCustomer cagent, Long masterId, Long creatorId, Long companyId) throws Exception {
         String stringQuery="";
         try{
@@ -771,47 +785,56 @@ public class AppointmentRepositoryJPA {
     }
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class, CantInsertProductRowCauseErrorException.class})
     public AppointmentUpdateReportJSON updateAppointment(AppointmentsForm request) throws Exception {
-        AppointmentUpdateReportJSON updateResults = new AppointmentUpdateReportJSON();// отчет об апдейте
-        Set<Long> productsIdsToSyncWoo = new HashSet<>(); // Set IDs of products with changed quantity as a result of shipment
-        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
-        if(     (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",request.getId().toString())) ||
-                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",request.getId().toString()))||
-                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",request.getId().toString()))||
-                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",request.getId().toString())))
-        {
-            // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
-            // проверим права на проведение
-            if((request.getIs_completed()!=null && request.getIs_completed())){
-
-                if(
-                        !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
-                                (securityRepositoryJPA.userHasPermissions_OR(59L,"720") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",request.getId().toString())) ||
-                                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
-                                        (securityRepositoryJPA.userHasPermissions_OR(59L,"721") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",request.getId().toString()))||
-                                        //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
-                                        (securityRepositoryJPA.userHasPermissions_OR(59L,"722") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",request.getId().toString()))||
-                                        //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                                        (securityRepositoryJPA.userHasPermissions_OR(59L,"723") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",request.getId().toString()))
-                        )
-                ) {
-                    updateResults.setSuccess(false);
-                    updateResults.setErrorCode(0);          // Недостаточно прав
-                    return updateResults;
-                }
-            }
-            try
+        EntityManager emgr = emf.createEntityManager();
+        Long myCompanyId=userRepositoryJPA.getMyCompanyId_();
+        String myTimeZone = userRepository.getUserTimeZone();
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        Long myId = userRepository.getUserId();
+        Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
+        List<Long> myDepartmentsIds =  userRepositoryJPA.getMyDepartmentsId_LONG();
+        boolean itIsMyDepartment = myDepartmentsIds.contains(departmentId);
+        Companies companyOfCreatingDoc = emgr.find(Companies.class, request.getCompany_id());//предприятие для создаваемого документа
+        Long DocumentMasterId=companyOfCreatingDoc.getMaster().getId(); //владелец предприятия создаваемого документа.
+        AppointmentUpdateReportJSON updateResults = new AppointmentUpdateReportJSON();// отчет о создании
+        try{
+            if(Objects.isNull(departmentId)) throw new Exception("Department part with id = "+request.getDepartment_part_id()+" is not belongs to master Id = "+masterId);
+            //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
+            if(     (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",request.getId().toString())) ||
+                    //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                    (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",request.getId().toString()))||
+                    //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
+                    (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",request.getId().toString()))||
+                    //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
+                    (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",request.getId().toString())))
             {
+                // если при сохранении еще и проводим документ (т.е. фактически была нажата кнопка "Провести"
+                // проверим права на проведение
+                if((request.getIs_completed()!=null && request.getIs_completed())){
+
+                    if(
+                            !(  //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
+                                    (securityRepositoryJPA.userHasPermissions_OR(59L,"720") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",request.getId().toString())) ||
+                                            //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                                            (securityRepositoryJPA.userHasPermissions_OR(59L,"721") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",request.getId().toString()))||
+                                            //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                                            (securityRepositoryJPA.userHasPermissions_OR(59L,"722") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",request.getId().toString()))||
+                                            //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                                            (securityRepositoryJPA.userHasPermissions_OR(59L,"723") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",request.getId().toString()))
+                            )
+                    ) {
+                        updateResults.setSuccess(false);
+                        updateResults.setErrorCode(0);          // Недостаточно прав
+                        return updateResults;
+                    }
+                }
+
                 // если документ проводится - проверим, не является ли документ уже проведённым (такое может быть если открыть один и тот же документ в 2 окнах и провести их)
                 if(commonUtilites.isDocumentCompleted(request.getCompany_id(),request.getId(), "scdl_appointments"))
                     throw new DocumentAlreadyCompletedException();
                 // если документ проводится и нет товаров - ошибка
                 if(request.getIs_completed()!=null && request.getIs_completed() && request.getAppointmentsProductTable().size()==0) throw new CantInsertProductRowCauseErrorException();
 
-                Long masterId = userRepositoryJPA.getMyMasterId();
-                Long myId = userRepository.getUserId();
+
 
                 // commonUtilites.idBelongsMyMaster("cagents", request.getCagent_id(), myMasterId);
                 // !!!!!!!!!!!!!!!! Сделать проверку списка клиентов на принадлежность к masterId !!!!!!!!!!!!!
@@ -819,7 +842,7 @@ public class AppointmentRepositoryJPA {
                 commonUtilites.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), masterId);
 
                 // сохранение всего кроме таблицы товаров
-                updateAppointmentWithoutTable(request);
+                updateAppointmentWithoutTable(request, myTimeZone);
 
                 //сохранение и удаление контрагентов и формирование списка <row_id - id> для контрагентов и товаров
                 Map<Integer,Long> cagentsMap = saveAppointmentCagents(request, myId, masterId);
@@ -827,41 +850,34 @@ public class AppointmentRepositoryJPA {
                 // сохранение таблицы товаров
                 insertAppointmentProducts(request, cagentsMap, request.getId(), masterId);
 
-                // отмечаем товары как необходимые для синхронизации с WooCommerce //???
-                for (AppointmentProductsTableForm row : request.getAppointmentsProductTable()) {
-                    productsIdsToSyncWoo.add(row.getProduct_id());
-                }
-                productsRepository.markProductsAsNeedToSyncWoo(productsIdsToSyncWoo, masterId);
-
                 // возвращаем весть об успешности операции
                 updateResults.setSuccess(true);
                 return updateResults;
 
-            } catch (DocumentAlreadyCompletedException e) { //
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateAppointment.", e);
-                e.printStackTrace();
+            } else {
                 updateResults.setSuccess(false);
-                updateResults.setErrorCode(-50);      // Документ уже проведён
-                return updateResults;
-            } catch (CantInsertProductRowCauseErrorException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateAppointment on updating of scdl_appointment_productss cause error.", e);
-                updateResults.setSuccess(false);
-                updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
-                e.printStackTrace();
-                return updateResults;
-            } catch (Exception e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method updateAppointment on updating of scdl_appointments cause error.", e);
-                updateResults.setSuccess(false);
-                updateResults.setErrorCode(1);      // Error saving document
+                updateResults.setErrorCode(0);          // Недостаточно прав
                 return updateResults;
             }
-
-        } else {
+        } catch (DocumentAlreadyCompletedException e) { //
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method updateAppointment.", e);
+            e.printStackTrace();
             updateResults.setSuccess(false);
-            updateResults.setErrorCode(0);          // Недостаточно прав
+            updateResults.setErrorCode(-50);      // Документ уже проведён
+            return updateResults;
+        } catch (CantInsertProductRowCauseErrorException e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method updateAppointment on updating of scdl_appointment_products cause error.", e);
+            updateResults.setSuccess(false);
+            updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
+            e.printStackTrace();
+            return updateResults;
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method updateAppointment on updating of scdl_appointments cause error.", e);
+            updateResults.setSuccess(false);
+            updateResults.setErrorCode(1);      // Error saving document
             return updateResults;
         }
     }
@@ -905,11 +921,6 @@ public class AppointmentRepositoryJPA {
                 logger.error("Exception in method AppointmentsRepository/setAppointmentAsDecompleted.", e);
                 e.printStackTrace();
                 return -60; // см. _ErrorCodes
-            } catch (CantInsertProductRowCauseErrorException e) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method AppointmentsRepository/setAppointmentAsDecompleted.", e);
-                e.printStackTrace();
-                return null;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 logger.error("Exception in method AppointmentsRepository/setAppointmentAsDecompleted. SQL query:"+stringQuery, e);
@@ -927,7 +938,7 @@ public class AppointmentRepositoryJPA {
                 row.setAppointment_id(parentDocId);// т.к. он может быть неизвестен при создании документа
                 Long cagentId = cagentsMap.get(row.getCustomerRowId());
                 row.setCustomerId(cagentId);
-                saveAppointmentProductsTable(row, myMasterId);
+                saveAppointmentProductsTable(row, myMasterId, request.getDepartment_part_id());
                 rowIds.add(row.getProduct_id());
             }
             deleteAppointmentProductsTableExcessRows(rowIds.size() > 0 ? (commonUtilites.SetOfLongToString(rowIds, ",", "", "")) : "0", request.getId(), myMasterId);
@@ -939,7 +950,7 @@ public class AppointmentRepositoryJPA {
         }
     }
 
-    private void saveAppointmentProductsTable(AppointmentProductsTableForm row, Long master_id) throws CantInsertProductRowCauseErrorException {
+    private void saveAppointmentProductsTable(AppointmentProductsTableForm row, Long master_id, Long depPartId) throws CantInsertProductRowCauseErrorException {
         String stringQuery="";
         if(Objects.isNull(row.getReserved_current())) row.setReserved_current(new BigDecimal(0));
         try {
@@ -968,7 +979,7 @@ public class AppointmentRepositoryJPA {
                             row.getEdizm_id() + "," +
                             row.getPrice_type_id() + "," +
                             row.getNds_id() + ", " +
-                            row.getDepartment_id() + ", " +
+                            "(select department_id from scdl_dep_parts where id = "+depPartId+" and master_id="+master_id+"), " +
                             row.getProduct_price_of_type_price() +
                             " ) " +
                             "ON CONFLICT ON CONSTRAINT scdl_appointment_cagent_product_uq " +// "upsert"
@@ -981,7 +992,7 @@ public class AppointmentRepositoryJPA {
                             " edizm_id = " + row.getEdizm_id() + ","+
                             " price_type_id = " + row.getPrice_type_id() + ","+
                             " nds_id = " + row.getNds_id() + ","+
-                            " department_id = " + row.getDepartment_id() + ","+
+                            " department_id = (select department_id from scdl_dep_parts where id = "+depPartId+" and master_id="+master_id+"),"+
                             " product_price_of_type_price = " + row.getProduct_price_of_type_price();
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
@@ -993,7 +1004,7 @@ public class AppointmentRepositoryJPA {
         }
     }
     @SuppressWarnings("Duplicates")
-    private Boolean updateAppointmentWithoutTable(AppointmentsForm request) throws Exception {
+    private Boolean updateAppointmentWithoutTable(AppointmentsForm request, String myTimeZone) throws Exception {
         Long myId = userRepository.getUserIdByUsername(userRepository.getUserName());
 
         if (!commonUtilites.isTimeValid(request.getTime_start()) || !commonUtilites.isTimeValid(request.getTime_end()))
@@ -1001,32 +1012,36 @@ public class AppointmentRepositoryJPA {
         if (!commonUtilites.isDateValid(request.getDate_start()) || !commonUtilites.isDateValid(request.getDate_end()))
             throw new IllegalArgumentException("Invalid query parameters (date):"+request.getDate_start()+", "+request.getDate_end());
 
-        String stringQuery;
-        stringQuery =   "update scdl_appointments set " +
-                " changer_id = " + myId + ", "+
-                " owner_id = " + myId + ", "+  // later it can be changed
+
+
+
+
+                String stringQuery;
+        stringQuery =
+                " update scdl_appointments set " +
+                " changer_id = " + myId + ", " +
+                " owner_id = " + myId + ", " +  // later it can be changed
+                " dep_part_id = " + request.getDepartment_part_id() + ", " +
                 " date_time_changed= now()," +
+                " name = :name, " +
                 " description = :description, " +
-                " date_start = to_date('"+request.getDate_start()+"', 'DD.MM.YYYY')," +
-                " date_end = to_date('"+request.getDate_end()+"', 'DD.MM.YYYY')," +
-                " time_start = to_timestamp('"+request.getTime_start()+"', 'HH24:MI')," +
-                " time_end = to_timestamp('"+request.getTime_end()+"',   'HH24:MI')," +
+                " employee_id = " + request.getEmployeeId() + ", " +
+                " starts_at_time = to_timestamp ('"+request.getDate_start()+" "+request.getTime_start()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
+                " ends_at_time = to_timestamp ('"+request.getDate_end()+" "+request.getTime_end()+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"'," +
                 " nds  = " + request.isNds() + ", " +
                 " nds_included  = " + request.isNds_included() + ", " +
                 " doc_number = " + request.getDoc_number() + ", " +
-                " email = :email, " +
-                " telephone = :telephone, " +
-                " zip_code = :zip_code, " +
                 " is_completed  = " + request.getIs_completed() + ", " +
                 " status_id = " + request.getStatus_id() +
                 " where " +
                 " id= "+request.getId();
         try
         {
-            Date dateNow = new Date();
-            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-            dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+//            Date dateNow = new Date();
+//            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+//            dateFormat.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
             Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("name",(request.getName() == null ? "" : request.getName()));
             query.setParameter("description",(request.getDescription() == null ? "" : request.getDescription()));
             query.executeUpdate();
             return true;
@@ -1144,7 +1159,7 @@ public class AppointmentRepositoryJPA {
             stringQuery =   " delete from scdl_appointment_products " +
                     " where appointment_id=" + appointment_id +
                     " and master_id=" + myMasterId +
-                    (rowIds.length()>0?(" and id not in (" + rowIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
+                    (rowIds.length()>0?(" and product_id not in (" + rowIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();
         }
@@ -1315,7 +1330,8 @@ public class AppointmentRepositoryJPA {
                         " app.product_count as product_count, " +
                         " app.product_price as product_price, " +
                         " app.product_sumprice as product_sumprice, " +
-                        " app.cagent_id as cagent_id "+
+                        " app.cagent_id as cagent_id, " +
+                        " app.price_type_id as price_type_id" +
                         " from " +
                         " scdl_appointment_products app " +
                         " inner join products p on p.id = app.product_id " +
@@ -1323,7 +1339,7 @@ public class AppointmentRepositoryJPA {
                         " left outer join sprav_resources r on prq.resource_id=r.id " +
                         " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
                         " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
-                        " left outer join departments d on d.id=dp.department_id " +
+                        " left outer join departments d on d.id=app.department_id " +
                         " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
                         " left outer join product_prices pp on pp.product_id = p.id " +
                         " left outer join product_quantity pqtt on pqtt.product_id=p.id and pqtt.department_id = d.id " +
@@ -1381,6 +1397,8 @@ public class AppointmentRepositoryJPA {
             BigDecimal  currentCycleProductPrice =  (                           obj[28]==null?BigDecimal.ZERO:(BigDecimal)obj[28]);
             BigDecimal  currentCycleProductSumprice =  (                        obj[29]==null?BigDecimal.ZERO:(BigDecimal)obj[29]);
             Long        currentCycleCagentId = (Long.parseLong(                 obj[30].toString()));
+            Long        currentCyclePriceTypeId = (                             obj[31] == null?null:Long.parseLong(obj[31].toString()));
+
 
             // on this cycle if it is a new user
             if (!currentCycleServiceId.equals(currentServiceId)) {
@@ -1429,6 +1447,7 @@ public class AppointmentRepositoryJPA {
                 appointmentService.setProduct_price(                currentCycleProductPrice);
                 appointmentService.setProduct_sumprice(             currentCycleProductSumprice);
                 appointmentService.setCagent_id(                    currentCycleCagentId);
+                appointmentService.setPrice_type_id(                currentCyclePriceTypeId);
                 // Cоздали новый лист для накопления частей отделений для новой услуги
                 departmentPartsWithResourcesIds = new ArrayList<>();
             }
@@ -1766,5 +1785,164 @@ public class AppointmentRepositoryJPA {
 
 
         return returnList;
+    }
+//*****************************************************************************************************************************************************
+//****************************************************   F   I   L   E   S   **************************************************************************
+//*****************************************************************************************************************************************************
+
+    public boolean addFilesToAppointment(UniversalForm request){
+        Long appointmentId = request.getId1();
+        //Если есть право на "Изменение по всем предприятиям" и id докмента принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта, ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",appointmentId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",appointmentId.toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",appointmentId.toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",appointmentId.toString())))
+        {
+            try
+            {
+                String stringQuery;
+                Long masterId = userRepositoryJPA.getMyMasterId();
+                Set<Long> filesIds = request.getSetOfLongs1();
+                for (Long fileId : filesIds) {
+                    commonUtilites.idBelongsMyMaster("files", fileId, masterId);
+                    stringQuery = "select appointment_id from scdl_appointment_files where appointment_id=" + appointmentId + " and file_id=" + fileId;
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    if (query.getResultList().size() == 0) {//если таких файлов еще нет у документа
+                        entityManager.close();
+                        manyToMany_AppointmentId_FileId(appointmentId,fileId);
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.error("Exception in method addFilesToAppointment.", ex);
+                ex.printStackTrace();
+                return false;
+            }
+        } else return false;
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Transactional
+    boolean manyToMany_AppointmentId_FileId(Long appointmentId, Long fileId){
+        try
+        {
+            entityManager.createNativeQuery(" " +
+                    "insert into scdl_appointment_files " +
+                    "(appointment_id,file_id) " +
+                    "values " +
+                    "(" + appointmentId + ", " + fileId +")")
+                    .executeUpdate();
+            entityManager.close();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.error("Exception in method manyToMany_AppointmentId_FileId. ", ex);
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
+    public List<FilesUniversalJSON> getListOfAppointmentFiles(Long appointmentId) {
+        if(securityRepositoryJPA.userHasPermissions_OR(59L, "708,709,710,711"))//Просмотр документов
+        {
+            Long myMasterId=userRepositoryJPA.getMyMasterId();
+            Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
+            boolean needToSetParameter_MyDepthsIds = false;
+            String stringQuery="select" +
+                    "           f.id as id," +
+                    "           f.date_time_created as date_time_created," +
+                    "           f.name as name," +
+                    "           f.original_name as original_name" +
+                    "           from" +
+                    "           scdl_appointments p" +
+                    "           inner join" +
+                    "           scdl_appointment_files pf" +
+                    "           on p.id=pf.appointment_id" +
+                    "           inner join" +
+                    "           files f" +
+                    "           on pf.file_id=f.id" +
+                    "           where" +
+                    "           p.id= " + appointmentId +
+                    "           and f.trash is not true"+
+                    "           and p.master_id= " + myMasterId;
+            if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(59L, "709")) //Если нет прав на просм по своему предприятию
+                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(59L, "710")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    {//остается только на свои документы
+                        stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
+                    }else{stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else stringQuery = stringQuery + " and p.company_id=" + MY_COMPANY_ID;//т.е. нет прав на все предприятия, а на своё есть
+            }
+            stringQuery = stringQuery+" order by f.original_name asc ";
+
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+
+                if (needToSetParameter_MyDepthsIds) {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
+
+                List<Object[]> queryList = query.getResultList();
+
+                List<FilesUniversalJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    FilesUniversalJSON doc = new FilesUniversalJSON();
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setDate_time_created((Timestamp) obj[1]);
+                    doc.setName((String) obj[2]);
+                    doc.setOriginal_name((String) obj[3]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            }
+            catch (Exception e) {
+                logger.error("Exception in method getListOfAppointmentsFiles. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return null;
+    }
+
+    @Transactional
+    @SuppressWarnings("Duplicates")
+    public boolean deleteAppointmentFile(SearchForm request)
+    {
+        //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
+        if( (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments", String.valueOf(request.getAny_id()))) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",String.valueOf(request.getAny_id())))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",String.valueOf(request.getAny_id())))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",String.valueOf(request.getAny_id()))))
+        {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String stringQuery;
+//            int myCompanyId = userRepositoryJPA.getMyCompanyId();
+            stringQuery  =  " delete from scdl_appointment_files "+
+                    " where appointment_id=" + request.getAny_id()+
+                    " and file_id="+request.getId()+
+                    " and (select master_id from scdl_appointments where id="+request.getAny_id()+")="+myMasterId ;
+            try
+            {
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return true;
+            }
+            catch (Exception e) {
+                logger.error("Exception in method deleteAppointmentFile. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return false;
+            }
+        } else return false;
     }
 }

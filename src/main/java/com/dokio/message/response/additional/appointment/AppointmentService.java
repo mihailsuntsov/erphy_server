@@ -33,8 +33,17 @@ public class AppointmentService {
     private BigDecimal  product_count;
     private BigDecimal  product_price;
     private BigDecimal  product_sumprice;
+    private Long        price_type_id;
     private Long        cagent_id;
     private int         cagent_row_id;
+
+    public Long getPrice_type_id() {
+        return price_type_id;
+    }
+
+    public void setPrice_type_id(Long price_type_id) {
+        this.price_type_id = price_type_id;
+    }
 
     public int getCagent_row_id() {
         return cagent_row_id;

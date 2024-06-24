@@ -857,7 +857,6 @@ public class CorrectionRepositoryJPA {
         }
     }
 
-    @SuppressWarnings("Duplicates") //отдает информацию по файлам, прикрепленным к документу
     public List<FilesUniversalJSON> getListOfCorrectionFiles(Long correctionId) {
         if(securityRepositoryJPA.userHasPermissions_OR(41L, "544,545"))//Просмотр документов
         {

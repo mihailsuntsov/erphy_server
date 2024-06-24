@@ -6687,6 +6687,12 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 alter table users drop column status_employee; -- column is not using
 insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
 
+create table scdl_appointment_files (
+                                      appointment_id bigint not null,
+                                      file_id bigint not null,
+                                      foreign key (file_id) references files (id) ON DELETE CASCADE,
+                                      foreign key (appointment_id) references scdl_appointments (id) ON DELETE CASCADE
+);
 
 
 
@@ -6801,3 +6807,4 @@ insert into scdl_appointment_products(
            4,			   --nds_id (Без НДС)
            3000.00		--product_price_of_type_price
          );
+

@@ -2,6 +2,7 @@ package com.dokio.controller;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.AppointmentsForm;
+import com.dokio.message.request.UniversalForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.repository.*;
@@ -75,6 +76,17 @@ public class AppointmentsController {
         catch (Exception e){logger.error("Controller getAppointmentValuesById error", e);
             return new ResponseEntity<>("Controller getAppointmentValuesById error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @RequestMapping(
+            value = "/api/auth/getListOfAppointmentFiles",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getListOfAppointmentFiles(
+            @RequestParam("id") Long id){
+        logger.info("Processing get request for path /api/auth/getListOfAppointmentFiles with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getListOfAppointmentFiles(id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getListOfAppointmentFiles error", e);
+            return new ResponseEntity<>("Controller getListOfAppointmentFiles error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @PostMapping("/api/auth/insertAppointment")
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertAppointment(@RequestBody AppointmentsForm request){
@@ -125,6 +137,13 @@ public class AppointmentsController {
             return new ResponseEntity<>("Controller getSettingsAppointments exception", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @PostMapping("/api/auth/addFilesToAppointment")
+    public ResponseEntity<?> addFilesToProduct(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/addFilesToAppointment: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.addFilesToAppointment(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller addFilesToAppointment error", e);
+            return new ResponseEntity<>("Controller addFilesToAppointment exception", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
     @PostMapping("/api/auth/getAppointmentServicesSearchList")
     public  ResponseEntity<?> getAppointmentServicesList(@RequestBody AppointmentMainInfoForm request) {

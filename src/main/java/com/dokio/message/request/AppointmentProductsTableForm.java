@@ -216,12 +216,12 @@ public class AppointmentProductsTableForm {
         this.unitOfMeasureTimeInSeconds = unitOfMeasureTimeInSeconds;
     }
 
-    public Boolean getServiceByAppointment() {
-        return isServiceByAppointment;
+    public Boolean getIsServiceByAppointment() {
+        return this.isServiceByAppointment;
     }
 
-    public void setServiceByAppointment(Boolean serviceByAppointment) {
-        isServiceByAppointment = serviceByAppointment;
+    public void setIsServiceByAppointment(Boolean isServiceByAppointment) {
+        this.isServiceByAppointment = isServiceByAppointment;
     }
 
     public List<DepartmentPartWithResourcesIds> getDepartmentPartsWithResourcesIds() {
