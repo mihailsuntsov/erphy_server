@@ -1350,8 +1350,7 @@ public class AppointmentRepositoryJPA {
                         " inner join sprav_sys_ppr ppr ON p.ppr_id = ppr.id " +
                         " where " +
                         " app.master_id=" + masterId + " and " +
-                        " app.appointment_id = " + reqest.getAppointmentId() + " and " +
-                        " pp.price_type_id = app.price_type_id";
+                        " app.appointment_id = " + reqest.getAppointmentId();
 
         stringQuery = stringQuery +" order by p.name, d.name, dp.name, r.name ";
 
@@ -1497,34 +1496,34 @@ public class AppointmentRepositoryJPA {
         String stringQuery =
                 " WITH busy_resources AS ( " +
 //              busy_resources - Это выборка с занятыми ресурсами в заданном промежутке времени в виде: / ID ресурса / Название / Используемое количество " +
-                        " select  " +
-                        " r.id as resource_id,  " +
-                        " r.name as resource,  " +
-                        " dp.id as dep_part_id, " +
-                        " dp.name as dep_part, " +
-                        " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
-                        " from   " +
-                        " scdl_appointments a, " +
-                        " scdl_appointment_products ap,  " +
-                        " products p, " +
-                        " scdl_product_resource_qtt pr, " +
-                        " sprav_resources r, " +
-                        " scdl_dep_parts dp, " +
-                        " scdl_resource_dep_parts_qtt rdp " +
-                        " where " +
-                        " p.master_id=" + masterId + " and " +
-                        " p.company_id=" + reqest.getCompanyId() + " and " +
-                        " ap.appointment_id=a.id and " +
-                        " ap.product_id=p.id and " +
-                        " pr.product_id=p.id and " +
-                        " pr.resource_id=r.id and  " +
-                        " dp.id=a.dep_part_id and " +
-                        " rdp.dep_part_id=a.dep_part_id and " +
-                        " 	a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
-                        " rdp.resource_id=r.id and " +
-                        " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
-                        " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
-                        ") " +
+        " select  " +
+                " r.id as resource_id,  " +
+                " r.name as resource,  " +
+                " dp.id as dep_part_id, " +
+                " dp.name as dep_part, " +
+                " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
+                " from   " +
+                " scdl_appointments a, " +
+                " scdl_appointment_products ap,  " +
+                " products p, " +
+                " scdl_product_resource_qtt pr, " +
+                " sprav_resources r, " +
+                " scdl_dep_parts dp, " +
+                " scdl_resource_dep_parts_qtt rdp " +
+                " where " +
+                " p.master_id=" + masterId + " and " +
+                " p.company_id=" + reqest.getCompanyId() + " and " +
+                " ap.appointment_id=a.id and " +
+                " ap.product_id=p.id and " +
+                " pr.product_id=p.id and " +
+                " pr.resource_id=r.id and  " +
+                " dp.id=a.dep_part_id and " +
+                " rdp.dep_part_id=a.dep_part_id and " +
+                " 	a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
+                " rdp.resource_id=r.id and " +
+                " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
+                " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
+                ") " +
 
                         " select  " +
                         " p.id,  " +
@@ -1790,6 +1789,7 @@ public class AppointmentRepositoryJPA {
 //****************************************************   F   I   L   E   S   **************************************************************************
 //*****************************************************************************************************************************************************
 
+    @Transactional
     public boolean addFilesToAppointment(UniversalForm request){
         Long appointmentId = request.getId1();
         //Если есть право на "Изменение по всем предприятиям" и id докмента принадлежит владельцу аккаунта (с которого изменяют), ИЛИ
@@ -1915,24 +1915,24 @@ public class AppointmentRepositoryJPA {
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean deleteAppointmentFile(SearchForm request)
+    public boolean deleteAppointmentFile(long file_id, long doc_id)
     {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого удаляют), ИЛИ
-        if( (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments", String.valueOf(request.getAny_id()))) ||
+        if( (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments", String.valueOf(doc_id))) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",String.valueOf(doc_id)))||
                 //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",String.valueOf(request.getAny_id())))||
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",String.valueOf(doc_id)))||
                 //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого удаляют) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",String.valueOf(request.getAny_id()))))
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",String.valueOf(doc_id))))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
 //            int myCompanyId = userRepositoryJPA.getMyCompanyId();
             stringQuery  =  " delete from scdl_appointment_files "+
-                    " where appointment_id=" + request.getAny_id()+
-                    " and file_id="+request.getId()+
-                    " and (select master_id from scdl_appointments where id="+request.getAny_id()+")="+myMasterId ;
+                    " where appointment_id=" + doc_id+
+                    " and file_id="+file_id+
+                    " and (select master_id from scdl_appointments where id="+doc_id+")="+myMasterId;
             try
             {
                 entityManager.createNativeQuery(stringQuery).executeUpdate();

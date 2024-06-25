@@ -152,4 +152,15 @@ public class AppointmentsController {
         catch (Exception e){e.printStackTrace();logger.error("Controller getAppointmentServicesSearchList error", e);
             return new ResponseEntity<>("Controller getAppointmentServicesSearchList error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(
+            value = "/api/auth/deleteAppointmentFile",
+            params = {"doc_id", "file_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> deleteAppointmentFile( @RequestParam("doc_id") Long doc_id, @RequestParam("file_id") Long file_id) {
+        logger.info("Processing get request for path /api/auth/deleteAppointmentFile with file_id=" + file_id.toString() + ", doc_id = " + doc_id);
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.deleteAppointmentFile(file_id,doc_id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller deleteAppointmentFile error with file_id=" + file_id.toString() + ", doc_id=" + doc_id.toString(), e);
+            return new ResponseEntity<>("Controller deleteAppointmentFile error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }
