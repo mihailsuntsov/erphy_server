@@ -1,6 +1,5 @@
 package com.dokio.message.response;
 
-import com.dokio.message.request.AppointmentProductsTableForm;
 import com.dokio.message.request.additional.AppointmentCustomer;
 import com.dokio.message.response.additional.appointment.AppointmentService;
 
@@ -41,10 +40,37 @@ public class AppointmentsJSON {
     private String      time_end;
     private Long        employeeId;
     private String      employeeName;
+    private BigDecimal  sum_price;          // для таблицы документов
+    private Long        product_count;      // для таблицы документов
     private List<AppointmentService>  appointmentsProductTable;             // Все товары и услуги из данного Appointment
     private List<AppointmentCustomer>           customersTable;             // Все покупатели из данного Appointment
     private String calendar_date_time_start;    // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
     private String calendar_date_time_end;      // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
+    private String date_time_start;         // для таблицы документов
+
+    public String getDate_time_start() {
+        return date_time_start;
+    }
+
+    public void setDate_time_start(String date_time_start) {
+        this.date_time_start = date_time_start;
+    }
+
+    public BigDecimal getSum_price() {
+        return sum_price;
+    }
+
+    public void setSum_price(BigDecimal sum_price) {
+        this.sum_price = sum_price;
+    }
+
+    public Long getProduct_count() {
+        return product_count;
+    }
+
+    public void setProduct_count(Long product_count) {
+        this.product_count = product_count;
+    }
 
     public List<AppointmentService> getAppointmentsProductTable() {
         return appointmentsProductTable;

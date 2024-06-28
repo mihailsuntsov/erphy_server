@@ -449,8 +449,7 @@ public class CalendarRepositoryJPA {
 
 
 
-    // IDs of employees that are free by Appointment events.
-    // Does not take into account accessibility of employees by scedule of workshifts
+    // IDs of employees that are free by Appointment events. Does not take into account accessibility of employees by scedule of workshifts
     // IDs сотрудников, которые свободны по Записям в заданный промежуток времени. Не учитывает доступность/занятость сотрудников по графику рабочих смен
     private List<Long> getEmployeesIdsByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, String myTimeZone, Long masterId) {
 
@@ -481,12 +480,12 @@ public class CalendarRepositoryJPA {
         "   select sa.employee_id from scdl_appointments sa " +
         "   inner join scdl_appointment_products ap on ap.appointment_id = sa.id" +
         "   inner join products p on p.id = ap.product_id " +
+        "   inner join sprav_status_dock ssd on sa.status_id = ssd.id " +
         "   where " +
         "   sa.master_id = "+masterId+" and " +
         "   sa.company_id = "+companyId+" and " +
-
-        // if query runs from existed appointment - its ID must not be matter
-        "   sa.id != "+currentAppointmentId + " and " +
+        "   sa.id != "+currentAppointmentId + " and " + // if query runs from existed appointment - its ID must not be matter
+        "   ssd.status_type != 3 and " +                // cancelled Appointments are no matter
         "   sa.employee_id is not null and " +
 
                 // dateFrom & timeFrom                 are in time zone of user
@@ -672,40 +671,6 @@ public class CalendarRepositoryJPA {
         restingEmployees.addAll(employeesWithoutWorkingSchedule);
         return restingEmployees;
     }
-//    private String getEmployeesListSQL(AppointmentMainInfoForm request, long masterId, String freeEmployeesIds, String servicesIds_, String depPartsIds_, String jobTitlesIds_,String myTimeZone,String companyTimeZone) {
-//        return "select " +
-//                " u.id as u_id, " +
-//                " u.name as u_name, " +
-//                " jt.id as jt_id, " +
-//                " jt.name as jt_name, " +
-//                " dp.id as dp_id, " +
-//                " dp.name as dp_name, " +
-//                " p.id as p_id, " +
-//                " p.name as p_name " +
-//                " from " +
-//                " users u, " +
-//                " sprav_jobtitles jt, " +
-//                " scdl_user_products up, " +
-//                " products p, " +
-//                " scdl_dep_part_products dpp, " +
-//                " scdl_dep_parts dp " +
-//                " where " +
-//                " u.company_id = "+request.getCompanyId()+" and " +
-//                " u.master_id =  "+masterId+" and " +
-//                " u.status_account = 2 and " +
-//                " u.is_employee = true and " +
-//                " u.is_currently_employed = true and " +
-//                " u.id in "+freeEmployeesIds+
-//                (request.getServicesIds(). size() > 0 ? (" and p.id  in " + servicesIds_ ) : "") +
-//                (request.getDepPartsIds(). size() > 0 ? (" and dp.id in " + depPartsIds_ ) : "") +
-//                (request.getJobTitlesIds().size() > 0 ? (" and jt.id in " + jobTitlesIds_) : "") +
-//                " and u.job_title_id=jt.id and " +
-//                " u.id = up.user_id and " +
-//                " p.id=up.product_id and " +
-//                " dpp.product_id=p.id and " +
-//                " dpp.dep_part_id=dp.id" +
-//                " order by u.name,dp.name,p.name;";
-//    }
 
     public List<AppointmentEmployee> getEmployeesList(AppointmentMainInfoForm request){
 
@@ -719,9 +684,9 @@ public class CalendarRepositoryJPA {
             Set<Long> employeesIdsList = new HashSet<>();
             boolean isAll = request.getIsAll();
 
-            if (!isAll && request.getIsFree())
+            if (!isAll && request.getIsFree()) // when query is going from Appointment to get free employees list
                 employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
-            else if (!isAll && !request.getIsFree())
+            else if (!isAll && !request.getIsFree()) // when query is going from Appointment to get busy employees list
                 employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
 
 
@@ -732,9 +697,9 @@ public class CalendarRepositoryJPA {
                 String servicesIds_ = commonUtilites.SetOfLongToString(request.getServicesIds(), ",", "(", ")");
                 String employeesIds = commonUtilites.SetOfLongToString(employeesIdsList, ",", "(", ")");
 
-//              With the help of this "WITH" table with columns <employee_id>-<deppart_id> is going filtering of employees list by department parts,
+//              With the help of this "employees_workshift_depparts" helping table with columns <employee_id>-<deppart_id> is going filtering of employees list by department parts,
 //              contained in work shift of employee
-//              С помощью этой таблицы "WITH" со столбцами <employee_id>-<deppart_id> происходит фильтрация списка сотрудников по подразделениям отдела,
+//              С помощью этой вспомогательной таблицы "employees_workshift_depparts" со столбцами <employee_id>-<deppart_id> происходит фильтрация списка сотрудников по частям отделений,
 //              содержащимся в рабочей смене сотрудника.
                 stringQuery="" +
                 " WITH employees_workshift_depparts AS " +

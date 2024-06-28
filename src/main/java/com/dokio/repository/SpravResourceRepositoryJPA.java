@@ -569,10 +569,13 @@ public class SpravResourceRepositoryJPA {
 						" 		where " +
 						" 	 	ap.appointment_id in ( " +
 						" 			select a.id  " +
-						" 			from scdl_appointments a " +
+						" 			from scdl_appointments a, " +
+                        "           sprav_status_dock ssd " +
 						" 			where " +
 						" 			a.master_id="+masterId+" and " +
 						" 			a.company_id="+request.getCompanyId() + " and " +
+                        "           a.status_id = ssd.id and " +
+                        "           ssd.status_type != 3 and " + // don't collect resources of cancelled Appointments
                         "           a.id != " + request.getAppointmentId() + " and " + //  don't collect resources of current appointment , from which is going this calling
 						" 			coalesce(a.is_deleted,false)=false and " + //The formula of intersection is: A_end > B_start AND A_start < B_end
                         "           to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+"','DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time and " +

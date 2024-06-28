@@ -3,6 +3,7 @@ import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.AppointmentsForm;
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.request.additional.AppointmentDocsListSearchForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.repository.*;
@@ -39,7 +40,7 @@ public class AppointmentsController {
 
     @PostMapping("/api/auth/getAppointmentTable")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getAppointmentTable(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+    public ResponseEntity<?> getAppointmentTable(@RequestBody AppointmentDocsListSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getAppointmentTable: " + searchRequest.toString());
         String searchString = searchRequest.getSearchString();
         String sortColumn = searchRequest.getSortColumn();
@@ -53,16 +54,16 @@ public class AppointmentsController {
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int offsetreal = offset * result;//создана переменная с номером страницы
-        return new ResponseEntity<List>(appointmentRepositoryJPA.getAppointmentsTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(), searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds()), HttpStatus.OK);
+        return new ResponseEntity<List>(appointmentRepositoryJPA.getAppointmentsTable(result, offsetreal, searchString, sortColumn, sortAsc, searchRequest.getCompanyId(), searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds(),searchRequest.getAppointmentId(),searchRequest.getCustomerId()), HttpStatus.OK);
     }
     @PostMapping("/api/auth/getAppointmentPagesList")
     @SuppressWarnings("Duplicates")
-    public ResponseEntity<?> getAppointmentPagesList(@RequestBody HistoryCagentDocsSearchForm searchRequest) {
+    public ResponseEntity<?> getAppointmentPagesList(@RequestBody AppointmentDocsListSearchForm searchRequest) {
         logger.info("Processing post request for path /api/auth/getAppointmentPagesList: " + searchRequest.toString());
         int offset = (Objects.isNull(searchRequest.getOffset())?0:searchRequest.getOffset()); // номер страницы. Изначально это null
         int result = (Objects.isNull(searchRequest.getResult())?10:searchRequest.getResult()); // количество записей, отображаемых на странице (по умолчанию 10)
         String searchString = searchRequest.getSearchString();
-        int size = appointmentRepositoryJPA.getAppointmentsSize(searchString, searchRequest.getCompanyId(), searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds());//  - общее количество записей выборки
+        int size = appointmentRepositoryJPA.getAppointmentsSize(searchString, searchRequest.getCompanyId(), searchRequest.getDepartmentId(),searchRequest.getFilterOptionsIds(),searchRequest.getAppointmentId(),searchRequest.getCustomerId());//  - общее количество записей выборки
         return new ResponseEntity<List>(commonUtilites.getPagesList(offset + 1, size, result), HttpStatus.OK);
     }
     @RequestMapping(

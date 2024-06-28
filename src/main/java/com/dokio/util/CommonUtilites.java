@@ -1028,6 +1028,20 @@ public class CommonUtilites {
         return query.getSingleResult().toString();
     }
 
-
+    public Long getDocumentStatus(int document_id, int type, long masterId, long companyId) throws Exception {
+        String stringQuery;
+        stringQuery = "select id from sprav_status_dock where master_id="+masterId+" and company_id="+companyId+" and dock_id="+document_id+" and type="+type;
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            return Long.valueOf(query.getSingleResult().toString());
+        }catch (NoResultException nre) {
+            logger.error("NoResultException in method getDocumentStatus. SQL="+stringQuery, nre);
+            return null;
+        }catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDocumentStatus. SQL: "+stringQuery, e);
+            throw new Exception();
+        }
+    }
 
 }

@@ -29,6 +29,15 @@ public class AppointmentsForm {
     private Boolean is_completed;// проведён
     private List<AppointmentProductsTableForm> appointmentsProductTable; //Все товары и услуги из данного заказа
     private List<AppointmentCustomer> customersTable;                   // Все покупатели из данного Заказа
+    private Long cagent_id;    // для создания документов из Записи (Отгрузка, входящие платежи)
+
+    public Long getCagent_id() {
+        return cagent_id;
+    }
+
+    public void setCagent_id(Long cagent_id) {
+        this.cagent_id = cagent_id;
+    }
 
     public Long getEmployeeId() {
         return employeeId;
@@ -205,5 +214,34 @@ public class AppointmentsForm {
 
     public void setCustomersTable(List<AppointmentCustomer> customersTable) {
         this.customersTable = customersTable;
+    }
+
+    @Override
+    public String toString() {
+        return "AppointmentsForm{" +
+                "id=" + id +
+                ", company_id=" + company_id +
+                ", department_part_id=" + department_part_id +
+                ", status_id=" + status_id +
+                ", date_start='" + date_start + '\'' +
+                ", date_end='" + date_end + '\'' +
+                ", time_start='" + time_start + '\'' +
+                ", time_end='" + time_end + '\'' +
+                ", doc_number='" + doc_number + '\'' +
+                ", employeeId=" + employeeId +
+                ", name='" + name + '\'' +
+                ", nds=" + nds +
+                ", nds_included=" + nds_included +
+                ", description='" + description + '\'' +
+                ", uid='" + uid + '\'' +
+                ", linked_doc_id=" + linked_doc_id +
+                ", linked_doc_name='" + linked_doc_name + '\'' +
+                ", parent_uid='" + parent_uid + '\'' +
+                ", child_uid='" + child_uid + '\'' +
+                ", is_completed=" + is_completed +
+                ", appointmentsProductTable=" + appointmentsProductTable +
+                ", customersTable=" + customersTable +
+                ", cagent_id=" + cagent_id +
+                '}';
     }
 }
