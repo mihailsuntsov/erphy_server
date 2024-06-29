@@ -2,6 +2,7 @@ package com.dokio.message.request;
 
 import com.dokio.message.request.additional.AppointmentCustomer;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -29,7 +30,25 @@ public class AppointmentsForm {
     private Boolean is_completed;// проведён
     private List<AppointmentProductsTableForm> appointmentsProductTable; //Все товары и услуги из данного заказа
     private List<AppointmentCustomer> customersTable;                   // Все покупатели из данного Заказа
-    private Long cagent_id;    // для создания документов из Записи (Отгрузка, входящие платежи)
+    private Long cagent_id;    // для создания документов из Записи (Отгрузка, входящие платежи) // to create documents from Appointments (Shipment, incoming payments)
+    private BigDecimal total_nds; // Сумма НДС клиента, для создания документов из Записи (входящие платежи) // Total VAT of customer, to create documents from Appointments (incoming payments)
+    private BigDecimal total_summ; // Total sum of customer, needed to create documents from Appointments (incoming payments) // Сумма клиента, для создания документов входящих платежей из Записи
+
+    public BigDecimal getTotal_summ() {
+        return total_summ;
+    }
+
+    public void setTotal_summ(BigDecimal total_summ) {
+        this.total_summ = total_summ;
+    }
+
+    public BigDecimal getTotal_nds() {
+        return total_nds;
+    }
+
+    public void setTotal_nds(BigDecimal total_nds) {
+        this.total_nds = total_nds;
+    }
 
     public Long getCagent_id() {
         return cagent_id;

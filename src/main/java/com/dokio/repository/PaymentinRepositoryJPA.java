@@ -436,6 +436,10 @@ public class PaymentinRepositoryJPA {
                     request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),33));
                 }
 
+                // т.к. по умолчанию на фронтэнде moving_type = 'boxoffice'
+                if(Objects.isNull(request.getPayment_account_id()) && Objects.isNull(request.getBoxoffice_from_id()))
+                    request.setMoving_type(null);
+
                 //если документ создается из другого документа
                 if (request.getLinked_doc_id() != null) {
                     //получаем для этих объектов id группы связанных документов (если ее нет - она создастся)
@@ -458,38 +462,6 @@ public class PaymentinRepositoryJPA {
                             return -20L;//расчётный счёт не определен (см. файл _ErrorCodes)
                     }
                 }
-
-
-
-                //Возможно 2 ситуации: контрагент выбран из существующих, или выбрано создание нового контрагента
-                //Если присутствует 2я ситуация, то контрагента нужно сначала создать, получить его id и уже затем создавать Заказ покупателя:
-//                if(request.getCagent_id()==null){
-//                    try{
-//                        CagentsForm cagentForm = new CagentsForm();
-//                        cagentForm.setName(request.getNew_cagent());
-//                        cagentForm.setCompany_id(request.getCompany_id());
-//                        cagentForm.setOpf_id(2);//ставим по-умолчанию Физ. лицо
-//                        cagentForm.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),12));
-//                        cagentForm.setDescription("Автоматическое создание из Счёта поставщика №"+doc_number.toString());
-//                        cagentForm.setPrice_type_id(commonUtilites.getPriceTypeDefault(request.getCompany_id()));
-//                        cagentForm.setTelephone("");
-//                        cagentForm.setEmail("");
-//                        cagentForm.setZip_code("");
-//                        cagentForm.setCountry_id(null);
-//                        cagentForm.setRegion_id(null);
-//                        cagentForm.setCity_id(null);
-//                        cagentForm.setStreet("");
-//                        cagentForm.setHome("");
-//                        cagentForm.setFlat("");
-//                        cagentForm.setAdditional_address("");
-//                        request.setCagent_id(cagentRepository.insertCagent(cagentForm));
-//                    }
-//                    catch (Exception e) {
-//                        logger.error("Exception in method insertPaymentin on creating Cagent.", e);
-//                        e.printStackTrace();
-//                        return null;
-//                    }
-//                }
 
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
                 stringQuery = "insert into paymentin (" +

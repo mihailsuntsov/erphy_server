@@ -1030,7 +1030,14 @@ public class CommonUtilites {
 
     public Long getDocumentStatus(int document_id, int type, long masterId, long companyId) throws Exception {
         String stringQuery;
-        stringQuery = "select id from sprav_status_dock where master_id="+masterId+" and company_id="+companyId+" and dock_id="+document_id+" and type="+type;
+        stringQuery = "select id from " +
+                " sprav_status_dock " +
+                " where " +
+                " master_id="+masterId+" and " +
+                " company_id="+companyId+" and " +
+                " dock_id="+document_id+" and " +
+                " coalesce(is_deleted,false)=false and " +
+                " status_type="+type+" limit 1";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             return Long.valueOf(query.getSingleResult().toString());

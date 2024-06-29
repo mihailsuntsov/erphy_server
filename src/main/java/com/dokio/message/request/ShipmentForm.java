@@ -214,7 +214,28 @@ public class ShipmentForm {
 
     @Override
     public String toString() {
-        return "ShipmentForm: id=" + this.id + ", company_id=" + this.company_id +
-                ", department_id=" + this.department_id + ", cagent_id=" + this.cagent_id;
+        return "ShipmentForm{" +
+                "id=" + id +
+                ", company_id=" + company_id +
+                ", description='" + description + '\'' +
+                ", department_id=" + department_id +
+                ", cagent_id=" + cagent_id +
+                ", new_cagent='" + new_cagent + '\'' +
+                ", status_id=" + status_id +
+                ", customers_orders_id=" + customers_orders_id +
+                ", shift_id=" + shift_id +
+                ", doc_number='" + doc_number + '\'' +
+                ", shipment_date='" + shipment_date + '\'' +
+                ", shipmentProductTable=" + shipmentProductTable +
+                ", nds=" + nds +
+                ", nds_included=" + nds_included +
+                ", uid='" + uid + '\'' +
+                ", linked_doc_id=" + linked_doc_id +
+                ", linked_doc_name='" + linked_doc_name + '\'' +
+                ", parent_uid='" + parent_uid + '\'' +
+                ", child_uid='" + child_uid + '\'' +
+                ", is_completed=" + is_completed +
+                ", shipment_time='" + shipment_time + '\'' +
+                '}';
     }
 }

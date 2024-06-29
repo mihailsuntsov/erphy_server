@@ -59,6 +59,12 @@ public class AppointmentRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private ShipmentRepositoryJPA shipmentRepository;
+    @Autowired
+    private PaymentinRepositoryJPA paymentinRepository;
+    @Autowired
+    private OrderinRepositoryJPA orderinRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -1672,7 +1678,7 @@ public class AppointmentRepositoryJPA {
 
 
     //ShipmentForm request
-    public Integer createAndCompleteShipmentFromAppointment(AppointmentsForm request){
+    public Long createAndCompleteShipmentFromAppointment(AppointmentsForm request){
 
         ShipmentForm shipmentDoc = new ShipmentForm();
         Long masterId = userRepositoryJPA.getMyMasterId();
@@ -1681,33 +1687,106 @@ public class AppointmentRepositoryJPA {
         Date date = new Date();
         String uuid = UUID.randomUUID().toString();
         try{
-        Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
+            Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
 
-        shipmentDoc.setCompany_id(request.getCompany_id());
-        shipmentDoc.setDepartment_id(departmentId);
-        shipmentDoc.setCagent_id(request.getCagent_id());
-        shipmentDoc.setStatus_id(commonUtilites.getDocumentStatus(21,2,masterId,request.getCompany_id()));
-        shipmentDoc.setShipment_date(dateFormat.format(date));
-        shipmentDoc.setShipment_time(timeFormat.format(date));
-        shipmentDoc.setNds(request.isNds());
-        shipmentDoc.setNds_included(request.isNds_included());
-        shipmentDoc.setUid(uuid);
-        shipmentDoc.setLinked_doc_id(request.getId());
-        shipmentDoc.setLinked_doc_name("scdl_appointments");
-        shipmentDoc.setParent_uid(request.getUid());
-        shipmentDoc.setIs_completed(false); // because this is only creation
+            shipmentDoc.setCompany_id(request.getCompany_id());
+            shipmentDoc.setDepartment_id(departmentId);
+            shipmentDoc.setCagent_id(request.getCagent_id());
+            shipmentDoc.setStatus_id(commonUtilites.getDocumentStatus(21,2,masterId,request.getCompany_id()));
+            shipmentDoc.setShipment_date(dateFormat.format(date));
+            shipmentDoc.setDescription("");
+            shipmentDoc.setShipment_time(timeFormat.format(date));
+            shipmentDoc.setNds(request.isNds());
+            shipmentDoc.setNds_included(request.isNds_included());
+            shipmentDoc.setUid(uuid);
+            shipmentDoc.setLinked_doc_id(request.getId());
+            shipmentDoc.setLinked_doc_name("scdl_appointments");
+            shipmentDoc.setParent_uid(request.getUid());
+            shipmentDoc.setChild_uid(uuid);
+            shipmentDoc.setIs_completed(false); // because this is only creation
+            Set<ShipmentProductTableForm> shipmentProductTable = new HashSet<>();
+            for (AppointmentProductsTableForm row : request.getAppointmentsProductTable()) {
+                if(row.getCustomerId().equals(request.getCagent_id())){
+                    ShipmentProductTableForm shipmentProduct = new ShipmentProductTableForm();
+                    shipmentProduct.setDepartment_id(row.getDepartment_id());
+                    shipmentProduct.setIs_material(row.getIs_material());
+                    shipmentProduct.setNds_id(row.getNds_id());
+                    shipmentProduct.setPrice_type_id(row.getPrice_type_id());
+                    shipmentProduct.setProduct_id(row.getProduct_id());
+                    shipmentProduct.setProduct_price(row.getProduct_price());
+                    shipmentProduct.setProduct_count(row.getProduct_count());
+                    shipmentProduct.setProduct_price_of_type_price(row.getProduct_price_of_type_price());
+                    shipmentProduct.setProduct_sumprice(row.getProduct_sumprice());
+                    shipmentProductTable.add(shipmentProduct);
+                }
+            }
+            shipmentDoc.setShipmentProductTable(shipmentProductTable);
 
+            Long resultOfShipmentCreation = (shipmentRepository.insertShipment(shipmentDoc));
 
+            if(Objects.isNull(resultOfShipmentCreation) || resultOfShipmentCreation <= 0L)
+                return resultOfShipmentCreation; // errors
 
-
+            // If no errors - completing Shipment
+            for (ShipmentProductTableForm shipmentProduct : shipmentProductTable){
+                shipmentProduct.setShipment_id(resultOfShipmentCreation);
+            }
+            shipmentDoc.setId(resultOfShipmentCreation);
+            shipmentDoc.setIs_completed(true);
+            shipmentRepository.updateShipment(shipmentDoc);
+            return resultOfShipmentCreation>0L?1L:resultOfShipmentCreation; // if everything is OK - send 1 else send error code
         }catch (Exception e) {
-            logger.error("Exception in method createAndCompleteShipmentFromAppointment. form:"+request.toString(), e);
+            logger.error("Exception in method createAndCompleteShipmentFromAppointment. ShipmentForm: "+shipmentDoc.toString()+",/ form:"+request.toString(), e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    Long createAndCompleteIncomingPaymentFromAppointment(AppointmentsForm request){
+        PaymentinForm paymentDoc = new PaymentinForm();
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+        Date date = new Date();
+        String uuid = UUID.randomUUID().toString();
+        try{
+            Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
+
+            paymentDoc.setCompany_id(request.getCompany_id());
+            paymentDoc.setDepartment_id(departmentId);
+            paymentDoc.setCagent_id(request.getCagent_id());
+            paymentDoc.setStatus_id(commonUtilites.getDocumentStatus(33,2,masterId,request.getCompany_id()));
+            paymentDoc.setDescription("");
+            paymentDoc.setSumm(request.getTotal_summ());
+            paymentDoc.setNds(request.getTotal_nds());
+            paymentDoc.setUid(uuid);
+            paymentDoc.setLinked_doc_id(request.getId());
+            paymentDoc.setLinked_doc_name("scdl_appointments");
+            paymentDoc.setParent_uid(request.getUid());
+            paymentDoc.setChild_uid(uuid);
+            paymentDoc.setIs_completed(false); // because this is only creation
+            paymentDoc.setIncome_number("");
+            paymentDoc.setIncome_number_date("");
+            paymentDoc.setPayment_account_id(null);// will be selected automatically
+            paymentDoc.setInternal(false);
+            paymentDoc.setMoving_type(null);
+
+            Long resultOfDocumentCreation = (paymentinRepository.insertPaymentin(paymentDoc));
+
+            if(Objects.isNull(resultOfDocumentCreation) || resultOfDocumentCreation <= 0L)
+                return resultOfDocumentCreation; // errors
+
+            // If no errors - completing Document
+            paymentDoc.setId(resultOfDocumentCreation);
+            paymentDoc.setIs_completed(true);
+            paymentinRepository.updatePaymentin(paymentDoc);
+            return resultOfDocumentCreation>0L?1L:resultOfDocumentCreation; // if everything is OK - send 1 else send error code
+        }catch (Exception e) {
+            logger.error("Exception in method createAndCompleteIncomingPaymentFromAppointment. form:"+request.toString(), e);
             e.printStackTrace();
             return null;
         }
 
 
-        return 1;
 
     }
 //*****************************************************************************************************************************************************

@@ -38,6 +38,7 @@ public class ShipmentProductTableForm {
     private Long department_id;                     // id отделения (склада) отгрузки
     private Boolean is_material;                    // материален ли данный товар/услуга (если не материален - не проводим проверку на его количество на складе)
 
+
     public Long getId() {
         return id;
     }

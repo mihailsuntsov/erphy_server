@@ -6693,10 +6693,8 @@ create table scdl_appointment_files (
                                       foreign key (file_id) references files (id) ON DELETE CASCADE,
                                       foreign key (appointment_id) references scdl_appointments (id) ON DELETE CASCADE
 );
-
-
-
-
+alter table linked_docs add column scdl_appointments_id bigint;
+alter table linked_docs add constraint scdl_appointments_id_fkey foreign key (scdl_appointments_id) references scdl_appointments (id);
 
 
 

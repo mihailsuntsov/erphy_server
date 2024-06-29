@@ -71,6 +71,7 @@ public class LinkedDocsUtilites {
                     "orderout",
                     "vatinvoiceout",
                     "correction",
+                    "scdl_appointments",
                     "withdrawal",//выемка из кассы ККМ
                     "depositing", // внесение средств в кассу ККМ
                     "vatinvoicein")

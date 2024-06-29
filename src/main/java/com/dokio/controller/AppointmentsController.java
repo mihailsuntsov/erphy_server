@@ -103,6 +103,13 @@ public class AppointmentsController {
         catch (Exception e){logger.error("Controller updateAppointment error", e);
             return new ResponseEntity<>("Controller updateAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @PostMapping("/api/auth/createAndCompleteShipmentFromAppointment")
+    public ResponseEntity<?> createAndCompleteShipmentFromAppointment(@RequestBody AppointmentsForm request){
+        logger.info("Processing post request for path /api/auth/createAndCompleteShipmentFromAppointment: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.createAndCompleteShipmentFromAppointment(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller createAndCompleteShipmentFromAppointment error", e);
+            return new ResponseEntity<>("Controller createAndCompleteShipmentFromAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @PostMapping("/api/auth/deleteAppointment")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteAppointment(@RequestBody SignUpForm request) {
