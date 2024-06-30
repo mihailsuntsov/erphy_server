@@ -47,6 +47,36 @@ public class LinkedDocsUtilites {
     @Autowired
     private CommonUtilites cu;
 
+    private static final Map<String,String> COLUMN_BY_TABLENAME = createMap();
+    private static Map<String,String> createMap() {
+        Map<String, String> result = new HashMap<>();
+        result.put("customers_orders","customers_orders");
+        result.put("acceptance","acceptance");
+        result.put("return","return");
+        result.put("returnsup","returnsup");
+        result.put("shipment","shipment");
+        result.put("retail_sales","retail_sales");
+        result.put("products","products");
+        result.put("inventory","inventory");
+        result.put("writeoff","writeoff");
+        result.put("posting","posting");
+        result.put("moving","moving");
+        result.put("ordersup","ordersup");
+        result.put("invoiceout","invoiceout");
+        result.put("invoicein","invoicein");
+        result.put("paymentin","paymentin");
+        result.put("paymentout","paymentout");
+        result.put("shifts","shifts");
+        result.put("orderin","orderin");
+        result.put("orderout","orderout");
+        result.put("vatinvoiceout","vatinvoiceout");
+        result.put("correction","correction");
+        result.put("scdl_appointments","appointment");
+        result.put("withdrawal","withdrawal");
+        result.put("depositing","depositing");
+        result.put("vatinvoicein","vatinvoicein");
+        return Collections.unmodifiableMap(result);
+    }
 
     private static final Set VALID_TABLENAMES
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -77,7 +107,7 @@ public class LinkedDocsUtilites {
                     "vatinvoicein")
             .collect(Collectors.toCollection(HashSet::new)));
 
-    public static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_prduct) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
+    public static final Set DOCS_WITH_PRODUCT_SUMPRICE // таблицы документов, у которых (в их таблице <tablename>_product) есть колонка product_sumprice, по которой можно посчитать сумму стоимости товаров в отдельном документе
             = Collections.unmodifiableSet((Set<? extends String>) Stream
             .of(    "acceptance",
                     "return",
@@ -90,6 +120,7 @@ public class LinkedDocsUtilites {
                     "customers_orders",
                     "inventory",
                     "ordersup",
+                    "scdl_appointments",
                     "invoiceout",
                     "invoicein")
             .collect(Collectors.toCollection(HashSet::new)));
@@ -335,90 +366,105 @@ public class LinkedDocsUtilites {
 
         LinkedDocsSchemeJSON linkedDocsScheme = new LinkedDocsSchemeJSON();
 //
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
-        String shemeText;
-        Integer count = 0; //кол-во докуменов в группе
+        try {
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            String shemeText;
+            Integer count = 0; //кол-во докуменов в группе
+            String bookingDocNameVariation = "";// variation's name of booking document: appointment, reservation
+            String pageName = "";
+            //узнаем id группы связанных документов по UID одного из документов
+            Long groupId = getColumnValueByUid(uid, "group_id", myMasterId);
+            if (!Objects.isNull(groupId) && groupId > 0) { //null - ошибка, 0 - нет результата, т.е. у документа нет связанных с ним других документов, и он не состоит в группе связанных
 
-        //узнаем id группы связанных документов по UID одного из документов
-        Long groupId = getGroupIdByUid(uid, myMasterId);
-        if (!Objects.isNull(groupId) && groupId > 0) { //null - ошибка, 0 - нет результата, т.е. у документа нет связанных с ним других документов, и он не состоит в группе связанных
+                // по UID группы достанем начальную информацию по документам группы
+                // (начальную - потому что она не будет включать внутреннюю информацию документа,
+                // такую как наименование статуса или сумму по товарам, т.к. наименования таблиц
+                // документов пока неизвестны (они в linked_docs, и нельзя делать конструкции типа " from ld.tablename").
+                // Данную информацию придется получать в цикле по полученным данным)
 
-            // по UID группы достанем начальную информацию по документам группы
-            // (начальную - потому что она не будет включать внутреннюю информацию документа,
-            // такую как наименование статуса или сумму по товарам, т.к. наименования таблиц
-            // документов пока неизвестны (они в linked_docs, и нельзя делать конструкции типа " from ld.tablename").
-            // Данную информацию придется получать в цикле по полученным данным)
+                List<LinkedDocsJSON> baseList = getBaseInfoOfLinkedDocs(groupId);
+                if (!Objects.isNull(baseList)) {
 
-            List<LinkedDocsJSON> baseList = getBaseInfoOfLinkedDocs(groupId);
-            if (!Objects.isNull(baseList)) {
+                    //достаем полную информацию и инфо по связям документов
+                    List<LinkedDocsJSON> returnList = getFullInfoOfLinkedDocs(baseList);
+                    List<LinkedDocsLinksJSON> linksList = getLinks(groupId);
+                    if (!Objects.isNull(returnList) && !Objects.isNull(linksList)) {
+                        Map<String, String> map = cu.translateForMe(new String[]{});// download all translation dictionary
+                        LinkedDocsSchemeJSON sheme = new LinkedDocsSchemeJSON();
 
-                //достаем полную информацию и инфо по связям документов
-                List<LinkedDocsJSON> returnList = getFullInfoOfLinkedDocs(baseList);
-                List<LinkedDocsLinksJSON> linksList = getLinks(groupId);
-                if (!Objects.isNull(returnList) && !Objects.isNull(linksList)) {
-                    Map<String, String> map = cu.translateForMe(new String[]{});
-                    LinkedDocsSchemeJSON sheme = new LinkedDocsSchemeJSON();
+                        shemeText = "digraph {" +
+                                "              rankdir=TB;" +
+                                "              node [ shape=record;" +
+                                "              margin=0;" +
+                                "              fixedsize = true;" +
+                                "              width=2.3;" +
+                                "              height=1.3;" +
+                                "              fontsize=12;" +
+                                "              fontname=\"Arial\";" +
+                                "              style=filled;" +
+                                "              fillcolor=\"#ededed\";" +
+                                "              color=\"#2b2a2a\";" +
+                                "              ]; ";
 
-                    shemeText = "digraph {" +
-                            "              rankdir=TB;" +
-                            "              node [ shape=record;" +
-                            "              margin=0;" +
-                            "              fixedsize = true;" +
-                            "              width=2.3;" +
-                            "              height=1.3;" +
-                            "              fontsize=12;" +
-                            "              fontname=\"Arial\";" +
-                            "              style=filled;" +
-                            "              fillcolor=\"#ededed\";" +
-                            "              color=\"#2b2a2a\";" +
-                            "              ]; ";
+                        for (LinkedDocsJSON linkedDoc : returnList) {
 
-                    for (LinkedDocsJSON linkedDoc : returnList) {
+                            // Document Appointment may has a variations of name. In accordance of type of business
+                            // it can be Appointment or Reservation.
+                            // In dictionary table tgere are two translations: 'scdl_appointments'-'Appointment' and 'reservation'-'Reservation'
+                            if(linkedDoc.getPagename().equals("appointments")){
+                                Long companyId = getColumnValueByUid(uid, "company_id", myMasterId);
+                                bookingDocNameVariation = cu.getCompanySettings(companyId).getBooking_doc_name_variation();
+                                pageName = bookingDocNameVariation.equals("appointment")?"appointment":"reservation";
+                            } else pageName = linkedDoc.getPagename();
+                            //перед UID добавляю букву, т.к. на фронте Graphviz некорректно работает с наименованиями node-ов, которые начинаются на цифры
 
-                        //перед UID добавляю букву, т.к. на фронте Graphviz некорректно работает с наименованиями node-ов, которые начинаются на цифры
+                            shemeText = shemeText + "a" + linkedDoc.getUid().replace("-", "") + " [";
+                            shemeText = shemeText + "URL=\"ui/" + linkedDoc.getPagename() + "doc/" + linkedDoc.getId() + "\";";
+                            if (uid.equals(linkedDoc.getUid()))
+                                shemeText = shemeText + " fillcolor=\"#acee00\";"; // если это node документа, из которого запрашивали схему - окрасим ноду в другой цвет
+                            shemeText = shemeText + "label=\"{" + map.get(pageName) + "|№" + linkedDoc.getDoc_number() + "\\n" + linkedDoc.getDate_time_created() + "\\n";
+                            if (!Objects.isNull(linkedDoc.getSumprice()))
+                                shemeText = shemeText + linkedDoc.getSumprice() + "\\n";
+                            shemeText = shemeText + map.get("completed") + ": " + (linkedDoc.isIs_completed() ? map.get("yes") : map.get("no")) + "\\n" + linkedDoc.getStatus() + "}\";";
+                            shemeText = shemeText + "tooltip=\"" + map.get("open_in_new_window") + "\";";
+                            shemeText = shemeText + "] ";
 
-                        shemeText = shemeText + "a" + linkedDoc.getUid().replace("-", "") + " [";
-                        shemeText = shemeText + "URL=\"ui/" + linkedDoc.getPagename() + "doc/" + linkedDoc.getId() + "\";";
-                        if (uid.equals(linkedDoc.getUid()))
-                            shemeText = shemeText + " fillcolor=\"#acee00\";"; // если это node документа, из которого запрашивали схему - окрасим ноду в другой цвет
-                        shemeText = shemeText + "label=\"{" + map.get(linkedDoc.getPagename()) + "|№" + linkedDoc.getDoc_number() + "\\n" + linkedDoc.getDate_time_created() + "\\n";
-                        if (!Objects.isNull(linkedDoc.getSumprice()))
-                            shemeText = shemeText + linkedDoc.getSumprice() + "\\n";
-                        shemeText = shemeText + map.get("completed")+": " + (linkedDoc.isIs_completed() ? map.get("yes") : map.get("no")) + "\\n" + linkedDoc.getStatus() + "}\";";
-                        shemeText = shemeText + "tooltip=\""+map.get("open_in_new_window")+"\";";
-                        shemeText = shemeText + "] ";
+                            count++;
 
-                        count++;
+                        }
+                        // сборка массива информации по связям документов. В данном цикле необходимо получить массив вида
+                        //                    <UUID документа> -> <UUID документа>;
+                        //                    <UUID документа> -> <UUID документа>;
+                        //                    <UUID документа> -> <UUID документа>;
+                        for (LinkedDocsLinksJSON link : linksList) {
 
-                    }
-                    // сборка массива информации по связям документов. В данном цикле необходимо получить массив вида
-                    //                    <UUID документа> -> <UUID документа>;
-                    //                    <UUID документа> -> <UUID документа>;
-                    //                    <UUID документа> -> <UUID документа>;
-                    for (LinkedDocsLinksJSON link : linksList) {
+                            shemeText = shemeText + "a" + link.getUid_from().replace("-", "") + " -> " + "a" + link.getUid_to().replace("-", "") + ";";
 
-                        shemeText = shemeText + "a" + link.getUid_from().replace("-", "") + " -> " + "a" + link.getUid_to().replace("-", "") + ";";
+                        }
+                        shemeText = shemeText + "}";
 
-                    }
-                    shemeText = shemeText + "}";
+                        sheme.setText(shemeText);
 
-                    sheme.setText(shemeText);
+                        sheme.setCount(count);
+                        return sheme;
 
-                    sheme.setCount(count);
-                    return sheme;
+                    } else return null;
 
                 } else return null;
 
-            } else return null;
+            } else { // либо ошибка ( groupId = null),  либо нет связей (groupId = 0)
 
-        } else { // либо ошибка ( groupId = null),  либо нет связей (groupId = 0)
-
-            if (Objects.isNull(groupId))
-                return null; // ошибка
-            else { // groupId=0, т.е. нет связей
-                linkedDocsScheme.setErrorCode(0L);
-                return linkedDocsScheme;
+                if (Objects.isNull(groupId))
+                    return null; // ошибка
+                else { // groupId=0, т.е. нет связей
+                    linkedDocsScheme.setErrorCode(0L);
+                    return linkedDocsScheme;
+                }
             }
+        } catch (Exception e) {
+            logger.error("Exception in method getLinkedDocsScheme for UID = " + uid, e);
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -493,11 +539,11 @@ public class LinkedDocsUtilites {
                 "   (select ds.doc_name_ru from documents ds where ds.table_name = '" + tablename + "') as doc_name," +
                 "   coalesce(ssd.name,'-') as status_name," +
                 (DOCS_WITH_PRODUCT_SUMPRICE.contains(tablename) ?
-                        ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tablename + "_product where " + tablename + "_id=" + id + "),0)") :
+                        ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tablename + "_product where " + COLUMN_BY_TABLENAME.get(tablename) + "_id=" + id + "),0)") :
                         (DOCS_WITH_PAY_SUMM.contains(tablename) ?
                                 ("  coalesce((select sum(coalesce(summ,0)) from " + tablename + " where id=" + id + "),0)") :
                                 (DOCS_WITH_PRODUCT_SUMPRICE.contains(tableWithSumm) ?
-                                        ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tableWithSumm + "_product where " + tableWithSumm + "_id=" + idInTableWithSumm + "),0)") :
+                                        ("  coalesce((select sum(coalesce(product_sumprice,0)) from " + tableWithSumm + "_product where " + COLUMN_BY_TABLENAME.get(tableWithSumm) + "_id=" + idInTableWithSumm + "),0)") :
                                         (DOCS_WITH_PAY_SUMM.contains(tableWithSumm) ?
                                                 ("  coalesce((select sum(coalesce(summ,0)) from " + tableWithSumm + " where id=" + idInTableWithSumm + "),0)") :
                                                 0.00
@@ -571,9 +617,9 @@ public class LinkedDocsUtilites {
     }
 
 
-    private Long getGroupIdByUid(String uid, Long myMasterId) {
+    private Long getColumnValueByUid(String uid, String columnName, Long myMasterId) {
 
-        String stringQuery = "select group_id from linked_docs where doc_uid=:uid and master_id=" + myMasterId;
+        String stringQuery = "select "+columnName+" from linked_docs where doc_uid=:uid and master_id=" + myMasterId;
 
         try {
             Query query = entityManager.createNativeQuery(stringQuery);

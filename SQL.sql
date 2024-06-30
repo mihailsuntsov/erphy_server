@@ -6569,7 +6569,7 @@ CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING bt
 
 
 -- drop table scdl_appointment_cagents;
--- drop table scdl_appointment_products;
+-- drop table scdl_appointments_product;
 -- drop table scdl_appointments;
 
 
@@ -6608,7 +6608,7 @@ create table scdl_appointments(
                              foreign key (dep_part_id)          references scdl_dep_parts(id)
 );
 
-create table scdl_appointment_products(
+create table scdl_appointments_product(
                              id                                 bigserial primary key not null,
                              master_id                          bigint not null,
                              product_id                         bigint not null,
@@ -6631,7 +6631,7 @@ create table scdl_appointment_products(
                              foreign key (cagent_id )           references cagents (id),
                              foreign key (master_id)            references users(id)
 );
-alter table scdl_appointment_products add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
+alter table scdl_appointments_product add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
 -- create table scdl_appointment_cagents(
 --                              id                                 bigserial primary key not null,
 --                              master_id                          bigint not null,
@@ -6645,7 +6645,7 @@ alter table scdl_appointment_products add constraint scdl_appointment_cagent_pro
 -- delete from usergroup_permissions where permission_id in(select id from permissions where document_id=59);
 -- delete from permissions where document_id=59;
 -- delete from documents where id=59;
--- drop table scdl_appointment_products;
+-- drop table scdl_appointments_product;
 -- drop table scdl_appointment_cagents;
 -- drop table scdl_appointments;
 
@@ -6695,7 +6695,9 @@ create table scdl_appointment_files (
 );
 alter table linked_docs add column scdl_appointments_id bigint;
 alter table linked_docs add constraint scdl_appointments_id_fkey foreign key (scdl_appointments_id) references scdl_appointments (id);
-
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('appointment', 'Appointment', 'Запись', 'Састанак'),
+('reservation', 'Reservation', 'Бронирование', 'Резервација');
 
 
 
@@ -6752,9 +6754,9 @@ values (
          to_timestamp ('30.06.2024 11:00', 'DD.MM.YYYY HH24:MI')
        );
 
-insert into scdl_appointment_products (master_id, product_id, resource_id, quantity) values (4,1008699,2,1);
+insert into scdl_appointments_product (master_id, product_id, resource_id, quantity) values (4,1008699,2,1);
 
-insert into scdl_appointment_products(
+insert into scdl_appointments_product(
   master_id,
   product_id,
   appointment_id,
@@ -6780,7 +6782,7 @@ insert into scdl_appointment_products(
            5000.00		--product_price_of_type_price
          );
 
-insert into scdl_appointment_products(
+insert into scdl_appointments_product(
   master_id,
   product_id,
   appointment_id,

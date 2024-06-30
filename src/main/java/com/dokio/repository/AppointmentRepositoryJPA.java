@@ -8,6 +8,7 @@ import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.AppointmentsJSON;
 import com.dokio.message.response.additional.*;
+import com.dokio.message.response.additional.appointment.AppointmentChildDocsJSON;
 import com.dokio.message.response.additional.appointment.AppointmentService;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithResourcesIds;
 import com.dokio.message.response.additional.appointment.ResourceOfDepartmentPart;
@@ -110,8 +111,8 @@ public class AppointmentRepositoryJPA {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           coalesce((select sum(coalesce(product_sumprice,0)) from scdl_appointment_products where appointment_id=p.id),0) as sum_price, " +
-                    "           (select count(*) from scdl_appointment_products ip where ip.appointment_id=p.id) as product_count," + //подсчет кол-ва услуг или товаров
+                    "           coalesce((select sum(coalesce(product_sumprice,0)) from scdl_appointments_product where appointment_id=p.id),0) as sum_price, " +
+                    "           (select count(*) from scdl_appointments_product ip where ip.appointment_id=p.id) as product_count," + //подсчет кол-ва услуг или товаров
                     "           to_char(p.starts_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',   'DD.MM.YYYY') as date_start, " +
                     "           to_char(p.starts_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',   'HH24:MI')    as time_start, " +
                     "           to_char(p.ends_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',     'DD.MM.YYYY') as date_end, " +
@@ -133,7 +134,7 @@ public class AppointmentRepositoryJPA {
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
 //          if this table requesting from the window of Appointment document by customer:
-            if(customerId>0L) stringQuery = stringQuery + " and p.id != "+appointmentId+" and p.id in (select appointment_id from scdl_appointment_products where cagent_id = "+customerId+") ";
+            if(customerId>0L) stringQuery = stringQuery + " and p.id != "+appointmentId+" and p.id in (select appointment_id from scdl_appointments_product where cagent_id = "+customerId+") ";
 
             if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -234,7 +235,7 @@ public class AppointmentRepositoryJPA {
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
 //      if this table requesting from the window of Appointment document by customer:
-        if(customerId>0L) stringQuery = stringQuery + " and p.id != "+appointmentId+" and p.id in (select appointment_id from scdl_appointment_products where cagent_id = "+customerId+") ";
+        if(customerId>0L) stringQuery = stringQuery + " and p.id != "+appointmentId+" and p.id in (select appointment_id from scdl_appointments_product where cagent_id = "+customerId+") ";
 
         if (!securityRepositoryJPA.userHasPermissions_OR(59L, "708")) //Если нет прав на просм по всем предприятиям
         {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -451,7 +452,7 @@ public class AppointmentRepositoryJPA {
                 " telephone " +
                 " from cagents " +
                 " where id in (" +
-                    "select cagent_id from scdl_appointment_products where appointment_id = " + appointmentId + " and master_id = " + masterId +
+                    "select cagent_id from scdl_appointments_product where appointment_id = " + appointmentId + " and master_id = " + masterId +
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -584,7 +585,7 @@ public class AppointmentRepositoryJPA {
 
 //                    } catch (CantInsertProductRowCauseErrorException e) {
 //                        TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//                        logger.error("Exception in method insertAppointment on inserting into scdl_appointment_products. ", e);
+//                        logger.error("Exception in method insertAppointment on inserting into scdl_appointments_product. ", e);
 //                        updateResults.setSuccess(false);
 //                        updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
 //                        e.printStackTrace();
@@ -779,7 +780,7 @@ public class AppointmentRepositoryJPA {
             return updateResults;
         } catch (CantInsertProductRowCauseErrorException e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            logger.error("Exception in method updateAppointment on updating of scdl_appointment_products cause error.", e);
+            logger.error("Exception in method updateAppointment on updating of scdl_appointments_product cause error.", e);
             updateResults.setSuccess(false);
             updateResults.setErrorCode(2);      // Ошибка обработки таблицы товаров
             e.printStackTrace();
@@ -866,7 +867,7 @@ public class AppointmentRepositoryJPA {
         if(Objects.isNull(row.getReserved_current())) row.setReserved_current(new BigDecimal(0));
         try {
             stringQuery =
-                    " insert into scdl_appointment_products (" +
+                    " insert into scdl_appointments_product (" +
                             "master_id, " +
                             "product_id, " +
                             "appointment_id, " +
@@ -1067,7 +1068,7 @@ public class AppointmentRepositoryJPA {
     private void deleteAppointmentProductsTableExcessRows(String rowIds, Long appointment_id, Long myMasterId) throws Exception {
         String stringQuery="";
         try {
-            stringQuery =   " delete from scdl_appointment_products " +
+            stringQuery =   " delete from scdl_appointments_product " +
                     " where appointment_id=" + appointment_id +
                     " and master_id=" + myMasterId +
                     (rowIds.length()>0?(" and product_id not in (" + rowIds.replaceAll("[^0-9\\,]", "") + ")"):"");//если во фронте удалили все товары, то удаляем все товары в данном Заказе покупателя
@@ -1215,7 +1216,7 @@ public class AppointmentRepositoryJPA {
                         " app.cagent_id as cagent_id, " +
                         " app.price_type_id as price_type_id" +
                         " from " +
-                        " scdl_appointment_products app " +
+                        " scdl_appointments_product app " +
                         " inner join products p on p.id = app.product_id " +
                         " left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
                         " left outer join sprav_resources r on prq.resource_id=r.id " +
@@ -1382,7 +1383,7 @@ public class AppointmentRepositoryJPA {
                         " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
                         " from   " +
                         " scdl_appointments a, " +
-                        " scdl_appointment_products ap,  " +
+                        " scdl_appointments_product ap,  " +
                         " products p, " +
                         " scdl_product_resource_qtt pr, " +
                         " sprav_resources r, " +
@@ -1741,16 +1742,13 @@ public class AppointmentRepositoryJPA {
             return null;
         }
     }
-    Long createAndCompleteIncomingPaymentFromAppointment(AppointmentsForm request){
+
+    public Long createAndCompletePaymentInFromAppointment(AppointmentsForm request){
         PaymentinForm paymentDoc = new PaymentinForm();
         Long masterId = userRepositoryJPA.getMyMasterId();
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        DateFormat timeFormat = new SimpleDateFormat("HH:mm");
-        Date date = new Date();
         String uuid = UUID.randomUUID().toString();
         try{
             Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
-
             paymentDoc.setCompany_id(request.getCompany_id());
             paymentDoc.setDepartment_id(departmentId);
             paymentDoc.setCagent_id(request.getCagent_id());
@@ -1769,25 +1767,113 @@ public class AppointmentRepositoryJPA {
             paymentDoc.setPayment_account_id(null);// will be selected automatically
             paymentDoc.setInternal(false);
             paymentDoc.setMoving_type(null);
-
             Long resultOfDocumentCreation = (paymentinRepository.insertPaymentin(paymentDoc));
-
             if(Objects.isNull(resultOfDocumentCreation) || resultOfDocumentCreation <= 0L)
                 return resultOfDocumentCreation; // errors
-
             // If no errors - completing Document
             paymentDoc.setId(resultOfDocumentCreation);
             paymentDoc.setIs_completed(true);
             paymentinRepository.updatePaymentin(paymentDoc);
             return resultOfDocumentCreation>0L?1L:resultOfDocumentCreation; // if everything is OK - send 1 else send error code
         }catch (Exception e) {
-            logger.error("Exception in method createAndCompleteIncomingPaymentFromAppointment. form:"+request.toString(), e);
+            logger.error("Exception in method createAndCompletePaymentInFromAppointment. form:"+request.toString(), e);
             e.printStackTrace();
             return null;
         }
+    }
+    public Long createAndCompleteOrderInFromAppointment(AppointmentsForm request){
+        OrderinForm paymentDoc = new OrderinForm();
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String uuid = UUID.randomUUID().toString();
+        try{
+            Long departmentId=((BigInteger)commonUtilites.getFieldValueFromTableById("scdl_dep_parts","department_id",masterId,request.getDepartment_part_id())).longValue();
+            paymentDoc.setCompany_id(request.getCompany_id());
+            paymentDoc.setDepartment_id(departmentId);
+            paymentDoc.setCagent_id(request.getCagent_id());
+            paymentDoc.setStatus_id(commonUtilites.getDocumentStatus(35,2,masterId,request.getCompany_id()));
+            paymentDoc.setDescription("");
+            paymentDoc.setSumm(request.getTotal_summ());
+            paymentDoc.setNds(request.getTotal_nds());
+            paymentDoc.setUid(uuid);
+            paymentDoc.setLinked_doc_id(request.getId());
+            paymentDoc.setLinked_doc_name("scdl_appointments");
+            paymentDoc.setParent_uid(request.getUid());
+            paymentDoc.setChild_uid(uuid);
+            paymentDoc.setIs_completed(false); // because this is only creation
+            paymentDoc.setInternal(false);
+            paymentDoc.setMoving_type(null);
+            Long resultOfDocumentCreation = (orderinRepository.insertOrderin(paymentDoc));
+            if(Objects.isNull(resultOfDocumentCreation) || resultOfDocumentCreation <= 0L)
+                return resultOfDocumentCreation; // errors
+            // If no errors - completing Document
+            paymentDoc.setId(resultOfDocumentCreation);
+            paymentDoc.setIs_completed(true);
+            orderinRepository.updateOrderin(paymentDoc);
+            return resultOfDocumentCreation>0L?1L:resultOfDocumentCreation; // if everything is OK - send 1 else send error code
+        }catch (Exception e) {
+            logger.error("Exception in method createAndCompleteOrderInFromAppointment. form:"+request.toString(), e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-
-
+    public List<AppointmentChildDocsJSON> getAppointmentChildDocs(Long docId){
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery =
+        " WITH linkeddocs as (select " +
+        " doc_id as doc_id, " +
+        " group_id as group_id, " +
+        " tablename as tablename, " +
+        " scdl_appointments_id as appointment_id, " +
+        " shipment_id as shipment_id, " +
+        " paymentin_id as paymentin_id, " +
+        " orderin_id as orderin_id " +
+        " from  " +
+        " linked_docs where group_id = ( " +
+        "   select (group_id) from linked_docs where master_id="+masterId+" and scdl_appointments_id=" + docId +
+        " )) " +
+        " select  " +
+        " p.id as id, " +
+        " 'shipment' as doc_name, " +
+        " coalesce((select sum(coalesce(product_sumprice,0)) from shipment_product where shipment_id=p.id),0) sum " +
+        " from shipment p where " +
+        " p.id in (select shipment_id from linkeddocs) " +
+        " and coalesce(p.is_completed,false) = true " +
+        " union all " +
+        " select  " +
+        " p.id as id, " +
+        " 'paymentin' as doc_name, " +
+        " p.summ as sum " +
+        " from paymentin p where " +
+        " p.id in (select paymentin_id from linkeddocs) " +
+        " and coalesce(p.is_completed,false) = true " +
+        " union all " +
+        " select  " +
+        " p.id as id, " +
+        " 'orderin' as doc_name, " +
+        " p.summ as sum " +
+        " from orderin p where " +
+        " p.id in (select orderin_id from linkeddocs) " +
+        " and coalesce(p.is_completed,false) = true ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<AppointmentChildDocsJSON> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                AppointmentChildDocsJSON doc = new AppointmentChildDocsJSON();
+                doc.setId(Long.parseLong(                   obj[0].toString()));
+                doc.setDocName((String)                     obj[1]);
+                doc.setSum((BigDecimal)                     obj[2]);
+                returnList.add(doc);
+            }
+            return returnList;
+        }
+        catch (Exception ex)
+        {
+            logger.error("Exception in method getAppointmentChildDocs.", ex);
+            ex.printStackTrace();
+            return null;
+        }
     }
 //*****************************************************************************************************************************************************
 //****************************************************   F   I   L   E   S   **************************************************************************

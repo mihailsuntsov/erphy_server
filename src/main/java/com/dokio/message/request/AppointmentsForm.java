@@ -33,6 +33,15 @@ public class AppointmentsForm {
     private Long cagent_id;    // для создания документов из Записи (Отгрузка, входящие платежи) // to create documents from Appointments (Shipment, incoming payments)
     private BigDecimal total_nds; // Сумма НДС клиента, для создания документов из Записи (входящие платежи) // Total VAT of customer, to create documents from Appointments (incoming payments)
     private BigDecimal total_summ; // Total sum of customer, needed to create documents from Appointments (incoming payments) // Сумма клиента, для создания документов входящих платежей из Записи
+    private String payment_doc_type; // to create documents from Appointments, paymentin or orderin// для создания документов входящих платежей, paymentin или orderin
+
+    public String getPayment_doc_type() {
+        return payment_doc_type;
+    }
+
+    public void setPayment_doc_type(String payment_doc_type) {
+        this.payment_doc_type = payment_doc_type;
+    }
 
     public BigDecimal getTotal_summ() {
         return total_summ;

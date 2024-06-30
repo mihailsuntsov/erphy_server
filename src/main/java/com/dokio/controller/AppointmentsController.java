@@ -78,6 +78,17 @@ public class AppointmentsController {
             return new ResponseEntity<>("Controller getAppointmentValuesById error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @RequestMapping(
+            value = "/api/auth/getAppointmentChildDocs",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getAppointmentChildDocs(
+            @RequestParam("id") Long id){
+        logger.info("Processing get request for path /api/auth/getAppointmentChildDocs with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getAppointmentChildDocs(id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getAppointmentChildDocs error", e);
+            return new ResponseEntity<>("Controller getAppointmentChildDocs error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
             value = "/api/auth/getListOfAppointmentFiles",
             params = {"id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
@@ -109,6 +120,20 @@ public class AppointmentsController {
         try {return new ResponseEntity<>(appointmentRepositoryJPA.createAndCompleteShipmentFromAppointment(request), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller createAndCompleteShipmentFromAppointment error", e);
             return new ResponseEntity<>("Controller createAndCompleteShipmentFromAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/createAndCompletePaymentInFromAppointment")
+    public ResponseEntity<?> createAndCompletePaymentInFromAppointment(@RequestBody AppointmentsForm request){
+        logger.info("Processing post request for path /api/auth/createAndCompletePaymentInFromAppointment: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.createAndCompletePaymentInFromAppointment(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller createAndCompletePaymentInFromAppointment error", e);
+            return new ResponseEntity<>("Controller createAndCompletePaymentInFromAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/createAndCompleteOrderInFromAppointment")
+    public ResponseEntity<?> createAndCompleteOrderInFromAppointment(@RequestBody AppointmentsForm request){
+        logger.info("Processing post request for path /api/auth/createAndCompleteOrderInFromAppointment: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.createAndCompleteOrderInFromAppointment(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller createAndCompleteOrderInFromAppointment error", e);
+            return new ResponseEntity<>("Controller createAndCompleteOrderInFromAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/deleteAppointment")
     @SuppressWarnings("Duplicates")

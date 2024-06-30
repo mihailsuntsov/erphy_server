@@ -478,7 +478,7 @@ public class CalendarRepositoryJPA {
             (isFree?" not ":"") +
         "   in (" +
         "   select sa.employee_id from scdl_appointments sa " +
-        "   inner join scdl_appointment_products ap on ap.appointment_id = sa.id" +
+        "   inner join scdl_appointments_product ap on ap.appointment_id = sa.id" +
         "   inner join products p on p.id = ap.product_id " +
         "   inner join sprav_status_dock ssd on sa.status_id = ssd.id " +
         "   where " +

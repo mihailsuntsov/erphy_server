@@ -565,7 +565,7 @@ public class SpravResourceRepositoryJPA {
 						"  	pr.resource_id=r.id and " +
 						" 	pr.product_id in ( " +
 						" 		select ap.product_id  " +
-						" 		from scdl_appointment_products ap " +
+						" 		from scdl_appointments_product ap " +
 						" 		where " +
 						" 	 	ap.appointment_id in ( " +
 						" 			select a.id  " +
