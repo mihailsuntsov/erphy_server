@@ -403,7 +403,7 @@ public class ShipmentRepositoryJPA {
                 return returnList;
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.error("Exception in method getRetailSalesProductTable. SQL query:" + stringQuery, e);
+                logger.error("Exception in method getShipmentProductTable. SQL query:" + stringQuery, e);
                 return null;
             }
         } else return null;

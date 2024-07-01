@@ -4,9 +4,12 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
 import com.dokio.message.request.additional.AppointmentCustomer;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
+import com.dokio.message.response.OrderinJSON;
+import com.dokio.message.response.PaymentinJSON;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.AppointmentsJSON;
+import com.dokio.message.response.ShipmentJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.message.response.additional.appointment.AppointmentChildDocsJSON;
 import com.dokio.message.response.additional.appointment.AppointmentService;
@@ -1819,6 +1822,10 @@ public class AppointmentRepositoryJPA {
 
     public List<AppointmentChildDocsJSON> getAppointmentChildDocs(Long docId){
         Long masterId = userRepositoryJPA.getMyMasterId();
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String myTimeZone = userSettings.getTime_zone();
+        String dateFormat = userSettings.getDateFormat();
+        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
         String stringQuery =
         " WITH linkeddocs as (select " +
         " doc_id as doc_id, " +
@@ -1835,7 +1842,10 @@ public class AppointmentRepositoryJPA {
         " select  " +
         " p.id as id, " +
         " 'shipment' as doc_name, " +
-        " coalesce((select sum(coalesce(product_sumprice,0)) from shipment_product where shipment_id=p.id),0) sum " +
+        " coalesce((select sum(coalesce(product_sumprice,0)) from shipment_product where shipment_id=p.id),0) as sum, " +
+        " p.cagent_id as customer_id, " +
+        " p.doc_number as doc_number, " +
+        " to_char(p.date_time_created at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0', '"+dateFormat+timeFormat+"') as date_time_created " +
         " from shipment p where " +
         " p.id in (select shipment_id from linkeddocs) " +
         " and coalesce(p.is_completed,false) = true " +
@@ -1843,7 +1853,10 @@ public class AppointmentRepositoryJPA {
         " select  " +
         " p.id as id, " +
         " 'paymentin' as doc_name, " +
-        " p.summ as sum " +
+        " p.summ as sum, " +
+        " p.cagent_id as customer_id, " +
+        " p.doc_number as doc_number, " +
+        " to_char(p.date_time_created at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0', '"+dateFormat+timeFormat+"') as date_time_created " +
         " from paymentin p where " +
         " p.id in (select paymentin_id from linkeddocs) " +
         " and coalesce(p.is_completed,false) = true " +
@@ -1851,7 +1864,10 @@ public class AppointmentRepositoryJPA {
         " select  " +
         " p.id as id, " +
         " 'orderin' as doc_name, " +
-        " p.summ as sum " +
+        " p.summ as sum, " +
+        " p.cagent_id as customer_id, " +
+        " p.doc_number as doc_number, " +
+        " to_char(p.date_time_created at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0', '"+dateFormat+timeFormat+"') as date_time_created " +
         " from orderin p where " +
         " p.id in (select orderin_id from linkeddocs) " +
         " and coalesce(p.is_completed,false) = true ";
@@ -1864,6 +1880,9 @@ public class AppointmentRepositoryJPA {
                 doc.setId(Long.parseLong(                   obj[0].toString()));
                 doc.setDocName((String)                     obj[1]);
                 doc.setSum((BigDecimal)                     obj[2]);
+                doc.setCustomerId(Long.parseLong(           obj[3].toString()));
+                doc.setDocNumber(                           obj[4].toString());
+                doc.setDate((String)                        obj[5]);
                 returnList.add(doc);
             }
             return returnList;
@@ -1872,6 +1891,98 @@ public class AppointmentRepositoryJPA {
         {
             logger.error("Exception in method getAppointmentChildDocs.", ex);
             ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public Integer setAppointmentChildDocumentAsDecompleted(String docName, Long docId){
+        switch(docName) {
+            case "shipment":
+                return setShipmentAsDecompleted(docId);
+            case "paymentin":
+                return setPaymentinAsDecompleted(docId);
+            default: // "orderin"
+                return setOrderinAsDecompleted(docId);
+        }
+    }
+
+    private Integer setShipmentAsDecompleted(Long docId){
+        ShipmentForm docToSend = new ShipmentForm();
+        try{
+            ShipmentJSON doc = shipmentRepository.getShipmentValuesById(docId);
+            List<ShipmentProductTableJSON> product_table=shipmentRepository.getShipmentProductTable(docId);
+            docToSend.setId(docId);
+            docToSend.setCompany_id(doc.getCompany_id());
+            docToSend.setCagent_id(doc.getCagent_id());
+            docToSend.setDoc_number(doc.getDoc_number().toString());
+            docToSend.setStatus_id(doc.getStatus_id());
+            docToSend.setDepartment_id(doc.getDepartment_id());
+            Set<ShipmentProductTableForm> docToSendProducts  = new HashSet<>();
+            for(ShipmentProductTableJSON product : product_table){
+                ShipmentProductTableForm sendProduct = new ShipmentProductTableForm();
+                sendProduct.setShipment_id(docId);
+                sendProduct.setProduct_id(product.getProduct_id());
+                sendProduct.setProduct_sumprice(product.getProduct_sumprice());
+    //            sendProduct.setProduct_price_of_type_price(product.getPro);
+                sendProduct.setProduct_price(product.getProduct_price());
+                sendProduct.setPrice_type_id(product.getPrice_type_id());
+                sendProduct.setProduct_count(product.getProduct_count());
+                sendProduct.setNds_id(product.getNds_id());
+                sendProduct.setNds(product.getNds());
+                sendProduct.setIs_material(product.getIs_material());
+                sendProduct.setDepartment_id(product.getDepartment_id());
+                sendProduct.setAdditional(product.getAdditional());
+                sendProduct.setName(product.getName());
+                sendProduct.setId(product.getId());
+                sendProduct.setPrice_type(product.getPrice_type());
+                docToSendProducts.add(sendProduct);
+            }
+            docToSend.setShipmentProductTable(docToSendProducts);
+            return shipmentRepository.setShipmentAsDecompleted(docToSend);
+        }catch (Exception e) {
+            logger.error("Exception in method setShipmentAsDecompleted. Id:"+docId+", ShipmentForm: "+docToSend.toString(), e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+    private Integer setPaymentinAsDecompleted(Long docId){
+        PaymentinForm docToSend = new PaymentinForm();
+        try{
+            PaymentinJSON doc = paymentinRepository.getPaymentinValuesById(docId);
+            docToSend.setId(docId);
+            docToSend.setInternal(doc.getInternal());
+            docToSend.setMoving_type(doc.getMoving_type());
+            docToSend.setSumm(doc.getSumm());
+            docToSend.setPayment_account_id(doc.getPayment_account_id());
+            docToSend.setCompany_id(doc.getCompany_id());
+            docToSend.setCagent_id(doc.getCagent_id());
+            docToSend.setDoc_number(doc.getDoc_number().toString());
+            docToSend.setStatus_id(doc.getStatus_id());
+            return paymentinRepository.setPaymentinAsDecompleted(docToSend);
+        }catch (Exception e) {
+            logger.error("Exception in method setPaymentinAsDecompleted. Id:"+docId+", PaymentinForm: "+docToSend.toString(), e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private Integer setOrderinAsDecompleted(Long docId){
+        OrderinForm docToSend = new OrderinForm();
+        try{
+            OrderinJSON doc = orderinRepository.getOrderinValuesById(docId);
+            docToSend.setId(docId);
+            docToSend.setInternal(doc.getInternal());
+            docToSend.setMoving_type(doc.getMoving_type());
+            docToSend.setBoxoffice_id(doc.getBoxoffice_id());
+            docToSend.setSumm(doc.getSumm());
+            docToSend.setCompany_id(doc.getCompany_id());
+            docToSend.setCagent_id(doc.getCagent_id());
+            docToSend.setDoc_number(doc.getDoc_number().toString());
+            docToSend.setStatus_id(doc.getStatus_id());
+            return orderinRepository.setOrderinAsDecompleted(docToSend);
+        }catch (Exception e) {
+            logger.error("Exception in method setOrderinAsDecompleted. Id:"+docId+", OrderinForm: "+docToSend.toString(), e);
+            e.printStackTrace();
             return null;
         }
     }

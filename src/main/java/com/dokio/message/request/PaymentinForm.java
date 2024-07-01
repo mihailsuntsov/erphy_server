@@ -249,4 +249,35 @@ public class PaymentinForm {
     public void setIncome_number_date(String income_number_date) {
         this.income_number_date = income_number_date;
     }
+
+    @Override
+    public String toString() {
+        return "PaymentinForm{" +
+                "id=" + id +
+                ", company_id=" + company_id +
+                ", description='" + description + '\'' +
+                ", cagent_id=" + cagent_id +
+                ", new_cagent='" + new_cagent + '\'' +
+                ", status_id=" + status_id +
+                ", doc_number='" + doc_number + '\'' +
+                ", nds=" + nds +
+                ", summ=" + summ +
+                ", uid='" + uid + '\'' +
+                ", linked_doc_id=" + linked_doc_id +
+                ", linked_doc_name='" + linked_doc_name + '\'' +
+                ", parent_uid='" + parent_uid + '\'' +
+                ", child_uid='" + child_uid + '\'' +
+                ", is_completed=" + is_completed +
+                ", income_number='" + income_number + '\'' +
+                ", income_number_date='" + income_number_date + '\'' +
+                ", payment_account_id=" + payment_account_id +
+                ", internal=" + internal +
+                ", department_id=" + department_id +
+                ", moving_type='" + moving_type + '\'' +
+                ", boxoffice_from_id=" + boxoffice_from_id +
+                ", payment_account_from_id=" + payment_account_from_id +
+                ", paymentout_id=" + paymentout_id +
+                ", orderout_id=" + orderout_id +
+                '}';
+    }
 }

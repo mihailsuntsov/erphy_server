@@ -248,4 +248,35 @@ public class OrderinForm {
     public void setIs_completed(Boolean is_completed) {
         this.is_completed = is_completed;
     }
+
+    @Override
+    public String toString() {
+        return "OrderinForm{" +
+                "id=" + id +
+                ", company_id=" + company_id +
+                ", description='" + description + '\'' +
+                ", cagent_id=" + cagent_id +
+                ", new_cagent='" + new_cagent + '\'' +
+                ", status_id=" + status_id +
+                ", doc_number='" + doc_number + '\'' +
+                ", nds=" + nds +
+                ", summ=" + summ +
+                ", uid='" + uid + '\'' +
+                ", linked_doc_id=" + linked_doc_id +
+                ", linked_doc_name='" + linked_doc_name + '\'' +
+                ", parent_uid='" + parent_uid + '\'' +
+                ", child_uid='" + child_uid + '\'' +
+                ", is_completed=" + is_completed +
+                ", internal=" + internal +
+                ", boxoffice_id=" + boxoffice_id +
+                ", department_id=" + department_id +
+                ", moving_type='" + moving_type + '\'' +
+                ", kassa_from_id=" + kassa_from_id +
+                ", boxoffice_from_id=" + boxoffice_from_id +
+                ", payment_account_from_id=" + payment_account_from_id +
+                ", withdrawal_id=" + withdrawal_id +
+                ", paymentout_id=" + paymentout_id +
+                ", orderout_id=" + orderout_id +
+                '}';
+    }
 }
