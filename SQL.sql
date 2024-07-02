@@ -6651,7 +6651,7 @@ alter table scdl_appointments_product add constraint scdl_appointment_cagent_pro
 
 insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
 insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
--- (704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
+(704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
 (705,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',59,20),
 (706,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',59,30),
 (707,'Создание документов своих отделений','Create documents of your departments','Креирање докумената за свог одељења',59,40),
