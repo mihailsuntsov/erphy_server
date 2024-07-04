@@ -446,4 +446,15 @@ public class UsersController {
         catch (Exception e){e.printStackTrace();logger.error("Controller setSidenavDrawer error", e);
             return new ResponseEntity<>("Error query of setting sidenav drawer information", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @RequestMapping(
+            value = "/api/auth/getJobtitlesWithEmployeesList",
+            params = {"id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getJobtitlesWithEmployeesList(
+            @RequestParam("id") Long id){
+        logger.info("Processing get request for path /api/auth/getJobtitlesWithEmployeesList with parameters: " + "id: " + id);
+        try {return new ResponseEntity<>(userRepositoryJPA.getJobtitlesWithEmployeesList(id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getJobtitlesWithEmployeesList error", e);
+            return new ResponseEntity<>("Controller getJobtitlesWithEmployeesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

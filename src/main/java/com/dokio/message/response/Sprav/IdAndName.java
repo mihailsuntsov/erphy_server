@@ -20,6 +20,14 @@ package com.dokio.message.response.Sprav;
 
 public class IdAndName {
 
+    public IdAndName(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public IdAndName() {
+    }
+
     private Long id;
     private String name;
 

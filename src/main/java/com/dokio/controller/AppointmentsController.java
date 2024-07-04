@@ -1,21 +1,33 @@
 package com.dokio.controller;
+import com.dokio.message.request.*;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
-import com.dokio.message.request.SignUpForm;
-import com.dokio.message.request.AppointmentsForm;
-import com.dokio.message.request.UniversalForm;
 import com.dokio.message.request.additional.AppointmentDocsListSearchForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
+import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
+import com.dokio.message.response.additional.appointment.AppointmentService;
 import com.dokio.repository.*;
+import com.dokio.service.TemplatesService;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
+import org.jxls.common.Context;
+import org.jxls.util.JxlsHelper;
+import org.jxls.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,7 +48,8 @@ public class AppointmentsController {
     CompanyRepositoryJPA company;
     @Autowired
     CommonUtilites commonUtilites;
-
+    @Autowired
+    private TemplatesService tservice;
 
     @PostMapping("/api/auth/getAppointmentTable")
     @SuppressWarnings("Duplicates")
@@ -205,5 +218,82 @@ public class AppointmentsController {
         try {return new ResponseEntity<>(appointmentRepositoryJPA.setAppointmentChildDocumentAsDecompleted(doc_name,doc_id), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller setAppointmentChildDocumentAsDecompleted error with file_id=" + doc_name + ", doc_id=" + doc_id.toString(), e);
             return new ResponseEntity<>("Controller setAppointmentChildDocumentAsDecompleted error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    // печать документов
+    @SuppressWarnings("Duplicates")
+    @RequestMapping(
+            value = "/api/auth/appointmentPrint",
+            params = {"file_name", "doc_id", "cagent_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public void appointmentPrint (HttpServletResponse response,
+                                  @RequestParam("file_name") String filename,
+                                  @RequestParam("cagent_id") Long cagentId,
+                                  @RequestParam("doc_id") Long doc_id) throws Exception {
+        FileInfoJSON fileInfo = tservice.getFileInfo(filename);
+        InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        OutputStream os = response.getOutputStream();
+        try {
+            AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
+            List<AppointmentService> product_table=doc.getAppointmentsProductTable();
+            CagentsJSON cg = cagentRepository.getCagentValues(cagentId);
+            CompaniesJSON mc = company.getCompanyValues(doc.getCompany_id());
+            CompaniesPaymentAccountsForm mainPaymentAccount = company.getMainPaymentAccountOfCompany(doc.getCompany_id());
+            doc.setCagent(cg.getName());
+            BigDecimal sumNds = new BigDecimal(0);
+            BigDecimal totalSum = new BigDecimal(0);
+            int row_num = 1; // номер строки при выводе печатной версии
+            // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
+            for(AppointmentService product:product_table){// бежим по товарам
+                if(product.getCagent_id().equals(cagentId)) { // в таблице товаров представлены товары всех клиентов, но нужно взять только те, которые относятся к запрашиваемому клиенту
+                    product.setRow_num(row_num);// номер строки при выводе печатной версии
+                    if (doc.isNds()) {// если в документе включен переключатель НДС
+                        BigDecimal nds_val = product.getNds_value();// величина НДС в процентах у текущего товара. Например, 20
+                        // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
+                        sumNds = sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val), 2, BigDecimal.ROUND_HALF_UP));
+                    }
+                    totalSum = totalSum.add(product.getProduct_sumprice());
+                    row_num++;
+                }
+            }
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileInfo.getOriginal_name());
+            Context context = new Context();
+            context.putVar("doc", doc);
+            context.putVar("mc", mc); // предприятие
+            context.putVar("cg", cg); // контрагент
+            context.putVar("tservice", tservice); // helper-класс для формирования файла
+            context.putVar("productTable", product_table);// таблица с товарами
+            context.putVar("mainPaymentAccount", mainPaymentAccount);// первый в списке расчётный счёт предприятия
+            context.putVar("sumNds", sumNds);
+            context.putVar("totalSum", totalSum);
+
+            // вставка печати и подписей
+            if(!Objects.isNull(mc.getStamp_id())){
+                FileInfoJSON fileStampInfo = tservice.getFileInfo(mc.getStamp_id());
+                InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath()+"/"+fileStampInfo.getName()));
+                byte[] stamp = Util.toByteArray(stampIs);
+                context.putVar("stamp", stamp);
+                stampIs.close();}
+            if(!Objects.isNull(mc.getDirector_signature_id())){
+                FileInfoJSON fileDirSignatInfo = tservice.getFileInfo(mc.getDirector_signature_id());
+                InputStream dirSignIs = new FileInputStream(new File(fileDirSignatInfo.getPath()+"/"+fileDirSignatInfo.getName()));
+                byte[] dirSignature = Util.toByteArray(dirSignIs);
+                context.putVar("dirSignature", dirSignature);
+                dirSignIs.close();}
+            if(!Objects.isNull(mc.getGlavbuh_signature_id())){
+                FileInfoJSON fileGbSignatInfo = tservice.getFileInfo(mc.getGlavbuh_signature_id());
+                InputStream gbSignIs = new FileInputStream(new File(fileGbSignatInfo.getPath()+"/"+fileGbSignatInfo.getName()));
+                byte[] gbSignature = Util.toByteArray(gbSignIs);
+                context.putVar("gbSignature", gbSignature);
+                gbSignIs.close();}
+
+            JxlsHelper.getInstance().processTemplate(is, os, context);
+        } catch (Exception e){
+            logger.error("Exception in method appointmentPrint.", e);
+            e.printStackTrace();
+        } finally {
+            is.close();
+            os.close();
+        }
     }
 }

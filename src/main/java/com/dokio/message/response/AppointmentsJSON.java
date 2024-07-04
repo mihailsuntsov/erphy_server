@@ -46,7 +46,16 @@ public class AppointmentsJSON {
     private List<AppointmentCustomer>           customersTable;             // Все покупатели из данного Appointment
     private String calendar_date_time_start;    // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
     private String calendar_date_time_end;      // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
-    private String date_time_start;         // для таблицы документов
+    private String date_time_start;             // для таблицы документов
+    private String cagent;                      // для печати
+
+    public String getCagent() {
+        return cagent;
+    }
+
+    public void setCagent(String cagent) {
+        this.cagent = cagent;
+    }
 
     public String getDate_time_start() {
         return date_time_start;

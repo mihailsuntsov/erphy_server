@@ -26,10 +26,11 @@ import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.UserJSON_;
-import com.dokio.message.response.UsersJSON;
 import com.dokio.message.response.UsersListJSON;
 import com.dokio.message.response.UsersTableJSON;
 import com.dokio.message.response.additional.*;
+import com.dokio.message.response.additional.appointment.EmployeeWithServices;
+import com.dokio.message.response.additional.appointment.JobtitleWithEmployees;
 import com.dokio.message.response.additional.eployeescdl.EmployeeScedule;
 import com.dokio.model.*;
 import com.dokio.security.services.UserDetailsServiceImpl;
@@ -38,8 +39,6 @@ import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -600,6 +599,122 @@ public class UserRepositoryJPA {
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getUserProducts. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public List<JobtitleWithEmployees> getJobtitlesWithEmployeesList(Long companyId){
+
+        Long masterId =   getMyMasterId();
+        String stringQuery=
+        "   select " +
+                "   jt.id as jobtitle_id, " +
+                "   jt.name as jobtitle, " +
+                "   jt.description as jt_description, " +
+                "   u.id as employee_id, " +
+                "   u.name as employee, " +
+                "   p.id as product_id, " +
+                "   p.name as product_name " +
+                "   from sprav_jobtitles jt " +
+                "   inner join users u on u.job_title_id = jt.id " +
+                "   left outer join scdl_user_products up on up.user_id = u.id " +
+                "   left outer join products p on p.id = up.product_id " +
+                "   where " +
+                "   jt.master_id="+masterId+" and " +
+                "   jt.company_id="+companyId+" and " +
+                "   coalesce(jt.is_deleted, false)=false and " +
+                "   coalesce(u.is_deleted, false)=false and " +
+                "   coalesce(u.is_employee, false)=true and " +
+                "   coalesce(p.is_deleted, false) = false and " +
+                "   coalesce(p.is_srvc_by_appointment, false)=true " +
+                "   order by jt.name, u.name, p.name";
+
+        try{
+            Long currentJobtitleId = 0L;
+            Long currentEmployeeId = 0L;
+            JobtitleWithEmployees jobtitleWithEmployees = new JobtitleWithEmployees();
+            EmployeeWithServices employeeWithServices = new EmployeeWithServices();
+            List<EmployeeWithServices> employeesWithServices = new ArrayList<>();
+            Set<IdAndName> services = new HashSet<>();
+            List<JobtitleWithEmployees> returnList = new ArrayList<>();
+            Query query = entityManager.createNativeQuery(stringQuery);//
+            List<Object[]> queryList = query.getResultList();
+
+            for (Object[] obj : queryList) {
+                Long        currentCycleJobtitleId = Long.parseLong(                obj[0].toString());
+                String      currentCycleJobtitleName =                              obj[1].toString();
+                String      currentCycleJobtitleDescription =                       obj[2].toString();
+                Long        currentCycleEmployeeId = Long.parseLong(                obj[3].toString());
+                String      currentCycleEmployeeName =                              obj[4].toString();
+                Long        currentCycleServiceId = Long.parseLong(                 obj[5].toString());
+                String      currentCycleServiceName =                               obj[6].toString();
+
+                // on this cycle if it is a new jobtitle
+                // если это новая должность
+                if (!currentCycleJobtitleId.equals(currentJobtitleId)) {
+                    // Если это не первый цикл
+                    // If it is not a first cycle
+                    if (!currentJobtitleId.equals(0L)) {
+                        // В текущего сторудника сохранили все накопленные сервисы
+                        employeeWithServices.setServices(services);
+                        // В список сотрудников текущей должности добавили текущего сотрудника
+                        employeesWithServices.add(employeeWithServices);
+                        // В должность поместили список сотрудников
+                        jobtitleWithEmployees.setEmployees(employeesWithServices);
+                        // В итоговый список должностей поместили эту должность
+                        returnList.add(jobtitleWithEmployees);
+                        // Cоздали новую должность
+                        jobtitleWithEmployees = new JobtitleWithEmployees();
+                        // Для новой должности создаем нового сотрудника
+                        currentEmployeeId = currentCycleEmployeeId;
+                        // Cоздали нового сотрудника и прописали в него его ID и имя
+                        employeeWithServices = new EmployeeWithServices(currentEmployeeId, currentCycleEmployeeName);
+                        // Cбросили текущее накопление сервисов для нового сторудника
+                        services = new HashSet<>();
+                    }
+                    currentJobtitleId = currentCycleJobtitleId;
+                    // Для новой должности задаём её ID, имя и её описание
+                    jobtitleWithEmployees.setId(                           currentCycleJobtitleId);
+                    jobtitleWithEmployees.setName(                         currentCycleJobtitleName);
+                    jobtitleWithEmployees.setDescription(                  currentCycleJobtitleDescription);
+                    // Для новой должности создали нового сторудника для накопления сервисов
+                    employeesWithServices = new ArrayList<>();
+                }
+                // Если должность не новая, но сотрудник сменился
+                if (!currentCycleEmployeeId.equals(currentEmployeeId)) {
+                    if (!currentEmployeeId.equals(0L)) {
+                        // В текущего сотрудника сохранили все накопленные сервисы
+                        employeeWithServices.setServices(services);
+                        // В список сотрудников текущей должности добавили текущего отрудника
+                        employeesWithServices.add(employeeWithServices);
+                    }
+                    currentEmployeeId = currentCycleEmployeeId;
+                    // Cоздали нового сотрудника, и прописали туда его ID и имя
+                    employeeWithServices = new EmployeeWithServices(currentEmployeeId, currentCycleEmployeeName);
+                    // Cбросили текущее накопление сервисов для новой части отделения
+                    services = new HashSet<>();
+                }
+                if(!Objects.isNull(currentCycleServiceId)) services.add(new IdAndName(
+                        currentCycleServiceId,
+                        currentCycleServiceName
+                ));
+            }
+            // По окончании цикла, если в должности что-то было
+            // нужно записать последнего сотрудника
+            if (!currentJobtitleId.equals(0L)) {
+                // В текущуего сотрудника сохранили все накопленные сервисы
+                employeeWithServices.setServices(services);
+                // В список сотрудников текущей должности добавили текущего сотрудника
+                employeesWithServices.add(employeeWithServices);
+                // В текущую должность поместили список сотрудников
+                jobtitleWithEmployees.setEmployees(employeesWithServices);
+                // В итоговый список должностей поместили текущую должность
+                returnList.add(jobtitleWithEmployees);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getJobtitlesWithEmployeesList. SQL query:" + stringQuery, e);
             return null;
         }
     }

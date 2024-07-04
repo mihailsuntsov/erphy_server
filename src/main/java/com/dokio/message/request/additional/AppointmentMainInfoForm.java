@@ -18,6 +18,7 @@ public class AppointmentMainInfoForm {
     private Set<Long> servicesIds;
     private Set<Long> depPartsIds;
     private Set<Long> jobTitlesIds;
+    private Set<Long> employeesIds;
     private Long priceTypeId;      // price will be returned by this price type
     private String querySource;// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
 
@@ -31,6 +32,22 @@ public class AppointmentMainInfoForm {
         this.timeFrom = timeFrom;
         this.dateTo = dateTo;
         this.timeTo = timeTo;
+    }
+
+    public Boolean getAll() {
+        return isAll;
+    }
+
+    public void setAll(Boolean all) {
+        isAll = all;
+    }
+
+    public Set<Long> getEmployeesIds() {
+        return employeesIds;
+    }
+
+    public void setEmployeesIds(Set<Long> employeesIds) {
+        this.employeesIds = employeesIds;
     }
 
     public Boolean getIsAll() {

@@ -10,15 +10,17 @@ public class AppointmentService {
     private String      name;
     private Long        departmentId;
     private String      departmentName;
-    private Integer     nds_id;                     // id ндс
-    private Long        edizm_id;                   // id ед. измерения / unit of measurement's ID
-    private String      edizm;                      // наименование ед. измерения / unit of measurement's name
+    private Integer     row_num;                    // needs for printing docs
+    private Integer     nds_id;                     // ID of VAT
+    private BigDecimal  nds_value;                  // VAT in percentages, for example: 20.0 (needs for printing docs)
+    private Long        edizm_id;                   // unit of measurement's ID / id ед. измерения /
+    private String      edizm;                      // unit of measurement's name / наименование ед. измерения /
     private Integer     edizm_type_id;              // 6=time, 2=weight, ...
     private BigDecimal  edizm_multiplier;           // The multiplier tells the system the ratio of your and international units
-    private BigDecimal  total;                      // всего товаров в отделении
-    private Boolean     is_material;                // определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
-    private Boolean     indivisible;                // неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
-    private BigDecimal  priceOfTypePrice;           // цена по запрошенному id типа цены
+    private BigDecimal  total;                      // all amount products in department / всего товаров в отделении
+    private Boolean     is_material;                // is product material? Needs for display fields for material products and hide for services and no material products / определяет материальный ли товар/услуга. Нужен для отображения полей, относящимся к товару и их скрытия в противном случае (например, остатки на складе, резервы - это неприменимо к нематериальным вещам - услугам, работам)
+    private Boolean     indivisible;                // id product indivisible? / неделимый товар (нельзя что-то сделать с, например, 0.5 единицами этого товара, только с кратно 1)
+    private BigDecimal  priceOfTypePrice;           // price by queried ID of price's type / цена по запрошенному id типа цены
 
     private Boolean     isEmployeeRequired;         // Whether employee is necessary required to do this service job?
     private Integer     maxPersOnSameTime;          // How many persons can get this service in one appointment by the same time
@@ -37,8 +39,24 @@ public class AppointmentService {
     private Long        cagent_id;
     private int         cagent_row_id;
 
+    public Integer getRow_num() {
+        return row_num;
+    }
+
+    public void setRow_num(Integer row_num) {
+        this.row_num = row_num;
+    }
+
     public Long getPrice_type_id() {
         return price_type_id;
+    }
+
+    public BigDecimal getNds_value() {
+        return nds_value;
+    }
+
+    public void setNds_value(BigDecimal nds_value) {
+        this.nds_value = nds_value;
     }
 
     public void setPrice_type_id(Long price_type_id) {

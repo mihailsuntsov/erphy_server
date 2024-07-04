@@ -6699,7 +6699,7 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('appointment', 'Appointment', 'Запись', 'Састанак'),
 ('reservation', 'Reservation', 'Бронирование', 'Резервација');
 
-
+drop table if exists scdl_jobtitle_products;
 
 
 

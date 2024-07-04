@@ -808,33 +808,6 @@ public class DepartmentRepositoryJPA {
     }
 
 
-    // For the "Departments parts" select list in Resources registry
-    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
-        String stringQuery;
-        Long masterId = userRepositoryJPA.getMyMasterId();
-        stringQuery =
-                    "           select" +
-                    "           p.id as id," +
-                    "           p.name as name," +
-                    "           p.description as description," +
-                    "           coalesce(p.is_active, true) as is_active," +
-                    "           d.name as department_name, " +
-                    "           d.id as department_id " +
-                    "           from scdl_dep_parts p" +
-                    "           INNER JOIN users u ON p.master_id=u.id" +
-                    "           INNER JOIN departments d ON p.department_id=d.id" +
-                    "           where  p.master_id=" + masterId +
-                    "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
-                    "           and coalesce(p.is_deleted, false) = false" +
-                    "           order by d.name,p.menu_order";
-        try {
-            return departmentsPartsListConstruct(stringQuery, masterId, companyId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
 
     // returns the list of departments with parts that user belongs to
 //    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
@@ -863,6 +836,36 @@ public class DepartmentRepositoryJPA {
 //            return null;
 //        }
 //    }
+
+
+
+    // For the "Departments parts" select list in Resources registry
+    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsList (Long companyId) {
+        String stringQuery;
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                "           select" +
+                        "           p.id as id," +
+                        "           p.name as name," +
+                        "           p.description as description," +
+                        "           coalesce(p.is_active, true) as is_active," +
+                        "           d.name as department_name, " +
+                        "           d.id as department_id " +
+                        "           from scdl_dep_parts p" +
+                        "           INNER JOIN users u ON p.master_id=u.id" +
+                        "           INNER JOIN departments d ON p.department_id=d.id" +
+                        "           where  p.master_id=" + masterId +
+                        "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
+                        "           and coalesce(p.is_deleted, false) = false" +
+                        "           order by d.name,p.menu_order";
+        try {
+            return departmentsPartsListConstruct(stringQuery, masterId, companyId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
     private List<DepartmentWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId, Long companyId){
         try {
@@ -1220,7 +1223,7 @@ public class DepartmentRepositoryJPA {
             throw new Exception(e); // cancelling the parent transaction
         }
     }
-    // returns list of services that employee can provide
+    // returns list of services that can be provideв in department part
 
     private List<DeppartProduct> getDeppartProducts(long deppartId, long masterId){
         String stringQuery="select " +

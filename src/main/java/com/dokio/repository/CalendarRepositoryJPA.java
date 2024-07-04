@@ -52,68 +52,103 @@ public class CalendarRepositoryJPA {
 
 
 
-    public List<CalendarEventJSON> getCalendarEventsList(CalendarEventsQueryForm queryForm){
+    public List<CalendarEventJSON> getCalendarEventsList(CalendarEventsQueryForm request) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        List<CalendarEventJSON> events = new ArrayList<>();
+//        List<CalendarEventJSON> events = new ArrayList<>();
+        List<CalendarEventJSON> returnList = new ArrayList<>();
         LocalDate localDate = LocalDate.now();
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String myTimeZone = userRepository.getUserTimeZone();
+
         String calendarDate = localDate.format(formatter);
-        String dateTo = localDate.plusDays(10).format(formatter);
-        String event1_start = localDate.plusDays(14).format(formatter);
-        String event1_end = localDate.plusDays(19).format(formatter);
-        String event2_start = localDate.plusDays(3).format(formatter);
-        String event2_end = localDate.plusDays(9).format(formatter);
-        String event3_start = localDate.plusDays(4).format(formatter);
-        String event3_end = localDate.plusDays(9).format(formatter);
-        String event4_start = localDate.plusDays(5).format(formatter);
-        String event4_end = localDate.plusDays(8).format(formatter);
-        String event5_start = localDate.plusDays(1).format(formatter);
-        String event5_end = localDate.plusDays(8).format(formatter);
+//        String dateTo = localDate.plusDays(10).format(formatter);
+//        String event1_start = localDate.plusDays(14).format(formatter);
+//        String event1_end = localDate.plusDays(19).format(formatter);
+//        String event2_start = localDate.plusDays(3).format(formatter);
+//        String event2_end = localDate.plusDays(9).format(formatter);
+//        String event3_start = localDate.plusDays(4).format(formatter);
+//        String event3_end = localDate.plusDays(9).format(formatter);
+//        String event4_start = localDate.plusDays(5).format(formatter);
+//        String event4_end = localDate.plusDays(8).format(formatter);
+//        String event5_start = localDate.plusDays(1).format(formatter);
+//        String event5_end = localDate.plusDays(8).format(formatter);
+//
+//        events.add(new CalendarEventJSON(1L, calendarDate+"T08:00:00.000Z",calendarDate+"T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+//        events.add(new CalendarEventJSON(2L, calendarDate+"T08:30:00.000Z",calendarDate+"T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+//        events.add(new CalendarEventJSON(3L, calendarDate+"T14:30:00.000Z",calendarDate+"T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
+//        events.add(new CalendarEventJSON(4L, calendarDate+"T08:00:00.000Z",calendarDate+"T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+//        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",calendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
+//        events.add(new CalendarEventJSON(6L, calendarDate+"T11:30:00.000Z",calendarDate+"T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
+//        events.add(new CalendarEventJSON(7L, calendarDate+"T10:30:00.000Z",calendarDate+"T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
+//
+//        events.add(new CalendarEventJSON(22L, calendarDate+"T12:00:00.000Z",dateTo+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+//        events.add(new CalendarEventJSON(23L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+//        events.add(new CalendarEventJSON(24L, event3_start+"T12:00:00.000Z",event3_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+//        events.add(new CalendarEventJSON(25L, event4_start+"T12:00:00.000Z",event4_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+//        events.add(new CalendarEventJSON(26L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
+//
+//        events.add(new CalendarEventJSON(27L, event2_start+"T12:00:00.000Z",event2_end+"T13:00:00.000Z", "Проживание Люкс", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 21L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(22L,"Кровать люкс", 1, 1))))));
+
+        String depPartsIds_ =  commonUtilites.SetOfLongToString(request.getDepparts(), ",", "(", ")");
+//        String jobTitlesIds_ = commonUtilites.SetOfLongToString(request.getJobtitles(), ",", "(", ")");
+        String employeesIds_ = commonUtilites.SetOfLongToString(request.getEmployees(), ",", "(", ")");
+
+        String stringQuery = " select " +
+            "           a.id as id, " +
+            "           a.name  as name, " +
+            "           concat(to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as start_, " +
+            "           concat(to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as end_, " +
+            "           ue.id as employee_id, " +
+            "           ue.name as employee, " +
+            "           a.dep_part_id as doc_dep_part_id, " +
+            "           r.id as resource_id, " +
+            "           r.name as resource_name, " +
+            "           sum(coalesce(prq.quantity,0)) as need_res_qtt " +
+            "           from scdl_appointments a " +
+            "           left outer join users ue ON a.employee_id=ue.id " +
+            "           left outer join scdl_appointments_product ap on ap.appointment_id=a.id " +
+            "           left outer join products p on p.id=ap.product_id " +
+            "           left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
+            "           left outer join sprav_resources r on prq.resource_id=r.id " +
+            "           where " +
+            "           a.master_id=" + masterId + " and " +
+            "           a.company_id=" + request.getCompanyId() + " and " +
+            "           coalesce(a.is_deleted,false) = false and " +
+            "           to_timestamp ('"+request.getDateFrom()+"', 'DD.MM.YYYY') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
+            "           to_timestamp ('"+request.getDateTo()+"', 'DD.MM.YYYY') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
+                        (request.getEmployees().size()>0?(" and ue.id in "+employeesIds_ ):"") +
+                        (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
+            "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name " +
+            "           order by a.id, r.id";
 
 
+        try{
+            Long currentAppointmentId = 0L;
+            Long currentResourceId = 0L;
+            CalendarEventJSON event = new CalendarEventJSON();
+            ItemResource resource = new ItemResource();
+            Set<ItemResource> resources = new HashSet<>();
+            Query query = entityManager.createNativeQuery(stringQuery);//
+            List<Object[]> queryList = query.getResultList();
 
-
-
-        events.add(new CalendarEventJSON(1L, calendarDate+"T08:00:00.000Z",calendarDate+"T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(2L, calendarDate+"T08:30:00.000Z",calendarDate+"T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(3L, calendarDate+"T14:30:00.000Z",calendarDate+"T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(4L, calendarDate+"T08:00:00.000Z",calendarDate+"T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",calendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(6L, calendarDate+"T11:30:00.000Z",calendarDate+"T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(7L, calendarDate+"T10:30:00.000Z",calendarDate+"T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
- /*
-       events.add(new CalendarEventJSON(8L, "2024-04-30T08:00:00.000Z","2024-04-30T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(9L, "2024-04-30T08:30:00.000Z","2024-04-30T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(10L, "2024-04-30T14:30:00.000Z","2024-04-30T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(11L, "2024-04-30T08:00:00.000Z","2024-04-30T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(12L, "2024-04-30T10:30:00.000Z","2024-04-30T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(13L, "2024-04-30T11:30:00.000Z","2024-04-30T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(14L, "2024-04-30T10:30:00.000Z","2024-04-30T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
-
-
-        events.add(new CalendarEventJSON(15L, "2024-05-01T08:00:00.000Z","2024-05-01T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(16L, "2024-05-01T08:30:00.000Z","2024-05-01T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(17L, "2024-05-01T14:30:00.000Z","2024-05-01T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-        events.add(new CalendarEventJSON(18L, "2024-05-01T08:00:00.000Z","2024-05-01T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(19L, "2024-05-01T10:30:00.000Z","2024-05-01T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-        events.add(new CalendarEventJSON(20L, "2024-05-01T11:30:00.000Z","2024-05-01T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-        events.add(new CalendarEventJSON(21L, "2024-05-01T10:30:00.000Z","2024-05-01T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
-*/
-
-
-        events.add(new CalendarEventJSON(22L, calendarDate+"T12:00:00.000Z",dateTo+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-        events.add(new CalendarEventJSON(23L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-        events.add(new CalendarEventJSON(24L, event3_start+"T12:00:00.000Z",event3_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-        events.add(new CalendarEventJSON(25L, event4_start+"T12:00:00.000Z",event4_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-        events.add(new CalendarEventJSON(26L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-
-        events.add(new CalendarEventJSON(27L, event2_start+"T12:00:00.000Z",event2_end+"T13:00:00.000Z", "Проживание Люкс", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 21L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(22L,"Кровать люкс", 1, 1))))));
-
-
-
-
-
-
-        return events;
+            for (Object[] obj : queryList) {
+                Long currentCycleAppointmentId = Long.parseLong(obj[0].toString());
+                String currentCycleAppointmentName = obj[1].toString();
+                String currentCycleDateStart = obj[2].toString();
+                String currentCycleDateEnd = obj[3].toString();
+                Long currentCycleEmployeeId = Long.parseLong(obj[4].toString());
+                String currentCycleEmployeeName = obj[5].toString();
+                Long currentCycleDepPartId = Long.parseLong(obj[6].toString());
+                Long currentCycleResourceId = Long.parseLong(obj[7].toString());
+                String currentCycleResourceName = obj[8].toString();
+                Integer currentCycleResourceQtt = (Integer) obj[9];
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getCalendarEventsList.", e);
+            return null;
+        }
+        return returnList;
 
     }
 
@@ -166,6 +201,7 @@ public class CalendarRepositoryJPA {
                         dateTo.format(sqlQueryFormatter),
                         queryForm.getDepparts(),
                         queryForm.getJobtitles(),
+                        queryForm.getEmployees(),
                         companyTimeZone,
                         myTimeZone,
                         masterId
@@ -273,12 +309,13 @@ public class CalendarRepositoryJPA {
 
 
 
-    private List<PointOfScedule> getPointsOfScedule(Long companyId, String dateFrom, String dateTo, Set<Long> depPartsIds, Set<Long> jobTitlesIds, String companyTimeZone, String myTimeZone, Long masterId){
+    private List<PointOfScedule> getPointsOfScedule(Long companyId, String dateFrom, String dateTo, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String companyTimeZone, String myTimeZone, Long masterId){
 
         String stringQuery;
 
         String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
         String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
+        String employeesIds_ = commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
 
         stringQuery =
         "   select " +
@@ -298,6 +335,7 @@ public class CalendarRepositoryJPA {
         "   u1.company_id = " + companyId + " and " +
         "   " +
             (jobTitlesIds.size()>0?("sd1.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+            (employeesIds.size()>0?("sd1.employee_id in "+employeesIds_+" and " ):"") +
         "   coalesce(u1.is_employee, false) = true and " +
         "   ( " +
         "       select count(*) from ( " +
@@ -334,6 +372,7 @@ public class CalendarRepositoryJPA {
         "   sd2.master_id = " + masterId + " and " +
         "   u2.company_id = " + companyId + " and " +
             (jobTitlesIds.size()>0?("sd2.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+            (employeesIds.size()>0?("sd2.employee_id in "+employeesIds_+" and " ):"") +
         "   coalesce(u2.is_employee, false) = true and " +
         "   ( " +
         "       select count(*) from ( " +
@@ -371,6 +410,7 @@ public class CalendarRepositoryJPA {
         "   sd3.master_id = " + masterId + " and " +
         "   u3.company_id = " + companyId + " and " +
             (jobTitlesIds.size()>0?("sd3.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+            (employeesIds.size()>0?("sd3.employee_id in "+employeesIds_+" and " ):"") +
         "   coalesce(u3.is_employee, false) = true and " +
         "   ( " +
         "       select count(*) from ( " +
@@ -408,6 +448,7 @@ public class CalendarRepositoryJPA {
         "   sd4.master_id = " + masterId + " and " +
         "   u4.company_id = " + companyId + " and " +
             (jobTitlesIds.size()>0?("sd4.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+            (employeesIds.size()>0?("sd4.employee_id in "+employeesIds_+" and " ):"") +
         "   coalesce(u4.is_employee, false) = true and " +
         "   ( " +
         "       select count(*) from ( " +
@@ -451,12 +492,13 @@ public class CalendarRepositoryJPA {
 
     // IDs of employees that are free by Appointment events. Does not take into account accessibility of employees by scedule of workshifts
     // IDs сотрудников, которые свободны по Записям в заданный промежуток времени. Не учитывает доступность/занятость сотрудников по графику рабочих смен
-    private List<Long> getEmployeesIdsByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, String myTimeZone, Long masterId) {
+    private List<Long> getEmployeesIdsByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone, Long masterId) {
 
         String stringQuery;
         String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
         String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
         String servicesIds_ =  commonUtilites.SetOfLongToString(servicesIds, ",", "(", ")");
+        String employeesIds_ =  commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
 
         stringQuery =
         " select u.id from users u where " +
@@ -515,7 +557,7 @@ public class CalendarRepositoryJPA {
 
     // Return IDs of free employees by shifts schedule and by period of time of all they appointments
     // IDs сотрудников, которые свободны и по расписанию смен, и по заданному промежутку времени.
-    private Set<Long> getFreeEmployeeIdsList (Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, String myTimeZone,Long masterId){
+    private Set<Long> getFreeEmployeeIdsList (Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone,Long masterId){
 //-------------------------------------------------------------------------------------------------------
 //   employee Id   Has shifts schedule?    Is it working time?    Is employee free by appointment?
 //
@@ -546,7 +588,7 @@ public class CalendarRepositoryJPA {
 //        String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
         // get IDs of employees who is free by the time of Appointments (but we do not know whether they free by work shifts scedule)
         // получить ID сотрудников, свободных по времени Записей (но мы не знаем, свободны ли они по графику рабочих смен)
-        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
         DateTimeFormatter ISO8601_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneId.of("UTC"));
         DateTimeFormatter system_formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy' 'HH:mm").withZone(ZoneId.of("UTC"));
         LocalDateTime a_date_start = LocalDateTime.parse(dateFrom+" "+timeFrom, system_formatter);
@@ -559,7 +601,7 @@ public class CalendarRepositoryJPA {
         */
         if(employeesIdsFreeByAppointments.size()>0){
 
-            List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds));
+            List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds,employeesIds));
 
             // break contains the start and end of employee's non-working time unit. Time has a format YYYY-MM-DDTHH:MM:00Z like 2024-03-25T13:00:00Z
             // this time presented in the time zone settings of user (myTimeZone)
@@ -597,7 +639,7 @@ public class CalendarRepositoryJPA {
     }
     // Return IDs of non-free employees by shifts schedule or by period of time of all they appointments
     // IDs сотрудников, которые не свободны по расписанию смен или по заданному промежутку времени.
-    private Set<Long> getNonAccessibleEmployeesIdsList (String kindOfNoFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, String myTimeZone,Long masterId){
+    private Set<Long> getNonAccessibleEmployeesIdsList (String kindOfNoFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone,Long masterId){
 //-------------------------------------------------------------------------------------------------------
 //   employee Id   Has shifts schedule?    Is it working time?    Is employee free by appointment?
 //
@@ -630,13 +672,13 @@ public class CalendarRepositoryJPA {
         Set<Long> employeesWithWorkingSchedule = new HashSet<>(); // employees who have at least one shift schedule
         // It can be querying by "Busy by Appointments" or "Busy by schedule of working time"
         // get IDs of employees who is "Busy by Appointments"
-        Set<Long> employeesIdsBusyByAppointments = new HashSet<>(getEmployeesIdsByAppointments(false, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsBusyByAppointments = new HashSet<>(getEmployeesIdsByAppointments(false, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
         // It querying by "Busy by Appointments"
         if (kindOfNoFree.equals("busyByAppointments"))
             return employeesIdsBusyByAppointments;
 
 //       If not querying by "Busy by Appointments", then by "Busy by schedule of working time":
-        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
         Set<Long> allEmployeesIds = new HashSet<>();
         allEmployeesIds.addAll(employeesIdsFreeByAppointments);
         allEmployeesIds.addAll(employeesIdsBusyByAppointments);
@@ -650,7 +692,7 @@ public class CalendarRepositoryJPA {
         DateTimeFormatter system_formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy' 'HH:mm").withZone(ZoneId.of("UTC"));
         LocalDateTime a_date_start = LocalDateTime.parse(dateFrom+" "+timeFrom, system_formatter);
         LocalDateTime a_date_end =   LocalDateTime.parse(dateTo+" "+timeTo, system_formatter);
-        List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds));
+        List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds,employeesIds));
         // break contains the start and end of employee's non-working time unit. Time has a format YYYY-MM-DDTHH:MM:00Z like 2024-03-25T13:00:00Z
         // this time presented in the time zone settings of user (myTimeZone)
         // dateFrom, timeFrom,dateTo,timeTo           are also in the time zone of user
@@ -685,9 +727,9 @@ public class CalendarRepositoryJPA {
             boolean isAll = request.getIsAll();
 
             if (!isAll && request.getIsFree()) // when query is going from Appointment to get free employees list
-                employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
+                employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), request.getEmployeesIds(), myTimeZone, masterId);
             else if (!isAll && !request.getIsFree()) // when query is going from Appointment to get busy employees list
-                employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), myTimeZone, masterId);
+                employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), request.getEmployeesIds(), myTimeZone, masterId);
 
 
             if (isAll || employeesIdsList.size() > 0) {

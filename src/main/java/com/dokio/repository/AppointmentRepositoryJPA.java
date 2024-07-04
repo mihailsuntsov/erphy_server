@@ -152,8 +152,11 @@ public class AppointmentRepositoryJPA {
 
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
-                        " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
+//                        " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                        " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(stat.name)like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(depp.name)like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -234,6 +237,7 @@ public class AppointmentRepositoryJPA {
                 "           LEFT OUTER JOIN users uo ON p.owner_id=uo.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                 "           where  p.master_id=" + myMasterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
@@ -253,8 +257,11 @@ public class AppointmentRepositoryJPA {
 
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
-                    " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
+//                    " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
+                    " upper(p.name)   like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(stat.name)like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(depp.name)like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -1217,7 +1224,8 @@ public class AppointmentRepositoryJPA {
                         " app.product_price as product_price, " +
                         " app.product_sumprice as product_sumprice, " +
                         " app.cagent_id as cagent_id, " +
-                        " app.price_type_id as price_type_id" +
+                        " app.price_type_id as price_type_id," +
+                        " coalesce(nds.value,0) as nds_value" +
                         " from " +
                         " scdl_appointments_product app " +
                         " inner join products p on p.id = app.product_id " +
@@ -1233,6 +1241,7 @@ public class AppointmentRepositoryJPA {
                         " left outer join sprav_sys_edizm sse_alb on sse_alb.id = p.scdl_appointment_atleast_before_unit_id " +
                         " left outer join sprav_sys_edizm sse_sd on sse_sd.id = p.scdl_srvc_duration_unit_id " +
                         " left outer join sprav_sys_edizm sse_tu on sse_tu.id = p.edizm_id " +
+                        " left outer join sprav_taxes nds ON nds.id = p.nds_id" +
                         " inner join sprav_sys_ppr ppr ON p.ppr_id = ppr.id " +
                         " where " +
                         " app.master_id=" + masterId + " and " +
@@ -1285,6 +1294,7 @@ public class AppointmentRepositoryJPA {
             Long        currentCycleCagentId = (Long.parseLong(                 obj[30].toString()));
             Long        currentCyclePriceTypeId = (                             obj[31] == null?null:Long.parseLong(      obj[31].toString()));
             String      currentCyclePair = currentCycleCagentId.toString() + " " + currentCycleServiceId.toString();
+            BigDecimal  currentCycleNdsValue = ((BigDecimal)                    obj[32]);
 
 
                 // on this cycle if it is a new service
@@ -1336,6 +1346,7 @@ public class AppointmentRepositoryJPA {
                     appointmentService.setProduct_sumprice(             currentCycleProductSumprice);
                     appointmentService.setCagent_id(                    currentCycleCagentId);
                     appointmentService.setPrice_type_id(                currentCyclePriceTypeId);
+                    appointmentService.setNds_value(                    currentCycleNdsValue);
                     // Cоздали новый лист для накопления частей отделений для нового сервиса
                     departmentPartsWithResourcesIds = new ArrayList<>();
                 }
@@ -1478,7 +1489,7 @@ public class AppointmentRepositoryJPA {
                         " p.company_id=" + reqest.getCompanyId() + " and " +
                         " p.ppr_id in (1,4) and " + //-- products and services
                         " coalesce(p.is_deleted,false)=false and " +
-                        " coalesce(dp.is_deleted,false)=false and  " +
+                        " coalesce(dp.is_deleted,false)=false and " +
                         " case when coalesce(p.is_srvc_by_appointment,false) = true then (coalesce(dp.is_active,false)=true) else true end and " +
                         " case when coalesce(p.is_srvc_by_appointment,false) = true then asg.assignment_type = :asg else true end ";
 //                        " pp.price_type_id = "+reqest.getPriceTypeId();
@@ -1666,13 +1677,13 @@ public class AppointmentRepositoryJPA {
             // В текущую часть отделения сохранили все накопленные IDs сервисов
             departmentPartWithResourcesIds.setResourcesOfDepartmentPart(currentDepPartResources);
 
-            // В список частей отделения текущего пользователя добавили текущее отделение
+            // В список частей отделений добавили текущую часть отделения
             departmentPartsWithResourcesIds.add(departmentPartWithResourcesIds);
 
-            // В текущего сотрудника поместили список частей отделений
+            // В текущую услугу поместили список частей отделений
             appointmentService.setDepartmentPartsWithResourcesIds(departmentPartsWithResourcesIds);
 
-            // В итоговый список сотрудников поместили этого сотрудника
+            // В итоговый список поместили текущую услугу
             returnList.add(appointmentService);
         }
 
