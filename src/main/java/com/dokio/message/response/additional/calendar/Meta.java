@@ -17,11 +17,11 @@ public class Meta {
         this.docType = docType;
     }
 
-    public Meta(CalendarUser user, String docType, Long departmentPartId, Set<ItemResource> itemResources) {
+    public Meta(CalendarUser user, String docType, Long departmentPartId) {
         this.user = user;
         this.docType = docType;
         this.departmentPartId = departmentPartId;
-        this.itemResources = itemResources;
+//        this.itemResources = itemResources;
     }
 
     public CalendarUser getUser() {

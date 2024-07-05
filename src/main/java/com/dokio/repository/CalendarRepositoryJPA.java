@@ -114,9 +114,10 @@ public class CalendarRepositoryJPA {
             "           a.master_id=" + masterId + " and " +
             "           a.company_id=" + request.getCompanyId() + " and " +
             "           coalesce(a.is_deleted,false) = false and " +
-            "           to_timestamp ('"+request.getDateFrom()+"', 'DD.MM.YYYY') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
-            "           to_timestamp ('"+request.getDateTo()+"', 'DD.MM.YYYY') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
-                        (request.getEmployees().size()>0?(" and ue.id in "+employeesIds_ ):"") +
+                // Events (appointments/reservations) must intersect the range of dates ( event_start < range_end AND event_end > range_start )
+            "           to_timestamp ('"+request.getDateFrom()+" 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
+            "           to_timestamp ('"+request.getDateTo()+" 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
+                        (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
                         (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name " +
             "           order by a.id, r.id";
@@ -124,32 +125,89 @@ public class CalendarRepositoryJPA {
 
         try{
             Long currentAppointmentId = 0L;
-            Long currentResourceId = 0L;
-            CalendarEventJSON event = new CalendarEventJSON();
-            ItemResource resource = new ItemResource();
+
+            CalendarEventJSON appointment = new CalendarEventJSON();
+//            ItemResource resource = new ItemResource();
             Set<ItemResource> resources = new HashSet<>();
             Query query = entityManager.createNativeQuery(stringQuery);//
             List<Object[]> queryList = query.getResultList();
+            CalendarUser currentEmployee;
+            Meta meta = new Meta();
 
             for (Object[] obj : queryList) {
                 Long currentCycleAppointmentId = Long.parseLong(obj[0].toString());
-                String currentCycleAppointmentName = obj[1].toString();
-                String currentCycleDateStart = obj[2].toString();
-                String currentCycleDateEnd = obj[3].toString();
-                Long currentCycleEmployeeId = Long.parseLong(obj[4].toString());
-                String currentCycleEmployeeName = obj[5].toString();
+                String currentCycleAppointmentName = (String) obj[1];
+                String currentCycleDateStart = (String) obj[2];
+                String currentCycleDateEnd = (String) obj[3];
+                Long currentCycleEmployeeId =obj[4] != null ? Long.parseLong(obj[4].toString()) : null;
+                String currentCycleEmployeeName = (String) obj[5];
                 Long currentCycleDepPartId = Long.parseLong(obj[6].toString());
-                Long currentCycleResourceId = Long.parseLong(obj[7].toString());
-                String currentCycleResourceName = obj[8].toString();
-                Integer currentCycleResourceQtt = (Integer) obj[9];
+                Long currentCycleResourceId = obj[7] != null ? Long.parseLong(obj[7].toString()) : null;
+                String currentCycleResourceName = (String) obj[8];
+                Integer currentCycleResourceQtt = obj[9] != null ? Integer.parseInt((obj[9]).toString()) : null;
+
+                // on this cycle if it is a new Appointment
+                // если это новая Запись
+                if (!currentCycleAppointmentId.equals(currentAppointmentId)) {
+
+                    // Если это не первый цикл
+                    // If it is not a first cycle
+                    if (!currentAppointmentId.equals(0L)) {
+                        // Объект, содержащий всю дополнительную информацию по Записи дополнили информацией по накопленным ресурсам
+                        // An object containing all additional information on the Record has been supplemented with information on accumulated resources
+                        meta.setItemResources(resources);
+                        // ... и добавили его в Запись
+                        appointment.setMeta(meta);
+                        // This Appointment was added to the final list of Appointments
+                        // В итоговый список Записей поместили эту Запись
+                        returnList.add(appointment);
+                    }
+                    // Задаём новую текущую Запись
+                    // Set a new current Appointment
+                    currentAppointmentId = currentCycleAppointmentId;
+                    appointment = new CalendarEventJSON();
+                    // Для новой Записи задаём её базовые данные
+                    // Set a basic data for new current Appointment
+                    appointment.setId(                           currentCycleAppointmentId);
+                    appointment.setTitle(                         currentCycleAppointmentName);
+                    appointment.setColor(new CalendarColors("#008000","#FDF1BA"));
+                    appointment.setStart(currentCycleDateStart);
+                    appointment.setEnd(currentCycleDateEnd);
+                    // Для новой Записи создали новый сет для накопления ресурсов
+                    // For a new Appointment, a new set was created to collect resources
+                    resources = new HashSet<>();
+                    // и добавили в него текущий ресурс
+                    // and added the current resource to it
+//                    resources.add(new ItemResource(currentCycleResourceId, currentCycleResourceName, currentCycleResourceQtt));
+                    // Для новой Записи создали нового пользователя
+                    // Created a new user for the new Appointment
+                    currentEmployee = new CalendarUser(currentCycleEmployeeId, currentCycleEmployeeName, new CalendarColors("#000000","#B0E0E0"));
+                    // Создали новый объект, содержащий всю дополнительную информацию по Записи
+                    // Created a new object containing all additional information about the Appointment
+                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId);
+                }
+                // Копим ресурсы
+                // Сollect resources
+                resources.add(new ItemResource(currentCycleResourceId, currentCycleResourceName,currentCycleResourceQtt));
             }
+            // По окончании цикла, если в Записи что-то было
+            // нужно записать последний ресурс
+            if (!currentAppointmentId.equals(0L)) {
+                // Объект, содержащий всю дополнительную информацию по Записи дополнили информацией по накопленным ресурсам
+                meta.setItemResources(resources);
+                // ... и добавили его в Запись
+                appointment.setMeta(meta);
+                // В итоговый список Записей поместили текущую Запись
+                returnList.add(appointment);
+            }
+
+            return returnList;
+
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Exception in method getCalendarEventsList.", e);
             return null;
         }
-        return returnList;
-
     }
 
 //    public List<BreakJSON> getCalendarUsersBreaksList2(CalendarEventsQueryForm queryForm) {

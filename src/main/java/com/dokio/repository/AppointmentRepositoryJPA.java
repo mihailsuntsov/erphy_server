@@ -1420,8 +1420,8 @@ public class AppointmentRepositoryJPA {
                         " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
                         " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
                         ") ";
-
     }
+
     public List<AppointmentService> getAppointmentServicesSearchList(AppointmentMainInfoForm reqest) {
 
         Long masterId = userRepositoryJPA.getMyMasterId();
