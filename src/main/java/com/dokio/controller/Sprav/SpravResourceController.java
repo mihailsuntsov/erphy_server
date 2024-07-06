@@ -98,13 +98,13 @@ public class SpravResourceController {
         catch (Exception e){logger.error("Controller undeleteResource error", e);
             return new ResponseEntity<>("Document recovery error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/getNowUsedResourcesList")
-    public  ResponseEntity<?> getNowUsedResourcesList(@RequestBody AppointmentMainInfoForm request) {
-        logger.info("Processing post request for path /api/auth/getNowUsedResourcesList: " + request.toString());
-        try {return new ResponseEntity<>(spravResourceRepository.getNowUsedResourcesList(request), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller getNowUsedResourcesList error", e);
-            return new ResponseEntity<>("Controller getNowUsedResourcesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
-    }
+//    @PostMapping("/api/auth/getNowUsedResourcesList")
+//    public  ResponseEntity<?> getNowUsedResourcesList(@RequestBody AppointmentMainInfoForm request) {
+//        logger.info("Processing post request for path /api/auth/getNowUsedResourcesList: " + request.toString());
+//        try {return new ResponseEntity<>(spravResourceRepository.getNowUsedResourcesList(request), HttpStatus.OK);}
+//        catch (Exception e){logger.error("Controller getNowUsedResourcesList error", e);
+//            return new ResponseEntity<>("Controller getNowUsedResourcesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+//    }
     @RequestMapping(
             value = "/api/auth/getResourcesList",
             params = {"company_id"},

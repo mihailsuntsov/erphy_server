@@ -7,6 +7,8 @@ public class CalendarEventsQueryForm {
     private Long companyId;
     private String dateFrom;
     private String dateTo;
+    private String timeFrom;
+    private String timeTo;
     private Set<Long> depparts;
     private Set<Long> jobtitles;
     private Set<Long> employees;
@@ -18,6 +20,22 @@ public class CalendarEventsQueryForm {
         this.depparts = depparts;
         this.jobtitles = jobtitles;
         this.employees = employees;
+    }
+
+    public String getTimeFrom() {
+        return timeFrom;
+    }
+
+    public void setTimeFrom(String timeFrom) {
+        this.timeFrom = timeFrom;
+    }
+
+    public String getTimeTo() {
+        return timeTo;
+    }
+
+    public void setTimeTo(String timeTo) {
+        this.timeTo = timeTo;
     }
 
     public Set<Long> getEmployees() {

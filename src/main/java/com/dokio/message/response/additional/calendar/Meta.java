@@ -8,6 +8,8 @@ public class Meta {
     private String docType;
     private Long departmentPartId;
     private Set<ItemResource> itemResources;
+    private String statusName;
+    private Integer statusType; //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
 
     public Meta() {
     }
@@ -17,11 +19,28 @@ public class Meta {
         this.docType = docType;
     }
 
-    public Meta(CalendarUser user, String docType, Long departmentPartId) {
+    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType) {
         this.user = user;
         this.docType = docType;
         this.departmentPartId = departmentPartId;
-//        this.itemResources = itemResources;
+        this.statusName = statusName;
+        this.statusType = statusType;
+    }
+
+    public String getStatusName() {
+        return statusName;
+    }
+
+    public void setStatusName(String statusName) {
+        this.statusName = statusName;
+    }
+
+    public Integer getStatusType() {
+        return statusType;
+    }
+
+    public void setStatusType(Integer statusType) {
+        this.statusType = statusType;
     }
 
     public CalendarUser getUser() {

@@ -4,6 +4,7 @@ import com.dokio.message.request.*;
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
 import com.dokio.message.request.additional.AppointmentCustomer;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
+import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
 import com.dokio.message.response.OrderinJSON;
 import com.dokio.message.response.PaymentinJSON;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
@@ -15,6 +16,8 @@ import com.dokio.message.response.additional.appointment.AppointmentChildDocsJSO
 import com.dokio.message.response.additional.appointment.AppointmentService;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithResourcesIds;
 import com.dokio.message.response.additional.appointment.ResourceOfDepartmentPart;
+import com.dokio.message.response.additional.calendar.CalendarEventJSON;
+import com.dokio.message.response.additional.calendar.ItemResource;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
@@ -36,6 +39,9 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -69,6 +75,8 @@ public class AppointmentRepositoryJPA {
     private PaymentinRepositoryJPA paymentinRepository;
     @Autowired
     private OrderinRepositoryJPA orderinRepository;
+    @Autowired
+    private CalendarRepositoryJPA calendarRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -1184,9 +1192,19 @@ public class AppointmentRepositoryJPA {
 
     private List<AppointmentService> getAppointmentServicesList(AppointmentMainInfoForm reqest, Long masterId, String myTimeZone) {
 
-        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);
+//        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);
+        CalendarEventsQueryForm eventsQuery = new CalendarEventsQueryForm();
+        eventsQuery.setCompanyId(reqest.getCompanyId());
+        eventsQuery.setDateFrom(reqest.getDateFrom());
+        eventsQuery.setDateTo(reqest.getDateTo());
+        eventsQuery.setTimeFrom(reqest.getTimeFrom());
+        eventsQuery.setTimeTo(reqest.getTimeTo());
+        eventsQuery.setDepparts(new HashSet<>());
+        eventsQuery.setEmployees(new HashSet<>());
+        List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
 
-        stringQuery = stringQuery + " select  " +
+
+        String stringQuery = " select  " +
                         " p.id, " +
                         " p.name, " +
                         " coalesce(d.id,0) as department_id, " +
@@ -1196,7 +1214,7 @@ public class AppointmentRepositoryJPA {
                         " r.id as resource_id, " +
                         " coalesce(r.name,'') as resource_name, " +
                         " coalesce(prq.quantity,0) as need_res_qtt, " +
-                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
+//                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
                         " coalesce(rdp.quantity,0) as res_quantity_in_dep_part, " +
                         " coalesce(pqtt.quantity, 0) product_quantity_in_department, " +
                         " p.nds_id as nds_id, " +
@@ -1270,31 +1288,32 @@ public class AppointmentRepositoryJPA {
             Long        currentCycleResourceId = (                              obj[6] == null?null:Long.parseLong(obj[6].toString()));
             String      currentCycleResourceName =                              obj[7].toString();
             Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
-            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
-            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[10].toString());
-            BigDecimal  currentCycleTotal = (                                   obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
-            Integer     currentCycleNdsId=((Integer)                            obj[12]);
-            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[13].toString()));
-            String      currentCycleEdIzm = ((String)                           obj[14]);
-            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[15]);
-            BigDecimal  currentCycleEdizm_multiplier = (                        obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
-            Boolean     currentCycleIs_material = ((Boolean)                    obj[17]);
-            Boolean     currentCycleIndivisible = ((Boolean)                    obj[18]);
-            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
-            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[20]);
-            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[21]);
-            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[22]);
-            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[23]);
-            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[24]);
-            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[25]);
-            BigDecimal  currentCycleReserved =  (                               obj[26]==null?BigDecimal.ZERO:(BigDecimal)obj[26]);
-            BigDecimal  currentCycleProductCount =  (                           obj[27]==null?BigDecimal.ZERO:(BigDecimal)obj[27]);
-            BigDecimal  currentCycleProductPrice =  (                           obj[28]==null?BigDecimal.ZERO:(BigDecimal)obj[28]);
-            BigDecimal  currentCycleProductSumprice =  (                        obj[29]==null?BigDecimal.ZERO:(BigDecimal)obj[29]);
-            Long        currentCycleCagentId = (Long.parseLong(                 obj[30].toString()));
-            Long        currentCyclePriceTypeId = (                             obj[31] == null?null:Long.parseLong(      obj[31].toString()));
+//            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
+            Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsLis);
+            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[9].toString());
+            BigDecimal  currentCycleTotal = (                                   obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
+            Integer     currentCycleNdsId=((Integer)                            obj[11]);
+            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[12].toString()));
+            String      currentCycleEdIzm = ((String)                           obj[13]);
+            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[14]);
+            BigDecimal  currentCycleEdizm_multiplier = (                        obj[15]==null?BigDecimal.ZERO:(BigDecimal)obj[15]);
+            Boolean     currentCycleIs_material = ((Boolean)                    obj[16]);
+            Boolean     currentCycleIndivisible = ((Boolean)                    obj[17]);
+            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[18]==null?BigDecimal.ZERO:(BigDecimal)obj[18]);
+            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[19]);
+            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[20]);
+            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[21]);
+            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[22]);
+            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[23]);
+            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[24]);
+            BigDecimal  currentCycleReserved =  (                               obj[25]==null?BigDecimal.ZERO:(BigDecimal)obj[25]);
+            BigDecimal  currentCycleProductCount =  (                           obj[26]==null?BigDecimal.ZERO:(BigDecimal)obj[26]);
+            BigDecimal  currentCycleProductPrice =  (                           obj[27]==null?BigDecimal.ZERO:(BigDecimal)obj[27]);
+            BigDecimal  currentCycleProductSumprice =  (                        obj[28]==null?BigDecimal.ZERO:(BigDecimal)obj[28]);
+            Long        currentCycleCagentId = (Long.parseLong(                 obj[29].toString()));
+            Long        currentCyclePriceTypeId = (                             obj[30] == null?null:Long.parseLong(      obj[30].toString()));
             String      currentCyclePair = currentCycleCagentId.toString() + " " + currentCycleServiceId.toString();
-            BigDecimal  currentCycleNdsValue = ((BigDecimal)                    obj[32]);
+            BigDecimal  currentCycleNdsValue = ((BigDecimal)                    obj[31]);
 
 
                 // on this cycle if it is a new service
@@ -1386,51 +1405,59 @@ public class AppointmentRepositoryJPA {
         return returnList;
     }
 
-    private String getBusyResourcesSqlQueryPart(Long masterId, AppointmentMainInfoForm reqest, String myTimeZone){
-        return " WITH busy_resources AS ( " +
-//              busy_resources - Это выборка с занятыми ресурсами в заданном промежутке времени в виде: / ID ресурса / Название / Используемое количество " +
-                        " select  " +
-                        " r.id as resource_id,  " +
-                        " r.name as resource,  " +
-                        " dp.id as dep_part_id, " +
-                        " dp.name as dep_part, " +
-                        " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
-                        " from   " +
-                        " scdl_appointments a, " +
-                        " scdl_appointments_product ap,  " +
-                        " products p, " +
-                        " scdl_product_resource_qtt pr, " +
-                        " sprav_resources r, " +
-                        " scdl_dep_parts dp, " +
-                        " scdl_resource_dep_parts_qtt rdp, " +
-                        " sprav_status_dock ssd " +
-                        " where " +
-                        " p.master_id=" + masterId + " and " +
-                        " p.company_id=" + reqest.getCompanyId() + " and " +
-                        " ap.appointment_id=a.id and " +
-                        " ap.product_id=p.id and " +
-                        " pr.product_id=p.id and " +
-                        " pr.resource_id=r.id and  " +
-                        " dp.id=a.dep_part_id and " +
-                        " a.status_id = ssd.id and " +
-                        " ssd.status_type != 3 and " + // cancelled Appointment type
-                        " rdp.dep_part_id=a.dep_part_id and " +
-                        " 	a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
-                        " rdp.resource_id=r.id and " +
-                        " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
-                        " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
-                        ") ";
-    }
+//    private String getBusyResourcesSqlQueryPart(Long masterId, AppointmentMainInfoForm reqest, String myTimeZone){
+//        return " WITH busy_resources AS ( " +
+////              busy_resources - Это выборка с занятыми ресурсами в заданном промежутке времени в виде: / ID ресурса / Название / Используемое количество " +
+//                        " select  " +
+//                        " r.id as resource_id,  " +
+//                        " r.name as resource,  " +
+//                        " dp.id as dep_part_id, " +
+//                        " dp.name as dep_part, " +
+//                        " pr.quantity as quantity_now_used  " + //-- кол-во используемого ресурса во всех Appointments
+//                        " from   " +
+//                        " scdl_appointments a, " +
+//                        " scdl_appointments_product ap,  " +
+//                        " products p, " +
+//                        " scdl_product_resource_qtt pr, " +
+//                        " sprav_resources r, " +
+//                        " scdl_dep_parts dp, " +
+//                        " scdl_resource_dep_parts_qtt rdp, " +
+//                        " sprav_status_dock ssd " +
+//                        " where " +
+//                        " p.master_id=" + masterId + " and " +
+//                        " p.company_id=" + reqest.getCompanyId() + " and " +
+//                        " ap.appointment_id=a.id and " +
+//                        " ap.product_id=p.id and " +
+//                        " pr.product_id=p.id and " +
+//                        " pr.resource_id=r.id and  " +
+//                        " dp.id=a.dep_part_id and " +
+//                        " a.status_id = ssd.id and " +
+//                        " ssd.status_type != 3 and " + // cancelled Appointment type
+//                        " rdp.dep_part_id=a.dep_part_id and " +
+//                        " 	a.id != " + reqest.getAppointmentId() + " and  " + //-- filtering by parent Appointment document
+//                        " rdp.resource_id=r.id and " +
+//                        " to_timestamp ('" + reqest.getDateFrom() + " " + reqest.getTimeFrom() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' < a.ends_at_time and " +
+//                        " to_timestamp ('" + reqest.getDateTo() + " " + reqest.getTimeTo() + "', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '" + myTimeZone + "' > a.starts_at_time  " +
+//                        ") ";
+//    }
 
     public List<AppointmentService> getAppointmentServicesSearchList(AppointmentMainInfoForm reqest) {
 
         Long masterId = userRepositoryJPA.getMyMasterId();
-        String myTimeZone = userRepository.getUserTimeZone();
+//        String myTimeZone = userRepository.getUserTimeZone();
+        CalendarEventsQueryForm eventsQuery = new CalendarEventsQueryForm();
+        eventsQuery.setCompanyId(reqest.getCompanyId());
+        eventsQuery.setDateFrom(reqest.getDateFrom());
+        eventsQuery.setDateTo(reqest.getDateTo());
+        eventsQuery.setTimeFrom(reqest.getTimeFrom());
+        eventsQuery.setTimeTo(reqest.getTimeTo());
+        eventsQuery.setDepparts(new HashSet<>());
+        eventsQuery.setEmployees(new HashSet<>());
+        List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
 
+//        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);
 
-        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);
-
-        stringQuery = stringQuery + " select  " +
+        String stringQuery = " select  " +
                         " p.id,  " +
                         " p.name,  " +
                         " coalesce(d.id,0) as department_id, " +
@@ -1440,10 +1467,8 @@ public class AppointmentRepositoryJPA {
                         " r.id as resource_id, " +
                         " coalesce(r.name,'') as resource_name, " +
                         " coalesce(prq.quantity,0) as need_res_qtt, " +
-                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
-//                " -- coalesce(br.quantity_now_used,0) as now_used,  " +
+//                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
                         " coalesce(rdp.quantity,0) as res_quantity_in_dep_part, " +
-
                         " coalesce(pqtt.quantity, 0) product_quantity_in_department, " +
                         " p.nds_id as nds_id, " +
                         " coalesce(p.edizm_id,0) as edizm_id, " +
@@ -1560,24 +1585,25 @@ public class AppointmentRepositoryJPA {
             Long        currentCycleResourceId = (                              obj[6] == null?null:Long.parseLong(obj[6].toString()));
             String      currentCycleResourceName =                              obj[7].toString();
             Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
-            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
-            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[10].toString());
-            BigDecimal  currentCycleTotal = (                                   obj[11]==null?BigDecimal.ZERO:(BigDecimal)obj[11]);
-            Integer     currentCycleNdsId=((Integer)                            obj[12]);
-            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[13].toString()));
-            String      currentCycleEdIzm = ((String)                           obj[14]);
-            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[15]);
-            BigDecimal  currentCycleEdizm_multiplier = (                        obj[16]==null?BigDecimal.ZERO:(BigDecimal)obj[16]);
-            Boolean     currentCycleIs_material = ((Boolean)                    obj[17]);
-            Boolean     currentCycleIndivisible = ((Boolean)                    obj[18]);
-            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[19]==null?BigDecimal.ZERO:(BigDecimal)obj[19]);
-            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[20]);
-            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[21]);
-            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[22]);
-            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[23]);
-            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[24]);
-            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[25]);
-            BigDecimal  currentCycleReserved =  (                               obj[26]==null?BigDecimal.ZERO:(BigDecimal)obj[26]);
+//            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
+            Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsLis);
+            Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[9].toString());
+            BigDecimal  currentCycleTotal = (                                   obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
+            Integer     currentCycleNdsId=((Integer)                            obj[11]);
+            Long        currentCycleEdIzmId = (Long.parseLong(                  obj[12].toString()));
+            String      currentCycleEdIzm = ((String)                           obj[13]);
+            Integer     currentCycleEdizm_type_id = ((Integer)                  obj[14]);
+            BigDecimal  currentCycleEdizm_multiplier = (                        obj[15]==null?BigDecimal.ZERO:(BigDecimal)obj[15]);
+            Boolean     currentCycleIs_material = ((Boolean)                    obj[16]);
+            Boolean     currentCycleIndivisible = ((Boolean)                    obj[17]);
+            BigDecimal  currentCyclePriceOfTypePrice = (                        obj[18]==null?BigDecimal.ZERO:(BigDecimal)obj[18]);
+            Boolean     currentCycleIsEmployeeRequired=((Boolean)               obj[19]);
+            Integer     currentCycleMaxPersOnSameTime=((Integer)                obj[20]);
+            BigDecimal  currentCycleAtLeastBeforeTimeInSeconds=((BigDecimal)    obj[21]);
+            BigDecimal  currentCycleSrvcDurationInSeconds=((BigDecimal)         obj[22]);
+            BigDecimal  currentCycleUnitOfMeasureDurationInSeconds=((BigDecimal)obj[23]);
+            Boolean     currentCycleServiceByAppointment = ((Boolean)           obj[24]);
+            BigDecimal  currentCycleReserved =  (                               obj[25]==null?BigDecimal.ZERO:(BigDecimal)obj[25]);
 
             // on this cycle if it is a new user
             if (!currentCycleServiceId.equals(currentServiceId)) {
@@ -1690,7 +1716,99 @@ public class AppointmentRepositoryJPA {
         return returnList;
     }
 
+    // Каждое событие (Запись) имеет список ресурсов, которые используются в услугах этого события
+    // Эта функция помогает узнать, есть ли ресурс с идентификатором в списке ресурсов события
+    // Each event (Appointment) has a list of resources that used in services of this event
+    // This function helps to know whether resource with ID is in the list of resources of event
+    private boolean isEventResourcesHasResource(Set<ItemResource> itemResources, Long resourceId){
+        Boolean result=false;
+        for(ItemResource resource :itemResources){
+            if(resource.getId().equals(resourceId))
+                result=true;
+        }
+        return result;
+    }
 
+    // Высчитывает максимальное используемое количество ресурса resourceId в части отделения depPartId кроме ресурса, используемого в Appointment exclAppointmentId
+    // Каждый event (Запись) сревнивается с остальными, и те элементы, которые имеют пересечения "каждый с каждым" заносятся в массив.
+    // Впоследствии бежим по этому массиву и суммируем нужный ресурс (bed в примере)
+    // Calculates the maximum usable amount of resource resourceId in the department part depPartId other than the resource used in Appointment exclAppointmentId
+    // Each event (Appointment) is compared with the others, and those elements that have intersections "each with each" are entered into the array.
+    // Subsequently, we run through this array and summarize the required resource (bed in the example)
+
+    //     Dates            |   1   2   3   4   5   6   7   8   9   10   11   12   13   14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30
+    //   -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //   | Room 5           |      [Event 1    bed: 2]              [Event 2    bed: 1]                         [Event 3    bed: 1]
+    //   | Amount of beds:3 |                                 [Event 4    bed: 2                                                            ]
+    //   -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  For example it'll return 2 at dates range 01 - 04, 2 at 05 - 09, 3 at 11 - 21
+    //  In this example you can add an appointment only from 01 to 09 or from 23 to 30 dates, because in other dates
+    //  the maximum amount of using resource "Bed" will be more than 3 (max amount beds in a room)
+
+    private int getMaxUsedResourceQtt(Long depPartId, Long resourceId, Long exclAppointmentId, List<CalendarEventJSON> allEvents){
+
+        int maxSumOfQueriedResource = 0;
+
+        List<CalendarEventJSON> events = new ArrayList<>();
+        DateTimeFormatter ISO8601_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        if(allEvents.size()>0){
+            // Создаем локальный список событий, оставляя из общего списка только те события, что относятся к запрашиваемым части отделения и ресурсу
+            // Create a local list of events, leaving from the general list only those events that relate to the queried part of the department and resource
+            for(CalendarEventJSON event : allEvents){
+                if(isEventResourcesHasResource(event.getMeta().getItemResources(), resourceId) && event.getMeta().getDepartmentPartId().equals(depPartId)){
+                    events.add(event);
+                }
+            }
+
+            for(CalendarEventJSON mainCycleEvent : events){
+//          events.map(mainCycleEvent=>{
+                List<CalendarEventJSON> intersectedWithEachOtherEventsGroup = new ArrayList<>();
+                // группа где каждый пересекается с каждым
+                // array where all have intersections "each with each"
+                intersectedWithEachOtherEventsGroup.add(mainCycleEvent);
+
+                for(CalendarEventJSON compareCycleEvent : events){
+                    if(!mainCycleEvent.getId().equals(compareCycleEvent.getId())){ // сравниваем с каждым другим, но не с самим собой
+
+                        int countOfIntersectionsWithGroupEvents = 0;
+
+                        for(CalendarEventJSON eventOfIntersectiondGroup : intersectedWithEachOtherEventsGroup){
+
+                            LocalDateTime compareCycleEventStart = LocalDateTime.parse(compareCycleEvent.getStart(), ISO8601_formatter);
+                            LocalDateTime compareCycleEventEnd = LocalDateTime.parse(compareCycleEvent.getEnd(), ISO8601_formatter);
+                            LocalDateTime intersectiondGroupEventStart = LocalDateTime.parse(eventOfIntersectiondGroup.getStart(), ISO8601_formatter);
+                            LocalDateTime intersectiondGroupEventEnd = LocalDateTime.parse(eventOfIntersectiondGroup.getEnd(), ISO8601_formatter);
+
+                            if(compareCycleEventStart.isBefore(intersectiondGroupEventEnd) && compareCycleEventEnd.isAfter(intersectiondGroupEventStart))
+                                countOfIntersectionsWithGroupEvents++;
+                        }
+                        if(countOfIntersectionsWithGroupEvents==intersectedWithEachOtherEventsGroup.size())
+                            intersectedWithEachOtherEventsGroup.add(compareCycleEvent);
+                    }
+                }
+
+                // Сейчас у получившейся группы событий, у events которой есть общее одновременное пересечение, нужно получить сумму по запрашиваемому ресурсу
+                int sumOfQueriedResource = 0;
+                for(CalendarEventJSON eventOfIntersectiondGroup : intersectedWithEachOtherEventsGroup){
+                    for( ItemResource resource : eventOfIntersectiondGroup.getMeta().getItemResources()){
+                        if(resource.getId().equals(resourceId) &&
+                            // не берем во внимание ресурсы из текущего докуммента // do not take into account resources from the current document
+                            !eventOfIntersectiondGroup.getId().equals(exclAppointmentId) &&
+                            // не берем во внимание ресурсы из отменённых документов // do not take into account resources from the cancelled documents
+                            !eventOfIntersectiondGroup.getMeta().getStatusType().equals(3)  //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+                                                                                            //status type:  1 - normal;  2 - final positive         3 - final negative
+                        )
+                            sumOfQueriedResource = sumOfQueriedResource + resource.getUsedQuantity();
+                    }
+                }
+
+                if(sumOfQueriedResource > maxSumOfQueriedResource)
+                    maxSumOfQueriedResource=sumOfQueriedResource;
+            }
+        }
+        return maxSumOfQueriedResource;
+    }
 
     //ShipmentForm request
     public Long createAndCompleteShipmentFromAppointment(AppointmentsForm request){

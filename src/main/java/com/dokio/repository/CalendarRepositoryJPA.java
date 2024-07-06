@@ -103,23 +103,27 @@ public class CalendarRepositoryJPA {
             "           a.dep_part_id as doc_dep_part_id, " +
             "           r.id as resource_id, " +
             "           r.name as resource_name, " +
-            "           sum(coalesce(prq.quantity,0)) as need_res_qtt " +
+            "           sum(coalesce(prq.quantity,0)) as need_res_qtt, " +
+            "           ssd.name as status_name, " +
+            "           ssd.status_type as status_type " + //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+                                                           //status type:  1 - normal;  2 - final positive         3 - final negative
             "           from scdl_appointments a " +
             "           left outer join users ue ON a.employee_id=ue.id " +
             "           left outer join scdl_appointments_product ap on ap.appointment_id=a.id " +
             "           left outer join products p on p.id=ap.product_id " +
             "           left outer join scdl_product_resource_qtt prq on p.id=prq.product_id  " +
             "           left outer join sprav_resources r on prq.resource_id=r.id " +
+            "           inner join sprav_status_dock ssd on a.status_id = ssd.id " +
             "           where " +
             "           a.master_id=" + masterId + " and " +
             "           a.company_id=" + request.getCompanyId() + " and " +
             "           coalesce(a.is_deleted,false) = false and " +
                 // Events (appointments/reservations) must intersect the range of dates ( event_start < range_end AND event_end > range_start )
-            "           to_timestamp ('"+request.getDateFrom()+" 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
-            "           to_timestamp ('"+request.getDateTo()+" 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
+            "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
+            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
                         (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
                         (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
-            "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name " +
+            "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type " +
             "           order by a.id, r.id";
 
 
@@ -145,6 +149,8 @@ public class CalendarRepositoryJPA {
                 Long currentCycleResourceId = obj[7] != null ? Long.parseLong(obj[7].toString()) : null;
                 String currentCycleResourceName = (String) obj[8];
                 Integer currentCycleResourceQtt = obj[9] != null ? Integer.parseInt((obj[9]).toString()) : null;
+                String currentCycleStatusName = (String) obj[10];
+                Integer currentCycleStatusType = obj[11] != null ? Integer.parseInt((obj[11]).toString()) : null;
 
                 // on this cycle if it is a new Appointment
                 // если это новая Запись
@@ -184,11 +190,12 @@ public class CalendarRepositoryJPA {
                     currentEmployee = new CalendarUser(currentCycleEmployeeId, currentCycleEmployeeName, new CalendarColors("#000000","#B0E0E0"));
                     // Создали новый объект, содержащий всю дополнительную информацию по Записи
                     // Created a new object containing all additional information about the Appointment
-                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId);
+                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType);
                 }
                 // Копим ресурсы
                 // Сollect resources
-                resources.add(new ItemResource(currentCycleResourceId, currentCycleResourceName,currentCycleResourceQtt));
+                if(!Objects.isNull(currentCycleResourceId))
+                    resources.add(new ItemResource(currentCycleResourceId, currentCycleResourceName,currentCycleResourceQtt));
             }
             // По окончании цикла, если в Записи что-то было
             // нужно записать последний ресурс
