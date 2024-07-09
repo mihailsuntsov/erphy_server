@@ -212,7 +212,6 @@ class PaymentoutController {
         catch (Exception e){return new ResponseEntity<>("Ошибка сохранения настроек для документа", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-    @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/getSettingsPaymentout",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")

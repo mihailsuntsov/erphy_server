@@ -1,5 +1,6 @@
 package com.dokio.controller;
 
+import com.dokio.message.request.Settings.SettingsCalendarForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
 import com.dokio.repository.CalendarRepositoryJPA;
@@ -44,4 +45,19 @@ public class CalendarController {
             return new ResponseEntity<>("Controller getEmployeesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
+    @PostMapping("/api/auth/saveSettingsCalendar")
+    public ResponseEntity<?> saveSettingsCalendar(@RequestBody SettingsCalendarForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsCalendar: " + request.toString());
+        try {return new ResponseEntity<>(calendarRepository.saveSettingsCalendar(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Controller SettingsCalendarForm error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @RequestMapping(
+            value = "/api/auth/getSettingsCalendar",
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getSettingsCalendar(){
+        logger.info("Processing get request for path /api/auth/getSettingsCalendar without request parameters");
+        try {return new ResponseEntity<>(calendarRepository.getSettingsCalendar(), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Controller getSettingsCalendar error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

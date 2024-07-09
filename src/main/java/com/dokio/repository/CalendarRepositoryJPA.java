@@ -1,7 +1,9 @@
 package com.dokio.repository;
 
+import com.dokio.message.request.Settings.SettingsCalendarForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
+import com.dokio.message.response.Settings.SettingsCalendarJSON;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
 import com.dokio.message.response.additional.calendar.*;
 import com.dokio.message.response.additional.appointment.AppointmentEmployee;
@@ -11,6 +13,7 @@ import com.dokio.util.LinkedDocsUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
@@ -995,7 +998,105 @@ public class CalendarRepositoryJPA {
     }
 
 
+    @Transactional
+    public Boolean saveSettingsCalendar(SettingsCalendarForm row) {
+        String stringQuery="";
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myId=userRepository.getUserId();
+        try {
+            commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
 
+            stringQuery =
+                    " insert into settings_calendar (" +
+                            "master_id, " +
+                            "company_id, " +
+                            "user_id, " +
+                            "date_time_update, " +
+                            "company_id, " + // company Id by default
+                            "start_view, "+
+                            "timeline_step, "+
+                            "day_start_minute, "+
+                            "day_end_minute, "+
+                            "resources_screen_scale, "+
+                            "display_cancelled"+
+                            ") values (" +
+                            myMasterId + "," +
+                            row.getCompanyId() + "," +
+                            myId + "," +
+                            "now(), " +
+                            row.getCompanyId() + "," +
+                            ":start_view,"+
+                            row.getTimelineStep() + "," +
+                            row.getDayStartMinute() + "," +
+                            row.getDayEndMinute() + "," +
+                            ":resources_screen_scale," +
+                            row.getDisplayCancelled() +
+            ") " +
+                    " ON CONFLICT ON CONSTRAINT settings_calendar_user_uq " +// "upsert"
+                    " DO update set " +
+                    " company_id = " + row.getCompanyId() + "," +
+                    " start_view = :start_view," +
+                    " timeline_step = " + row.getTimelineStep() + "," +
+                    " day_start_minute = " + row.getDayStartMinute() + "," +
+                    " day_end_minute = " + row.getDayEndMinute() + "," +
+                    " date_time_update = now()," +
+                    " resources_screen_scale = :resources_screen_scale," +
+                    " display_cancelled = "+row.getDisplayCancelled();
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("start_view",row.getStartView());
+            query.setParameter("resources_screen_scale",row.getResourcesScreenScale());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method saveSettingsCalendar. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public SettingsCalendarJSON getSettingsCalendar() {
+
+        String stringQuery;
+        Long myId=userRepository.getUserId();
+        stringQuery = "     select " +
+                "           p.id as id, " +
+                "           p.company_id as company_id, " +                                 // предприятие
+                "           coalesce(start_view,'month') as start_view, " + // month / scheduler / resources
+                "           coalesce(timeline_step, 30) as timeline_step, " + // step in minutes
+                "           coalesce(day_start_minute, 0) as day_start_minute, " + // minute of day start (0-1438) that means 00:00 - 23:58
+                "           coalesce(day_end_minute, 1439) as day_end_minute, " + // minute of day end (1-1439)   that means 00:01 - 23:59
+                "           coalesce(resources_screen_scale,'month') as resources_screen_scale, " + //  month / week / day
+                "           coalesce(display_cancelled, false) as display_cancelled " + //  display or not cancelled events by default"
+                "           from settings_calendar p " +
+                "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+
+            SettingsCalendarJSON returnObj=new SettingsCalendarJSON(
+                    "month",30,0,1439,"month",false);
+
+            for(Object[] obj:queryList){
+                returnObj.setId(Long.parseLong(                             obj[0].toString()));
+                returnObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                returnObj.setStartView((String)                             obj[2]);
+                returnObj.setTimelineStep((Integer)                         obj[3]);
+                returnObj.setDayStartMinute((Integer)                       obj[4]);
+                returnObj.setDayEndMinute((Integer)                         obj[5]);
+                returnObj.setResourcesScreenScale((String)                  obj[6]);
+                returnObj.setDisplayCancelled((Boolean)                     obj[7]);
+            }
+            return returnObj;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method getSettingsCalendar. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+
+    }
 
 
 

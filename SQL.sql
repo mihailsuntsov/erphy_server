@@ -6701,8 +6701,23 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 
 drop table if exists scdl_jobtitle_products;
 
-
-
+create table settings_calendar (
+                                 id                          bigserial primary key not null,
+                                 master_id                   bigint not null,
+                                 date_time_update            timestamp with time zone,
+                                 user_id                     bigint not null,
+                                 company_id                  bigint,
+                                 start_view                  varchar not null, -- month / scheduler / resources
+                                 timeline_step               int not null,     -- step in minutes
+                                 day_start_minute            int not null,     -- minute of day start (0-1438) that means 00:00 - 23:58
+                                 day_end_minute              int not null,     -- minute of day end (1-1439)   that means 00:01 - 23:59
+                                 resources_screen_scale      varchar not null, -- month / week / day
+                                 display_cancelled           boolean not null, -- display or not cancelled events by default
+                                 foreign key (master_id) references users(id),
+                                 foreign key (user_id) references users(id),
+                                 foreign key (company_id) references companies(id)
+);
+alter table settings_calendar add constraint settings_calendar_user_uq UNIQUE (company_id, user_id);
 
 
 
