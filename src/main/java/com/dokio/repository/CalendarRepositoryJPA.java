@@ -241,7 +241,7 @@ public class CalendarRepositoryJPA {
                 String myTimeZone = userRepository.getUserTimeZone();
                 Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
                 Long masterId = userRepositoryJPA.getMyMasterId();
-                int companyTimeZoneId = (Integer)commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, queryForm.getCompanyId());
+                int companyTimeZoneId = (Integer) commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, queryForm.getCompanyId());
                 String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
                 DateTimeFormatter sqlQueryFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
                 DateTimeFormatter calendarFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -1012,7 +1012,6 @@ public class CalendarRepositoryJPA {
                             "company_id, " +
                             "user_id, " +
                             "date_time_update, " +
-                            "company_id, " + // company Id by default
                             "start_view, "+
                             "timeline_step, "+
                             "day_start_minute, "+
@@ -1024,7 +1023,6 @@ public class CalendarRepositoryJPA {
                             row.getCompanyId() + "," +
                             myId + "," +
                             "now(), " +
-                            row.getCompanyId() + "," +
                             ":start_view,"+
                             row.getTimelineStep() + "," +
                             row.getDayStartMinute() + "," +
