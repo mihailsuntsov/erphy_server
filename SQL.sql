@@ -6719,7 +6719,23 @@ create table settings_calendar (
 );
 alter table settings_calendar add constraint settings_calendar_user_uq UNIQUE (company_id, user_id);
 
-
+create table settings_appointment (
+                                    id                          bigserial primary key not null,
+                                    master_id                   bigint not null,
+                                    date_time_update            timestamp with time zone,
+                                    user_id                     bigint not null,
+                                    company_id                  bigint,
+                                    start_time                  varchar not null,   -- current / set_manually    The last one is suitable for hotels for checkin time
+                                    end_date_time               varchar not null,   -- no_calc / sum_all_length / max_length
+                                    calc_date_but_time          boolean not null,   -- if user wants to calc only dates. Suitable for hotels for checkout time
+                                    start_time_manually         varchar(5),         -- 'HH:mm' if start_time = 'set_manually'
+                                    end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
+                                    hide_employee_field         boolean not null,   -- If for all services of company employees are not needed
+                                    foreign key (master_id) references users(id),
+                                    foreign key (user_id) references users(id),
+                                    foreign key (company_id) references companies(id)
+);
+alter table settings_appointment add constraint settings_appointment_user_uq UNIQUE (company_id, user_id);
 
 
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------

@@ -4,12 +4,21 @@ import java.math.BigDecimal;
 
 public class SettingsAppointmentForm {
 
-    private Long        companyId; //id предприятия
-    private Long        departmentId; //id отделения
-    private Boolean     hideTenths;//убирать десятые (копейки)
-    private String      priorityTypePriceSide; // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-    private Boolean     autocreateOnStart; //автосоздание на старте документа, если автозаполнились все поля
-    private Long        statusIdOnAutocreateOnCheque;//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
+    private Long companyId;
+    private String startTime; // current / set_manually   The last one is suitable for hotels for checkin time
+    private String endDateTime; // no_calc / sum_all_length / max_length / calc_date_but_time
+    private String startTimeManually; // 'HH:mm' if start_time = 'set_manually'
+    private String endTimeManually; // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
+    private boolean hideEmployeeField; // If for all services of company employees are not needed
+    private boolean calcDateButTime; // if user wants to calc only dates. Suitable for hotels for checkout time
+
+    public boolean isCalcDateButTime() {
+        return calcDateButTime;
+    }
+
+    public void setCalcDateButTime(boolean calcDateButTime) {
+        this.calcDateButTime = calcDateButTime;
+    }
 
     public Long getCompanyId() {
         return companyId;
@@ -19,43 +28,43 @@ public class SettingsAppointmentForm {
         this.companyId = companyId;
     }
 
-    public Long getDepartmentId() {
-        return departmentId;
+    public String getStartTime() {
+        return startTime;
     }
 
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
     }
 
-    public Boolean getHideTenths() {
-        return hideTenths;
+    public String getEndDateTime() {
+        return endDateTime;
     }
 
-    public void setHideTenths(Boolean hideTenths) {
-        this.hideTenths = hideTenths;
+    public void setEndDateTime(String endDateTime) {
+        this.endDateTime = endDateTime;
     }
 
-    public String getPriorityTypePriceSide() {
-        return priorityTypePriceSide;
+    public String getStartTimeManually() {
+        return startTimeManually;
     }
 
-    public void setPriorityTypePriceSide(String priorityTypePriceSide) {
-        this.priorityTypePriceSide = priorityTypePriceSide;
+    public void setStartTimeManually(String startTimeManually) {
+        this.startTimeManually = startTimeManually;
     }
 
-    public Boolean getAutocreateOnStart() {
-        return autocreateOnStart;
+    public String getEndTimeManually() {
+        return endTimeManually;
     }
 
-    public void setAutocreateOnStart(Boolean autocreateOnStart) {
-        this.autocreateOnStart = autocreateOnStart;
+    public void setEndTimeManually(String endTimeManually) {
+        this.endTimeManually = endTimeManually;
     }
 
-    public Long getStatusIdOnAutocreateOnCheque() {
-        return statusIdOnAutocreateOnCheque;
+    public boolean isHideEmployeeField() {
+        return hideEmployeeField;
     }
 
-    public void setStatusIdOnAutocreateOnCheque(Long statusIdOnAutocreateOnCheque) {
-        this.statusIdOnAutocreateOnCheque = statusIdOnAutocreateOnCheque;
+    public void setHideEmployeeField(boolean hideEmployeeField) {
+        this.hideEmployeeField = hideEmployeeField;
     }
 }

@@ -1,6 +1,7 @@
 package com.dokio.controller;
 import com.dokio.message.request.*;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
+import com.dokio.message.request.Settings.SettingsAppointmentForm;
 import com.dokio.message.request.additional.AppointmentDocsListSearchForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.response.*;
@@ -173,14 +174,20 @@ public class AppointmentsController {
         catch (Exception e){e.printStackTrace();logger.error("Controller setCustomersOrdersAsDecompleted error", e);
             return new ResponseEntity<>("Controller setAppointmentAsDecompleted exception", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @PostMapping("/api/auth/saveSettingsAppointment")
+    public ResponseEntity<?> saveSettingsCalendar(@RequestBody SettingsAppointmentForm request){
+        logger.info("Processing post request for path /api/auth/saveSettingsAppointment: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.saveSettingsAppointment(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Controller saveSettingsAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     @RequestMapping(
-            value = "/api/auth/getSettingsAppointments",
+            value = "/api/auth/getSettingsAppointment",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<?> getSettingsAppointments()
+    public ResponseEntity<?> getSettingsAppointment()
     {   logger.info("Processing get request for path /api/auth/getSettingsAppointments without request parameters");
-        try{    return new ResponseEntity<>(appointmentRepositoryJPA.getSettingsAppointments(), HttpStatus.OK);}
-        catch (Exception e) {e.printStackTrace();logger.error("Controller getSettingsAppointments exception", e);
-            return new ResponseEntity<>("Controller getSettingsAppointments exception", HttpStatus.INTERNAL_SERVER_ERROR);}
+        try{    return new ResponseEntity<>(appointmentRepositoryJPA.getSettingsAppointment(), HttpStatus.OK);}
+        catch (Exception e) {e.printStackTrace();logger.error("Controller getSettingsAppointment exception", e);
+            return new ResponseEntity<>("Controller getSettingsAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/addFilesToAppointment")
@@ -188,7 +195,7 @@ public class AppointmentsController {
         logger.info("Processing post request for path /api/auth/addFilesToAppointment: " + request.toString());
         try {return new ResponseEntity<>(appointmentRepositoryJPA.addFilesToAppointment(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller addFilesToAppointment error", e);
-            return new ResponseEntity<>("Controller addFilesToAppointment exception", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Controller addFilesToAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/getAppointmentServicesSearchList")

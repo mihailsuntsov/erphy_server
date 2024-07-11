@@ -984,102 +984,106 @@ public class AppointmentRepositoryJPA {
 
 
     //сохраняет настройки документа
+
     @Transactional
-    public Boolean saveSettingsAppointments(SettingsAppointmentForm row) {
+    public Boolean saveSettingsAppointment(SettingsAppointmentForm row) {
         String stringQuery="";
         Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         Long myId=userRepository.getUserId();
         try {
-
             commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
-            commonUtilites.idBelongsMyMaster("departments", row.getDepartmentId(), myMasterId);
-            // commonUtilites.idBelongsMyMaster("cagents", row.getCustomerId(), myMasterId);
-            // !!!!!!!!!!!!!!!! Сделать проверку списка клиентов на принадлежность к masterId !!!!!!!!!!!!!
-
-
-            commonUtilites.idBelongsMyMaster("sprav_status_dock", row.getStatusIdOnAutocreateOnCheque(), myMasterId);
 
             stringQuery =
-                    " insert into settings_appointments (" +
-                            "master_id, " +
-                            "company_id, " +
-                            "user_id, " +
-                            "hide_tenths, " +       //убирать десятые (копейки) - boolean
-                            "department_id, " +     //отделение по умолчанию
-                            "priority_type_price_side, "+ // приоритет типа цены: Склад (sklad) Покупатель (cagent) Цена по-умолчанию (defprice)
-                            "date_time_update, " +
-                            "autocreate_on_start , "+//автосоздание на старте документа, если автозаполнились все поля
-                            "status_id_on_autocreate_on_cheque"+//Перед автоматическим созданием после успешного отбития чека документ сохраняется. Данный статус - это статус документа при таком сохранении
-                            ") values (" +
-                            myMasterId + "," +
-                            row.getCompanyId() + "," +
-                            myId + "," +
-                            row.getHideTenths() + "," +
-                            row.getDepartmentId() + "," +
-                            ":priorityTypePriceSide,"+
-                            "now(), " +
-                            row.getAutocreateOnStart()+
-                            ") " +
-                            "ON CONFLICT ON CONSTRAINT settings_appointments_user_uq " +// "upsert"
-                            " DO update set " +
-                            " hide_tenths = " + row.getHideTenths() + ","+
-                            ", department_id = "+row.getDepartmentId()+
-                            ", company_id = "+row.getCompanyId()+
-                            ", date_time_update = now()" +
-                            ", priority_type_price_side = :priorityTypePriceSide"+
-                            ", autocreate_on_start = "+row.getAutocreateOnStart()+
-                            ", status_id_on_autocreate_on_cheque = " + row.getStatusIdOnAutocreateOnCheque();
+            " insert into settings_appointment (" +
+            " master_id, " +
+            " company_id, " +
+            " user_id, " +
+            " date_time_update, " +
+            " start_time, "+          // current / set_manually
+            " end_date_time, "+       // no_calc / sum_all_length / max_length /
+            " start_time_manually, "+ // 'HH:mm' if start_time = 'set_manually'
+            " end_time_manually, "+   // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
+            " calc_date_but_time, "+   //  If user wants to calc only dates. Suitable for hotels for checkout time
+            " hide_employee_field"+   // If for all services of company employees are not needed
+            ") values (" +
+            myMasterId + "," +
+            row.getCompanyId() + "," +
+            myId + "," +
+            " now(), " +
+            " :start_time,"+
+            " :end_date_time," +
+            " :start_time_manually," +
+            " :end_time_manually," +
+            row.isCalcDateButTime() + "," +
+            row.isHideEmployeeField() +
+            ") " +
+            " ON CONFLICT ON CONSTRAINT settings_appointment_user_uq " +// "upsert"
+            " DO update set " +
+            " date_time_update = now()," +
+            " company_id = " + row.getCompanyId() + "," +
+            " start_time = :start_time," +
+            " end_date_time = :end_date_time," +
+            " start_time_manually = :start_time_manually," +
+            " end_time_manually = :end_time_manually," +
+            " calc_date_but_time = "+row.isCalcDateButTime() + "," +
+            " hide_employee_field = "+row.isHideEmployeeField();
 
             Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("priorityTypePriceSide", row.getPriorityTypePriceSide());
+            query.setParameter("start_time",row.getStartTime());
+            query.setParameter("end_date_time",row.getEndDateTime());
+            query.setParameter("start_time_manually",row.getStartTimeManually());
+            query.setParameter("end_time_manually",row.getEndTimeManually());
             query.executeUpdate();
             return true;
         }
         catch (Exception e) {
-            logger.error("Exception in method saveSettingsAppointments. SQL query:"+stringQuery, e);
+            logger.error("Exception in method saveSettingsAppointment. SQL query:"+stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
 
-    //Загружает настройки документа "Заказ покупателя" для текущего пользователя (из-под которого пришел запрос)
-    public SettingsAppointmentJSON getSettingsAppointments() throws Exception {
+    public SettingsAppointmentJSON getSettingsAppointment() {
+
         String stringQuery;
         Long myId=userRepository.getUserId();
-        stringQuery = "select " +
-                "           coalesce(p.hide_tenths,false) as hide_tenths, " +
-                "           p.department_id as department_id, " +
+        stringQuery = "     select " +
                 "           p.id as id, " +
-                "           p.company_id as company_id, " +
-                "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
-                "           coalesce(p.autocreate_on_start,false) as autocreate_on_start," +
-                "           p.status_id_on_autocreate_on_cheque as status_id_on_autocreate_on_cheque " +
-                "           from settings_appointments p " +
-                "           LEFT OUTER JOIN cagents cg ON p.customer_id=cg.id " +
+                "           p.company_id as company_id, " +                                     // company
+                "           coalesce(start_time,'current') as start_time, " +                   // current / set_manually   The last one is suitable for hotels for checkin time
+                "           coalesce(end_date_time, 'sum_all_length') as end_date_time, " +     // no_calc / sum_all_length / max_length
+                "           coalesce(start_time_manually, '00:00') as start_time_manually, " +  // 'HH:mm' if start_time = 'set_manually'
+                "           coalesce(end_time_manually, '00:01') as end_time_manually, " +      // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
+                "           coalesce(hide_employee_field, false) as hide_employee_field, " +     //  If for all services of company employees are not needed
+                "           coalesce(calc_date_but_time, false) as calc_date_but_time " +       //  If user wants to calc only dates. Suitable for hotels for checkout time
+
+                "           from settings_appointment p " +
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();
-            if(queryList.size()==0) throw new NoResultException();
-            SettingsAppointmentJSON returnObj=new SettingsAppointmentJSON();
+
+            SettingsAppointmentJSON returnObj=new SettingsAppointmentJSON(
+                    "current","sum_all_length","00:00","00:01",false, false);
+
             for(Object[] obj:queryList){
-                returnObj.setHideTenths((Boolean)                       obj[0]);
-                returnObj.setDepartmentId(obj[1]!=null?Long.parseLong(  obj[1].toString()):null);
-                returnObj.setId(Long.parseLong(                         obj[2].toString()));
-                returnObj.setCompanyId(Long.parseLong(                  obj[3].toString()));
-                returnObj.setPriorityTypePriceSide((String)             obj[4]);
-                returnObj.setAutocreateOnStart((Boolean)                obj[5]);
-                returnObj.setStatusIdOnAutocreateOnCheque(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
+                returnObj.setId(Long.parseLong(                             obj[0].toString()));
+                returnObj.setCompanyId(Long.parseLong(                      obj[1].toString()));
+                returnObj.setStartTime((String)                             obj[2]);
+                returnObj.setEndDateTime((String)                           obj[3]);
+                returnObj.setStartTimeManually((String)                     obj[4]);
+                returnObj.setEndTimeManually((String)                       obj[5]);
+                returnObj.setHideEmployeeField((Boolean)                    obj[6]);
+                returnObj.setCalcDateButTime((Boolean)                      obj[7]);
             }
             return returnObj;
-        } catch (NoResultException nre) {
-            return null;
         }
         catch (Exception e) {
-            logger.error("Exception in method getSettingsAppointments. SQL query:"+stringQuery, e);
+            logger.error("Exception in method getSettingsAppointment. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            throw new Exception();
+            return null;
         }
+
     }
 
     //  удаляет лишние позиции товаров при сохранении документа (те позиции, которые ранее были в документе, но потом их удалили)
