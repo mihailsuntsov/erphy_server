@@ -6729,7 +6729,7 @@ create table settings_appointment (
                                     end_date_time               varchar not null,   -- no_calc / sum_all_length / max_length
                                     calc_date_but_time          boolean not null,   -- if user wants to calc only dates. Suitable for hotels for checkout time
                                     start_time_manually         varchar(5),         -- 'HH:mm' if start_time = 'set_manually'
-                                    end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
+                                    end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'no_calc'
                                     hide_employee_field         boolean not null,   -- If for all services of company employees are not needed
                                     foreign key (master_id) references users(id),
                                     foreign key (user_id) references users(id),
