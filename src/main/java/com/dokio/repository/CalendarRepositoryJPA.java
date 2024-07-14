@@ -830,7 +830,7 @@ public class CalendarRepositoryJPA {
                 "       where " +
                 "       ssd.master_id="+masterId+" and " +
                 "       ws.id is not null and " +
-                "       ssd.employee_id in "+employeesIds+" and " +
+                (employeesIdsList.size() > 0?("       ssd.employee_id in "+employeesIds+" and "):"") +
 //              Сравнение производится по времени пользователя, т.к. запрос идет из UI. По этому нужно адаптировать время начала и окончания смены ко времени пользователя
 //              The comparison is made based on the user's time, because the request comes from the UI. Therefore, it is necessary to adapt the start and end times of the work shift to the user’s time
 
