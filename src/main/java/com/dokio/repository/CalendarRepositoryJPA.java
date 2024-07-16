@@ -108,8 +108,10 @@ public class CalendarRepositoryJPA {
             "           r.name as resource_name, " +
             "           sum(coalesce(prq.quantity,0)) as need_res_qtt, " +
             "           ssd.name as status_name, " +
-            "           ssd.status_type as status_type " + //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+            "           ssd.status_type as status_type, " + //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                                                            //status type:  1 - normal;  2 - final positive         3 - final negative
+            "           ssd.id as status_id, " +
+            "           ssd.color as status_color" +
             "           from scdl_appointments a " +
             "           left outer join users ue ON a.employee_id=ue.id " +
             "           left outer join scdl_appointments_product ap on ap.appointment_id=a.id " +
@@ -126,7 +128,7 @@ public class CalendarRepositoryJPA {
             "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
                         (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
                         (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
-            "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type " +
+            "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
             "           order by a.id, r.id";
 
 
@@ -154,6 +156,8 @@ public class CalendarRepositoryJPA {
                 Integer currentCycleResourceQtt = obj[9] != null ? Integer.parseInt((obj[9]).toString()) : null;
                 String currentCycleStatusName = (String) obj[10];
                 Integer currentCycleStatusType = obj[11] != null ? Integer.parseInt((obj[11]).toString()) : null;
+                Long currentCycleStatusId = obj[12] != null ? Long.parseLong(obj[12].toString()) : null;
+                String currentCycleStatusColor = (String) obj[13];
 
                 // on this cycle if it is a new Appointment
                 // если это новая Запись
@@ -193,7 +197,7 @@ public class CalendarRepositoryJPA {
                     currentEmployee = new CalendarUser(currentCycleEmployeeId, currentCycleEmployeeName, new CalendarColors("#000000","#B0E0E0"));
                     // Создали новый объект, содержащий всю дополнительную информацию по Записи
                     // Created a new object containing all additional information about the Appointment
-                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType);
+                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType, currentCycleStatusId, currentCycleStatusColor);
                 }
                 // Копим ресурсы
                 // Сollect resources

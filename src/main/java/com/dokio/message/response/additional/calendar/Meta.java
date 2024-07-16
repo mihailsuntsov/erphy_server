@@ -10,21 +10,36 @@ public class Meta {
     private Set<ItemResource> itemResources;
     private String statusName;
     private Integer statusType; //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
+    private Long statusId;
+    private String statusColor;
 
     public Meta() {
     }
 
-    public Meta(CalendarUser user, String docType) {
-        this.user = user;
-        this.docType = docType;
-    }
-
-    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType) {
+    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType, Long statusId, String statusColor) {
         this.user = user;
         this.docType = docType;
         this.departmentPartId = departmentPartId;
         this.statusName = statusName;
         this.statusType = statusType;
+        this.statusId = statusId;
+        this.statusColor = statusColor;
+    }
+
+    public Long getStatusId() {
+        return statusId;
+    }
+
+    public void setStatusId(Long statusId) {
+        this.statusId = statusId;
+    }
+
+    public String getStatusColor() {
+        return statusColor;
+    }
+
+    public void setStatusColor(String statusColor) {
+        this.statusColor = statusColor;
     }
 
     public String getStatusName() {

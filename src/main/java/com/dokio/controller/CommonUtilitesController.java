@@ -18,6 +18,7 @@
 package com.dokio.controller;
 
 import com.dokio.message.request.UniversalForm;
+import com.dokio.repository.AppointmentRepositoryJPA;
 import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -38,8 +39,10 @@ public class CommonUtilitesController {
 
     @Autowired
     CommonUtilites commonUtilites;
+    @Autowired
+    AppointmentRepositoryJPA appointmentRepository;
 
-    @SuppressWarnings("Duplicates")
+
     @RequestMapping(
             value = "/api/auth/isDocumentNumberUnical",
             params = {"company_id", "doc_number", "doc_id", "table"},
@@ -96,4 +99,26 @@ public class CommonUtilitesController {
         }
     }
 
+    @RequestMapping(
+            value = "/api/auth/changeDocumentStatus",
+            params = {"documentsTableId", "docId", "statusId"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> changeDocumentStatus(
+            @RequestParam("documentsTableId") Integer documentsTableId,
+            @RequestParam("docId") Long docId,
+            @RequestParam("statusId") Long statusId){
+        logger.info("Processing get request for path /api/auth/changeDocumentStatus with parameters: " + "documentsTableId: " + documentsTableId.toString() + ", docId: " + docId.toString() + ", statusId: " + statusId.toString());
+        try {
+            Integer ret = null;
+            switch (documentsTableId) {
+                case (59):// Appointments
+                    ret = appointmentRepository.changeAppointmentStatus(docId, statusId);
+                    break;
+            }
+            return new ResponseEntity<>(ret, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

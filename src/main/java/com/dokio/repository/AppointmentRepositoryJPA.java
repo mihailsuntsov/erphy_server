@@ -2279,4 +2279,38 @@ public class AppointmentRepositoryJPA {
             }
         } else return false;
     }
+
+    @Transactional
+    public Integer changeAppointmentStatus(Long docId, Long statusId){
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        Long myId = userRepository.getUserId();
+        if(     (securityRepositoryJPA.userHasPermissions_OR(59L,"712") && securityRepositoryJPA.isItAllMyMastersDocuments("scdl_appointments",docId.toString())) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"713") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("scdl_appointments",docId.toString()))||
+                //Если есть право на "Редактирование по своим отделениям и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"714") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("scdl_appointments",docId.toString()))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я (т.е. залогиненное лицо)
+                (securityRepositoryJPA.userHasPermissions_OR(59L,"715") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("scdl_appointments",docId.toString())))
+        {
+            String stringQuery = "";
+            try {
+                commonUtilites.idBelongsMyMaster("sprav_status_dock", statusId, masterId);
+                commonUtilites.idBelongsMyMaster("scdl_appointments", docId, masterId);
+                stringQuery = "update scdl_appointments " +
+                        " set " +
+                        " status_id = " + statusId + ", " +
+                        " date_time_changed = now(), " +
+                        " changer_id = " + myId +
+                        " where id = " + docId + " and master_id=" + masterId;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method changeAppointmentStatus. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
+    }
+
 }
