@@ -124,9 +124,11 @@ public class CalendarRepositoryJPA {
             "           a.company_id=" + request.getCompanyId() + " and " +
             "           coalesce(a.is_deleted,false) = false and " +
                 // Events (appointments/reservations) must intersect the range of dates ( event_start < range_end AND event_end > range_start )
+//            "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' - interval '6' day < a.ends_at_time and " +
+//            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' + interval '6' day > a.starts_at_time " +
             "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
             "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
-                        (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
+                (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
                         (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
             "           order by a.id, r.id";
