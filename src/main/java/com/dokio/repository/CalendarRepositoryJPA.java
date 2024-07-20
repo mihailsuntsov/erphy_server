@@ -4,6 +4,7 @@ import com.dokio.message.request.Settings.SettingsCalendarForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
 import com.dokio.message.response.Settings.SettingsCalendarJSON;
+import com.dokio.message.response.additional.IdNameAndDescription;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
 import com.dokio.message.response.additional.calendar.*;
 import com.dokio.message.response.additional.appointment.AppointmentEmployee;
@@ -1007,7 +1008,7 @@ public class CalendarRepositoryJPA {
     @Transactional
     public Boolean saveSettingsCalendar(SettingsCalendarForm row) {
         String stringQuery="";
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         Long myId=userRepository.getUserId();
         try {
             commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
@@ -1102,7 +1103,159 @@ public class CalendarRepositoryJPA {
 
     }
 
+    public List<ShortServiceInfoWithAttributes> getResourceServicesList(long resourceId){
 
+
+        String stringQuery = "";
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+        stringQuery = " select  " +
+                " p.id as id,  " +
+                " p.name as name, " +
+                " p.short_description, " +
+                " f.name as filename, " +
+                " pa.id as  attribute_id, " +
+                " pa.name as attribute_name, " +
+                " pa.description as attribute_description, " +
+                " pt.term_id as term_id, " +
+                " pat.name as term_name, " +
+                " pat.description as term_descr " +
+                "  from  " +
+                " products p " +
+                " inner join scdl_product_resource_qtt prq on p.id=prq.product_id " +
+                " inner join sprav_resources r on prq.resource_id=r.id " +
+                " left outer join files f on f.id=(select file_id from product_files where product_id=p.id order by output_order limit 1) " +
+                " left outer join product_terms pt on pt.product_id = p.id  " +
+                " left outer join product_attribute_terms pat on pat.id = pt.term_id " +
+                " left outer join product_attributes pa on pa.id = pat.attribute_id " +
+                " left outer join product_productattributes ppa on ppa.product_id = p.id and ppa.attribute_id=pa.id " +
+                " where  " +
+                " p.master_id = "+myMasterId+" and " +
+                " r.id = " + resourceId +
+                " order by p.name, ppa.position, pat.menu_order ";
+
+
+        try{
+            List<ShortServiceInfoWithAttributes> returnList = new ArrayList<>();
+            Long currentServiceId = 0L;
+            Long currentAttributeId = 0L;
+            ShortServiceInfoWithAttributes shortServiceInfoWithAttributes = new ShortServiceInfoWithAttributes();
+            ProductAttribute attributeWithTerms = new ProductAttribute();
+            List<ProductAttribute> attributesWithTerms = new ArrayList<>();
+            List<IdNameAndDescription> currentAttributeTerms = new ArrayList<>();
+
+            Query query = entityManager.createNativeQuery(stringQuery);//
+            List<Object[]> queryList = query.getResultList();
+
+            for (Object[] obj : queryList) {
+                Long currentCycleServiceId =              Long.parseLong(obj[0].toString());
+                String currentCycleServiceName =                (String) obj[1];
+                String currentCycleServiceDescription =         (String) obj[2];
+                String currentCycleImageFile =                  (String) obj[3];
+                Long currentCycleAttributeId =            Objects.isNull(obj[4])?null:Long.parseLong(obj[4].toString());
+                String currentCycleAttributeName =              (String) obj[5];
+                String currentCycleAttributeDescription =       (String) obj[6];
+                Long currentCycleTermId =                 Objects.isNull(obj[7])?null:Long.parseLong(obj[7].toString());
+                String currentCycleTermName =                   (String) obj[8];
+                String currentCycleTermDescription =            (String) obj[9];
+
+                // on this cycle if it is a new service
+                if (!currentCycleServiceId.equals(currentServiceId)) {
+
+                    // Если это не первый цикл
+                    // If it is not a first cycle
+                    if (!currentServiceId.equals(0L)) {
+
+                        // В текущий атрибут сохранили все накопленные термсы
+                        attributeWithTerms.setTermsList(currentAttributeTerms);
+
+                        // В список атрибутов текущего сервиса добавили текущий атрибут
+                        attributesWithTerms.add(attributeWithTerms);
+
+                        // В текущий сервис поместили список атрибутов
+                        shortServiceInfoWithAttributes.setAttributesList(attributesWithTerms);
+
+                        // В итоговый список сервисов поместили этот сервис
+                        returnList.add(shortServiceInfoWithAttributes);
+
+                        // Cоздали новый сервис
+                        shortServiceInfoWithAttributes = new ShortServiceInfoWithAttributes();
+
+                        // Для нового сервиса создаем новый атрибут и сбрасываем накопление термсов
+                        currentAttributeId = currentCycleAttributeId;
+
+                        // Cоздали новый атрибут, и прописали туда его данные
+                        attributeWithTerms = new ProductAttribute(currentAttributeId, currentCycleAttributeName, currentCycleAttributeDescription);
+
+                        // Cбросили текущее накопление атрибутов  для нового сервиса
+                        currentAttributeTerms = new ArrayList<>();
+
+                    }
+
+                    currentServiceId = currentCycleServiceId;
+
+                    // Для нового ссервиса задаём его ID, имя описание
+                    shortServiceInfoWithAttributes.setId(currentCycleServiceId);
+                    shortServiceInfoWithAttributes.setName(currentCycleServiceName);
+                    shortServiceInfoWithAttributes.setDescription(currentCycleServiceDescription);
+                    shortServiceInfoWithAttributes.setImageFile(currentCycleImageFile);
+
+
+                    // Cоздали новый лист для накопления атрибутов для нового сервиса
+                    attributesWithTerms = new ArrayList<>();
+
+                }
+
+                // Если сервис не новый, но атрибут сменился
+                if (!currentCycleAttributeId.equals(currentAttributeId)) {
+
+                    if (!currentAttributeId.equals(0L)) {
+
+                        // В текущий атрибут сохранили все накопленные термсы
+                        attributeWithTerms.setTermsList(currentAttributeTerms);
+
+                        // В список атрибутов текущего сервиса добавили текущий атрибут
+                        attributesWithTerms.add(attributeWithTerms);
+
+                    }
+
+                    currentAttributeId = currentCycleAttributeId;
+
+                    // Cоздали новый атрибут, и прописали туда его ID
+                    attributeWithTerms = new ProductAttribute(currentAttributeId, currentCycleAttributeName, currentCycleAttributeDescription);
+
+                    // Cбросили текущее накопление ID сервисов для новой части отделения
+                    currentAttributeTerms = new ArrayList<>();
+
+                }
+
+                // копим термсы
+                currentAttributeTerms.add(new IdNameAndDescription(currentCycleTermId, currentCycleTermName, currentCycleTermDescription));
+            }
+
+            // По окончании цикла нужно записать последний сервис
+            if (!currentServiceId.equals(0L)) {
+
+                // В текущий атрибут сохранили все накопленные термсы
+                attributeWithTerms.setTermsList(currentAttributeTerms);
+
+                // В список атрибутов текущего сервиса добавили текущий атрибут
+                attributesWithTerms.add(attributeWithTerms);
+
+                // В текущий сервис поместили список атрибутов
+                shortServiceInfoWithAttributes.setAttributesList(attributesWithTerms);
+
+                // В итоговый список сервисов поместили этот сервис
+                returnList.add(shortServiceInfoWithAttributes);
+            }
+            return returnList;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getResourceServicesList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
 
 
 

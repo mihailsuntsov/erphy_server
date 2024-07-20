@@ -1,6 +1,7 @@
 package com.dokio.message.request.additional;
 
 import com.dokio.message.response.additional.IdAndNameJSON;
+import com.dokio.message.response.additional.ResourceJSON;
 
 import java.util.List;
 
@@ -13,6 +14,15 @@ public class DepartmentPartsForm {
     private int menu_order;
     private Boolean is_active;
     private List<IdAndNameJSON> deppartProducts;
+    private List<ResourceJSON> deppartResourcesTable;
+
+    public List<ResourceJSON> getDeppartResourcesTable() {
+        return deppartResourcesTable;
+    }
+
+    public void setDeppartResourcesTable(List<ResourceJSON> deppartResourcesTable) {
+        this.deppartResourcesTable = deppartResourcesTable;
+    }
 
     public List<IdAndNameJSON> getDeppartProducts() {
         return deppartProducts;

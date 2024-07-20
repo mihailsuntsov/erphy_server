@@ -120,6 +120,7 @@ public class ProductsForm {
     private Long scdl_srvc_duration_unit_id;
     private List<Long> depparts;
     private List<Long> employees;
+    private List<ProductResourcesForm> productResourcesTable; // resources that used this service
 
     public List<Long> getDepparts() {
         return depparts;
@@ -220,7 +221,6 @@ public class ProductsForm {
     public List<ProductVariationsForm> getProductVariations() {
         return productVariations;
     }
-    private List<ProductResourcesForm> productResourcesTable; // resources that used this service
 
     public List<ProductResourcesForm> getProductResourcesTable() {
         return productResourcesTable;

@@ -60,4 +60,16 @@ public class CalendarController {
         try {return new ResponseEntity<>(calendarRepository.getSettingsCalendar(), HttpStatus.OK);}
         catch (Exception e){return new ResponseEntity<>("Controller getSettingsCalendar error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(
+            value = "/api/auth/getResourceServicesList",
+            params = {"resource_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getResourceServicesList(
+            @RequestParam("resource_id") Long resource_id){
+        logger.info("Processing get request for path /api/auth/getResourceServicesList with parameters: " + "resource_id: " + resource_id);
+        try {return new ResponseEntity<>(calendarRepository.getResourceServicesList(resource_id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getResourceServicesList error", e);
+            return new ResponseEntity<>("Controller getResourceServicesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

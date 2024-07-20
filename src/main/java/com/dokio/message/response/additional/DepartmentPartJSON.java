@@ -19,6 +19,7 @@ public class DepartmentPartJSON {
     private String description;
     private Boolean is_active;
     private Boolean is_deleted;
+    private List<ResourceJSON> deppartResourcesTable; // used in Department document, when department part is opened
 
     // to create table |Department part name|Resource qtt| in the document "Resource"
     // that describes the qtt of current resource in each department part
@@ -27,6 +28,14 @@ public class DepartmentPartJSON {
     private Integer resource_qtt;   // used in    getDepartmentPartsWithResourceQttList
     private List<DeppartProduct> deppartProducts; // list of services in this department part
     private List<ResourceDepPart> resources; // list of resources with quantity in this department part
+
+    public List<ResourceJSON> getDeppartResourcesTable() {
+        return deppartResourcesTable;
+    }
+
+    public void setDeppartResourcesTable(List<ResourceJSON> deppartResourcesTable) {
+        this.deppartResourcesTable = deppartResourcesTable;
+    }
 
     public List<ResourceDepPart> getResources() {
         return resources;

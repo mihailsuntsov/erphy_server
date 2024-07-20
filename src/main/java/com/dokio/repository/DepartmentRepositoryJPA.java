@@ -23,10 +23,7 @@ import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
-import com.dokio.message.response.additional.DepartmentPartJSON;
-import com.dokio.message.response.additional.DepartmentWithPartsJSON;
-import com.dokio.message.response.additional.IdAndNameJSON;
-import com.dokio.message.response.additional.ResourceDepPart;
+import com.dokio.message.response.additional.*;
 import com.dokio.message.response.additional.eployeescdl.DeppartProduct;
 import com.dokio.model.Companies;
 import com.dokio.model.Departments;
@@ -765,6 +762,7 @@ public class DepartmentRepositoryJPA {
                     doc.setIs_deleted((Boolean) obj[12]);
                     doc.setDeppartProducts(getDeppartProducts(id,myMasterId));
                 }
+                doc.setDeppartResourcesTable(getDeppartResources(myMasterId, doc.getId()));
                 return doc;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -773,6 +771,78 @@ public class DepartmentRepositoryJPA {
             }
         } else return null;
     }
+    private List<ResourceJSON> getDeppartResources(Long masterId, Long deppartId){
+        String stringQuery =
+                " select " +
+                        " da.resource_id as id," +
+                        " da.quantity    as resource_qtt," +
+                        " p.name         as resource_name," +
+                        " p.description  as resource_description" +
+                        " from  scdl_resource_dep_parts_qtt da" +
+                        " inner join sprav_resources p on p.id = da.resource_id" +
+                        " where da.master_id = " + masterId + " and da.dep_part_id = " + deppartId + " order by p.name";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> resultList = query.getResultList();
+            List<ResourceJSON> returnList = new ArrayList<>();
+            for(Object[] obj:resultList){
+                ResourceJSON doc=new ResourceJSON();
+                doc.setResource_id(Long.parseLong(              obj[0].toString()));
+                doc.setResource_qtt((Integer)                   obj[1]);
+                doc.setName((String)                            obj[2]);
+                doc.setDescription((String)                     obj[3]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDeppartResources. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private void saveDeppartResourcesQtt(Long master_id, Long resource_id, Long deppart_id, int quantity) throws Exception {
+        String stringQuery = "insert into scdl_resource_dep_parts_qtt (" +
+                "   master_id," +
+                "   resource_id," +
+                "   dep_part_id," +
+                "   quantity " +
+                "   ) values (" +
+                master_id+", "+
+                resource_id+", "+
+                deppart_id+", " +
+                quantity +
+                ") ON CONFLICT ON CONSTRAINT scdl_resource_dep_parts_qtt_uq " +// "upsert"
+                "   DO update set " +
+                "   quantity = " + quantity;
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveDeppartResourcesQtt. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+    // Deleting resources that no more contain this department part
+    private void deleteResourcesThatNoMoreContainedInThisDeppart(Set<Long> existingResources, Long deppartId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from scdl_resource_dep_parts_qtt " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " dep_part_id = " +deppartId;
+        if(existingResources.size()>0)
+            stringQuery = stringQuery + " and resource_id not in " + commonUtilites.SetOfLongToString(existingResources,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteResourcesThatNoMoreContainedInThisDeppart. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
     public List<DepartmentPartJSON> getDepartmentPartsList (Long departmentId) {
         String stringQuery;
         Long masterId = userRepositoryJPA.getMyMasterId();
@@ -807,35 +877,6 @@ public class DepartmentRepositoryJPA {
         }
     }
 
-
-
-    // returns the list of departments with parts that user belongs to
-//    public List<DepartmentWithPartsJSON> getDepartmentsWithPartsListOfUser (Long userId, Long masterId) {
-//        String stringQuery;
-//        stringQuery =
-//                    "           select " +
-//                    "           p.id as id, " +
-//                    "           p.name as name, " +
-//                    "           p.description as description, " +
-//                    "           coalesce(p.is_active, true) as is_active, " +
-//                    "           d.name as department_name, " +
-//                    "           d.id as department_id " +
-//                    "           from scdl_dep_parts p " +
-//                    "           INNER JOIN users u ON p.master_id=u.id " +
-//                    "           INNER JOIN departments d ON p.department_id=d.id " +
-//                    "           where  p.master_id = " + masterId +
-//                    "           and p.department_id in (select id from departments where master_id="+masterId+" and coalesce(is_deleted,false)=false)" +
-//                    "           and p.department_id in (select department_id from user_department where user_id="+userId+")"+
-//                    "           and coalesce(p.is_deleted, false) = false" +
-//                    "           order by d.name,p.menu_order";
-//        try {
-//            return departmentsPartsListConstruct(stringQuery);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            logger.error("Exception in method getDepartmentsWithPartsListOfUser. SQL query:" + stringQuery, e);
-//            return null;
-//        }
-//    }
 
 
 
@@ -1061,7 +1102,7 @@ public class DepartmentRepositoryJPA {
     }
 
     @Transactional
-    public Integer insertDepartmentPart(DepartmentPartsForm request) {
+    public Long insertDepartmentPart(DepartmentPartsForm request) {
         //Если есть право на "Редактирование по всем предприятиям" и id принадлежат владельцу аккаунта (с которого апдейтят ), ИЛИ
         if(     (securityRepositoryJPA.userHasPermissions_OR(4L,"16") && securityRepositoryJPA.isItAllMyMastersDocuments("departments",request.getDepartment_id().toString())) ||
                 //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого апдейтят) и предприятию аккаунта, ИЛИ
@@ -1103,20 +1144,23 @@ public class DepartmentRepositoryJPA {
                 stringQuery="select id from scdl_dep_parts where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDocId=Long.valueOf(query2.getSingleResult().toString());
-                Set<Long>existingDeppartProducts = new HashSet<>();
+//                Set<Long>existingDeppartProducts = new HashSet<>();
                 for (IdAndNameJSON product : request.getDeppartProducts()) {
                     saveDeppartProducts(myMasterId, product.getId(), newDocId);
-                    existingDeppartProducts.add(product.getId());
+//                    existingDeppartProducts.add(product.getId());
                 }
-                deleteNoMoreContainedDeppartsOrProducts(existingDeppartProducts, myMasterId, request.getId(),"product");
-                return 1;
+//                deleteNoMoreContainedDeppartsOrProducts(existingDeppartProducts, myMasterId, request.getId(),"product");
+                for (ResourceJSON row : request.getDeppartResourcesTable()) {
+                    saveDeppartResourcesQtt(myMasterId, row.getResource_id(), newDocId, row.getResource_qtt());
+                }
+                return newDocId;
             } catch (Exception e) {
                 logger.error("Exception in method insertDepartmentPart. SQL query:" + stringQuery, e);
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
                 e.printStackTrace();
                 return null;
             }
-        } else return -1;
+        } else return -1L;
     }
 
     @SuppressWarnings("Duplicates")
@@ -1154,6 +1198,14 @@ public class DepartmentRepositoryJPA {
                     existingDeppartProducts.add(product.getId());
                 }
                 deleteNoMoreContainedDeppartsOrProducts(existingDeppartProducts, myMasterId, request.getId(),"product");
+                // saving resources
+                Set<Long>existingDeppartResources = new HashSet<>();
+                for (ResourceJSON row : request.getDeppartResourcesTable()) {
+                    saveDeppartResourcesQtt(myMasterId, row.getResource_id(), request.getId(), row.getResource_qtt());
+                    existingDeppartResources.add(row.getResource_id());
+                }
+                // deleting resources that was deleted on frontend
+                deleteResourcesThatNoMoreContainedInThisDeppart(existingDeppartResources,request.getId(), myMasterId );
                 return 1;
             } catch (Exception e) {
                 logger.error("Exception in method updateDepartmentPart. SQL query:" + stringQuery, e);

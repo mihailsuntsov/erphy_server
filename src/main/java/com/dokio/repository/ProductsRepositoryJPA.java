@@ -5311,7 +5311,7 @@ public class ProductsRepositoryJPA {
     }
 
 
-    // **********************  A L L   A B O U T   A S S I G N M E N T S  **********************
+    // **********************  A L L   A B O U T   A P P O I N T M E N T S  **********************
 
 
     private void saveProductResourcesQtt(Long master_id, Long resource_id, Long product_id, int quantity) throws Exception {
