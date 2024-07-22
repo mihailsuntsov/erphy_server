@@ -27,6 +27,7 @@ import javax.validation.Valid;
 import com.dokio.message.request.CompaniesForm;
 import com.dokio.message.request.DepartmentForm;
 import com.dokio.message.request.Sprav.StoresForm;
+import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.model.*;
@@ -197,7 +198,7 @@ public class AuthRestAPIs {
 			// уcтановим пользователю часовой пояс (timeZone), язык и локаль
 			userRepositoryJPA.setUserSettings(createdUserId, 24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru") ? 10 : 4, "24");
 			userRepository.save(user);// сохраняем чтобы применился язык
-			Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'", "'my_department'", "'role_admins'", "'default_store_name'"});
+			Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'", "'my_department'", "'role_admins'", "'default_store_name'", "'dep_part'"});
 			// set plan options with current prices to master user
 			subscriptionRepository.createMasterUserPlanOptions(createdUserId);
 			// создадим пользователю предприятие
@@ -214,13 +215,15 @@ public class AuthRestAPIs {
 			Long bo = boxofficeRepository.insertBoxofficesFast(createdUserId, createdUserId, companyId);
 			// расчетный счет предприятия
 			Long ac = paymentAccountsRepository.insertPaymentAccountsFast(createdUserId, createdUserId, companyId);
-			// создадим пользователю отделение
+			// создадим отделение
 			DepartmentForm department = new DepartmentForm();
 			department.setName(map.get("my_department"));
 			department.setPrice_id(prices.get(0));
 			department.setBoxoffice_id(bo);
 			department.setPayment_account_id(ac);
 			Long departmentId = departmentRepositoryJPA.insertDepartmentFast(department, companyId, createdUserId);
+			Long depPartId = departmentRepositoryJPA.insertDepartmentPartFast(map.get("dep_part")+" 1", departmentId, createdUserId);
+//			DepartmentPartsForm departmentPartsForm = new DepartmentPartsForm();
 			Companies userCompany = emgr.find(Companies.class, companyId);
 			Set<Long> userDepartmentsIds = new HashSet<>(Arrays.asList(departmentId));
 			Set<Departments> userDepartments = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(userDepartmentsIds);

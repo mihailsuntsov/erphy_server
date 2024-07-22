@@ -1152,10 +1152,10 @@ public class CalendarRepositoryJPA {
                 String currentCycleServiceName =                (String) obj[1];
                 String currentCycleServiceDescription =         (String) obj[2];
                 String currentCycleImageFile =                  (String) obj[3];
-                Long currentCycleAttributeId =            Objects.isNull(obj[4])?null:Long.parseLong(obj[4].toString());
+                Long currentCycleAttributeId =            Objects.isNull(obj[4])?0L:Long.parseLong(obj[4].toString());
                 String currentCycleAttributeName =              (String) obj[5];
                 String currentCycleAttributeDescription =       (String) obj[6];
-                Long currentCycleTermId =                 Objects.isNull(obj[7])?null:Long.parseLong(obj[7].toString());
+                Long currentCycleTermId =                 Objects.isNull(obj[7])?0L:Long.parseLong(obj[7].toString());
                 String currentCycleTermName =                   (String) obj[8];
                 String currentCycleTermDescription =            (String) obj[9];
 
@@ -1170,6 +1170,7 @@ public class CalendarRepositoryJPA {
                         attributeWithTerms.setTermsList(currentAttributeTerms);
 
                         // В список атрибутов текущего сервиса добавили текущий атрибут
+                        if(!Objects.isNull(attributeWithTerms.getId()) && attributeWithTerms.getId()>0L)
                         attributesWithTerms.add(attributeWithTerms);
 
                         // В текущий сервис поместили список атрибутов
@@ -1230,7 +1231,8 @@ public class CalendarRepositoryJPA {
                 }
 
                 // копим термсы
-                currentAttributeTerms.add(new IdNameAndDescription(currentCycleTermId, currentCycleTermName, currentCycleTermDescription));
+                if(!currentCycleTermId.equals(0L))
+                    currentAttributeTerms.add(new IdNameAndDescription(currentCycleTermId, currentCycleTermName, currentCycleTermDescription));
             }
 
             // По окончании цикла нужно записать последний сервис
@@ -1240,6 +1242,7 @@ public class CalendarRepositoryJPA {
                 attributeWithTerms.setTermsList(currentAttributeTerms);
 
                 // В список атрибутов текущего сервиса добавили текущий атрибут
+                if(!Objects.isNull(attributeWithTerms.getId()) && attributeWithTerms.getId()>0L)
                 attributesWithTerms.add(attributeWithTerms);
 
                 // В текущий сервис поместили список атрибутов

@@ -657,7 +657,7 @@ public class DepartmentRepositoryJPA {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertDepartmentFast(DepartmentForm request,Long companyId, Long myMasterId) {
+    public Long insertDepartmentFast(DepartmentForm request,Long companyId, Long myMasterId) throws Exception {
 //        EntityManager emgr = emf.createEntityManager();
         String stringQuery;
         Long newDocId;
@@ -695,9 +695,52 @@ public class DepartmentRepositoryJPA {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             logger.error("Exception in method insertDepartmentFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return null;
+            throw new Exception();
         }
     }
+    @Transactional
+    public Long insertDepartmentPartFast(String name, Long departmentId, Long myMasterId) throws Exception {
+
+            Long newDocId;
+            String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            String stringQuery =
+                    " insert into scdl_dep_parts " +
+                            "(" +
+                            "master_id, " +
+                            "creator_id, " +
+                            "date_time_created, " +
+                            "name, " +
+                            "description, " +
+                            "department_id, " +
+                            "is_active, " +
+                            "menu_order" +
+                            ") values (" +
+                            myMasterId + "," +
+                            myMasterId + "," +
+                            "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +//дата и время создания
+                            ":name," +
+                            "''," +
+                            departmentId + ", " +
+                            "true, " +
+                            " (select coalesce(max(menu_order),0)+1 from scdl_dep_parts where department_id=" + departmentId + ")" +
+                            ")";
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("name", name);
+                query.executeUpdate();
+                stringQuery="select id from scdl_dep_parts where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myMasterId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+                newDocId=Long.valueOf(query2.getSingleResult().toString());
+                return newDocId;
+            } catch (Exception e) {
+                logger.error("Exception in method insertDepartmentPartFast. SQL query:" + stringQuery, e);
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+                e.printStackTrace();
+                throw new Exception();
+            }
+
+    }
+
 //*****************************************************************************************************************************************************
 //****************************************************   P  A  R  T  S   ******************************************************************************
 //*****************************************************************************************************************************************************

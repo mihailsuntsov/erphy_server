@@ -946,7 +946,7 @@ public class CompanyRepositoryJPA {
                 " nds_included, " +
                 " vat, " +// VAT number
                 " store_default_lang_code," +
-                " booking_doc_name_variation," +
+                " booking_doc_name_variation_id," +
                 " time_zone_id " +
                 ") values (" +
                 myMasterId + ", "+
@@ -1615,6 +1615,8 @@ public class CompanyRepositoryJPA {
                 " st_prefix_barcode_packed," +
                 " name, " + //наименование
                 " type, " +
+                " time_zone_id, " +
+                " booking_doc_name_variation_id, " +
                 " store_default_lang_code" +
                 ") values (" +
                 myMasterId + ", "+
@@ -1625,6 +1627,8 @@ public class CompanyRepositoryJPA {
                 request.getSt_prefix_barcode_packed()+", "+
                 "'" + (request.getName() == null ? "Company": request.getName()) + "'," +//наименование
                 "'entity'," +
+                "21," + // UTC (GMT+0)
+                "1, " + // reservation
                 "upper('" +request.getStore_default_lang_code()+ "')" +
                 ")";
         try{

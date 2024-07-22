@@ -571,7 +571,9 @@ public class SpravStatusDocRepository {
         Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
                 "'st_new'","'st_cancel'","'st_send'","'st_ret_compl'","'st_assembly'","'st_wait_pay'","'st_wait_receive'","'st_paym_made'","'st_new_order'",
                 "'st_assembl_ord'","'st_await_iss'","'st_issd_buyer'","'st_wait_prices'","'st_wait_invoice'","'st_ord_delvrd'","'st_in_process'","'st_completed'",
-                "'st_payment_send'","'st_money_accptd'","'st_money_issued'","'st_invc_issued'","'st_invc_paid'","'st_printed'","'st_cg_new'","'st_cg_lead_new'","'st_cg_lead_prop'","'st_cg_lead_negot'","'st_cg_lead_out'","'st_cg_customer'"});
+                "'st_payment_send'","'st_money_accptd'","'st_money_issued'","'st_invc_issued'","'st_invc_paid'","'st_printed'","'st_cg_new'",
+                "'st_cg_lead_new'","'st_cg_lead_prop'","'st_cg_lead_negot'","'st_cg_lead_out'","'st_cg_customer'","'st_new_'","'st_confirmed'","'st_processed'"});
+
         stringQuery = "insert into sprav_status_dock ( master_id,creator_id,company_id,date_time_created,name,dock_id,status_type,color,output_order,is_deleted,is_default) values "+
                 // Возврат покупателя
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new")+"',28,1,'#cccccc',1,false,true),"+            //Новый документ
@@ -681,8 +683,13 @@ public class SpravStatusDocRepository {
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_prop")+"',12,1,'#8979fb',3,false,false),"+  //Lead - Sent proposal
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_negot")+"',12,1,'#33f1ff',4,false,false),"+ //Lead - Negotiations
                 "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_customer")+"',12,2,'#009e03',5,false,false),"+   //Lead - Out of funnel
-                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false);";   //Customer
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cg_lead_out")+"',12,3,'#000000',6,false,false)," +   //Customer
 
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_new_")+"',59,1,'#cccccc',1,false,true),"+            //Новый
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_confirmed")+"',59,1,'#6461a8',2,false,false),"+      //Подтверждён
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_processed")+"',59,1,'#008ad2',3,false,false),"+      //Выполняется
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_completed")+"',59,2,'#0cb149',4,false,false),"+      //Завершено
+                "("+masterId+","+mId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("st_cancel")+"',59,3,'#000000',5,false,false);";         //Отмена
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

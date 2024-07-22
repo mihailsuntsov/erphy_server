@@ -6737,7 +6737,18 @@ create table settings_appointment (
 );
 alter table settings_appointment add constraint settings_appointment_user_uq UNIQUE (company_id, user_id);
 
-
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('dep_part', 'Part of department', 'Часть отделения', 'Део одељења');
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('st_new_', 	'New', 				'Новый', 		'Нови'),
+('st_confirmed','Сonfirmed',		'Подтверждён',	'Потврђен'),
+('st_processed','Being processed',	'Выполняется',	'У току');
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('um_vizit', 	    'Vizit', 				'Посещение', 		'Посета'),
+('um_vizit_sm', 	'viz', 				'пос.', 		'пос.');
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('um_night', 	    'Night', 				'Ночь', 		'Ноћ'),
+('um_night_sm', 	'night', 				'ноч', 		'ноћ');
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
 
 
