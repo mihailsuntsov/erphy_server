@@ -4,6 +4,7 @@ import com.dokio.message.request.Settings.SettingsCalendarForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
 import com.dokio.message.response.Settings.SettingsCalendarJSON;
+import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.IdNameAndDescription;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
 import com.dokio.message.response.additional.calendar.*;
@@ -61,6 +62,9 @@ public class CalendarRepositoryJPA {
 //        List<CalendarEventJSON> events = new ArrayList<>();
         List<CalendarEventJSON> returnList = new ArrayList<>();
         LocalDate localDate = LocalDate.now();
+        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+        String dateFormat = userSettings.getDateFormat();
+        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
         Long masterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
 
@@ -112,7 +116,12 @@ public class CalendarRepositoryJPA {
             "           ssd.status_type as status_type, " + //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
                                                            //status type:  1 - normal;  2 - final positive         3 - final negative
             "           ssd.id as status_id, " +
-            "           ssd.color as status_color" +
+            "           ssd.color as status_color," +
+            "           to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_start," +
+            "           to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_start, " +
+            "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_end," +
+            "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_end " +
+
             "           from scdl_appointments a " +
             "           left outer join users ue ON a.employee_id=ue.id " +
             "           left outer join scdl_appointments_product ap on ap.appointment_id=a.id " +
@@ -148,7 +157,7 @@ public class CalendarRepositoryJPA {
 
             for (Object[] obj : queryList) {
                 Long currentCycleAppointmentId = Long.parseLong(obj[0].toString());
-                String currentCycleAppointmentName = (String) obj[1];
+                String currentCycleAppointmentName = ((String) obj[1]) + " " +  generateStartANdEndDateTime((String)obj[14],(String)obj[15],(String)obj[16],(String)obj[17]);
                 String currentCycleDateStart = (String) obj[2];
                 String currentCycleDateEnd = (String) obj[3];
                 Long currentCycleEmployeeId =obj[4] != null ? Long.parseLong(obj[4].toString()) : null;
@@ -225,6 +234,14 @@ public class CalendarRepositoryJPA {
             logger.error("Exception in method getCalendarEventsList.", e);
             return null;
         }
+    }
+
+    private String generateStartANdEndDateTime(String dateStart, String timeStart, String dateEnd, String timeEnd){
+        // multi-days event
+        if(!dateStart.equals(dateEnd)){
+            return (dateStart + " " + timeStart + "−" + dateEnd + " " + timeEnd);
+        } else
+            return (timeStart + "−" + timeEnd);
     }
 
 //    public List<BreakJSON> getCalendarUsersBreaksList2(CalendarEventsQueryForm queryForm) {

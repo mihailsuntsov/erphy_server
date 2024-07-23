@@ -473,4 +473,44 @@ public class SpravJobtitleRepositoryJPA {
         }
     }
 
+    @Transactional
+    public void createJobtitlesFast(Long mId, Long uId, Long cId) throws Exception {
+        String stringQuery;
+        String t = new Timestamp(System.currentTimeMillis()).toString();
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{
+                "'jt_administrator'","'jt_manager'","'jt_manicurist'","'jt_hairdresser-stylist'","'jt_eyebrow master'",
+                "'jt_cosmetologist'","'jt_visagiste'","'jt_masseur'","'jt_instructor'","'jt_trainer'",
+                "'jt_dentist'","'jt_orthodontist'","'jt_surgeon'","'jt_therapist'","'jt_neurologist'",
+                "'jt_cardiologist'","'jt_usd_doctor'","'jt_family_doctor'","'jt_photographer'","'jt_teacher'"});
+        stringQuery = "insert into sprav_jobtitles (master_id,creator_id,company_id,date_time_created,name,description,is_deleted) values "+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_administrator")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_manager")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_manicurist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_hairdresser")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_eyebrow master")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_cosmetologist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_visagiste")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_masseur")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_instructor")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_trainer")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_dentist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_orthodontist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_surgeon")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_therapist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_neurologist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_cardiologist")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_usd_doctor")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_family_doctor")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_photographer")+"','',false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("jt_teacher")+"','',false);";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method createJobtitlesFast. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 }

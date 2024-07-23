@@ -44,6 +44,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
@@ -114,6 +115,8 @@ public class AuthRestAPIs {
 	@Autowired
 	SpravProductAttributeRepository spravProductAttributes;
 	@Autowired
+	SpravJobtitleRepositoryJPA spravJobtitleRepository;
+	@Autowired
 	SubscriptionRepositoryJPA subscriptionRepository;
     @Autowired
     StoreRepository storeRepository;
@@ -176,8 +179,8 @@ public class AuthRestAPIs {
 
 			int cntUsers = cu.getCntRegisteredUsers();
 
-			Set<String> strRoles = new HashSet<>();
-			strRoles.add("admin"); // это "системная" роль, для спринга. Ею наделяются все пользователи. Все их реальные права регулируются Докио
+//			Set<String> strRoles = new HashSet<>();
+//			strRoles.add("admin"); // это "системная" роль, для спринга. Ею наделяются все пользователи. Все их реальные права регулируются Докио
 			Set<Role> roles = new HashSet<>();
 			Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).orElseThrow(() -> new RuntimeException("Fail! -> Cause: User Role not find."));
 			roles.add(adminRole);
@@ -197,6 +200,7 @@ public class AuthRestAPIs {
 
 			// уcтановим пользователю часовой пояс (timeZone), язык и локаль
 			userRepositoryJPA.setUserSettings(createdUserId, 24, userRepositoryJPA.getLangIdBySuffix(signUpRequest.getLanguage()), signUpRequest.getLanguage().equals("ru") ? 10 : 4, "24");
+
 			userRepository.save(user);// сохраняем чтобы применился язык
 			Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'", "'my_department'", "'role_admins'", "'default_store_name'", "'dep_part'"});
 			// set plan options with current prices to master user
@@ -275,6 +279,8 @@ public class AuthRestAPIs {
 			statusDocRepository.insertStatusesFast(createdUserId, createdUserId, companyId);
 			// базовые аттрибуты товаров (размер, цвет)
 			spravProductAttributes.insertProductAttributeFast(createdUserId, createdUserId, companyId, storeId);
+			// Должности / Job titles
+			spravJobtitleRepository.createJobtitlesFast(createdUserId, createdUserId, companyId);;
 			// Занести пользователя в контрагенты
 			if(settingsGeneral.isSaas() && !Objects.isNull(settingsGeneral.getBilling_cagents_category_id()))
 				userRepositoryJPA.setUserAsCagent(createdUserId, signUpRequest.getName(), signUpRequest.getEmail(), settingsGeneral);
@@ -286,7 +292,9 @@ public class AuthRestAPIs {
 			// if it is not a SaaS mode - after the registration of first user need to disallow other registrations
 			if(!settingsGeneral.isSaas()&& cntUsers==0)
 				cu.setLetToRegisterNewUsers(false);
-
+			// if it is a SaaS mode and need to create support user
+			if(settingsGeneral.isSaas() && settingsGeneral.isCreate_support_user())
+				createUserOfSupportFast(createdUserId, userCompany, userDepartments, usergroupId, settingsGeneral.getStores_alert_email(), signUpRequest.getEmail(), "en",adminRole);
 
 			return new ResponseEntity<>(String.valueOf(createdUserId), HttpStatus.OK);
 		} catch (Exception e){
@@ -304,7 +312,39 @@ public class AuthRestAPIs {
 				465L, 467L, 469L, 471L, 473L, 475L, 476L, 478L, 480L, 482L, 484L, 486L, 487L, 489L, 491L, 493L, 495L, 497L, 498L, 500L, 502L, 504L, 506L, 507L, 509L, 511L, 513L, 515L, 517L, 518L, 520L, 522L, 524L, 526L,
 				528L, 529L, 531L, 533L, 535L, 537L, 539L, 540L, 542L, 544L, 546L, 548L, 550L, 551L, 553L, 555L, 557L, 560L, 563L, 568L, 571L, 576L, 579L, 583L, 584L, 586L, 587L, 589L, 590L, 635L,
 				636L, 638L, 640L, 642L, 238L, 239L, 242L, 112L, 644L, 645L, 647L, 649L, 651L, 653L, 654L, 656L, 658L, 660L, 662L, 663L, 665L, 667L, 669L, 671L, 672L, 674L, 676L, 678L, 680L, 681L, 682L, 683L, 684L, 686L,
-				688L, 690L));
+				688L, 690L, 683L, 684L, 686L, 688L, 690L, 692L, 693L, 695L, 697L, 699L, 701L, 702L, 703L, 704L, 705L, 708L, 712L, 716L, 720L, 724L, 725L, 726L));
 	}
 // 308 559 562 295 575 567 - All Retail sales "Display in the list of documents in the sidebar"
+
+	private void createUserOfSupportFast(Long mId, Companies company, Set<Departments> userDepartments, Long usergroupId, String adminEmail, String createdUserEmail, String language, Role adminRole) throws Exception {
+		try {
+			String supportUserName = "support_"+mId.toString();
+			String userPassword= UUID.randomUUID().toString();
+			User user = new User("Support user", supportUserName, "support_user_of@account_with_id."+mId, encoder.encode(userPassword));
+			Set<Role> roles = new HashSet<>();
+			roles.add(adminRole);
+			user.setDate_time_created(new Timestamp(System.currentTimeMillis()));
+			//добавили юзеру сет ролей и сохранили его
+			user.setRoles(roles);
+			user.setStatus_account(2); //2: email verified.
+			user.setMaster(userRepository.findById(mId).orElseThrow(
+					() -> new UsernameNotFoundException("User Not Found with -> id : " + mId.toString())));
+			user.setCompany(company);
+			user.setDepartments(userDepartments);
+			Long createdUserId = userRepository.save(user).getId();// и сохранили его
+			userGroupRepository.addUserToUserGroup(createdUserId,usergroupId);
+			Map<String, String> map = cu.translateForUser(mId, new String[]{"'acc_tech_support'"});
+			user.setName(map.get("acc_tech_support"));
+			user.setMaster(userDetailsService.getUserById(mId));
+			userRepository.save(user);// сохраняем чтобы записался masterId и новое имя
+			// уcтановим пользователю часовой пояс (timeZone), язык и локаль
+			userRepositoryJPA.setUserSettings(createdUserId, 24, userRepositoryJPA.getLangIdBySuffix(language), language.equals("ru") ? 10 : 4, "24");
+			userRepository.save(user);// сохраняем чтобы применился язык
+			mailRepository.newSaasUserRegistered(adminEmail, createdUserEmail, supportUserName, userPassword, language);
+		} catch (Exception e) {
+			logger.error("Exception in method createUserOfSupportFast. MasterId = "+mId, e);
+			e.printStackTrace();
+			throw new Exception();
+		}
+	}
 }

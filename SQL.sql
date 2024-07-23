@@ -6749,6 +6749,54 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('um_night', 	    'Night', 				'Ночь', 		'Ноћ'),
 ('um_night_sm', 	'night', 				'ноч', 		'ноћ');
+insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
+('jt_administrator', 'Администратор', 'Administrator', 'Администратор'),
+('jt_manager', 'Управляющий', 'Manager', 'Менаџер'),
+('jt_manicurist', 'Мастер маникюра', 'Manicurist', 'Маникер'),
+('jt_hairdresser-stylist', 'Парикмахер-стилист', 'Hairdresser-stylist', 'Фризер-стилиста'),
+('jt_eyebrow master', 'Мастер-бровист', 'Eyebrow master', 'Мајстор за обрве'),
+('jt_cosmetologist', 'Косметолог', 'Cosmetologist', 'Козметичарка'),
+('jt_visagiste', 'Визажист', 'Visagiste', 'Висагисте'),
+('jt_masseur', 'Массажист', 'Masseur', 'Масер'),
+('jt_instructor', 'Инструктор', 'Instructor', 'Инструктор'),
+('jt_trainer', 'Тренер', 'Trainer', 'Тренер'),
+('jt_dentist', 'Стоматолог', 'Dentist', 'Зубар'),
+('jt_orthodontist', 'Ортодонт', 'Orthodontist', 'Ортодонт'),
+('jt_surgeon', 'Хирург', 'Surgeon', 'Хирург'),
+('jt_therapist', 'Терапевт', 'Therapist', 'Терапеут'),
+('jt_neurologist', 'Невролог', 'Neurologist', 'Неуролог'),
+('jt_cardiologist', 'Кардиолог', 'Cardiologist', 'Кардиолог'),
+('jt_usd_doctor', 'Врач УЗИ-диагностики', 'Ultrasound diagnostics doctor', 'Доктор ултразвучне дијагностике'),
+('jt_family_doctor', 'Врач общей практики (семейный врач)', 'General practitioner (family doctor)', 'Лекар опште праксе (породични лекар)'),
+('jt_photographer', 'Фотограф', 'Photographer', 'Фотограф'),
+('jt_teacher', 'Преподаватель', 'Teacher', 'Учитељу');
+
+alter table settings_general add column create_support_user boolean;
+update settings_general set create_support_user = true;
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('acc_tech_support', 	    'Support user', 				'Пользователь тех. поддержки', 		'Корисник подршке');
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('email_confirmation',
+ 'Email confirmation',
+ 'Подтверждение электонной почты',
+ 'потврда е-поште'),
+('you_registered_new_acc',
+ 'You have registered new account. Please use the below link to confirm your e-mail.',
+ 'Вы зарегистрировали новый аккаунт. Пожалуйста, используйте ссылку ниже, чтобы подтвердить свой адрес электронной почты.',
+ 'Регистровали сте нови налог. Користите везу испод да потврдите своју е-пошту.'),
+('click_link',
+ 'Click on Link',
+ 'Нажмите на ссылку',
+ 'Кликните на линк'),
+('password_recovery',
+ 'Password recovery',
+ 'Восстановление пароля',
+ 'Повратак изгубљене шифре'),
+('you_rereqested_new_pwd',
+ 'You have requested for a new password. Please use the below link to set new password.',
+ 'Вы запросили новый пароль. Пожалуйста, используйте ссылку ниже, чтобы установить новый пароль.',
+ 'Захтевали сте нову лозинку. Молимо користите везу испод да поставите нову лозинку.');
+
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
 
 

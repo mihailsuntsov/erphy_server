@@ -633,7 +633,7 @@ public class CommonUtilites {
             }
             return map;
         } catch (Exception e) {
-            logger.error("Exception in method translateMe. SQL: " + stringQuery, e);
+            logger.error("Exception in method translateForMe. SQL: " + stringQuery, e);
             e.printStackTrace();
             return null;
         }
@@ -654,12 +654,29 @@ public class CommonUtilites {
             }
             return map;
         } catch (Exception e) {
-            logger.error("Exception in method translateMe. SQL: " + stringQuery, e);
+            logger.error("Exception in method translateForUser. SQL: " + stringQuery, e);
             e.printStackTrace();
             return null;
         }
     }
-
+    public Map<String, String> translateFromLanguage(String langSuffix, String[] keys){
+        String stringQuery =            "select key, tr_"+langSuffix+" from _dictionary ";
+        if(keys.length>0)
+            stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            Map<String, String> map = new HashMap<>();
+            for(Object[] obj:queryList){
+                map.put((String)obj[0], (String)obj[1]);
+            }
+            return map;
+        } catch (Exception e) {
+            logger.error("Exception in method translateFromLanguage. SQL: " + stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
     @SuppressWarnings("Duplicates")
     public Map<String, String> translateHTMLmessages(Long userId, String[] keys){
         String suffix = userRepositoryJPA.getUserSuffix(userId);
@@ -752,7 +769,8 @@ public class CommonUtilites {
                         " billing_megabytes_product_id as billing_megabytes_product_id, " +
                         " billing_stores_product_id as billing_stores_product_id, " +
                         " billing_stores_woo_product_id as billing_stores_woo_product_id, " +
-                        " billing_plan_product_id as billing_plan_product_id " +
+                        " billing_plan_product_id as billing_plan_product_id, " +
+                        " coalesce(create_support_user, false) as create_support_user " +
                         " from settings_general p";
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -798,6 +816,7 @@ public class CommonUtilites {
                 doc.setBilling_stores_product_id(withSensitiveInfo?(         queryList.get(0)[34]!=null?Long.parseLong(queryList.get(0)[34].toString()):null):null);
                 doc.setBilling_stores_woo_product_id(withSensitiveInfo?(     queryList.get(0)[35]!=null?Long.parseLong(queryList.get(0)[35].toString()):null):null);
                 doc.setBilling_plan_product_id(withSensitiveInfo?(           queryList.get(0)[36]!=null?Long.parseLong(queryList.get(0)[36].toString()):null):null);
+                doc.setCreate_support_user((Boolean) queryList.get(0)[37]);
             }
             return doc;
         } catch (Exception e) {

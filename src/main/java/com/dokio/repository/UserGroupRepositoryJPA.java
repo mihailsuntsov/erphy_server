@@ -348,9 +348,9 @@ public class UserGroupRepositoryJPA {
             return false;
         }
     }
-    @SuppressWarnings("Duplicates")
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
-    public Long insertUsergroupFast(String name, Long myId, Long myMasterId) {
+
+    @Transactional
+    public Long insertUsergroupFast(String name, Long myId, Long myMasterId) throws Exception {
         String stringQuery;
         Long newDocId;
         String timestamp = new Timestamp(System.currentTimeMillis()).toString();
@@ -374,16 +374,28 @@ public class UserGroupRepositoryJPA {
             stringQuery="select id from usergroup where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
             Query query2 = entityManager.createNativeQuery(stringQuery);
             newDocId=Long.valueOf(query2.getSingleResult().toString());
-            stringQuery="insert into user_usergroup (user_id, usergroup_id) values ("+myId+", "+newDocId+")";
-            Query query3 = entityManager.createNativeQuery(stringQuery);
-            query3.executeUpdate();
-
+            addUserToUserGroup(myId, newDocId);
             return newDocId;
         } catch (Exception e) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             logger.error("Exception in method insertUsergroupFast. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            return null;
+            throw new Exception();
+        }
+    }
+
+    @Transactional
+    public void addUserToUserGroup(Long userId, Long usergroupId) throws Exception {
+        String stringQuery="";
+        try{
+            stringQuery="insert into user_usergroup (user_id, usergroup_id) values ("+userId+", "+usergroupId+")";
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+        } catch (Exception e) {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            logger.error("Exception in method addUserToUserGroup. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
         }
     }
 }

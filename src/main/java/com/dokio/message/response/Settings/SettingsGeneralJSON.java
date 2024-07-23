@@ -42,6 +42,7 @@ public class SettingsGeneralJSON {
     private int     max_store_orders_per_24h_1_account; // max quantity of online stores that can be ordered in 24h from one account
     private int     max_store_orders_per_24h_1_ip;      // max quantity of online stores that can be ordered in 24h from one IP address
     private String  saas_payment_currency; // currency of SaaS subscription accounting
+    private boolean create_support_user; // create or not a support user account
 
     // billing settings
     private Long    billing_master_id;
@@ -64,6 +65,14 @@ public class SettingsGeneralJSON {
     private String  url_privacy_policy;
     private String  url_data_processing_agreement;
     private String  root_domain;                   // like dokio.me
+
+    public boolean isCreate_support_user() {
+        return create_support_user;
+    }
+
+    public void setCreate_support_user(boolean create_support_user) {
+        this.create_support_user = create_support_user;
+    }
 
     public String getRoot_domain() {
         return root_domain;
