@@ -107,7 +107,7 @@ public class CalendarRepositoryJPA {
             "           concat(to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as start_, " +
             "           concat(to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as end_, " +
             "           ue.id as employee_id, " +
-            "           ue.name as employee, " +
+            "           coalesce(ue.name,'') as employee, " +
             "           a.dep_part_id as doc_dep_part_id, " +
             "           r.id as resource_id, " +
             "           r.name as resource_name, " +
@@ -157,7 +157,7 @@ public class CalendarRepositoryJPA {
 
             for (Object[] obj : queryList) {
                 Long currentCycleAppointmentId = Long.parseLong(obj[0].toString());
-                String currentCycleAppointmentName = ((String) obj[1]) + " " +  generateStartANdEndDateTime((String)obj[14],(String)obj[15],(String)obj[16],(String)obj[17]);
+                String currentCycleAppointmentName = ((String) obj[1]) + " " +  generateStartANdEndDateTime((String)obj[14],(String)obj[15],(String)obj[16],(String)obj[17]) + (!((String)obj[5]).equals("")?(", "+(String)obj[5]):"");
                 String currentCycleDateStart = (String) obj[2];
                 String currentCycleDateEnd = (String) obj[3];
                 Long currentCycleEmployeeId =obj[4] != null ? Long.parseLong(obj[4].toString()) : null;
@@ -239,9 +239,9 @@ public class CalendarRepositoryJPA {
     private String generateStartANdEndDateTime(String dateStart, String timeStart, String dateEnd, String timeEnd){
         // multi-days event
         if(!dateStart.equals(dateEnd)){
-            return (dateStart + " " + timeStart + "−" + dateEnd + " " + timeEnd);
+            return (dateStart + " " + timeStart + " − " + dateEnd + " " + timeEnd);
         } else
-            return (timeStart + "−" + timeEnd);
+            return (timeStart + " − " + timeEnd);
     }
 
 //    public List<BreakJSON> getCalendarUsersBreaksList2(CalendarEventsQueryForm queryForm) {
@@ -406,7 +406,7 @@ public class CalendarRepositoryJPA {
         String stringQuery;
 
         String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
-        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
+//        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
         String employeesIds_ = commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
 
         stringQuery =
@@ -427,8 +427,6 @@ public class CalendarRepositoryJPA {
         "   sd1.master_id = " + masterId + " and " +
         "   u1.company_id = " + companyId + " and " +
         "   " +
-//            (jobTitlesIds.size()>0?("sd1.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-        "sd1.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
         "   coalesce(u1.is_employee, false) = true  " +
         " and w1.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
 //        "   and ( " +
@@ -465,8 +463,6 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd2.master_id = " + masterId + " and " +
         "   u2.company_id = " + companyId + " and " +
-//            (jobTitlesIds.size()>0?("sd2.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-        "   sd2.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
         "   coalesce(u2.is_employee, false) = true  " +
         "   and w2.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
 //        "  and ( " +
@@ -504,8 +500,6 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd3.master_id = " + masterId + " and " +
         "   u3.company_id = " + companyId + " and " +
-//            (jobTitlesIds.size()>0?("sd3.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-        "   sd3.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
         "   coalesce(u3.is_employee, false) = true  " +
         "   and w3.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
 //        "  and ( " +
@@ -543,8 +537,6 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd4.master_id = " + masterId + " and " +
         "   u4.company_id = " + companyId + " and " +
-//            (jobTitlesIds.size()>0?("sd4.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-        "   sd4.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
         "   coalesce(u4.is_employee, false) = true  " +
         "   and w4.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
 //        "  and ( " +
@@ -589,13 +581,13 @@ public class CalendarRepositoryJPA {
 
     // IDs of employees that are free by Appointment events. Does not take into account accessibility of employees by scedule of workshifts
     // IDs сотрудников, которые свободны по Записям в заданный промежуток времени. Не учитывает доступность/занятость сотрудников по графику рабочих смен
-    private List<Long> getEmployeesIdsByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone, Long masterId) {
+    private List<Long> getEmployeesIdsFreeByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, String myTimeZone, Long masterId) {
 
         String stringQuery;
-        String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
-        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
-        String servicesIds_ =  commonUtilites.SetOfLongToString(servicesIds, ",", "(", ")");
-        String employeesIds_ =  commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
+//        String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
+//        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
+//        String servicesIds_ =  commonUtilites.SetOfLongToString(servicesIds, ",", "(", ")");
+//        String employeesIds_ =  commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
 
         stringQuery =
         " select u.id from users u where " +
@@ -604,15 +596,15 @@ public class CalendarRepositoryJPA {
         " u.status_account = 2 and " +
         " u.is_employee = true and " +
         " u.is_currently_employed = true and " +
-        (servicesIds.size() >0?(" u.id in (select user_id from scdl_user_products where product_id in "+servicesIds_+") and "):"") +
-        (jobTitlesIds.size()>0?(" u.job_title_id in "+jobTitlesIds_+" and "):"") +
-        "   ( " +
-        "       select count(*) from ( " +
-        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u.id " +
-        "           INTERSECT " +
-        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"")+
-        "       ) as aaa " +
-        "   )>0 and " +
+//        (servicesIds.size() >0?(" u.id in (select user_id from scdl_user_products where product_id in "+servicesIds_+") and "):"") +
+//        (jobTitlesIds.size()>0?(" u.job_title_id in "+jobTitlesIds_+" and "):"") +
+//        "   ( " +
+//        "       select count(*) from ( " +
+//        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u.id " +
+//        "           INTERSECT " +
+//        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"")+
+//        "       ) as aaa " +
+//        "   )>0 and " +
         "   u.id " +
             (isFree?" not ":"") +
         "   in (" +
@@ -633,7 +625,8 @@ public class CalendarRepositoryJPA {
 
         "   to_timestamp ('"+dateFrom+" "+timeFrom+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < sa.ends_at_time and " +
         "   to_timestamp ('"+dateTo+" "+timeTo+"', 'DD.MM.YYYY HH24:MI') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > sa.starts_at_time and " +
-        "   coalesce(p.scdl_is_employee_required, false) = true )";
+        "   coalesce(p.scdl_is_employee_required, false) = true )"
+        ;
 
 
         try{
@@ -685,7 +678,7 @@ public class CalendarRepositoryJPA {
 //        String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
         // get IDs of employees who is free by the time of Appointments (but we do not know whether they free by work shifts scedule)
         // получить ID сотрудников, свободных по времени Записей (но мы не знаем, свободны ли они по графику рабочих смен)
-        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsFreeByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,myTimeZone,masterId));
         DateTimeFormatter ISO8601_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneId.of("UTC"));
         DateTimeFormatter system_formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy' 'HH:mm").withZone(ZoneId.of("UTC"));
         LocalDateTime a_date_start = LocalDateTime.parse(dateFrom+" "+timeFrom, system_formatter);
@@ -769,13 +762,13 @@ public class CalendarRepositoryJPA {
         Set<Long> employeesWithWorkingSchedule = new HashSet<>(); // employees who have at least one shift schedule
         // It can be querying by "Busy by Appointments" or "Busy by schedule of working time"
         // get IDs of employees who is "Busy by Appointments"
-        Set<Long> employeesIdsBusyByAppointments = new HashSet<>(getEmployeesIdsByAppointments(false, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsBusyByAppointments = new HashSet<>(getEmployeesIdsFreeByAppointments(false, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,myTimeZone,masterId));
         // It querying by "Busy by Appointments"
         if (kindOfNoFree.equals("busyByAppointments"))
             return employeesIdsBusyByAppointments;
 
 //       If not querying by "Busy by Appointments", then by "Busy by schedule of working time":
-        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,servicesIds,depPartsIds,jobTitlesIds,employeesIds,myTimeZone,masterId));
+        Set<Long> employeesIdsFreeByAppointments = new HashSet<>(getEmployeesIdsFreeByAppointments(true, currentAppointmentId,companyId,dateFrom,timeFrom,dateTo,timeTo,myTimeZone,masterId));
         Set<Long> allEmployeesIds = new HashSet<>();
         allEmployeesIds.addAll(employeesIdsFreeByAppointments);
         allEmployeesIds.addAll(employeesIdsBusyByAppointments);
@@ -861,12 +854,12 @@ public class CalendarRepositoryJPA {
                 "       ws.id is not null and " +
                 (employeesIdsList.size() > 0?("       ssd.employee_id in "+employeesIds+" and "):"") +
 //              Сравнение производится по времени пользователя, т.к. запрос идет из UI. По этому нужно адаптировать время начала и окончания смены ко времени пользователя
-//              The comparison is made based on the user's time, because the request comes from the UI. Therefore, it is necessary to adapt the start and end times of the work shift to the user’s time
-
-//              The formula of Entering is:
-//              Start of work shift <= Start of Appointment
-                "       to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_from,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' <= to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS') and " +
-//              AND End of Workshift >= End of Appointment
+////              The comparison is made based on the user's time, because the request comes from the UI. Therefore, it is necessary to adapt the start and end times of the work shift to the user’s time
+//
+////              The formula of Entering is:
+////              Start of work shift <= Start of Appointment
+//                "       to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_from,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' <= to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS') and " +
+////              AND End of Workshift >= End of Appointment
                 "       case " +
                 "           when " +
                 "               ws.time_to <= ws.time_from " +
@@ -888,12 +881,12 @@ public class CalendarRepositoryJPA {
                 " p.id as p_id, " +
                 " p.name as p_name " +
                 " from " +
-                " users u, " +
-                " sprav_jobtitles jt, " +
-                " scdl_user_products up, " +
-                " products p, " +
-                " scdl_dep_part_products dpp, " +
-                " scdl_dep_parts dp " +
+                " users u " +
+                " inner join sprav_jobtitles jt on u.job_title_id=jt.id " +
+                " left outer join scdl_user_products up on u.id = up.user_id " +
+                " left outer join products p on p.id=up.product_id " +
+                " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
+                " left outer join scdl_dep_parts dp on dpp.dep_part_id=dp.id " +
 //                " left outer join products " + // это позволит показывать сотрудников даже если у них нет ни одного сервиса
                 " where " +                                              // it will let display employees even if they do not have services
                 " u.company_id = "+request.getCompanyId()+" and " +
@@ -901,16 +894,16 @@ public class CalendarRepositoryJPA {
                 " u.status_account = 2 and " +
                 " u.is_employee = true and " +
                 " u.is_currently_employed = true " +
-                ((!isAll && request.getIsFree())?" and dp.id in (select deppart_id from employees_workshift_depparts where employee_id = u.id) ":"") +
+                ((!isAll && request.getIsFree())?" and (dp.id is null or dp.id in (select deppart_id from employees_workshift_depparts where employee_id = u.id))":"") +
                 (!isAll?(" and u.id in "+employeesIds):"") +
                 (request.getServicesIds(). size() > 0 ? (" and p.id  in " + servicesIds_ ) : "") +
-                (request.getDepPartsIds(). size() > 0 ? (" and dp.id in " + depPartsIds_ ) : "") +
+                (request.getDepPartsIds(). size() > 0 ? (" and (dp.id is null or dp.id in " + depPartsIds_+")" ) : "") +
                 (request.getJobTitlesIds().size() > 0 ? (" and jt.id in " + jobTitlesIds_) : "") +
-                " and u.job_title_id=jt.id and " +
-                " u.id = up.user_id and " +
-                " (p.id=up.product_id or p.id is null) and " +
-                " dpp.product_id=p.id and " +
-                " dpp.dep_part_id=dp.id" +
+//                " and u.job_title_id=jt.id and " +
+//                " u.id = up.user_id and " +
+//                " (p.id=up.product_id or p.id is null) and " +
+//                " dpp.product_id=p.id and " +
+//                " dpp.dep_part_id=dp.id" +
                 " order by u.name,dp.name,p.name;";
 
                 Long currentUserId = 0L;
@@ -927,8 +920,8 @@ public class CalendarRepositoryJPA {
                     Long currentCycleEmployeeId = Long.parseLong(obj[0].toString());
                     String currentCycleEmployeeName = obj[1].toString();
                     Long currentCycleJobTitleId = Long.parseLong(obj[2].toString());
-                    Long currentCycleDepPartId = Long.parseLong(obj[4].toString());
-                    Long currentCycleServiceId = Long.parseLong(obj[6].toString());
+                    Long currentCycleDepPartId = Objects.isNull(obj[4])?null:Long.parseLong(obj[4].toString());
+                    Long currentCycleServiceId = Objects.isNull(obj[6])?null:Long.parseLong(obj[6].toString());
 
                     // on this cycle if it is a new user
                     if (!currentCycleEmployeeId.equals(currentUserId)) {
@@ -941,7 +934,8 @@ public class CalendarRepositoryJPA {
                             departmentPartWithServicesIds.setServicesIds(currentDepPartServicesIds);
 
                             // В список частей отделения текущего пользователя добавили текущее отделение
-                            departmentPartsWithServicesIds.add(departmentPartWithServicesIds);
+                            if(!Objects.isNull(departmentPartWithServicesIds.getId()))
+                                departmentPartsWithServicesIds.add(departmentPartWithServicesIds);
 
                             // В текущего сотрудника поместили список частей отделений
                             appointmentEmployee.setDepartmentPartsWithServicesIds(departmentPartsWithServicesIds);
@@ -956,7 +950,9 @@ public class CalendarRepositoryJPA {
                             currentDepPartId = currentCycleDepPartId;
 
                             // Cоздали новую часть отделения, и прописали туда её ID
-                            departmentPartWithServicesIds = new DepartmentPartWithServicesIds(currentDepPartId);
+                            if(!Objects.isNull(currentDepPartId))
+                                departmentPartWithServicesIds = new DepartmentPartWithServicesIds(currentDepPartId);
+                            else departmentPartWithServicesIds = new DepartmentPartWithServicesIds();
 
                             // Cбросили текущее накопление ID сервисов для новой части отделения
                             currentDepPartServicesIds = new HashSet<>();
@@ -977,7 +973,7 @@ public class CalendarRepositoryJPA {
                     }
 
                     // Если сотрудник не новый, но часть отделения сменилась
-                    if (!currentCycleDepPartId.equals(currentDepPartId)) {
+                    if (!Objects.isNull(currentCycleDepPartId) && !currentCycleDepPartId.equals(currentDepPartId)) {
 
                         if (!currentDepPartId.equals(0L)) {
 
@@ -1011,7 +1007,8 @@ public class CalendarRepositoryJPA {
                     departmentPartWithServicesIds.setServicesIds(currentDepPartServicesIds);
 
                     // В список частей отделения текущего пользователя добавили текущее отделение
-                    departmentPartsWithServicesIds.add(departmentPartWithServicesIds);
+                    if(!Objects.isNull(departmentPartWithServicesIds.getId()))
+                        departmentPartsWithServicesIds.add(departmentPartWithServicesIds);
 
                     // В текущего сотрудника поместили список частей отделений
                     appointmentEmployee.setDepartmentPartsWithServicesIds(departmentPartsWithServicesIds);
