@@ -233,6 +233,7 @@ public class AuthRestAPIs {
 			Set<Departments> userDepartments = departmentRepositoryJPA.getDepartmentsSetBySetOfDepartmentsId(userDepartmentsIds);
 			user.setCompany(userCompany);
 			user.setDepartments(userDepartments);
+			user.setFio_name(signUpRequest.getName());
 			userRepository.saveAndFlush(user);
 			// создадим Роль (группу пользователей)
 			Long usergroupId = userGroupRepository.insertUsergroupFast(map.get("role_admins"), createdUserId, createdUserId);
@@ -335,6 +336,7 @@ public class AuthRestAPIs {
 			userGroupRepository.addUserToUserGroup(createdUserId,usergroupId);
 			Map<String, String> map = cu.translateForUser(mId, new String[]{"'acc_tech_support'"});
 			user.setName(map.get("acc_tech_support"));
+			user.setFio_name(map.get("acc_tech_support"));
 			user.setMaster(userDetailsService.getUserById(mId));
 			userRepository.save(user);// сохраняем чтобы записался masterId и новое имя
 			// уcтановим пользователю часовой пояс (timeZone), язык и локаль

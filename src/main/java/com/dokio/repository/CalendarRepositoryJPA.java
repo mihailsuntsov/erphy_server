@@ -422,20 +422,22 @@ public class CalendarRepositoryJPA {
         "   scdl_scedule_day sd1 " +
         "   inner join scdl_workshift w1 on w1.scedule_day_id = sd1.id " +
         "   inner join users u1 on sd1.employee_id = u1.id " +
+
         "   where " +
         "   sd1.master_id = " + masterId + " and " +
         "   u1.company_id = " + companyId + " and " +
         "   " +
-            (jobTitlesIds.size()>0?("sd1.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-            (employeesIds.size()>0?("sd1.employee_id in "+employeesIds_+" and " ):"") +
-        "   coalesce(u1.is_employee, false) = true and " +
-        "   ( " +
-        "       select count(*) from ( " +
-        "       select product_id from scdl_user_products where master_id="+masterId+" and user_id = u1.id " +
-        "       INTERSECT " +
-        "       select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
-        "       ) as aaa " +
-        "   )>0 " + // here we convert all times to GMT, because we need to compare time of company and time of user
+//            (jobTitlesIds.size()>0?("sd1.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+        "sd1.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
+        "   coalesce(u1.is_employee, false) = true  " +
+        " and w1.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+//        "   and ( " +
+//        "           select count(*) from ( " +
+//        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u1.id " +
+//        "           INTERSECT " +
+//        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
+//        "           ) as aaa " +
+//        "       )>0 " + // here we convert all times to GMT, because we need to compare time of company and time of user
         "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
         "   and to_timestamp(to_char(sd1.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
 
@@ -463,16 +465,17 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd2.master_id = " + masterId + " and " +
         "   u2.company_id = " + companyId + " and " +
-            (jobTitlesIds.size()>0?("sd2.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-            (employeesIds.size()>0?("sd2.employee_id in "+employeesIds_+" and " ):"") +
-        "   coalesce(u2.is_employee, false) = true and " +
-        "   ( " +
-        "       select count(*) from ( " +
-        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u2.id " +
-        "           INTERSECT " +
-        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
-        "       ) as aaa " +
-        "   )>0 " +
+//            (jobTitlesIds.size()>0?("sd2.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+        "   sd2.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
+        "   coalesce(u2.is_employee, false) = true  " +
+        "   and w2.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+//        "  and ( " +
+//        "       select count(*) from ( " +
+//        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u2.id " +
+//        "           INTERSECT " +
+//        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
+//        "       ) as aaa " +
+//        "   )>0 " +
         "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
         "   and to_timestamp(to_char(sd2.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
 
@@ -501,16 +504,17 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd3.master_id = " + masterId + " and " +
         "   u3.company_id = " + companyId + " and " +
-            (jobTitlesIds.size()>0?("sd3.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-            (employeesIds.size()>0?("sd3.employee_id in "+employeesIds_+" and " ):"") +
-        "   coalesce(u3.is_employee, false) = true and " +
-        "   ( " +
-        "       select count(*) from ( " +
-        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u3.id " +
-        "           INTERSECT " +
-        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"")+
-        "       ) as aaa " +
-        "   )>0 " +
+//            (jobTitlesIds.size()>0?("sd3.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+        "   sd3.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
+        "   coalesce(u3.is_employee, false) = true  " +
+        "   and w3.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+//        "  and ( " +
+//        "       select count(*) from ( " +
+//        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u3.id " +
+//        "           INTERSECT " +
+//        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"")+
+//        "       ) as aaa " +
+//        "   )>0 " +
         "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
         "   and to_timestamp(to_char(sd3.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
 
@@ -539,16 +543,17 @@ public class CalendarRepositoryJPA {
         "   where " +
         "   sd4.master_id = " + masterId + " and " +
         "   u4.company_id = " + companyId + " and " +
-            (jobTitlesIds.size()>0?("sd4.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
-            (employeesIds.size()>0?("sd4.employee_id in "+employeesIds_+" and " ):"") +
-        "   coalesce(u4.is_employee, false) = true and " +
-        "   ( " +
-        "       select count(*) from ( " +
-        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u4.id " +
-        "           INTERSECT " +
-        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
-        "       ) as aaa " +
-        "   )>0 " +
+//            (jobTitlesIds.size()>0?("sd4.employee_id in (select id from users where job_title_id in "+jobTitlesIds_+") and " ):"") +
+        "   sd4.employee_id in "+(employeesIds.size()>0?employeesIds_:"(0)")+" and " +
+        "   coalesce(u4.is_employee, false) = true  " +
+        "   and w4.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+//        "  and ( " +
+//        "       select count(*) from ( " +
+//        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u4.id " +
+//        "           INTERSECT " +
+//        "           select product_id from scdl_dep_part_products where master_id="+masterId+(depPartsIds.size()>0?(" and dep_part_id in " + depPartsIds_):"") +
+//        "       ) as aaa " +
+//        "   )>0 " +
         "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 00:00:00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' >= to_timestamp('"+dateFrom+" 00:00:00.000', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
         "   and to_timestamp(to_char(sd4.day_date, 'DD.MM.YYYY')||' 23:59:59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+companyTimeZone+"' <= to_timestamp('"+dateTo+" 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' " +
 
@@ -889,7 +894,8 @@ public class CalendarRepositoryJPA {
                 " products p, " +
                 " scdl_dep_part_products dpp, " +
                 " scdl_dep_parts dp " +
-                " where " +
+//                " left outer join products " + // это позволит показывать сотрудников даже если у них нет ни одного сервиса
+                " where " +                                              // it will let display employees even if they do not have services
                 " u.company_id = "+request.getCompanyId()+" and " +
                 " u.master_id =  "+masterId+" and " +
                 " u.status_account = 2 and " +
@@ -902,7 +908,7 @@ public class CalendarRepositoryJPA {
                 (request.getJobTitlesIds().size() > 0 ? (" and jt.id in " + jobTitlesIds_) : "") +
                 " and u.job_title_id=jt.id and " +
                 " u.id = up.user_id and " +
-                " p.id=up.product_id and " +
+                " (p.id=up.product_id or p.id is null) and " +
                 " dpp.product_id=p.id and " +
                 " dpp.dep_part_id=dp.id" +
                 " order by u.name,dp.name,p.name;";
@@ -992,8 +998,9 @@ public class CalendarRepositoryJPA {
                         currentDepPartServicesIds = new HashSet<>();
 
                     }
-
-                    currentDepPartServicesIds.add(currentCycleServiceId);
+                    // collect services
+                    if(!Objects.isNull(currentCycleServiceId))
+                        currentDepPartServicesIds.add(currentCycleServiceId);
                 }
 
                 // По окончании цикла, если в ней что-то было

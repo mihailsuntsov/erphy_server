@@ -6330,18 +6330,18 @@ alter table users add constraint user_counterparty_id_fkey foreign key (counterp
 alter table users add constraint user_incoming_service_id_fkey foreign key (incoming_service_id) references products(id);
 
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('second', 'second', 'секунда', 'секунда'),
-('minute', 'minute', 'минута', 'минут'),
-('hour', 'hour', 'час', 'сат'),
-('day', 'one day', 'сутки ', 'дан'),
+('second', 'Second', 'Секунда', 'Секунда'),
+('minute', 'Minute', 'Минута', 'Минут'),
+('hour', 'Hour', 'Час', 'Сат'),
+('day', 'One day', 'Сутки ', 'Дан'),
 ('second_s', 's', 'сек', 'сек'),
 ('minute_s', 'm', 'мин', 'мин'),
 ('hour_s', 'h', 'час', 'сат'),
-('day_s', 'day', 'сут', 'дан');
+('day_s', 'Day', 'сут', 'дан');
 
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('session', 'session', 'сеанс', 'сесија'),
-('session_s', 'session', 'сеанс', 'сесија');
+('session', 'Session', 'Сеанс', 'Сесија'),
+('session_s', 'session', 'sеанс', 'sесија');
 
 insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units types set. Do not need a translation because using only internally
 
@@ -6796,7 +6796,9 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
  'You have requested for a new password. Please use the below link to set new password.',
  'Вы запросили новый пароль. Пожалуйста, используйте ссылку ниже, чтобы установить новый пароль.',
  'Захтевали сте нову лозинку. Молимо користите везу испод да поставите нову лозинку.');
-
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('service', 'Service', 'Услуга', 'Услуга'),
+('service_s', 'service', 'услуга', 'услуга');
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
 
 

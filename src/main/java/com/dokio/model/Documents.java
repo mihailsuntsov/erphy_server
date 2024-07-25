@@ -47,9 +47,9 @@ public class Documents {
   @Column(name = "show")
   private Integer show;
 
-  @JsonIgnore
-  @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-  private Set<DocumentsMenu> documentsMenu = new HashSet<DocumentsMenu>();
+//  @JsonIgnore
+//  @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+//  private Set<DocumentsMenu> documentsMenu = new HashSet<DocumentsMenu>();
 
   @OrderBy("output_order ASC")
   @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
@@ -65,7 +65,6 @@ public class Documents {
     this.id = id;
   }
 
-
   public String getName() {
     return name;
   }
@@ -74,28 +73,10 @@ public class Documents {
     this.name = name;
   }
 
-
-//  public String getPageName() {
-//    return pageName;
+//  public Set<DocumentsMenu> getDocumentsMenu() {
+//    return documentsMenu;
 //  }
 //
-//  public void setPageName(String pageName) {
-//    this.pageName = pageName;
-//  }
-
-//
-//  public String getIconStyle() {
-//    return iconStyle;
-//  }
-//
-//  public void setIconStyle(String iconStyle) {
-//    this.iconStyle = iconStyle;
-//  }
-
-  public Set<DocumentsMenu> getDocumentsMenu() {
-    return documentsMenu;
-  }
-
   public void setId(Long id) {
     this.id = id;
   }
@@ -108,7 +89,7 @@ public class Documents {
     this.permissions = permissions;
   }
 
-  public void setDocumentsMenu(Set<DocumentsMenu> documentsMenu) {
-    this.documentsMenu = documentsMenu;
-  }
+//  public void setDocumentsMenu(Set<DocumentsMenu> documentsMenu) {
+//    this.documentsMenu = documentsMenu;
+//  }
 }

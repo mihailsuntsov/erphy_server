@@ -462,7 +462,9 @@ public class SpravSysEdizmJPA {
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("second")+"','"+map.get("second_s")+"',6,1,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("minute")+"','"+map.get("minute_s")+"',6,60,false),"+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("hour")+"','"+map.get("hour_s")+"',6,3600,false),"+
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("day")+"','"+map.get("day_s")+"',6,86400,false);";
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("day")+"','"+map.get("day_s")+"',6,86400,false),"+
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("service")+"','"+map.get("service_s")+"',7,null,false)";
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

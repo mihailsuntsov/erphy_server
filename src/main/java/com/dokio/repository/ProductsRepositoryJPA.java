@@ -1162,6 +1162,9 @@ public class ProductsRepositoryJPA {
                         newDocument.setOutofstock_aftersale(request.getOutofstock_aftersale());
                         // Label description
                         newDocument.setLabel_description(request.getLabel_description());
+                        // product is the service by appointment
+                        newDocument.setIs_srvc_by_appointment(request.isIs_srvc_by_appointment());
+
 
                         entityManager.persist(newDocument);
                         entityManager.flush();
@@ -1514,7 +1517,7 @@ public class ProductsRepositoryJPA {
             } else
                 newDocument.setProduct_code_free(response.getProduct_code_free());
             //группа товаров
-            newDocument.setProductGroup(response.getProductGroup());
+//            newDocument.setProductGroup(response.getProductGroup());
             //единица измерения
             newDocument.setEdizm(response.getEdizm());
             //весовой товар
@@ -1543,12 +1546,14 @@ public class ProductsRepositoryJPA {
             newDocument.setProductCategories(response.getProductCategories());
 
             newDocument.setImages(response.getImages());
+            // product is the service by appointment
+            newDocument.setIs_srvc_by_appointment(response.getIs_srvc_by_appointment());
 
             entityManager.persist(newDocument);
 
             entityManager.flush();
 
-            return newDocument.getId();//временно
+            return newDocument.getId();
 
         } catch (Exception e) {
             logger.error("Exception in method copyProducts_createBaseDocument.", e);
@@ -5658,7 +5663,7 @@ public class ProductsRepositoryJPA {
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     public Boolean insertProductCategoriesFast(Long mId, Long uId, Long cId) {
         String stringQuery;
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'p_catg_myprods'","'p_catg_srvcs'","'p_catg_in_srvcs'","'prod_work_empl'","'prod_transp'","'prod_rent'","'prod_prolltax'","'prod_incomtax'","'prod_banking'","'prod_my_prod'","'prod_my_srvc'","'prod_accounting'","'um_piece'","'um_uncountable'","'tax_no_tax'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'p_catg_myprods'","'p_catg_srvcs'","'p_catg_in_srvcs'","'prod_work_empl'","'prod_transp'","'prod_rent'","'prod_prolltax'","'prod_incomtax'","'prod_banking'","'prod_my_prod'","'prod_my_srvc'","'prod_accounting'","'um_piece'","'service'","'tax_no_tax'"});
         String t = new Timestamp(System.currentTimeMillis()).toString();
         stringQuery = "insert into product_categories ( master_id,creator_id,company_id,date_time_created,parent_id,output_order,name) values "+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,1,'"+map.get("p_catg_myprods")+"'),"+ // cagent_supplier
@@ -5666,14 +5671,14 @@ public class ProductsRepositoryJPA {
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),null,3,'"+map.get("p_catg_in_srvcs")+"');" +// cagent_taxoffce
 
                 "insert into products (master_id, creator_id, company_id, date_time_created, name, ppr_id, indivisible, not_buy, not_sell, edizm_id, nds_id) values " +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_work_empl")+"' ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_transp")+"'    ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_rent")+"'      ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_prolltax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_incomtax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_banking")+"'   ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_accounting")+"',4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
-                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_my_srvc")+"'   ,4,true,true,false, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_uncountable")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_work_empl")+"' ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_transp")+"'    ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_rent")+"'      ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_prolltax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_incomtax")+"'  ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_banking")+"'   ,4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_accounting")+"',4,true,false,true, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
+                "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_my_srvc")+"'   ,4,true,true,false, (select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("service")+"'), (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'))," +
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("prod_my_prod")+"'   ,1,true,false,false,(select id from sprav_sys_edizm where company_id="+cId+" and name='"+map.get("um_piece")+"'),       (select id from sprav_taxes where company_id="+cId+" and name='"+map.get("tax_no_tax")+"'));" +
 
                 "insert into product_productcategories (category_id,product_id) values " +

@@ -2,7 +2,7 @@ package com.dokio.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dokio.model.ManyToManyKeys.ProductFields;
+//import com.dokio.model.ManyToManyKeys.ProductFields;
 import com.dokio.model.Sprav.*;
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -67,9 +67,11 @@ public class Products {
     @Column(name = "not_sell")//товар сянт с продажи (нужно, чтобы отфильтровать товары, которые сняты с продажи)
     private Boolean not_sell;
 
-    @ManyToOne
-    @JoinColumn(name = "group_id")     // группа товаров или услуг
-    private ProductGroups productGroup;
+    @Column(name = "is_srvc_by_appointment")// product is the service by appointment
+    private Boolean is_srvc_by_appointment;
+//    @ManyToOne
+//    @JoinColumn(name = "group_id")     // группа товаров или услуг
+//    private ProductGroups productGroup;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "product_productcategories",
@@ -77,11 +79,19 @@ public class Products {
             inverseJoinColumns = @JoinColumn(name = "category_id"))
     private Set<ProductCategories> productCategories = new HashSet<>();
 
-    @OneToMany(mappedBy = "product")
-    Set<ProductFields> fieldValues;
+//    @OneToMany(mappedBy = "product")
+//    Set<ProductFields> fieldValues;
 
     @ManyToMany(mappedBy = "products")
     private Set<Files> images;
+
+    public Boolean getIs_srvc_by_appointment() {
+        return is_srvc_by_appointment;
+    }
+
+    public void setIs_srvc_by_appointment(Boolean is_srvc_by_appointment) {
+        this.is_srvc_by_appointment = is_srvc_by_appointment;
+    }
 
     @Column(name = "product_code")// Код весового товара (для штрихкода EAN-13 весовых продуктов), генерируется системой по запросу пользователя в generateWeightProductCode
     private Integer product_code;
@@ -387,13 +397,13 @@ public class Products {
         this.is_archive = is_archive;
     }
 
-    public ProductGroups getProductGroup() {
-        return productGroup;
-    }
+//    public ProductGroups getProductGroup() {
+//        return productGroup;
+//    }
 
-    public void setProductGroup(ProductGroups productGroup) {
-        this.productGroup = productGroup;
-    }
+//    public void setProductGroup(ProductGroups productGroup) {
+//        this.productGroup = productGroup;
+//    }
 
     public Integer getProduct_code() {
         return product_code;
@@ -491,13 +501,13 @@ public class Products {
         this.excizable = excizable;
     }
 
-    public Set<ProductFields> getFieldValues() {
-        return fieldValues;
-    }
+//    public Set<ProductFields> getFieldValues() {
+//        return fieldValues;
+//    }
 
-    public void setFieldValues(Set<ProductFields> fieldValues) {
-        this.fieldValues = fieldValues;
-    }
+//    public void setFieldValues(Set<ProductFields> fieldValues) {
+//        this.fieldValues = fieldValues;
+//    }
 
     public Set<Files> getImages() {
         return images;

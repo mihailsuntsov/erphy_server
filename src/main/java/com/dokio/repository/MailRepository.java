@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -83,6 +84,10 @@ public class MailRepository {
                 user = userRepository.findByUsername(email.substring(0,email.indexOf('@'))).get();
                 if(lastRepairPassQueryAgo(user.getId())<60)
                     return -105; //Request rate exceeded Превышена частота запросов (more than 1 per 60 sec)
+                if(Objects.isNull(user)) {
+                    logger.warn("User not found in forgotPass by username "+email.substring(0,email.indexOf('@')));
+                    return -100;
+                }
                 if(user==null) {logger.warn("User not found in setNewPass by Username "+email.substring(0,email.indexOf('@'))); return -100;}
                 // as "<login of support user>@repair_support_user.com" is not a real email - need to set real admin email
                 SettingsGeneralJSON settingsGeneral = cu.getSettingsGeneral(true);
@@ -91,7 +96,11 @@ public class MailRepository {
                 user = userRepository.findByEmail(email.trim());
                 if(lastRepairPassQueryAgo(user.getId())<60)
                     return -105; //Request rate exceeded Превышена частота запросов (more than 1 per 60 sec)
-                if(user==null) {logger.warn("User not found in setNewPass by Email "+email.trim()); return -100;}
+                if(Objects.isNull(user)) {
+                    logger.warn("User not found in forgotPass by Email "+email.trim());
+                    return -100;
+                }
+
             }
 
             String uuid = UUID.randomUUID().toString();
@@ -144,7 +153,7 @@ public class MailRepository {
 
     private MimeMessagePreparator getMessagePreparator(String from_email, String to_email, String subject, String text) {
         return mimeMessage -> {
-            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage);
+            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             messageHelper.setTo(to_email);
             messageHelper.setFrom(from_email);
             messageHelper.setSubject(subject);

@@ -625,8 +625,8 @@ public class UserRepositoryJPA {
                 "   coalesce(jt.is_deleted, false)=false and " +
                 "   coalesce(u.is_deleted, false)=false and " +
                 "   coalesce(u.is_employee, false)=true and " +
-                "   coalesce(p.is_deleted, false) = false and " +
-                "   coalesce(p.is_srvc_by_appointment, false)=true " +
+                "   coalesce(p.is_deleted, false) = false " +
+//                "   coalesce(p.is_srvc_by_appointment, false)=true " +
                 "   order by jt.name, u.name, p.name";
 
         try{
@@ -646,8 +646,8 @@ public class UserRepositoryJPA {
                 String      currentCycleJobtitleDescription =                       obj[2].toString();
                 Long        currentCycleEmployeeId = Long.parseLong(                obj[3].toString());
                 String      currentCycleEmployeeName =                              obj[4].toString();
-                Long        currentCycleServiceId = Long.parseLong(                 obj[5].toString());
-                String      currentCycleServiceName =                               obj[6].toString();
+                Long        currentCycleServiceId =                  Objects.isNull(obj[5])?null:Long.parseLong(obj[5].toString());
+                String      currentCycleServiceName =                Objects.isNull(obj[6])?null:obj[6].toString();
 
                 // on this cycle if it is a new jobtitle
                 // если это новая должность
@@ -1418,7 +1418,7 @@ public class UserRepositoryJPA {
         return ("   select" +
                 "   (select count(*) from companies   where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as companies," +
                 "   (select count(*) from departments where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as departments," +
-                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as users," +
+                "   (select count(*) from users       where master_id="+myMasterId+" and coalesce(is_deleted,false)=false and email not like '%support_user_of@account_with_id.%')               as users," +
                 "   (select count(*) from products    where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as products," +
                 "   (select count(*) from cagents     where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as counterparties," +
                 "   (select count(*) from stores      where master_id="+myMasterId+" and coalesce(is_deleted,false)=false)               as stores," +

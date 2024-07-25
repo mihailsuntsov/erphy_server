@@ -659,7 +659,8 @@ public class CommonUtilites {
             return null;
         }
     }
-    public Map<String, String> translateFromLanguage(String langSuffix, String[] keys){
+    public Map<String, String> translateFromLanguage(String langSuffix, String[] keys) throws Exception{
+        if(langSuffix.length()>2){logger.error("Illegal suffix "+langSuffix); throw new Exception("Illegal suffix "+langSuffix);}
         String stringQuery =            "select key, tr_"+langSuffix+" from _dictionary ";
         if(keys.length>0)
             stringQuery = stringQuery + " where key in("+String.join(",", keys)+")";
@@ -700,7 +701,7 @@ public class CommonUtilites {
     }
 
     @SuppressWarnings("Duplicates")
-    public TranslateHTMLmessageResult translateHTMLmessage(String key){
+    public TranslateHTMLmessageResult translateHTMLmessage(String key) throws Exception {
         String suffix = userRepositoryJPA.getUserSuffix(userRepository.getUserId());
         String stringQuery =
         "select tr_"+suffix+" from _saas_messages where key = :key";
@@ -717,7 +718,8 @@ public class CommonUtilites {
         }
     }
     @SuppressWarnings("Duplicates")
-    public String translateHTMLmessage(String key, String suffix){
+    public String translateHTMLmessage(String key, String suffix) throws Exception{
+        if(suffix.length()>2){logger.error("Illegal suffix "+suffix); throw new Exception("Illegal suffix "+suffix);}
         String stringQuery =
                 "select tr_"+suffix+" from _saas_messages where key = :key";
         try {
