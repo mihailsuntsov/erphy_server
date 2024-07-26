@@ -138,8 +138,10 @@ public class CalendarRepositoryJPA {
 //            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' + interval '6' day > a.starts_at_time " +
             "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
             "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
-                (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
-                        (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
+//                        (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
+//                        (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
+            "           and (ue.id in "+(request.getEmployees().size()>0?employeesIds_:"(0)")+" or ue.id is null)" +
+            "           and a.dep_part_id in "+(request.getDepparts().size()>0?depPartsIds_:"(0)") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
             "           order by a.id, r.id";
 
@@ -428,7 +430,9 @@ public class CalendarRepositoryJPA {
         "   u1.company_id = " + companyId + " and " +
         "   " +
         "   coalesce(u1.is_employee, false) = true  " +
-        " and w1.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+        "   and w1.id in (select workshift_id from scdl_workshift_deppart where deppart_id in "+(depPartsIds.size()>0?depPartsIds_:"(0)")+")" +
+
+
 //        "   and ( " +
 //        "           select count(*) from ( " +
 //        "           select product_id from scdl_user_products where master_id="+masterId+" and user_id = u1.id " +
