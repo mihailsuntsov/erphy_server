@@ -59,7 +59,6 @@ public class CalendarRepositoryJPA {
 
     public List<CalendarEventJSON> getCalendarEventsList(CalendarEventsQueryForm request) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//        List<CalendarEventJSON> events = new ArrayList<>();
         List<CalendarEventJSON> returnList = new ArrayList<>();
         LocalDate localDate = LocalDate.now();
         UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
@@ -67,35 +66,6 @@ public class CalendarRepositoryJPA {
         String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
         Long masterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
-
-        String calendarDate = localDate.format(formatter);
-//        String dateTo = localDate.plusDays(10).format(formatter);
-//        String event1_start = localDate.plusDays(14).format(formatter);
-//        String event1_end = localDate.plusDays(19).format(formatter);
-//        String event2_start = localDate.plusDays(3).format(formatter);
-//        String event2_end = localDate.plusDays(9).format(formatter);
-//        String event3_start = localDate.plusDays(4).format(formatter);
-//        String event3_end = localDate.plusDays(9).format(formatter);
-//        String event4_start = localDate.plusDays(5).format(formatter);
-//        String event4_end = localDate.plusDays(8).format(formatter);
-//        String event5_start = localDate.plusDays(1).format(formatter);
-//        String event5_end = localDate.plusDays(8).format(formatter);
-//
-//        events.add(new CalendarEventJSON(1L, calendarDate+"T08:00:00.000Z",calendarDate+"T10:30:00.000Z", "Стрижка Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-//        events.add(new CalendarEventJSON(2L, calendarDate+"T08:30:00.000Z",calendarDate+"T13:00:00.000Z", "Покраска Иванова Т.А.", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-//        events.add(new CalendarEventJSON(3L, calendarDate+"T14:30:00.000Z",calendarDate+"T17:00:00.000Z", "Сложная покраска Петрова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(37L, "Влад Зырянов", new CalendarColors("#000000","#B0E0E6")),"appointment")));
-//        events.add(new CalendarEventJSON(4L, calendarDate+"T08:00:00.000Z",calendarDate+"T11:30:00.000Z", "Стрижка Ким", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-//        events.add(new CalendarEventJSON(5L, calendarDate+"T10:30:00.000Z",calendarDate+"T12:00:00.000Z", "Стрижка Борисюк", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(4L, "Михаил Сунцов", new CalendarColors("#000000","#FFEFD5")),"appointment")));
-//        events.add(new CalendarEventJSON(6L, calendarDate+"T11:30:00.000Z",calendarDate+"T13:00:00.000Z", "Стрижка Холмогорова", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(36L, "Алёна Попцова", new CalendarColors("#000000","#FFC0CB")),"appointment")));
-//        events.add(new CalendarEventJSON(7L, calendarDate+"T10:30:00.000Z",calendarDate+"T15:00:00.000Z", "Стрижка Тутти", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(298L, "Анастасия Сунцова", new CalendarColors("#000000","#B0E0E0")),"appointment")));
-//
-//        events.add(new CalendarEventJSON(22L, calendarDate+"T12:00:00.000Z",dateTo+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-//        events.add(new CalendarEventJSON(23L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-//        events.add(new CalendarEventJSON(24L, event3_start+"T12:00:00.000Z",event3_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-//        events.add(new CalendarEventJSON(25L, event4_start+"T12:00:00.000Z",event4_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-//        events.add(new CalendarEventJSON(26L, event1_start+"T12:00:00.000Z",event1_end+"T13:00:00.000Z", "Проживание Стандарт", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 14L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(21L,"Кровать", 1, 4))))));
-//
-//        events.add(new CalendarEventJSON(27L, event2_start+"T12:00:00.000Z",event2_end+"T13:00:00.000Z", "Проживание Люкс", new CalendarColors("#008000","#FDF1BA"), new Meta(new CalendarUser(0L, "No employee", new CalendarColors("#000000","#B0E0E0")),"appointment", 21L, new HashSet<ItemResource>(Arrays.asList(new ItemResource(22L,"Кровать люкс", 1, 1))))));
 
         String depPartsIds_ =  commonUtilites.SetOfLongToString(request.getDepparts(), ",", "(", ")");
 //        String jobTitlesIds_ = commonUtilites.SetOfLongToString(request.getJobtitles(), ",", "(", ")");

@@ -226,6 +226,17 @@ public class AppointmentsController {
         catch (Exception e){e.printStackTrace();logger.error("Controller setAppointmentChildDocumentAsDecompleted error with file_id=" + doc_name + ", doc_id=" + doc_id.toString(), e);
             return new ResponseEntity<>("Controller setAppointmentChildDocumentAsDecompleted error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+    @RequestMapping(
+            value = "/api/auth/getPreloadServicesIdsByResourceId",
+            params = {"resource_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getPreloadServicesIdsByResourceId(
+            @RequestParam("resource_id") Long resource_id){
+        logger.info("Processing get request for path /api/auth/getPreloadServicesIdsByResourceId with parameters: " + "resource_id: " + resource_id);
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getPreloadServicesIdsByResourceId(resource_id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getPreloadServicesIdsByResourceId error", e);
+            return new ResponseEntity<>("Controller getPreloadServicesIdsByResourceId error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
     // печать документов
     @SuppressWarnings("Duplicates")
     @RequestMapping(

@@ -18,6 +18,7 @@ import com.dokio.message.response.additional.appointment.DepartmentPartWithResou
 import com.dokio.message.response.additional.appointment.ResourceOfDepartmentPart;
 import com.dokio.message.response.additional.calendar.CalendarEventJSON;
 import com.dokio.message.response.additional.calendar.ItemResource;
+import com.dokio.message.response.additional.calendar.ShortServiceInfoWithAttributes;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
@@ -1455,7 +1456,7 @@ public class AppointmentRepositoryJPA {
         eventsQuery.setDateTo(reqest.getDateTo());
         eventsQuery.setTimeFrom(reqest.getTimeFrom());
         eventsQuery.setTimeTo(reqest.getTimeTo());
-        eventsQuery.setDepparts(new HashSet<>());
+        eventsQuery.setDepparts(reqest.getDepPartsIds());
         eventsQuery.setEmployees(new HashSet<>());
         List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
 
@@ -1530,6 +1531,11 @@ public class AppointmentRepositoryJPA {
                             " pb.value = :sg" +
                             ")";
                         }
+                        // for preloading services list if Appointment is creating by dragging in Resources screen
+                        if(!Objects.isNull(reqest.getServicesIds()) && reqest.getServicesIds().size()>0){
+                            stringQuery = stringQuery + " and p.id in " + commonUtilites.SetOfLongToString(reqest.getServicesIds(),",","(",")");
+                        }
+
                         if(reqest.getQuerySource().equals("customer"))// The source where is query going from.  'customer' - from website by customer, or 'manually' - from crm manually by staff (administrator of salon, etc.)
                             stringQuery = stringQuery +
                             " and concat(p.id,'_',dp.id) not in ( " +
@@ -1538,7 +1544,7 @@ public class AppointmentRepositoryJPA {
     //                      В данном случае эта часть отделения не будет включена в услугу как часть отделения, где эта услуга выполняется.
     //                      А если это была единственная часть отделения - эта услуга вообще не будет включена в список на выдачу.
     //                      Если запрос идет от администратора сервиса из CRM - данная фильтрация будет проведена на фронтеэнде в CRM, т.к. пользователю нужно объяснить причины не отображения услуге в списке поиска.
-    //                      List of services for whi    ch at least 1 resource is not sufficient to perform this service in this part of the department
+    //                      List of services for which at least 1 resource is not sufficient to perform this service in this part of the department
     //                      In this case, this part of the department will not be included in the service as part of the department where this service is performed.
     //                      And if this was the only part of the department, this service will not be included in the list for issue at all
     //                      If the request comes from the service administrator from CRM, this filtering will be carried out on the front end in CRM, because the user needs the explanation of the reasons of not displaying the service in the search list.
@@ -2027,6 +2033,25 @@ public class AppointmentRepositoryJPA {
             return null;
         }
     }
+
+
+    public Set<Long> getPreloadServicesIdsByResourceId(Long resourceId){
+        try {
+            List<ShortServiceInfoWithAttributes> servicesOfAttributeList = calendarRepository.getResourceServicesList(resourceId);
+            Set<Long> servicesIds = new HashSet<>();
+            for (ShortServiceInfoWithAttributes service : servicesOfAttributeList) {
+                servicesIds.add(service.getId());
+            }
+            return servicesIds;
+        }
+        catch (Exception e)
+            {
+                logger.error("Exception in method getPreloadServicesIdsByResourceId.", e);
+                e.printStackTrace();
+                return null;
+            }
+    }
+
 
     public Integer setAppointmentChildDocumentAsDecompleted(String docName, Long docId){
         switch(docName) {
