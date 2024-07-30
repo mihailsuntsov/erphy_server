@@ -1098,7 +1098,7 @@ public class CalendarRepositoryJPA {
 
     }
 
-    public List<ShortServiceInfoWithAttributes> getResourceServicesList(long resourceId){
+    public List<ShortServiceInfoWithAttributes> getResourceServicesList(long resourceId, Long deppartId){
 
 
         String stringQuery = "";
@@ -1126,8 +1126,10 @@ public class CalendarRepositoryJPA {
                 " left outer join product_productattributes ppa on ppa.product_id = p.id and ppa.attribute_id=pa.id " +
                 " where  " +
                 " p.master_id = "+myMasterId+" and " +
-                " r.id = " + resourceId +
-                " order by p.name, ppa.position, pat.menu_order ";
+                " r.id = " + resourceId;
+                if(!Objects.isNull(deppartId))
+                    stringQuery = stringQuery + " and p.id in (select product_id from scdl_dep_part_products where dep_part_id = "+deppartId+") ";
+                stringQuery = stringQuery + " order by p.name, ppa.position, pat.menu_order ";
 
 
         try{

@@ -2035,9 +2035,9 @@ public class AppointmentRepositoryJPA {
     }
 
 
-    public Set<Long> getPreloadServicesIdsByResourceId(Long resourceId){
+    public Set<Long> getPreloadServicesIdsByResourceId(Long resourceId,Long deppartId){
         try {
-            List<ShortServiceInfoWithAttributes> servicesOfAttributeList = calendarRepository.getResourceServicesList(resourceId);
+            List<ShortServiceInfoWithAttributes> servicesOfAttributeList = calendarRepository.getResourceServicesList(resourceId, deppartId);
             Set<Long> servicesIds = new HashSet<>();
             for (ShortServiceInfoWithAttributes service : servicesOfAttributeList) {
                 servicesIds.add(service.getId());

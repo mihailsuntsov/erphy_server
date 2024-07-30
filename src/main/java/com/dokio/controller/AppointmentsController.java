@@ -228,12 +228,13 @@ public class AppointmentsController {
     }
     @RequestMapping(
             value = "/api/auth/getPreloadServicesIdsByResourceId",
-            params = {"resource_id"},
+            params = {"resource_id","deppart_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getPreloadServicesIdsByResourceId(
-            @RequestParam("resource_id") Long resource_id){
+            @RequestParam("resource_id") Long resource_id,
+            @RequestParam("deppart_id") Long deppart_id){
         logger.info("Processing get request for path /api/auth/getPreloadServicesIdsByResourceId with parameters: " + "resource_id: " + resource_id);
-        try {return new ResponseEntity<>(appointmentRepositoryJPA.getPreloadServicesIdsByResourceId(resource_id), HttpStatus.OK);}
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getPreloadServicesIdsByResourceId(resource_id,deppart_id), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller getPreloadServicesIdsByResourceId error", e);
             return new ResponseEntity<>("Controller getPreloadServicesIdsByResourceId error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
