@@ -149,23 +149,23 @@ public class AppointmentsController {
         catch (Exception e){logger.error("Controller createAndCompleteOrderInFromAppointment error", e);
             return new ResponseEntity<>("Controller createAndCompleteOrderInFromAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/deleteAppointment")
+    @PostMapping("/api/auth/deleteAppointments")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> deleteAppointment(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/deleteAppointment: " + request.toString());
+        logger.info("Processing post request for path /api/auth/deleteAppointments: " + request.toString());
         String checked = request.getChecked() == null ? "": request.getChecked();
         try {return new ResponseEntity<>(appointmentRepositoryJPA.deleteAppointments(checked), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller deleteAppointment error", e);
-            return new ResponseEntity<>("Controller deleteAppointment error",  HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller deleteAppointments error", e);
+            return new ResponseEntity<>("Controller deleteAppointments error",  HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    @PostMapping("/api/auth/undeleteAppointment")
+    @PostMapping("/api/auth/undeleteAppointments")
     @SuppressWarnings("Duplicates")
     public  ResponseEntity<?> undeleteAppointment(@RequestBody SignUpForm request) {
-        logger.info("Processing post request for path /api/auth/undeleteAppointment: " + request.toString());
+        logger.info("Processing post request for path /api/auth/undeleteAppointments: " + request.toString());
         String checked = request.getChecked() == null ? "" : request.getChecked();
         try {return new ResponseEntity<>(appointmentRepositoryJPA.undeleteAppointments(checked), HttpStatus.OK);}
-        catch (Exception e){logger.error("Controller undeleteAppointment error", e);
-            return new ResponseEntity<>("Controller undeleteAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
+        catch (Exception e){logger.error("Controller undeleteAppointments error", e);
+            return new ResponseEntity<>("Controller undeleteAppointments error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/setAppointmentAsDecompleted")
     public ResponseEntity<?> setCustomersOrdersAsDecompleted(@RequestBody AppointmentsForm request){

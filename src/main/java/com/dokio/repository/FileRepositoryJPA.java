@@ -1016,6 +1016,8 @@ public class FileRepositoryJPA {
 //      Returned list contains: [String filePath, String menuName, int docId, Long fileId]
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null, "document",null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),59,null, "document",null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),59,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("ordersup")+".xls",map.get("ordersup")+".xls",map.get("ordersup"),39,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg",map.get("logo")+".jpg","", null,null, null,null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png",map.get("signature")+"1.png","", null,null, null,null));

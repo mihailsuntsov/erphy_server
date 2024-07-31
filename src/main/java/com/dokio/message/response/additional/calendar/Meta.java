@@ -12,11 +12,12 @@ public class Meta {
     private Integer statusType; //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
     private Long statusId;
     private String statusColor;
+    private Boolean isCompleted;
 
     public Meta() {
     }
 
-    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType, Long statusId, String statusColor) {
+    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType, Long statusId, String statusColor, Boolean isCompleted) {
         this.user = user;
         this.docType = docType;
         this.departmentPartId = departmentPartId;
@@ -24,6 +25,15 @@ public class Meta {
         this.statusType = statusType;
         this.statusId = statusId;
         this.statusColor = statusColor;
+        this.isCompleted = isCompleted;
+    }
+
+    public Boolean getCompleted() {
+        return isCompleted;
+    }
+
+    public void setCompleted(Boolean completed) {
+        isCompleted = completed;
     }
 
     public Long getStatusId() {

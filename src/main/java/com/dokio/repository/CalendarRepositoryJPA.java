@@ -90,7 +90,9 @@ public class CalendarRepositoryJPA {
             "           to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_start," +
             "           to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_start, " +
             "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_end," +
-            "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_end " +
+            "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_end, " +
+
+            "           coalesce(a.is_completed,false) as is_completed" +
 
             "           from scdl_appointments a " +
             "           left outer join users ue ON a.employee_id=ue.id " +
@@ -113,7 +115,7 @@ public class CalendarRepositoryJPA {
             "           and (ue.id in "+(request.getEmployees().size()>0?employeesIds_:"(0)")+" or ue.id is null)" +
             "           and a.dep_part_id in "+(request.getDepparts().size()>0?depPartsIds_:"(0)") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
-            "           order by a.id, r.id";
+            "           order by a.starts_at_time, r.id";
 
 
         try{
@@ -142,7 +144,7 @@ public class CalendarRepositoryJPA {
                 Integer currentCycleStatusType = obj[11] != null ? Integer.parseInt((obj[11]).toString()) : null;
                 Long currentCycleStatusId = obj[12] != null ? Long.parseLong(obj[12].toString()) : null;
                 String currentCycleStatusColor = (String) obj[13];
-
+                Boolean currentCycleIsCompleted = (Boolean) obj[18];
                 // on this cycle if it is a new Appointment
                 // если это новая Запись
                 if (!currentCycleAppointmentId.equals(currentAppointmentId)) {
@@ -181,7 +183,7 @@ public class CalendarRepositoryJPA {
                     currentEmployee = new CalendarUser(currentCycleEmployeeId, currentCycleEmployeeName, new CalendarColors("#000000","#B0E0E0"));
                     // Создали новый объект, содержащий всю дополнительную информацию по Записи
                     // Created a new object containing all additional information about the Appointment
-                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType, currentCycleStatusId, currentCycleStatusColor);
+                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType, currentCycleStatusId, currentCycleStatusColor,currentCycleIsCompleted);
                 }
                 // Копим ресурсы
                 // Сollect resources

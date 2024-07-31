@@ -443,7 +443,7 @@ public class SpravSysEdizmJPA {
         Map<String, String> map = cu.translateForUser(mId, new String[]{
                 "'um_piece'","'um_piece_s'","'um_uncountable'","'um_gramm'","'um_ton'","'um_meter'","'um_centimeter'","'um_litre'"
                 ,"'um_cubic_meter'","'um_square_meter'","'um_kilogramm'","'um_kilogramm_s'","'um_gramm_s'","'um_ton_s'","'um_meter_s'"
-                ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'","'second'","'minute'","'hour'"
+                ,"'um_centimeter_s'","'um_litre_s'","'um_cubic_meter_s'","'um_square_meter_s'","'second'","'minute'","'hour'","'service'","'service_s'"
                 ,"'day'","'second_s'","'minute_s'","'hour_s'","'day_s'","'session'","'session_s'","'um_night'","'um_night_sm'","'um_vizit'","'um_vizit_sm'"});
         stringQuery = "insert into sprav_sys_edizm ( master_id,creator_id,company_id,date_time_created,name,short_name,type_id,equals_si,is_default) values "+
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),'"+map.get("um_piece")+"','"+map.get("um_piece_s")+"',1,1,true),"+
