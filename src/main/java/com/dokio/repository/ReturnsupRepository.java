@@ -1214,7 +1214,7 @@ public class ReturnsupRepository {
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
                 " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
                 " where  p.master_id=" + myMasterId +
-                " and coalesce(p.is_archive,false) !=true ";
+                " and coalesce(p.is_deleted,false) !=true ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.product_code_free,'fm0000000000') like CONCAT('%',:sg) or "+

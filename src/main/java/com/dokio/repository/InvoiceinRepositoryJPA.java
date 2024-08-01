@@ -546,7 +546,7 @@ public class InvoiceinRepositoryJPA {
 
                 // статус по умолчанию (если не выбран)
                 if (request.getStatus_id() ==null){
-                    request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),21));
+                    request.setStatus_id(commonUtilites.getDocumentsDefaultStatus(request.getCompany_id(),32));
                 }
 
                 //если документ создается из другого документа

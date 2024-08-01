@@ -44,6 +44,8 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -844,7 +846,8 @@ public class AcceptanceRepository {
 
     private Boolean saveAcceptanceProductTable(AcceptanceProductForm row, Long myMasterId) throws CantInsertProductRowCauseErrorException {
         String stringQuery;
-
+        if(Objects.isNull(row.getProduct_netcost()))
+            row.setProduct_netcost(row.getProduct_sumprice().divide(row.getProduct_count()).setScale(2, RoundingMode.HALF_UP));
         stringQuery =   " insert into acceptance_product (" +
                 "product_id," +
                 "acceptance_id," +
@@ -870,6 +873,8 @@ public class AcceptanceRepository {
                 " product_count = " + row.getProduct_count() + "," +
                 " product_price = " + row.getProduct_price() + "," +
                 " product_sumprice = " + row.getProduct_sumprice() + "," +
+                // if acceptance is creating from another document - netcost is not calculating and it should be calculated here
+                // если приёмка создается из другого документа, то средняя себестоимость не рассчитывается, и ее нужно посчитать тут
                 " product_netcost = " + row.getProduct_netcost() +"," +
                 " nds_id = " + row.getNds_id() +"," +
                 " edizm_id = "+ row.getEdizm_id();

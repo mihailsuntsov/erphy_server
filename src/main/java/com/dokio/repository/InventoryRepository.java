@@ -1021,7 +1021,7 @@ public class InventoryRepository {
                 " left outer join sprav_sys_ppr ssp on ssp.id=p.ppr_id" +
                 " left outer join sprav_sys_edizm ei on p.edizm_id=ei.id" +
                 " where  p.master_id=" + myMasterId +
-                " and coalesce(p.is_archive,false) !=true " +
+                " and coalesce(p.is_deleted,false) !=true " +
                 " and p.ppr_id != 4 ";
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +

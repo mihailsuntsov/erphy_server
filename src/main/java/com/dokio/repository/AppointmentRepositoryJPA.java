@@ -1459,7 +1459,7 @@ public class AppointmentRepositoryJPA {
         eventsQuery.setDepparts(reqest.getDepPartsIds());
         eventsQuery.setEmployees(new HashSet<>());
         List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
-
+        String depPartsIds_ =  commonUtilites.SetOfLongToString(reqest.getDepPartsIds(), ",", "(", ")");
 //        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);
 
         String stringQuery = " select  " +
@@ -1503,7 +1503,7 @@ public class AppointmentRepositoryJPA {
 //                      " -- left outer join busy_resources br on br.resource_id=r.id " +
                         " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
                         " left outer join scdl_dep_parts dp on dp.id=dpp.dep_part_id  " +
-                        " left outer join departments d on d.id=dp.department_id " +
+                        " left outer join departments d on d.id=(select department_id from scdl_dep_parts where id in "+depPartsIds_+")  " + // if product is material - it is impossible to get department id because this product is not represented in scdl_dep_part_products (because it is not a service by appointment)
                         " left outer join scdl_resource_dep_parts_qtt rdp on rdp.resource_id=r.id and rdp.dep_part_id=dp.id " +
                         " left outer join product_prices pp on pp.product_id = p.id and pp.price_type_id = " + reqest.getPriceTypeId() +
                         " left outer join product_barcodes pb on pb.product_id=p.id" +
@@ -1519,6 +1519,7 @@ public class AppointmentRepositoryJPA {
                         " p.company_id=" + reqest.getCompanyId() + " and " +
                         " p.ppr_id in (1,4) and " + //-- products and services
                         " coalesce(p.is_deleted,false)=false and " +
+                        " coalesce(p.not_sell, false) = false and " +
                         " coalesce(dp.is_deleted,false)=false and " +
                         " case when coalesce(p.is_srvc_by_appointment,false) = true then (coalesce(dp.is_active,false)=true) else true end and " +
                         " case when coalesce(p.is_srvc_by_appointment,false) = true then asg.assignment_type = :asg else true end ";
@@ -1876,8 +1877,9 @@ public class AppointmentRepositoryJPA {
             }
             shipmentDoc.setId(resultOfShipmentCreation);
             shipmentDoc.setIs_completed(true);
-            shipmentRepository.updateShipment(shipmentDoc);
-            return resultOfShipmentCreation>0L?1L:resultOfShipmentCreation; // if everything is OK - send 1 else send error code
+            Integer resultOfCompletion = shipmentRepository.updateShipment(shipmentDoc);
+//            return resultOfCompletion>0L?1L:resultOfShipmentCreation; // if everything is OK - send 1 else send error code
+            return Objects.isNull(resultOfCompletion)?null:resultOfCompletion.longValue();
         }catch (Exception e) {
             logger.error("Exception in method createAndCompleteShipmentFromAppointment. ShipmentForm: "+shipmentDoc.toString()+",/ form:"+request.toString(), e);
             e.printStackTrace();

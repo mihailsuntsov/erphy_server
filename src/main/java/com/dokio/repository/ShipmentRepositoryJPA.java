@@ -920,12 +920,12 @@ public class ShipmentRepositoryJPA {
                 return -70; // см. _ErrorCodes
             } catch (CantInsertProductRowCauseOversellException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ShipmentRepository/addShipmentProductHistory on inserting into product_history cause oversell.", e);
+                logger.warn("Exception in method ShipmentRepository/addShipmentProductHistory on inserting into product_history cause oversell.", e);
                 e.printStackTrace();
                 return -80;// недостаточно товара на складе
             } catch (CantSetHistoryCauseNegativeSumException e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-                logger.error("Exception in method ShipmentRepository/setShipmentAsDecompleted.", e);
+                logger.warn("Exception in method ShipmentRepository/setShipmentAsDecompleted.", e);
                 e.printStackTrace();
                 return -80; // см. _ErrorCodes
             }catch (Exception e) {
