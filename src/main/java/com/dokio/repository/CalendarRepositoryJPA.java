@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -67,6 +68,7 @@ public class CalendarRepositoryJPA {
         Long masterId = userRepositoryJPA.getMyMasterId();
         String myTimeZone = userRepository.getUserTimeZone();
 
+
         String depPartsIds_ =  commonUtilites.SetOfLongToString(request.getDepparts(), ",", "(", ")");
 //        String jobTitlesIds_ = commonUtilites.SetOfLongToString(request.getJobtitles(), ",", "(", ")");
         String employeesIds_ = commonUtilites.SetOfLongToString(request.getEmployees(), ",", "(", ")");
@@ -92,7 +94,30 @@ public class CalendarRepositoryJPA {
             "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_end," +
             "           to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+timeFormat+"') as time_end, " +
 
-            "           coalesce(a.is_completed,false) as is_completed" +
+            "           coalesce(a.is_completed,false) as is_completed," +
+
+            "           (select sum(coalesce(product_sumprice,0)) from scdl_appointments_product where appointment_id = a.id) as sum_all, " +
+
+            "           coalesce((select sum(coalesce(product_sumprice,0)) from shipment_product where shipment_id in (" +
+            "               select id from shipment where " +
+            "               master_id = "+masterId+" and " +
+            "               coalesce(is_completed,false) = true and " +
+            "               linked_docs_group_id = a.linked_docs_group_id" +
+                        ")),0) as sum_shipped, " +
+
+            "           coalesce((select sum(coalesce(summ,0)) from orderin where " +
+            "               master_id = "+masterId+" and " +
+            "               coalesce(is_completed, false) = true and " +
+            "               internal = false and " +
+            "               linked_docs_group_id = a.linked_docs_group_id" +
+            "           ),0)" +
+            "                       + " +
+            "           coalesce((select sum(coalesce(summ,0)) from paymentin where " +
+            "               master_id = "+masterId+" and " +
+            "               coalesce(is_completed, false) = true and " +
+            "               internal = false and " +
+            "               linked_docs_group_id = a.linked_docs_group_id" +
+            "           ),0) as sum_payed " +
 
             "           from scdl_appointments a " +
             "           left outer join users ue ON a.employee_id=ue.id " +
@@ -104,15 +129,20 @@ public class CalendarRepositoryJPA {
             "           where " +
             "           a.master_id=" + masterId + " and " +
             "           a.company_id=" + request.getCompanyId() + " and " +
+                        (!request.getWithCancelledEvents()?" ssd.status_type != 3 and ":"") +
             "           coalesce(a.is_deleted,false) = false and " +
                 // Events (appointments/reservations) must intersect the range of dates ( event_start < range_end AND event_end > range_start )
 //            "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' - interval '6' day < a.ends_at_time and " +
 //            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' + interval '6' day > a.starts_at_time " +
             "           to_timestamp ('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' < a.ends_at_time and " +
-            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":59.999','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time " +
+            "           to_timestamp ('"+request.getDateTo()+" "+request.getTimeTo()+":00.000','DD.MM.YYYY HH24:MI:SS.MS') at time zone 'Etc/GMT+0' at time zone '"+myTimeZone+"' > a.starts_at_time ";
 //                        (request.getEmployees().size()>0?(" and (ue.id in "+employeesIds_+" or ue.id is null)" ):"") +
 //                        (request.getDepparts().size()>0?(" and a.dep_part_id in "+depPartsIds_ ):"") +
-            "           and (ue.id in "+(request.getEmployees().size()>0?employeesIds_:"(0)")+" or ue.id is null)" +
+
+            if(request.getIfNoEmployeesThenNoEvents())
+                stringQuery = stringQuery + " and (ue.id in "+(request.getEmployees().size()>0?employeesIds_:"(0)")+" or ue.id is null)";
+
+            stringQuery = stringQuery +
             "           and a.dep_part_id in "+(request.getDepparts().size()>0?depPartsIds_:"(0)") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
             "           order by a.starts_at_time, r.id";
@@ -145,6 +175,9 @@ public class CalendarRepositoryJPA {
                 Long currentCycleStatusId = obj[12] != null ? Long.parseLong(obj[12].toString()) : null;
                 String currentCycleStatusColor = (String) obj[13];
                 Boolean currentCycleIsCompleted = (Boolean) obj[18];
+                BigDecimal currentCycleSumAll = (BigDecimal) obj[19];
+                BigDecimal currentCycleSumShipped = (BigDecimal) obj[20];
+                BigDecimal currentCycleSumPayed = (BigDecimal) obj[21];
                 // on this cycle if it is a new Appointment
                 // если это новая Запись
                 if (!currentCycleAppointmentId.equals(currentAppointmentId)) {
@@ -183,7 +216,17 @@ public class CalendarRepositoryJPA {
                     currentEmployee = new CalendarUser(currentCycleEmployeeId, currentCycleEmployeeName, new CalendarColors("#000000","#B0E0E0"));
                     // Создали новый объект, содержащий всю дополнительную информацию по Записи
                     // Created a new object containing all additional information about the Appointment
-                    meta = new Meta(currentEmployee,"appointment", currentCycleDepPartId, currentCycleStatusName, currentCycleStatusType, currentCycleStatusId, currentCycleStatusColor,currentCycleIsCompleted);
+                    meta = new Meta(currentEmployee,
+                            "appointment",
+                                    currentCycleDepPartId,
+                                    currentCycleStatusName,
+                                    currentCycleStatusType,
+                                    currentCycleStatusId,
+                                    currentCycleStatusColor,
+                                    currentCycleIsCompleted,
+                                    currentCycleSumAll,
+                                    currentCycleSumShipped,
+                                    currentCycleSumPayed);
                 }
                 // Копим ресурсы
                 // Сollect resources

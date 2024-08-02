@@ -943,12 +943,12 @@ public class ShipmentRepositoryJPA {
         // Есть ли права на проведение
         if( //Если есть право на "Проведение по всем предприятиям" и id принадлежат владельцу аккаунта (с которого проводят), ИЛИ
                 (securityRepositoryJPA.userHasPermissions_OR(21L,"396") && securityRepositoryJPA.isItAllMyMastersDocuments("shipment",request.getId().toString())) ||
-                        //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
-                        (securityRepositoryJPA.userHasPermissions_OR(21L,"397") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",request.getId().toString()))||
-                        //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
-                        (securityRepositoryJPA.userHasPermissions_OR(21L,"398") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",request.getId().toString()))||
-                        //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
-                        (securityRepositoryJPA.userHasPermissions_OR(21L,"399") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",request.getId().toString()))
+                //Если есть право на "Проведение по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта, ИЛИ
+                (securityRepositoryJPA.userHasPermissions_OR(21L,"397") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments("shipment",request.getId().toString()))||
+                //Если есть право на "Проведение по своим отделениям и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях
+                (securityRepositoryJPA.userHasPermissions_OR(21L,"398") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsDocuments("shipment",request.getId().toString()))||
+                //Если есть право на "Проведение своих документов" и id принадлежат владельцу аккаунта (с которого проводят) и предприятию аккаунта и отделение в моих отделениях и создатель документа - я
+                (securityRepositoryJPA.userHasPermissions_OR(21L,"399") && securityRepositoryJPA.isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments("shipment",request.getId().toString()))
         )
         {
             if(request.getShipmentProductTable().size()==0) throw new Exception("There is no products in this document");// на тот случай если документ придет без товаров (случаи всякие бывают)

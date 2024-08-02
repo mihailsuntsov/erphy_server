@@ -1206,7 +1206,9 @@ public class AppointmentRepositoryJPA {
         eventsQuery.setTimeTo(reqest.getTimeTo());
         eventsQuery.setDepparts(new HashSet<>());
         eventsQuery.setEmployees(new HashSet<>());
-        List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
+        eventsQuery.setWithCancelledEvents(false); // no cancelled events
+        eventsQuery.setIfNoEmployeesThenNoEvents(false); // events of all employees
+        List<CalendarEventJSON> calendarEventsList = calendarRepository.getCalendarEventsList(eventsQuery);
 
 
         String stringQuery = " select  " +
@@ -1294,7 +1296,7 @@ public class AppointmentRepositoryJPA {
             String      currentCycleResourceName =                              obj[7].toString();
             Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
 //            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
-            Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsLis);
+            Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsList);
             Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[9].toString());
             BigDecimal  currentCycleTotal = (                                   obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
             Integer     currentCycleNdsId=((Integer)                            obj[11]);
@@ -1458,6 +1460,8 @@ public class AppointmentRepositoryJPA {
         eventsQuery.setTimeTo(reqest.getTimeTo());
         eventsQuery.setDepparts(reqest.getDepPartsIds());
         eventsQuery.setEmployees(new HashSet<>());
+        eventsQuery.setWithCancelledEvents(false); // no cancelled events
+        eventsQuery.setIfNoEmployeesThenNoEvents(false); // events of all employees and without employees
         List<CalendarEventJSON> calendarEventsLis = calendarRepository.getCalendarEventsList(eventsQuery);
         String depPartsIds_ =  commonUtilites.SetOfLongToString(reqest.getDepPartsIds(), ",", "(", ")");
 //        String stringQuery = getBusyResourcesSqlQueryPart( masterId, reqest, myTimeZone);

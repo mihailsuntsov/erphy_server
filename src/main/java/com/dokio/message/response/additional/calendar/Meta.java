@@ -1,5 +1,6 @@
 package com.dokio.message.response.additional.calendar;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 public class Meta {
@@ -13,11 +14,15 @@ public class Meta {
     private Long statusId;
     private String statusColor;
     private Boolean isCompleted;
+    private BigDecimal sumAll;
+    private BigDecimal sumShipped;
+    private BigDecimal sumPayed;
+
 
     public Meta() {
     }
 
-    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType, Long statusId, String statusColor, Boolean isCompleted) {
+    public Meta(CalendarUser user, String docType, Long departmentPartId, String statusName, Integer statusType, Long statusId, String statusColor, Boolean isCompleted, BigDecimal sumAll, BigDecimal sumShipped, BigDecimal sumPayed) {
         this.user = user;
         this.docType = docType;
         this.departmentPartId = departmentPartId;
@@ -26,6 +31,33 @@ public class Meta {
         this.statusId = statusId;
         this.statusColor = statusColor;
         this.isCompleted = isCompleted;
+        this.sumAll = sumAll;
+        this.sumShipped=sumShipped;
+        this.sumPayed=sumPayed;
+    }
+
+    public BigDecimal getSumAll() {
+        return sumAll;
+    }
+
+    public void setSumAll(BigDecimal sumAll) {
+        this.sumAll = sumAll;
+    }
+
+    public BigDecimal getSumShipped() {
+        return sumShipped;
+    }
+
+    public void setSumShipped(BigDecimal sumShipped) {
+        this.sumShipped = sumShipped;
+    }
+
+    public BigDecimal getSumPayed() {
+        return sumPayed;
+    }
+
+    public void setSumPayed(BigDecimal sumPayed) {
+        this.sumPayed = sumPayed;
     }
 
     public Boolean getCompleted() {

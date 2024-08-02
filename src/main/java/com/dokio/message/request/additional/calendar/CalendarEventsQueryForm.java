@@ -13,6 +13,9 @@ public class CalendarEventsQueryForm {
     private Set<Long> jobtitles;
     private Set<Long> employees;
 
+    private Boolean withCancelledEvents;
+    private Boolean ifNoEmployeesThenNoEvents;
+
     public CalendarEventsQueryForm(Long companyId, String dateFrom, String dateTo, Set<Long> depparts, Set<Long> jobtitles, Set<Long> employees) {
         this.companyId = companyId;
         this.dateFrom = dateFrom;
@@ -20,6 +23,22 @@ public class CalendarEventsQueryForm {
         this.depparts = depparts;
         this.jobtitles = jobtitles;
         this.employees = employees;
+    }
+
+    public Boolean getWithCancelledEvents() {
+        return withCancelledEvents;
+    }
+
+    public void setWithCancelledEvents(Boolean withCancelledEvents) {
+        this.withCancelledEvents = withCancelledEvents;
+    }
+
+    public Boolean getIfNoEmployeesThenNoEvents() {
+        return ifNoEmployeesThenNoEvents;
+    }
+
+    public void setIfNoEmployeesThenNoEvents(Boolean ifNoEmployeesThenNoEvents) {
+        this.ifNoEmployeesThenNoEvents = ifNoEmployeesThenNoEvents;
     }
 
     public String getTimeFrom() {
