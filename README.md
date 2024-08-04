@@ -1,28 +1,28 @@
-# DokioCRM<br>
-This is a server part of DokioCRM
+# ERPHY<br>
+This is a server part of ERPHY (ex DokioCRM)
 ## About
-DokioCRM is a free and open source Ecommerce ERP/CRM for small business. You can manage your customers, warehouse, sales and finances, and get analytics of how your business works.<br>
+ERPHY is a free and open source Ecommerce ERP/CRM. You can manage your customers, warehouse, sales and finances, and get analytics of how your business works.<br><br>
+NEW!!!<br>
+Added an universal reservation and appointment module. Now ERPHY is a powerful reservation and appointment system!
+Suitable for beauty salons, hostels, hotels, hospitals, dentists, car rental and other!<br><br>
 It has an integration with WordPress and WooCommerce, and you can put all your goods from CRM to the online store in one click!<br>
 There is a support of a multilingual goods and online stores<br>
 All possibilities are described in more detail on the website of project:
 ## Site
-https://dokio.me<br>
+https://erphy.me/crm/en<br>
 
 ## Examples
 The SaaS version: https://erphy.me/dss Here you can register and test working with the program interface<br>
-The simple online store example with product filters: https://dokio.me/shop/<br>
-Multilingual real estate online catalog: https://dokio.me/examples/realestate_en/<br>
 Multilingual food delivery site: https://food.erphy.me
 
 ## How to install
-[<img src="https://dokio.me/downloads/shared/screen2.jpg" width="50%">](https://youtu.be/z2qjwzGXB30 "Now in Android: 55")<br><br>
 You can install the program on your VPS server using a bash installation script. 
 Bash installation script tested on:<br> 
 * Ubuntu Server 20.04
 * Ubuntu Server 22.04 (recommended)<br>
 
 Minimum requirments of VPS is: 1 Cpu core, 2 Gb RAM, 15 Gb HDD<br>
-Use only freshly installed VPS for the installation of DokioCRM<br>
+Use only freshly installed VPS for the installation of ERPHY<br>
 
 In order for SSL to install and work correctly, you should order and configure a domain name for your VPS.
 
@@ -45,7 +45,7 @@ hostname -f
 NOTE: _In order for the SSL certificate to be obtained successfully, the server must be accessible by domain name. If you have just received a domain name, the VPS server may not be available yet. You can check whether or not the domain is resolving into the correct host IP address by using the ping command in your computer console:`ping yoursite.com`_
 ### 3. Execute installation script:
 ```shell
-wget https://dokio.me/downloads/shell/dokiocrm-install.sh  -O - | sh
+wget https://erphy.me/downloads/shell/erphy-install.sh  -O - | sh
 ```
 This command will start the installation process. 
 
@@ -53,19 +53,19 @@ Once DokioCRM is installed, the installer will ask you if you want to install a 
 A configured and ready-to-use online store will be installed.
 
 
-After the installation the file `/var/dokio_pwd.txt` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
-The user interface of DokioCRM will be available at this address: `https://yoursite.com/dss`.<br>
-Click `Registration`, and create your account. After registration you can login into the user interface of DokioCRM.<br>
+After the installation the file `/var/erphy_pwd.txt` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
+The user interface of ERPHY will be available at this address: `https://yoursite.com/dss`.<br>
+Click `Registration`, and create your account. After registration you can login into the user interface of ERPHY.<br>
 When the first account is registered, the ability to register new accounts will not be available. This is to prevent new unwanted account registrations on your server. However, you can create any number of users of your company from the user interface (Settings/Users). But if you want to allow new registrations on your server, run the following command in the SSH client:
 ```shell                                                                                                                                                                                                                                                                 
-sudo -Hiu postgres psql -d dokio -c "update settings_general set show_registration_link = true, allow_registration = true;"
+sudo -Hiu postgres psql -d erphy -c "update settings_general set show_registration_link = true, allow_registration = true;"
 ```
 NOTE: _Some mail services, for example, Gmail, can bounce the emails from your server mailbox. It's because the domain zone of `yoursite.com` has no SPF record. Add a TXT record for `yoursite.com`. It should be like `"v=spf1 +a +mx +ip4:xxx.xxx.xxx.xxx ~all"`, created in a domain zone management on the domain `yoursite.com` registrar website. <br>
 For some services it still can not be enough, and you should set up DKIM and DMARC on your server, and order the creation of a PTR record from your VPS provider company._
 
 
 ## How to use
-Detailed instructions for use - in [Knowledge base](https://dokio.me/knowledge-base/)
+Detailed instructions for use - in [Knowledge base](https://erphy.me/knowledge-base/)
 
 
 ## Contacts

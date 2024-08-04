@@ -358,7 +358,7 @@ public class StorageService {
             String line = "";
             if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//";  //запущено в винде
             } else {                    BASE_FILES_FOLDER = "//var//";} //запущено в linux
-            String path = BASE_FILES_FOLDER+"dokiocrm.key";
+            String path = BASE_FILES_FOLDER+"erphy.key";
             if(isPathExists(path)){
                 BufferedReader reader = new BufferedReader(new FileReader(path));
                 line = reader.readLine();

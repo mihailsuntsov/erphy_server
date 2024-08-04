@@ -6272,16 +6272,6 @@ create table sprav_jobtitles ( -- describes job titles and what services they ca
                                foreign key (company_id) references companies(id)
 );
 
--- create table scdl_jobtitle_products(  -- describes set of services that job title can provide
---                                          master_id          bigint,
---                                          product_id         bigint not null,
---                                          jobtitle_id        bigint not null,
---                                          foreign key (master_id) references users(id),
---                                          foreign key (product_id) references products(id),
---                                          foreign key (jobtitle_id) references sprav_jobtitles(id)
--- );
--- alter table scdl_jobtitle_products add constraint scdl_jobtitle_products_uq unique (product_id, jobtitle_id);
-
 insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (57,'Должности','jobtitles',1,'sprav_jobtitles','Должности','Job titles','Звања');
 
 insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
@@ -6437,56 +6427,6 @@ alter table scdl_dep_parts add constraint changer_id_fkey foreign key (changer_i
 alter table scdl_dep_parts alter column date_time_created set not null;
 alter table scdl_dep_parts alter column creator_id set not null;
 
--- create table scdl_scedule_day(
---   -- describes one day of employee - workshift or vacation
---                              id                          int primary key not null,
---                              master_id                   bigint not null,
---                              employee_id                 bigint not null,
---                              day_type                    varchar(9) not null, -- workshift or vacation
---                              day_date                    date not null,
---                              workshift_time_from         time,
---                              workshift_time_to           time,
---                              vacation_is_paid            boolean,
---                              vacation_payment_per_day    numeric(12,2),
---                              foreign key (employee_id)   references users(id),
---                              foreign key (master_id)     references users(id)
--- );
---
--- alter table scdl_scedule_day add constraint day_type_workshift_check check(day_type != 'workshift' or (workshift_time_from is not null and workshift_time_to is not null));
--- alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (employee_id, day_type, day_date);
---
--- create table scdl_workshift_breaks(
---   -- describes the breaks of workshift
---                               id                          int primary key not null,
---                               master_id                   bigint not null,
---                               scedule_day_id              bigint not null,
---                               time_from                   time not null,
---                               time_to                     time not null,
---                               is_paid                     boolean,
---                               precent                     int,
---                               foreign key (scedule_day_id)references scdl_scedule_day(id),
---                               foreign key (master_id)     references users(id)
--- );
---
--- create table scdl_scedule_day_deppart
--- (
---   -- describes the departments parts where this scedule day is belongs to
---                               master_id      bigint not null,
---                               scedule_day_id bigint not null,
---                               deppart_id     bigint not null,
---                               foreign key (scedule_day_id) references scdl_scedule_day (id),
---                               foreign key (deppart_id) references scdl_dep_parts (id)
--- );
--- alter table scdl_scedule_day_deppart add constraint scdl_scedule_day_deppart_uq unique (scedule_day_id, deppart_id);
-
-
--- drop table scdl_vacation;
--- drop table scdl_workshift_deppart;
--- drop table scdl_workshift_breaks;
--- drop table scdl_workshift;
--- drop table scdl_scedule_day;
-
-
 create table scdl_scedule_day(
   -- describes one day of employee
                                    id                          bigserial primary key not null,
@@ -6528,7 +6468,7 @@ create table scdl_workshift_deppart
   -- describes the departments parts where this workshift is belongs to
                                     master_id                   bigint not null,
                                     workshift_id                bigint not null,
-                                    scdl_scedule_day                  bigint not null,
+                                    deppart_id                  bigint not null,
                                     foreign key (workshift_id)  references scdl_workshift (id) on delete cascade,
                                     foreign key (deppart_id)    references scdl_dep_parts (id) on delete cascade,
                                     foreign key (master_id)     references users(id)
@@ -6699,8 +6639,6 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('appointment', 'Appointment', 'Запись', 'Састанак'),
 ('reservation', 'Reservation', 'Бронирование', 'Резервација');
 
-drop table if exists scdl_jobtitle_products;
-
 create table settings_calendar (
                                  id                          bigserial primary key not null,
                                  master_id                   bigint not null,
@@ -6799,6 +6737,7 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('service', 'Service', 'Услуга', 'Услуга'),
 ('service_s', 'service', 'услуга', 'услуга');
+update version set value = '1.4.0', date = '04-08-2024';
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
 
 

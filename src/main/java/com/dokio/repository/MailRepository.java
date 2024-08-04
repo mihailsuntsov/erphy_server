@@ -26,7 +26,7 @@ public class MailRepository {
 
     Logger logger = Logger.getLogger("MailRepository");
 
-    @Value("${dokioserver.host}")
+    @Value("${erphyserver.host}")
     private String systemserver;
     @Value("${activate_account.from_email}")
     private String from_email;
