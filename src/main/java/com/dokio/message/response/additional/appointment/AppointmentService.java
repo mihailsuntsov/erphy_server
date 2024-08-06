@@ -11,7 +11,7 @@ public class AppointmentService {
     private Long        departmentId;
     private String      departmentName;
     private Integer     row_num;                    // needs for printing docs
-    private Integer     nds_id;                     // ID of VAT
+    private Long        nds_id;                     // ID of VAT
     private BigDecimal  nds_value;                  // VAT in percentages, for example: 20.0 (needs for printing docs)
     private Long        edizm_id;                   // unit of measurement's ID / id ед. измерения /
     private String      edizm;                      // unit of measurement's name / наименование ед. измерения /
@@ -38,6 +38,14 @@ public class AppointmentService {
     private Long        price_type_id;
     private Long        cagent_id;
     private int         cagent_row_id;
+
+    public Long getNds_id() {
+        return nds_id;
+    }
+
+    public void setNds_id(Long nds_id) {
+        this.nds_id = nds_id;
+    }
 
     public Integer getRow_num() {
         return row_num;
@@ -165,14 +173,6 @@ public class AppointmentService {
 
     public void setAtLeastBeforeTimeInSeconds(BigDecimal atLeastBeforeTimeInSeconds) {
         this.atLeastBeforeTimeInSeconds = atLeastBeforeTimeInSeconds;
-    }
-
-    public Integer getNds_id() {
-        return nds_id;
-    }
-
-    public void setNds_id(Integer nds_id) {
-        this.nds_id = nds_id;
     }
 
     public Long getEdizm_id() {

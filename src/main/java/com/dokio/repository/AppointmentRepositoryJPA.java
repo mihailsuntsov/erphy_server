@@ -1224,7 +1224,7 @@ public class AppointmentRepositoryJPA {
 //                        " coalesce((select sum(quantity_now_used) from busy_resources where resource_id=r.id and dep_part_id=dp.id),0) as now_used,  " +
                         " coalesce(rdp.quantity,0) as res_quantity_in_dep_part, " +
                         " coalesce(pqtt.quantity, 0) product_quantity_in_department, " +
-                        " p.nds_id as nds_id, " +
+                        " app.nds_id as nds_id, " +
                         " coalesce(p.edizm_id,0) as edizm_id, " +
                         " coalesce(edizm.short_name,'') as edizm, " +
                         " coalesce(edizm.type_id, 0) as edizm_type_id, " +       // 6=time, 2=weight, ...
@@ -1292,14 +1292,14 @@ public class AppointmentRepositoryJPA {
             String      currentCycleDepartmentName =                            obj[3].toString();
             Long        currentCycleDepPartId = Long.parseLong(                 obj[4].toString());
             String      currentCycleDepPartName =                               obj[5].toString();
-            Long        currentCycleResourceId = (                              obj[6] == null?null:Long.parseLong(obj[6].toString()));
+            Long        currentCycleResourceId = (                              obj[6]==null?null:Long.parseLong(obj[6].toString()));
             String      currentCycleResourceName =                              obj[7].toString();
             Integer     currentCycleNeedRresQtt = Integer.parseInt(             obj[8].toString());
 //            Integer     currentCycleNowUsed = Integer.parseInt(                 obj[9].toString());
             Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsList);
             Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[9].toString());
             BigDecimal  currentCycleTotal = (                                   obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
-            Integer     currentCycleNdsId=((Integer)                            obj[11]);
+            Long        currentCycleNdsId=(                                     obj[11]==null?null:Long.parseLong(obj[11].toString()));
             Long        currentCycleEdIzmId = (Long.parseLong(                  obj[12].toString()));
             String      currentCycleEdIzm = ((String)                           obj[13]);
             Integer     currentCycleEdizm_type_id = ((Integer)                  obj[14]);
@@ -1318,7 +1318,7 @@ public class AppointmentRepositoryJPA {
             BigDecimal  currentCycleProductPrice =  (                           obj[27]==null?BigDecimal.ZERO:(BigDecimal)obj[27]);
             BigDecimal  currentCycleProductSumprice =  (                        obj[28]==null?BigDecimal.ZERO:(BigDecimal)obj[28]);
             Long        currentCycleCagentId = (Long.parseLong(                 obj[29].toString()));
-            Long        currentCyclePriceTypeId = (                             obj[30] == null?null:Long.parseLong(      obj[30].toString()));
+            Long        currentCyclePriceTypeId = (                             obj[30]==null?null:Long.parseLong(      obj[30].toString()));
             String      currentCyclePair = currentCycleCagentId.toString() + " " + currentCycleServiceId.toString();
             BigDecimal  currentCycleNdsValue = ((BigDecimal)                    obj[31]);
 
@@ -1604,7 +1604,7 @@ public class AppointmentRepositoryJPA {
             Integer     currentCycleNowUsed = getMaxUsedResourceQtt(currentCycleDepPartId, currentCycleResourceId, reqest.getAppointmentId(), calendarEventsLis);
             Integer     currentCycleQuantityInDepPart = Integer.parseInt(       obj[9].toString());
             BigDecimal  currentCycleTotal = (                                   obj[10]==null?BigDecimal.ZERO:(BigDecimal)obj[10]);
-            Integer     currentCycleNdsId=((Integer)                            obj[11]);
+            Long        currentCycleNdsId=(                                     obj[11] == null?null:Long.parseLong(obj[11].toString()));
             Long        currentCycleEdIzmId = (Long.parseLong(                  obj[12].toString()));
             String      currentCycleEdIzm = ((String)                           obj[13]);
             Integer     currentCycleEdizm_type_id = ((Integer)                  obj[14]);
