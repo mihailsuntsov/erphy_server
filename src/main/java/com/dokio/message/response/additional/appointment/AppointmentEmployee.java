@@ -7,9 +7,18 @@ public class AppointmentEmployee {
     private Long id;                            // Employee's ID
     private String name;                        // Employee's name
     private Long jobtitle_id;                   // Job title ID of employee
+    private String jobtitle_name;               // Employee's job title name
     private List<DepartmentPartWithServicesIds> departmentPartsWithServicesIds; // Department parts, whose services coincide with the services of the employee.
                                                                                 // It contains the set of these services
     private String state;                       // "free" / "busyByAppointments" / "busyBySchedule"
+
+    public String getJobtitle_name() {
+        return jobtitle_name;
+    }
+
+    public void setJobtitle_name(String jobtitle_name) {
+        this.jobtitle_name = jobtitle_name;
+    }
 
     public String getState() {
         return state;

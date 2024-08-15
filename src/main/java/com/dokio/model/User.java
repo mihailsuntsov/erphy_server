@@ -183,7 +183,8 @@ public class User{
     @Column(name = "incoming_service_id")   // service that company gets from user-employee, and for which pay the salary
     private Long incoming_service_id;
 
-
+    @Column(name = "is_display_in_employee_list") // This user will be displayed in the lists of users who provide services
+    private Boolean is_display_in_employee_list;
 
 
     public User() {}
@@ -209,6 +210,14 @@ public class User{
 
     public void setFreeTrialDays(Integer freeTrialDays) {
         this.freeTrialDays = freeTrialDays;
+    }
+
+    public Boolean getIs_display_in_employee_list() {
+        return is_display_in_employee_list;
+    }
+
+    public void setIs_display_in_employee_list(Boolean is_display_in_employee_list) {
+        this.is_display_in_employee_list = is_display_in_employee_list;
     }
 
     public Boolean getBlockedMasterId() {

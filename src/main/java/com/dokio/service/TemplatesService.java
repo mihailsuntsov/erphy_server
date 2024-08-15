@@ -165,12 +165,12 @@ public class TemplatesService {
         switch (company.getType()) {
             case ("individual"):// individual
                 if(!Objects.isNull(company.getJr_country_id()) && COUNTRIES_WITH_SURNAME_FIRST.contains(company.getJr_country_id()))
-                    result = company.getLegal_form()+" "+company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo();
+                    result = company.getLegal_form()+" "+((Objects.isNull(company.getJr_fio_family())||company.getJr_fio_family().equals(""))?company.getName():(company.getJr_fio_family()+" "+company.getJr_fio_name()+" "+company.getJr_fio_otchestvo()));
                 else
-                    result = company.getLegal_form()+" "+company.getJr_fio_name()+((company.getJr_fio_otchestvo()!=null&&!company.getJr_fio_otchestvo().equals(""))?(" "+company.getJr_fio_otchestvo()):"")+" "+company.getJr_fio_family();
+                    result = company.getLegal_form()+" "+((Objects.isNull(company.getJr_fio_family())||company.getJr_fio_family().equals(""))?company.getName():(company.getJr_fio_name()+((company.getJr_fio_otchestvo()!=null&&!company.getJr_fio_otchestvo().equals(""))?(" "+company.getJr_fio_otchestvo()):"")+" "+company.getJr_fio_family()));
                 break;
             default:  // Entity
-                result = company.getJr_jur_full_name();
+                result = (Objects.isNull(company.getJr_jur_full_name())||company.getJr_jur_full_name().equals(""))?company.getName():company.getJr_jur_full_name();
                 break;
         }
         return result;

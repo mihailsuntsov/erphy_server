@@ -723,7 +723,9 @@ public class SpravStatusDocRepository {
                 "insert into settings_shipment          ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=21 and status_type=2 limit 1));" +
                 "insert into settings_vatinvoicein      ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=38 and status_type=2 limit 1));" +
                 "insert into settings_vatinvoiceout     ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=37 and status_type=2 limit 1));" +
-                "insert into settings_writeoff          ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=17 and status_type=2 limit 1));";
+                "insert into settings_writeoff          ( master_id,company_id,user_id,status_on_finish_id)                 values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=17 and status_type=2 limit 1));" +
+                "insert into settings_appointment       ( master_id,company_id,user_id,status_id_on_complete)               values ("+masterId+","+cId+","+mId+",(select id from sprav_status_dock where company_id="+cId+" and dock_id=59 and status_type=2 limit 1));";
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.executeUpdate();

@@ -40,9 +40,17 @@ public class UserJSON_ {
         private String job_title_name;
         private String counterparty_name;
         private String incoming_service_name;
+        private boolean is_display_in_employee_list;
 
-//        private List<UserProductDeppartsJSON> userProductsDepparts; // list of services that employee (this user) can provide, and where (parts of departments) he can provide these services
-        private List<IdAndNameJSON> userProducts; // list of services that employee (this user) can provide
+    public boolean isIs_display_in_employee_list() {
+        return is_display_in_employee_list;
+    }
+
+    public void setIs_display_in_employee_list(boolean is_display_in_employee_list) {
+        this.is_display_in_employee_list = is_display_in_employee_list;
+    }
+
+    private List<IdAndNameJSON> userProducts; // list of services that employee (this user) can provide
 
     public boolean isIs_employee() {
         return is_employee;

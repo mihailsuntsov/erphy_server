@@ -24,17 +24,11 @@ public class CompanySettingsJSON {
     private Integer st_prefix_barcode_packed;
     private String  netcost_policy;
     private Integer time_zone_id;
-
+    private String  time_zone;
     private int     booking_doc_name_variation_id;        // variation's id of name of booking document: 1-appointment, 2-reservation
     private String     booking_doc_name_variation;        // variation of name of booking document: appointment, reservation
-//    private Long    store_orders_department_id;         // department for creation Customer order from store
-//    private String  store_if_customer_not_found;        // "create_new" or "use_default" customer (counterparty)
-//    private Long    store_default_customer_id;          // counterparty id if store_if_customer_not_found == use_default
-//    private Long    store_default_creator_id;           // ID of default user, that will be marked as a creator of store order. Default is master user
-//    private Integer store_days_for_esd;                 // number of days for ESD of created store order. Default is 0
     private boolean vat;
     private boolean vat_included;
-//    private boolean store_auto_reserve;
     private boolean is_store;                             // true if there is at least 1 non-deleted online stores
 
     public boolean isIs_store() {
@@ -47,6 +41,14 @@ public class CompanySettingsJSON {
 
     public void setBooking_doc_name_variation_id(int booking_doc_name_variation_id) {
         this.booking_doc_name_variation_id = booking_doc_name_variation_id;
+    }
+
+    public String getTime_zone() {
+        return time_zone;
+    }
+
+    public void setTime_zone(String time_zone) {
+        this.time_zone = time_zone;
     }
 
     public Integer getTime_zone_id() {

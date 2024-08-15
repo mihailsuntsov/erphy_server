@@ -416,7 +416,7 @@ public class PaymentinRepositoryJPA {
 
             if ((   //если есть право на создание по всем предприятиям, или
                     (securityRepositoryJPA.userHasPermissions_OR(33L, "465")) ||
-                    //если есть право на создание по всем подразделениям своего предприятия, и предприятие документа своё, или
+                    //если есть право на создание по своему предприятию, и предприятие документа своё, или
                     (securityRepositoryJPA.userHasPermissions_OR(33L, "466") && myCompanyId.equals(request.getCompany_id()))) &&
                     //создается документ для предприятия моего владельца (т.е. под юрисдикцией главного аккаунта)
                     DocumentMasterId.equals(myMasterId))

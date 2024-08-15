@@ -54,7 +54,7 @@ public class DashboardVidgetsController {
         } catch (Exception e){
             e.printStackTrace();
             logger.error("Exception in method getVolumesReportData.", e);
-            return new ResponseEntity<>("Ошибка при запросе отчёта объёмов", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Controller getVolumesReportData error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -66,7 +66,7 @@ public class DashboardVidgetsController {
         } catch (Exception e){
             e.printStackTrace();
             logger.error("Exception in method getIncomeOutcomeReportData.", e);
-            return new ResponseEntity<>("Ошибка при запросе отчёта прихода и расхода", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Controller getIncomeOutcomeReportData error", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -79,7 +79,7 @@ public class DashboardVidgetsController {
         logger.info("Processing get request for path /api/auth/getIndicatorsData with parameters: " + "company_id: " + company_id);
         try {return new ResponseEntity<>(indicatorsRepository.getIndicatorsData(company_id), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getIndicatorsData error", e);
-            return new ResponseEntity<>("Ошибка загрузки данных для индикаторов стартовой страницы", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Controller getIndicatorsData error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 }

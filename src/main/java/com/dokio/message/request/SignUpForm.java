@@ -52,6 +52,7 @@ public class SignUpForm {
     private List<IdAndNameJSON> deppartProducts;
     private boolean is_employee;
     private boolean is_currently_employed;
+    private boolean is_display_in_employee_list;
     private Long job_title_id;
     private Long counterparty_id;
     private Long incoming_service_id;
@@ -86,10 +87,19 @@ public class SignUpForm {
                 ", deppartProducts=" + deppartProducts +
                 ", is_employee=" + is_employee +
                 ", is_currently_employed=" + is_currently_employed +
+                ", is_display_in_employee_list=" + is_display_in_employee_list +
                 ", job_title_id=" + job_title_id +
                 ", counterparty_id=" + counterparty_id +
                 ", incoming_service_id=" + incoming_service_id +
                 '}';
+    }
+
+    public boolean isIs_display_in_employee_list() {
+        return is_display_in_employee_list;
+    }
+
+    public void setIs_display_in_employee_list(boolean is_display_in_employee_list) {
+        this.is_display_in_employee_list = is_display_in_employee_list;
     }
 
     public int getId() {

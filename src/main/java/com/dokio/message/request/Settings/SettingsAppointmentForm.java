@@ -11,6 +11,15 @@ public class SettingsAppointmentForm {
     private String endTimeManually; // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
     private boolean hideEmployeeField; // If for all services of company employees are not needed
     private boolean calcDateButTime; // if user wants to calc only dates. Suitable for hotels for checkout time
+    private Long  statusIdOnComplete;             // status on completion
+
+    public Long getStatusIdOnComplete() {
+        return statusIdOnComplete;
+    }
+
+    public void setStatusIdOnComplete(Long statusIdOnComplete) {
+        this.statusIdOnComplete = statusIdOnComplete;
+    }
 
     public boolean isCalcDateButTime() {
         return calcDateButTime;

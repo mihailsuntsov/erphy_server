@@ -145,7 +145,7 @@ public class CalendarRepositoryJPA {
             stringQuery = stringQuery +
             "           and a.dep_part_id in "+(request.getDepparts().size()>0?depPartsIds_:"(0)") +
             "           group by a.id, a.name, start_, end_, ue.id,ue.name,a.dep_part_id,r.id,r.name,ssd.name,ssd.status_type,ssd.name,ssd.id " +
-            "           order by a.starts_at_time, r.id";
+            "           order by a.starts_at_time, a.id, r.id";
 
 
         try{
@@ -613,8 +613,9 @@ public class CalendarRepositoryJPA {
         " u.company_id = "+companyId+" and " +
         " u.master_id = "+masterId+" and " +
         " u.status_account = 2 and " +
-        " u.is_employee = true and " +
-        " u.is_currently_employed = true and " +
+        " coalesce(u.is_employee,false) = true and " +
+        " coalesce(u.is_currently_employed,false) = true and " +
+        " coalesce(u.is_display_in_employee_list,false) = true and " +
 //        (servicesIds.size() >0?(" u.id in (select user_id from scdl_user_products where product_id in "+servicesIds_+") and "):"") +
 //        (jobTitlesIds.size()>0?(" u.job_title_id in "+jobTitlesIds_+" and "):"") +
 //        "   ( " +
@@ -829,6 +830,7 @@ public class CalendarRepositoryJPA {
         try {
             Long masterId = userRepositoryJPA.getMyMasterId();
             String myTimeZone = userRepository.getUserTimeZone();
+            String companyTimeZone = commonUtilites.getCompanySettings(request.getCompanyId()).getTime_zone();
 //            int companyTimeZoneId = (Integer) commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, request.getCompanyId());
 //            String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
             List<AppointmentEmployee> returnList = new ArrayList<>();
@@ -873,19 +875,20 @@ public class CalendarRepositoryJPA {
                 "       ws.id is not null and " +
                 (employeesIdsList.size() > 0?("       ssd.employee_id in "+employeesIds+" and "):"") +
 //              Сравнение производится по времени пользователя, т.к. запрос идет из UI. По этому нужно адаптировать время начала и окончания смены ко времени пользователя
+//              Расписание работы сотрудников ВСЕГДА строится и хранится по времени работы предприятия
 ////              The comparison is made based on the user's time, because the request comes from the UI. Therefore, it is necessary to adapt the start and end times of the work shift to the user’s time
-//
+//                 The work schedule of employees is ALWAYS built and stored according to the working hours of the company
 ////              The formula of Entering is:
 ////              Start of work shift <= Start of Appointment
-//                "       to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_from,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' <= to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS') and " +
+                "       to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_from,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone '" + companyTimeZone + "' <= to_timestamp('"+request.getDateFrom()+" "+request.getTimeFrom()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS') and " +
 ////              AND End of Workshift >= End of Appointment
                 "       case " +
                 "           when " +
                 "               ws.time_to <= ws.time_from " +
                 "           then ( " +
-                "               to_timestamp(concat(to_char(ssd.day_date+1, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
+                "               to_timestamp(concat(to_char(ssd.day_date+1, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone '" + companyTimeZone + "' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
                 "           ) else ( " +
-                "               to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
+                "               to_timestamp(concat(to_char(ssd.day_date, 'DD.MM.YYYY'),' ',to_char(ws.time_to,'HH24:MI')),'DD.MM.YYYY HH24:MI') at time zone '" + myTimeZone + "' at time zone '" + companyTimeZone + "' >= to_timestamp('"+request.getDateTo()+" "+request.getTimeTo()+":00.000', 'DD.MM.YYYY HH24:MI:SS.MS')" +
                 "           ) " +
                 "       end " +
                 "   )" +
@@ -894,7 +897,7 @@ public class CalendarRepositoryJPA {
                 " u.id as u_id, " +
                 " u.name as u_name, " +
                 " jt.id as jt_id, " +
-                " jt.name as jt_name, " +
+                " coalesce(jt.name,'') as jt_name, " +
                 " dp.id as dp_id, " +
                 " dp.name as dp_name, " +
                 " p.id as p_id, " +
@@ -902,17 +905,19 @@ public class CalendarRepositoryJPA {
                 " from " +
                 " users u " +
                 " inner join sprav_jobtitles jt on u.job_title_id=jt.id " +
+//              " left outer join products - it will let display employees even if they do not have services
+//              but now we have "is_display_in_employee_list"
                 " left outer join scdl_user_products up on u.id = up.user_id " +
                 " left outer join products p on p.id=up.product_id " +
                 " left outer join scdl_dep_part_products dpp on dpp.product_id=p.id " +
                 " left outer join scdl_dep_parts dp on dpp.dep_part_id=dp.id " +
-//                " left outer join products " + // это позволит показывать сотрудников даже если у них нет ни одного сервиса
-                " where " +                                              // it will let display employees even if they do not have services
+                " where " +
                 " u.company_id = "+request.getCompanyId()+" and " +
                 " u.master_id =  "+masterId+" and " +
                 " u.status_account = 2 and " +
-                " u.is_employee = true and " +
-                " u.is_currently_employed = true " +
+                " coalesce(u.is_employee,false) = true and " +
+                " coalesce(u.is_currently_employed,false) = true and " +
+                " coalesce(u.is_display_in_employee_list,false) = true " +
                 ((!isAll && request.getIsFree())?" and (dp.id is null or dp.id in (select deppart_id from employees_workshift_depparts where employee_id = u.id))":"") +
                 (!isAll?(" and u.id in "+employeesIds):"") +
                 (request.getServicesIds(). size() > 0 ? (" and p.id  in " + servicesIds_ ) : "") +
@@ -939,6 +944,7 @@ public class CalendarRepositoryJPA {
                     Long currentCycleEmployeeId = Long.parseLong(obj[0].toString());
                     String currentCycleEmployeeName = obj[1].toString();
                     Long currentCycleJobTitleId = Long.parseLong(obj[2].toString());
+                    String currentCycleJobTitleName = obj[3].toString();
                     Long currentCycleDepPartId = Objects.isNull(obj[4])?null:Long.parseLong(obj[4].toString());
                     Long currentCycleServiceId = Objects.isNull(obj[6])?null:Long.parseLong(obj[6].toString());
 
@@ -984,6 +990,7 @@ public class CalendarRepositoryJPA {
                         appointmentEmployee.setId(currentCycleEmployeeId);
                         appointmentEmployee.setName(currentCycleEmployeeName);
                         appointmentEmployee.setJobtitle_id(currentCycleJobTitleId);
+                        appointmentEmployee.setJobtitle_name(currentCycleJobTitleName);
                         if(!isAll) appointmentEmployee.setState(request.getFree()?"free":request.getKindOfNoFree());
 
                         // Cоздали новый лист для накопления частей отделений для нового сотрудника

@@ -1614,6 +1614,7 @@ public class CompanyRepositoryJPA {
                 " st_prefix_barcode_pieced," +
                 " st_prefix_barcode_packed," +
                 " name, " + //наименование
+                " jr_jur_full_name," +
                 " type, " +
                 " time_zone_id, " +
                 " booking_doc_name_variation_id, " +
@@ -1625,6 +1626,7 @@ public class CompanyRepositoryJPA {
                 "'all', " +
                 request.getSt_prefix_barcode_pieced()+", "+
                 request.getSt_prefix_barcode_packed()+", "+
+                "'" + (request.getName() == null ? "Company": request.getName()) + "'," +//наименование
                 "'" + (request.getName() == null ? "Company": request.getName()) + "'," +//наименование
                 "'entity'," +
                 "21," + // UTC (GMT+0)

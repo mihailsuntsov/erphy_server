@@ -108,6 +108,13 @@ public class VolumesRepository {
                     stringQuery += " from "+tableNames[i]+"_product rsp";
                     stringQuery += " INNER JOIN products p ON p.id=rsp.product_id";
                     stringQuery += " INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id";
+                    // The logic is:
+                    // if selling doc (shipment or retail_sale) is not created from an appointment, OR created from an appointment but without selected employee -
+                    // then seller is a creator of selling doc
+                    // else  seller is employee of an appointment
+                    stringQuery += " LEFT OUTER JOIN linked_docs ld ON ld."+tableNames[i]+"_id = rs.id"; // adding only the row with selling doc (shipment or retail sale) of linked docs group
+                    stringQuery += " LEFT OUTER JOIN linked_docs dg ON dg.group_id = ld.group_id and dg.tablename = 'scdl_appointments'"; // adding appointment row of linked docs group
+                    stringQuery += " LEFT OUTER JOIN scdl_appointments app ON app.id = dg.doc_id";
                     stringQuery += " where ";
                     stringQuery = stringQuery + " rs.date_time_created at time zone '"+myTimeZone+"'  >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')"+
                             " and rs.date_time_created at time zone '"+myTimeZone+"' <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
@@ -167,7 +174,14 @@ public class VolumesRepository {
                 stringQuery = stringQuery + "           from "+tableNames[i]+"_product rsp" +
                         "           INNER JOIN products p ON p.id=rsp.product_id" +
                         "           INNER JOIN "+tableNames[i]+" rs ON rs.id=rsp."+tableNames[i]+"_id" +
-                        "           where " +
+                        // The logic is:
+                        // if selling doc (shipment or retail_sale) is not created from an appointment, OR created from an appointment but without selected employee -
+                        // then seller is a creator of selling doc
+                        // else  seller is employee of an appointment
+                        "           LEFT OUTER JOIN linked_docs ld ON ld."+tableNames[i]+"_id = rs.id" + // adding only the row with selling doc (shipment or retail sale) of linked docs group
+                        "           LEFT OUTER JOIN linked_docs dg ON dg.group_id = ld.group_id and dg.tablename = 'scdl_appointments'" + // adding appointment row of linked docs group
+                        "           LEFT OUTER JOIN scdl_appointments app ON app.id = dg.doc_id" +
+                "           where " +
                         " rs.date_time_created at time zone '"+myTimeZone+"' >=to_timestamp(:dateFrom||' 00:00:00','DD.MM.YYYY HH24:MI:SS')" +
                         " and rs.date_time_created at time zone '"+myTimeZone+"'  <=to_timestamp(:dateTo||' 23:59:59','DD.MM.YYYY HH24:MI:SS')";
                 if(tableNames[i].equals("shipment"))
@@ -309,7 +323,12 @@ public class VolumesRepository {
         }
         if(request.getEmployeeIds().size()>0){
             Long[] ids = request.getEmployeeIds().toArray(new Long[request.getEmployeeIds().size()]);
-            s += " and rs.creator_id = " + ids[0];
+//            s += " and rs.creator_id = " + ids[0];
+            // the logic is:
+            // if selling doc (shipment or retail_sale) is not created from an appointment, OR created from an appointment but without selected employee -
+            // then seller is a creator of selling doc
+            // else  seller is employee of an appointment
+            s += " and CASE WHEN app.employee_id is null THEN rs.creator_id = "+ids[0]+" ELSE app.employee_id = "+ids[0]+" END";
         }
         return s;
     }

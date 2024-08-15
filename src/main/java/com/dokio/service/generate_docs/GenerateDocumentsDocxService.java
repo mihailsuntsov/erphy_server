@@ -20,6 +20,8 @@ package com.dokio.service.generate_docs;
 
 import java.io.*;
 import java.util.*;
+
+import de.phip1611.Docx4JSRUtil;
 import org.apache.log4j.Logger;
 import org.docx4j.XmlUtils;
 import org.docx4j.model.datastorage.migration.VariablePrepare;
@@ -30,10 +32,35 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import com.j256.simplemagic.ContentInfo;
 import com.j256.simplemagic.ContentInfoUtil;
 import org.docx4j.wml.*;
+import org.springframework.core.io.Resource;
+
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 public class GenerateDocumentsDocxService {
+
+    Logger logger = Logger.getLogger("GenerateDocumentsDocxService");
+
+    public GenerateDocumentsDocxService() {
+    }
+
+    public static GenerateDocumentsDocxService getInstance() {
+        return new GenerateDocumentsDocxService();
+    }
+
+
+    public Resource generateWordDoc(Resource resource){
+        return resource;
+    }
+
+
+
+
+
+
+
+
+
 
     // Загрузка документа с помощью docx4j. Вернет объект, представляющий полный (на данный момент)
     // пустой документ. Теперь мы можем использовать API Docx4J для добавления, удаления и изменения содержимого
@@ -132,59 +159,106 @@ public class GenerateDocumentsDocxService {
         return retMap;
     }
 
-    public boolean generateDocument(File template, String outputDocument, Map<String,String> changeMap, List<Map<String,String>> mapAsList){
-        if (template != null && outputDocument != null && !outputDocument.isEmpty()){
-            if (template.exists()){
-                if (!outputDocument.endsWith(FORMAT)){
-                    log.warn("The output document must be .docx");
-                    return false;
-                }
-                // Проверяем что mime соответствует нашим высоким требованиям
-                String mimeType = getMimeType(template);
-                if (mimeType != null && (mimeType.equals(MIME_TYPE)||mimeType.equals(MIME_TYPE2))){
-                    WordprocessingMLPackage wordMLPackage;
-                    try {
-                        // Загружаем темплейт
-                        wordMLPackage = WordprocessingMLPackage.load(template);
-                        VariablePrepare.prepare(wordMLPackage);
-                        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
 
-                        // Подменяем плейсхолдеры
-                        documentPart.variableReplace(changeMap);
-                        List<Object> tables = getAllElementFromObject(documentPart, Tbl.class);
 
-                        // Находим таблицу,
-                        Tbl tempTable = getTemplateTable(tables, new String[]{"TM_PARAMETER","TM_VALUE"}[0]);
-                        List<Object> rows = getAllElementFromObject(tempTable, Tr.class);
 
-                        // да не простую, а о двух строчках
-                        if (rows.size() == 2) {
-                            Tr templateRow = (Tr) rows.get(1);
-                            for (Map<String, String> replacements : mapAsList) {
-                                addRowToTable(tempTable, templateRow, replacements);
-                            }
-                            // Удаляем 2й ряд (с метками)
-                            tempTable.getContent().remove(templateRow);
-                        }
-
-                        // Вывод docx
-                        OutputStream output = new FileOutputStream(outputDocument);
-                        Save saver = new Save(wordMLPackage);
-                        if (saver.save(output)){
-                            log.info("Document " + outputDocument + " ok");
-                            return true;
-                        }
-                    } catch (Docx4JException e) {
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+    public boolean generateDocXDocument(String filePath, String outputDocument, Map <String, String> replaceMap) throws Exception {
+        try{
+            File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
+            if (template != null && outputDocument != null && !outputDocument.isEmpty()){
+                if (template.exists()){
+                    if (!outputDocument.endsWith(FORMAT)){
+                        log.warn("The output document must be .docx");
+                        return false;
                     }
-                }else{
-                    log.error("Invalid document mime type");
+                    // Проверяем что mime соответствует нашим высоким требованиям
+                    String mimeType = getMimeType(template);
+                    if (mimeType != null && (mimeType.equals(MIME_TYPE)||mimeType.equals(MIME_TYPE2))){
+                        try {
+                            // Загружаем темплейт
+                            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new FileInputStream(template));
+                            Docx4JSRUtil.searchAndReplace(wordMLPackage, replaceMap);
+                            // Вывод docx
+                            OutputStream output = new FileOutputStream(outputDocument);
+                            Save saver = new Save(wordMLPackage);
+                            if (saver.save(output)){
+                                log.info("Document " + outputDocument + " ok");
+                                return true;
+                            }
+                        } catch (Docx4JException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }else{
+                        log.error("Invalid document mime type");
+                    }
                 }
             }
+            return false;
+
+        } catch (Exception e) {
+            logger.error("Exception in method UserRepositoryJPA/getMyDateTime. ", e);
+            e.printStackTrace();
+            throw new Exception();
         }
-        return false;
     }
+
+
+
+//    public boolean generateDocument(File template, String outputDocument, Map<String,String> changeMap, List<Map<String,String>> mapAsList){
+//        if (template != null && outputDocument != null && !outputDocument.isEmpty()){
+//            if (template.exists()){
+//                if (!outputDocument.endsWith(FORMAT)){
+//                    log.warn("The output document must be .docx");
+//                    return false;
+//                }
+//                // Проверяем что mime соответствует нашим высоким требованиям
+//                String mimeType = getMimeType(template);
+//                if (mimeType != null && (mimeType.equals(MIME_TYPE)||mimeType.equals(MIME_TYPE2))){
+//                    WordprocessingMLPackage wordMLPackage;
+//                    try {
+//                        // Загружаем темплейт
+//                        wordMLPackage = WordprocessingMLPackage.load(template);
+//                        VariablePrepare.prepare(wordMLPackage);
+//                        MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
+//
+//                        // Подменяем плейсхолдеры
+//                        documentPart.variableReplace(changeMap);
+//                        List<Object> tables = getAllElementFromObject(documentPart, Tbl.class);
+//
+//                        // Находим таблицу,
+//                        Tbl tempTable = getTemplateTable(tables, new String[]{"TM_PARAMETER","TM_VALUE"}[0]);
+//                        List<Object> rows = getAllElementFromObject(tempTable, Tr.class);
+//
+//                        // да не простую, а о двух строчках
+//                        if (rows.size() == 2) {
+//                            Tr templateRow = (Tr) rows.get(1);
+//                            for (Map<String, String> replacements : mapAsList) {
+//                                addRowToTable(tempTable, templateRow, replacements);
+//                            }
+//                            // Удаляем 2й ряд (с метками)
+//                            tempTable.getContent().remove(templateRow);
+//                        }
+//
+//                        // Вывод docx
+//                        OutputStream output = new FileOutputStream(outputDocument);
+//                        Save saver = new Save(wordMLPackage);
+//                        if (saver.save(output)){
+//                            log.info("Document " + outputDocument + " ok");
+//                            return true;
+//                        }
+//                    } catch (Docx4JException e) {
+//                        e.printStackTrace();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }else{
+//                    log.error("Invalid document mime type");
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
 }

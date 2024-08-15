@@ -7,7 +7,17 @@ Added an universal reservation and appointment module. Now ERPHY is a powerful r
 Suitable for beauty salons, hostels, hotels, hospitals, dentists, car rental and other!<br><br>
 It has an integration with WordPress and WooCommerce, and you can put all your goods from CRM to the online store in one click!<br>
 There is a support of a multilingual goods and online stores<br>
-All possibilities are described in more detail on the website of project:
+
+## Interface examples
+
+[<img src="https://erphy.me/downloads/pictures/interface/main_page.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/main_page.png "Full size")
+[<img src="https://erphy.me/downloads/pictures/interface/calendar1.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/calendar1.png "Full size")
+[<img src="https://erphy.me/downloads/pictures/interface/calendar2.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/calendar2.png "Full size")
+[<img src="https://erphy.me/downloads/pictures/interface/calendar3.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/calendar3.png "Full size")
+[<img src="https://erphy.me/downloads/pictures/interface/appointment1.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/appointment1.png "Full size")
+[<img src="https://erphy.me/downloads/pictures/interface/scedule.jpg" width="49%">](https://erphy.me/downloads/pictures/interface/scedule.png "Full size")
+<br>
+
 ## Site
 https://erphy.me/crm/en<br>
 
@@ -18,8 +28,9 @@ Multilingual food delivery site: https://food.erphy.me
 ## How to install
 You can install the program on your VPS server using a bash installation script. 
 Bash installation script tested on:<br> 
-* Ubuntu Server 20.04
-* Ubuntu Server 22.04 (recommended)<br>
+
+* Ubuntu Server 22.04 <br>
+* Ubuntu Server 24.04 <br>
 
 Minimum requirments of VPS is: 1 Cpu core, 2 Gb RAM, 15 Gb HDD<br>
 Use only freshly installed VPS for the installation of ERPHY<br>
@@ -49,10 +60,10 @@ wget https://erphy.me/downloads/shell/erphy-install.sh  -O - | sh
 ```
 This command will start the installation process. 
 
-Once DokioCRM is installed, the installer will ask you if you want to install a WordPress site with a built-in WooCommerce store. If you want to do this, type `y` and press Enter. 
+Once ERPHY is installed, the installer will ask you if you want to install a WordPress site with a built-in WooCommerce store. If you want to do this, type `y` and press Enter. 
 A configured and ready-to-use online store will be installed.
 
-
+## How to use
 After the installation the file `/var/erphy_pwd.txt` will be created. It contans all passwords. I recommend saving this information on your computer and deleting this file.<br><br>
 The user interface of ERPHY will be available at this address: `https://yoursite.com/dss`.<br>
 Click `Registration`, and create your account. After registration you can login into the user interface of ERPHY.<br>
@@ -63,9 +74,7 @@ sudo -Hiu postgres psql -d erphy -c "update settings_general set show_registrati
 NOTE: _Some mail services, for example, Gmail, can bounce the emails from your server mailbox. It's because the domain zone of `yoursite.com` has no SPF record. Add a TXT record for `yoursite.com`. It should be like `"v=spf1 +a +mx +ip4:xxx.xxx.xxx.xxx ~all"`, created in a domain zone management on the domain `yoursite.com` registrar website. <br>
 For some services it still can not be enough, and you should set up DKIM and DMARC on your server, and order the creation of a PTR record from your VPS provider company._
 
-
-## How to use
-Detailed instructions for use - in [Knowledge base](https://erphy.me/knowledge-base/)
+Detailed instructions for use - in [Knowledge base](https://erphy.me/crm/en/knowledge-base/)
 
 
 ## Contacts

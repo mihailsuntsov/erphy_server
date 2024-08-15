@@ -1009,7 +1009,7 @@ public class FileRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public List<BaseFiles> insertBaseFilesFast(Long mId, Long uId, Long cId, Long catgId) {
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'ordersup'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'","'pricetag'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'ordersup'","'f_with_stamp_sign'","'signature'","'logo'","'stamp'","'pricetag'","'f_med_contr_exmpl'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
         List<BaseFiles> filePaths = new ArrayList<>();
 //      List of :               [String filePath, String menuName, int docId, Long fileId (null)]
@@ -1017,7 +1017,7 @@ public class FileRepositoryJPA {
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),31,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),59,null, "document",null));
-        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),59,null, "document",null));
+//        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign")+".xls",map.get("invoiceout")+" "+map.get("f_with_stamp_sign"),59,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("ordersup")+".xls",map.get("ordersup")+".xls",map.get("ordersup"),39,null, "document",null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("logo")+".jpg",map.get("logo")+".jpg","", null,null, null,null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("signature")+"1.png",map.get("signature")+"1.png","", null,null, null,null));
@@ -1025,12 +1025,14 @@ public class FileRepositoryJPA {
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("stamp")+".png","",map.get("stamp")+".png", null,null, null,null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm", 14,null, "label",5));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm", 14,null, "label",3));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("f_med_contr_exmpl")+".docx",map.get("f_med_contr_exmpl")+".xls",map.get("f_med_contr_exmpl"),59,null, "document",null));
+
         return storageService.copyFilesFromPathToCompany(filePaths,cId,catgId, mId, uId);
     }
 
     @SuppressWarnings("Duplicates")
     public List<BaseFiles> assemblyBaseFilesList(Long mId) {
-        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'ordersup'","'f_with_stamp_sign'","'pricetag'"});
+        Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'invoiceout'","'ordersup'","'f_with_stamp_sign'","'pricetag'","'f_med_contr_exmpl'"});
         String suffix = userRepositoryJPA.getUserSuffix(mId);
         List<BaseFiles> filePaths = new ArrayList<>();
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),31,null, "document", null));
@@ -1038,6 +1040,8 @@ public class FileRepositoryJPA {
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("ordersup")+".xls",map.get("ordersup")+".xls",map.get("ordersup"),39,null, "document", null));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm.xls",map.get("pricetag")+" 40 x 40 mm", 14,null, "label", 5));
         filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm.xls",map.get("pricetag")+" 65 x 52 mm", 14,null, "label", 3));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("invoiceout")+".xls",map.get("invoiceout")+".xls",map.get("invoiceout"),59,null, "document", null));
+        filePaths.add(new BaseFiles(start_files_path+"//"+suffix+"//"+map.get("f_med_contr_exmpl")+".docx",map.get("f_med_contr_exmpl")+".docx",map.get("f_med_contr_exmpl"),59,null, "document", null));
         return filePaths;
     }
 

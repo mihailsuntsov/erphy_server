@@ -1005,7 +1005,8 @@ public class AppointmentRepositoryJPA {
             " start_time_manually, "+ // 'HH:mm' if start_time = 'set_manually'
             " end_time_manually, "+   // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
             " calc_date_but_time, "+   //  If user wants to calc only dates. Suitable for hotels for checkout time
-            " hide_employee_field"+   // If for all services of company employees are not needed
+            " hide_employee_field,"+   // If for all services of company employees are not needed
+            " status_id_on_complete " +
             ") values (" +
             myMasterId + "," +
             row.getCompanyId() + "," +
@@ -1016,7 +1017,8 @@ public class AppointmentRepositoryJPA {
             " :start_time_manually," +
             " :end_time_manually," +
             row.isCalcDateButTime() + "," +
-            row.isHideEmployeeField() +
+            row.isHideEmployeeField() + "," +
+            row.getStatusIdOnComplete() +
             ") " +
             " ON CONFLICT ON CONSTRAINT settings_appointment_user_uq " +// "upsert"
             " DO update set " +
@@ -1026,7 +1028,8 @@ public class AppointmentRepositoryJPA {
             " end_date_time = :end_date_time," +
             " start_time_manually = :start_time_manually," +
             " end_time_manually = :end_time_manually," +
-            " calc_date_but_time = "+row.isCalcDateButTime() + "," +
+            " calc_date_but_time = " + row.isCalcDateButTime() + "," +
+            " status_id_on_complete = " + row.getStatusIdOnComplete() + "," +
             " hide_employee_field = "+row.isHideEmployeeField();
 
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1056,8 +1059,8 @@ public class AppointmentRepositoryJPA {
                 "           coalesce(start_time_manually, '00:00') as start_time_manually, " +  // 'HH:mm' if start_time = 'set_manually'
                 "           coalesce(end_time_manually, '00:01') as end_time_manually, " +      // 'HH:mm' if end_time = 'calc_date_but_time' || 'no_calc_date_but_time'
                 "           coalesce(hide_employee_field, false) as hide_employee_field, " +     //  If for all services of company employees are not needed
-                "           coalesce(calc_date_but_time, false) as calc_date_but_time " +       //  If user wants to calc only dates. Suitable for hotels for checkout time
-
+                "           coalesce(calc_date_but_time, false) as calc_date_but_time, " +       //  If user wants to calc only dates. Suitable for hotels for checkout time
+                "           status_id_on_complete as status_id_on_complete " +
                 "           from settings_appointment p " +
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
@@ -1076,6 +1079,7 @@ public class AppointmentRepositoryJPA {
                 returnObj.setEndTimeManually((String)                       obj[5]);
                 returnObj.setHideEmployeeField((Boolean)                    obj[6]);
                 returnObj.setCalcDateButTime((Boolean)                      obj[7]);
+                returnObj.setStatusIdOnComplete(obj[8]!=null?Long.parseLong(obj[8].toString()):null);
             }
             return returnObj;
         }

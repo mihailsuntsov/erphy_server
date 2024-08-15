@@ -22,6 +22,7 @@ import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
 //import com.dokio.message.request.additional.UserProductDeppartsForm;
+import com.dokio.message.request.additional.UserCagentForm;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.Sprav.IdAndName;
@@ -180,6 +181,7 @@ public class UserRepositoryJPA {
                 user.setAdditional(signUpRequest.getAdditional());
                 user.setIs_employee(signUpRequest.isIs_employee());
                 user.setIs_currently_employed(signUpRequest.isIs_currently_employed());
+                user.setIs_display_in_employee_list(signUpRequest.isIs_display_in_employee_list());
                 user.setJob_title_id(signUpRequest.getJob_title_id());
                 user.setCounterparty_id(signUpRequest.getCounterparty_id());
                 user.setIncoming_service_id(signUpRequest.getIncoming_service_id());
@@ -275,6 +277,7 @@ public class UserRepositoryJPA {
 
                 user.setIs_employee(request.isIs_employee());
                 user.setIs_currently_employed(request.isIs_currently_employed());
+                user.setIs_display_in_employee_list(request.isIs_display_in_employee_list());
                 user.setJob_title_id(request.getJob_title_id());
                 user.setCounterparty_id(request.getCounterparty_id());
                 user.setIncoming_service_id(request.getIncoming_service_id());
@@ -617,14 +620,20 @@ public class UserRepositoryJPA {
                 "   p.name as product_name " +
                 "   from sprav_jobtitles jt " +
                 "   inner join users u on u.job_title_id = jt.id " +
-                "   left outer join scdl_user_products up on up.user_id = u.id " +
-                "   left outer join products p on p.id = up.product_id " +
+//                "   left outer join scdl_user_products up on up.user_id = u.id " +
+//                "   left outer join products p on p.id = up.product_id " +
+                // if use "inner join" - then in scedule will be non-customer-service employees like
+                // salon administrator or cleaning stuff
+                "   inner join scdl_user_products up on up.user_id = u.id " +
+                "   inner join products p on p.id = up.product_id " +
                 "   where " +
                 "   jt.master_id="+masterId+" and " +
                 "   jt.company_id="+companyId+" and " +
                 "   coalesce(jt.is_deleted, false)=false and " +
                 "   coalesce(u.is_deleted, false)=false and " +
                 "   coalesce(u.is_employee, false)=true and " +
+                "   coalesce(u.is_currently_employed, false)=true and " +
+                "   coalesce(u.is_display_in_employee_list, false)=true and " +
                 "   coalesce(p.is_deleted, false) = false " +
 //                "   coalesce(p.is_srvc_by_appointment, false)=true " +
                 "   order by jt.name, u.name, p.name";
@@ -851,7 +860,8 @@ public class UserRepositoryJPA {
                     "           p.incoming_service_id as incoming_service_id, " +
                     "           coalesce(sjt.name,'') as jobtitle_name, " +
                     "           cg.name as counterparty_name, " +
-                    "           prd.name as service_name " +
+                    "           prd.name as service_name, " +
+                    "           coalesce(p.is_display_in_employee_list, false) as is_display_in_employee_list" +
                     "           from users p" +
 
                     "           left outer join sprav_jobtitles sjt on sjt.id = p.job_title_id " +
@@ -903,6 +913,7 @@ public class UserRepositoryJPA {
                     doc.setJob_title_name((String)              obj[28]);
                     doc.setCounterparty_name((String)           obj[29]);
                     doc.setIncoming_service_name((String)       obj[30]);
+                    doc.setIs_display_in_employee_list((Boolean)obj[31]);
 
                     doc.setUserDepartmentsNames(getUserDepartmentsNames(id));
                     doc.setUserDepartmentsId(getUserDepartmentsId(id));
@@ -1726,5 +1737,102 @@ public class UserRepositoryJPA {
         }
     }
 
+    @Transactional
+    public Long insertUserCagent(UserCagentForm request) throws Exception {
+        String stringQuery="";
+        Long masterId = getMyMasterId();
+        Long myCompanyId=getMyCompanyId_();
+        commonUtilites.idBelongsMyMaster("companies", request.getCompanyId(), masterId);
+        Long myId = getMyId();
+        if (   //если есть право на создание по всем предприятиям, или
+                (securityRepositoryJPA.userHasPermissions_OR(12L, "129")) ||
+                //если есть право на создание по своему предприятию, и предприятие документа своё, или
+                (securityRepositoryJPA.userHasPermissions_OR(12L, "130") && myCompanyId.equals(request.getCompanyId())))
+        {
+            try {
+                String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+                stringQuery =
+                        " insert into cagents ( " +
+                                " master_id," +
+                                " creator_id, " +
+                                " company_id, " +
+                                " date_time_created, " +
+                                " name, " +
+                                " jr_fio_family, " +
+                                " jr_fio_name, " +
+                                " jr_fio_otchestvo, " +
+                                " email, " +
+                                " jr_jur_full_name, " +
+                                " type " +
+                                " ) values (" +
+                                "" + masterId + "," +
+                                "" + myId + "," +
+                                "" + request.getCompanyId() + "," +
+                                " to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')," +
+                                " :displayName," +
+                                " :surname," +
+                                " :name," +
+                                " :fatherName," +
+                                " :email," +
+                                " :displayName," +
+                                "'individual') " +
+                                " ON CONFLICT ON CONSTRAINT cagents_pkey DO NOTHING";
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.setParameter("displayName", request.getDisplayName());
+                query.setParameter("name", request.getName());
+                query.setParameter("surname", request.getSurname());
+                query.setParameter("fatherName", request.getFatherName());
+                query.setParameter("email", request.getEmail());
+                query.executeUpdate();
 
+                stringQuery = "select id from cagents where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;
+                Query query2 = entityManager.createNativeQuery(stringQuery);
+
+                return Long.valueOf(query2.getSingleResult().toString());
+            } catch (Exception e) {
+                logger.error("Exception in method UserRepositoryJPA/insertUserCagent. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
+
+        } else return -1L;
+    }
+
+    public Map<String, String> getMyDateTime() throws Exception {
+        try{
+            Map<String, String> dateTimeMap = new HashMap<>();
+            UserSettingsJSON userSettings = getMySettings();
+            String myTimeZone = userSettings.getTime_zone();
+            String hourFormat = (userSettings.getTimeFormat().equals("12") ? "HH12" : "HH24"); // '12' or '24';
+            String stringQuery =
+                    " select to_char(now() at time zone '"+myTimeZone+"', 'DD') as day,  "+
+                    " to_char(now() at time zone '"+myTimeZone+"', 'MM') as month,       "+
+                    " to_char(now() at time zone '"+myTimeZone+"', 'YYYY') as year,      "+
+                    " to_char(now() at time zone '"+myTimeZone+"', '"+hourFormat+"') as hours,  "+
+                    " to_char(now() at time zone '"+myTimeZone+"', 'MI') as minues, " +
+                    " to_char(now() at time zone '"+myTimeZone+"', 'AM') as AMPM";
+                    Query query = entityManager.createNativeQuery(stringQuery);
+                    List<Object[]> queryList = query.getResultList();
+                    dateTimeMap.put("${DAY}",       (String)queryList.get(0)[0]);
+                    dateTimeMap.put("${MONTH}",     (String)queryList.get(0)[1]);
+                    dateTimeMap.put("${YEAR}",      (String)queryList.get(0)[2]);
+                    dateTimeMap.put("${HOUR}",      (String)queryList.get(0)[3]);
+                    dateTimeMap.put("${MINUTE}",    (String)queryList.get(0)[4]);
+                    dateTimeMap.put("${AMPM}",      (hourFormat.equals("HH12")?(String)queryList.get(0)[5]:""));
+            return dateTimeMap;
+        } catch (Exception e) {
+            logger.error("Exception in method UserRepositoryJPA/getMyDateTime. ", e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 }
+
+
+
+
+
+
+
+
+

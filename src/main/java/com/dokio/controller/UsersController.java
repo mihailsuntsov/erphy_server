@@ -22,6 +22,7 @@ import com.dokio.message.request.SearchForm;
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
+import com.dokio.message.request.additional.UserCagentForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.MyShortInfoJSON;
@@ -456,5 +457,13 @@ public class UsersController {
         try {return new ResponseEntity<>(userRepositoryJPA.getJobtitlesWithEmployeesList(id), HttpStatus.OK);}
         catch (Exception e){logger.error("Controller getJobtitlesWithEmployeesList error", e);
             return new ResponseEntity<>("Controller getJobtitlesWithEmployeesList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/insertUserCagent")
+    public ResponseEntity<?> insertUserCagent(@RequestBody UserCagentForm request){
+        logger.info("Processing post request for path /api/auth/insertUserCagent: " + request.toString());
+        try {return new ResponseEntity<>(userRepositoryJPA.insertUserCagent(request), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller insertUserCagent error", e);
+            return new ResponseEntity<>("Controller insertUserCagent error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

@@ -18,9 +18,13 @@
 
 package com.dokio.util;
 import com.dokio.controller._Info;
+import com.dokio.message.response.CagentsJSON;
+import com.dokio.message.response.CompaniesJSON;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
 import com.dokio.message.response.Settings.SettingsGeneralJSON;
 import com.dokio.message.response.additional.TranslateHTMLmessageResult;
+import com.dokio.repository.CagentRepositoryJPA;
+import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.Exceptions.CantSetHistoryCauseNegativeSumException;
 import com.dokio.repository.Exceptions.WrongCrmSecretKeyException;
 import com.dokio.repository.SecurityRepositoryJPA;
@@ -60,6 +64,10 @@ public class CommonUtilites {
     private _Info info;
     @Autowired
     SecurityRepositoryJPA securityRepositoryJPA;
+    @Autowired
+    CagentRepositoryJPA cagentRepository;
+    @Autowired
+    CompanyRepositoryJPA companyRepository;
 
 
     @SuppressWarnings("Duplicates")
@@ -431,10 +439,13 @@ public class CommonUtilites {
                         " coalesce(cmp.nds_included, false) as nds_included, " +
                         "(select count(*) from stores where company_id="+company_id+" and coalesce(is_deleted,false)=false) > 0 as is_store," +
                         " coalesce(cmp.booking_doc_name_variation_id,1) as booking_doc_name_variation, " +
-                        " coalesce(cmp.time_zone_id,21) as time_zone_id" +
+                        " cmp.time_zone_id as time_zone_id," +
+                        " s.canonical_id as time_zone " +
 //                        " coalesce(cmp.store_auto_reserve, false) as store_auto_reserve, " +
 //                        " coalesce(cmp.is_store, false) as is_store" +
-                        " from companies cmp where cmp.id="+company_id;
+                        " from companies cmp " +
+                        " inner join sprav_sys_timezones s on s.id = cmp.time_zone_id "+
+                        " where cmp.id="+company_id; // inner - because each company has time zone
         try
         {
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -457,6 +468,7 @@ public class CommonUtilites {
                     returnObj.setBooking_doc_name_variation_id((Integer)    obj[6]);
                     returnObj.setBooking_doc_name_variation(returnObj.getBooking_doc_name_variation_id()==1?"appointment":"reservation");
                     returnObj.setTime_zone_id((Integer)                     obj[7]);
+                    returnObj.setTime_zone((String)                         obj[8]);
 
                 }
 
@@ -1072,6 +1084,77 @@ public class CommonUtilites {
         }
     }
 
+    public Map<String, String> getCagentMapValues(Long id){
+        CagentsJSON cg = cagentRepository.getCagentValues(id);
+        return new HashMap<String, String>() {
+            {
+                put("${CG_FULL_NAME}",          cg.getJr_jur_full_name());
+                put("${CG_SHORT_NAME}",         cg.getName());
+                put("${CG_SURNAME}",            cg.getJr_fio_family());
+                put("${CG_MIDDLENAME}",         cg.getJr_fio_otchestvo());
+                put("${CG_NAME}",               cg.getJr_fio_name());
+                put("${CG_DESCRIPTION}",        cg.getDescription());
+                put("${CG_TELEPHONE}",          cg.getTelephone());
+                put("${CG_EMAIL}",              cg.getEmail());
+                put("${CG_SITE}",               cg.getSite());
+                put("${CG_LEGAL_FORM}",         cg.getLegal_form());
+                put("${CG_REG_ADDR_ZIP}",       cg.getJr_zip_code());
+                put("${CG_REG_ADDR_COUNTRY}",   cg.getJr_country());
+                put("${CG_REG_ADDR_REGION}",    cg.getJr_region());
+                put("${CG_REG_ADDR_CITY}",      cg.getJr_city());
+                put("${CG_REG_ADDR_STREET}",    cg.getJr_street());
+                put("${CG_REG_ADDR_HOUSE}",     cg.getJr_home());
+                put("${CG_REG_ADDR_ROOM}",      cg.getJr_flat());
+                put("${CG_REG_ADDR_ADDIT}",     cg.getJr_additional_address());
+                put("${CG_MAIL_ADDR_ZIP}",      cg.getZip_code());
+                put("${CG_MAIL_ADDR_COUNTRY}",  cg.getCountry());
+                put("${CG_MAIL_ADDR_REGION}",   cg.getRegion());
+                put("${CG_MAIL_ADDR_CITY}",     cg.getCity());
+                put("${CG_MAIL_ADDR_STREET}",   cg.getStreet());
+                put("${CG_MAIL_ADDR_HOUSE}",    cg.getHome());
+                put("${CG_MAIL_ADDR_ROOM}",     cg.getFlat());
+                put("${CG_MAIL_ADDR_ADDIT}",    cg.getAdditional_address());
+                put("${CG_TIN}",                cg.getJr_inn());
+                put("${CG_VAT}",                cg.getJr_vat());
+            }};
+    }
+    public Map<String, String> getCompanyMapValues(Long id){
+        CompaniesJSON mc = companyRepository.getCompanyValues(id);
+        return new HashMap<String, String>() {
+            {
+                put("${MC_FULL_NAME}",          mc.getJr_jur_full_name());
+                put("${MC_SHORT_NAME}",         mc.getName());
+                put("${MC_SURNAME}",            mc.getJr_fio_family());
+                put("${MC_MIDDLENAME}",         mc.getJr_fio_otchestvo());
+                put("${MC_NAME}",               mc.getJr_fio_name());
+                put("${MC_TELEPHONE}",          mc.getTelephone());
+                put("${MC_EMAIL}",              mc.getEmail());
+                put("${MC_SITE}",               mc.getSite());
+                put("${MC_LEGAL_FORM}",         mc.getLegal_form());
+                put("${MC_REG_ADDR_ZIP}",       mc.getJr_zip_code());
+                put("${MC_REG_ADDR_COUNTRY}",   mc.getJr_country());
+                put("${MC_REG_ADDR_REGION}",    mc.getJr_region());
+                put("${MC_REG_ADDR_CITY}",      mc.getJr_city());
+                put("${MC_REG_ADDR_STREET}",    mc.getJr_street());
+                put("${MC_REG_ADDR_HOUSE}",     mc.getJr_home());
+                put("${MC_REG_ADDR_ROOM}",      mc.getJr_flat());
+                put("${MC_REG_ADDR_ADDIT}",     mc.getJr_additional_address());
+                put("${MC_MAIL_ADDR_ZIP}",      mc.getZip_code());
+                put("${MC_MAIL_ADDR_COUNTRY}",  mc.getCountry());
+                put("${MC_MAIL_ADDR_REGION}",   mc.getRegion());
+                put("${MC_MAIL_ADDR_CITY}",     mc.getCity());
+                put("${MC_MAIL_ADDR_STREET}",   mc.getStreet());
+                put("${MC_MAIL_ADDR_HOUSE}",    mc.getHome());
+                put("${MC_MAIL_ADDR_ROOM}",     mc.getFlat());
+                put("${MC_MAIL_ADDR_ADDIT}",    mc.getAdditional_address());
+                put("${MC_TIN}",                mc.getJr_inn());
+                put("${MC_VAT}",                mc.getJr_vat());
+                put("${MC_CEO}",                mc.getFio_director());
+                put("${MC_CEO_JOB_TITLE}",      mc.getDirector_position());
+                put("${MC_ACCOUNTANT}",         mc.getFio_glavbuh());
+                put("${MC_REGISTRY_NUM}",       mc.getJr_jur_ogrn());
 
 
+            }};
+    }
 }

@@ -8,13 +8,18 @@ import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.additional.appointment.AppointmentService;
 import com.dokio.repository.*;
+import com.dokio.service.StorageService;
 import com.dokio.service.TemplatesService;
+import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
 import com.dokio.util.CommonUtilites;
+import org.apache.commons.jexl3.JxltEngine;
 import org.apache.log4j.Logger;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 import org.jxls.util.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,12 +29,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Controller
@@ -51,6 +59,10 @@ public class AppointmentsController {
     CommonUtilites commonUtilites;
     @Autowired
     private TemplatesService tservice;
+    @Autowired
+    StorageService storageService;
+    @Autowired
+    UserRepositoryJPA userRepositoryJPA;
 
     @PostMapping("/api/auth/getAppointmentTable")
     @SuppressWarnings("Duplicates")
@@ -114,7 +126,6 @@ public class AppointmentsController {
             return new ResponseEntity<>("Controller getListOfAppointmentFiles error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @PostMapping("/api/auth/insertAppointment")
-    @SuppressWarnings("Duplicates")
     public ResponseEntity<?> insertAppointment(@RequestBody AppointmentsForm request){
         logger.info("Processing post request for path /api/auth/insertAppointment: " + request.toString());
         try {return new ResponseEntity<>(appointmentRepositoryJPA.insertAppointment(request), HttpStatus.OK);}
@@ -239,6 +250,82 @@ public class AppointmentsController {
             return new ResponseEntity<>("Controller getPreloadServicesIdsByResourceId error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     // печать документов
+
+//    @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
+//    @ResponseBody
+//    public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
+//        logger.info("Processing get request for path /api/auth/getCompanyCard: fileId=" + fileId);
+//
+//        FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
+//        if(fileInfo !=null){
+//            fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
+//            Resource file = companyRepositoryJPA.getCompanyCard(fileInfo);//и отправим экземпляр класса FileInfoJSON с путём к файлу и системным именем файла на получение карточки
+//            if(file!=null) {//если файл есть - значит docx4j отработал, и успешно записал файл Карточка предприятия.docx.
+//                String fileName = "Карточка предприятия.docx";
+//                return ResponseEntity.ok()
+//                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
+//                        .body(file);
+//            }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
+//                return responseEntity;}
+//        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+//            return responseEntity;}
+//    }
+
+    @RequestMapping(
+            value = "/api/auth/appointmentPrintDocx",
+            params = {"file_name", "doc_id", "cagent_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<Resource> appointmentPrintDocx (  HttpServletResponse response,
+                                        @RequestParam("file_name") String filename,
+                                        @RequestParam("cagent_id") Long cagentId,
+                                        @RequestParam("doc_id") Long doc_id) throws Exception, UnsupportedEncodingException {
+        try{
+            FileInfoJSON fileInfo = tservice.getFileInfo(filename);
+            if(fileInfo !=null){
+                GenerateDocumentsDocxService gt = new GenerateDocumentsDocxService();
+//                fileInfo.setOriginal_name(fileInfo.getName());//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
+                String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
+                String outputDocument = fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
+
+                AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
+
+                Map<String, String> myDateTime = userRepositoryJPA.getMyDateTime();// map with keys ${DAY}, ${MONTH}, ${YEAR}, ${HOUR}, ${MINUTE}.
+
+                Map<String, String> replaceMap = new HashMap<String, String>() {{
+                    put("${APP_EMPLOYEE}",          doc.getEmployeeName());
+                    put("${APP_JOB_TITLE}",         doc.getJobtitle());
+                    put("${APP_ADDITIONAL_INFO}",   doc.getDescription());
+                    put("${DOC_NUMBER}",            doc.getDoc_number().toString());
+                }};
+
+                replaceMap.putAll(commonUtilites.getCagentMapValues(cagentId));
+                replaceMap.putAll(commonUtilites.getCompanyMapValues(doc.getCompany_id()));
+                replaceMap.putAll(myDateTime);
+
+                gt.generateDocXDocument(filePath, outputDocument, replaceMap);
+
+                Path path = Paths.get(outputDocument);
+                Resource resource = new UrlResource(path.toUri());
+                if (resource.exists() || resource.isReadable()) {
+
+                    String fileName = fileInfo.getOriginal_name();
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
+                            .body(resource);
+                }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
+                    return responseEntity;}
+
+            } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permits or there is no file in a storage.", HttpStatus.FORBIDDEN);
+                return responseEntity;}
+
+        } catch (Exception e) {
+            logger.error("Exception in method appointmentPrintDocx.", e);
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/appointmentPrint",
@@ -249,11 +336,14 @@ public class AppointmentsController {
                                   @RequestParam("cagent_id") Long cagentId,
                                   @RequestParam("doc_id") Long doc_id) throws Exception {
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
-        InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        File template = new File(fileInfo.getPath()+"/"+filename);
+
+
+        InputStream is = new FileInputStream(template);
         OutputStream os = response.getOutputStream();
         try {
             AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
-            List<AppointmentService> product_table=doc.getAppointmentsProductTable();
+            List<AppointmentService> product_table = doc.getAppointmentsProductTable();
             CagentsJSON cg = cagentRepository.getCagentValues(cagentId);
             CompaniesJSON mc = company.getCompanyValues(doc.getCompany_id());
             CompaniesPaymentAccountsForm mainPaymentAccount = company.getMainPaymentAccountOfCompany(doc.getCompany_id());
@@ -262,8 +352,8 @@ public class AppointmentsController {
             BigDecimal totalSum = new BigDecimal(0);
             int row_num = 1; // номер строки при выводе печатной версии
             // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
-            for(AppointmentService product:product_table){// бежим по товарам
-                if(product.getCagent_id().equals(cagentId)) { // в таблице товаров представлены товары всех клиентов, но нужно взять только те, которые относятся к запрашиваемому клиенту
+            for (AppointmentService product : product_table) {// бежим по товарам
+                if (product.getCagent_id().equals(cagentId)) { // в таблице товаров представлены товары всех клиентов, но нужно взять только те, которые относятся к запрашиваемому клиенту
                     product.setRow_num(row_num);// номер строки при выводе печатной версии
                     if (doc.isNds()) {// если в документе включен переключатель НДС
                         BigDecimal nds_val = product.getNds_value();// величина НДС в процентах у текущего товара. Например, 20
@@ -275,7 +365,7 @@ public class AppointmentsController {
                 }
             }
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileInfo.getOriginal_name());
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileInfo.getOriginal_name());
             Context context = new Context();
             context.putVar("doc", doc);
             context.putVar("mc", mc); // предприятие
@@ -287,27 +377,30 @@ public class AppointmentsController {
             context.putVar("totalSum", totalSum);
 
             // вставка печати и подписей
-            if(!Objects.isNull(mc.getStamp_id())){
+            if (!Objects.isNull(mc.getStamp_id())) {
                 FileInfoJSON fileStampInfo = tservice.getFileInfo(mc.getStamp_id());
-                InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath()+"/"+fileStampInfo.getName()));
+                InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath() + "/" + fileStampInfo.getName()));
                 byte[] stamp = Util.toByteArray(stampIs);
                 context.putVar("stamp", stamp);
-                stampIs.close();}
-            if(!Objects.isNull(mc.getDirector_signature_id())){
+                stampIs.close();
+            }
+            if (!Objects.isNull(mc.getDirector_signature_id())) {
                 FileInfoJSON fileDirSignatInfo = tservice.getFileInfo(mc.getDirector_signature_id());
-                InputStream dirSignIs = new FileInputStream(new File(fileDirSignatInfo.getPath()+"/"+fileDirSignatInfo.getName()));
+                InputStream dirSignIs = new FileInputStream(new File(fileDirSignatInfo.getPath() + "/" + fileDirSignatInfo.getName()));
                 byte[] dirSignature = Util.toByteArray(dirSignIs);
                 context.putVar("dirSignature", dirSignature);
-                dirSignIs.close();}
-            if(!Objects.isNull(mc.getGlavbuh_signature_id())){
+                dirSignIs.close();
+            }
+            if (!Objects.isNull(mc.getGlavbuh_signature_id())) {
                 FileInfoJSON fileGbSignatInfo = tservice.getFileInfo(mc.getGlavbuh_signature_id());
-                InputStream gbSignIs = new FileInputStream(new File(fileGbSignatInfo.getPath()+"/"+fileGbSignatInfo.getName()));
+                InputStream gbSignIs = new FileInputStream(new File(fileGbSignatInfo.getPath() + "/" + fileGbSignatInfo.getName()));
                 byte[] gbSignature = Util.toByteArray(gbSignIs);
                 context.putVar("gbSignature", gbSignature);
-                gbSignIs.close();}
+                gbSignIs.close();
+            }
 
             JxlsHelper.getInstance().processTemplate(is, os, context);
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.error("Exception in method appointmentPrint.", e);
             e.printStackTrace();
         } finally {

@@ -176,6 +176,11 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>de.phip1611</groupId>
+            <artifactId>docx4j-search-and-replace-util</artifactId>
+            <version>1.0.7</version>
+        </dependency>
         <!-- Java -->
         <dependency>
             <groupId>javax.validation</groupId>

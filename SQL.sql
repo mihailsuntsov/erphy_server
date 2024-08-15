@@ -6737,105 +6737,16 @@ insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
 ('service', 'Service', 'Услуга', 'Услуга'),
 ('service_s', 'service', 'услуга', 'услуга');
-update version set value = '1.4.0', date = '04-08-2024';
+
+alter table settings_appointment add column status_id_on_complete bigint;
+alter table settings_appointment alter start_time drop not null;
+alter table settings_appointment alter end_date_time drop not null;
+alter table settings_appointment alter calc_date_but_time drop not null;
+alter table settings_appointment alter hide_employee_field drop not null;
+
+-- 1.4.0-2
+insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
+('f_med_contr_exmpl','Пример договора медобслуживания','Sample contract of medical services','Узорак уговора о медицинским услугама');
+alter table users add column is_display_in_employee_list boolean;
+update version set value = '1.4.0-2', date = '15-08-2024';
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
-
-
-insert into scdl_appointments
-(							  master_id,
-                company_id,
-                creator_id,
-                changer_id,
-                owner_id,
-                date_time_created,
-                date_time_changed,
-                status_id,
-                doc_number,
-                name,
-                description,
-                nds,
-                nds_included,
-                is_deleted,
-                is_completed,
-                uid,
-                linked_docs_group_id,
-                dep_part_id,
-                starts_at_time,
-                ends_at_time)
-values (
-         4,
-         1,
-         4,
-         4,
-         4,
-         now(),
-         now(),
-         null,
-         1,
-         'Проживание Люкс в номере Люкс',
-         '',
-         true,
-         true,
-         false,
-         false,
-         '',
-         null,
-         21, -- Номер Люкс
-         to_timestamp ('24.06.2024 13:00', 'DD.MM.YYYY HH24:MI'),
-         to_timestamp ('30.06.2024 11:00', 'DD.MM.YYYY HH24:MI')
-       );
-
-insert into scdl_appointments_product (master_id, product_id, resource_id, quantity) values (4,1008699,2,1);
-
-insert into scdl_appointments_product(
-  master_id,
-  product_id,
-  appointment_id,
-  price_type_id,
-  department_id,
-  product_count,
-  product_price,
-  product_sumprice,
-  edizm_id,
-  nds_id,
-  product_price_of_type_price
-) values (
-           4,
-           1008703,	--product_id (Проживание Стандарт)
-           2, 			--appointment_id
-           null,		--price_type_id
-           271,			--department_id
-           1.000,		--product_count
-           5000.00,	--product_price
-           5000.00,	--product_sumprice
-           1849,		--edizm_id (Сутки)
-           4,			   --nds_id (Без НДС)
-           5000.00		--product_price_of_type_price
-         );
-
-insert into scdl_appointments_product(
-  master_id,
-  product_id,
-  appointment_id,
-  price_type_id,
-  department_id,
-  product_count,
-  product_price,
-  product_sumprice,
-  edizm_id,
-  nds_id,
-  product_price_of_type_price
-) values (
-           4,
-           1008699,	--product_id (Лечение кариеса с микроскопом)
-           1, 			--appointment_id
-           null,		--price_type_id
-           41,			--department_id
-           1.000,		--product_count
-           3000.00,	--product_price
-           3000.00,	--product_sumprice
-           1851,		--edizm_id (Визит)
-           4,			   --nds_id (Без НДС)
-           3000.00		--product_price_of_type_price
-         );
-
