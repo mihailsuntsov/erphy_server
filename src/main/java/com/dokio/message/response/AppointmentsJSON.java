@@ -44,10 +44,46 @@ public class AppointmentsJSON {
     private Long        product_count;      // для таблицы документов
     private List<AppointmentService>  appointmentsProductTable;             // Все товары и услуги из данного Appointment
     private List<AppointmentCustomer>           customersTable;             // Все покупатели из данного Appointment
-    private String calendar_date_time_start;    // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
-    private String calendar_date_time_end;      // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
-    private String date_time_start;             // для таблицы документов
-    private String cagent;                      // для печати
+    private String      calendar_date_time_start;    // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
+    private String      calendar_date_time_end;      // date and time for angular calendar in ISO 8601 format YYYY-MM-DDTHH24:MI:SS.MSZ
+    private String      date_time_start;             // для таблицы документов
+    private String      cagent;                      // for printing
+    private String      date_start_user_format;      // for printing
+    private String      date_end_user_format;        // for printing
+    private String      time_start_user_format;      // for printing
+    private String      time_end_user_format;        // for printing
+
+    public String getDate_start_user_format() {
+        return date_start_user_format;
+    }
+
+    public void setDate_start_user_format(String date_start_user_format) {
+        this.date_start_user_format = date_start_user_format;
+    }
+
+    public String getDate_end_user_format() {
+        return date_end_user_format;
+    }
+
+    public void setDate_end_user_format(String date_end_user_format) {
+        this.date_end_user_format = date_end_user_format;
+    }
+
+    public String getTime_start_user_format() {
+        return time_start_user_format;
+    }
+
+    public void setTime_start_user_format(String time_start_user_format) {
+        this.time_start_user_format = time_start_user_format;
+    }
+
+    public String getTime_end_user_format() {
+        return time_end_user_format;
+    }
+
+    public void setTime_end_user_format(String time_end_user_format) {
+        this.time_end_user_format = time_end_user_format;
+    }
 
     public String getCagent() {
         return cagent;

@@ -6169,26 +6169,6 @@ insert into sprav_sys_locales (id,name,code,date_format) values(12,'Montenegrin'
 insert into sprav_sys_locales (id,name,code,date_format) values(13,'Bosnian','bs','DD.MM.YYYY');
 insert into sprav_sys_locales (id,name,code,date_format) values(14,'Croatian','hr','DD.MM.YYYY');
 
-
--- alter table cagents add column tg_id bigint;
--- alter table cagents add column tg_name varchar(1000); -- name in Telegram like @myname
---
--- create table msg_tg_bots (
---                             id                 bigserial primary key not null,
---                             oid                bigint not null, -- outer id. This is id of Telegram bot in telegram system
---                             token_hash         varchar(255), -- hash of token. Used only for outgoing messages to prevent substitution of the bot name
---                             master_id          bigint not null,
---                             company_id         bigint not null,
---                             date_time_created timestamp with time zone not null,
---                             date_time_changed timestamp with time zone,
---                             name               varchar(1000) not null, -- This is in @nickname of Telegram bot in telegram system
---                             description        varchar(250) not null,  -- user description
---                             output_order       int not null,           -- 1,2,30,100,...
---                             is_active          boolean not null,       -- is work with this bot allowed (incoming and outgoing messages)
---                             foreign key (master_id) references users(id),
---                             foreign key (company_id) references companies(id)
--- );
-
 create table scdl_dep_parts(
                                       id                 bigserial primary key not null,
                                       department_id      bigint not null,-- Id of a parent department
@@ -6497,22 +6477,6 @@ CREATE INDEX scdl_workshift_scedule_day_id_index ON public.scdl_workshift USING 
 CREATE INDEX scdl_vacation_master_id_index ON public.scdl_vacation USING btree (master_id);
 CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING btree (scedule_day_id);
 
-
-
-
-
-
-
-
-
-
-
-
--- drop table scdl_appointment_cagents;
--- drop table scdl_appointments_product;
--- drop table scdl_appointments;
-
-
 create table scdl_appointments(
   -- describes appointments
                              id                                 bigserial primary key not null,
@@ -6572,22 +6536,6 @@ create table scdl_appointments_product(
                              foreign key (master_id)            references users(id)
 );
 alter table scdl_appointments_product add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
--- create table scdl_appointment_cagents(
---                              id                                 bigserial primary key not null,
---                              master_id                          bigint not null,
---                              cagent_id                          bigint not null,
---                              appointment_id                     bigint not null,
---                              places_ordered                     int not null,
---                              foreign key (appointment_id)       references scdl_appointments (id),
---                              foreign key (cagent_id)            references cagents (id)
--- );
-
--- delete from usergroup_permissions where permission_id in(select id from permissions where document_id=59);
--- delete from permissions where document_id=59;
--- delete from documents where id=59;
--- drop table scdl_appointments_product;
--- drop table scdl_appointment_cagents;
--- drop table scdl_appointments;
 
 insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
 insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values

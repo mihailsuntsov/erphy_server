@@ -345,11 +345,15 @@ public class AppointmentRepositoryJPA {
                                 "           concat(to_char(p.starts_at_time,'YYYY-MM-DD'), 'T', to_char(p.starts_at_time,'HH24:MI:SS.MS'), 'Z') as calendar_date_start," +
                                 "           concat(to_char(p.ends_at_time,'YYYY-MM-DD'), 'T', to_char(p.ends_at_time,'HH24:MI:SS.MS'), 'Z') as calendar_date_end," +
                                 "           jt.id as jobtitle_id, " +
-                                "           jt.name as jobtitle," +
+                                "           coalesce(jt.name,'') as jobtitle," +
                                 "           ue.id as employee_id," +
-                                "           ue.name as employee_name," +
+                                "           coalesce(ue.name,'') as employee_name," +
                                 "           dp.name as department_name," +
-                                "           uo.id as owner_id" +
+                                "           uo.id as owner_id," +
+                                "           to_char(p.starts_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',   '" + dateFormat + "') as date_start_user_format, " +
+                                "           to_char(p.starts_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',   '" + timeFormat + "')    as time_start_user_format, " +
+                                "           to_char(p.ends_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',     '" + dateFormat + "') as date_end_user_format, " +
+                                "           to_char(p.ends_at_time at time zone '" + myTimeZone + "' at time zone 'Etc/GMT+0',     '" + timeFormat + "')    as time_end_user_format " +
                                 "           from scdl_appointments p " +
                                 "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                                 "           INNER JOIN scdl_dep_parts dprts ON p.dep_part_id=dprts.id " +
@@ -426,6 +430,10 @@ public class AppointmentRepositoryJPA {
                     returnObj.setEmployeeName((String)                      queryList.get(0)[31]);
                     returnObj.setDepartment((String)                        queryList.get(0)[32]);
                     returnObj.setOwner_id(Long.parseLong(                   queryList.get(0)[33].toString()));
+                    returnObj.setDate_start_user_format((String)            queryList.get(0)[34]);
+                    returnObj.setTime_start_user_format((String)            queryList.get(0)[35]);
+                    returnObj.setDate_end_user_format((String)              queryList.get(0)[36]);
+                    returnObj.setTime_end_user_format((String)              queryList.get(0)[37]);
 
                     AppointmentMainInfoForm reqest = new AppointmentMainInfoForm(
                             returnObj.getId(),
@@ -679,7 +687,8 @@ public class AppointmentRepositoryJPA {
                             " email, " +
                             " telephone, " +
                             " jr_jur_full_name, " +
-                            " type " +
+                            " type, " +
+                            " description" +
                             " ) values (" +
                             (Objects.isNull(cagent.getId())?"":cagent.getId()+",") +
                             ""+masterId+"," +
@@ -690,7 +699,8 @@ public class AppointmentRepositoryJPA {
                             " :email," +
                             " :telephone," +
                             " :name," +
-                            "'individual') " +
+                            "'individual'," +
+                            " :additional) " +
                             " ON CONFLICT ON CONSTRAINT cagents_pkey DO NOTHING";// "upsert"
 //                            " DO update set " +
 //                            " name = :name," +
@@ -701,6 +711,7 @@ public class AppointmentRepositoryJPA {
             query.setParameter("name",cagent.getName());
             query.setParameter("email",cagent.getEmail());
             query.setParameter("telephone",cagent.getTelephone());
+            query.setParameter("additional",cagent.getAdditional());
             query.executeUpdate();
             if(Objects.isNull(cagent.getId())){
                 stringQuery="select id from cagents where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+creatorId;

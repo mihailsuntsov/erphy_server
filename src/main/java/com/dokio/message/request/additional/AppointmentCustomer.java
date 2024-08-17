@@ -7,6 +7,15 @@ public class AppointmentCustomer {
     private String name;
     private String email;
     private String telephone;
+    private String additional;
+
+    public String getAdditional() {
+        return additional;
+    }
+
+    public void setAdditional(String additional) {
+        this.additional = additional;
+    }
 
     public Long getId() {
         return id;

@@ -35,10 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Controller
 public class AppointmentsController {
@@ -286,16 +283,42 @@ public class AppointmentsController {
 //                fileInfo.setOriginal_name(fileInfo.getName());//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
                 String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
                 String outputDocument = fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
-
+                Long masterId = userRepositoryJPA.getMyMasterId();
                 AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
 
-                Map<String, String> myDateTime = userRepositoryJPA.getMyDateTime();// map with keys ${DAY}, ${MONTH}, ${YEAR}, ${HOUR}, ${MINUTE}.
+                Map<String, String> myDateTime = userRepositoryJPA.getMyDateTime();// map with keys ${DAY}, ${MONTH}, ${YEAR}, ${HOUR}, ${MINUTE}, ${AMPM}.
 
+                int indx = 0;
+                int firstCustomersServiceIndex = 0;
+                for (AppointmentService service : doc.getAppointmentsProductTable()){
+                    if(service.getCagent_id().equals(cagentId) && firstCustomersServiceIndex == 0)
+                        firstCustomersServiceIndex=indx;
+                    indx++;
+                }
+                final int i = firstCustomersServiceIndex;
+                BigDecimal serviceSumprice = doc.getAppointmentsProductTable().get(i).getProduct_count().multiply(doc.getAppointmentsProductTable().get(i).getProduct_price()).setScale(2, BigDecimal.ROUND_HALF_UP);
                 Map<String, String> replaceMap = new HashMap<String, String>() {{
-                    put("${APP_EMPLOYEE}",          doc.getEmployeeName());
-                    put("${APP_JOB_TITLE}",         doc.getJobtitle());
-                    put("${APP_ADDITIONAL_INFO}",   doc.getDescription());
-                    put("${DOC_NUMBER}",            doc.getDoc_number().toString());
+                    put("${APP_EMPLOYEE}",              doc.getEmployeeName());
+                    put("${APP_JOB_TITLE}",             doc.getJobtitle());
+                    put("${APP_ADDITIONAL_INFO}",       doc.getDescription());
+                    put("${DOC_NUMBER}",                doc.getDoc_number().toString());
+                    put("${APP_DATE_START}",            doc.getDate_start_user_format());
+                    put("${APP_TIME_START}",            doc.getTime_start_user_format());
+                    put("${APP_DATE_END}",              doc.getDate_end_user_format());
+                    put("${APP_TIME_END}",              doc.getTime_end_user_format());
+                    put("${APP_SERVICE_NAME}",          doc.getAppointmentsProductTable().get(i).getName());
+                    put("${APP_SERVICE_QTT}",           doc.getAppointmentsProductTable().get(i).getProduct_count().toString().replace(".000", ""));
+                    put("${APP_SERVICE_QTT_UOM}",       doc.getAppointmentsProductTable().get(i).getEdizm());
+                    put("${APP_SERVICE_SUMPRICE}",      serviceSumprice.toString());
+                    // ${APP_SERVICE_ADDED_TAX_VALUE} will be > 0 if taxes added over price, because getProduct_sumprice() is already contains added tax.
+                    // Example: qtt = 1, price = 100, VAT = 10%, serviceSumprice = 1*100=100, getProduct_sumprice()=110, ${APP_SERVICE_ADDED_TAX_VALUE} = 110-100=10
+                    put("${APP_SERVICE_ADDED_TAX_VALUE}",doc.getAppointmentsProductTable().get(i).getProduct_sumprice().subtract(serviceSumprice).toString());
+                    put("${APP_SERVICE_PRICE_WITH_ADDED_TAX_VALUE}",doc.getAppointmentsProductTable().get(i).getProduct_sumprice().toString());
+                    put("${APP_SERVICE_PRICE}",         doc.getAppointmentsProductTable().get(i).getProduct_price().toString());
+//                    put("${APP_SERVICE_TAX}",           doc.getAppointmentsProductTable().get(i).getNds_value().toString());
+                    put("${APP_SERVICE_TAX_NAME}",      (String)commonUtilites.getFieldValueFromTableById("sprav_taxes","name", masterId, doc.getAppointmentsProductTable().get(0).getNds_id()));
+
+
                 }};
 
                 replaceMap.putAll(commonUtilites.getCagentMapValues(cagentId));
@@ -343,7 +366,8 @@ public class AppointmentsController {
         OutputStream os = response.getOutputStream();
         try {
             AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
-            List<AppointmentService> product_table = doc.getAppointmentsProductTable();
+            List<AppointmentService> all_products_table = doc.getAppointmentsProductTable(); // shared table, contained all services of all customers in this Appointment
+            List<AppointmentService> product_table_of_cagent = new ArrayList<>(); // table contained services that belongs only to this customer (cagentId)
             CagentsJSON cg = cagentRepository.getCagentValues(cagentId);
             CompaniesJSON mc = company.getCompanyValues(doc.getCompany_id());
             CompaniesPaymentAccountsForm mainPaymentAccount = company.getMainPaymentAccountOfCompany(doc.getCompany_id());
@@ -352,7 +376,7 @@ public class AppointmentsController {
             BigDecimal totalSum = new BigDecimal(0);
             int row_num = 1; // номер строки при выводе печатной версии
             // в таблице товаров считаем сумму НДС и общую сумму стоимости товаров (или услуг)
-            for (AppointmentService product : product_table) {// бежим по товарам
+            for (AppointmentService product : all_products_table) {// бежим по товарам
                 if (product.getCagent_id().equals(cagentId)) { // в таблице товаров представлены товары всех клиентов, но нужно взять только те, которые относятся к запрашиваемому клиенту
                     product.setRow_num(row_num);// номер строки при выводе печатной версии
                     if (doc.isNds()) {// если в документе включен переключатель НДС
@@ -360,10 +384,12 @@ public class AppointmentsController {
                         // Включен переключатель "НДС включён" или нет - в любом случае НДС уже в цене product_sumprice. Нужно его вычленить из нее по формуле (для НДС=20%) "цену с НДС умножить на 20 и разделить на 120"
                         sumNds = sumNds.add(product.getProduct_sumprice().multiply(nds_val).divide(new BigDecimal(100).add(nds_val), 2, BigDecimal.ROUND_HALF_UP));
                     }
+                    product_table_of_cagent.add(product);
                     totalSum = totalSum.add(product.getProduct_sumprice());
                     row_num++;
                 }
             }
+
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
             response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileInfo.getOriginal_name());
             Context context = new Context();
@@ -371,7 +397,7 @@ public class AppointmentsController {
             context.putVar("mc", mc); // предприятие
             context.putVar("cg", cg); // контрагент
             context.putVar("tservice", tservice); // helper-класс для формирования файла
-            context.putVar("productTable", product_table);// таблица с товарами
+            context.putVar("productTable", product_table_of_cagent);// таблица с товарами
             context.putVar("mainPaymentAccount", mainPaymentAccount);// первый в списке расчётный счёт предприятия
             context.putVar("sumNds", sumNds);
             context.putVar("totalSum", totalSum);
