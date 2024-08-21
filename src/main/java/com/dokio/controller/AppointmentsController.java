@@ -402,7 +402,7 @@ public class AppointmentsController {
             context.putVar("sumNds", sumNds);
             context.putVar("totalSum", totalSum);
 
-            // вставка печати и подписей
+            // вставка печати и подписейё
             if (!Objects.isNull(mc.getStamp_id())) {
                 FileInfoJSON fileStampInfo = tservice.getFileInfo(mc.getStamp_id());
                 InputStream stampIs = new FileInputStream(new File(fileStampInfo.getPath() + "/" + fileStampInfo.getName()));
