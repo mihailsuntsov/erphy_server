@@ -22,10 +22,11 @@ There is a support of a multilingual goods and online stores<br>
 https://erphy.me/crm/en<br>
 
 ## Examples
-The SaaS version: https://erphy.me/dss Here you can register and test working with the program interface<br>
-Multilingual food delivery site: https://food.erphy.me
+The SaaS version: https://erphy.me/dss<br>
+Using ERPHY as a Dental clinic appointment software: https://youtu.be/N9rUhyAZ_Uk
 
 ## How to install
+[Video-instruction on YouTube](https://youtu.be/LyWnXbMJpho)<br>
 You can install the program on your VPS server using a bash installation script. 
 Bash installation script tested on:<br> 
 

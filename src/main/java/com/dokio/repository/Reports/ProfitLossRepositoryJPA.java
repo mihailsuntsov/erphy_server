@@ -118,11 +118,15 @@ public class ProfitLossRepositoryJPA {
                 // Операционные расходы
                 List<ProfitLossSerie> operational=getProfitLossOpex(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone);
                 // списания в операционных расходах считаются отдельно:
-                ProfitLossSerie writeoffs = new ProfitLossSerie();
-                writeoffs.setName("Списания");
-                writeoffs.setValue(getProfitLossWriteoffs(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone));
-                if(writeoffs.getValue().compareTo(new BigDecimal(0))>0)
+                BigDecimal writeoffsValue = getProfitLossWriteoffs(myMasterId,reqest.getCompanyId(),reqest.getDateFrom(), reqest.getDateTo(), myTimeZone);
+                if(writeoffsValue.compareTo(new BigDecimal(0))>0){
+                    Long mId = userRepositoryJPA.getMyId();
+                    Map<String, String> map = commonUtilites.translateForUser(mId, new String[]{"'writeoff'"});
+                    ProfitLossSerie writeoffs = new ProfitLossSerie();
+                    writeoffs.setName(map.get("writeoff"));
+                    writeoffs.setValue(writeoffsValue);
                     operational.add(writeoffs);
+                }
                 return operational;
             } catch (Exception e) {
                 e.printStackTrace();
