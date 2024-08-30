@@ -23,6 +23,15 @@ public class    FileInfoJSON {
     private String name;
     private String original_name;
     private String path;
+    private Long masterId;
+
+    public Long getMasterId() {
+        return masterId;
+    }
+
+    public void setMasterId(Long masterId) {
+        this.masterId = masterId;
+    }
 
     public String getName() {
         return name;

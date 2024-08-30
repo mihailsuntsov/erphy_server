@@ -260,7 +260,7 @@ public class AuthRestAPIs {
             store.setLang_code(signUpRequest.getLanguage());
             store.setCompany_id(companyId);
             store.setStore_ip("127.0.0.1");
-            store.setCrm_secret_key(cntUsers==0?storageService.getSecretKey():"");// first user will get the key from a file, that was created at the end of DokioCRM installation
+            store.setCrm_secret_key(cntUsers==0?storageService.getSecretKey():"");// first user will get the key from a file, that was created at the end of ERPHY installation
             store.setStore_if_customer_not_found("create_new");
             store.setStore_price_type_regular(prices.get(0));
             store.setStore_price_type_sale(prices.get(1));

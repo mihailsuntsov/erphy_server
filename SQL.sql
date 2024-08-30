@@ -6697,4 +6697,10 @@ insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
 ('f_med_contr_exmpl','Пример договора медобслуживания','Sample contract of medical services','Узорак уговора о медицинским услугама');
 alter table users add column is_display_in_employee_list boolean;
 update version set value = '1.4.0-2', date = '15-08-2024';
+
+
+
+
+
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
+alter table users add column crypto_password bytea;

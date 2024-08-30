@@ -34,6 +34,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import javax.crypto.CipherOutputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.ParseException;
@@ -278,45 +281,41 @@ public class FilesController {
             return new ResponseEntity<>("Error cleaning trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
-
-
-
-
     @SuppressWarnings("Duplicates")
     @GetMapping("/api/public/getFile/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<Resource> getFilePublic(@PathVariable String filename) throws UnsupportedEncodingException {
+    public ResponseEntity<byte[]> getFilePublic(@PathVariable String filename) throws Exception, UnsupportedEncodingException {
         logger.info("Processing get request for path /api/public/getFile: filename=" + filename);
-
         FileInfoJSON fileInfo = fileRepository.getFilePublic(filename);
         if(fileInfo !=null){
+            Long masterId = fileInfo.getMasterId();
             String filePath=fileInfo.getPath()+"//"+filename;
             String originalFileName = fileInfo.getOriginal_name();
-            Resource file = storageService.loadFile(filePath);
+//            Resource file = storageService.loadFile(filePath);
+            byte[] cos = storageService.loadFile(filePath, masterId);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
-                    .body(file);
+                    .body(cos);
         } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }
-
-
     @SuppressWarnings("Duplicates")
     @GetMapping("/api/auth/getFile/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<Resource> getFileAuth(@PathVariable String filename) throws UnsupportedEncodingException {
+    public ResponseEntity<byte[]> getFileAuth(@PathVariable String filename) throws Exception, UnsupportedEncodingException {
         logger.info("Processing get request for path /api/auth/getFile: filename=" + filename);
-
-        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename, masterId);
         if(fileInfo !=null){
             String filePath=fileInfo.getPath()+"//"+filename;
             String originalFileName = fileInfo.getOriginal_name();
-            Resource file = storageService.loadFile(filePath);
+//            Resource file = storageService.loadFile(filePath);
+            byte[] cos = storageService.loadFile(filePath, masterId);
             HttpHeaders h = new HttpHeaders();
             h.add("Content-type", "text/html;charset=UTF-8");
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
-                    .body(file);
+                    .body(cos);
         } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }
@@ -324,17 +323,18 @@ public class FilesController {
     @SuppressWarnings("Duplicates")
     @GetMapping("/api/auth/getFileImageThumb/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<Resource> getFileImageThumb(@PathVariable String filename) throws UnsupportedEncodingException {
+    public ResponseEntity<byte[]> getFileImageThumb(@PathVariable String filename) throws Exception, UnsupportedEncodingException {
         logger.info("Processing get request for path /api/auth/getFileImageThumb: filename=" + filename);
-
-        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename);
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(filename, masterId);
         if(fileInfo !=null){
             String filePath=fileInfo.getPath()+"/thumbs/"+filename;
             String originalFileName = fileInfo.getOriginal_name();
-            Resource file = storageService.loadFile(filePath);
+//            Resource file = storageService.loadFile(filePath);
+            byte[] cos = storageService.loadFile(filePath, masterId);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
-                    .body(file);
+                    .body(cos);
         } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }

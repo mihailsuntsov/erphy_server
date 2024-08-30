@@ -91,14 +91,14 @@ public class UploadController {
         return ResponseEntity.ok().body(fileNames);
     }
 
-    @GetMapping("/api/auth/files/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
-        logger.info("Processing get request for path api/auth/files: " + "fileName=" + filename);
-
-        Resource file = storageService.loadFile(filename);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-                .body(file);
-    }
+//    @GetMapping("/api/auth/files/{filename:.+}")
+//    @ResponseBody
+//    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
+//        logger.info("Processing get request for path api/auth/files: " + "fileName=" + filename);
+//
+//        Resource file = storageService.loadFile(filename);
+//        return ResponseEntity.ok()
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
+//                .body(file);
+//    }
 }

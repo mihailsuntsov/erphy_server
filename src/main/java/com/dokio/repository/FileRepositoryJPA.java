@@ -32,6 +32,7 @@ import com.dokio.model.Companies;
 import com.dokio.model.FileCategories;
 import com.dokio.model.Files;
 import com.dokio.model.User;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
 import com.dokio.util.CommonUtilites;
@@ -73,6 +74,8 @@ public class FileRepositoryJPA {
     private StorageService storageService;
     @Autowired
     private CommonUtilites commonUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
 
     Logger logger = Logger.getLogger("FileRepositoryJPA");
@@ -296,8 +299,7 @@ public class FileRepositoryJPA {
         } else return -1;
     }
 
-    @Transactional
-    @SuppressWarnings("Duplicates")
+
     public Long storeFileToDB(FileJSON fileObj, boolean dontCheckPermissions)
     {
 //        dontCheckPermissions need for store files when registering new account - at this time user isn't registered and userRepository.* will returns nulls
@@ -485,19 +487,18 @@ public class FileRepositoryJPA {
     }
 
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права или если он открыт на общий доступ
-        public FileInfoJSON getFileAuth(String filename) {
+        public FileInfoJSON getFileAuth(String filename, Long masterId) {
 
         List<Integer> myPermissions = securityRepositoryJPA.giveMeMyPermissions(13L);
         if(myPermissions.contains(150) || (myPermissions.contains(151)))
 //        if (securityRepositoryJPA.userHasPermissions_OR(13L, "150,151"))//Просмотр документов
         {
-            Long myMasterId = userRepositoryJPA.getMyMasterId();
             String stringQuery;
             stringQuery = "select " +
                     "           p.original_name as original_name, " +
                     "           p.path as path " +
                     "           from files p " +
-                    "           where  p.master_id = :myMasterId and p.name = :filename";
+                    "           where  p.master_id = :masterId and p.name = :filename";
 //            "           where p.name = :filename";
             if (!myPermissions.contains(150)) //Если нет прав на "Просмотр документов по всем предприятиям"
             {
@@ -506,7 +507,7 @@ public class FileRepositoryJPA {
             }
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("filename",filename);
-            query.setParameter("myMasterId",myMasterId);
+            query.setParameter("masterId", masterId);
             List<Object[]> queryList = query.getResultList();
 //            if(queryList.size()>0) {//есть права на просмотр и скачивание файла
                 FileInfoJSON doc = new FileInfoJSON();
@@ -526,7 +527,8 @@ public class FileRepositoryJPA {
         String stringQuery;
         stringQuery = "select " +
                 "           p.original_name as original_name, " +
-                "           p.path as path " +
+                "           p.path as path, " +
+                "           p.master_id as masterid " +
                 "           from files p " +
                 "           where p.name= :filename and p.anonyme_access = true ";
 
@@ -537,6 +539,7 @@ public class FileRepositoryJPA {
             FileInfoJSON doc = new FileInfoJSON();
             doc.setOriginal_name((String) queryList.get(0)[0]);
             doc.setPath((String) queryList.get(0)[1]);
+            doc.setMasterId(Long.valueOf(queryList.get(0)[2].toString()));
             return doc;
         }
         else return null;
@@ -850,24 +853,24 @@ public class FileRepositoryJPA {
             String stringQuery;
             try
             {
-                for (FileCategoriesForm field : request)
-                {
-                    stringQuery = "update file_categories set " +
+            for (FileCategoriesForm field : request)
+            {
+                stringQuery = "update file_categories set " +
 
-                            " output_order=" + field.getOutput_order() +
-                            " where id=" + field.getId() +
-                            " and master_id=" + myMasterId;
-                    if (!securityRepositoryJPA.userHasPermissions_OR(13L, "156")) //Если нет прав по всем предприятиям
-                    {
-                        //остается только на своё предприятие (157)
-                        int myCompanyId = userRepositoryJPA.getMyCompanyId();
-                        stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
-                    }
-                    Query query = entityManager.createNativeQuery(stringQuery);
-                    query.executeUpdate();
+                        " output_order=" + field.getOutput_order() +
+                        " where id=" + field.getId() +
+                        " and master_id=" + myMasterId;
+                if (!securityRepositoryJPA.userHasPermissions_OR(13L, "156")) //Если нет прав по всем предприятиям
+                {
+                    //остается только на своё предприятие (157)
+                    int myCompanyId = userRepositoryJPA.getMyCompanyId();
+                    stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
                 }
-                return true;
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
             }
+            return true;
+        }
             catch (Exception e) {
                 logger.error("Exception in method saveChangeCategoriesOrder.", e);
                 e.printStackTrace();

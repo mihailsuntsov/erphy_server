@@ -22,6 +22,7 @@ import com.dokio.message.response.additional.BaseFiles;
 import com.dokio.message.response.additional.FileJSON;
 import com.dokio.repository.FileRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItem;
@@ -29,10 +30,13 @@ import org.apache.log4j.Logger;
 import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
@@ -40,6 +44,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -51,11 +59,16 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.List;
 
-@Service
 @Repository
 public class StorageService {
     Logger logger = Logger.getLogger(StorageService.class);
@@ -64,27 +77,28 @@ public class StorageService {
     private EntityManager entityManager;
     @Autowired
     private FileRepositoryJPA frj;
+    @Autowired
+    private CryptoService cryptoService;
 
     @Value("${files_path}")
     private String files_path;
 
+    private static final String  ENCRYPTION_ALGORITHM = "AES/CBC/PKCS5Padding";
 //***************************************************************************
 //***************************** F I L E S ***********************************
 //***************************************************************************
 
-    @SuppressWarnings("Duplicates")
     private FileJSON storePreparation(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId)//подготовка для записи файла
     {
         try
         {
             FileJSON fileObj = new FileJSON();
-            String BASE_FILES_FOLDER;
+            String BASE_FILES_FOLDER = getBaseFilesFolderPath();
             Calendar calendar = Calendar.getInstance();
             String YEAR = calendar.get(Calendar.YEAR) + "//";
             fileObj.setMyMasterId(masterId);
             fileObj.setMyId(myId);
-            if(isPathExists("C://")){   BASE_FILES_FOLDER = "C://Temp//files//";  //запущено в винде
-            } else {                    BASE_FILES_FOLDER = files_path;} //запущено в linux
+
             String MY_MASTER_ID_FOLDER = fileObj.getMyMasterId() + "//";
             String MY_COMPANY_ID_FOLDER = companyId + "//";
             String THUMBS_FOLDER = "thumbs//";
@@ -102,7 +116,7 @@ public class StorageService {
             fileObj.setGeneratedFileName(GetGeneratedFileName());
             fileObj.setFileSize(file.getSize());
             fileObj.setMimeType(file.getContentType());
-            fileObj.setNewFileName(fileObj.getGeneratedFileName()+fileObj.getFileExtention());
+            fileObj.setNewFileName(fileObj.getGeneratedFileName()+"_encrypted"+fileObj.getFileExtention());
             fileObj.setCompanyId(companyId);
             fileObj.setDescription(description);
             fileObj.setAnonyme_access(anonyme_access);
@@ -117,12 +131,16 @@ public class StorageService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public Long store(MultipartFile file, Long companyId, Boolean anonyme_access, Long categoryId, String description, Long masterId, Long myId, boolean dontCheckPermissions) {
         try
         {
             FileJSON fileObj = storePreparation(file,companyId,anonyme_access,categoryId,description, masterId, myId);
             if(!Objects.isNull(fileObj)){
                 createDirectory(fileObj.getUPLOADED_FOLDER().toString());
+                SecretKey key = cryptoService.getSecretKeyByMasterCryptoPassword(masterId);
+
+                IvParameterSpec ivParameterSpec = cryptoService.generateIv();
 
                 if(// если файл - картинка - надо сохранить его с опр. условиями (размер и thumbnail)
                     fileObj.getFileExtention().equalsIgnoreCase(".jpg")  ||
@@ -137,13 +155,17 @@ public class StorageService {
                     BufferedImage thumbImage = downscaleImageSize(originalImage, type, fileObj.getTHUMBNAIL_WIDTH());
                     byte[] thumbInByte = getImageInByte(thumbImage, format);
                     byte[] imageInByte = getImageInByte(originalImage, format);
-                    Path filePath = Paths.get(fileObj.getUPLOADED_FOLDER() + "//" + fileObj.getNewFileName());
-                    Path thumbPath = Paths.get(fileObj.getUPLOADED_THUMBS_FOLDER() + "//" + fileObj.getNewFileName());
-                    Files.write(filePath, imageInByte);
-                    Files.write(thumbPath, thumbInByte);
-                } else
-                    Files.copy(file.getInputStream(), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()));
+//                    Path filePath = Paths.get(fileObj.getUPLOADED_FOLDER() + "//" + fileObj.getNewFileName());
+//                    Path thumbPath = Paths.get(fileObj.getUPLOADED_THUMBS_FOLDER() + "//" + fileObj.getNewFileName());
 
+                    cryptoService.encryptFile(key, ivParameterSpec,new ByteArrayInputStream(imageInByte), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()).toFile());
+                    cryptoService.encryptFile(key, ivParameterSpec,new ByteArrayInputStream(thumbInByte), fileObj.getUPLOADED_THUMBS_FOLDER().resolve(fileObj.getNewFileName()).toFile());
+//                    Files.write(filePath, imageInByte);
+//                    Files.write(thumbPath, thumbInByte);
+                } else {
+                    cryptoService.encryptFile(key, ivParameterSpec,file.getInputStream(), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()).toFile());
+//                    Files.copy(file.getInputStream(), fileObj.getUPLOADED_FOLDER().resolve(fileObj.getNewFileName()));
+                }
                 // запись в БД информации о файле
                 return frj.storeFileToDB( // запись в БД информации о файле (возвращает id файла)
                         fileObj, dontCheckPermissions
@@ -155,19 +177,48 @@ public class StorageService {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    public Resource loadFile(String filepath) {
+    public byte[] loadFile(String filepath, Long masterId) throws Exception  {
         try
         {
             Path file = Paths.get(filepath);
             Resource resource = new UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {
-                return resource;
+
+                OutputStream outputStream = new ByteArrayOutputStream();
+
+                // if file is encrypted
+                if(filepath.contains("_encrypted.")) {
+                    FileInputStream inputStream = new FileInputStream(file.toFile());
+                    IvParameterSpec ivParameterSpec = cryptoService.generateIv();
+                    Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
+                    SecretKey key = cryptoService.getSecretKeyByMasterCryptoPassword(masterId);
+                    cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
+                    byte[] buffer = new byte[64];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        byte[] output = cipher.update(buffer, 0, bytesRead);
+                        if (output != null) {
+                            outputStream.write(output);
+                        }
+                    }
+                    byte[] outputBytes = cipher.doFinal();
+                    if (outputBytes != null) {
+                        outputStream.write(outputBytes);
+                    }
+                    inputStream.close();
+                } else { // if file is not encrypted
+                    byte[] data = Files.readAllBytes(file);
+                    outputStream.write(data);
+                }
+                outputStream.close();
+                return ((ByteArrayOutputStream) outputStream).toByteArray();
             } else {
                 throw new RuntimeException("Fail to load from filepath '"+filepath+"'");
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+filepath+"'");
+            throw new RuntimeException("MalformedURLException! Fail to load from filepath '"+filepath+"'", e);
+        } catch (Exception e) {
+            throw new Exception("Exception! Fail to load from filepath '"+filepath+"'", e);
         }
     }
 
@@ -278,6 +329,7 @@ public class StorageService {
         return length;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
     public List<BaseFiles> copyFilesFromPathToCompany(List<BaseFiles> baseFilesList, Long companyId, Long categoryId, Long masterId, Long userId){
         List<BaseFiles> retList = new ArrayList<>();
         try{
@@ -302,6 +354,11 @@ public class StorageService {
         return retList;
     }
 
+    public String getBaseFilesFolderPath(){
+//        if(isPathExists("C://")){   return "C://Temp//files//";     // running in Windows
+//        } else {                    return files_path;}             // running in linux
+        return files_path;
+    }
 //***************************************************************************
 //***************************** I M A G E S *********************************
 //***************************************************************************
@@ -320,19 +377,19 @@ public class StorageService {
         }
     }
 
-    public String GetFilePathByFileName(String fileName){
-        String stringQuery="select path||'//'||name from files where name = '"+fileName+"'";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        return query.getSingleResult().toString();
-
-    }
-
-    public String GetOriginalFileName(String fileName){
-        String stringQuery="select original_name from files where name = '"+fileName+"'";
-        Query query = entityManager.createNativeQuery(stringQuery);
-        String originName = query.getSingleResult().toString();
-        return originName;
-    }
+//    public String GetFilePathByFileName(String fileName){
+//        String stringQuery="select path||'//'||name from files where name = '"+fileName+"'";
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        return query.getSingleResult().toString();
+//
+//    }
+//
+//    public String GetOriginalFileName(String fileName){
+//        String stringQuery="select original_name from files where name = '"+fileName+"'";
+//        Query query = entityManager.createNativeQuery(stringQuery);
+//        String originName = query.getSingleResult().toString();
+//        return originName;
+//    }
 
 //    public String GetImgThumbPathByFileName(String fileName){
 //        String stringQuery="select path||'/thumbs/'||name from files where name = '"+fileName+"'";
