@@ -18,59 +18,47 @@
 
 package com.dokio.message.response.additional;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+//import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+//import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+//
+//import javax.persistence.ElementCollection;
+//import javax.persistence.Entity;
+//import javax.persistence.FetchType;
+//import javax.persistence.Id;
+//import java.sql.Timestamp;
+//import java.util.List;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import java.sql.Timestamp;
 import java.util.List;
 
-@Entity
+//@Entity
 public class FilesJSON {
 
-    @Id
+//    @Id
     private Long id;
     private String name;
     private String original_name;
     private String description;
-    private String file_size;
+    private Integer file_size;
     private String extention;
     private String mime_type;
     private Boolean anonyme_access;
     private String company;
-    private String company_id;
+    private Long company_id;
     private String master;
-    private String master_id;
+    private Long master_id;
     private String creator;
-    private String creator_id;
+    private Long creator_id;
     private String changer;
-    private String changer_id;
+    private Long changer_id;
     private String date_time_created;
     private String date_time_changed;
     private String alt;
-
-//    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-//    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-//    private Timestamp date_time_created;
-//    @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
-//    @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
-//    private Timestamp date_time_changed;
-    @ElementCollection(fetch = FetchType.LAZY)
+    private Long   owner_id;
+    private String owner;
     private List<Long> file_categories_id;
 
     public Long getId() {
         return id;
-    }
-
-    public String getExtention() {
-        return extention;
-    }
-
-    public void setExtention(String extention) {
-        this.extention = extention;
     }
 
     public void setId(Long id) {
@@ -101,12 +89,20 @@ public class FilesJSON {
         this.description = description;
     }
 
-    public String getFile_size() {
+    public Integer getFile_size() {
         return file_size;
     }
 
-    public void setFile_size(String file_size) {
+    public void setFile_size(Integer file_size) {
         this.file_size = file_size;
+    }
+
+    public String getExtention() {
+        return extention;
+    }
+
+    public void setExtention(String extention) {
+        this.extention = extention;
     }
 
     public String getMime_type() {
@@ -133,20 +129,12 @@ public class FilesJSON {
         this.company = company;
     }
 
-    public String getCompany_id() {
+    public Long getCompany_id() {
         return company_id;
     }
 
-    public void setCompany_id(String company_id) {
+    public void setCompany_id(Long company_id) {
         this.company_id = company_id;
-    }
-
-    public String getAlt() {
-        return alt;
-    }
-
-    public void setAlt(String alt) {
-        this.alt = alt;
     }
 
     public String getMaster() {
@@ -157,11 +145,11 @@ public class FilesJSON {
         this.master = master;
     }
 
-    public String getMaster_id() {
+    public Long getMaster_id() {
         return master_id;
     }
 
-    public void setMaster_id(String master_id) {
+    public void setMaster_id(Long master_id) {
         this.master_id = master_id;
     }
 
@@ -173,11 +161,11 @@ public class FilesJSON {
         this.creator = creator;
     }
 
-    public String getCreator_id() {
+    public Long getCreator_id() {
         return creator_id;
     }
 
-    public void setCreator_id(String creator_id) {
+    public void setCreator_id(Long creator_id) {
         this.creator_id = creator_id;
     }
 
@@ -189,11 +177,11 @@ public class FilesJSON {
         this.changer = changer;
     }
 
-    public String getChanger_id() {
+    public Long getChanger_id() {
         return changer_id;
     }
 
-    public void setChanger_id(String changer_id) {
+    public void setChanger_id(Long changer_id) {
         this.changer_id = changer_id;
     }
 
@@ -211,6 +199,30 @@ public class FilesJSON {
 
     public void setDate_time_changed(String date_time_changed) {
         this.date_time_changed = date_time_changed;
+    }
+
+    public String getAlt() {
+        return alt;
+    }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
+    }
+
+    public Long getOwner_id() {
+        return owner_id;
+    }
+
+    public void setOwner_id(Long owner_id) {
+        this.owner_id = owner_id;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     public List<Long> getFile_categories_id() {

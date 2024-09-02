@@ -18,7 +18,9 @@
 package com.dokio.controller;
 
 import com.dokio.message.request.UniversalForm;
+import com.dokio.message.request.additional.ChangeOwnerForm;
 import com.dokio.repository.AppointmentRepositoryJPA;
+import com.dokio.repository.FileRepositoryJPA;
 import com.dokio.repository.ProductsRepositoryJPA;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -26,10 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class CommonUtilitesController {
@@ -41,6 +40,8 @@ public class CommonUtilitesController {
     CommonUtilites commonUtilites;
     @Autowired
     AppointmentRepositoryJPA appointmentRepository;
+    @Autowired
+    FileRepositoryJPA filesRepository;
 
 
     @RequestMapping(
@@ -118,7 +119,18 @@ public class CommonUtilitesController {
             return new ResponseEntity<>(ret, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error("Controller changeDocumentStatus error", e);
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PostMapping("/api/auth/changeDocumentOwner")
+    public ResponseEntity<?> changeDocumentOwner(@RequestBody ChangeOwnerForm request){
+        logger.info("Processing get request for path /api/auth/changeDocOwner with parameters: " + request.toString());
+        try {return new ResponseEntity<>(commonUtilites.changeDocumentOwner(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller changeDocumentOwner error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 }

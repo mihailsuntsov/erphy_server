@@ -455,27 +455,21 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateCagentCategory(@RequestBody CagentCategoriesForm request){
         logger.info("Processing post request for path /api/auth/updateCagentCategory: " + request.toString());
-
-        if(cagentsRepositoryJPA.updateCagentCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting updateCagentCategory", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.updateCagentCategory(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller updateCagentCategory error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteCagentCategory")
     public ResponseEntity<?> deleteCagentCategory(@RequestBody CagentCategoriesForm request){
         logger.info("Processing post request for path /api/auth/deleteCagentCategory: " + request.toString());
-
-        if(cagentsRepositoryJPA.deleteCagentCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting deleteCagentCategory", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.deleteCagentCategory(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller deleteCagentCategory error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveChangeCagentCategoriesOrder")
@@ -483,14 +477,11 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
     public ResponseEntity<?> saveChangeCagentCategoriesOrder(@RequestBody List<CagentCategoriesForm> request){
         logger.info("Processing post request for path /api/auth/saveChangeCagentCategoriesOrder: [" + request.stream().
                 map(CagentCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
-
-        if(cagentsRepositoryJPA.saveChangeCategoriesOrder(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when requesting saveChangeCagentCategoriesOrder", HttpStatus.INTERNAL_SERVER_ERROR);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(cagentsRepositoryJPA.saveChangeCategoriesOrder(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller saveChangeCagentCategoriesOrder error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
 }

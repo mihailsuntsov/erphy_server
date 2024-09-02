@@ -18,6 +18,7 @@
 
 package com.dokio.util;
 import com.dokio.controller._Info;
+import com.dokio.message.request.additional.ChangeOwnerForm;
 import com.dokio.message.response.CagentsJSON;
 import com.dokio.message.response.CompaniesJSON;
 import com.dokio.message.response.Settings.CompanySettingsJSON;
@@ -953,7 +954,6 @@ public class CommonUtilites {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     public void idBelongsMyMaster(String tableName, Long id, Long masterId) throws Exception {
         String stringQuery;
         stringQuery = "select ((select count(*) from "+tableName+" where id="+id+" and master_id="+masterId+")=0)";
@@ -967,7 +967,6 @@ public class CommonUtilites {
         }
     }
 
-    @SuppressWarnings("Duplicates")
     public void idBelongsMyMaster(String tableName, Integer id, Long masterId) throws Exception {
         String stringQuery;
         stringQuery = "select ((select count(*) from "+tableName+" where id="+id+" and master_id="+masterId+")=0)";
@@ -1156,5 +1155,34 @@ public class CommonUtilites {
 
 
             }};
+    }
+
+    @Transactional
+    public Integer changeDocumentOwner(ChangeOwnerForm request) {
+        String ids = SetOfLongToString(request.getDocumentIds(),",","","");
+        if((securityRepositoryJPA.userHasPermissions_OR(request.getDocumentRegistryId(),request.getEditDocAllCompaniesPermit()) && securityRepositoryJPA.isItAllMyMastersDocuments(request.getDocumentName(),ids)) ||
+                //Если есть право на "Редактирование по своему предприятияю" и  id принадлежат владельцу аккаунта (с которого редактируют) и предприятию аккаунта
+                (securityRepositoryJPA.userHasPermissions_OR(request.getDocumentRegistryId(),request.getEditDocMyCompanyPermit()) && securityRepositoryJPA.isItAllMyMastersAndMyCompanyDocuments(request.getDocumentName(),ids))||
+                //Если есть право на "Редактирование своих документов" и id принадлежат владельцу аккаунта (с которого редактируют) и владелец документов - я
+                (securityRepositoryJPA.userHasPermissions_OR(request.getDocumentRegistryId(),request.getEditMyDocPermit()) && securityRepositoryJPA.isItAllMyMastersAndMyDocuments_(request.getDocumentName(),ids)))
+        {
+            String stringQuery="";
+            try{
+                Long masterId = userRepositoryJPA.getMyMasterId();
+                idBelongsMyMaster("users", request.getNewOwnerId(), masterId);
+                stringQuery =
+                        " update files" +
+                        " set owner_id=" + request.getNewOwnerId() +
+                        ", date_time_changed=now() " +
+                        " where master_id=" + masterId +
+                        " and id in ("+ids+")";
+                entityManager.createNativeQuery(stringQuery).executeUpdate();
+                return 1;
+            }catch (Exception e){
+                logger.error("Exception in method changeDocumentOwner. SQL query: "+stringQuery+", Request params:"+ request.toString(), e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 }

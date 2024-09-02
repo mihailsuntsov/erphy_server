@@ -29,7 +29,16 @@ public class FileCategoriesForm {
     private Long categoryId;
     private String name;
     private Long companyId;
+    private Long ownerId;
     private  int output_order;
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
 
     public Long getId() {
         return id;

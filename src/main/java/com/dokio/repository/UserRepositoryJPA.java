@@ -465,6 +465,35 @@ public class UserRepositoryJPA {
         }
     }
 
+    public List<UsersListJSON> getUsersListByCompanyId(Long cId) {
+        String stringQuery;
+        Long masterId = getMyMasterId();
+        stringQuery="       select " +
+                "           u.id as id, " +
+                "           u.name as name " +
+                "           from users u " +
+                "           where u.status_account<4 and " +
+                "           u.company_id="+cId+" and " +
+                "           u.master_id ="+masterId;
+        stringQuery = stringQuery+" order by u.name asc";
+        try
+        {
+            Query query =  entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<UsersListJSON> usersList = new ArrayList<>();
+            for(Object[] obj:queryList){
+                UsersListJSON doc=new UsersListJSON();
+                doc.setId(Long.parseLong(                               obj[0].toString()));
+                doc.setName((String)                                    obj[1]);
+                usersList.add(doc);
+            }
+            return usersList;
+        }catch (Exception e) {
+            logger.error("Exception in method getEmployeeListByCompanyId. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     //поиск пользователей предприятия по подстроке
     public List<IdAndName> getUsersList(Long companyId, String search_string) {

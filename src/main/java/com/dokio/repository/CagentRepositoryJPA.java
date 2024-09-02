@@ -1830,7 +1830,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 
     @Transactional
     @SuppressWarnings("Duplicates")
-    public boolean updateCagentCategory(CagentCategoriesForm request)
+    public Integer updateCagentCategory(CagentCategoriesForm request)
     {
         if(securityRepositoryJPA.userHasPermissions_OR(12L,"139,140"))//  Контрагенты : "Редактирование категорий"
         {
@@ -1854,13 +1854,13 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("name",request.getName());
                 int i = query.executeUpdate();
-                return true;
+                return 1;
             }
             catch (Exception e) {
                 e.printStackTrace();
-                return false;
+                return null;
             }
-        } else return false;
+        } else return -1;
     }
 
     @Transactional

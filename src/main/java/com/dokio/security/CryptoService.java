@@ -156,7 +156,7 @@ public class CryptoService {
 //            throw new Exception();
         }
     }
-    
+
     public void addCryptoPasswordToDatabase(Long masterId) throws Exception {
         String masterCryptoKey = getMasterCryptoKey(masterId);
         String stringQuery =

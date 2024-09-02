@@ -6704,3 +6704,25 @@ update version set value = '1.4.0-2', date = '15-08-2024';
 
 ------------------------------------------------  end of 1.4.0  ------------------------------------------------------
 alter table users add column crypto_password bytea;
+
+alter table files add column owner_id bigint;
+alter table files add constraint owner_id_fkey foreign key (owner_id) references users (id);
+
+insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+(727,'Просмотр своих файлов','View owned files','Погледајте своје фајлова',13,70),
+(728,'Редактирование своих файлов','Editing owned files','Уређивање своје фајлова',13,110),
+(729,'Удаление своих файлов в корзину','Deleting owned files to the recycle bin','Брисање своје фајлова у корпу',13,150),
+(730,'Корзина - Восстановление своих файлов из корзины','Recycle Bin - Recover owned files from recycle bin','Корпа - Враћење своје фајлова из корпе',13,265),
+(731,'Корзина - Удаление своих файлов из корзины','Recycle Bin - Deletion of owned files from recycle bin','Корпа - Брисање своје фајлови из корпе',13,310);
+
+insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+(732,'Категории - Создание своих категорий','Creation own categories','Стварање своје категорије',13,662),
+(733,'Категории - Просмотр категорий всех предприятий','View categories of all companies','Погледајте категорије свих предузећа',13,664),
+(734,'Категории - Просмотр категорий своего предприятия','View your company categories','Погледајте категорије своје предузеће',13,666),
+(735,'Категории - Просмотр своих категорий','View own categories','Погледајте своје категорије',13,668),
+(736,'Категории - Редактирование своих категорий','Editing own categories','Уређивање своје категорије',13,683),
+(737,'Категории - Удаление своих категорий','Deleting own categories','Избрисање своје категорије',13,710);
+
+alter table file_categories add column owner_id bigint;
+alter table file_categories add constraint owner_id_fkey foreign key (owner_id) references users (id);
+alter table file_categories add column owner varchar (4000);

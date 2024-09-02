@@ -58,6 +58,36 @@ public class FileCategories {
     @ManyToMany(mappedBy = "fileCategories")
     private Set<Files> files;
 
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "company_id", nullable = false)
+    private Companies company;
+
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "master_id", nullable = false)
+    private User master;
+
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "owner_id")
+    private User owner_user;
+
+    private String owner;
+
+    private Long ownerId;
+
+    @PostLoad
+    public void postLoad() {
+        if(owner_user != null) {
+            this.owner = owner_user.getName();
+            this.ownerId = owner_user.getId();
+        } else {
+            this.owner = null;
+            this.ownerId = null;
+        }
+    }
+
     public Long getId() {
         return id;
     }
@@ -96,5 +126,45 @@ public class FileCategories {
 
     public void setFiles(Set<Files> files) {
         this.files = files;
+    }
+
+    public Companies getCompany() {
+        return company;
+    }
+
+    public void setCompany(Companies company) {
+        this.company = company;
+    }
+
+    public User getMaster() {
+        return master;
+    }
+
+    public void setMaster(User master) {
+        this.master = master;
+    }
+
+    public User getOwner_user() {
+        return owner_user;
+    }
+
+    public void setOwner_user(User owner_user) {
+        this.owner_user = owner_user;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
     }
 }

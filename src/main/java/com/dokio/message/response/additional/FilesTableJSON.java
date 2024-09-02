@@ -18,20 +18,20 @@
 
 package com.dokio.message.response.additional;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+//import javax.persistence.Entity;
+//import javax.persistence.Id;
 
-@Entity
+//@Entity
 public class FilesTableJSON {
 
-    @Id
+//    @Id
     private Long id;
     private String name;
     private String original_name;
     private String extention;
     private String path;
     private String description;
-    private String file_size;
+    private Integer file_size;
     private String mime_type;
     private Boolean anonyme_access;
     private String company;
@@ -40,6 +40,24 @@ public class FilesTableJSON {
     private String changer;
     private String date_time_created;
     private String date_time_changed;
+    private Long   owner_id;
+    private String owner;
+
+    public Long getOwner_id() {
+        return owner_id;
+    }
+
+    public void setOwner_id(Long owner_id) {
+        this.owner_id = owner_id;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
 
     public Long getId() {
         return id;
@@ -89,11 +107,11 @@ public class FilesTableJSON {
         this.description = description;
     }
 
-    public String getFile_size() {
+    public Integer getFile_size() {
         return file_size;
     }
 
-    public void setFile_size(String file_size) {
+    public void setFile_size(Integer file_size) {
         this.file_size = file_size;
     }
 

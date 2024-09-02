@@ -466,4 +466,16 @@ public class UsersController {
         catch (Exception e){logger.error("Controller insertUserCagent error", e);
             return new ResponseEntity<>("Controller insertUserCagent error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+    @RequestMapping(
+            value = "/api/auth/getUsersListByCompanyId",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getUsersListByCompanyId(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getUsersListByCompanyId with parameters: " + "company_id: " + company_id);
+        try {return new ResponseEntity<>(userRepositoryJPA.getUsersListByCompanyId(company_id), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller getUsersListByCompanyId error", e);
+            return new ResponseEntity<>("Controller getUsersListByCompanyId error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 }

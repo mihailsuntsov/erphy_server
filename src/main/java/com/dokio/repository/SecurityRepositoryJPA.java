@@ -411,7 +411,7 @@ public class SecurityRepositoryJPA {
 
     @SuppressWarnings("Duplicates")//все ли  документы принадлежат текущему родительскому аккаунту
     public boolean isItAllMyMastersDocuments(String docTableName, String ugIds) {//строка типа "1,2,3,4,5..."
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         ArrayList<Long> decArray = new ArrayList<>();
         for (String s : ugIds.split(",")) {
             decArray.add(new Long(s));
@@ -426,7 +426,7 @@ public class SecurityRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")//все ли  документы принадлежат текущему родительскому аккаунту
     public boolean isItAllMyMastersDocuments(String docTableName, Set<Long> ugIdsL) {//строка типа "1,2,3,4,5..."
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         String ugIds = commonUtilites.SetOfLongToString(ugIdsL,",","","");
         String stringQuery = "select p.id from " +
                 docTableName + " p " +
@@ -438,7 +438,7 @@ public class SecurityRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")//все ли  документы принадлежат текущему родительскому аккаунту и предприятию
     public boolean isItAllMyMastersAndMyCompanyDocuments(String docTableName, String ugIds) {//строка типа "1,2,3,4,5..."
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         ArrayList<Long> decArray = new ArrayList<>();
         for (String s : ugIds.split(",")) {
             decArray.add(new Long(s));
@@ -452,9 +452,24 @@ public class SecurityRepositoryJPA {
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() == decArray.size());
     }
+    public boolean isItAllMyMastersAndMyDocuments_(String docTableName, String ugIds) {//строка типа "1,2,3,4,5..."
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
+        ArrayList<Long> decArray = new ArrayList<>();
+        for (String s : ugIds.split(",")) {
+            decArray.add(new Long(s));
+        }
+        String stringQuery = "select p.id from " +
+                docTableName + " p " +
+                " where " +
+                " p.id in(" + ugIds + ") and " +
+                " (p.owner_id =" +userRepositoryJPA.getMyId() +" or p.owner_id is null) and "+
+                " p.master_id=" + myMasterId;
+        Query query = entityManager.createNativeQuery(stringQuery);
+        return (query.getResultList().size() == decArray.size());
+    }
     @SuppressWarnings("Duplicates")//все ли  документы принадлежат текущему родительскому аккаунту и предприятию и отделениям
     public boolean isItAllMyMastersAndMyCompanyAndMyDepthsDocuments(String docTableName, String ugIds) {//строка типа "1,2,3,4,5..."
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         ArrayList<Long> decArray = new ArrayList<>();
         for (String s : ugIds.split(",")) {
             decArray.add(new Long(s));
@@ -472,7 +487,7 @@ public class SecurityRepositoryJPA {
     }
     @SuppressWarnings("Duplicates")//все ли  документы принадлежат текущему родительскому аккаунту и предприятию и отделениям и я - создатель
     public boolean isItAllMyMastersAndMyCompanyAndMyDepthsAndMyDocuments(String docTableName, String ugIds) {//строка типа "1,2,3,4,5..."
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         ArrayList<Long> decArray = new ArrayList<>();
         for (String s : ugIds.split(",")) {
             decArray.add(new Long(s));
@@ -491,7 +506,7 @@ public class SecurityRepositoryJPA {
         return (query.getResultList().size() == decArray.size());
     }
     public boolean isItAllMyDocuments(String docTableName, List<Long> decArray) {
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         String ugIds = commonUtilites.ListOfLongToString(decArray,",","","");
         String stringQuery = "select p.id from " +
                 docTableName + " p " +
@@ -507,7 +522,7 @@ public class SecurityRepositoryJPA {
 
     //true если id предприятия принадлежит аккаунту, который является master-аккаунтом текущего пользователя.
     public Boolean companyBelongsToMyMastersAccount(Long id){
-        Long myMasterId = this.userRepositoryJPA.getUserMasterIdByUsername(this.userRepository.getUserName());
+        Long myMasterId = this.userRepositoryJPA.getMyMasterId();
         String stringQuery = "select p.id from companies p where p.id="+id+" and p.master_id=" + myMasterId ;
         Query query = entityManager.createNativeQuery(stringQuery);
         return (query.getResultList().size() > 0);

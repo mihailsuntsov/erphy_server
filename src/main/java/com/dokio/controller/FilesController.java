@@ -366,10 +366,12 @@ public class FilesController {
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getFileCategoriesTrees( @RequestParam("company_id") Long companyId) {
         logger.info("Processing get request for path /api/auth/getFileCategoriesTrees with fileId=" + companyId.toString());
-        List<FileCategories> returnList;
+        List<FileCategories> returnList = new ArrayList<>();
         List<Integer> categoriesRootIds = filesRepositoryJPA.getCategoriesRootIds(companyId);//
         try {
-            returnList = filesRepositoryJPA.getFileCategoriesTrees(categoriesRootIds);
+            if(!Objects.isNull(categoriesRootIds)){
+                returnList = filesRepositoryJPA.getFileCategoriesTrees(categoriesRootIds);
+            }
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
             return responseEntity;
         }
@@ -452,27 +454,21 @@ public class FilesController {
     @SuppressWarnings("Duplicates")
     public ResponseEntity<?> updateFileCategory(@RequestBody FileCategoriesForm request){
         logger.info("Processing post request for path /api/auth/updateFileCategory: " + request.toString());
-
-        if(filesRepositoryJPA.updateFileCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.updateFileCategory(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller updateFileCategory error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/deleteFileCategory")
     public ResponseEntity<?> deleteFileCategory(@RequestBody FileCategoriesForm request){
         logger.info("Processing post request for path /api/auth/deleteFileCategory: " + request.toString());
-
-        if(filesRepositoryJPA.deleteFileCategory(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when updating", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.deleteFileCategory(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller deleteFileCategory error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/saveChangeFileCategoriesOrder")
@@ -480,14 +476,11 @@ public class FilesController {
     public ResponseEntity<?> saveChangeFileCategoriesOrder(@RequestBody List<FileCategoriesForm> request){
         logger.info("Processing post request for path /api/auth/saveChangeFileCategoriesOrder: [" + request.stream().
                 map(FileCategoriesForm::toString).collect(Collectors.joining(", ")) + "]");
-
-        if(filesRepositoryJPA.saveChangeCategoriesOrder(request)){
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("[\n" + "    1\n" +  "]", HttpStatus.OK);
-            return responseEntity;
-        } else {
-            ResponseEntity<String> responseEntity = new ResponseEntity<>("Error when saving", HttpStatus.BAD_REQUEST);
-            return responseEntity;
-        }
+        try {return new ResponseEntity<>(filesRepositoryJPA.saveChangeCategoriesOrder(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller deleteFileCategory error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/setCategoriesToFiles")
@@ -498,8 +491,7 @@ public class FilesController {
         Set<Long> filesIds = form.getSetOfLongs1();
         Set<Long> categoriesIds = form.getSetOfLongs2();
         Boolean save = form.getYesNo();
-
-        Boolean result = filesRepositoryJPA.setCategoriesToFiles(filesIds, categoriesIds, save);
+        Integer result = filesRepositoryJPA.setCategoriesToFiles(filesIds, categoriesIds, save);
         if (!Objects.isNull(result)) {//вернет true - ок, false - недостаточно прав,  null - ошибка
             return new ResponseEntity<>(result, HttpStatus.OK);
         } else {

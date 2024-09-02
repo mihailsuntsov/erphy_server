@@ -87,6 +87,10 @@ public class Files {
     @JoinColumn(name = "changer_id")
     private User changer;
 
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @Column(name="date_time_created", nullable = false)
     @JsonSerialize(using = com.dokio.util.JSONSerializer.class)
     @JsonDeserialize(using = com.dokio.util.JSONDeserialize.class)
@@ -153,6 +157,14 @@ public class Files {
 
     public String getDescription() {
         return description;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public void setDescription(String description) {
