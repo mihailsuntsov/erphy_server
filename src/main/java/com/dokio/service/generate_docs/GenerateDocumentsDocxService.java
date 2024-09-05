@@ -21,6 +21,8 @@ package com.dokio.service.generate_docs;
 import java.io.*;
 import java.util.*;
 
+import com.dokio.security.CryptoService;
+import com.dokio.service.StorageService;
 import de.phip1611.Docx4JSRUtil;
 import org.apache.log4j.Logger;
 import org.docx4j.XmlUtils;
@@ -32,14 +34,21 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import com.j256.simplemagic.ContentInfo;
 import com.j256.simplemagic.ContentInfoUtil;
 import org.docx4j.wml.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
+@Service
 public class GenerateDocumentsDocxService {
 
     Logger logger = Logger.getLogger("GenerateDocumentsDocxService");
+
+    @Autowired
+    StorageService storageService;
+
 
     public GenerateDocumentsDocxService() {
     }
@@ -162,48 +171,78 @@ public class GenerateDocumentsDocxService {
 
 
 
-    public boolean generateDocXDocument(String filePath, String outputDocument, Map <String, String> replaceMap) throws Exception {
-        try{
-            File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
-            if (template != null && outputDocument != null && !outputDocument.isEmpty()){
-                if (template.exists()){
-                    if (!outputDocument.endsWith(FORMAT)){
-                        log.warn("The output document must be .docx");
-                        return false;
-                    }
-                    // Проверяем что mime соответствует нашим высоким требованиям
-                    String mimeType = getMimeType(template);
-                    if (mimeType != null && (mimeType.equals(MIME_TYPE)||mimeType.equals(MIME_TYPE2))){
+    public byte[] generateDocXDocument(String filePath, Map <String, String> replaceMap, Long masterId) throws Exception {
+//        try{
+
+//            File template= new File(filePath);//сформировалась строка типа new File("C:\\Temp\\files\\4\\1\\2020/f561b9d3-e27-2020-09-16-15-09-25-572.docx")
+//            if (template != null && outputDocument != null && !outputDocument.isEmpty()){
+//                if (template.exists()){
+//                    if (!outputDocument.endsWith(FORMAT)){
+//                        log.warn("The output document must be .docx");
+//                        return false;
+//                    }
+//                    // Проверяем что mime соответствует нашим высоким требованиям
+//                    String mimeType = getMimeType(template);
+//                    if (mimeType != null && (mimeType.equals(MIME_TYPE)||mimeType.equals(MIME_TYPE2))){
                         try {
+                            byte[] decryptedBytesOfFile = storageService.loadFile(filePath, masterId);
                             // Загружаем темплейт
-                            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new FileInputStream(template));
+                            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new ByteArrayInputStream(decryptedBytesOfFile));
+//                            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new FileInputStream(template));
                             Docx4JSRUtil.searchAndReplace(wordMLPackage, replaceMap);
-                            // Вывод docx
-                            OutputStream output = new FileOutputStream(outputDocument);
+                            OutputStream outputStream = new ByteArrayOutputStream();
                             Save saver = new Save(wordMLPackage);
-                            if (saver.save(output)){
-                                log.info("Document " + outputDocument + " ok");
-                                return true;
-                            }
+                            saver.save(outputStream);
+                            return ((ByteArrayOutputStream) outputStream).toByteArray();
+//                            // Вывод docx
+//                            OutputStream output = new FileOutputStream(outputDocument);
+//                            Save saver = new Save(wordMLPackage);
+//                            if (saver.save(output)){
+//                                log.info("Document " + outputDocument + " writed successfully");
+//                            } else {
+//                                log.info("Document " + outputDocument + " writing error!");
+//                                throw new Exception("Document " + outputDocument + " writing error!");
+//                            }
+//                            return true;
+
                         } catch (Docx4JException e) {
                             e.printStackTrace();
+                            logger.error("Docx4JException in method GenerateDocumentsDocxService/generateDocXDocument. ", e);
+                            return null;
                         } catch (Exception e) {
                             e.printStackTrace();
+                            logger.error("Exception in method GenerateDocumentsDocxService/generateDocXDocument. ", e);
+                            return null;
                         }
-                    }else{
-                        log.error("Invalid document mime type");
-                    }
-                }
-            }
-            return false;
-
-        } catch (Exception e) {
-            logger.error("Exception in method UserRepositoryJPA/getMyDateTime. ", e);
+//                    }else{
+//                        log.error("Invalid document mime type");
+//                    }
+//                }
+//            }
+//            return false;
+//
+//        } catch (Exception e) {
+//            logger.error("Exception in method UserRepositoryJPA/getMyDateTime. ", e);
+//            e.printStackTrace();
+//            throw new Exception();
+//        }
+    }
+    public WordprocessingMLPackage generateMLPackage(String filePath, Map <String, String> replaceMap, Long masterId) throws Exception {
+        try {
+            byte[] decryptedBytesOfFile = storageService.loadFile(filePath, masterId);
+            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new ByteArrayInputStream(decryptedBytesOfFile));
+            Docx4JSRUtil.searchAndReplace(wordMLPackage, replaceMap);
+            return wordMLPackage;
+        } catch (Docx4JException e) {
             e.printStackTrace();
-            throw new Exception();
+            logger.error("Docx4JException in method GenerateDocumentsDocxService/generateMLPackage. ", e);
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method GenerateDocumentsDocxService/generateMLPackage. ", e);
+            return null;
         }
     }
-
 
 
 //    public boolean generateDocument(File template, String outputDocument, Map<String,String> changeMap, List<Map<String,String>> mapAsList){

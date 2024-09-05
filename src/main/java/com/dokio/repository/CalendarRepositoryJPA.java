@@ -9,6 +9,7 @@ import com.dokio.message.response.additional.IdNameAndDescription;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
 import com.dokio.message.response.additional.calendar.*;
 import com.dokio.message.response.additional.appointment.AppointmentEmployee;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -51,8 +52,10 @@ public class CalendarRepositoryJPA {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+//    @Autowired
+//    private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
-    private LinkedDocsUtilites linkedDocsUtilites;
+    private CryptoService cryptoService;
 
 
 
@@ -75,7 +78,7 @@ public class CalendarRepositoryJPA {
 
         String stringQuery = " select " +
             "           a.id as id, " +
-            "           a.name  as name, " +
+            "           coalesce(pgp_sym_decrypt(a.name_enc,:cryptoPassword),a.name) as name, " +
             "           concat(to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as start_, " +
             "           concat(to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','YYYY-MM-DD'), 'T', to_char(a.ends_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','HH24:MI:SS.MS'), 'Z') as end_, " +
             "           ue.id as employee_id, " +
@@ -86,7 +89,7 @@ public class CalendarRepositoryJPA {
             "           sum(coalesce(prq.quantity,0)) as need_res_qtt, " +
             "           ssd.name as status_name, " +
             "           ssd.status_type as status_type, " + //тип статуса : 1 - обычный; 2 - конечный положительный 3 - конечный отрицательный
-                                                           //status type:  1 - normal;  2 - final positive         3 - final negative
+                                                            //status type:  1 - normal;  2 - final positive         3 - final negative
             "           ssd.id as status_id, " +
             "           ssd.color as status_color," +
             "           to_char(a.starts_at_time at time zone '"+myTimeZone+"' at time zone 'Etc/GMT+0','"+dateFormat+"') as date_start," +
@@ -150,11 +153,12 @@ public class CalendarRepositoryJPA {
 
         try{
             Long currentAppointmentId = 0L;
-
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
             CalendarEventJSON appointment = new CalendarEventJSON();
 //            ItemResource resource = new ItemResource();
             Set<ItemResource> resources = new HashSet<>();
             Query query = entityManager.createNativeQuery(stringQuery);//
+            query.setParameter("cryptoPassword", cryptoPassword);
             List<Object[]> queryList = query.getResultList();
             CalendarUser currentEmployee;
             Meta meta = new Meta();

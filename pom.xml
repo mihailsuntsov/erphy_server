@@ -213,7 +213,18 @@
             <artifactId>log4j</artifactId>
             <version>1.2.14</version>
         </dependency>
-
+        <!--converting xhtml to docx-->
+        <dependency>
+            <groupId>org.docx4j</groupId>
+            <artifactId>docx4j-ImportXHTML</artifactId>
+            <version>8.3.11</version>
+        </dependency>
+        <!--convert html to well formatted xhtml-->
+        <dependency>
+            <groupId>com.github.jtidy</groupId>
+            <artifactId>jtidy</artifactId>
+            <version>1.0.4</version>
+        </dependency>
         <!-- Web -->
         <dependency>
             <groupId>javax.servlet.jsp.jstl</groupId>

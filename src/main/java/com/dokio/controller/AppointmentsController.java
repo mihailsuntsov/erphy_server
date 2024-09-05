@@ -12,8 +12,19 @@ import com.dokio.service.StorageService;
 import com.dokio.service.TemplatesService;
 import com.dokio.service.generate_docs.GenerateDocumentsDocxService;
 import com.dokio.util.CommonUtilites;
+import com.google.common.collect.Lists;
 import org.apache.commons.jexl3.JxltEngine;
 import org.apache.log4j.Logger;
+import org.docx4j.TextUtils;
+import org.docx4j.TraversalUtil;
+import org.docx4j.com.google.common.base.Preconditions;
+import org.docx4j.convert.in.xhtml.FormattingOption;
+import org.docx4j.convert.in.xhtml.ImportXHTMLProperties;
+import org.docx4j.convert.in.xhtml.XHTMLImporter;
+import org.docx4j.openpackaging.io3.Save;
+import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.openpackaging.parts.WordprocessingML.StyleDefinitionsPart;
+import org.docx4j.wml.*;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 import org.jxls.util.Util;
@@ -31,11 +42,19 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
+import org.apache.commons.io.FileUtils;
+import org.docx4j.XmlUtils;
+import org.docx4j.convert.in.xhtml.XHTMLImporterImpl;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.w3c.tidy.Tidy;
+import org.docx4j.model.properties.run.FontSize;
 
 @Controller
 public class AppointmentsController {
@@ -60,6 +79,8 @@ public class AppointmentsController {
     StorageService storageService;
     @Autowired
     UserRepositoryJPA userRepositoryJPA;
+    @Autowired
+    GenerateDocumentsDocxService gt;
 
     @PostMapping("/api/auth/getAppointmentTable")
     @SuppressWarnings("Duplicates")
@@ -246,43 +267,20 @@ public class AppointmentsController {
         catch (Exception e){logger.error("Controller getPreloadServicesIdsByResourceId error", e);
             return new ResponseEntity<>("Controller getPreloadServicesIdsByResourceId error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-    // печать документов
 
-//    @GetMapping("/api/auth/getCompanyCard/{fileId:.+}")
-//    @ResponseBody
-//    public ResponseEntity<Resource> getCompanyCard(@PathVariable String fileId) throws UnsupportedEncodingException {
-//        logger.info("Processing get request for path /api/auth/getCompanyCard: fileId=" + fileId);
-//
-//        FileInfoJSON fileInfo = fileRepository.getFileAuth(fileId); //Взять path файла, если есть права или если он открыт на общий доступ
-//        if(fileInfo !=null){
-//            fileInfo.setOriginal_name(fileId);//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
-//            Resource file = companyRepositoryJPA.getCompanyCard(fileInfo);//и отправим экземпляр класса FileInfoJSON с путём к файлу и системным именем файла на получение карточки
-//            if(file!=null) {//если файл есть - значит docx4j отработал, и успешно записал файл Карточка предприятия.docx.
-//                String fileName = "Карточка предприятия.docx";
-//                return ResponseEntity.ok()
-//                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
-//                        .body(file);
-//            }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
-//                return responseEntity;}
-//        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
-//            return responseEntity;}
-//    }
 
     @RequestMapping(
             value = "/api/auth/appointmentPrintDocx",
             params = {"file_name", "doc_id", "cagent_id"},
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
-    public ResponseEntity<Resource> appointmentPrintDocx (  HttpServletResponse response,
+    public ResponseEntity<byte[]> appointmentPrintDocx (  HttpServletResponse response,
                                         @RequestParam("file_name") String filename,
                                         @RequestParam("cagent_id") Long cagentId,
                                         @RequestParam("doc_id") Long doc_id) throws Exception, UnsupportedEncodingException {
         try{
             FileInfoJSON fileInfo = tservice.getFileInfo(filename);
             if(fileInfo !=null){
-                GenerateDocumentsDocxService gt = new GenerateDocumentsDocxService();
-//                fileInfo.setOriginal_name(fileInfo.getName());//подменим в этом поле оригинальное название файла системным именем (типа 0f8fkdlk-234-342-34-43-343.docx)
                 String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
-                String outputDocument = fileInfo.getPath()+"/"+fileInfo.getOriginal_name();
                 Long masterId = userRepositoryJPA.getMyMasterId();
                 AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
 
@@ -295,12 +293,12 @@ public class AppointmentsController {
                         firstCustomersServiceIndex=indx;
                     indx++;
                 }
+
                 final int i = firstCustomersServiceIndex;
                 BigDecimal serviceSumprice = doc.getAppointmentsProductTable().get(i).getProduct_count().multiply(doc.getAppointmentsProductTable().get(i).getProduct_price()).setScale(2, BigDecimal.ROUND_HALF_UP);
                 Map<String, String> replaceMap = new HashMap<String, String>() {{
                     put("${APP_EMPLOYEE}",              doc.getEmployeeName());
                     put("${APP_JOB_TITLE}",             doc.getJobtitle());
-                    put("${APP_ADDITIONAL_INFO}",       doc.getDescription());
                     put("${DOC_NUMBER}",                doc.getDoc_number().toString());
                     put("${APP_DATE_START}",            doc.getDate_start_user_format());
                     put("${APP_TIME_START}",            doc.getTime_start_user_format());
@@ -325,18 +323,100 @@ public class AppointmentsController {
                 replaceMap.putAll(commonUtilites.getCompanyMapValues(doc.getCompany_id()));
                 replaceMap.putAll(myDateTime);
 
-                gt.generateDocXDocument(filePath, outputDocument, replaceMap);
+                BufferedReader br = new BufferedReader(
+                        new StringReader(
+                                doc.getDescription()
+                        ));
+                StringWriter sw = new StringWriter();
+                Tidy t = new Tidy();
+                t.setDropEmptyParas(true);
+                t.setShowWarnings(false); //to hide errors
+                t.setQuiet(true); //to hide warning
+                t.setUpperCaseAttrs(false);
+                t.setUpperCaseTags(false);
+                t.setInputEncoding("UTF-8");
+                t.setOutputEncoding("UTF-8");
+                t.setXmlOut(true);
+                t.parse(br,sw);
+                StringBuffer sb = sw.getBuffer();
+                String strClean = sb.toString();
+                br.close();
+                sw.close();
+                String wrappedXHTML = new StringBuilder(strClean).toString().
+                replaceAll("class=\"ql-size-huge\"", "style=\"font-size: 26px; margin-bottom: 0px;\"").
+                replaceAll("class=\"ql-size-large\"", "style=\"font-size: 18px; margin-bottom: 0px;\"").
+                replaceAll("class=\"ql-size-small\"", "style=\"font-size: 10px; margin-bottom: 0px;\"").
+                replaceAll("<br />", "").
+                replaceAll("<p>", "<p style=\"font-size: 12px; margin-left: -8px; margin-bottom: 0px;\">");
+//                replaceAll("<ul>","<ul class='Bullet0'>");
 
-                Path path = Paths.get(outputDocument);
-                Resource resource = new UrlResource(path.toUri());
-                if (resource.exists() || resource.isReadable()) {
+                WordprocessingMLPackage wordMLPackageToConvert = WordprocessingMLPackage.createPackage();
 
-                    String fileName = fileInfo.getOriginal_name();
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8").replace("+", " ") + "\"")
-                            .body(resource);
-                }else {ResponseEntity responseEntity = new ResponseEntity<>("Невозможно сформировать карточку предприятия", HttpStatus.INTERNAL_SERVER_ERROR);
-                    return responseEntity;}
+                ImportXHTMLProperties.setProperty("docx4j-ImportXHTML.fonts.default.serif", "Arial");
+                ImportXHTMLProperties.setProperty("docx4j-ImportXHTML.fonts.default.sans-serif", "Arial");
+                ImportXHTMLProperties.setProperty("docx4j-ImportXHTML.fonts.default.monospace", "Courier New");
+
+                XHTMLImporterImpl XHTMLImporter = new XHTMLImporterImpl(wordMLPackageToConvert);
+
+                final List<Object> descriptionAsWordML = XHTMLImporter.convert( wrappedXHTML, null);
+
+                wordMLPackageToConvert.getMainDocumentPart().getContent().addAll(descriptionAsWordML);
+                String description = XmlUtils.marshaltoString(wordMLPackageToConvert.getMainDocumentPart().getJaxbElement(), true, true);
+
+                WordprocessingMLPackage wordMLPackage = gt.generateMLPackage(filePath, replaceMap, masterId);
+                Map<String, List<Object>> replacements = new HashMap<String, List<Object>>() {{
+                    put("${APP_ADDITIONAL_INFO}", descriptionAsWordML);
+                }};
+
+
+                MainDocumentPart mainPart = wordMLPackage.getMainDocumentPart();
+
+                // look for all P elements in the specified object
+                final List<P> paragraphs = Lists.newArrayList();
+                new TraversalUtil(mainPart, new TraversalUtil.CallbackImpl() {
+                    @Override
+                    public List<Object> apply(Object o) {
+                        if (o instanceof P) {
+                            paragraphs.add((P) o);
+                        }
+                        return null;
+                    }
+                });
+
+                // code by epochcoder from https://gist.github.com/epochcoder/478a72a4b59a43995373
+                // run through all found paragraphs to located identifiers
+                for (final P paragraph : paragraphs) {
+                    // check if this is one of our identifiers
+                    final StringWriter paragraphText = new StringWriter();
+                    try {
+                        TextUtils.extractText(paragraph, paragraphText);
+                    } catch (Exception ex) {
+                        logger.warn("failure while extracting text from w:p", ex);
+                    }
+                    final String identifier = paragraphText.toString();
+                    if (identifier != null && replacements.containsKey(identifier)) {
+                        final List<Object> listToModify = mainPart.getContent();
+                        if (listToModify != null) {
+                            final int index = listToModify.indexOf(paragraph);
+                            Preconditions.checkState(index > -1, "could not located the paragraph in the specified list!");
+                            // remove the paragraph from it's current index
+                            listToModify.remove(index);
+                            // add the converted HTML paragraphs
+                            listToModify.addAll(index, replacements.get(identifier));
+                        }
+                    }
+                }
+
+                removeSpacePreserveRecursive(wordMLPackage.getMainDocumentPart().getJaxbElement().getBody());
+
+                OutputStream outputStream = new ByteArrayOutputStream();
+                Save saver = new Save(wordMLPackage);
+                saver.save(outputStream);
+
+                        String fileName = fileInfo.getOriginal_name();
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"UTF-8\"")
+                        .body(((ByteArrayOutputStream) outputStream).toByteArray());
 
             } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permits or there is no file in a storage.", HttpStatus.FORBIDDEN);
                 return responseEntity;}
@@ -349,6 +429,26 @@ public class AppointmentsController {
 
     }
 
+    // code by achimmihca from https://github.com/plutext/docx4j-ImportXHTML/issues/59
+    private static void removeSpacePreserveRecursive(Object obj)
+    {
+        if (obj instanceof Text)
+        {
+            Text text = (Text) obj;
+            if ("preserve".equals(text.getSpace()))
+            {
+                text.setSpace(null);
+            }
+        }
+        else if (obj instanceof ContentAccessor)
+        {
+            ContentAccessor contentAccessor = (ContentAccessor) obj;
+            for (Object child : contentAccessor.getContent())
+            {
+                removeSpacePreserveRecursive(child);
+            }
+        }
+    }
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/appointmentPrint",
@@ -358,11 +458,13 @@ public class AppointmentsController {
                                   @RequestParam("file_name") String filename,
                                   @RequestParam("cagent_id") Long cagentId,
                                   @RequestParam("doc_id") Long doc_id) throws Exception {
+
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
-        File template = new File(fileInfo.getPath()+"/"+filename);
 
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        byte[] decryptedBytesOfFile = storageService.loadFile(fileInfo.getPath()+"/"+filename, masterId);
+        InputStream is = new ByteArrayInputStream(decryptedBytesOfFile);
 
-        InputStream is = new FileInputStream(template);
         OutputStream os = response.getOutputStream();
         try {
             AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);

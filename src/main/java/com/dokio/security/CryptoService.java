@@ -133,7 +133,7 @@ public class CryptoService {
     }
 
 
-    String getCryptoPasswordFromDatabase(Long masterId) throws Exception {
+    public String getCryptoPasswordFromDatabase(Long masterId) throws Exception {
         String masterCryptoKey = getMasterCryptoKey(masterId);
         String stringQuery =
                         " select pgp_sym_decrypt(\"crypto_password\",'"+masterCryptoKey+"') " +

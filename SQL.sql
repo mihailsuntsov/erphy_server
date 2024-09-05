@@ -6726,3 +6726,7 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 alter table file_categories add column owner_id bigint;
 alter table file_categories add constraint owner_id_fkey foreign key (owner_id) references users (id);
 alter table file_categories add column owner varchar (4000);
+
+alter table scdl_appointments drop column description;
+alter table scdl_appointments add column description bytea;
+alter table scdl_appointments add column name_enc bytea;
