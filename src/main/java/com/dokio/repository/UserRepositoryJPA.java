@@ -34,6 +34,7 @@ import com.dokio.message.response.additional.appointment.EmployeeWithServices;
 import com.dokio.message.response.additional.appointment.JobtitleWithEmployees;
 import com.dokio.message.response.additional.eployeescdl.EmployeeScedule;
 import com.dokio.model.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.service.StorageService;
 import com.dokio.util.CommonUtilites;
@@ -105,6 +106,8 @@ public class UserRepositoryJPA {
     DocumentsRepositoryJPA documentsRepository;
     @Autowired
     SpravStatusDocRepository ssd;
+    @Autowired
+    private CryptoService cryptoService;
 
 
 
@@ -888,7 +891,7 @@ public class UserRepositoryJPA {
                     "           p.counterparty_id as counterparty_id, " +
                     "           p.incoming_service_id as incoming_service_id, " +
                     "           coalesce(sjt.name,'') as jobtitle_name, " +
-                    "           cg.name as counterparty_name, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as counterparty_name, " +
                     "           prd.name as service_name, " +
                     "           coalesce(p.is_display_in_employee_list, false) as is_display_in_employee_list" +
                     "           from users p" +
@@ -911,6 +914,8 @@ public class UserRepositoryJPA {
 //                UsersJSON userJSON = (UsersJSON) query.getSingleResult();
 //                return userJSON;
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 List<Object[]> queryList = query.getResultList();
                 UserJSON_ doc = new UserJSON_();
                 for(Object[] obj:queryList){

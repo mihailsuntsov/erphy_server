@@ -1022,7 +1022,7 @@ public class AppointmentRepositoryJPA {
     @Transactional
     public Boolean saveSettingsAppointment(SettingsAppointmentForm row) {
         String stringQuery="";
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
         Long myId=userRepository.getUserId();
         try {
             commonUtilites.idBelongsMyMaster("companies", row.getCompanyId(), myMasterId);
@@ -2417,5 +2417,56 @@ public class AppointmentRepositoryJPA {
         query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId_LONG());
         query.setParameter("myId", userRepository.getUserId());
         return (query.getResultList().size() == decArray.size());
+    }
+
+    @Transactional
+    public Integer updateDescriptionDefaultTemplate(SettingsAppointmentForm settings){
+        String stringQuery;
+        Long myId=userRepository.getUserId();
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery=
+                " insert into settings_appointment (" +
+                        " master_id, " +
+                        " company_id, " +
+                        " user_id, " +
+                        " date_time_update, " +
+                        " description_template " +
+                        "   ) values (" +
+                        masterId + "," +
+                        settings.getCompanyId() + "," +
+                        myId + "," +
+                        " now(), " +
+                        ":description_template)" +
+                        " ON CONFLICT ON CONSTRAINT settings_appointment_user_uq " +// "upsert"
+                        " DO update set " +
+                        " date_time_update = now()," +
+                        " description_template = :description_template";
+        try {
+            commonUtilites.idBelongsMyMaster("companies", settings.getCompanyId(), masterId);
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("description_template",settings.getDescriptionDefaultTemplate());
+            query.executeUpdate();
+            return 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method updateDescriptionDefaultTemplate. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+    public SettingsAppointmentJSON getDescriptionDefaultTemplate(Long companyId) {
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        Long myId=userRepository.getUserId();
+        String stringQuery="select coalesce(u.description_template,'') from settings_appointment u where u.user_id = "+myId+" and u.company_id="+companyId;
+        try{
+            commonUtilites.idBelongsMyMaster("companies", companyId, masterId);
+            Query query = entityManager.createNativeQuery(stringQuery);
+            SettingsAppointmentJSON result = new SettingsAppointmentJSON();
+            result.setDescriptionDefaultTemplate((String) query.getSingleResult());
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getDescriptionDefaultTemplate. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 }

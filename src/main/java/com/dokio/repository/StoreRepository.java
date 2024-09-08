@@ -31,6 +31,7 @@ import com.dokio.message.response.additional.StoreOrderingResultJSON;
 import com.dokio.message.response.additional.StoreTranslationCategoryJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.LanguageVersionOfSiteIsNotUniqueException;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -79,6 +80,8 @@ public class StoreRepository {
     MailRepository mailRepository;
     @Autowired
     CommonUtilites cu;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -252,7 +255,7 @@ public class StoreRepository {
                     "           p.store_days_for_esd, " +           // number of days for ESD of created store order. Default is 0
                     "           coalesce(p.store_auto_reserve,false), " +// auto reserve product after getting internet store order
                     "           p.store_ip, " +                     // internet-store ip address
-                    "           cag.name as store_default_customer," + // customer_id if store_if_customer_not_found="use_default"
+                    "           pgp_sym_decrypt(cag.name_enc,:cryptoPassword) as store_default_customer, " + // customer_id if store_if_customer_not_found="use_default"
                     "           uoc.name as store_default_creator," +// user-creator of orders that incoming from the online store
                     "           p.is_let_sync," + // synchronization allowed
                     "           (select is_saas from settings_general) as is_saas," + // is this SaaS? (getting from settings_general)
@@ -276,6 +279,8 @@ public class StoreRepository {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 List<Object[]> queryList = query.getResultList();
 
                 StoresJSON doc = new StoresJSON();

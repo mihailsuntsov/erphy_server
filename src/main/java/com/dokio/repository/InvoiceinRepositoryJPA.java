@@ -26,6 +26,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -71,7 +72,9 @@ public class InvoiceinRepositoryJPA {
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    private CryptoService cryptoService;
+//    @Autowired
+//    private CustomersOrdersRepositoryJPA customersOrdersRepository;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -97,7 +100,7 @@ public class InvoiceinRepositoryJPA {
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -120,7 +123,7 @@ public class InvoiceinRepositoryJPA {
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from invoicein_product where invoicein_id=p.id),0) as sum_price, " +
                     "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as invoicein_date, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from invoicein_product ip where coalesce(ip.invoicein_id,0)=p.id) as product_count," + //подсчет кол-ва товаров\
                     "           p.name as name," +
@@ -140,7 +143,7 @@ public class InvoiceinRepositoryJPA {
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
@@ -162,7 +165,7 @@ public class InvoiceinRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
@@ -180,7 +183,8 @@ public class InvoiceinRepositoryJPA {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
 
@@ -238,7 +242,7 @@ public class InvoiceinRepositoryJPA {
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
         boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long masterId = userRepositoryJPA.getMyMasterId();
 
         stringQuery = "select  p.id as id " +
                 "           from invoicein p " +
@@ -247,7 +251,7 @@ public class InvoiceinRepositoryJPA {
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId +
+                "           where  p.master_id=" + masterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
@@ -267,7 +271,7 @@ public class InvoiceinRepositoryJPA {
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
@@ -282,10 +286,17 @@ public class InvoiceinRepositoryJPA {
 
             Query query = entityManager.createNativeQuery(stringQuery);
 
+
+
             if(needToSetParameter_MyDepthsIds)
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+            {   query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("sg", searchString);
+                query.setParameter("cryptoPassword", cryptoPassword);}
+
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -394,7 +405,7 @@ public class InvoiceinRepositoryJPA {
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select " +
                     "           p.id as id, " +
@@ -416,7 +427,7 @@ public class InvoiceinRepositoryJPA {
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           to_char(p.invoicein_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as invoicein_date, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -439,7 +450,7 @@ public class InvoiceinRepositoryJPA {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.id= " + id;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(32L, "452")) //Если нет прав на просм по всем предприятиям
@@ -454,6 +465,9 @@ public class InvoiceinRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -987,10 +1001,11 @@ public class InvoiceinRepositoryJPA {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
+        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery = "select " +
                 "           p.department_id as department_id, " +                           // отделение
                 "           p.cagent_id as cagent_id, " +
-                "           cg.name as cagent, " +                                          // контрагент
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +                                      // контрагент
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +                                 // предприятие
                 "           coalesce(p.autocreate,false) as autocreate," +                  // автосоздание (не нужно нажимать кнопку Создать)
@@ -1003,6 +1018,8 @@ public class InvoiceinRepositoryJPA {
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             List<Object[]> queryList = query.getResultList();
 
             if(queryList.size()==0) throw new NoResultException();
@@ -1024,13 +1041,11 @@ public class InvoiceinRepositoryJPA {
             return returnObj;
         } catch (NoResultException nre) {
             return new SettingsInvoiceinJSON(false, false, false, "");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Exception in method getSettingsInvoicein. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            throw e;
+            return null;
         }
-
     }
 
     @Transactional

@@ -24,10 +24,10 @@ public class CagentsJSON {
 
     private Long id;
     private String company;
-    private String master;
+//    private String master;
     private String creator;
     private String changer;
-    private Long master_id;
+//    private Long master_id;
     private Long creator_id;
     private Long changer_id;
     private Long company_id;
@@ -47,8 +47,8 @@ public class CagentsJSON {
     private String email;
     private String zip_code;
     private Integer country_id;
-    private Integer region_id;
-    private Integer city_id;
+//    private Integer region_id;
+//    private Integer city_id;
     private String street;
     private String home;
     private String flat;
@@ -62,8 +62,8 @@ public class CagentsJSON {
     private String jr_jur_ogrn;
     private String jr_zip_code;
     private Integer jr_country_id;
-    private Integer jr_region_id;
-    private Integer jr_city_id;
+//    private Integer jr_region_id;
+//    private Integer jr_city_id;
     private String jr_street;
     private String jr_home;
     private String jr_flat;
@@ -87,17 +87,46 @@ public class CagentsJSON {
     private String country;
     private String region;
     private String city;
-    private String area;
+//    private String area;
     private String jr_country;
     private String jr_region;
     private String jr_city;
-    private String jr_area;
+//    private String jr_area;
 
     private String type;                        // entity or individual
     private String legal_form;
+
+    private String id_card_enc;
+    private String date_of_birth_enc;
+    private String sex_enc;
+
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+    public String getId_card_enc() {
+        return id_card_enc;
+    }
+
+    public void setId_card_enc(String id_card_enc) {
+        this.id_card_enc = id_card_enc;
+    }
+
+    public String getDate_of_birth_enc() {
+        return date_of_birth_enc;
+    }
+
+    public void setDate_of_birth_enc(String date_of_birth_enc) {
+        this.date_of_birth_enc = date_of_birth_enc;
+    }
+
+    public String getSex_enc() {
+        return sex_enc;
+    }
+
+    public void setSex_enc(String sex_enc) {
+        this.sex_enc = sex_enc;
+    }
 
     public String getType() {
         return type;
@@ -163,13 +192,13 @@ public class CagentsJSON {
         this.company = company;
     }
 
-    public String getMaster() {
-        return master;
-    }
+//    public String getMaster() {
+//        return master;
+//    }
 
-    public void setMaster(String master) {
-        this.master = master;
-    }
+//    public void setMaster(String master) {
+//        this.master = master;
+//    }
 
     public String getCreator() {
         return creator;
@@ -187,13 +216,13 @@ public class CagentsJSON {
         this.changer = changer;
     }
 
-    public Long getMaster_id() {
-        return master_id;
-    }
+//    public Long getMaster_id() {
+//        return master_id;
+//    }
 
-    public void setMaster_id(Long master_id) {
-        this.master_id = master_id;
-    }
+//    public void setMaster_id(Long master_id) {
+//        this.master_id = master_id;
+//    }
 
     public Long getCreator_id() {
         return creator_id;
@@ -323,21 +352,21 @@ public class CagentsJSON {
         this.country_id = country_id;
     }
 
-    public Integer getRegion_id() {
-        return region_id;
-    }
-
-    public void setRegion_id(Integer region_id) {
-        this.region_id = region_id;
-    }
-
-    public Integer getCity_id() {
-        return city_id;
-    }
-
-    public void setCity_id(Integer city_id) {
-        this.city_id = city_id;
-    }
+//    public Integer getRegion_id() {
+//        return region_id;
+//    }
+//
+//    public void setRegion_id(Integer region_id) {
+//        this.region_id = region_id;
+//    }
+//
+//    public Integer getCity_id() {
+//        return city_id;
+//    }
+//
+//    public void setCity_id(Integer city_id) {
+//        this.city_id = city_id;
+//    }
 
     public String getStreet() {
         return street;
@@ -435,21 +464,21 @@ public class CagentsJSON {
         this.jr_country_id = jr_country_id;
     }
 
-    public Integer getJr_region_id() {
-        return jr_region_id;
-    }
-
-    public void setJr_region_id(Integer jr_region_id) {
-        this.jr_region_id = jr_region_id;
-    }
-
-    public Integer getJr_city_id() {
-        return jr_city_id;
-    }
-
-    public void setJr_city_id(Integer jr_city_id) {
-        this.jr_city_id = jr_city_id;
-    }
+//    public Integer getJr_region_id() {
+//        return jr_region_id;
+//    }
+//
+//    public void setJr_region_id(Integer jr_region_id) {
+//        this.jr_region_id = jr_region_id;
+//    }
+//
+//    public Integer getJr_city_id() {
+//        return jr_city_id;
+//    }
+//
+//    public void setJr_city_id(Integer jr_city_id) {
+//        this.jr_city_id = jr_city_id;
+//    }
 
     public String getJr_street() {
         return jr_street;
@@ -595,13 +624,13 @@ public class CagentsJSON {
         this.city = city;
     }
 
-    public String getArea() {
-        return area;
-    }
-
-    public void setArea(String area) {
-        this.area = area;
-    }
+//    public String getArea() {
+//        return area;
+//    }
+//
+//    public void setArea(String area) {
+//        this.area = area;
+//    }
 
     public String getJr_country() {
         return jr_country;
@@ -627,11 +656,11 @@ public class CagentsJSON {
         this.jr_city = jr_city;
     }
 
-    public String getJr_area() {
-        return jr_area;
-    }
-
-    public void setJr_area(String jr_area) {
-        this.jr_area = jr_area;
-    }
+//    public String getJr_area() {
+//        return jr_area;
+//    }
+//
+//    public void setJr_area(String jr_area) {
+//        this.jr_area = jr_area;
+//    }
 }

@@ -30,6 +30,7 @@ import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -77,6 +78,8 @@ public class VatinvoiceinRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -128,7 +131,7 @@ public class VatinvoiceinRepositoryJPA {
                     "               WHEN p.parent_tablename='acceptance'" +
                     "                   THEN coalesce((select sum(coalesce(product_sumprice,0)) from acceptance_product where acceptance_id=p.acceptance_id),0)" +
                     "               ELSE 0 END as summ," +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.paydoc_number as paydoc_number," +
                     "           to_char(p.paydoc_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as paydoc_date, " +
@@ -159,7 +162,7 @@ public class VatinvoiceinRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.paydoc_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
@@ -175,7 +178,8 @@ public class VatinvoiceinRepositoryJPA {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
-
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
 
@@ -246,7 +250,7 @@ public class VatinvoiceinRepositoryJPA {
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.paydoc_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
@@ -261,7 +265,9 @@ public class VatinvoiceinRepositoryJPA {
             if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -309,7 +315,7 @@ public class VatinvoiceinRepositoryJPA {
                     "               ELSE 0 END as summ,"+
                     "           '' as gov_id, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -335,6 +341,9 @@ public class VatinvoiceinRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 List<Object[]> queryList = query.getResultList();
 

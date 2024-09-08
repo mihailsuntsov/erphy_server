@@ -28,6 +28,7 @@ import com.dokio.message.response.additional.FilesReturnJSON;
 import com.dokio.message.response.additional.ReturnProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -68,6 +69,8 @@ public class ReturnRepository {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -117,7 +120,7 @@ public class ReturnRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           (select count(*) from return_product ip where coalesce(ip.return_id,0)=p.id) as product_count," + //подсчет кол-ва товаров в данной инвентаризации
                     "           coalesce(p.is_completed,false) as is_completed " +  //  завершен?
 
@@ -146,7 +149,7 @@ public class ReturnRepository {
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -171,6 +174,8 @@ public class ReturnRepository {
                         .setFirstResult(offsetreal)
                         .setMaxResults(result);
 
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
                 if (searchString != null && !searchString.isEmpty())
@@ -245,7 +250,7 @@ public class ReturnRepository {
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -262,7 +267,9 @@ public class ReturnRepository {
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
 
@@ -385,7 +392,7 @@ public class ReturnRepository {
                     "           to_char(p.date_return at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_return, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +  // инвентаризация завершена?
                     "           cg.id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.nds as nds, " +
                     "           p.uid as uid, " +
                     "           to_char(p.date_return at time zone '"+myTimeZone+"', 'HH24:MI') as return_time " +
@@ -414,6 +421,9 @@ public class ReturnRepository {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}

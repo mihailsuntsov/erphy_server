@@ -30,6 +30,7 @@ import com.dokio.message.response.additional.FilesReturnsupJSON;
 import com.dokio.message.response.additional.ReturnsupProductsListJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -70,11 +71,13 @@ public class ReturnsupRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
-            .of("cagent","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
+            .of("cagent_enc","cagent","doc_number","name","status_name","product_count","is_completed","company","department","creator","date_time_created_sort")
             .collect(Collectors.toCollection(HashSet::new)));
     private static final Set VALID_COLUMNS_FOR_ASC
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -96,7 +99,7 @@ public class ReturnsupRepository {
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
 
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -119,7 +122,7 @@ public class ReturnsupRepository {
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           (select count(*) from returnsup_product ip where coalesce(ip.returnsup_id,0)=p.id) as product_count," + //подсчет кол-ва товаров в данной инвентаризации
                     "           coalesce(p.is_completed,false) as is_completed " +  //  завершен?
 
@@ -131,7 +134,7 @@ public class ReturnsupRepository {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(29L, "368")) //Если нет прав на просм по всем предприятиям
@@ -148,7 +151,7 @@ public class ReturnsupRepository {
             if (searchString != null && !searchString.isEmpty()) {
                 stringQuery = stringQuery + " and (" +
                         " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -172,6 +175,8 @@ public class ReturnsupRepository {
                 Query query = entityManager.createNativeQuery(stringQuery)
                         .setFirstResult(offsetreal)
                         .setMaxResults(result);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -222,7 +227,7 @@ public class ReturnsupRepository {
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
         boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long masterId = userRepositoryJPA.getMyMasterId();
 
         stringQuery = "select  p.id as id " +
                 "           from returnsup p " +
@@ -231,7 +236,7 @@ public class ReturnsupRepository {
                 "           INNER JOIN departments dp ON p.department_id=dp.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId +
+                "           where  p.master_id=" + masterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(29L, "368")) //Если нет прав на просм по всем предприятиям
@@ -247,7 +252,7 @@ public class ReturnsupRepository {
         if (searchString != null && !searchString.isEmpty()) {
             stringQuery = stringQuery + " and (" +
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
@@ -266,7 +271,9 @@ public class ReturnsupRepository {
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
 
             return query.getResultList().size();
         } catch (Exception e) {
@@ -370,7 +377,7 @@ public class ReturnsupRepository {
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
             boolean needToSetParameter_MyDepthsIds = false;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             stringQuery = "select  p.id as id, " +
                     "           u.name as master, " +
@@ -394,7 +401,7 @@ public class ReturnsupRepository {
                     "           to_char(p.date_return at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as date_return, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +  // инвентаризация завершена?
                     "           cg.id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.nds as nds, " +
                     "           p.uid as uid, " +
                     "           to_char(p.date_return at time zone '"+myTimeZone+"', 'HH24:MI') as return_time " +
@@ -407,7 +414,7 @@ public class ReturnsupRepository {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.id= " + id;
 
 
@@ -423,6 +430,8 @@ public class ReturnsupRepository {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}

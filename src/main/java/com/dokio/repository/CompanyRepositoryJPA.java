@@ -26,6 +26,7 @@ import com.dokio.message.response.Sprav.IdAndName;
 import com.dokio.message.response.additional.UserResources;
 import com.dokio.model.Companies;
 import com.dokio.message.response.CompaniesJSON;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -88,6 +89,8 @@ public class CompanyRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     DocumentsRepositoryJPA documentsRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -848,29 +851,26 @@ public class CompanyRepositoryJPA {
         if(securityRepositoryJPA.userHasPermissions_OR(3L,"3"))//  Предприятия : "Создание" (см. файл Permissions Id)
         {
             Long myMasterId=userRepositoryJPA.getMyMasterId(); //владелец предприятия создаваемого документа.
-            //plan limit check
             if(!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) { // if plan with limits - checking limits
                 UserResources consumedResources = userRepositoryJPA.getMyConsumedResources();
                 UserResources allowedResources = userRepositoryJPA.getMyMaxAllowedResources();
                 if(
                     consumedResources.getCompanies() >= allowedResources.getCompanies()
-//                            ||
-                            //because Company creates Department
-                        // consumedResources.getDepartments()>= allowedResources.getDepartments()
                 )
                     return -120L; // number of companies is out of bounds of tariff plan
             }
             Long createdCompanyId;
             try
             {
-                cu.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
-                //Сначала создаём документ без банковских счетов
-                createdCompanyId = insertCompanyBaseFields(request,myMasterId);
-                //Сохраняем банковские реквизиты
-                for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
-                    insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
-                }
-                return createdCompanyId;
+//                cu.idBelongsMyMaster("sprav_status_dock", request.getStatus_id(), myMasterId);
+//                //Сначала создаём документ без банковских счетов
+//                createdCompanyId = insertCompanyBaseFields(request,myMasterId);
+//                //Сохраняем банковские реквизиты
+//                for (CompaniesPaymentAccountsForm row : request.getCompaniesPaymentAccountsTable()) {
+//                    insertCompanyPaymentAccounts(row, myMasterId, createdCompanyId);
+//                }
+//                return createdCompanyId;
+                return -1L;
 
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1074,6 +1074,7 @@ public class CompanyRepositoryJPA {
         Long bo = boxofficeRepository.insertBoxofficesFast(myId, myMasterId, companyId);
         // расчетный счет предприятия
         Long ac = paymentAccountsRepository.insertPaymentAccountsFast(myId,myMasterId,companyId);
+        String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
 
         Map<String, String> map = cu.translateForUser(myId, new String[]{"'my_department'","'role_admins'"});
 
@@ -1091,7 +1092,7 @@ public class CompanyRepositoryJPA {
         // набор валют
         currenciesRepository.insertCurrenciesFast(myMasterId,myId,companyId);
         // базовые категоии контрагентов
-        cagentRepository.insertCagentCategoriesFast(myMasterId, myId,companyId);
+        cagentRepository.insertCagentCategoriesFast(myMasterId, myId,companyId, cryptoPassword);
         // базовые категоии файлов + базовые файлы (шаблоны)
         Long templateCategoryId = fileRepository.insertFileCategoriesFast(myMasterId, myId, companyId);
         // now need to put base files into this category in accordance of user language

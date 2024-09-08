@@ -26,6 +26,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -71,6 +72,8 @@ public class RetailSalesRepository {
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
     private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
@@ -127,7 +130,7 @@ public class RetailSalesRepository {
                     "           p.name as name, " +
                     "           coalesce(sh.shift_number,0) as shift_number, " +
                     "           (select count(*) from receipts rec where coalesce(rec.retail_sales_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt," + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
-                    "           cg.name as cagent " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent " +
 
                     "           from retail_sales p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -166,7 +169,7 @@ public class RetailSalesRepository {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
 
@@ -179,6 +182,8 @@ public class RetailSalesRepository {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
@@ -265,7 +270,7 @@ public class RetailSalesRepository {
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
@@ -281,8 +286,12 @@ public class RetailSalesRepository {
 
             if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
+
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -444,7 +453,7 @@ public class RetailSalesRepository {
                 "           coalesce(p.nds,false) as nds, " +
                 "           coalesce(p.nds_included,false) as nds_included, " +
                 "           p.cagent_id as cagent_id, " +
-                "           cg.name as cagent, " +
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                 "           coalesce(p.shift_id,0) as shift_id, " +
                 "           p.date_time_created as date_time_created_sort, " +
                 "           p.date_time_changed as date_time_changed_sort, " +
@@ -481,6 +490,9 @@ public class RetailSalesRepository {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -1184,6 +1196,7 @@ public class RetailSalesRepository {
 
             String stringQuery;
             Long myId=userRepository.getUserId();
+            Long masterId = userRepositoryJPA.getMyMasterId();
             stringQuery = "select " +
                     "           p.pricing_type as pricing_type, " +
                     "           p.price_type_id as price_type_id, " +
@@ -1194,7 +1207,7 @@ public class RetailSalesRepository {
                     "           coalesce(p.save_settings,false) as save_settings, " +
                     "           p.department_id as department_id, " +
                     "           p.customer_id as customer_id, " +
-                    "           cg.name as customer, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.id as id, " +
                     "           p.company_id as company_id, " +
                     "           p.priority_type_price_side as priority_type_price_side," +
@@ -1209,6 +1222,8 @@ public class RetailSalesRepository {
                     "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 List<Object[]> queryList = query.getResultList();
 
                 SettingsRetailSalesJSON returnObj=new SettingsRetailSalesJSON();
@@ -1238,7 +1253,7 @@ public class RetailSalesRepository {
             catch (Exception e) {
                 logger.error("Exception in method getSettingsRetailSales. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                throw e;
+                return null;
             }
 
         }

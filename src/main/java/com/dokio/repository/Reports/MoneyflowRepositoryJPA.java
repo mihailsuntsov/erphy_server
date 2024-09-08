@@ -21,6 +21,7 @@ import com.dokio.message.response.Reports.MoneyflowTableJSON;
 import com.dokio.repository.CompanyRepositoryJPA;
 import com.dokio.repository.SecurityRepositoryJPA;
 import com.dokio.repository.UserRepositoryJPA;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -50,6 +51,8 @@ public class MoneyflowRepositoryJPA {
     CompanyRepositoryJPA companyRepositoryJPA;
     @Autowired
     CommonUtilites commonUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
     private Logger logger = Logger.getLogger("MoneyflowRepositoryJPA");
 
@@ -307,10 +310,9 @@ public class MoneyflowRepositoryJPA {
         } else return null;
     }
 
-    private String getMoneyflowDetailedSQL(String searchString, Long companyId, Set<Long> accountsIds, Set<Long> boxofficesIds){
+    private String getMoneyflowDetailedSQL(String searchString, Long companyId, Set<Long> accountsIds, Set<Long> boxofficesIds, Long myMasterId){
         String stringQuery;
         String myTimeZone = userRepository.getUserTimeZone();
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
         String sx = userRepositoryJPA.getMySuffix();
         Map<String, String> map = commonUtilites.translateForMe(new String[]{"'acc_short'","'cash_room'"});
         String dateFormat=userRepositoryJPA.getMyDateFormat();
@@ -328,7 +330,7 @@ public class MoneyflowRepositoryJPA {
                 "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort,  " +
                 " coalesce(cg.id,"+companyId+")  as cagent_id, " +
-                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
+                " coalesce(pgp_sym_decrypt(cg.name_enc,:cryptoPassword),(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from paymentin p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 33 " +
@@ -358,7 +360,7 @@ public class MoneyflowRepositoryJPA {
                 "'"+map.get("acc_short")+" "+"'||obj.payment_account||', '||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort,  " +
                 " coalesce(cg.id,"+companyId+")  as cagent_id, " +
-                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
+                " coalesce(pgp_sym_decrypt(cg.name_enc,:cryptoPassword),(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from paymentout p  " +
                 " INNER JOIN companies_payment_accounts obj on p.payment_account_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 34 " +
@@ -387,7 +389,7 @@ public class MoneyflowRepositoryJPA {
                 "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort,  " +
                 " coalesce(cg.id,"+companyId+")  as cagent_id, " +
-                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
+                " coalesce(pgp_sym_decrypt(cg.name_enc,:cryptoPassword),(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from orderin p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 35 " +
@@ -416,7 +418,7 @@ public class MoneyflowRepositoryJPA {
                 "'"+map.get("cash_room")+" "+"'||obj.name as obj_name,  " +
                 " p.date_time_created as date_time_created_sort,  " +
                 " coalesce(cg.id,"+companyId+")  as cagent_id, " +
-                " coalesce(cg.name,(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
+                " coalesce(pgp_sym_decrypt(cg.name_enc,:cryptoPassword),(select name from companies where id="+companyId+")) as cagent " + //if no counterparty - the transaction inside of the company
                 " from orderout p  " +
                 " INNER JOIN sprav_boxoffice obj on p.boxoffice_id=obj.id  " +
                 " INNER JOIN documents d ON d.id = 36 " +
@@ -474,10 +476,14 @@ public class MoneyflowRepositoryJPA {
     public List<MoneyflowTableJSON> getMoneyflowDetailedTable(int result, int offsetreal, String searchString, String sortColumn, String sortAsc, Long companyId, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
         if (!VALID_COLUMNS_FOR_ORDER_BY.contains(sortColumn) || !VALID_COLUMNS_FOR_ASC.contains(sortAsc))
             throw new IllegalArgumentException("Invalid query parameters");
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId, accountsIds, boxofficesIds);
+
+        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId, accountsIds, boxofficesIds, myMasterId);
         stringQuery = stringQuery + " order by " + sortColumn + " " + sortAsc;
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
             query.setParameter("dateFrom", dateFrom);
@@ -512,9 +518,13 @@ public class MoneyflowRepositoryJPA {
 
     @SuppressWarnings("Duplicates")
     public Integer getMoneyflowDetailedSize(String searchString, Long companyId, Set<Integer> filterOptionsIds, String dateFrom, String dateTo, Set<Long> accountsIds, Set<Long> boxofficesIds) {
-        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId,  accountsIds, boxofficesIds);
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        String stringQuery = getMoneyflowDetailedSQL(searchString, companyId,  accountsIds, boxofficesIds,masterId);
+
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             if (searchString != null && !searchString.isEmpty())
             {query.setParameter("sg", searchString);}
             query.setParameter("dateFrom", dateFrom);

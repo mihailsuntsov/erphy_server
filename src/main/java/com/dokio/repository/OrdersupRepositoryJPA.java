@@ -25,6 +25,7 @@ import com.dokio.message.response.Settings.SettingsOrdersupJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -69,8 +70,10 @@ public class OrdersupRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+//    @Autowired
+//    private CustomersOrdersRepositoryJPA customersOrdersRepository;
     @Autowired
-    private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -93,7 +96,7 @@ public class OrdersupRepositoryJPA {
             boolean needToSetParameter_MyDepthsIds = false;
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String dateFormat=userRepositoryJPA.getMyDateFormat();
 
             stringQuery = "select  p.id as id, " +
@@ -117,7 +120,7 @@ public class OrdersupRepositoryJPA {
                     "           stat.description as status_description, " +
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from ordersup_product where ordersup_id=p.id),0) as sum_price, " +
                     "           to_char(p.ordersup_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as ordersup_date, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from ordersup_product ip where coalesce(ip.ordersup_id,0)=p.id) as product_count," + //подсчет кол-ва товаров\
                     "           p.name as name," +
@@ -134,7 +137,7 @@ public class OrdersupRepositoryJPA {
                     "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
@@ -156,7 +159,7 @@ public class OrdersupRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
@@ -172,8 +175,10 @@ public class OrdersupRepositoryJPA {
             }
 
             try{
-                Query query = entityManager.createNativeQuery(stringQuery);
 
+                Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
 
@@ -229,7 +234,7 @@ public class OrdersupRepositoryJPA {
         boolean needToSetParameter_MyDepthsIds = false;
         Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
         boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
         stringQuery = "select  p.id as id " +
                 "           from ordersup p " +
@@ -238,7 +243,7 @@ public class OrdersupRepositoryJPA {
                 "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId +
+                "           where  p.master_id=" + masterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
@@ -258,7 +263,7 @@ public class OrdersupRepositoryJPA {
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
@@ -271,11 +276,12 @@ public class OrdersupRepositoryJPA {
         try{
 
             Query query = entityManager.createNativeQuery(stringQuery);
-
             if(needToSetParameter_MyDepthsIds)
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+            {   query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -381,7 +387,7 @@ public class OrdersupRepositoryJPA {
             String stringQuery;
             boolean needToSetParameter_MyDepthsIds = false;
             String myTimeZone = userRepository.getUserTimeZone();
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
             String dateFormat=userRepositoryJPA.getMyDateFormat();
             stringQuery = "select " +
@@ -404,7 +410,7 @@ public class OrdersupRepositoryJPA {
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           to_char(p.ordersup_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as ordersup_date, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
@@ -425,7 +431,7 @@ public class OrdersupRepositoryJPA {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.id= " + id;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(39L, "432")) //Если нет прав на просм по всем предприятиям
@@ -440,6 +446,8 @@ public class OrdersupRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -956,10 +964,11 @@ public class OrdersupRepositoryJPA {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
-        stringQuery = "select " +
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery = "     select " +
                 "           p.department_id as department_id, " +                           // отделение
                 "           p.cagent_id as cagent_id, " +
-                "           cg.name as cagent, " +                                          // контрагент
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +     // контрагент
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +                                 // предприятие
                 "           coalesce(p.autocreate,false) as autocreate," +                  // автосоздание (не нужно нажимать кнопку Создать)
@@ -972,6 +981,8 @@ public class OrdersupRepositoryJPA {
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             List<Object[]> queryList = query.getResultList();
 
             if(queryList.size()==0) throw new NoResultException();
@@ -997,7 +1008,7 @@ public class OrdersupRepositoryJPA {
         catch (Exception e) {
             logger.error("Exception in method getSettingsOrdersup. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            throw e;
+            return null;
         }
 
     }

@@ -74,9 +74,39 @@ public class CagentsForm {
 
     private String type;                        // entity or individual
     private String legal_form;
+
+    private String id_card;
+    private String date_of_birth;
+    private String sex;
+
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+
+
+    public String getId_card() {
+        return id_card;
+    }
+
+    public void setId_card(String id_card) {
+        this.id_card = id_card;
+    }
+
+    public String getDate_of_birth() {
+        return date_of_birth;
+    }
+
+    public void setDate_of_birth(String date_of_birth) {
+        this.date_of_birth = date_of_birth;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
+    }
 
     public String getJr_vat() {
         return jr_vat;

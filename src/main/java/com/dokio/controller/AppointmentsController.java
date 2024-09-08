@@ -210,6 +210,22 @@ public class AppointmentsController {
         catch (Exception e){return new ResponseEntity<>("Controller saveSettingsAppointment error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
     @RequestMapping(
+            value = "/api/auth/getDescriptionDefaultTemplate",
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDescriptionDefaultTemplate(@RequestParam("company_id") Long company_id) {
+        logger.info("Processing get request for path /api/auth/getDescriptionDefaultTemplate with company_id=" + company_id.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.getDescriptionDefaultTemplate(company_id), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDescriptionDefaultTemplate error with company_id=" + company_id.toString(), e);
+            return new ResponseEntity<>("Controller getDescriptionDefaultTemplate error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/auth/updateDescriptionDefaultTemplate")
+    public ResponseEntity<?> updateDescriptionDefaultTemplate(@RequestBody SettingsAppointmentForm request){
+        logger.info("Processing post request for path /api/auth/updateDescriptionDefaultTemplate: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.updateDescriptionDefaultTemplate(request), HttpStatus.OK);}
+        catch (Exception e){return new ResponseEntity<>("Controller updateDescriptionDefaultTemplate error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @RequestMapping(
             value = "/api/auth/getSettingsAppointment",
             method = RequestMethod.GET, produces = "application/json;charset=utf8")
     public ResponseEntity<?> getSettingsAppointment()
@@ -348,7 +364,6 @@ public class AppointmentsController {
                 replaceAll("class=\"ql-size-small\"", "style=\"font-size: 10px; margin-bottom: 0px;\"").
                 replaceAll("<br />", "").
                 replaceAll("<p>", "<p style=\"font-size: 12px; margin-left: -8px; margin-bottom: 0px;\">");
-//                replaceAll("<ul>","<ul class='Bullet0'>");
 
                 WordprocessingMLPackage wordMLPackageToConvert = WordprocessingMLPackage.createPackage();
 
@@ -360,8 +375,9 @@ public class AppointmentsController {
 
                 final List<Object> descriptionAsWordML = XHTMLImporter.convert( wrappedXHTML, null);
 
-                wordMLPackageToConvert.getMainDocumentPart().getContent().addAll(descriptionAsWordML);
-                String description = XmlUtils.marshaltoString(wordMLPackageToConvert.getMainDocumentPart().getJaxbElement(), true, true);
+                // in a description variable at the debugging U can see what WordML it contains
+//                wordMLPackageToConvert.getMainDocumentPart().getContent().addAll(descriptionAsWordML);
+//                String description = XmlUtils.marshaltoString(wordMLPackageToConvert.getMainDocumentPart().getJaxbElement(), true, true);
 
                 WordprocessingMLPackage wordMLPackage = gt.generateMLPackage(filePath, replaceMap, masterId);
                 Map<String, List<Object>> replacements = new HashMap<String, List<Object>>() {{
@@ -382,6 +398,8 @@ public class AppointmentsController {
                         return null;
                     }
                 });
+
+
 
                 // code by epochcoder from https://gist.github.com/epochcoder/478a72a4b59a43995373
                 // run through all found paragraphs to located identifiers
@@ -407,13 +425,12 @@ public class AppointmentsController {
                     }
                 }
 
-                removeSpacePreserveRecursive(wordMLPackage.getMainDocumentPart().getJaxbElement().getBody());
 
+
+                removeSpacePreserveRecursive(wordMLPackage.getMainDocumentPart().getJaxbElement().getBody());
                 OutputStream outputStream = new ByteArrayOutputStream();
                 Save saver = new Save(wordMLPackage);
                 saver.save(outputStream);
-
-                        String fileName = fileInfo.getOriginal_name();
                 return ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"UTF-8\"")
                         .body(((ByteArrayOutputStream) outputStream).toByteArray());
@@ -449,6 +466,7 @@ public class AppointmentsController {
             }
         }
     }
+
     @SuppressWarnings("Duplicates")
     @RequestMapping(
             value = "/api/auth/appointmentPrint",

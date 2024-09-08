@@ -11,6 +11,7 @@ public class SettingsAppointmentJSON {
     private boolean hideEmployeeField; // If for all services of company employees are not needed
     private boolean calcDateButTime; // if user wants to calc only dates. Suitable for hotels for checkout time
     private Long  statusIdOnComplete;             // status on completion
+    private String descriptionDefaultTemplate;
     public boolean isCalcDateButTime() {
         return calcDateButTime;
     }
@@ -29,6 +30,14 @@ public class SettingsAppointmentJSON {
         this.endTimeManually = endTimeManually;
         this.hideEmployeeField = hideEmployeeField;
         this.calcDateButTime = calcDateButTime;
+    }
+
+    public String getDescriptionDefaultTemplate() {
+        return descriptionDefaultTemplate;
+    }
+
+    public void setDescriptionDefaultTemplate(String descriptionDefaultTemplate) {
+        this.descriptionDefaultTemplate = descriptionDefaultTemplate;
     }
 
     public Long getStatusIdOnComplete() {

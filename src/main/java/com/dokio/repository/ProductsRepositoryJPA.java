@@ -32,6 +32,7 @@ import com.dokio.model.Sprav.SpravSysEdizm;
 import com.dokio.model.Sprav.SpravSysNds;
 import com.dokio.model.Sprav.SpravSysPPR;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
@@ -73,6 +74,8 @@ public class ProductsRepositoryJPA {
     private CommonUtilites commonUtilites;
     @Autowired
     private FileRepositoryJPA fileRepository;
+    @Autowired
+    private CryptoService cryptoService;
 //    @Autowired
 //    private StoreProductsRepository storeProductsRepository;
 
@@ -3587,7 +3590,7 @@ public class ProductsRepositoryJPA {
             String stringQuery = "select" +
                     "           c.id as cagent_id," +
                     "           f.product_id as product_id," +
-                    "           c.name as name," +
+                    "           pgp_sym_decrypt(c.name_enc,:cryptoPassword) as name, " +
                     "           f.output_order as output_order," +
                     "           f.cagent_article as cagent_article," +
                     "           f.additional as additional" +
@@ -3608,9 +3611,17 @@ public class ProductsRepositoryJPA {
                 stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
             stringQuery = stringQuery + " order by f.output_order asc ";
-            Query query = entityManager.createNativeQuery(stringQuery, ProductCagentsJSON.class);
-            returnlist = query.getResultList();
-            return returnlist;
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery, ProductCagentsJSON.class);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
+                returnlist = query.getResultList();
+                return returnlist;
+            } catch (Exception e) {
+                logger.error("Exception in method getListOfProductCagents. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
         } else return null;
     }
 

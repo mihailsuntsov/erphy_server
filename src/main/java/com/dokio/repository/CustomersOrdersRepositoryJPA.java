@@ -29,6 +29,7 @@ import com.dokio.repository.Exceptions.CantInsertProductRowCauseErrorException;
 import com.dokio.repository.Exceptions.DocumentAlreadyCompletedException;
 import com.dokio.repository.Exceptions.DocumentAlreadyDecompletedException;
 import com.dokio.repository.Exceptions.NotEnoughPermissionsException;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -73,6 +74,8 @@ public class CustomersOrdersRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -127,7 +130,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce((select sum(coalesce(product_sumprice,0)) from customers_orders_product where customers_orders_id=p.id),0) as sum_price, " +
                     "           p.name as name, " +
                     "           (select count(*) from customers_orders_product ip where coalesce(ip.customers_orders_id,0)=p.id) as product_count," + //подсчет кол-ва товаров
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           st.name as store" +
 //                    "           cnt.name_ru, ' ', reg.name_ru, ' ', cty.name_ru, ' ',
                     "           from customers_orders p " +
@@ -167,7 +170,7 @@ public class CustomersOrdersRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(st.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
@@ -187,114 +190,139 @@ public class CustomersOrdersRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery)
                     .setFirstResult(offsetreal)
                     .setMaxResults(result);
+            try {
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
+                if (searchString != null && !searchString.isEmpty()) {
+                    query.setParameter("sg", searchString);
+                }
 
-            if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+                if (needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+                {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
 
-            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
-            List<Object[]> queryList = query.getResultList();
-            List<CustomersOrdersJSON> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                CustomersOrdersJSON doc=new CustomersOrdersJSON();
-                doc.setId(Long.parseLong(                     obj[0].toString()));
-                doc.setMaster((String)                        obj[1]);
-                doc.setCreator((String)                       obj[2]);
-                doc.setChanger((String)                       obj[3]);
-                doc.setMaster_id(Long.parseLong(              obj[4].toString()));
-                doc.setCreator_id(Long.parseLong(             obj[5].toString()));
-                doc.setChanger_id(obj[6]!=null?Long.parseLong(obj[6].toString()):null);
-                doc.setCompany_id(Long.parseLong(             obj[7].toString()));
-                doc.setDepartment_id(Long.parseLong(          obj[8].toString()));
-                doc.setDepartment((String)                    obj[9]);
-                doc.setDoc_number(Long.parseLong(             obj[10].toString()));
-                doc.setShipment_date((String)(                obj[11]));
-                doc.setCompany((String)                       obj[12]);
-                doc.setDate_time_created((String)             obj[13]);
-                doc.setDate_time_changed((String)             obj[14]);
-                doc.setDescription((String)                   obj[15]);
-                doc.setIs_completed((Boolean)                 obj[16]);
-                doc.setStatus_id(obj[20]!=null?Long.parseLong(obj[20].toString()):null);
-                doc.setStatus_name((String)                   obj[21]);
-                doc.setStatus_color((String)                  obj[22]);
-                doc.setStatus_description((String)            obj[23]);
-                doc.setSum_price((BigDecimal)                 obj[24]);
-                doc.setName((String)                          obj[25]);
-                doc.setProduct_count(Long.parseLong(          obj[26].toString()));
-                doc.setCagent((String)                        obj[27]);
-                doc.setStore((String)                         obj[28]);
+                List<Object[]> queryList = query.getResultList();
+                List<CustomersOrdersJSON> returnList = new ArrayList<>();
+                for (Object[] obj : queryList) {
+                    CustomersOrdersJSON doc = new CustomersOrdersJSON();
+                    doc.setId(Long.parseLong(obj[0].toString()));
+                    doc.setMaster((String) obj[1]);
+                    doc.setCreator((String) obj[2]);
+                    doc.setChanger((String) obj[3]);
+                    doc.setMaster_id(Long.parseLong(obj[4].toString()));
+                    doc.setCreator_id(Long.parseLong(obj[5].toString()));
+                    doc.setChanger_id(obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
+                    doc.setCompany_id(Long.parseLong(obj[7].toString()));
+                    doc.setDepartment_id(Long.parseLong(obj[8].toString()));
+                    doc.setDepartment((String) obj[9]);
+                    doc.setDoc_number(Long.parseLong(obj[10].toString()));
+                    doc.setShipment_date((String) (obj[11]));
+                    doc.setCompany((String) obj[12]);
+                    doc.setDate_time_created((String) obj[13]);
+                    doc.setDate_time_changed((String) obj[14]);
+                    doc.setDescription((String) obj[15]);
+                    doc.setIs_completed((Boolean) obj[16]);
+                    doc.setStatus_id(obj[20] != null ? Long.parseLong(obj[20].toString()) : null);
+                    doc.setStatus_name((String) obj[21]);
+                    doc.setStatus_color((String) obj[22]);
+                    doc.setStatus_description((String) obj[23]);
+                    doc.setSum_price((BigDecimal) obj[24]);
+                    doc.setName((String) obj[25]);
+                    doc.setProduct_count(Long.parseLong(obj[26].toString()));
+                    doc.setCagent((String) obj[27]);
+                    doc.setStore((String) obj[28]);
 
 
-                returnList.add(doc);
+                    returnList.add(doc);
+                }
+                return returnList;
+            } catch (Exception e) {
+                logger.error("Exception in method CustomersOrdersRepositoryJPA/getCustomersOrdersTable. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
             }
-            return returnList;
         } else return null;
     }
     @SuppressWarnings("Duplicates")
-    public int getCustomersOrdersSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
-//        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
-//        {
-        String stringQuery;
-        boolean needToSetParameter_MyDepthsIds = false;
-        boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+    public Integer getCustomersOrdersSize(String searchString, int companyId, int departmentId, Set<Integer> filterOptionsIds) {
+        if(securityRepositoryJPA.userHasPermissions_OR(23L, "287,288,289,290"))//(см. файл Permissions Id)
+        {
+            String stringQuery;
+            boolean needToSetParameter_MyDepthsIds = false;
+            boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
+            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
 
-        stringQuery = "select  p.id as id " +
-                "           from customers_orders p " +
-                "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
-                "           INNER JOIN departments dp ON p.department_id=dp.id " +
-                "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
-                "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
-                "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           LEFT OUTER JOIN stores st ON p.store_id=st.id" +
-                "           where  p.master_id=" + myMasterId +
-                "           and coalesce(p.is_deleted,false) ="+showDeleted;
+            stringQuery = "select  p.id as id " +
+                    "           from customers_orders p " +
+                    "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
+                    "           INNER JOIN departments dp ON p.department_id=dp.id " +
+                    "           LEFT OUTER JOIN cagents cg ON p.cagent_id=cg.id " +
+                    "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
+                    "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
+                    "           LEFT OUTER JOIN stores st ON p.store_id=st.id" +
+                    "           where  p.master_id=" + myMasterId +
+                    "           and coalesce(p.is_deleted,false) =" + showDeleted;
 
-        if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
-        {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
-            if (!securityRepositoryJPA.userHasPermissions_OR(23L, "288")) //Если нет прав на просм по своему предприятию
-            {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
-                if (!securityRepositoryJPA.userHasPermissions_OR(23L, "289")) //Если нет прав на просмотр всех доков в своих подразделениях
-                {//остается только на свои документы
-                    stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds and p.creator_id ="+userRepositoryJPA.getMyId();needToSetParameter_MyDepthsIds=true;
-                }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
-            } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
-        }
-        if(filterOptionsIds.contains(2)) // Только просроченные заказы
-            stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
-        if(filterOptionsIds.contains(3)) // Только новые заказы
-            stringQuery = stringQuery +  " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now() and (p.linked_docs_group_id is null or p.date_time_changed is null)";
+            if (!securityRepositoryJPA.userHasPermissions_OR(23L, "287")) //Если нет прав на просм по всем предприятиям
+            {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
+                if (!securityRepositoryJPA.userHasPermissions_OR(23L, "288")) //Если нет прав на просм по своему предприятию
+                {//остается на: просмотр всех доков в своих подразделениях ИЛИ свои документы
+                    if (!securityRepositoryJPA.userHasPermissions_OR(23L, "289")) //Если нет прав на просмотр всех доков в своих подразделениях
+                    {//остается только на свои документы
+                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId() + " and p.department_id in :myDepthsIds and p.creator_id =" + userRepositoryJPA.getMyId();
+                        needToSetParameter_MyDepthsIds = true;
+                    } else {
+                        stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId() + " and p.department_id in :myDepthsIds";
+                        needToSetParameter_MyDepthsIds = true;
+                    }//т.е. по всем и своему предприятиям нет а на свои отделения есть
+                } else
+                    stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
+            }
+            if (filterOptionsIds.contains(2)) // Только просроченные заказы
+                stringQuery = stringQuery + " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now()";
+            if (filterOptionsIds.contains(3)) // Только новые заказы
+                stringQuery = stringQuery + " and coalesce(p.is_completed,false)=false and to_timestamp(to_char(p.shipment_date,'DD.MM.YYYY')||' 23:59:59.999', 'DD.MM.YYYY HH24:MI:SS.MS') < now() and (p.linked_docs_group_id is null or p.date_time_changed is null)";
 
-        if (searchString != null && !searchString.isEmpty()) {
-            stringQuery = stringQuery + " and (" +
-                    " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or "+
-                    " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
-                    " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(st.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
-        }
-        if (companyId > 0) {
-            stringQuery = stringQuery + " and p.company_id=" + companyId;
-        }
-        if (departmentId > 0) {
-            stringQuery = stringQuery + " and p.department_id=" + departmentId;
-        }
+            if (searchString != null && !searchString.isEmpty()) {
+                stringQuery = stringQuery + " and (" +
+                        " to_char(p.shipment_date, 'DD.MM.YYYY') = CONCAT('%',:sg,'%') or " +
+                        " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or " +
+                        " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(st.name)  like upper(CONCAT('%',:sg,'%')) or " +
+                        " upper(p.description) like upper(CONCAT('%',:sg,'%'))" + ")";
+            }
+            if (companyId > 0) {
+                stringQuery = stringQuery + " and p.company_id=" + companyId;
+            }
+            if (departmentId > 0) {
+                stringQuery = stringQuery + " and p.department_id=" + departmentId;
+            }
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-        Query query = entityManager.createNativeQuery(stringQuery);
+                if (searchString != null && !searchString.isEmpty()) {
+                    query.setParameter("sg", searchString);
+                    String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                    query.setParameter("cryptoPassword", cryptoPassword);
+                }
 
-        if (searchString != null && !searchString.isEmpty())
-        {query.setParameter("sg", searchString);}
+                if (needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+                {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
 
-        if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-        {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
-
-        return query.getResultList().size();
-//        } else return 0;
+                return query.getResultList().size();
+            } catch (Exception e) {
+                logger.error("Exception in method CustomersOrdersRepositoryJPA/getCustomersOrdersTable. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return null;
     }
 
     @SuppressWarnings("Duplicates")
@@ -482,7 +510,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.shipment_date as shipment_date_sort, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
@@ -539,66 +567,76 @@ public class CustomersOrdersRepositoryJPA {
                     }else{stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId()+" and p.department_id in :myDepthsIds";needToSetParameter_MyDepthsIds=true;}//т.е. по всем и своему предприятиям нет а на свои отделения есть
                 } else stringQuery = stringQuery + " and p.company_id=" + userRepositoryJPA.getMyCompanyId();//т.е. нет прав на все предприятия, а на своё есть
             }
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
 
-            Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
-            if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
-            {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
+                if (needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
+                {
+                    query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());
+                }
 
-            List<Object[]> queryList = query.getResultList();
+                List<Object[]> queryList = query.getResultList();
 
-            CustomersOrdersJSON returnObj=new CustomersOrdersJSON();
+                CustomersOrdersJSON returnObj = new CustomersOrdersJSON();
 
-            for(Object[] obj:queryList){
-                returnObj.setId(Long.parseLong(                         obj[0].toString()));
-                returnObj.setMaster((String)                            obj[1]);
-                returnObj.setCreator((String)                           obj[2]);
-                returnObj.setChanger((String)                           obj[3]);
-                returnObj.setMaster_id(Long.parseLong(                  obj[4].toString()));
-                returnObj.setCreator_id(Long.parseLong(                 obj[5].toString()));
-                returnObj.setChanger_id(obj[6]!=null?Long.parseLong(    obj[6].toString()):null);
-                returnObj.setCompany_id(Long.parseLong(                 obj[7].toString()));
-                returnObj.setDepartment_id(Long.parseLong(              obj[8].toString()));
-                returnObj.setDepartment((String)                        obj[9]);
-                returnObj.setDoc_number(Long.parseLong(                 obj[10].toString()));
-                returnObj.setShipment_date((String)(                    obj[11]));
-                returnObj.setCompany((String)                           obj[12]);
-                returnObj.setDate_time_created((String)                 obj[13]);
-                returnObj.setDate_time_changed((String)                 obj[14]);
-                returnObj.setDescription((String)                       obj[15]);
-                returnObj.setIs_completed((Boolean)                     obj[16]);
-                returnObj.setDepartment_type_price_id(Long.parseLong(   obj[17].toString()));
-                returnObj.setNds((Boolean)                              obj[18]);
-                returnObj.setNds_included((Boolean)                     obj[19]);
-                returnObj.setCagent_id(Long.parseLong(                  obj[20].toString()));
-                returnObj.setCagent((String)                            obj[21]);
-                returnObj.setName((String)                              obj[25]);
-                returnObj.setStatus_id(obj[26]!=null?Long.parseLong(    obj[26].toString()):null);
-                returnObj.setFio((String)                               obj[27]);
-                returnObj.setEmail((String)                             obj[28]);
-                returnObj.setTelephone((String)                         obj[29]);
-                returnObj.setZip_code((String)                          obj[30]);
-                returnObj.setCountry_id((Integer)                       obj[31]);
-                returnObj.setRegion_id((Integer)                        obj[32]);
-                returnObj.setCity_id((Integer)                          obj[33]);
-                returnObj.setAdditional_address((String)                obj[34]);
-                returnObj.setTrack_number((String)                      obj[35]);
-                returnObj.setStatus_name((String)                       obj[36]);
-                returnObj.setStatus_color((String)                      obj[37]);
-                returnObj.setStatus_description((String)                obj[38]);
-                returnObj.setStreet((String)                            obj[39]);
-                returnObj.setHome((String)                              obj[40]);
-                returnObj.setFlat((String)                              obj[41]);
-                returnObj.setCountry((String)                           obj[42]);
-                returnObj.setRegion((String)                            obj[43]);
-                returnObj.setCity((String)                              obj[44]);
-                returnObj.setArea((String)                              obj[45]);
-                returnObj.setCagent_type_price_id(Long.parseLong(       obj[46].toString()));
-                returnObj.setDefault_type_price_id(Long.parseLong(      obj[47].toString()));
-                returnObj.setUid((String)                               obj[48]);
-                returnObj.setShipment_time((String)                     obj[49]);
+                for (Object[] obj : queryList) {
+                    returnObj.setId(Long.parseLong(obj[0].toString()));
+                    returnObj.setMaster((String) obj[1]);
+                    returnObj.setCreator((String) obj[2]);
+                    returnObj.setChanger((String) obj[3]);
+                    returnObj.setMaster_id(Long.parseLong(obj[4].toString()));
+                    returnObj.setCreator_id(Long.parseLong(obj[5].toString()));
+                    returnObj.setChanger_id(obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
+                    returnObj.setCompany_id(Long.parseLong(obj[7].toString()));
+                    returnObj.setDepartment_id(Long.parseLong(obj[8].toString()));
+                    returnObj.setDepartment((String) obj[9]);
+                    returnObj.setDoc_number(Long.parseLong(obj[10].toString()));
+                    returnObj.setShipment_date((String) (obj[11]));
+                    returnObj.setCompany((String) obj[12]);
+                    returnObj.setDate_time_created((String) obj[13]);
+                    returnObj.setDate_time_changed((String) obj[14]);
+                    returnObj.setDescription((String) obj[15]);
+                    returnObj.setIs_completed((Boolean) obj[16]);
+                    returnObj.setDepartment_type_price_id(Long.parseLong(obj[17].toString()));
+                    returnObj.setNds((Boolean) obj[18]);
+                    returnObj.setNds_included((Boolean) obj[19]);
+                    returnObj.setCagent_id(Long.parseLong(obj[20].toString()));
+                    returnObj.setCagent((String) obj[21]);
+                    returnObj.setName((String) obj[25]);
+                    returnObj.setStatus_id(obj[26] != null ? Long.parseLong(obj[26].toString()) : null);
+                    returnObj.setFio((String) obj[27]);
+                    returnObj.setEmail((String) obj[28]);
+                    returnObj.setTelephone((String) obj[29]);
+                    returnObj.setZip_code((String) obj[30]);
+                    returnObj.setCountry_id((Integer) obj[31]);
+                    returnObj.setRegion_id((Integer) obj[32]);
+                    returnObj.setCity_id((Integer) obj[33]);
+                    returnObj.setAdditional_address((String) obj[34]);
+                    returnObj.setTrack_number((String) obj[35]);
+                    returnObj.setStatus_name((String) obj[36]);
+                    returnObj.setStatus_color((String) obj[37]);
+                    returnObj.setStatus_description((String) obj[38]);
+                    returnObj.setStreet((String) obj[39]);
+                    returnObj.setHome((String) obj[40]);
+                    returnObj.setFlat((String) obj[41]);
+                    returnObj.setCountry((String) obj[42]);
+                    returnObj.setRegion((String) obj[43]);
+                    returnObj.setCity((String) obj[44]);
+                    returnObj.setArea((String) obj[45]);
+                    returnObj.setCagent_type_price_id(Long.parseLong(obj[46].toString()));
+                    returnObj.setDefault_type_price_id(Long.parseLong(obj[47].toString()));
+                    returnObj.setUid((String) obj[48]);
+                    returnObj.setShipment_time((String) obj[49]);
+                }
+                return returnObj;
+            } catch (Exception e) {
+                logger.error("Exception in method getCustomersOrdersValuesById.", e);
+                e.printStackTrace();
+                return null;
             }
-            return returnObj;
         } else return null;
     }
 
@@ -1266,6 +1304,7 @@ public class CustomersOrdersRepositoryJPA {
 
             String stringQuery;
             Long myId=userRepository.getUserId();
+            Long masterId = userRepositoryJPA.getMyMasterId();
             stringQuery = "select " +
                     "           coalesce(p.pricing_type,'priceType') as pricing_type,"+
                     "           p.price_type_id as price_type_id, " +
@@ -1276,7 +1315,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce(p.save_settings,false) as save_settings, " +
                     "           p.department_id as department_id, " +
                     "           p.customer_id as customer_id, " +
-                    "           cg.name as customer, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.id as id, " +
                     "           p.company_id as company_id, " +
                     "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
@@ -1289,6 +1328,8 @@ public class CustomersOrdersRepositoryJPA {
                     "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
                 List<Object[]> queryList = query.getResultList();
                 if(queryList.size()==0) throw new NoResultException();
 
@@ -1321,7 +1362,7 @@ public class CustomersOrdersRepositoryJPA {
             catch (Exception e) {
                 logger.error("Exception in method getSettingsCustomersOrders. SQL query:"+stringQuery, e);
                 e.printStackTrace();
-                throw e;
+                return null;
             }
 
     }
@@ -1432,7 +1473,7 @@ public class CustomersOrdersRepositoryJPA {
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.is_deleted as is_deleted, " +
                     "           dp.name as department, " +
                     "           p.date_time_created as date_time_created_sort " +
@@ -1454,28 +1495,36 @@ public class CustomersOrdersRepositoryJPA {
                 stringQuery=stringQuery +" and p.id !=" + documentId;
             }
             stringQuery = stringQuery + "  order by date_time_created_sort asc";
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<CustomersOrdersReservesTable> returnList = new ArrayList<>();
-            for(Object[] obj:queryList){
-                CustomersOrdersReservesTable doc=new CustomersOrdersReservesTable();
-                doc.setId(Long.parseLong(                     obj[0].toString()));
-                doc.setCreator((String)                       obj[1]);
-                doc.setName((String)                          obj[2]);
-                doc.setNon_shipped((BigDecimal)               obj[3]);
-                doc.setDoc_number(Long.parseLong(             obj[4].toString()));
-                doc.setShipment_date((String)(                obj[5]));
-                doc.setDate_time_created((String)             obj[6]);
-                doc.setDescription((String)                   obj[7]);
-                doc.setIs_completed((Boolean)                 obj[8]);
-                doc.setStatus_name((String)                   obj[9]);
-                doc.setStatus_color((String)                  obj[10]);
-                doc.setCagent((String)                        obj[11]);
-                doc.setIs_deleted((Boolean)                   obj[12]);
-                doc.setDepartment((String)                    obj[13]);
-                returnList.add(doc);
+            try{
+                Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
+                List<Object[]> queryList = query.getResultList();
+                List<CustomersOrdersReservesTable> returnList = new ArrayList<>();
+                for(Object[] obj:queryList){
+                    CustomersOrdersReservesTable doc=new CustomersOrdersReservesTable();
+                    doc.setId(Long.parseLong(                     obj[0].toString()));
+                    doc.setCreator((String)                       obj[1]);
+                    doc.setName((String)                          obj[2]);
+                    doc.setNon_shipped((BigDecimal)               obj[3]);
+                    doc.setDoc_number(Long.parseLong(             obj[4].toString()));
+                    doc.setShipment_date((String)(                obj[5]));
+                    doc.setDate_time_created((String)             obj[6]);
+                    doc.setDescription((String)                   obj[7]);
+                    doc.setIs_completed((Boolean)                 obj[8]);
+                    doc.setStatus_name((String)                   obj[9]);
+                    doc.setStatus_color((String)                  obj[10]);
+                    doc.setCagent((String)                        obj[11]);
+                    doc.setIs_deleted((Boolean)                   obj[12]);
+                    doc.setDepartment((String)                    obj[13]);
+                    returnList.add(doc);
+                }
+                return returnList;
+            }catch (Exception e) {
+                logger.error("Exception in method getReservesTable. SQL query:"+stringQuery, e);
+                e.printStackTrace();
+                return null;
             }
-            return returnList;
         } else return null;
     }
 

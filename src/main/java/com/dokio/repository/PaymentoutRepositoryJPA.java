@@ -32,6 +32,7 @@ import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.FinanceUtilites;
@@ -84,6 +85,8 @@ public class PaymentoutRepositoryJPA {
     private FinanceUtilites financeUtilites;
     @Autowired
     private SpravExpenditureRepositoryJPA expenditureRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -128,7 +131,7 @@ public class PaymentoutRepositoryJPA {
                     "           stat.color as status_color, " +
                     "           stat.description as status_description, " +
                     "           coalesce(p.summ,0) as summ, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.income_number as income_number," +
                     "           to_char(p.income_number_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as income_number_date, " +
@@ -168,7 +171,7 @@ public class PaymentoutRepositoryJPA {
                         " upper(sei.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
@@ -184,6 +187,8 @@ public class PaymentoutRepositoryJPA {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
@@ -261,7 +266,7 @@ public class PaymentoutRepositoryJPA {
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(sei.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.income_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
@@ -276,7 +281,9 @@ public class PaymentoutRepositoryJPA {
             if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -317,7 +324,7 @@ public class PaymentoutRepositoryJPA {
                     "           coalesce(p.summ,0) as summ, " +
                     "           coalesce(p.nds,0) as nds, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -352,6 +359,8 @@ public class PaymentoutRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 List<Object[]> queryList = query.getResultList();
 
@@ -792,9 +801,10 @@ public class PaymentoutRepositoryJPA {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
+        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery = "select " +
                 "           p.cagent_id as cagent_id, " +
-                "           cg.name as cagent, " +                                          // контрагент
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +                                          // контрагент
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +                                 // предприятие
                 "           p.status_id_on_complete as status_id_on_complete " +           // статус по проведении
@@ -803,6 +813,8 @@ public class PaymentoutRepositoryJPA {
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             List<Object[]> queryList = query.getResultList();
 
             SettingsPaymentoutJSON returnObj=new SettingsPaymentoutJSON();

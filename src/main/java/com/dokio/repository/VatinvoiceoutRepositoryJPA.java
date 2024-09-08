@@ -30,6 +30,7 @@ import com.dokio.message.response.additional.FilesUniversalJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.model.Companies;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -77,6 +78,8 @@ public class VatinvoiceoutRepositoryJPA {
     ProductsRepositoryJPA productsRepository;
     @Autowired
     private LinkedDocsUtilites linkedDocsUtilites;
+    @Autowired
+    private CryptoService cryptoService;
 
     private static final Set VALID_COLUMNS_FOR_ORDER_BY
             = Collections.unmodifiableSet((Set<? extends String>) Stream
@@ -128,11 +131,11 @@ public class VatinvoiceoutRepositoryJPA {
                     "               WHEN p.parent_tablename='shipment'" +
                     "                   THEN coalesce((select sum(coalesce(product_sumprice,0)) from shipment_product where shipment_id=p.shipment_id),0)" +
                     "               ELSE 0 END as summ," +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           p.paydoc_number as paydoc_number," +
                     "           to_char(p.paydoc_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as paydoc_date, " +
-                    "           cg2.name as cagent2, " +
+                    "           pgp_sym_decrypt(cg2.name_enc,:cryptoPassword) as cagent2, " +
 
 
                     "           p.paydoc_date as paydoc_date_sort, " +
@@ -161,8 +164,8 @@ public class VatinvoiceoutRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg2.name) like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg2.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.paydoc_number) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
@@ -178,6 +181,8 @@ public class VatinvoiceoutRepositoryJPA {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
@@ -251,8 +256,8 @@ public class VatinvoiceoutRepositoryJPA {
                     " to_char(p.doc_number,'0000000000') like CONCAT('%',:sg) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg2.name) like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg2.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.paydoc_number) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
@@ -267,7 +272,9 @@ public class VatinvoiceoutRepositoryJPA {
             if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -315,7 +322,7 @@ public class VatinvoiceoutRepositoryJPA {
                     "               ELSE 0 END as summ,"+
                     "           coalesce(p.gov_id,'') as gov_id, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.status_id as status_id, " +
                     "           stat.name as status_name, " +
                     "           stat.color as status_color, " +
@@ -325,7 +332,7 @@ public class VatinvoiceoutRepositoryJPA {
                     "           coalesce(p.paydoc_number,'') as paydoc_number," +
                     "           to_char(p.paydoc_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as paydoc_date, " +
                     "           p.cagent2_id as cagent2_id, " +
-                    "           cg2.name as cagent2 " +
+                    "           pgp_sym_decrypt(cg2.name_enc,:cryptoPassword) as cagent2 " +
 
                     "           from vatinvoiceout p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -344,6 +351,9 @@ public class VatinvoiceoutRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 List<Object[]> queryList = query.getResultList();
 
@@ -676,9 +686,10 @@ public class VatinvoiceoutRepositoryJPA {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
+        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery = "select " +
                 "           p.cagent_id as cagent_id, " +
-                "           cg.name as cagent, " +                                          // контрагент
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +                                         // контрагент
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +                                 // предприятие
                 "           p.status_id_on_complete as status_id_on_complete, " +           // статус по проведении
@@ -690,6 +701,8 @@ public class VatinvoiceoutRepositoryJPA {
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
             List<Object[]> queryList = query.getResultList();
 
             SettingsVatinvoiceoutJSON returnObj=new SettingsVatinvoiceoutJSON();

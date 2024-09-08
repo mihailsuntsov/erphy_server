@@ -27,6 +27,7 @@ import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.*;
 import com.dokio.model.*;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -74,6 +75,8 @@ public class ShipmentRepositoryJPA {
     private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
     private CustomersOrdersRepositoryJPA customersOrdersRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
 
 
@@ -131,7 +134,7 @@ public class ShipmentRepositoryJPA {
                     "           to_char(p.shipment_date at time zone '"+myTimeZone+"', '"+dateFormat+"') as shipment_date, " +
                     "           coalesce(sh.shift_number,0) as shift_number, " +
                     "           (select count(*) from receipts rec where coalesce(rec.shipment_id,0)=p.id and rec.operation_id='sell') as hasSellReceipt," + //подсчет кол-ва чеков на предмет того, был ли выбит чек продажи в данной Розничной продаже
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.shipment_date as shipment_date_sort, " +
                     "           coalesce(p.is_completed,false) as is_completed, " +
                     "           (select count(*) from shipment_product ip where coalesce(ip.shipment_id,0)=p.id) as product_count" + //подсчет кол-ва товаров
@@ -166,7 +169,7 @@ public class ShipmentRepositoryJPA {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
             }
             if (companyId > 0) {
@@ -186,6 +189,8 @@ public class ShipmentRepositoryJPA {
 
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if (searchString != null && !searchString.isEmpty())
                 {query.setParameter("sg", searchString);}
@@ -276,7 +281,7 @@ public class ShipmentRepositoryJPA {
                     " upper(dp.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name)  like upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
@@ -293,7 +298,9 @@ public class ShipmentRepositoryJPA {
             if(needToSetParameter_MyDepthsIds)
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
             return query.getResultList().size();
         } catch (Exception e) {
             e.printStackTrace();
@@ -462,7 +469,7 @@ public class ShipmentRepositoryJPA {
                     "           coalesce(p.nds,false) as nds, " +
                     "           coalesce(p.nds_included,false) as nds_included, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           coalesce(p.shift_id,0) as shift_id, " +
                     "           p.date_time_created as date_time_created_sort, " +
                     "           p.date_time_changed as date_time_changed_sort, " +
@@ -502,6 +509,9 @@ public class ShipmentRepositoryJPA {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(myMasterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -1351,6 +1361,7 @@ public class ShipmentRepositoryJPA {
 
         String stringQuery;
         Long myId=userRepository.getUserId();
+        Long masterId = userRepositoryJPA.getMyMasterId();
         stringQuery = "select " +
                 "           coalesce(p.pricing_type,'priceType') as pricing_type,"+
                 "           p.price_type_id as price_type_id, " +
@@ -1361,7 +1372,7 @@ public class ShipmentRepositoryJPA {
                 "           coalesce(p.save_settings,false) as save_settings, " +
                 "           p.department_id as department_id, " +
                 "           p.customer_id as customer_id, " +
-                "           cg.name as customer, " +
+                "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as customer, " +
                 "           p.id as id, " +
                 "           p.company_id as company_id, " +
                 "           coalesce(p.priority_type_price_side,'defprice') as priority_type_price_side," +
@@ -1375,6 +1386,9 @@ public class ShipmentRepositoryJPA {
                 "           where p.user_id= " + myId +" ORDER BY coalesce(date_time_update,to_timestamp('01.01.2000 00:00:00','DD.MM.YYYY HH24:MI:SS')) DESC  limit 1";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
+            String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+            query.setParameter("cryptoPassword", cryptoPassword);
+
             List<Object[]> queryList = query.getResultList();
 
             SettingsShipmentJSON returnObj=new SettingsShipmentJSON();
@@ -1404,7 +1418,7 @@ public class ShipmentRepositoryJPA {
         catch (Exception e) {
             logger.error("Exception in method getSettingsShipment. SQL query:"+stringQuery, e);
             e.printStackTrace();
-            throw e;
+            return null;
         }
 
     }

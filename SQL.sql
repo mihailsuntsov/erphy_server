@@ -6730,3 +6730,51 @@ alter table file_categories add column owner varchar (4000);
 alter table scdl_appointments drop column description;
 alter table scdl_appointments add column description bytea;
 alter table scdl_appointments add column name_enc bytea;
+
+alter table settings_appointment add column description_template varchar(1000000);
+
+alter table cagents
+  add column name_enc bytea,
+  add column description_enc bytea,
+  add column zip_code_enc bytea,
+  add column region_enc bytea,
+  add column city_enc bytea,
+  add column street_enc bytea,
+  add column home_enc bytea,
+  add column flat_enc bytea,
+  add column additional_address_enc bytea,
+
+  add column jr_zip_code_enc bytea,
+  add column jr_region_enc bytea,
+  add column jr_city_enc bytea,
+  add column jr_street_enc bytea,
+  add column jr_home_enc bytea,
+  add column jr_flat_enc bytea,
+  add column jr_additional_address_enc bytea,
+
+  add column jr_jur_full_name_enc bytea,
+  add column jr_fio_family_enc bytea,
+  add column jr_fio_name_enc bytea,
+  add column jr_fio_otchestvo_enc bytea,
+  add column jr_ip_svid_num_enc bytea,
+  add column jr_jur_kpp_enc bytea,
+  add column jr_jur_ogrn_enc bytea,
+  add column jr_okpo_enc bytea,
+  add column jr_ip_ogrnip_enc bytea,
+  add column jr_inn_enc bytea, --TIN
+  add column vat_enc bytea,
+
+  add column email_enc bytea,
+  add column telephone_enc bytea,
+  add column site_enc bytea,
+
+  add column discount_card_enc bytea,
+  add column id_card_enc bytea,
+  add column date_of_birth_enc bytea,
+  add column sex_enc bytea;
+
+alter table cagents alter column name drop not null;
+update documents set show=0 where id in (43,45,46,37,38,25,44,24);
+update documents set doc_name_en = 'Cash rooms' where id=42;
+
+

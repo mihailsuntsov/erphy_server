@@ -12,6 +12,15 @@ public class SettingsAppointmentForm {
     private boolean hideEmployeeField; // If for all services of company employees are not needed
     private boolean calcDateButTime; // if user wants to calc only dates. Suitable for hotels for checkout time
     private Long  statusIdOnComplete;             // status on completion
+    private String descriptionDefaultTemplate;
+
+    public String getDescriptionDefaultTemplate() {
+        return descriptionDefaultTemplate;
+    }
+
+    public void setDescriptionDefaultTemplate(String descriptionDefaultTemplate) {
+        this.descriptionDefaultTemplate = descriptionDefaultTemplate;
+    }
 
     public Long getStatusIdOnComplete() {
         return statusIdOnComplete;

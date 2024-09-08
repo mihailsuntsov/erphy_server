@@ -32,6 +32,7 @@ import com.dokio.message.response.additional.FilesAcceptanceJSON;
 import com.dokio.message.response.ProductHistoryJSON;
 import com.dokio.message.response.additional.LinkedDocsJSON;
 import com.dokio.repository.Exceptions.*;
+import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
 import com.dokio.util.LinkedDocsUtilites;
@@ -74,6 +75,8 @@ public class AcceptanceRepository {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    private CryptoService cryptoService;
 
     private Logger logger = Logger.getLogger("AcceptanceRepository");
 
@@ -100,7 +103,7 @@ public class AcceptanceRepository {
 
             Integer MY_COMPANY_ID = userRepositoryJPA.getMyCompanyId();
             boolean needToSetParameter_MyDepthsIds = false;
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
             boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
 
             stringQuery = "select  p.id as id, " +
@@ -117,7 +120,7 @@ public class AcceptanceRepository {
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.acceptance_date   at time zone '"+myTimeZone+"', '"+dateFormat+timeFormat+"') as acceptance_date, " +
                     "           cmp.name as company, " +
@@ -143,7 +146,7 @@ public class AcceptanceRepository {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
             if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
@@ -166,7 +169,7 @@ public class AcceptanceRepository {
                         " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                        " upper(cg.name) like  upper(CONCAT('%',:sg,'%')) or "+
+                        " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                         " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
 
             }
@@ -185,6 +188,8 @@ public class AcceptanceRepository {
                 Query query = entityManager.createNativeQuery(stringQuery)
                         .setFirstResult(offsetreal)
                         .setMaxResults(result);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -242,7 +247,7 @@ public class AcceptanceRepository {
         String stringQuery;
         boolean needToSetParameter_MyDepthsIds = false;
         boolean showDeleted = filterOptionsIds.contains(1);// Показывать только удаленные
-        Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+        Long masterId = userRepositoryJPA.getMyMasterId();
 
         stringQuery = "select  p.id as id " +
                 "           from acceptance p " +
@@ -251,7 +256,7 @@ public class AcceptanceRepository {
                 "           INNER JOIN cagents cg ON p.cagent_id=cg.id " +
                 "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                 "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
-                "           where  p.master_id=" + myMasterId +
+                "           where  p.master_id=" + masterId +
                 "           and coalesce(p.is_deleted,false) ="+showDeleted;
 
         if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
@@ -274,7 +279,7 @@ public class AcceptanceRepository {
                     " upper(cmp.name) like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(us.name)  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(uc.name)  like upper(CONCAT('%',:sg,'%')) or "+
-                    " upper(cg.name) like  upper(CONCAT('%',:sg,'%')) or "+
+                    " upper(pgp_sym_decrypt(cg.name_enc,:cryptoPassword))  like upper(CONCAT('%',:sg,'%')) or "+
                     " upper(p.description) like upper(CONCAT('%',:sg,'%'))"+")";
         }
         if (companyId > 0) {
@@ -287,7 +292,9 @@ public class AcceptanceRepository {
             Query query = entityManager.createNativeQuery(stringQuery);
 
             if (searchString != null && !searchString.isEmpty())
-            {query.setParameter("sg", searchString);}
+            {   query.setParameter("sg", searchString);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);}
 
             if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
             {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
@@ -395,7 +402,7 @@ public class AcceptanceRepository {
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
-            Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
+            Long masterId = userRepositoryJPA.getMyMasterId();
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           u.name as master, " +
@@ -411,7 +418,7 @@ public class AcceptanceRepository {
                     "           p.department_id as department_id, " +
                     "           dp.name as department, " +
                     "           p.cagent_id as cagent_id, " +
-                    "           cg.name as cagent, " +
+                    "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as cagent, " +
                     "           p.doc_number as doc_number, " +
                     "           to_char(p.acceptance_date at time zone '"+myTimeZone+"', 'DD.MM.YYYY') as acceptance_date, " +
                     "           cmp.name as company, " +
@@ -437,7 +444,7 @@ public class AcceptanceRepository {
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
-                    "           where  p.master_id=" + myMasterId +
+                    "           where  p.master_id=" + masterId +
                     "           and p.id= " + id;
             if (!securityRepositoryJPA.userHasPermissions_OR(15L, "188")) //Если нет прав на просм по всем предприятиям
             {//остается на: своё предприятие ИЛИ свои подразделения или свои документы
@@ -451,6 +458,8 @@ public class AcceptanceRepository {
             }
             try{
                 Query query = entityManager.createNativeQuery(stringQuery);
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
+                query.setParameter("cryptoPassword", cryptoPassword);
 
                 if(needToSetParameter_MyDepthsIds)//Иначе получим Unable to resolve given parameter name [myDepthsIds] to QueryParameter reference
                 {query.setParameter("myDepthsIds", userRepositoryJPA.getMyDepartmentsId());}
