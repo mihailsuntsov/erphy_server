@@ -96,36 +96,55 @@ public class CagentsJSON {
     private String type;                        // entity or individual
     private String legal_form;
 
-    private String id_card_enc;
-    private String date_of_birth_enc;
-    private String sex_enc;
+    private String id_card;
+    private String date_of_birth;    // always in DD.MM.YYYY
+    private String sex;              // always male / female
+    private String date_of_birth_user_format;  // formatted into user format like MM/DD/YYYY
+    private String sex_user_format;            // translated to the user language like Male / Female, or Мужской / Женский
 
 //    private Integer reg_country_id;             // country of registration
 //    private String tax_number;                  // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                  // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
 
-    public String getId_card_enc() {
-        return id_card_enc;
+
+    public String getDate_of_birth_user_format() {
+        return date_of_birth_user_format;
     }
 
-    public void setId_card_enc(String id_card_enc) {
-        this.id_card_enc = id_card_enc;
+    public void setDate_of_birth_user_format(String date_of_birth_user_format) {
+        this.date_of_birth_user_format = date_of_birth_user_format;
     }
 
-    public String getDate_of_birth_enc() {
-        return date_of_birth_enc;
+    public String getSex_user_format() {
+        return sex_user_format;
     }
 
-    public void setDate_of_birth_enc(String date_of_birth_enc) {
-        this.date_of_birth_enc = date_of_birth_enc;
+    public void setSex_user_format(String sex_user_format) {
+        this.sex_user_format = sex_user_format;
     }
 
-    public String getSex_enc() {
-        return sex_enc;
+    public String getId_card() {
+        return id_card;
     }
 
-    public void setSex_enc(String sex_enc) {
-        this.sex_enc = sex_enc;
+    public void setId_card(String id_card) {
+        this.id_card = id_card;
+    }
+
+    public String getDate_of_birth() {
+        return date_of_birth;
+    }
+
+    public void setDate_of_birth(String date_of_birth) {
+        this.date_of_birth = date_of_birth;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
     }
 
     public String getType() {

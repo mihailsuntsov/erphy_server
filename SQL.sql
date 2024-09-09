@@ -6549,7 +6549,7 @@ insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) va
 (711,'Просмотр документов созданных собой','View documents created by yourself','Погледајте документе које сте сами креирали',59,80),
 (712,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',59,90),
 (713,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',59,100),
-(714,'Редактирование документов своих отделений','Editing documents of your departments','Уређивање докумената свог одељења',59,110),
+(changeDocumentOwner,'Редактирование документов своих отделений','Editing documents of your departments','Уређивање докумената свог одељења',59,110),
 (715,'Редактирование документов созданных собой','Editing documents created by yourself','Уређивање докумената које сте сами креирали',59,120),
 (716,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',59,130),
 (717,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',59,140),
@@ -6776,5 +6776,19 @@ alter table cagents
 alter table cagents alter column name drop not null;
 update documents set show=0 where id in (43,45,46,37,38,25,44,24);
 update documents set doc_name_en = 'Cash rooms' where id=42;
+insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+('male', 'Male', 'Мужской', 'Мушки'),
+('female', 'Female', 'Женский', 'Женско');
 
-
+update permissions set name_sr='Уређивање своје докумената' where name_sr='Уређивање докумената које сте сами креирали';
+update permissions set name_en='Editing owned documents' where name_en='Editing documents created by yourself';
+update permissions set name_ru='Редактирование своих документов' where name_ru='Редактирование документов созданных собой';
+update permissions set name_sr='Брисање своје докумената' where name_sr='Брисање докумената које сте сами креирали';
+update permissions set name_en='Deleting owned documents' where name_en='Deleting documents created by yourself';
+update permissions set name_ru='Удаление своих документов' where name_ru='Удаление документов созданных собой';
+update permissions set name_sr='Довршавање своје докумената' where name_sr='Довршавање докумената које сте сами креирали';
+update permissions set name_en='Completion owned documents' where name_en='Completion documents created by yourself';
+update permissions set name_ru='Проведение своих документов' where name_ru='Проведение документов созданных собой';
+update permissions set name_sr='Погледајте своје докумената' where name_sr='Погледајте документе које сте сами креирали';
+update permissions set name_en='View owned documents' where name_en='View documents created by yourself';
+update permissions set name_ru='Просмотр своих документов' where name_ru='Просмотр документов созданных собой';

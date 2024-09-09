@@ -347,7 +347,6 @@ public class CagentRepositoryJPA {
             String myTimeZone = userSettings.getTime_zone();
             String dateFormat = userSettings.getDateFormat();
             String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24';
-
             stringQuery = "select  p.id as id, " +
                     "           coalesce(pgp_sym_decrypt(p.name_enc, :cryptoPassword),p.name) as name," +
                     "           us.name as creator, " +
@@ -403,7 +402,10 @@ public class CagentRepositoryJPA {
                     "           coalesce(pgp_sym_decrypt(p.vat_enc, :cryptoPassword),coalesce(p.vat,'')) as vat," +// VAT identification number
                     "           coalesce(pgp_sym_decrypt(p.id_card_enc, :cryptoPassword),'') as id_card," +
                     "           coalesce(pgp_sym_decrypt(p.date_of_birth_enc, :cryptoPassword),'') as date_of_birth," + // stored as text in DD.MM.YYYY format
-                    "           coalesce(pgp_sym_decrypt(p.sex_enc, :cryptoPassword),'') as sex" +
+                    "           coalesce(pgp_sym_decrypt(p.sex_enc, :cryptoPassword),'') as sex," +
+                    "           to_char(to_date(NULLIF(pgp_sym_decrypt(date_of_birth_enc, :cryptoPassword),''),'DD.MM.YYYY'), '"+dateFormat+"') as date_of_birth_user_format " +
+
+
                     "           from cagents p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -422,6 +424,7 @@ public class CagentRepositoryJPA {
                 String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
                 query.setParameter("cryptoPassword", cryptoPassword);
+                Map<String, String> map = commonUtilites.translateForMe(new String[]{"'male'","'female'"});
                 List<Object[]> queryList = query.getResultList();
                 CagentsJSON doc = new CagentsJSON();
                 doc.setId(Long.parseLong(                                       queryList.get(0)[0].toString()));
@@ -477,9 +480,11 @@ public class CagentRepositoryJPA {
                 doc.setType(queryList.get(0)[50]!=null?                 (String)queryList.get(0)[50]:"");
                 doc.setLegal_form((String)                                      queryList.get(0)[51]);
                 doc.setJr_vat((String)                                          queryList.get(0)[52]);
-                doc.setId_card_enc((String)                                     queryList.get(0)[53]);
-                doc.setDate_of_birth_enc((String)                               queryList.get(0)[54]);
-                doc.setSex_enc((String)                                         queryList.get(0)[55]);
+                doc.setId_card((String)                                         queryList.get(0)[53]);
+                doc.setDate_of_birth((String)                                   queryList.get(0)[54]);
+                doc.setSex((String)                                             queryList.get(0)[55]);
+                doc.setDate_of_birth_user_format((String)                       queryList.get(0)[56]);
+                doc.setSex_user_format(((!Objects.isNull(doc.getSex()))&&!(doc.getSex()).equals(""))?map.get(doc.getSex()):"");
                 //adding categories
                 List<Integer> valuesListId =getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
                 doc.setCagent_categories_id(valuesListId);
@@ -886,9 +891,9 @@ public class CagentRepositoryJPA {
             query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.setParameter("vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
-            query.setParameter("id_card", (request.getId_card() == null ? "": request.getJr_vat()));
-            query.setParameter("date_of_birth", (request.getDate_of_birth() == null ? "": request.getJr_vat()));
-            query.setParameter("sex", (request.getSex() == null ? "": request.getJr_vat()));
+            query.setParameter("id_card", (request.getId_card() == null ? "": request.getId_card()));
+            query.setParameter("date_of_birth", (request.getDate_of_birth() == null ? "": request.getDate_of_birth()));
+            query.setParameter("sex", (request.getSex() == null ? "": request.getSex()));
 
             query.executeUpdate();
         }catch (Exception e) {

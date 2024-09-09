@@ -1115,6 +1115,9 @@ public class CommonUtilites {
                 put("${CG_MAIL_ADDR_ADDIT}",    cg.getAdditional_address());
                 put("${CG_TIN}",                cg.getJr_inn());
                 put("${CG_VAT}",                cg.getJr_vat());
+                put("${CG_ID_CARD}",            cg.getId_card());
+                put("${CG_DATE_OF_BIRTH}",      cg.getDate_of_birth_user_format());
+                put("${CG_SEX}",                cg.getSex_user_format());
             }};
     }
     public Map<String, String> getCompanyMapValues(Long id){

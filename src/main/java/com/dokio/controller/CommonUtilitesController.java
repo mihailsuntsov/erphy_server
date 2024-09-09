@@ -126,7 +126,7 @@ public class CommonUtilitesController {
 
     @PostMapping("/api/auth/changeDocumentOwner")
     public ResponseEntity<?> changeDocumentOwner(@RequestBody ChangeOwnerForm request){
-        logger.info("Processing get request for path /api/auth/changeDocOwner with parameters: " + request.toString());
+        logger.info("Processing get request for path /api/auth/changeDocumentOwner with parameters: " + request.toString());
         try {return new ResponseEntity<>(commonUtilites.changeDocumentOwner(request), HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();

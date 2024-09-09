@@ -4,6 +4,7 @@ import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
 import com.dokio.message.request.Settings.SettingsAppointmentForm;
 import com.dokio.message.request.additional.AppointmentDocsListSearchForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
+import com.dokio.message.request.additional.ChangeOwnerForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Settings.SettingsAppointmentJSON;
 import com.dokio.message.response.additional.appointment.AppointmentService;
@@ -285,6 +286,16 @@ public class AppointmentsController {
     }
 
 
+    @PostMapping("/api/auth/changeAppointmentOwner")
+    public ResponseEntity<?> changeAppointmentOwner(@RequestBody ChangeOwnerForm request){
+        logger.info("Processing get request for path /api/auth/changeAppointmentOwner with parameters: " + request.toString());
+        try {return new ResponseEntity<>(appointmentRepositoryJPA.changeAppointmentOwner(request), HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Controller changeAppointmentOwner error", e);
+            return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
     @RequestMapping(
             value = "/api/auth/appointmentPrintDocx",
             params = {"file_name", "doc_id", "cagent_id"},
@@ -331,8 +342,6 @@ public class AppointmentsController {
                     put("${APP_SERVICE_PRICE}",         doc.getAppointmentsProductTable().get(i).getProduct_price().toString());
 //                    put("${APP_SERVICE_TAX}",           doc.getAppointmentsProductTable().get(i).getNds_value().toString());
                     put("${APP_SERVICE_TAX_NAME}",      (String)commonUtilites.getFieldValueFromTableById("sprav_taxes","name", masterId, doc.getAppointmentsProductTable().get(0).getNds_id()));
-
-
                 }};
 
                 replaceMap.putAll(commonUtilites.getCagentMapValues(cagentId));
