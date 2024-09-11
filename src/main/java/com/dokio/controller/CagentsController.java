@@ -19,6 +19,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.*;
 import com.dokio.message.request.Reports.HistoryCagentDocsSearchForm;
+import com.dokio.message.request.additional.SetCategoriesToCagentsForm;
 import com.dokio.message.response.*;
 import com.dokio.message.response.Reports.HistoryCagentBalanceJSON;
 import com.dokio.message.response.Reports.HistoryCagentDocsJSON;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -363,14 +365,33 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
 //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************
-    @PostMapping("/api/auth/getCagentCategoriesTrees")
-    @SuppressWarnings("Duplicates")
-    //отправляет ID предприятия. По нему в getCategoriesRootIds ищутся id корневых категорий, и уже по ним грузятся деревья категорий
-    public ResponseEntity<?> getCagentCategoriesTrees(@RequestBody SearchForm request){
-        logger.info("Processing post request for path /api/auth/getCagentCategoriesTrees: " + request.toString());
+//    @PostMapping("/api/auth/getCagentCategoriesTrees")
+//    @SuppressWarnings("Duplicates")
+//    //отправляет ID предприятия. По нему в getCategoriesRootIds ищутся id корневых категорий, и уже по ним грузятся деревья категорий
+//    public ResponseEntity<?> getCagentCategoriesTrees(@RequestBody SearchForm request){
+//        logger.info("Processing post request for path /api/auth/getCagentCategoriesTrees: " + request.toString());
+//
+//        List<CagentCategories> returnList;
+//        List<Integer> categoriesRootIds = cagentsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
+//        try {
+//            returnList = cagentsRepositoryJPA.getCagentCategoriesTrees(categoriesRootIds);
+//            ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
+//            return responseEntity;
+//        } catch (Exception e){
+//            ResponseEntity responseEntity = new ResponseEntity<>("Error when requesting getCagentCategoriesTrees", HttpStatus.INTERNAL_SERVER_ERROR);
+//            return responseEntity;
+//        }
+//    }
 
+    @RequestMapping(
+            value = "/api/auth/getCagentCategoriesTrees",// отдаёт список контактов контрагента
+            params = {"company_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getCagentCategoriesTrees(
+            @RequestParam("company_id") Long company_id){
+        logger.info("Processing get request for path /api/auth/getCagentCategoriesTrees, id = " + company_id);
         List<CagentCategories> returnList;
-        List<Integer> categoriesRootIds = cagentsRepositoryJPA.getCategoriesRootIds(Long.valueOf(Integer.parseInt((request.getCompanyId()))));//
+        List<Integer> categoriesRootIds = cagentsRepositoryJPA.getCategoriesRootIds(Long.valueOf(company_id));
         try {
             returnList = cagentsRepositoryJPA.getCagentCategoriesTrees(categoriesRootIds);
             ResponseEntity responseEntity = new ResponseEntity<>(returnList, HttpStatus.OK);
@@ -482,6 +503,21 @@ public ResponseEntity<?> getMutualpaymentTable(@RequestBody HistoryCagentDocsSea
             e.printStackTrace();
             logger.error("Controller saveChangeCagentCategoriesOrder error", e);
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
+    @PostMapping("/api/auth/setCategoriesToCagents")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setCategoriesToCagents(@RequestBody SetCategoriesToCagentsForm form) {
+        logger.info("Processing post request for path api/auth/setCategoriesToCagents: " + form.toString());
+        Set<Long> cagentsIds = form.getCagentsIds();
+        List<Long> categoriesIds = form.getCategoriesIds();
+        Boolean save = form.getSave();
+        Integer result = cagentsRepositoryJPA.setCategoriesToCagents(cagentsIds, categoriesIds, save);
+        if (!Objects.isNull(result)) {
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Error assigning categories to counterparties!", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

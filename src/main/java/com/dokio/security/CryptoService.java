@@ -26,7 +26,8 @@ import java.security.spec.KeySpec;
 import java.util.*;
 
 
-@Service
+@Repository
+@Transactional
 public class CryptoService {
 
     Logger logger = Logger.getLogger(CryptoService.class);
@@ -118,20 +119,25 @@ public class CryptoService {
         Writer writer = null;
         String pathToMasterFolder = storageService.getBaseFilesFolderPath()+masterId.toString()+"//";
         try {
-            writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(pathToMasterFolder+"key.txt"), "utf-8"));
-            writer.write(UUID.randomUUID().toString());
+            if(!storageService.isPathExists(pathToMasterFolder)){
+                File destinationFolder = new File(pathToMasterFolder);
+                destinationFolder.mkdir();
+            }
+            if(storageService.isPathExists(pathToMasterFolder)) {
+                writer = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(pathToMasterFolder + "key.txt"), "utf-8"));
+                writer.write(UUID.randomUUID().toString());
+            } else throw new Exception("Cannot create directory "+pathToMasterFolder);
         } catch (IOException ex) {
             ex.printStackTrace();
-            logger.error("Exception in method createKeyFile in " + pathToMasterFolder, ex);
+            logger.error("IOException in method createKeyFile in " + pathToMasterFolder, ex);
         } catch (Exception ex) {
             ex.printStackTrace();
-            logger.error("Exception iFromPassword(n method createKeyFile in " + pathToMasterFolder, ex);
+            logger.error("Exception in method createMasterKeyFile in " + pathToMasterFolder, ex);
         } finally {
             try {writer.close();} catch (Exception ex) {/*ignore*/}
         }
     }
-
 
     public String getCryptoPasswordFromDatabase(Long masterId) throws Exception {
         String masterCryptoKey = getMasterCryptoKey(masterId);
@@ -157,7 +163,7 @@ public class CryptoService {
         }
     }
 
-    public void addCryptoPasswordToDatabase(Long masterId) throws Exception {
+    private void addCryptoPasswordToDatabase(Long masterId){
         String masterCryptoKey = getMasterCryptoKey(masterId);
         String stringQuery =
                 " update users " +

@@ -711,6 +711,7 @@ public class AppointmentRepositoryJPA {
         String stringQuery="";
         try{
             String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+            if(!Objects.isNull(cagent.getDate_of_birth())) commonUtilites.isDateValid(cagent.getDate_of_birth());
             stringQuery =
                     " insert into cagents ( " +
                             (Objects.isNull(cagent.getId())?"":" id, ") +

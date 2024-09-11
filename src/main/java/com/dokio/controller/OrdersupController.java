@@ -24,6 +24,7 @@ package com.dokio.controller;
         import com.dokio.message.response.additional.InvoiceoutProductTableJSON;
         import com.dokio.message.response.additional.OrdersupProductTableJSON;
         import com.dokio.repository.*;
+        import com.dokio.service.StorageService;
         import com.dokio.service.TemplatesService;
         import org.apache.log4j.Logger;
         import org.jxls.common.Context;
@@ -38,10 +39,7 @@ package com.dokio.controller;
         import org.springframework.web.bind.annotation.*;
 
         import javax.servlet.http.HttpServletResponse;
-        import java.io.File;
-        import java.io.FileInputStream;
-        import java.io.InputStream;
-        import java.io.OutputStream;
+        import java.io.*;
         import java.math.BigDecimal;
         import java.util.ArrayList;
         import java.util.List;
@@ -63,6 +61,10 @@ public class OrdersupController {
     CagentRepositoryJPA cagentRepository;
     @Autowired
     CompanyRepositoryJPA company;
+    @Autowired
+    StorageService storageService;
+    @Autowired
+    UserRepositoryJPA userRepositoryJPA;
 
     @PostMapping("/api/auth/getOrdersupTable")
     @SuppressWarnings("Duplicates")
@@ -298,7 +300,9 @@ public class OrdersupController {
                                  @RequestParam("file_name") String filename,
                                  @RequestParam("doc_id") Long doc_id) throws Exception {
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
-        InputStream is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        byte[] decryptedBytesOfFile = storageService.loadFile(fileInfo.getPath()+"/"+filename, masterId);
+        InputStream is = new ByteArrayInputStream(decryptedBytesOfFile);
         OutputStream os = response.getOutputStream();
         try {
             OrdersupJSON doc = ordersupRepository.getOrdersupValuesById(doc_id);

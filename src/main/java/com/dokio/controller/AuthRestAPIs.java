@@ -48,6 +48,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.dokio.message.request.LoginForm;
@@ -206,6 +207,7 @@ public class AuthRestAPIs {
 
 			userRepository.save(user);// сохраняем чтобы применился язык
 			String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(createdUserId);
+//			if(Objects.isNull(cryptoPassword)) throw new Exception("Can't create crypto password!");
 			Map<String, String> map = cu.translateForUser(createdUserId, new String[]{"'my_company'", "'my_department'", "'role_admins'", "'default_store_name'", "'dep_part'"});
 			// set plan options with current prices to master user
 			subscriptionRepository.createMasterUserPlanOptions(createdUserId);
@@ -230,7 +232,7 @@ public class AuthRestAPIs {
 			department.setBoxoffice_id(bo);
 			department.setPayment_account_id(ac);
 			Long departmentId = departmentRepositoryJPA.insertDepartmentFast(department, companyId, createdUserId);
-			Long depPartId = departmentRepositoryJPA.insertDepartmentPartFast(map.get("dep_part")+" 1", departmentId, createdUserId);
+			departmentRepositoryJPA.insertDepartmentPartFast(map.get("dep_part")+" 1", departmentId, createdUserId);
 //			DepartmentPartsForm departmentPartsForm = new DepartmentPartsForm();
 			Companies userCompany = emgr.find(Companies.class, companyId);
 			Set<Long> userDepartmentsIds = new HashSet<>(Arrays.asList(departmentId));
@@ -287,8 +289,8 @@ public class AuthRestAPIs {
 			// Должности / Job titles
 			spravJobtitleRepository.createJobtitlesFast(createdUserId, createdUserId, companyId);;
 			// Занести пользователя в контрагенты
-			if(settingsGeneral.isSaas() && !Objects.isNull(settingsGeneral.getBilling_cagents_category_id()))
-				userRepositoryJPA.setUserAsCagent(createdUserId, signUpRequest.getName(), signUpRequest.getEmail(), settingsGeneral);
+//			if(settingsGeneral.isSaas() && !Objects.isNull(settingsGeneral.getBilling_cagents_category_id()))
+//				userRepositoryJPA.setUserAsCagent(createdUserId, signUpRequest.getName(), signUpRequest.getEmail(), settingsGeneral, cryptoPassword);
 			// отправили письмо для подтверждения e-mail (кроме самого первого зарегистрированного - ему подтверждение не надо, т.к. почта не настроена и он может не получить емайл)
 			// sending email message for email validation (but the first registred user - he do not need to be validated by email as the email server may be not set up correctly)
 			if(cntUsers>0)
@@ -307,6 +309,16 @@ public class AuthRestAPIs {
 			return new ResponseEntity<>("User registration error", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+//	String getCryptoPassword(Long createdUserId){
+//		try{
+//			return cryptoService.getCryptoPasswordFromDatabase(createdUserId);
+//		} catch (Exception e) {
+//			logger.error("Exception in method getCryptoPassword. MasterId = "+createdUserId, e);
+//			e.printStackTrace();
+//			return null;
+//		}
+//	}
 
 	public Set<Long> getAdminPermissions(){
 		return new HashSet<>(Arrays.asList(

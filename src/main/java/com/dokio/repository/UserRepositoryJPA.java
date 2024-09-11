@@ -228,12 +228,13 @@ public class UserRepositoryJPA {
 
     @Transactional
     public Integer updateUser(SignUpForm request) {
-        boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
-        boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "27"); // Пользователи:"Редактирование всех"
+//        boolean userHasPermissions_OwnUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование своего"
+        boolean userHasPermissions_AllUpdate=securityRepositoryJPA.userHasPermissions_OR(5L, "26"); // Пользователи:"Редактирование всех пользователей своего предприятия"
         boolean requestUserIdEqualMyUserId=(userDetailService.getUserId()==Long.valueOf(request.getId()));
 
-        if(((requestUserIdEqualMyUserId && userHasPermissions_OwnUpdate)//(если пользователь сохраняет свой аккаунт и у него есть на это права
-                ||(!requestUserIdEqualMyUserId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
+//        if(((requestUserIdEqualMyUserId && userHasPermissions_OwnUpdate)//(если пользователь сохраняет свой аккаунт и у него есть на это права
+//                ||(!requestUserIdEqualMyUserId && userHasPermissions_AllUpdate))//или если пользователь сохраняет чужой аккаунт и у него есть на это права)
+        if(userHasPermissions_AllUpdate
                 && securityRepositoryJPA.isItMyMastersUser(Long.valueOf(request.getId()))) //и сохраняемый аккаунт под юрисдикцией главного аккаунта
         {
             try{
@@ -1678,52 +1679,52 @@ public class UserRepositoryJPA {
         } else return null;
     }
 
-    @Transactional
-    public void setUserAsCagent(Long userId, String userName, String userEmail, SettingsGeneralJSON settingsGeneral){
-        String stringQuery;
-        stringQuery =
-            " insert into cagents ( " +
-                " master_id, " +
-                " creator_id, " +
-                " company_id, " +
-                " date_time_created, " +
-                " user_id, " +
-                " name, " +
-                " description, " +
-                " email, " +
-                " type," +
-                " legal_form" +
-            ") values ( " +
-                settingsGeneral.getBilling_master_id()           + ", " +
-                settingsGeneral.getBilling_shipment_creator_id() + ", " +
-                settingsGeneral.getBilling_shipment_company_id() + ", " +
-                " now(), " +
-                userId + ", " +
-                " :userName, " +
-                " CONCAT('User with id = ',"+userId+"), " +
-                " :userEmail," +
-                "'individual', " +
-                "''" +
-            "); " +
-
-            " insert into cagent_cagentcategories (" +
-                "category_id, " +
-                "cagent_id" +
-            ") values ( " +
-                settingsGeneral.getBilling_cagents_category_id() + ", " +
-                "(select id from cagents where email='"+userEmail+"')" +
-            ") " +
-            " ON CONFLICT ON CONSTRAINT cagent_cagentcategories_uq DO NOTHING;";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("userEmail",userEmail);
-            query.setParameter("userName",userName);
-            query.executeUpdate();
-        }catch (Exception e) {
-            logger.error("Exception in method setUserAsCagent. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-        }
-    }
+//    @Transactional
+//    public void setUserAsCagent(Long userId, String userName, String userEmail, SettingsGeneralJSON settingsGeneral){
+//        String stringQuery;
+//        stringQuery =
+//            " insert into cagents ( " +
+//                " master_id, " +
+//                " creator_id, " +
+//                " company_id, " +
+//                " date_time_created, " +
+//                " user_id, " +
+//                " name, " +
+//                " description, " +
+//                " email, " +
+//                " type," +
+//                " legal_form" +
+//            ") values ( " +
+//                settingsGeneral.getBilling_master_id()           + ", " +
+//                settingsGeneral.getBilling_shipment_creator_id() + ", " +
+//                settingsGeneral.getBilling_shipment_company_id() + ", " +
+//                " now(), " +
+//                userId + ", " +
+//                " :userName, " +
+//                " CONCAT('User with id = ',"+userId+"), " +
+//                " :userEmail," +
+//                "'individual', " +
+//                "''" +
+//            "); " +
+//
+//            " insert into cagent_cagentcategories (" +
+//                "category_id, " +
+//                "cagent_id" +
+//            ") values ( " +
+//                settingsGeneral.getBilling_cagents_category_id() + ", " +
+//                "(select id from cagents where email='"+userEmail+"')" +
+//            ") " +
+//            " ON CONFLICT ON CONSTRAINT cagent_cagentcategories_uq DO NOTHING;";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.setParameter("userEmail",userEmail);
+//            query.setParameter("userName",userName);
+//            query.executeUpdate();
+//        }catch (Exception e) {
+//            logger.error("Exception in method setUserAsCagent. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//        }
+//    }
 
     //отдает сотрудников по списку должностей и отделений
     public List<EmployeeScedule> getEmployeeListByDepartmentsAndJobtitles(List<Long> depIds, List<Long> jobttlsIds, Long masterId) {
@@ -1785,38 +1786,49 @@ public class UserRepositoryJPA {
         {
             try {
                 String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+
+                if(!Objects.isNull(request.getDate_of_birth())) commonUtilites.isDateValid(request.getDate_of_birth());
+
                 stringQuery =
                         " insert into cagents ( " +
                                 " master_id," +
                                 " creator_id, " +
                                 " company_id, " +
                                 " date_time_created, " +
-                                " name, " +
-                                " jr_fio_family, " +
-                                " jr_fio_name, " +
-                                " jr_fio_otchestvo, " +
-                                " email, " +
-                                " jr_jur_full_name, " +
-                                " type " +
+                                " name_enc, " +
+                                " jr_fio_family_enc, " +
+                                " jr_fio_name_enc, " +
+                                " jr_fio_otchestvo_enc, " +
+                                " email_enc, " +
+                                " jr_jur_full_name_enc, " +
+                                " type, " +
+                                " date_of_birth_enc,"+
+                                " sex_enc"+
                                 " ) values (" +
                                 "" + masterId + "," +
                                 "" + myId + "," +
                                 "" + request.getCompanyId() + "," +
                                 " to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')," +
-                                " :displayName," +
-                                " :surname," +
-                                " :name," +
-                                " :fatherName," +
-                                " :email," +
-                                " :displayName," +
-                                "'individual') " +
+                                " pgp_sym_encrypt(:displayName, :cryptoPassword)," +
+                                " pgp_sym_encrypt(:surname, :cryptoPassword)," +
+                                " pgp_sym_encrypt(:name, :cryptoPassword)," +
+                                " pgp_sym_encrypt(:fatherName, :cryptoPassword)," +
+                                " pgp_sym_encrypt(:email, :cryptoPassword)," +
+                                " pgp_sym_encrypt(:displayName, :cryptoPassword)," +
+                                "'individual'," +
+                                " pgp_sym_encrypt(:date_of_birth, :cryptoPassword),"+
+                                " pgp_sym_encrypt(:sex, :cryptoPassword))" +
                                 " ON CONFLICT ON CONSTRAINT cagents_pkey DO NOTHING";
+                String cryptoPassword = cryptoService.getCryptoPasswordFromDatabase(masterId);
                 Query query = entityManager.createNativeQuery(stringQuery);
-                query.setParameter("displayName", request.getDisplayName());
-                query.setParameter("name", request.getName());
-                query.setParameter("surname", request.getSurname());
-                query.setParameter("fatherName", request.getFatherName());
-                query.setParameter("email", request.getEmail());
+                query.setParameter("displayName", (request.getDisplayName() == null ? "": request.getDisplayName()));
+                query.setParameter("name",(request.getName() == null ? "": request.getName()));
+                query.setParameter("fatherName", (request.getFatherName() == null ? "": request.getFatherName()));
+                query.setParameter("surname", (request.getSurname() == null ? "": request.getSurname()));
+                query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+                query.setParameter("date_of_birth", (request.getDate_of_birth() == null ? "": request.getDate_of_birth()));
+                query.setParameter("sex", (request.getSex() == null ? "": request.getSex()));
+                query.setParameter("cryptoPassword",cryptoPassword);
                 query.executeUpdate();
 
                 stringQuery = "select id from cagents where date_time_created=(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id=" + myId;

@@ -37,7 +37,7 @@ public class CagentsJSON {
     private Integer opf_id;
     private String date_time_created;
     private String date_time_changed;
-    private List<Integer> cagent_categories_id;
+    private List<Long> cagent_categories_id;
 
     // Апдейт Контрагентов:
 
@@ -315,11 +315,11 @@ public class CagentsJSON {
         this.date_time_changed = date_time_changed;
     }
 
-    public List<Integer> getCagent_categories_id() {
+    public List<Long> getCagent_categories_id() {
         return cagent_categories_id;
     }
 
-    public void setCagent_categories_id(List<Integer> cagent_categories_id) {
+    public void setCagent_categories_id(List<Long> cagent_categories_id) {
         this.cagent_categories_id = cagent_categories_id;
     }
 

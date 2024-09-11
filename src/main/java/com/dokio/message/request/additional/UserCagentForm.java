@@ -7,6 +7,9 @@ public class UserCagentForm {
     private String  fatherName;
     private String  displayName;
     private String  email;
+    private String  date_of_birth;    // always in DD.MM.YYYY
+    private String  sex;              // always male / female
+
 
     public UserCagentForm() {
     }
@@ -18,6 +21,22 @@ public class UserCagentForm {
         this.fatherName = fatherName;
         this.email = email;
         this.displayName = displayName;
+    }
+
+    public String getDate_of_birth() {
+        return date_of_birth;
+    }
+
+    public void setDate_of_birth(String date_of_birth) {
+        this.date_of_birth = date_of_birth;
+    }
+
+    public String getSex() {
+        return sex;
+    }
+
+    public void setSex(String sex) {
+        this.sex = sex;
     }
 
     public String getDisplayName() {

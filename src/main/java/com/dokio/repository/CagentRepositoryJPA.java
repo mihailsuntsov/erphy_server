@@ -41,6 +41,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -403,7 +404,7 @@ public class CagentRepositoryJPA {
                     "           coalesce(pgp_sym_decrypt(p.id_card_enc, :cryptoPassword),'') as id_card," +
                     "           coalesce(pgp_sym_decrypt(p.date_of_birth_enc, :cryptoPassword),'') as date_of_birth," + // stored as text in DD.MM.YYYY format
                     "           coalesce(pgp_sym_decrypt(p.sex_enc, :cryptoPassword),'') as sex," +
-                    "           to_char(to_date(NULLIF(pgp_sym_decrypt(date_of_birth_enc, :cryptoPassword),''),'DD.MM.YYYY'), '"+dateFormat+"') as date_of_birth_user_format " +
+                    "           coalesce(to_char(to_date(NULLIF(pgp_sym_decrypt(date_of_birth_enc, :cryptoPassword),''),'DD.MM.YYYY'), '"+dateFormat+"'),'') as date_of_birth_user_format " +
 
 
                     "           from cagents p " +
@@ -486,7 +487,7 @@ public class CagentRepositoryJPA {
                 doc.setDate_of_birth_user_format((String)                       queryList.get(0)[56]);
                 doc.setSex_user_format(((!Objects.isNull(doc.getSex()))&&!(doc.getSex()).equals(""))?map.get(doc.getSex()):"");
                 //adding categories
-                List<Integer> valuesListId =getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
+                List<Long> valuesListId =getCagentsCategoriesIdsByCagentId(Long.valueOf(id));
                 doc.setCagent_categories_id(valuesListId);
                 return doc;
             } catch (Exception e) {
@@ -1522,6 +1523,7 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
 //        return result;
 //    }
 
+
     // inserting base set of categories of new account or company
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
@@ -1551,14 +1553,14 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
                 "("+mId+","+uId+","+cId+","+"to_timestamp('"+t+"','YYYY-MM-DD HH24:MI:SS.MS'),pgp_sym_encrypt('"+map.get("cagent_landlord")+"', :cryptoPassword),   pgp_sym_encrypt('"+map.get("cagent_landlord")+"',   :cryptoPassword)   ,'entity');" +
 
                 "insert into cagent_cagentcategories (category_id,cagent_id) values " +
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_suppliers")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_supplier")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_customers")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_customer")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_employees")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_director_y")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_banks")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_bank")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_accounting")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_accntnts")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_transport")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_carrier")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_rent")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_landlord")+"')),"+
-                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_tax_srvcs")+"'),(select id from cagents where company_id="+cId+" and name = '"+map.get("cagent_taxoffce")+"'));";
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_suppliers")+"'),(select id from cagents where company_id="+cId+"   and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_supplier")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_customers")+"'),(select id from cagents where company_id="+cId+"   and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_customer")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_employees")+"'),(select id from cagents where company_id="+cId+"   and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_director_y")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_banks")+"'),(select id from cagents where company_id="+cId+"       and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_bank")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_accounting")+"'),(select id from cagents where company_id="+cId+"  and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_accntnts")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_transport")+"'),(select id from cagents where company_id="+cId+"   and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_carrier")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_rent")+"'),(select id from cagents where company_id="+cId+"        and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_landlord")+"')),"+
+                "((select id from cagent_categories where company_id="+cId+" and name = '"+map.get("catg_tax_srvcs")+"'),(select id from cagents where company_id="+cId+"   and pgp_sym_decrypt(name_enc, :cryptoPassword) = '"+map.get("cagent_taxoffce")+"'));";
 
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -1589,11 +1591,14 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
     }
 
     //права не нужны т.к. не вызывается по API, только из контроллера
-    private List<Integer> getCagentsCategoriesIdsByCagentId(Long id) {
+    private List<Long> getCagentsCategoriesIdsByCagentId(Long id) {
         String stringQuery="select p.category_id from cagent_cagentcategories p where p.cagent_id= "+id;
         Query query = entityManager.createNativeQuery(stringQuery);
-        List<Integer> depIds = query.getResultList();
-        return depIds;
+        List<Integer> queryList = query.getResultList();
+        List<Long> returnList =  queryList.stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+        return returnList;
     }
 
     @Transactional//права не нужны т.к. не вызывается по API, только из контроллера
@@ -1964,4 +1969,88 @@ public List<HistoryCagentBalanceJSON> getMutualpaymentTable(int result, int offs
             throw new Exception();
         }
     }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
+    public Integer setCategoriesToCagents(Set<Long> cagentsIds, List<Long> categoriesIds, Boolean save) {
+        Long myMasterId = userRepositoryJPA.getMyMasterId();
+
+        if( securityRepositoryJPA.userHasPermissions_OR(12L,"136") &&
+            securityRepositoryJPA.isItAllMyMastersDocuments("cagents",commonUtilites.SetOfLongToString(cagentsIds,",","",""))
+        )
+        {
+            try {
+                String cagents = commonUtilites.SetOfLongToString(cagentsIds, ",", "", "");
+                //поверка на то, что присланные id файлов действительно являются файлами мастер-аккаунта
+                if (securityRepositoryJPA.isItAllMyMastersDocuments("cagents", cagents)) {
+                    if (!save) {//если не нужно сохранять те категории у файла, которые уже есть
+                        //удаляем все категории у всех запрашиваемых файлов
+                        if (deleteAllCagentsCategories(cagents)) {
+                            //назначаем файлам категории
+                            if(setCategoriesToCagents(cagentsIds,categoriesIds,myMasterId))
+                                return 1;
+                            else return null; // ошибка на прописывании категорий у файла
+                        } else return null; // ошибка на стадии удаления категорий файлов в deleteAllCagentsCategories
+                    } else {//нужно сохранить предыдущие категории у файлов. Тут уже сложнее - нужно отдельно работать с каждым файлом
+                        //цикл по файлам
+                        for (Long p : cagentsIds) {
+                            //получим уже имеющиеся категории у текущего файла
+                            List<Long> cagentCategoriesIds = new ArrayList<>();
+                            cagentCategoriesIds.addAll(getCagentsCategoriesIdsByCagentId(p));
+                            //дополним их новыми категориями
+                            cagentCategoriesIds.addAll(categoriesIds);
+                            //удалим старые категории
+                            if (deleteAllCagentsCategories(p.toString())) {
+                                Set<Long> prod = new HashSet<>();
+                                prod.add(p);
+                                //назначаем текущему файлу категории
+                                if(!setCategoriesToCagents(prod,cagentCategoriesIds,myMasterId))
+                                    return null; // ошибка на прописывании категорий у файла
+                            } else return null; // ошибка на стадии удаления категорий текущего файла в deleteAllCagentsCategories
+                        }
+                        return 1;
+                    }
+                } else return null; // не прошли по безопасности - подсунуты "левые" id файлов
+            } catch (Exception e) {
+                logger.error("Exception in method setCategoriesToCagents 1", e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1; // не прошли по безопасности
+    }
+    private Boolean setCategoriesToCagents(Set<Long> cagentsIds, List<Long> categoriesIds, Long myMasterId) throws Exception {
+        if(categoriesIds.size()>0) {//если категории есть
+            //прописываем их у всех запрашиваемых файлов
+            StringBuilder stringQuery = new StringBuilder("insert into cagent_cagentcategories (cagent_id, category_id) values ");
+            int i = 0;
+            for (Long p : cagentsIds) { // cagents are checked to belonging to MasterId
+                for (Long c : categoriesIds) {
+                    commonUtilites.idBelongsMyMaster("cagent_categories", c, myMasterId);
+                    stringQuery.append(i > 0 ? "," : "").append("(").append(p).append(",").append(c).append(")");
+                    i++;
+                }
+            }
+            stringQuery.append(" ON CONFLICT ON CONSTRAINT cagent_cagentcategories_uq DO NOTHING");
+            try {
+                entityManager.createNativeQuery(stringQuery.toString()).executeUpdate();
+                return true;
+            } catch (Exception e) {
+                logger.error("Exception in method setCategoriesToCagents 2. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                throw new Exception();
+            }
+        } else return true;
+    }
+    private Boolean deleteAllCagentsCategories(String cagents) throws Exception {
+        String stringQuery = "delete from cagent_cagentcategories where cagent_id in("+cagents.replaceAll("[^0-9\\,]", "")+")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception in method deleteAllFilesCategories. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 }

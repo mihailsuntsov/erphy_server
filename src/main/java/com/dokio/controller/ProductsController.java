@@ -41,10 +41,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -988,12 +985,12 @@ public class ProductsController {
     @PostMapping("/api/auth/labelsPrint")
     public void labelsPrint(HttpServletResponse response, @RequestBody LabelsPrintForm labelsPrintForm) throws Exception  {
         logger.info("Processing post request for path /api/auth/labelsPrint with parameters: " + labelsPrintForm.toString());
-//        String filename="94ca2b16-dc1-2023-01-02-12-51-33-559.xls";
         String filename=labelsPrintForm.getFile_name();
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
-        InputStream  is = new FileInputStream(new File(fileInfo.getPath()+"/"+filename));
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        byte[] decryptedBytesOfFile = storageService.loadFile(fileInfo.getPath()+"/"+filename, masterId);
+        InputStream is = new ByteArrayInputStream(decryptedBytesOfFile);
         OutputStream os = response.getOutputStream();
-
         try {
             List<ProductLabel> productLabelsList = productsRepositoryJPA.getProductLabelsList(labelsPrintForm.getLabelsPrintProductsList(), labelsPrintForm.getPricetype_id(),labelsPrintForm.getCompany_id());
 

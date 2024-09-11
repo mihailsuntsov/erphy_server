@@ -487,11 +487,9 @@ public class AppointmentsController {
                                   @RequestParam("doc_id") Long doc_id) throws Exception {
 
         FileInfoJSON fileInfo = tservice.getFileInfo(filename);
-
         Long masterId = userRepositoryJPA.getMyMasterId();
         byte[] decryptedBytesOfFile = storageService.loadFile(fileInfo.getPath()+"/"+filename, masterId);
         InputStream is = new ByteArrayInputStream(decryptedBytesOfFile);
-
         OutputStream os = response.getOutputStream();
         try {
             AppointmentsJSON doc = appointmentRepositoryJPA.getAppointmentsValuesById(doc_id);
