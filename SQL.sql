@@ -6792,3 +6792,6 @@ update permissions set name_ru='Проведение своих документ
 update permissions set name_sr='Погледајте своје докумената' where name_sr='Погледајте документе које сте сами креирали';
 update permissions set name_en='View owned documents' where name_en='View documents created by yourself';
 update permissions set name_ru='Просмотр своих документов' where name_ru='Просмотр документов созданных собой';
+update version set value = '1.4.1', date = '12-09-2024';
+
+------------------------------------------------  end of 1.4.1  ------------------------------------------------------

@@ -94,12 +94,13 @@ public class MailRepository {
                 email = settingsGeneral.getStores_alert_email();
             } else {
                 user = userRepository.findByEmail(email.trim());
-                if(lastRepairPassQueryAgo(user.getId())<60)
-                    return -105; //Request rate exceeded Превышена частота запросов (more than 1 per 60 sec)
                 if(Objects.isNull(user)) {
                     logger.warn("User not found in forgotPass by Email "+email.trim());
                     return -100;
                 }
+                if(lastRepairPassQueryAgo(user.getId())<60)
+                    return -105; //Request rate exceeded Превышена частота запросов (more than 1 per 60 sec)
+
 
             }
 

@@ -967,18 +967,19 @@ public class FileRepositoryJPA {
     @SuppressWarnings("Duplicates")
     public Integer deleteFileCategory(FileCategoriesForm request)
     {
-        if(securityRepositoryJPA.userHasPermissions_OR(13L, "158,159"))
+        if(securityRepositoryJPA.userHasPermissions_OR(13L, "158,159,737"))
         {
             Long myMasterId = userRepositoryJPA.getUserMasterIdByUsername(userRepository.getUserName());
             String stringQuery;
             stringQuery = "delete from file_categories "+
                     " where id=" + request.getCategoryId()+
                     " and master_id="+myMasterId ;
-            if (!securityRepositoryJPA.userHasPermissions_OR(13L, "158")) //Если нет прав по всем предприятиям
-            {
-                //остается только на своё предприятие (159)
-                int myCompanyId = userRepositoryJPA.getMyCompanyId();
-                stringQuery = stringQuery + " and company_id=" + myCompanyId;//т.е. нет прав на все предприятия, а на своё есть
+            if (!securityRepositoryJPA.userHasPermissions_OR(13L, "158")) //Если нет прав на "Редактирование категорий всех предприятий"
+            {//остается на: своё предприятие ИЛИ свои категории (159 или 737)
+                if (!securityRepositoryJPA.userHasPermissions_OR(13L, "159")) //Если нет прав на "Редактирование категорий своего предприятия"
+                {//остается на Удаление своих категорий (737)
+                    stringQuery = stringQuery + " and (owner_id=" + userRepositoryJPA.getMyId() + " or owner_id is null) ";
+                } else stringQuery = stringQuery + " and company_id=" + userRepositoryJPA.getMyCompanyId();
             }
             try
             {

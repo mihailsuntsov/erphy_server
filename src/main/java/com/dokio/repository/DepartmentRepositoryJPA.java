@@ -92,8 +92,8 @@ public class DepartmentRepositoryJPA {
             stringQuery = "select " +
                     "           p.id as id, " +
                     "           p.name as name, " +
-                    "           us.username as creator, " +
-                    "           uc.username as changer, " +
+                    "           us.name as creator, " +
+                    "           uc.name as changer, " +
                     "           p.address as address, " +
                     "           p.additional as additional, " +
                     "           (select name from companies where id=p.company_id) as company, " +

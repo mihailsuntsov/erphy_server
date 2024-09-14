@@ -181,6 +181,11 @@
             <artifactId>docx4j-search-and-replace-util</artifactId>
             <version>1.0.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.26.1</version>
+        </dependency>
         <!-- Java -->
         <dependency>
             <groupId>javax.validation</groupId>

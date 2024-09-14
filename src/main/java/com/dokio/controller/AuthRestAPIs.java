@@ -276,7 +276,8 @@ public class AuthRestAPIs {
             store.setStore_days_for_esd(1);
             store.setStore_auto_reserve(false);
             store.setIs_let_sync(true);
-            Long storeId=storeRepository.insertStoreFast(store,createdUserId,createdUserId);
+
+//            Long storeId=storeRepository.insertStoreFast(store,createdUserId,createdUserId);
 
 			// базовые категоии товаров и сами товары
 			productsRepository.insertProductCategoriesFast(createdUserId, createdUserId, companyId);
@@ -285,7 +286,7 @@ public class AuthRestAPIs {
 			// статусы документов
 			statusDocRepository.insertStatusesFast(createdUserId, createdUserId, companyId);
 			// базовые аттрибуты товаров (размер, цвет)
-			spravProductAttributes.insertProductAttributeFast(createdUserId, createdUserId, companyId, storeId);
+//			spravProductAttributes.insertProductAttributeFast(createdUserId, createdUserId, companyId, storeId);
 			// Должности / Job titles
 			spravJobtitleRepository.createJobtitlesFast(createdUserId, createdUserId, companyId);;
 			// Занести пользователя в контрагенты
