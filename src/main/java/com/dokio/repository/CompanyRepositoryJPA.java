@@ -18,6 +18,8 @@
 package com.dokio.repository;
 import com.dokio.controller.AuthRestAPIs;
 import com.dokio.message.request.*;
+import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
+import com.dokio.message.request.additional.OnlineSchedulingLanguage;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
 import com.dokio.message.response.additional.BoxofficeListJSON;
@@ -495,7 +497,43 @@ public class CompanyRepositoryJPA {
                         "           coalesce(p.store_default_lang_code, 'EN') as store_default_lang_code," +
                         "           p.vat as jr_vat," + // VAT identification number, " +
                         "           coalesce(p.booking_doc_name_variation_id, 1) as booking_doc_name_variation_id," +
-                        "           coalesce(p.time_zone_id,21) as time_zone_id" +
+                        "           coalesce(p.time_zone_id,21) as time_zone_id," +
+
+                        "           coalesce(os.fld_step, 15) as fld_step, " +                          // step of time slots (10,15,30,60 minutes)
+                        "           coalesce(os.fld_max_amount_services, 10) as fld_max_amount_services, " +           // max amount of services that customer can select at once
+                        "           coalesce(os.fld_locale_id, 3) as fld_locale_id, " +                      // date format: 3 = "English (United States)"
+                        "           coalesce(os.fld_time_format, '12') as fld_time_format, " +                 // 12 or 24
+                        "           coalesce(os.fld_duration, 'summary') as fld_duration, " +               // duration of vizit: "summary" - as sum of all services duration. "longest" - duration of a longest service. "defined" - predefined duration
+                        "           coalesce(os.fld_predefined_duration, 1) as fld_predefined_duration, " +            // predefined duration of the appointment (if duration = "defined")
+                        "           coalesce(os.fld_predefined_duration_unit_id, (select id from sprav_sys_edizm where company_id="+id+" and type_id=6 order by id desc offset 1 limit 1)) as fld_predefined_duration_unit_id, " +   // Should be "hour". The unit of measure of predefined duration of the appointment's time (if duration = "defined")
+                        "           coalesce(os.fld_tel_prefix, '+1') as fld_tel_prefix, " +
+                        "           coalesce(os.fld_ask_telephone, true) as fld_ask_telephone, " +
+                        "           coalesce(os.fld_ask_email, true) as fld_ask_email, " +
+                        "           coalesce(os.fld_url_slug, concat(lower(regexp_replace(substring(p.name,0,50), '[^a-zA-Z]', '', 'g')), floor(random()* 1000000000) )) as fld_url_slug, " +
+                        "           coalesce(os.txt_btn_select_time, 'Select time') as txt_btn_select_time, " +
+                        "           coalesce(os.txt_btn_select_specialist, 'Select specialist') as txt_btn_select_specialist, " +
+                        "           coalesce(os.txt_btn_select_services, 'Select services') as txt_btn_select_services, " +
+                        "           coalesce(os.txt_summary_header, 'Summary') as txt_summary_header, " +
+                        "           coalesce(os.txt_summary_date, 'Date') as txt_summary_date, " +
+                        "           coalesce(os.txt_summary_time_start, 'Start time') as txt_summary_time_start, " +
+                        "           coalesce(os.txt_summary_time_end, 'End time') as txt_summary_time_end, " +
+                        "           coalesce(os.txt_summary_duration, 'Duration') as txt_summary_duration, " +
+                        "           coalesce(os.txt_summary_specialist, 'Specialist') as txt_summary_specialist, " +
+                        "           coalesce(os.txt_summary_services, 'Selected services') as txt_summary_services, " +
+                        "           coalesce(os.txt_btn_create_order, 'Create order') as txt_btn_create_order, " +
+                        "           coalesce(os.txt_btn_send_order, 'Send order') as txt_btn_send_order, " +
+                        "           coalesce(os.txt_msg_send_successful, 'Your appointment reservation was successfully sent') as txt_msg_send_successful, " +
+                        "           coalesce(os.txt_msg_send_error, 'Error of appointment reservation sending') as txt_msg_send_error, " +
+                        "           coalesce(os.txt_msg_time_not_enable, 'Sorry, but the selected time slot is no longer available. Please choose another time slot.') as txt_msg_time_not_enable, " +
+                        "           coalesce(os.stl_color_buttons, '#223559') as stl_color_buttons, " +
+                        "           coalesce(os.stl_color_buttons_text, '#ffffff') as stl_color_buttons_text, " +
+                        "           coalesce(os.stl_color_text, '#333333') as stl_color_text, " +
+                        "           coalesce(os.stl_corner_radius, '5') as stl_corner_radius, " +
+                        "           coalesce(os.stl_font_family, 'Roboto, sans-serif') as stl_font_family, " +
+                        "           coalesce(os.txt_fld_your_name, 'Your name') as txt_fld_your_name, " +
+                        "           coalesce(os.txt_fld_your_tel, 'Telephone') as txt_fld_your_tel, " +
+                        "           coalesce(os.txt_fld_your_email, 'Email') as txt_fld_your_email " +
+
                         "           from companies p " +
                         "           INNER JOIN users u ON p.master_id=u.id " +
                         "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -508,6 +546,7 @@ public class CompanyRepositoryJPA {
                         //                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
                         //                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                         "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
+                        "           LEFT OUTER JOIN scdl_os_company_settings os ON os.company_id=p.id " +
                         //                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
                         //                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
                         "           where p.id= " + id +
@@ -602,7 +641,46 @@ public class CompanyRepositoryJPA {
                 doc.setJr_vat((String) queryList.get(0)[76]);
                 doc.setBooking_doc_name_variation_id((Integer) queryList.get(0)[77]);// variation of name of booking document: 1-appointment, 2-reservation
                 doc.setTime_zone_id((Integer) queryList.get(0)[78]);// variation of name of booking document: 1-appointment, 2-reservation
+                doc.setFld_step((Integer) queryList.get(0)[79]);
+                doc.setFld_max_amount_services((Integer) queryList.get(0)[80]);
+                doc.setFld_locale_id((Integer) queryList.get(0)[81]);
+                doc.setFld_time_format((String) queryList.get(0)[82]);
+                doc.setFld_duration((String) queryList.get(0)[83]);
+                doc.setFld_predefined_duration((Integer) queryList.get(0)[84]);
+                doc.setFld_predefined_duration_unit_id(queryList.get(0)[85] != null ? Long.parseLong(queryList.get(0)[85].toString()) : null);
+                doc.setFld_tel_prefix((String) queryList.get(0)[86]);
+                doc.setFld_ask_telephone((Boolean) queryList.get(0)[87]);
+                doc.setFld_ask_email((Boolean) queryList.get(0)[88]);
+                doc.setFld_url_slug((String) queryList.get(0)[89]);
+                doc.setTxt_btn_select_time((String) queryList.get(0)[90]);
+                doc.setTxt_btn_select_specialist((String) queryList.get(0)[91]);
+                doc.setTxt_btn_select_services((String) queryList.get(0)[92]);
+                doc.setTxt_summary_header((String) queryList.get(0)[93]);
+                doc.setTxt_summary_date((String) queryList.get(0)[94]);
+                doc.setTxt_summary_time_start((String) queryList.get(0)[95]);
+                doc.setTxt_summary_time_end((String) queryList.get(0)[96]);
+                doc.setTxt_summary_duration((String) queryList.get(0)[97]);
+                doc.setTxt_summary_specialist((String) queryList.get(0)[98]);
+                doc.setTxt_summary_services((String) queryList.get(0)[99]);
+                doc.setTxt_btn_create_order((String) queryList.get(0)[100]);
+                doc.setTxt_btn_send_order((String) queryList.get(0)[101]);
+                doc.setTxt_msg_send_successful((String) queryList.get(0)[102]);
+                doc.setTxt_msg_send_error((String) queryList.get(0)[103]);
+                doc.setTxt_msg_time_not_enable((String) queryList.get(0)[104]);
+                doc.setStl_color_buttons((String) queryList.get(0)[105]);
+                doc.setStl_color_buttons_text((String) queryList.get(0)[106]);
+                doc.setStl_color_text((String) queryList.get(0)[107]);
+                doc.setStl_corner_radius((String) queryList.get(0)[108]);
+                doc.setStl_font_family((String) queryList.get(0)[109]);
+                doc.setTxt_fld_your_name((String) queryList.get(0)[110]);
+                doc.setTxt_fld_your_tel((String) queryList.get(0)[111]);
+                doc.setTxt_fld_your_email((String) queryList.get(0)[112]);
 
+
+                doc.setOnlineSchedulingLanguagesList(getOnlineSchedulingLanguagesList(doc.getId(),myMasterId));
+
+
+                doc.setOnlineSchedulingFieldsTranslations(getOnlineSchedulingFieldsTranslationsList(doc.getId(), myMasterId));
                 return doc;
             }catch (Exception e) {
                 logger.error("Error of getCompanyValues. stringQuery="+stringQuery, e);
@@ -610,6 +688,196 @@ public class CompanyRepositoryJPA {
                 return null;
             }
         } else return null;
+    }
+
+
+    public List<OnlineSchedulingFieldsTranslation> getOnlineSchedulingFieldsTranslationsList(Long companyId, Long masterId){
+        String stringQuery = "      select   " +
+                "           coalesce(p.txt_btn_select_time,'') as txt_btn_select_time, " +
+                "           coalesce(p.txt_btn_select_specialist,'') as txt_btn_select_specialist, " +
+                "           coalesce(p.txt_btn_select_services,'') as txt_btn_select_services, " +
+                "           coalesce(p.txt_summary_header,'') as txt_summary_header, " +
+                "           coalesce(p.txt_summary_date,'') as txt_summary_date, " +
+                "           coalesce(p.txt_summary_time_start,'') as txt_summary_time_start, " +
+                "           coalesce(p.txt_summary_time_end,'') as txt_summary_time_end, " +
+                "           coalesce(p.txt_summary_duration,'') as txt_summary_duration, " +
+                "           coalesce(p.txt_summary_specialist,'') as txt_summary_specialist, " +
+                "           coalesce(p.txt_summary_services,'') as txt_summary_services, " +
+                "           coalesce(p.txt_btn_create_order,'') as txt_btn_create_order, " +
+                "           coalesce(p.txt_btn_send_order,'') as txt_btn_send_order, " +
+                "           coalesce(p.txt_fld_your_name,'') as txt_fld_your_name, " +
+                "           coalesce(p.txt_fld_your_tel,'') as txt_fld_your_tel, " +
+                "           coalesce(p.txt_fld_your_email,'') as txt_fld_your_email, " +
+                "           coalesce(p.txt_msg_send_successful,'') as txt_msg_send_successful, " +
+                "           coalesce(p.txt_msg_send_error,'') as txt_msg_send_error, " +
+                "           coalesce(p.txt_msg_time_not_enable,'') as txt_msg_time_not_enable, " +
+                "           p.lang_code as lang_code" +
+                "           from     scdl_os_translate p " +
+                "           where    p.master_id=" + masterId +
+                "           and      p.company_id =" + companyId +
+                "           order by p.lang_code";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<OnlineSchedulingFieldsTranslation> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                OnlineSchedulingFieldsTranslation doc = new OnlineSchedulingFieldsTranslation();
+                doc.setTxt_btn_select_time((String) obj[0]);
+                doc.setTxt_btn_select_specialist((String) obj[1]);
+                doc.setTxt_btn_select_services((String) obj[2]);
+                doc.setTxt_summary_header((String) obj[3]);
+                doc.setTxt_summary_date((String) obj[4]);
+                doc.setTxt_summary_time_start((String) obj[5]);
+                doc.setTxt_summary_time_end((String) obj[6]);
+                doc.setTxt_summary_duration((String) obj[7]);
+                doc.setTxt_summary_specialist((String) obj[8]);
+                doc.setTxt_summary_services((String) obj[9]);
+                doc.setTxt_btn_create_order((String) obj[10]);
+                doc.setTxt_btn_send_order((String) obj[11]);
+                doc.setTxt_fld_your_name((String) obj[12]);
+                doc.setTxt_fld_your_tel((String) obj[13]);
+                doc.setTxt_fld_your_email((String) obj[14]);
+                doc.setTxt_msg_send_successful((String) obj[15]);
+                doc.setTxt_msg_send_error((String) obj[16]);
+                doc.setTxt_msg_time_not_enable((String) obj[17]);
+                doc.setLangCode((String) obj[18]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getOnlineSchedulingFieldsTranslationsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    private void saveOnlineSchedulingFieldsTranslations(OnlineSchedulingFieldsTranslation row, Long master_id, Long company_id) throws Exception {
+        String stringQuery =
+                " insert into scdl_os_translate (" +
+                " master_id," +
+                " company_id," +
+                " lang_code," +
+                " txt_btn_select_time, " +
+                " txt_btn_select_specialist, " +
+                " txt_btn_select_services, " +
+                " txt_summary_header, " +
+                " txt_summary_date, " +
+                " txt_summary_time_start, " +
+                " txt_summary_time_end, " +
+                " txt_summary_duration, " +
+                " txt_summary_specialist, " +
+                " txt_summary_services, " +
+                " txt_btn_create_order, " +
+                " txt_btn_send_order, " +
+                " txt_msg_send_successful, " +
+                " txt_msg_send_error, " +
+                " txt_msg_time_not_enable, " +
+                " txt_fld_your_name, " +
+                " txt_fld_your_tel, " +
+                " txt_fld_your_email " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                ":lang_code," +
+                " :txt_btn_select_time, " +
+                " :txt_btn_select_specialist, " +
+                " :txt_btn_select_services, " +
+                " :txt_summary_header, " +
+                " :txt_summary_date, " +
+                " :txt_summary_time_start, " +
+                " :txt_summary_time_end, " +
+                " :txt_summary_duration, " +
+                " :txt_summary_specialist, " +
+                " :txt_summary_services, " +
+                " :txt_btn_create_order, " +
+                " :txt_btn_send_order, " +
+                " :txt_msg_send_successful, " +
+                " :txt_msg_send_error, " +
+                " :txt_msg_time_not_enable, " +
+                " :txt_fld_your_name, " +
+                " :txt_fld_your_tel, " +
+                " :txt_fld_your_email " +
+                ") ON CONFLICT ON CONSTRAINT scdl_os_translate_lang_uq " +// "upsert"
+                " DO update set " +
+                " txt_btn_select_time = :txt_btn_select_time,  " +
+                " txt_btn_select_specialist = :txt_btn_select_specialist,  " +
+                " txt_btn_select_services = :txt_btn_select_services,  " +
+                " txt_summary_header = :txt_summary_header,  " +
+                " txt_summary_date = :txt_summary_date,  " +
+                " txt_summary_time_start = :txt_summary_time_start,  " +
+                " txt_summary_time_end = :txt_summary_time_end,  " +
+                " txt_summary_duration = :txt_summary_duration,  " +
+                " txt_summary_specialist = :txt_summary_specialist,  " +
+                " txt_summary_services = :txt_summary_services,  " +
+                " txt_btn_create_order = :txt_btn_create_order,  " +
+                " txt_btn_send_order = :txt_btn_send_order,  " +
+                " txt_msg_send_successful = :txt_msg_send_successful,  " +
+                " txt_msg_send_error = :txt_msg_send_error,  " +
+                " txt_msg_time_not_enable = :txt_msg_time_not_enable,  " +
+                " txt_fld_your_name = :txt_fld_your_name,  " +
+                " txt_fld_your_tel = :txt_fld_your_tel,  " +
+                " txt_fld_your_email = :txt_fld_your_email  ";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("lang_code", row.getLangCode());
+            query.setParameter("txt_btn_select_time", row.getTxt_btn_select_time());
+            query.setParameter("txt_btn_select_specialist", row.getTxt_btn_select_specialist());
+            query.setParameter("txt_btn_select_services", row.getTxt_btn_select_services());
+            query.setParameter("txt_summary_header", row.getTxt_summary_header());
+            query.setParameter("txt_summary_date", row.getTxt_summary_date());
+            query.setParameter("txt_summary_time_start", row.getTxt_summary_time_start());
+            query.setParameter("txt_summary_time_end", row.getTxt_summary_time_end());
+            query.setParameter("txt_summary_duration", row.getTxt_summary_duration());
+            query.setParameter("txt_summary_specialist", row.getTxt_summary_specialist());
+            query.setParameter("txt_summary_services", row.getTxt_summary_services());
+            query.setParameter("txt_btn_create_order", row.getTxt_btn_create_order());
+            query.setParameter("txt_btn_send_order", row.getTxt_btn_send_order());
+            query.setParameter("txt_msg_send_successful", row.getTxt_msg_send_successful());
+            query.setParameter("txt_msg_send_error", row.getTxt_msg_send_error());
+            query.setParameter("txt_msg_time_not_enable", row.getTxt_msg_time_not_enable());
+            query.setParameter("txt_fld_your_name", row.getTxt_fld_your_name());
+            query.setParameter("txt_fld_your_tel", row.getTxt_fld_your_tel());
+            query.setParameter("txt_fld_your_email", row.getTxt_fld_your_email());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveOnlineSchedulingFieldsTranslations. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
+
+
+    public Set<OnlineSchedulingLanguage> getOnlineSchedulingLanguagesList (Long company_id, Long masterId) {
+        String stringQuery;
+        stringQuery =
+                        "           select" +
+                        "           p.suffix as suffix," +
+                        "           p.name as name," +
+                        "           f.name as filename," +
+                        "           p.id as id" +
+                        "           from scdl_os_company_languages p" +
+                        "           LEFT OUTER JOIN files f ON p.flag_file_id=f.id" +
+                        "           where  p.master_id=" + masterId +
+                        "           and p.company_id=" + company_id +
+                        "           order by p.name";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            Set<OnlineSchedulingLanguage> returnList = new HashSet<>();
+            for (Object[] obj : queryList) {
+                OnlineSchedulingLanguage doc = new OnlineSchedulingLanguage();
+                doc.setSuffix((String)              obj[0]);
+                doc.setName((String)                obj[1]);
+                doc.setFileName((String)            obj[2]);
+                doc.setId(Long.parseLong(obj[3].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getOnlineSchedulingLanguagesList. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
@@ -644,10 +912,23 @@ public class CompanyRepositoryJPA {
 //                if(request.getIs_store() && (!userRepositoryJPA.isPlanNoLimits(userRepositoryJPA.getMasterUserPlan(myMasterId))) && !isCompanyWithStore(request.getId()))
 //                    if(userRepositoryJPA.getMyConsumedResources().getStores() >= userRepositoryJPA.getMyMaxAllowedResources().getStores())
 //                        return -121; // number of internet-stores is out of bounds of tariff plan
-                updateCompanyBaseFields(request);
+                updateCompanyBaseFields(request, myMasterId);
 //                if(isStoreDepartsChanged(request.getCompanyStoreDepartments(), request.getId()))
 //                    markAllCompanyProductsAsNeedToSyncWoo(request.getId());
 //                insertCompanyStoreDepartments(request, myMasterId);
+
+                Set<Long>existingOnlineSchedulingLanguages = new HashSet<>();
+                for (OnlineSchedulingLanguage row : request.getOnlineSchedulingLanguagesList()) {
+                    saveOnlineSchedulingLanguage(myMasterId, request.getId(), row);
+                    existingOnlineSchedulingLanguages.add(row.getId());
+                }
+                deleteOnlineSchedulingLanguagesThatNoMoreContainThisComapny(existingOnlineSchedulingLanguages, request.getId(), myMasterId );
+                //save the list of translations of scheduling form
+                if (!Objects.isNull(request.getOnlineSchedulingFieldsTranslations()) && request.getOnlineSchedulingFieldsTranslations().size() > 0) {
+                    for (OnlineSchedulingFieldsTranslation row : request.getOnlineSchedulingFieldsTranslations()) {
+                        saveOnlineSchedulingFieldsTranslations(row, myMasterId, request.getId());
+                    }
+                }
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -657,9 +938,55 @@ public class CompanyRepositoryJPA {
             }
         } else return -1;
     }
+    private void saveOnlineSchedulingLanguage(Long master_id, Long company_id, OnlineSchedulingLanguage language) throws Exception {
+        String stringQuery =
+                "   insert into scdl_os_company_languages (" +
+                "   master_id," +
+                "   company_id," +
+                "   suffix," +
+                "   name" +
+//                "   flag_file_id " +
+                "   ) values (" +
+                master_id+", "+
+                company_id+", "+
+                ":lang_suffix, " +
+                ":lang_name " +
+//                " (select id from files where name = :file_name and master_id = " + master_id + ")" +
+                ") ON CONFLICT ON CONSTRAINT scdl_os_company_languages_lang_uq " +
+                "   DO update set " +
+                "   name = :lang_name ";
+//                "   flag_file_id = (select id from files where name = :file_name and master_id = " + master_id + ")";
+        try{
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("lang_name", language.getName());
+            query.setParameter("lang_suffix",language.getSuffix());
+//            query.setParameter("file_name",language.getFileName());
+            query.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method saveOnlineSchedulingLanguage. SQL query:" + stringQuery, e);
+            throw new Exception(e);
+        }
+    }
 
-    @SuppressWarnings("Duplicates")
-    private void updateCompanyBaseFields(CompaniesForm request) throws Exception {//Апдейт документа без банковских счетов
+    private void deleteOnlineSchedulingLanguagesThatNoMoreContainThisComapny(Set<Long> existingOnlineSchedulingLanguages, Long companyId, Long masterId) throws Exception  {
+        String stringQuery =
+                " delete from scdl_os_company_languages " +
+                        " where " +
+                        " master_id = " + masterId + " and " +
+                        " company_id = " + companyId;
+        if(existingOnlineSchedulingLanguages.size()>0)
+            stringQuery = stringQuery + " and id not in " + cu.SetOfLongToString(existingOnlineSchedulingLanguages,",","(",")");
+        try {
+            entityManager.createNativeQuery(stringQuery).executeUpdate();
+        } catch (Exception e) {
+            logger.error("Exception in method deleteOnlineSchedulingLanguagesThatNoMoreContainThisComapny. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception(e);
+        }
+    }
+
+    private void updateCompanyBaseFields(CompaniesForm request, Long masterId) throws Exception {//Апдейт документа без банковских счетов
         Long myId = userRepositoryJPA.getMyId();
 
             String stringQuery;
@@ -732,7 +1059,121 @@ public class CompanyRepositoryJPA {
                     " booking_doc_name_variation_id = " + request.getBooking_doc_name_variation_id() + ", " +
                     " time_zone_id = " + request.getTime_zone_id() +
                     " where " +
-                    " id = " + request.getId();// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
+                    " id = " + request.getId()+";"+// на Master_id = MyMasterId провеврять не надо, т.к. уже проверено в вызывающем методе
+
+                    // update online sceduling settings
+                    " insert into scdl_os_company_settings (" +
+                    " master_id, " +
+                    " company_id, " +
+                    " fld_step, " +
+                    " fld_max_amount_services, " +
+                    " fld_locale_id, " +
+                    " fld_time_format, " +
+                    " fld_duration, " +
+                    " fld_predefined_duration, " +
+                    " fld_predefined_duration_unit_id, " +
+                    " fld_tel_prefix, " +
+                    " fld_ask_telephone, " +
+                    " fld_ask_email, " +
+                    " fld_url_slug, " +
+                    " txt_btn_select_time, " +
+                    " txt_btn_select_specialist, " +
+                    " txt_btn_select_services, " +
+                    " txt_summary_header, " +
+                    " txt_summary_date, " +
+                    " txt_summary_time_start, " +
+                    " txt_summary_time_end, " +
+                    " txt_summary_duration, " +
+                    " txt_summary_specialist, " +
+                    " txt_summary_services, " +
+                    " txt_btn_create_order, " +
+                    " txt_btn_send_order, " +
+                    " txt_msg_send_successful, " +
+                    " txt_msg_send_error, " +
+                    " txt_msg_time_not_enable, " +
+                    " txt_fld_your_name, " +
+                    " txt_fld_your_tel, " +
+                    " txt_fld_your_email, " +
+                    " stl_color_buttons, " +
+                    " stl_color_buttons_text, " +
+                    " stl_color_text, " +
+                    " stl_corner_radius, " +
+                    " stl_font_family " +
+                    ") values (" +
+                    masterId + ", " +
+                    request.getId() + ", " +
+                    request.getFld_step() + ", " +
+                    request.getFld_max_amount_services() + ", " +
+                    request.getFld_locale_id() + ", " +
+                    " :fld_time_format, " +
+                    " :fld_duration, " +
+                    request.getFld_predefined_duration() + ", " +
+                    request.getFld_predefined_duration_unit_id() + ", " +
+                    " :fld_tel_prefix, " +
+                    request.getFld_ask_telephone() + ", " +
+                    request.getFld_ask_email() + ", " +
+                    " :fld_url_slug, " +
+                    " :txt_btn_select_time, " +
+                    " :txt_btn_select_specialist, " +
+                    " :txt_btn_select_services, " +
+                    " :txt_summary_header, " +
+                    " :txt_summary_date, " +
+                    " :txt_summary_time_start, " +
+                    " :txt_summary_time_end, " +
+                    " :txt_summary_duration, " +
+                    " :txt_summary_specialist, " +
+                    " :txt_summary_services, " +
+                    " :txt_btn_create_order, " +
+                    " :txt_btn_send_order, " +
+                    " :txt_msg_send_successful, " +
+                    " :txt_msg_send_error, " +
+                    " :txt_msg_time_not_enable, " +
+                    " :txt_fld_your_name, " +
+                    " :txt_fld_your_tel, " +
+                    " :txt_fld_your_email, " +
+                    " :stl_color_buttons, " +
+                    " :stl_color_buttons_text, " +
+                    " :stl_color_text, " +
+                    " :stl_corner_radius, " +
+                    " :stl_font_family " +
+                    ") " +
+                    " ON CONFLICT ON CONSTRAINT scdl_os_company_settings_company_uq " +// "upsert"
+                    " DO UPDATE SET " +
+                    " fld_step = " +  request.getFld_step() + ", " +
+                    " fld_max_amount_services = " + request.getFld_max_amount_services() + ", " +
+                    " fld_locale_id = " + request.getFld_locale_id() + ", " +
+                    " fld_time_format = :fld_time_format," +
+                    " fld_duration = :fld_duration," +
+                    " fld_predefined_duration = " + request.getFld_predefined_duration() + ", " +
+                    " fld_predefined_duration_unit_id = " + request.getFld_predefined_duration_unit_id() + ", " +
+                    " fld_tel_prefix = :fld_tel_prefix," +
+                    " fld_ask_telephone = " + request.getFld_ask_telephone() + ", " +
+                    " fld_ask_email = " + request.getFld_ask_email() + ", " +
+                    " fld_url_slug = :fld_url_slug,  " +
+                    " txt_btn_select_time = :txt_btn_select_time,  " +
+                    " txt_btn_select_specialist = :txt_btn_select_specialist,  " +
+                    " txt_btn_select_services = :txt_btn_select_services,  " +
+                    " txt_summary_header = :txt_summary_header,  " +
+                    " txt_summary_date = :txt_summary_date,  " +
+                    " txt_summary_time_start = :txt_summary_time_start,  " +
+                    " txt_summary_time_end = :txt_summary_time_end,  " +
+                    " txt_summary_duration = :txt_summary_duration,  " +
+                    " txt_summary_specialist = :txt_summary_specialist,  " +
+                    " txt_summary_services = :txt_summary_services,  " +
+                    " txt_btn_create_order = :txt_btn_create_order,  " +
+                    " txt_btn_send_order = :txt_btn_send_order,  " +
+                    " txt_msg_send_successful = :txt_msg_send_successful,  " +
+                    " txt_msg_send_error = :txt_msg_send_error,  " +
+                    " txt_msg_time_not_enable = :txt_msg_time_not_enable,  " +
+                    " txt_fld_your_name = :txt_fld_your_name,  " +
+                    " txt_fld_your_tel = :txt_fld_your_tel,  " +
+                    " txt_fld_your_email = :txt_fld_your_email,  " +
+                    " stl_color_buttons = :stl_color_buttons,  " +
+                    " stl_color_buttons_text = :stl_color_buttons_text,  " +
+                    " stl_color_text = :stl_color_text,  " +
+                    " stl_corner_radius = :stl_corner_radius,  " +
+                    " stl_font_family = :stl_font_family ;";
+
         Query query = entityManager.createNativeQuery(stringQuery);
         try
         {
@@ -774,6 +1215,34 @@ public class CompanyRepositoryJPA {
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
             query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
+
+            query.setParameter("fld_time_format", request.getFld_time_format());
+            query.setParameter("fld_duration", request.getFld_duration());
+            query.setParameter("fld_tel_prefix", request.getFld_tel_prefix());
+            query.setParameter("fld_url_slug", request.getFld_url_slug());
+            query.setParameter("txt_btn_select_time", request.getTxt_btn_select_time());
+            query.setParameter("txt_btn_select_specialist", request.getTxt_btn_select_specialist());
+            query.setParameter("txt_btn_select_services", request.getTxt_btn_select_services());
+            query.setParameter("txt_summary_header", request.getTxt_summary_header());
+            query.setParameter("txt_summary_date", request.getTxt_summary_date());
+            query.setParameter("txt_summary_time_start", request.getTxt_summary_time_start());
+            query.setParameter("txt_summary_time_end", request.getTxt_summary_time_end());
+            query.setParameter("txt_summary_duration", request.getTxt_summary_duration());
+            query.setParameter("txt_summary_specialist", request.getTxt_summary_specialist());
+            query.setParameter("txt_summary_services", request.getTxt_summary_services());
+            query.setParameter("txt_btn_create_order", request.getTxt_btn_create_order());
+            query.setParameter("txt_btn_send_order", request.getTxt_btn_send_order());
+            query.setParameter("txt_msg_send_successful", request.getTxt_msg_send_successful());
+            query.setParameter("txt_msg_send_error", request.getTxt_msg_send_error());
+            query.setParameter("txt_msg_time_not_enable", request.getTxt_msg_time_not_enable());
+            query.setParameter("txt_fld_your_name", request.getTxt_fld_your_name());
+            query.setParameter("txt_fld_your_tel", request.getTxt_fld_your_tel());
+            query.setParameter("txt_fld_your_email", request.getTxt_fld_your_email());
+            query.setParameter("stl_color_buttons", request.getStl_color_buttons());
+            query.setParameter("stl_color_buttons_text", request.getStl_color_buttons_text());
+            query.setParameter("stl_color_text", request.getStl_color_text());
+            query.setParameter("stl_corner_radius", request.getStl_corner_radius());
+            query.setParameter("stl_font_family", request.getStl_font_family());
 
             query.executeUpdate();
         }catch (Exception e) {

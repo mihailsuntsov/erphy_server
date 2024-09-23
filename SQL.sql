@@ -3593,3111 +3593,3111 @@
 
 ------------------------------------------------  end of 1.0.0-0   -----------------------------------------------------
 -----------------------------------------------  begin of 1.0.1-0   ----------------------------------------------------
-alter table companies_payment_accounts add column creator_id bigint;
-alter table companies_payment_accounts add column changer_id bigint;
-alter table companies_payment_accounts add column date_time_created timestamp with time zone;
-alter table companies_payment_accounts add column date_time_changed timestamp with time zone;
-alter table companies_payment_accounts add column description varchar(2048);
-alter table companies_payment_accounts add column intermediatery varchar(2048);
-alter table companies_payment_accounts add column swift varchar(11);
-alter table companies_payment_accounts add column iban varchar(34);
-alter table companies_payment_accounts add column is_main boolean;
-alter table companies_payment_accounts add column is_deleted boolean;
-alter table companies_payment_accounts add constraint companies_payment_accounts_creator_id_fkey foreign key (creator_id) references users (id);
-alter table companies_payment_accounts add constraint companies_payment_accounts_changer_id_fkey foreign key (changer_id) references users (id);
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (52,'Расчётные счета','accounts',1,'companies_payment_accounts','Расчётные счета', 'Bank accounts');
-insert into permissions (id,name_ru,name_en,document_id,output_order) values
-(653,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',52,10),
-(654,'Создание документов по всем предприятиям','Creation of documents for all companies',52,20),
-(655,'Создание документов своего предприятия','Create your company documents',52,30),
-(656,'Удаление документов всех предприятий','Deleting documents of all companies',52,130),
-(657,'Удаление документов своего предприятия','Deleting your company documents',52,140),
-(658,'Просмотр документов всех предприятий','View documents of all companies',52,50),
-(659,'Просмотр документов своего предприятия','View your company documents',52,60),
-(660,'Редактирование документов всех предприятий','Editing documents of all companies',52,90),
-(661,'Редактирование документов своего предприятия','Editing your company documents',52,100);
-alter table cagents_payment_accounts add column intermediatery varchar(2048);
-alter table cagents_payment_accounts add column swift varchar(11);
-alter table cagents_payment_accounts add column iban varchar(34);
-alter table template_docs drop constraint template_docs_file_id_fkey;
-alter table template_docs add constraint template_docs_file_id_fkey foreign key (file_id) references files (id) on delete cascade;
-
-alter table companies add column legal_form varchar(240);
-alter table cagents add column legal_form varchar(240);
-update companies set legal_form = '';
-update cagents set legal_form = '';
-
-create table plans(
-                    id                 serial primary key not null,
-                    name_en            varchar(200) not null,
-                    name_ru            varchar(200) not null,
-                    version            int not null,
-                    daily_price        numeric(10,10) not null,
-                    is_default         boolean not null,
-                    is_nolimits        boolean not null, -- used for standalone servers. If 'TRUE' - system will not check the limits
-                    is_archive         boolean not null,
-                    date_time_created  timestamp with time zone not null,
-                    date_time_archived timestamp with time zone,
-                    output_order       int not null,
-                    n_companies        int not null,
-                    n_departments      int not null,
-                    n_users            int not null,
-                    n_products         int not null,
-                    n_counterparties   int not null,
-                    n_megabytes        int not null
-);
-alter table plans add constraint plans_name_en_version_uq unique (name_en, version) ;
-alter table plans add constraint plans_name_ru_version_uq unique (name_ru, version) ;
-
-create table plans_add_options(
-                    id                 bigserial primary key not null,
-                    user_id            bigint not null,
-                    n_companies        int not null,
-                    companies_ppu      numeric(10,10),
-                    n_departments      int not null,
-                    departments_ppu    numeric(10,10),
-                    n_users            int not null,
-                    users_ppu          numeric(10,10),
-                    n_products         int not null,
-                    products_ppu       numeric(10,10),
-                    n_counterparties   int not null,
-                    counterparties_ppu numeric(10,10),
-                    n_megabytes        int not null,
-                    megabytes_ppu      numeric(10,10),
-                    foreign key (user_id) references users(id)
-);
-alter table plans_add_options add constraint user_id_uq unique (user_id) ;
-
-insert into plans (
-                    name_en,
-                    name_ru,
-                    version,
-                    daily_price,
-                    is_default,
-                    is_nolimits,
-                    is_archive,
-                    date_time_created,
-                    output_order,
-                    n_companies,
-                    n_departments,
-                    n_users,
-                    n_products,
-                    n_counterparties,
-                    n_megabytes) values
-                    ('No limits','Безлимитный', 1, 0, true, true,  false, now(), 100, 0, 0, 0, 0, 0, 0),
-                    ('Free',     'Бесплатный',  1, 0, true, false, false, now(), 200, 1, 1, 1, 100, 100, 50);
-
-alter table users add column plan_id int;
-alter table users add constraint plan_id_fkey foreign key (plan_id) references plans (id);
-update users set plan_id = 1 where id = master_id;
-
-alter table settings_general add column plan_default_id int;
-alter table settings_general add constraint plan_default_id_fkey foreign key (plan_default_id) references plans (id);
-update settings_general set plan_default_id = 2;
-alter table settings_general alter plan_default_id set not null;
-
-update version set value = '1.0.1-0', date = '27-06-2022';
-------------------------------------------------  end of 1.0.1   -----------------------------------------------------
------------------------------------------------  begin of 1.0.2   ----------------------------------------------------
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('um_uncountable',          'Неисчислимое',               'Uncountable'),
-('um_kilogramm',            'Килограмм',                  'Kilogramm'),
-('um_gramm',                'Грамм',                      'Gramm'),
-('um_ton',                  'Тонна',                      'Ton'),
-('um_meter',                'Метр',                       'Meter'),
-('um_centimeter',           'Сантиметр',                  'Centimeter'),
-('um_litre',                'Литр',                       'Litre'),
-('um_cubic_meter',          'Кубический метр',            'Cubic meter'),
-('um_square_meter',         'Квадратный метр',            'Square meter'),
-('um_kilogramm_s',          'кг',                         'kg'),
-('um_gramm_s',              'г',                          'g'),
-('um_ton_s',                'т',                          't'),
-('um_meter_s',              'м',                          'm'),
-('um_centimeter_s',         'см',                         'cm'),
-('um_litre_s',              'л',                          'L'),
-('um_cubic_meter_s',        'м3',                         'm3'),
-('um_square_meter_s',       'м2',                         'm2'),
-
-('curr_us_dollar',          'Американский доллар',        'US Dollar'),
-('curr_euro',               'Евро',                       'Euro'),
-('curr_canadian_dollar',    'Канадский доллар',           'Canadian Dollar'),
-('curr_australian_dollar',  'Австралийский доллар',       'Australian Dollar'),
-('curr_new_zealand_dollar', 'Новозеландский доллар',      'New Zealand Dollar'),
-('curr_russian_rouble',     'Российский рубль',           'Russian Rouble'),
-('curr_pound_sterling',     'Фунт стерлингов',            'Pound Sterling'),
-
-('tax_no_tax',              'Без НДС',                    'No taxes'),
-('tax_tax',                 'НДС',                        'Vat'),
-
-('main_bank_acc',           'Мой банк',                   'Main Bank account'),
-('main_cash_room',          'Касса предприятия',          'Main Cash room'),
-('my_company',              'Мое предприятие',            'My company'),
-('my_department',           'Мое отделение',              'My department'),
-('role_admins',             'Администраторы',             'Administrators'),
-
-('catg_suppliers',          'Поставщики',                 'Suppliers'),
-('catg_customers',          'Покупатели',                 'Customers'),
-('catg_employees',          'Сотрудники',                 'Employees'),
-('catg_banks',              'Банки',                      'Banks'),
-('catg_transport',          'Транспорт',                  'Transport'),
-('catg_rent',               'Аренда',                     'Rent'),
-('catg_tax_srvcs',          'Налоговые',                  'Tax services'),
-
-('basic_price',             'Базовая цена',               'Basic price'),
-
-('exp_rent',                'Аренда',                     'Rent'),
-('exp_return',              'Возвраты',                   'Return'),
-('exp_salary',              'Зарплата',                   'Salary'),
-('exp_banking_srvcs',       'Банк. обслуживание',         'Banking services'),
-('exp_taxes',               'Налоги',                     'Taxes'),
-('exp_pay_goods_srvcs',     'Оплата за товары и услуги',  'Payment for goods and services'),
-('exp_pay_wh_company',      'Внутренние платежи',         'Payments within the company');
-insert into _dictionary (key, tr_ru, tr_en) values
-('um_piece',                'Штука',                      'Piece'),
-('um_piece_s',              'шт',                         'pcs');
-update version set value = '1.0.2', date = '02-07-2022';
-------------------------------------------------  end of 1.0.2  ------------------------------------------------------
------------------------------------------------  begin of 1.0.3   ----------------------------------------------------
-insert into _dictionary (key, tr_ru, tr_en) values
-('f_ctg_images',                'Картинки',                      'Images'),
-('f_ctg_goods',                 'Товары',                        'Goods'),
-('f_ctg_docs',                  'Документы',                     'Docs'),
-('f_with_stamp_sign',           'с печатью и подписями',         'with stamp and signatures');
-insert into _dictionary (key, tr_ru, tr_en) values
-('signature',                   'Подпись',                       'Signature'),
-('logo',                        'Логотип',                       'Logo');
-insert into _dictionary (key, tr_ru, tr_en) values
-('f_ctg_templates',             'Шаблоны',                       'Templates');
-insert into _dictionary (key, tr_ru, tr_en) values
-('stamp',                       'Печать',                        'Stamp');
-update version set value = '1.0.3', date = '08-07-2022';
-------------------------------------------------  end of 1.0.3  ------------------------------------------------------
------------------------------------------------  begin of 1.0.4   ----------------------------------------------------
-update documents set doc_name_en = 'Products and Services' where doc_name_ru = 'Товары и услуги';
-alter table user_settings add column time_format varchar(2);
-update user_settings set time_format = '12'; -- can be 12 or 24
-alter table user_settings alter time_format set not null;
-
-ALTER TABLE acceptance ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE acceptance SET create_time_holder = acceptance_date::TIMESTAMP;
-ALTER TABLE acceptance ALTER COLUMN acceptance_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE acceptance DROP COLUMN create_time_holder;
-
-ALTER TABLE return ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE return SET create_time_holder = date_return::TIMESTAMP;
-ALTER TABLE return ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE return DROP COLUMN create_time_holder;
-
-ALTER TABLE returnsup ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE returnsup SET create_time_holder = date_return::TIMESTAMP;
-ALTER TABLE returnsup ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE returnsup DROP COLUMN create_time_holder;
-
-ALTER TABLE ordersup ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE ordersup SET create_time_holder = ordersup_date::TIMESTAMP;
-ALTER TABLE ordersup ALTER COLUMN ordersup_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE ordersup DROP COLUMN create_time_holder;
-
-ALTER TABLE invoicein ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE invoicein SET create_time_holder = invoicein_date::TIMESTAMP;
-ALTER TABLE invoicein ALTER COLUMN invoicein_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE invoicein DROP COLUMN create_time_holder;
-
-ALTER TABLE invoiceout ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE invoiceout SET create_time_holder = invoiceout_date::TIMESTAMP;
-ALTER TABLE invoiceout ALTER COLUMN invoiceout_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE invoiceout DROP COLUMN create_time_holder;
-
-ALTER TABLE customers_orders ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE customers_orders SET create_time_holder = shipment_date::TIMESTAMP;
-ALTER TABLE customers_orders ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE customers_orders DROP COLUMN create_time_holder;
-
-ALTER TABLE shipment ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE shipment SET create_time_holder = shipment_date::TIMESTAMP;
-ALTER TABLE shipment ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE shipment DROP COLUMN create_time_holder;
-
-ALTER TABLE writeoff ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE writeoff SET create_time_holder = writeoff_date::TIMESTAMP;
-ALTER TABLE writeoff ALTER COLUMN writeoff_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE writeoff DROP COLUMN create_time_holder;
-
-ALTER TABLE posting ADD COLUMN create_time_holder TIMESTAMP with time zone;
-UPDATE posting SET create_time_holder = posting_date::TIMESTAMP;
-ALTER TABLE posting ALTER COLUMN posting_date TYPE TIMESTAMP with time zone USING create_time_holder;
-ALTER TABLE posting DROP COLUMN create_time_holder;
-
-update version set value = '1.0.4', date = '27-08-2022';
-------------------------------------------------  end of 1.0.4  ------------------------------------------------------
------------------------------------------------  start of 1.0.5  -----------------------------------------------------
-update documents set doc_name_en = 'Purchase order' where doc_name_ru = 'Заказ поставщику';
-update _dictionary set tr_en = 'Purchase order' where key = 'ordersup';
-
-update version set value = '1.0.4-1', date = '28-08-2022';
-------------------------------------------------  end of 1.0.4  ------------------------------------------------------
------------------------------------------------  start of 1.1.0  -----------------------------------------------------
-alter table sprav_taxes add column woo_id int;
-
-alter table companies add column is_store boolean;
-alter table companies add column store_site_address varchar(128); -- e.g. http://localhost/DokioShop
-alter table companies add column store_key varchar(128);    -- consumer key
-alter table companies add column store_secret varchar(128); -- consumer secret
-alter table companies add column store_type varchar(8); -- e.g. woo
-alter table companies add column store_api_version varchar(16); -- e.g. v3
-alter table companies add column crm_secret_key varchar(36); -- smth like UUID
-alter table companies add column store_price_type_regular bigint; -- id of regular price
-alter table companies add column store_price_type_sale bigint; -- id of sale price
-alter table companies add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
-alter table companies add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
-
-alter table sprav_taxes add constraint woo_id_uq unique (company_id, woo_id) ;
-alter table sprav_taxes alter column value type numeric(4,2);
-alter table sprav_taxes alter column multiplier type numeric(5,4);
-
-alter table product_categories add column date_time_sync timestamp with time zone;
-alter table product_categories add column slug varchar(120);
-alter table product_categories add column description varchar(250);
-alter table product_categories add column display varchar(16);--Options: default, products, subcategories and both. Default is default.
-alter table product_categories add column image_id bigint; -- id of category image file
-alter table product_categories add constraint image_id_fkey foreign key (image_id) references files (id) ON DELETE SET NULL;
-alter table files add column alt varchar(120);
-alter table product_categories add column woo_id int;
-alter table product_categories add constraint product_categories_woo_id_uq unique (company_id, woo_id) ;
-alter table product_categories add constraint product_categories_slug_uq unique (company_id, slug);-- all company categories need to have unique slug names
-alter table product_categories add constraint product_categories_name_uq unique (parent_id, name); -- one parent category can't contains two or more subcategories with the same names
-CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
-alter table product_categories add column is_store_category boolean;
-alter table products add column type	varchar(8); --Product type. Options: simple, grouped, external and variable. Default is simple.
-alter table products add column slug varchar(120); --Product slug.
-alter table products add column featured boolean; --Featured product. Default is false.
-alter table products add column short_description varchar(2048);
-alter table products alter column description TYPE varchar(16384);
-alter table products add column virtual boolean; --If the product is virtual. Default is false.
-alter table products add column downloadable	boolean; 	--If the product is downloadable. Default is false.
-alter table products add column download_limit	integer; --Number of times downloadable files can be downloaded after purchase. Default is -1.
-alter table products add column download_expiry	 integer; --Number of days until access to downloadable files expires. Default is -1.
-alter table products add column external_url	varchar(255); --Product external URL. Only for external products.
-alter table products add column button_text	 varchar(60); --Product external button text. Only for external products.
-alter table products add column tax_status	varchar(8); --	Tax status. Options: taxable, shipping and none. Default is taxable.
-alter table products add column manage_stock	boolean; --	Stock management at product level. Default is false.
-alter table products add column stock_status varchar(10);	--Controls the stock status of the product. Options: instock, outofstock, onbackorder. Default is instock.
-alter table products add column backorders	varchar(6); --If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no.
-alter table products add column sold_individually	 boolean; --	Allow one item to be bought in a single order. Default is false.
-alter table products add column height	numeric(10,3); --	Product height.
-alter table products add column width	numeric(10,3); --	Product width.
-alter table products add column length	numeric(10,3); --	Product length.
-alter table products add column shipping_class	varchar(120); --	Shipping class slug.
-alter table products add column reviews_allowed	 boolean; -- Allow reviews. Default is true.
-alter table products add column parent_id	 bigint; --	Product parent ID.
-alter table products add constraint parent_id_fkey foreign key (parent_id) references products (id);
-alter table products add column purchase_note	 varchar(1000); -- Optional note to send the customer after purchase.
-alter table products add column menu_order	int; -- Menu order, used to custom sort products.
-alter table products add column date_on_sale_from_gmt  timestamp with time zone;
-alter table products add column date_on_sale_to_gmt  timestamp with time zone;
-
--- DELETE FROM product_productcategories WHERE ctid NOT IN (SELECT max(ctid) FROM product_productcategories GROUP BY category_id, product_id); --use this if the next row won't be run perfect (there is duplicates)
-alter table product_productcategories add constraint product_productcategories_uq unique (category_id, product_id);
-
-create table product_upsell(
-                    master_id          bigint,
-                    product_id         bigint,
-                    child_id           bigint,
-                    foreign key (master_id)        references users(id),
-                    foreign key (product_id)       references products(id),
-                    foreign key (child_id)         references products(id)
-);
-create table product_crosssell(
-                             master_id          bigint,
-                             product_id         bigint,
-                             child_id           bigint,
-                             foreign key (master_id)        references users(id),
-                             foreign key (product_id)       references products(id),
-                             foreign key (child_id)         references products(id)
-);
-alter table product_upsell add constraint product_upsell_uq unique (child_id, product_id);
-alter table product_crosssell add constraint product_crosssell_uq unique (child_id, product_id);
-create table product_grouped(
-                                master_id          bigint,
-                                product_id         bigint,
-                                child_id           bigint,
-                                foreign key (master_id)        references users(id),
-                                foreign key (product_id)       references products(id),
-                                foreign key (child_id)         references products(id)
-);
-alter table product_grouped add constraint product_grouped_uq unique (child_id, product_id);
-
-alter table products add column low_stock_threshold	numeric(12,3); --	Low stock threshold
-
-create table product_downloadable_files(
-                                product_id          bigint,
-                                file_id             bigint,
-                                output_order        int,
-                                foreign key (file_id)          references files(id),
-                                foreign key (product_id)       references products(id)
-);
-alter table product_downloadable_files add constraint product_downloadable_files_uq unique (file_id, product_id);
-
-create table product_attributes(
-                            id                  bigserial primary key not null,
-                            master_id           bigint not null,
-                            company_id          bigint not null,
-                            creator_id          bigint not null,
-                            changer_id          bigint,
-                            date_time_created   timestamp with time zone not null,
-                            date_time_changed   timestamp with time zone,
-                            woo_id              int, -- Attribute name.MANDATORY
-                            name                varchar(120),
-                            slug                varchar(120), -- An alphanumeric identifier for the resource unique to its type.
-                            type                varchar(16), -- Type of attribute. By default only 'select' is supported.
-                            order_by            varchar(16), -- Default sort order. Options: menu_order, name, name_num and id. Default is menu_order.
-                            has_archives        boolean, -- Enable/Disable attribute archives. Default is false.
-                            is_deleted boolean,
-                            foreign key (master_id) references users(id),
-                            foreign key (creator_id) references users(id),
-                            foreign key (changer_id) references users(id),
-                            foreign key (company_id) references companies(id)
-);
-create table product_attribute_terms(
-                             id                 bigserial primary key not null,
-                             woo_id             int,
-                             master_id          bigint,
-                             attribute_id       bigint, -- Id of a parent attribute
-                             name               varchar(120), -- Term name.
-                             slug               varchar(120), -- An alphanumeric identifier for the resource unique to its type.
-                             description        varchar(1000), -- HTML description of the resource.
-                             menu_order         int,    -- Menu order, used to custom sort the resource.
-                             foreign key (master_id) references users(id),
-                             foreign key (attribute_id) references product_attributes(id) on delete cascade
-);
-
-create table product_custom_attributes(
-                              id                 bigserial primary key not null,
-                              master_id          bigint,
-                              product_id         bigint,
-                              name               varchar(120),
-                              terms              varchar(1000), -- String with terms divided by | e.g. Red | Blue | Yellow
-                              visible            boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page.
-                              foreign key (master_id) references users(id),
-                              foreign key (product_id) references products(id)
-);
-alter table product_custom_attributes add constraint product_custom_attributes_name_uq unique (name, product_id);
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('color',    'Цвет','Color'),
-('size',     'Размер','Size');
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (53,'Атрибуты товаров','productattributes',1,'product_attributes','Атрибуты товаров', 'Product attributes');
-
-insert into permissions (id,name_ru,name_en,document_id,output_order) values
-(662,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',53,10),
-(663,'Создание документов по всем предприятиям','Creation of documents for all companies',53,20),
-(664,'Создание документов своего предприятия','Create your company documents',53,30),
-(665,'Удаление документов всех предприятий','Deleting documents of all companies',53,130),
-(666,'Удаление документов своего предприятия','Deleting your company documents',53,140),
-(667,'Просмотр документов всех предприятий','View documents of all companies',53,50),
-(668,'Просмотр документов своего предприятия','View your company documents',53,60),
-(669,'Редактирование документов всех предприятий','Editing documents of all companies',53,90),
-(670,'Редактирование документов своего предприятия','Editing your company documents',53,100);
-
-
-alter table product_attributes add constraint product_attributes_slug_uq unique (company_id, slug);-- all company product attributes need to have unique slug names
-alter table product_attribute_terms add constraint product_attribute_terms_slug_uq unique (attribute_id, slug);-- product attribute need to have unique terms slug names
-alter table product_attributes add constraint product_attributes_name_uq unique (company_id, name);--product attribute name must be unique
-alter table product_attribute_terms add constraint product_attribute_terms_name_uq unique (attribute_id, name);-- product attribute need to have unique terms names
-alter table product_attribute_terms alter column attribute_id set not null;
-
-
-create table product_productattributes(
-                                        master_id     bigint not null,
-                                        product_id    bigint not null,
-                                        attribute_id  bigint not null,
-                                        position      int not null, -- 	Attribute position
-                                        visible       boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page. Default is false.
-                                        variation	    boolean, -- Define if the attribute can be used as variation. Default is false.
-                                        foreign key (master_id) references users(id),
-                                        foreign key (product_id) references products(id),
-                                        foreign key (attribute_id) references product_attributes(id)
-);
-alter table product_productattributes add constraint product_productattribute_uq unique (product_id, attribute_id);--product attribute in the product card must be unique
-create table product_terms(
-                                        master_id     bigint not null,
-                                        product_id    bigint not null,
-                                        term_id       bigint not null,
-                                        foreign key (master_id) references users(id),
-                                        foreign key (product_id) references products(id),
-                                        foreign key (term_id) references product_attribute_terms(id)
-);
-
-alter table product_terms add constraint product_term_uq unique (product_id, term_id);--product term in the product card must be unique
-
-alter table product_terms add column product_attribute_id bigint not null;
-alter table product_terms add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes (id);
-
-
-alter table product_terms drop constraint product_terms_term_id_fkey, add constraint product_terms_term_id_fkey foreign key (term_id) references product_attribute_terms(id) on delete cascade;
-alter table products add column woo_id int;
-alter table products add column date_time_syncwoo timestamp with time zone;
---DELETE FROM product_files WHERE ctid NOT IN (SELECT max(ctid) FROM product_files GROUP BY file_id, product_id); run it, if next row won't be executed
-alter table product_files add constraint product_file_uq unique (file_id, product_id);
-alter table products add column need_to_syncwoo boolean; -- the product is need to be synchronized because its category turned into store type category
-alter table customers_orders add column woo_gmt_date varchar(19);
-alter table customers_orders add column woo_id int;
-alter table companies add column nds_included boolean; -- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
-alter table companies add column store_orders_department_id bigint;
-alter table companies add constraint store_orders_department_id_fkey foreign key (store_orders_department_id) references departments (id);
-alter table companies add column store_if_customer_not_found varchar(11); -- create_new or use_default
-alter table companies add column store_default_customer_id bigint;
-alter table companies add constraint store_default_customer_id_fkey foreign key (store_default_customer_id) references cagents (id);
-alter table cagents add column woo_id integer;
-alter table companies add column store_default_creator_id bigint;
-alter table companies add constraint store_default_creator_id_fkey foreign key (store_default_creator_id) references users (id);
-alter table companies add column store_days_for_esd int;
-alter table products add constraint product_woo_id_uq unique (company_id, woo_id);
-create table company_store_departments(
-                                      master_id          bigint not null,
-                                      company_id         bigint not null,
-                                      department_id      bigint not null,
-                                      menu_order         int,    -- Menu order, used to custom sort the departments
-                                      foreign key (master_id) references users(id),
-                                      foreign key (department_id) references departments(id),
-                                      foreign key (company_id) references companies(id)
-);
-alter table company_store_departments add constraint company_store_department_uq unique (company_id, department_id);
-alter table companies add column store_auto_reserve boolean; -- auto reserve product after getting internet store order
-alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
-update version set value = '1.1.0', date = '28-12-2022';
-------------------------------------------------  end of 1.1.0  ------------------------------------------------------
-------------------------------------------------  start of 1.1.1  ------------------------------------------------------
-alter table template_docs add column type varchar(8); -- the type of template/ Can be: "document", "label"
-alter table template_docs add column num_labels_in_row int; -- quantity of labels in the each row
-update template_docs set type='document';
-alter table template_docs alter column type set not null;
-alter table products add column label_description varchar(2048);
-insert into _dictionary (key, tr_ru, tr_en) values
-('pricetag',             'Ценник',                       'Price tag');
-alter table products add column description_html varchar(16384);
-alter table products add column short_description_html varchar(3000);
-alter table products add column description_type varchar(6); -- editor / custom
-alter table products add column short_description_type varchar(6); -- editor / custom
-alter table file_filecategories alter column category_id TYPE bigint USING category_id::bigint;
-alter table sprav_sys_edizm add column is_default boolean;
-create table customers_orders_files (
-                                customers_orders_id bigint not null,
-                                file_id bigint not null,
-                                foreign key (file_id) references files (id) ON DELETE CASCADE,
-                                foreign key (customers_orders_id ) references customers_orders (id) ON DELETE CASCADE
-);
-alter table plans add column n_stores int;
-update plans set n_stores=1 where name_en='No limits';
-update plans set n_stores=0 where name_en='Free';
-alter table plans alter column n_stores set not null;
-alter table plans_add_options add column n_stores int not null;
-alter table plans_add_options add column stores_ppu numeric(10,3);
-alter table plans_add_options alter column companies_ppu TYPE numeric (10,3);
-alter table plans_add_options alter column departments_ppu TYPE numeric (10,3);
-alter table plans_add_options alter column users_ppu TYPE numeric (10,3);
-alter table plans_add_options alter column products_ppu TYPE numeric (10,3);
-alter table plans_add_options alter column counterparties_ppu TYPE numeric (10,3);
-alter table plans_add_options alter column megabytes_ppu TYPE numeric (10,3);
-alter table companies add column store_ip varchar(21);
-update companies set crm_secret_key = null where crm_secret_key='';
-alter table companies add constraint crm_secret_key_uq unique (crm_secret_key);
--- CREATE UNIQUE INDEX crm_secret_key_uq ON companies (crm_secret_key) WHERE crm_secret_key IS NOT NULL;
-CREATE INDEX crm_secret_key_idx ON companies(crm_secret_key);
-update version set value = '1.1.1', date = '13-01-2023';
-------------------------------------------------  end of 1.1.1  ------------------------------------------------------
-----------------------------------------------  start of 1.2.0  ------------------------------------------------------
-drop table if exists sites_html;
-drop table if exists sites_routes;
-drop table if exists sites;
-delete from usergroup_permissions where permission_id in (select id from permissions where document_id=20);
-delete from permissions where document_id=20;
-delete from documents where id=20;
-
-create table stores (id bigserial primary key not null,
-                     master_id  bigint not null,
-                     company_id bigint not null,
-                     creator_id bigint not null,
-                     changer_id bigint,
-                     date_time_created timestamp with time zone not null,
-                     date_time_changed timestamp with time zone,
-                     name varchar(250) not null,
-                     lang_code  varchar(2) not null,
-                     store_type varchar(8) not null, -- e.g. woo
-                     store_api_version varchar(16) not null, -- e.g. v3
-                     crm_secret_key varchar(36), -- smth like UUID
-                     store_price_type_regular bigint not null, -- id of regular price
-                     store_price_type_sale bigint, -- id of sale price
-                     store_ip varchar(21) not null,
-                     is_deleted boolean,
-                     store_auto_reserve boolean,
-                     store_days_for_esd int not null,
-                     store_default_creator_id bigint not null,
-                     store_default_customer_id bigint,
-                     store_if_customer_not_found varchar(11) not null,
-                     store_orders_department_id bigint not null,
-                     foreign key (master_id) references users(id),
-                     foreign key (creator_id) references users(id),
-                     foreign key (changer_id) references users(id),
-                     foreign key (company_id) references companies(id),
-                     foreign key (store_default_creator_id) references users(id),
-                     foreign key (store_default_customer_id) references cagents(id),
-                     foreign key (store_orders_department_id) references departments(id)
-);
-alter table stores add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
-alter table stores add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
-alter table stores add constraint store_crm_secret_key_uq unique (crm_secret_key);
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (54,'Интернет-магазины','stores',1,'stores','Интернет-магазины', 'Online stores');
-
-insert into permissions (id,name_ru,name_en,document_id,output_order) values
-(671,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',54,10),
-(672,'Создание документов по всем предприятиям','Creation of documents for all companies',54,20),
-(673,'Создание документов своего предприятия','Create your company documents',54,30),
-(674,'Удаление документов всех предприятий','Deleting documents of all companies',54,130),
-(675,'Удаление документов своего предприятия','Deleting your company documents',54,140),
-(676,'Просмотр документов всех предприятий','View documents of all companies',54,50),
-(677,'Просмотр документов своего предприятия','View your company documents',54,60),
-(678,'Редактирование документов всех предприятий','Editing documents of all companies',54,90),
-(679,'Редактирование документов своего предприятия','Editing your company documents',54,100);
-
-create table store_departments(
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                store_id           bigint not null,
-                                department_id      bigint not null,
-                                menu_order         int,    -- Menu order, used to custom sort the departments
-                                foreign key (master_id) references users(id),
-                                foreign key (department_id) references departments(id),
-                                foreign key (store_id) references stores(id),
-                                foreign key (company_id) references companies(id)
-);
-alter table store_departments add constraint store_department_uq unique (store_id, department_id);
-create table stores_products (
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                store_id           bigint not null,
-                                product_id         bigint not null,
-                                woo_id             int,
-                                need_to_syncwoo    boolean,
-                                date_time_syncwoo  timestamp with time zone,
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (product_id) references products(id),
-                                foreign key (store_id) references stores(id)
-);
-alter table stores_products add constraint stores_products_uq unique (store_id, product_id);
-alter table companies add column store_default_lang_code  varchar(2);-- e.g. RU or EN
-update companies set store_default_lang_code='EN';
-create table store_translate_categories(
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                lang_code          varchar(2) not null,
-                                category_id        bigint not null,
-                                name               varchar(512),
-                                slug               varchar(120),
-                                description        varchar(250),
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (category_id) references product_categories(id) on delete cascade
-);
-alter table store_translate_categories add constraint category_lang_uq unique (category_id, lang_code);
-alter table companies alter column store_default_lang_code set not null;
-create table stores_productcategories (
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                store_id           bigint not null,
-                                category_id        bigint not null,
-                                woo_id             int,
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (category_id) references product_categories(id) on delete cascade,
-                                foreign key (store_id) references stores(id)
-);
-alter table stores_productcategories add constraint stores_categories_uq unique (store_id, category_id);
-
-create table store_translate_attributes(
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                lang_code          varchar(2) not null,
-                                attribute_id       bigint not null,
-                                name               varchar(512),
-                                slug               varchar(120),
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (attribute_id) references product_attributes(id) on delete cascade
-);
-alter table store_translate_attributes add constraint attribute_lang_uq unique (attribute_id, lang_code);
-create table stores_attributes (
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                store_id           bigint not null,
-                                attribute_id       bigint not null,
-                                woo_id             int,
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (attribute_id) references product_attributes(id) on delete cascade,
-                                foreign key (store_id) references stores(id)
-);
-alter table stores_attributes add constraint stores_attributes_uq unique (store_id, attribute_id);
-create table store_translate_terms(
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                lang_code          varchar(2) not null,
-                                term_id            bigint not null,
-                                name               varchar(512),
-                                slug               varchar(120),
-                                description        varchar(250),
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (term_id) references product_attribute_terms(id) on delete cascade
-);
-alter table store_translate_terms add constraint term_lang_uq unique (term_id, lang_code);
-create table stores_terms (
-                                master_id          bigint not null,
-                                company_id         bigint not null,
-                                store_id           bigint not null,
-                                term_id            bigint not null,
-                                woo_id             int,
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (term_id) references product_attribute_terms(id) on delete cascade,
-                                foreign key (store_id) references stores(id)
-);
-alter table stores_terms add constraint stores_terms_uq unique (store_id, term_id);
-create table store_translate_products(
-                                    master_id          bigint not null,
-                                    company_id         bigint not null,
-                                    lang_code          varchar(2) not null,
-                                    product_id         bigint not null,
-                                    name               varchar(512),
-                                    slug               varchar(512),
-                                    description        varchar(100000),
-                                    description_html   varchar(100000),
-                                    short_description  varchar(100000),
-                                    short_description_html varchar(100000),
-                                    foreign key (master_id) references users(id),
-                                    foreign key (company_id) references companies(id),
-                                    foreign key (product_id) references products(id) on delete cascade
-);
-alter table store_translate_products add constraint product_lang_uq unique (product_id, lang_code);
-alter table products alter column description type varchar(100000);
-alter table products alter column description_html type varchar(100000);
-alter table products alter column short_description type varchar(100000);
-alter table products alter column short_description_html type varchar(100000);
-alter table products alter column slug type varchar(512);
-
-alter table customers_orders add column store_id bigint;
-alter table customers_orders add constraint customers_orders_store_id_fkey foreign key (store_id) references stores (id);
-CREATE UNIQUE INDEX store_translate_attributes_slug_uq ON store_translate_attributes (company_id, lang_code, slug) WHERE slug !='';-- attribute need to have unique translated slugs for each language
-drop index product_categories_name_nn_uq;
-CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
-alter table product_categories drop constraint product_categories_slug_uq;
-CREATE UNIQUE INDEX product_categories_slug_uq ON product_categories (company_id, slug) WHERE slug !='';
-alter table product_attributes drop constraint product_attributes_name_uq;
-alter table store_translate_terms add column attribute_id int not null ;
-alter table store_translate_terms add constraint store_translate_terms_attribute_id_fkey foreign key (attribute_id) references product_attributes (id) on delete cascade;
-CREATE UNIQUE INDEX store_translate_terms_name_uq ON store_translate_terms (attribute_id, lang_code, name) WHERE name !='';
-CREATE UNIQUE INDEX store_translate_terms_slug_uq ON store_translate_terms (attribute_id, lang_code, slug) WHERE slug !='';
-alter table plans alter column  daily_price type numeric (20,10);
-drop table company_store_departments;
-insert into _dictionary (key, tr_en, tr_ru) values ('sale_price', 'Sale price', 'Скидочная цена');
-
-alter table products drop column woo_id;
-alter table products drop column date_time_syncwoo;
-alter table products drop column need_to_syncwoo;
-alter table companies drop column is_store;
-alter table companies drop column store_site_address;
-alter table companies drop column store_key;
-alter table companies drop column store_secret;
-alter table companies drop column store_type;
-alter table companies drop column store_api_version;
-alter table companies drop column crm_secret_key;
-alter table companies drop column store_price_type_regular;
-alter table companies drop column store_price_type_sale;
-alter table product_categories drop column woo_id;
-alter table product_attributes drop column woo_id;
-alter table product_attribute_terms drop column woo_id;
-update version set value = '1.2.0', date = '13-03-2023';
-------------------------------------------------  end of 1.2.0  ------------------------------------------------------
-insert into _dictionary (key, tr_ru, tr_en) values
-('payroll_taxes',               'Налоги на зарплату',                       'Payroll taxes'),
-('accounting_srvcs',            'Бухгалтерские услуги',                     'Accounting services');
-update _dictionary set tr_ru = 'Подоходные налоги', tr_en = 'Income taxes' where key = 'exp_taxes';
-
-CREATE UNIQUE INDEX products_sku_uq ON products (article, company_id) WHERE article !=''; -- because in WooCommerce article must be unique
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('catg_accounting',              'Бухгалтерские услуги',                      'Accounting services'),
-('cagent_director_y',            'Директор (вы)',                             'CEO (you)'),
-('cagent_accntnts',              'Бухгалтер',                                 'Accountant'),
-('cagent_supplier',              'Поставщик',                                 'Supplier'),
-('cagent_customer',              'Покупатель',                                'Customer'),
-('cagent_bank',                  'Банк',                                      'Bank'),
-('cagent_taxoffce',              'Налоговая служба',                          'Tax office'),
-('cagent_carrier',               'Перевозчик',                                'Carrier'),
-('cagent_landlord',              'Арендодатель',                              'Landlord'),
-('p_catg_myprods',               'Мои товары',                                'My products'),
-('p_catg_srvcs',                 'Мои услуги',                                'My services'),
-('p_catg_in_srvcs',              'Принимаемые',                               'Receiving'),
-('prod_work_empl',               'Работа и услуги от сотрудника',             'Work and services from an employee'),
-('prod_transp',                  'Транспортные услуги',                       'Transport service'),
-('prod_rent',                    'Услуги аренды',                             'Rent service'),
-('prod_prolltax',                'Обязательства по налогам на зарплату',      'Payroll taxes obligations'),
-('prod_incomtax',                'Обязательства по налогу на прибыль',        'Income taxes obligations'),
-('prod_banking',                 'Банковские услуги',                         'Banking service'),
-('prod_my_prod',                 'Мой товар',                                 'My example product'),
-('prod_my_srvc',                 'Моя услуга',                                'My example service'),
-('prod_accounting',              'Бухгалтерские услуги',                      'Accounting service');
-
-
-insert into _dictionary (key, tr_ru, tr_en) values ('catg_leads',              'Лиды',                      'Leads');
-
-
-update version set value = '1.2.1', date = '05-04-2023';
-------------------------------------------------  end of 1.2.1  ------------------------------------------------------
------------------------------------------------  start of 1.2.2  -----------------------------------------------------
-insert into _dictionary (key, tr_ru, tr_en) values
-('st_cg_new',               'Новый контрагент',                 'New counterparty'),
-('st_cg_lead_new',          'Лид - Новый',                      'Lead - New added'),
-('st_cg_lead_prop',         'Лид - Отправлено предложение',     'Lead - Sent proposal'),
-('st_cg_lead_negot',        'Лид - Переговоры',                 'Lead - Negotiations'),
-('st_cg_lead_out',          'Лид - Вышел из воронки',           'Lead - Out of funnel'),
-('st_cg_customer',          'Клиент',                           'Customer');
-
-update version set value = '1.2.2', date = '16-04-2023';
-------------------------------------------------  end of 1.2.2  ------------------------------------------------------
-------------------------------------------------  start of 1.3.0  -----------------------------------------------------
-
-alter table users add column  plan_price           numeric (20,10);
-alter table users add column  free_trial_days      int;
-alter table users add column  is_blocked_master_id boolean; -- blocked the master user and all its child users
-alter table plans add column  n_stores_woo         int;
-alter table plans_add_options add column n_stores_woo   int;
-alter table plans_add_options add column stores_woo_ppu numeric (10,3); -- price per unit
-alter table settings_general  add column free_trial_days int;
-update settings_general set free_trial_days=14;
-alter table users add column plan_version int;
-alter table stores add column rent_store_requested boolean;
-alter table stores add column rent_store_exists boolean;
-alter table stores add column rent_store_ip varchar(15);
-alter table stores add column rent_store_third_lvl_domain_name varchar(30);
-alter table settings_general  add column is_saas boolean;
-update settings_general set is_saas = false;
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (55,'Подписка','subscription',1,'','Подписка', 'Subscription');
-insert into permissions (id,name_ru,name_en,document_id,output_order) values
-(680,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',55,10),
-(681,'Просмотр','View',55,50),
-(682,'Редактирование','Editing',55,90);
-update plans set n_stores_woo=0;
-
-insert into plans_add_options (user_id,n_companies,n_departments,n_users,n_products,n_counterparties,n_megabytes,n_stores,n_stores_woo,companies_ppu,departments_ppu,users_ppu,products_ppu,counterparties_ppu,megabytes_ppu,stores_ppu,stores_woo_ppu)
-select u.id,0,0,0,0,0,0,0,0,0.166,0.166,0.166,0.166,0.166,0.166,0.166,0.233 from users u where id=master_id;
-
-create table plans_add_options_prices (
-                                        name            varchar(100) not null,
-                                        ppu             numeric (15,10) not null,
-                                        step            int not null,
-                                        quantity_limit  int not null,
-                                        is_active       boolean not null
-                                      );
-
-insert into plans_add_options_prices  (name, ppu, step, quantity_limit, is_active) values
-                                      ('companies',      0.166,         1,    1000,   true),
-                                      ('departments',    0.166,         1,    1000,   true),
-                                      ('users',          0.166,         1,    100,    true),
-                                      ('products',       0.000166,      1000, 100000, true),
-                                      ('counterparties', 0.000166,      1000, 100000, true),
-                                      ('megabytes',      0.0003333333,  500,  5000,   true),
-                                      ('stores',         0.166,         1,    10,     true),
-                                      ('stores_woo',     0.233,         1,    10,     true);
-
-
-
-
-
-alter table companies add column vat varchar(100);
-alter table cagents add column vat varchar(100);
-alter table settings_acceptance drop constraint settings_acceptance_user_uq;
-alter table settings_acceptance add constraint settings_acceptance_user_uq UNIQUE (company_id, user_id);
-alter table settings_correction drop constraint if exists settings_correction_user_uq;
-alter table settings_correction add constraint settings_correction_user_uq UNIQUE (company_id, user_id);
-alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_uq;
-alter table settings_customers_orders add constraint settings_customers_orders_user_uq UNIQUE (company_id, user_id);
-alter table settings_inventory drop constraint if exists settings_inventory_user_uq;
-alter table settings_inventory add constraint settings_inventory_user_uq UNIQUE (company_id, user_id);
-alter table settings_invoicein drop constraint if exists settings_invoicein_user_uq;
-alter table settings_invoicein add constraint settings_invoicein_user_uq UNIQUE (company_id, user_id);
-alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_uq;
-alter table settings_invoiceout add constraint settings_invoiceout_user_uq UNIQUE (company_id, user_id);
-alter table settings_moving drop constraint if exists settings_moving_user_uq;
-alter table settings_moving add constraint settings_moving_user_uq UNIQUE (company_id, user_id);
-alter table settings_orderin drop constraint if exists settings_orderin_user_uq;
-alter table settings_orderin add constraint settings_orderin_user_uq UNIQUE (company_id, user_id);
-alter table settings_orderout drop constraint if exists settings_orderout_user_uq;
-alter table settings_orderout add constraint settings_orderout_user_uq UNIQUE (company_id, user_id);
-alter table settings_ordersup drop constraint if exists settings_ordersup_user_uq;
-alter table settings_ordersup add constraint settings_ordersup_user_uq UNIQUE (company_id, user_id);
-alter table settings_paymentin drop constraint if exists settings_paymentin_user_uq;
-alter table settings_paymentin add constraint settings_paymentin_user_uq UNIQUE (company_id, user_id);
-alter table settings_paymentout drop constraint if exists settings_paymentout_user_uq;
-alter table settings_paymentout add constraint settings_paymentout_user_uq UNIQUE (company_id, user_id);
-alter table settings_posting drop constraint if exists settings_posting_user_uq;
-alter table settings_posting add constraint settings_posting_user_uq UNIQUE (company_id, user_id);
-alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_uq;
-alter table settings_retail_sales add constraint settings_retail_sales_user_uq UNIQUE (company_id, user_id);
-alter table settings_return drop constraint if exists settings_return_user_uq;
-alter table settings_return add constraint settings_return_user_uq UNIQUE (company_id, user_id);
-alter table settings_returnsup drop constraint if exists settings_returnsup_user_uq;
-alter table settings_returnsup add constraint settings_returnsup_user_uq UNIQUE (company_id, user_id);
-alter table settings_shipment drop constraint if exists settings_shipment_user_uq;
-alter table settings_shipment add constraint settings_shipment_user_uq UNIQUE (company_id, user_id);
-alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_uq;
-alter table settings_vatinvoicein add constraint settings_vatinvoicein_user_uq UNIQUE (company_id, user_id);
-alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_uq;
-alter table settings_vatinvoiceout add constraint settings_vatinvoiceout_user_uq UNIQUE (company_id, user_id);
-alter table settings_writeoff drop constraint if exists settings_writeoff_user_uq;
-alter table settings_writeoff add constraint settings_writeoff_user_uq UNIQUE (company_id, user_id);
-alter table settings_dashboard drop constraint if exists settings_dashboard_user_uq;
-alter table settings_dashboard add constraint settings_dashboard_user_uq UNIQUE (company_id, user_id);
-alter table settings_correction drop constraint if exists settings_correction_user_id_key;
-alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_id_key;
-alter table settings_inventory drop constraint if exists settings_inventory_user_id_key;
-alter table settings_invoicein drop constraint if exists settings_invoicein_user_id_key;
-alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_id_key;
-alter table settings_moving drop constraint if exists settings_moving_user_id_key;
-alter table settings_orderin drop constraint if exists settings_orderin_user_id_key;
-alter table settings_orderout drop constraint if exists settings_orderout_user_id_key;
-alter table settings_ordersup drop constraint if exists settings_ordersup_user_id_key;
-alter table settings_paymentin drop constraint if exists settings_paymentin_user_id_key;
-alter table settings_paymentout drop constraint if exists settings_paymentout_user_id_key;
-alter table settings_posting drop constraint if exists settings_posting_user_id_key;
-alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_id_key;
-alter table settings_return drop constraint if exists settings_return_user_id_key;
-alter table settings_returnsup drop constraint if exists settings_returnsup_user_id_key;
-alter table settings_shipment drop constraint if exists settings_shipment_user_id_key;
-alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_id_key;
-alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_id_key;
-alter table settings_writeoff drop constraint if exists settings_writeoff_user_id_key;
-alter table settings_dashboard drop constraint if exists settings_dashboard_user_id_key;
-
-alter table settings_acceptance add column date_time_update timestamp with time zone;
-alter table settings_correction add column date_time_update timestamp with time zone;
-alter table settings_customers_orders add column date_time_update timestamp with time zone;
-alter table settings_inventory add column date_time_update timestamp with time zone;
-alter table settings_invoicein add column date_time_update timestamp with time zone;
-alter table settings_invoiceout add column date_time_update timestamp with time zone;
-alter table settings_moving add column date_time_update timestamp with time zone;
-alter table settings_orderin add column date_time_update timestamp with time zone;
-alter table settings_orderout add column date_time_update timestamp with time zone;
-alter table settings_ordersup add column date_time_update timestamp with time zone;
-alter table settings_paymentin add column date_time_update timestamp with time zone;
-alter table settings_paymentout add column date_time_update timestamp with time zone;
-alter table settings_posting add column date_time_update timestamp with time zone;
-alter table settings_retail_sales add column date_time_update timestamp with time zone;
-alter table settings_return add column date_time_update timestamp with time zone;
-alter table settings_returnsup add column date_time_update timestamp with time zone;
-alter table settings_shipment add column date_time_update timestamp with time zone;
-alter table settings_vatinvoicein add column date_time_update timestamp with time zone;
-alter table settings_vatinvoiceout add column date_time_update timestamp with time zone;
-alter table settings_writeoff add column date_time_update timestamp with time zone;
-alter table settings_dashboard add column date_time_update timestamp with time zone;
-
--- this table describes the field "Default Form Values" in WooCommerce
-create table default_attributes(
-                                 master_id     bigint not null,
-                                 product_id    bigint not null, -- variable (parent) product.
-                                 attribute_id  bigint not null,
-                                 term_id       bigint not null,
-                                 foreign key (master_id) references users(id) on delete cascade,
-                                 foreign key (product_id) references products(id) on delete cascade,
-                                 foreign key (attribute_id) references product_attributes(id) on delete cascade,
-                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade
-);
-
-alter table product_productattributes drop constraint product_productattributes_attribute_id_fkey, add constraint product_productattributes_attribute_id_fkey foreign key (attribute_id) references product_attributes(id) on delete cascade;
-alter table product_terms drop constraint attribute_id_fkey, add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes(id) on delete cascade;
-
-create table product_variations
-(
-                                 id         bigserial primary key not null,
-                                 master_id  bigint not null,
-                                 product_id bigint not null, -- variable (parent) product.
-                                 variation_product_id bigint not null,  -- variation of variable (parent) product.
-                                 menu_order int,
-                                 foreign key (master_id) references users (id) on delete cascade,
-                                 foreign key (variation_product_id) references products(id),
-                                 foreign key (product_id) references products (id) on delete cascade
-);
-
-alter table product_variations add constraint variation_product_id_uq UNIQUE (variation_product_id);
-
-create table product_variations_row_items(
-  -- each row of this table describes a part of one variation
-  -- for example:
-  -- variation with id=1 contains [Color(id=50) = Red(id=5)] and [Size(id=51) = Large(id=10)]
-  -- then it will be described in this table by two rows as
-  -- variation_id=1, attribute_id=50, term_id=5;
-  -- variation_id=1, attribute_id=51, term_id=10;
-                                 id                   bigserial primary key not null,
-                                 variation_id         bigint not null,
-                                 master_id            bigint not null,
-                                 attribute_id         bigint not null,
-                                 term_id              bigint,
-                                 foreign key (master_id) references users(id),
-                                 foreign key (variation_id) references product_variations(id) on delete cascade,
-                                 foreign key (attribute_id) references product_attributes(id) on delete cascade,
-                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade
-);
-
-alter table product_variations_row_items add constraint variation_row_attribute_id_uq UNIQUE (variation_id, attribute_id);
-alter table default_attributes add constraint variation_default_attributes_uq UNIQUE (product_id, attribute_id);
-alter table default_attributes alter column term_id drop not null;
-create table stores_variations (
-                                 master_id          bigint not null,
-                                 company_id         bigint not null,
-                                 store_id           bigint not null,
-                                 product_id         bigint not null,
-                                 woo_id             int,
-                                 need_to_syncwoo    boolean,
-                                 date_time_syncwoo  timestamp with time zone,
-                                 foreign key (master_id) references users(id),
-                                 foreign key (company_id) references companies(id),
-                                 --for automatic deletion row in this table after deleting the variation
-                                 foreign key (product_id) references product_variations(variation_product_id) on delete cascade,
-                                 foreign key (store_id) references stores(id)
-);
-alter table stores_variations add constraint stores_variations_uq unique (store_id, product_id);
-
-update plans set is_default = (CASE WHEN id=2 THEN true ELSE false END);
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('black',    'чёрный','black'),
-('white',     'белый','white');
-
-alter table plans_add_options_prices add constraint name_uq unique (name);
-create table _saas_billing_history
-(id bigserial primary key not null,
- date_time_created timestamp with time zone not null,
- for_what_date date not null,
- master_account_id  bigint not null,
- operation_type varchar(100) not null, -- i.e. depositing, withdrawal_plan, withdrawal_plan_option, correction etc.
- plan_id int, -- plan id
- option_name  varchar(100), -- additional option name like "department", "store_connection"
- option_ppu  numeric (20,10), -- price per unit of option
- option_quantity int, -- quantity of option like  "plan_option_name = Store connection,  plan_option_quantity = 2"
- operation_sum numeric (20,10) not null,
- additional varchar(10000), --additional info
- foreign key (master_account_id) references users(id),
- foreign key (plan_id) references plans(id),
- foreign key (option_name) references plans_add_options_prices(name)
-);
-
-alter table plans drop column is_default; -- it is not need because default plan is in settings_general->plan_default_id
-alter table plans add column is_free boolean; -- for free plans the billing is not applied, also this users can't use an additional options
-update plans set is_free = true;
-alter table plans alter column is_free set not null;
-alter table plans alter column n_stores_woo set not null;
-
-alter table plans_add_options_prices alter column ppu type numeric (20,10);
-alter table plans_add_options alter column stores_ppu type numeric(20,10);
-alter table plans_add_options alter column stores_woo_ppu type numeric(20,10);
-alter table plans_add_options alter column companies_ppu type numeric (20,10);
-alter table plans_add_options alter column departments_ppu type numeric (20,10);
-alter table plans_add_options alter column users_ppu type numeric (20,10);
-alter table plans_add_options alter column products_ppu type numeric (20,10);
-alter table plans_add_options alter column counterparties_ppu type numeric (20,10);
-alter table plans_add_options alter column megabytes_ppu type numeric (20,10);
-update plans_add_options set megabytes_ppu = 0.0003333333;
-update plans_add_options_prices set ppu=0.0003333333 where name='megabytes';
-
-alter table plans add column is_available_for_user_switching boolean; --  Can user switch its current plan to this plan?
-update plans set is_available_for_user_switching = true where is_nolimits = false;
-update plans set is_available_for_user_switching = false where is_nolimits = true;
-alter table plans alter column is_available_for_user_switching set not null;
-
-alter table plans_add_options_prices add column quantity_trial_limit int;
-update plans_add_options_prices set quantity_trial_limit = 1 where name = 'companies';
-update plans_add_options_prices set quantity_trial_limit = 4 where name = 'departments';
-update plans_add_options_prices set quantity_trial_limit = 5 where name = 'users';
-update plans_add_options_prices set quantity_trial_limit = 0 where name = 'products';
-update plans_add_options_prices set quantity_trial_limit = 0 where name = 'counterparties';
-update plans_add_options_prices set quantity_trial_limit = 0 where name = 'megabytes';
-update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores';
-update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores_woo';
-alter table plans_add_options_prices alter column quantity_trial_limit set not null;
-
-alter table settings_general add column free_plan_id int;
-update settings_general set free_plan_id = 2;
-alter table settings_general alter column free_plan_id set not null;
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('withdrawal_plan',            'Списание за тариф',     'Plan write-off'),
-('withdrawal_plan_option',     'Списание за доп. опции','Additional options write-off');
-
-alter table settings_general add column let_woo_plugin_to_sync boolean;
-update settings_general set let_woo_plugin_to_sync=true;
-alter table settings_general alter column let_woo_plugin_to_sync set not null;
-alter table settings_general add column woo_plugin_oldest_acceptable_ver varchar(10);
-update settings_general set woo_plugin_oldest_acceptable_ver='1.3.0';
-alter table settings_general alter column woo_plugin_oldest_acceptable_ver set not null;
-alter table stores add column is_let_sync boolean;
-update stores set is_let_sync=true;
-alter table stores alter column is_let_sync set not null;
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('withdrawal_add_service',     'Списание за доп. сервис','Additional service write-off');
-
-alter table settings_general add column is_sites_distribution boolean; -- in this SaaS there is a sites distribution
-update settings_general set is_sites_distribution=false;
-alter table settings_general alter column is_sites_distribution set not null;
-
-create table _saas_stores_for_ordering (
-                                id                            bigserial primary key not null,
-
-                                date_time_created             timestamp with time zone not null,
-                                ready_to_distribute           boolean not null,
-                                distributed                   boolean not null,
-                                is_queried_to_delete          boolean not null, -- user sent query to delete
-                                is_deleted                    boolean not null, -- site was physically deleted from server
-
-                                panel_domain                  varchar(100),
-                                client_no                     varchar(100),
-                                client_name                   varchar(100),
-                                client_login                  varchar(100),
-                                client_password               bytea,
-                                site_domain                   varchar(100),
-                                site_root                     varchar(100),
-                                ftp_user                      varchar(100),
-                                ftp_password                  bytea,
-                                db_user                       varchar(100),
-                                db_password                   bytea,
-                                db_name                       varchar(100),
-                                wp_login                      varchar(100),
-                                wp_password                   bytea,
-                                wp_server_ip                  varchar(16) ,
-                                dokio_secret_key              varchar(100),
-                                record_creator_name           varchar(100), -- name of employee who created this record
-
-                                date_time_ordered             timestamp with time zone, -- when user sent query to get site
-                                date_time_distributed         timestamp with time zone, -- when user got the site
-                                date_time_query_to_delete     timestamp with time zone, -- when user sent query to delete - store mark as "is_queried_to_delete=true"
-                                date_time_deleted             timestamp with time zone, -- when site was physically deleted from server
-                                master_id                     bigint,
-                                company_id                    bigint,
-                                store_id                      bigint,           -- online store connection
-                                orderer_id                    bigint,           -- who ordered (who is clicked on the button "Order store")
-                                deleter_id                    bigint,           -- who deleted (who is clicked on the button "Delete store")
-                                orderer_ip                    varchar(100),     -- ip address from which store ordered
-
-                                foreign key (master_id) references users(id),
-                                foreign key (company_id) references companies(id),
-                                foreign key (orderer_id) references users(id),
-                                foreign key (deleter_id) references users(id),
-                                foreign key (store_id) references stores(id)
-);
-
-alter table settings_general add column   stores_alert_email    varchar(100);
-update settings_general set stores_alert_email = '';
-alter table settings_general alter column stores_alert_email  set not null;
-
-alter table settings_general add column   min_qtt_stores_alert  int;
-update      settings_general set          min_qtt_stores_alert  = 0;
-alter table settings_general alter column min_qtt_stores_alert  set not null;
-
-create table _saas_agreements(
-                               id                    bigserial primary key not null,
-                               type                  varchar(100) not null,
-                               version               varchar(100) not null,
-                               version_date          date not null,
-                               name_en               varchar(300) not null,
-                               text_en               varchar(2000000) not null,
-                               name_ru               varchar(300) not null,
-                               text_ru               varchar(2000000) not null
-);
-
-create table _saas_agreements_units(
-                               id                    bigserial primary key not null,
-                               date_time_agree       timestamp with time zone not null,
-                               master_user           bigint not null,
-                               user_who_agree        bigint not null,
-                               agreement_id          bigint not null,
-                               store_id              bigint,
-                               store_woo_id          bigint,
-                               foreign key (agreement_id) references _saas_agreements(id),
-                               foreign key (master_user) references users(id),
-                               foreign key (user_who_agree) references users(id),
-                               foreign key (store_id) references stores(id),
-                               foreign key (store_woo_id) references _saas_stores_for_ordering(id)
-);
-
-CREATE EXTENSION pgcrypto;
-
-alter table settings_general add column max_store_orders_per_24h_1_account int;
-update settings_general  set max_store_orders_per_24h_1_account =1;
-alter table settings_general alter column max_store_orders_per_24h_1_account set not null;
-alter table settings_general add column max_store_orders_per_24h_1_ip int;
-update settings_general  set max_store_orders_per_24h_1_ip=1;
-alter table settings_general alter column max_store_orders_per_24h_1_ip set not null;
-
-create table _saas_messages
-(
-  key               varchar(200)  PRIMARY KEY not null,
-  tr_en             text,
-  tr_ru             text
-);
-alter table _saas_messages add constraint _saas_messages_key_uq unique (key);
-insert into _saas_messages (key, tr_ru, tr_en) values (
-  'success_online_store_order',
-  '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Спасибо за заказ сайта!</strong></span></span></h1>
-  <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>Желаем удачи в бизнесе!</strong></span></span></p>
-  ',
-  '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
-  <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>We wish you good luck in business!</strong></span></span></p>
-');
-insert into _saas_messages (key, tr_ru, tr_en) values (
-'online_store_no_free_but_ordered',
-'<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
-<p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">К сожалению, свободных сайтов нет.</span></span></p>
-<span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">Благодарим за понимание!</span></span></p>
-',
-'<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
-<p style="text-align:center"><span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Unfortunately, there are no free slots with sites at the moment.</span></span></p>
-<span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Thank you for understanding!</span></span></p>
-'
-);
-alter table _saas_stores_for_ordering add constraint _saas_stores_for_ordering_dokio_secret_key_uq unique (dokio_secret_key);
-
-alter table stores drop constraint store_crm_secret_key_uq;
-CREATE UNIQUE INDEX stores_crm_secret_key_uq ON stores (crm_secret_key) WHERE crm_secret_key !='';
-alter table settings_general drop column if exists email_rent_stores_responsible_employee ;
-
-insert into _saas_messages (key, tr_ru, tr_en) values (
-      'delete_online_store_request',
-      'Зравствуйте.
-       Поступил запрос на удаление сайта с интернет-магазином.
-      Если запрос верен и вы на самом деле хотите удалить сайт с интернет-магазином, пожалуйста, подтвердите данное намерение, отправив фразу "Да, я хочу удалить сайт" на указанный ниже email:
-      ',
-      'Hello!
-      Received a request to delete a site with an online store.
-      If the request is correct and you really want to delete the site with an online store, please confirm this intention by sending the phrase "Yes, I want to delete the site" to the email below:
-      ');
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('site_data',              'Данные о сайте',          'Site data'),
-('site_address',           'Адрес сайта',             'Site address'),
-('site_name',              'Найименование сайта',     'Site name'),
-('who_requested_removal',  'Кто запросил удаление',   'Who requested removal'),
-('confirmation_email',     'Email для подтверждения', 'Confirmation email');
-insert into _dictionary (key, tr_ru, tr_en) values
-('os_req_rcvd',              'Запрос на удаление сайта с интернет-магазинтм',          'Online store deletion request received');
-
-alter table settings_general add column saas_payment_currency varchar(100);
-update settings_general set saas_payment_currency = 'USD';
-alter table settings_general alter column saas_payment_currency set not null;
-
-alter table settings_general add column url_terms_and_conditions varchar(1000);
-update settings_general  set url_terms_and_conditions = '';
-alter table settings_general alter column url_terms_and_conditions set not null;
-
-alter table settings_general add column url_privacy_policy varchar(1000);
-update settings_general  set url_privacy_policy = '';
-alter table settings_general alter column url_privacy_policy set not null;
-
-alter table settings_general add column url_data_processing_agreement varchar(1000);
-update settings_general  set url_data_processing_agreement = '';
-alter table settings_general alter column url_data_processing_agreement set not null;
-
-alter table _saas_stores_for_ordering add column third_lvl_user_domain varchar(100);
-
-CREATE UNIQUE INDEX third_lvl_user_domain_uq ON _saas_stores_for_ordering (third_lvl_user_domain) WHERE third_lvl_user_domain IS NOT NULL;
-
-alter table settings_general add column root_domain varchar(255);               --like dokio.me
-update settings_general set root_domain = '';
-alter table settings_general alter column root_domain set not null;
-
-insert into _saas_messages (key, tr_ru, tr_en) values (
-    'site_name_access',
-    '<p style="text-align:center"><strong>ВНИМАНИЕ</strong></p>
-    <p><span style="font-size:14px">Сначала сайт будет доступен по сгенерированному системой имени.<br />
-    По выбранному Вами имени сайт будет доступен в течение 24 часов.
-    </span></p>',
-    '<p style="text-align:center"><strong>NOTE</strong></p>
-    <p><span style="font-size:14px">At first the site will be accessible with a system-generated name.<br />
-    It will be available at your choosen name within 24h.
-    </span></p>');
-
-alter table users add column jr_legal_form varchar(10);
-alter table users add column jr_jur_name varchar(100);
-alter table users add column jr_name varchar(100);
-alter table users add column jr_surname varchar(100);
-alter table users add column jr_country_id int;
-alter table users add column jr_vat varchar(100);
-alter table users add constraint jr_country_id_fkey foreign key (jr_country_id) references sprav_sys_countries(id);
-alter table users add column jr_changer_id bigint;
-alter table users add constraint jr_changer_id_fkey foreign key (jr_changer_id) references users(id);
-alter table users add column jr_date_time_changed timestamp with time zone;
-alter table users alter column jr_jur_name type varchar(500);
-
-update users set plan_id=2 where plan_id is null;
-alter table users alter column plan_id set not null;
-
-alter table _saas_stores_for_ordering add column is_existed_store_variation boolean;
-alter table _saas_stores_for_ordering add column parent_variation_store_id bigint;
-alter table _saas_stores_for_ordering add column variation_name_position varchar(6); -- "after" or "before"
-alter table _saas_stores_for_ordering add column variation_name varchar(100);
-alter table _saas_stores_for_ordering add constraint parent_variation_store_id_fkey foreign key (parent_variation_store_id) references _saas_stores_for_ordering(id);
-CREATE UNIQUE INDEX _saas_stores_for_ordering_var_uq ON _saas_stores_for_ordering (parent_variation_store_id, variation_name) WHERE variation_name IS NOT NULL and variation_name!='';
-alter table _saas_stores_for_ordering add column site_url varchar(256);
-update _saas_stores_for_ordering set site_url=null;
-alter table _saas_stores_for_ordering alter column site_url set not null;
-CREATE UNIQUE INDEX _saas_stores_for_ordering_site_url_uq ON _saas_stores_for_ordering (site_url) WHERE site_url !='' and is_deleted = false;
-
-alter table stores_attributes add column need_to_syncwoo    boolean;
-alter table stores_attributes add column date_time_syncwoo  timestamp with time zone;
-alter table stores_terms add column need_to_syncwoo    boolean;
-alter table stores_terms add column date_time_syncwoo  timestamp with time zone;
-
-alter table product_attribute_terms add column date_time_changed timestamp with time zone;
-
-alter table stores_productcategories add column need_to_syncwoo    boolean;
-alter table stores_productcategories add column date_time_syncwoo  timestamp with time zone;
-
-alter table product_attributes add column description varchar(250);
-
-alter table product_prices_history alter column price_value drop not null;
-  alter table users alter column plan_id drop not null;
-
-insert into _saas_messages (key, tr_ru, tr_en) values (
-                                                        'email_template',
-                                                        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title></title>
-	<style type="text/css">
-		body {
-			margin: 0;
-			background-color: white;
-		}
-		table {
-			border-spacing: 0;
-		}
-		td {
-			padding: 0;
-		}
-		img {
-			border: 0;
-		}
-
-	</style>
-</head>
-<body>
-	<center class="wrapper">
-		<table class="main" width="100%">
-		<tr>
-			<td style="text-align: center;">
-				<h2>
-					{HEADER}
-				</h2>
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center;">
-				{CONTENT}
-			</td>
-		</tr>
-		</table>
-	</center>
-</body>
-</html>',
-                                                        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title></title>
-	<style type="text/css">
-		body {
-			margin: 0;
-			background-color: white;
-		}
-		table {
-			border-spacing: 0;
-		}
-		td {
-			padding: 0;
-		}
-		img {
-			border: 0;
-		}
-
-	</style>
-</head>
-<body>
-	<center class="wrapper">
-		<table class="main" width="100%">
-		<tr>
-			<td style="text-align: center;">
-				<h2>
-					{HEADER}
-				</h2>
-			</td>
-		</tr>
-		<tr>
-			<td style="text-align: center;">
-				{CONTENT}
-			</td>
-		</tr>
-		</table>
-	</center>
-</body>
-</html>');
-
-insert into _dictionary (key, tr_ru, tr_en) values
-('default_store_name',              'Мой интернет-магазин',          'My online store');
-
-create table stores_sync_statuses(
-             id bigserial primary key not null,
-             master_id  bigint not null,
-             store_id  bigint not null,
-             date_time_start timestamp with time zone,
-             date_time_end timestamp with time zone,
-             job varchar(10) not null,
-             foreign key (master_id) references users(id),
-             foreign key (store_id) references stores(id)
-                                 );
-alter table stores_sync_statuses add constraint stores_sync_statuses_uq unique (store_id, job);
-
-alter table usergroup drop column is_archive;
-alter table usergroup drop column company_id;
-delete from usergroup_permissions where permission_id in (33,30);
-delete from permissions where id in (33,30);
-drop table products_history; -- now product_history used instead
-alter table user_settings add column sidenav_drawer varchar(5);-- "open" or "close"
-update _dictionary set tr_en = 'Purchase order' where key='ordersup';
-
-create table _saas_payment_select(
-                                     id                    serial primary key not null,
-                                     name                  varchar(100) not null,  -- work (technical) name. Not used in user's interface
-                                     img_address           varchar(1000) not null, -- like 'https://mysite.com/assets/img/stripe.jpg'
-                                     output_order          int not null,           -- 1,2,30,100,...
-                                     link                  varchar(2048),          -- link to payment
-                                     is_active             boolean not null,       -- show or hide
-                                     description_msg_key   varchar(200),           -- key of translation in a table _saas_payment_select
-                                     foreign key (description_msg_key) references _saas_messages(key)
-);
-
-alter table settings_general add column billing_master_id bigint;
-alter table settings_general add column billing_shipment_creator_id bigint;
-alter table settings_general add column billing_shipment_company_id bigint;
-alter table settings_general add column billing_shipment_department_id bigint;
-alter table settings_general add column billing_cagents_category_id bigint;
-alter table settings_general add column billing_companies_product_id bigint;
-alter table settings_general add column billing_departments_product_id bigint;
-alter table settings_general add column billing_users_product_id bigint;
-alter table settings_general add column billing_products_product_id bigint;
-alter table settings_general add column billing_counterparties_product_id bigint;
-alter table settings_general add column billing_megabytes_product_id bigint;
-alter table settings_general add column billing_stores_product_id bigint;
-alter table settings_general add column billing_stores_woo_product_id bigint;
-alter table settings_general add column billing_plan_product_id bigint;
-
-alter table settings_general add constraint billing_master_id_fkey foreign key (billing_master_id) references users(id);
-alter table settings_general add constraint billing_shipment_creator_id_fkey foreign key (billing_shipment_creator_id) references users(id);
-alter table settings_general add constraint billing_shipment_company_id_fkey foreign key (billing_shipment_company_id) references companies(id);
-alter table settings_general add constraint billing_shipment_department_id_fkey foreign key (billing_shipment_department_id) references departments(id);
-alter table settings_general add constraint billing_cagents_category_id_fkey foreign key (billing_cagents_category_id) references cagent_categories(id);
-alter table settings_general add constraint billing_companies_product_id_fkey foreign key (billing_companies_product_id) references products(id);
-alter table settings_general add constraint billing_departments_product_id_fkey foreign key (billing_departments_product_id) references products(id);
-alter table settings_general add constraint billing_users_product_id_fkey foreign key (billing_users_product_id) references products(id);
-alter table settings_general add constraint billing_products_product_id_fkey foreign key (billing_products_product_id) references products(id);
-alter table settings_general add constraint billing_counterparties_product_id_fkey foreign key (billing_counterparties_product_id) references products(id);
-alter table settings_general add constraint billing_megabytes_product_id_fkey foreign key (billing_megabytes_product_id) references products(id);
-alter table settings_general add constraint billing_stores_product_id_fkey foreign key (billing_stores_product_id) references products(id);
-alter table settings_general add constraint billing_stores_woo_product_id_fkey foreign key (billing_stores_woo_product_id) references products(id);
-alter table settings_general add constraint billing_plan_product_id_fkey foreign key (billing_plan_product_id) references products(id);
-
-
-alter table cagents add column user_id bigint;
-CREATE UNIQUE INDEX cagents_user_id_uq ON cagents (user_id) WHERE user_id IS NOT NULL;
-alter table cagents add constraint user_id_fkey foreign key (user_id) references users(id);
---DELETE FROM cagent_cagentcategories WHERE ctid NOT IN (SELECT max(ctid) FROM cagent_cagentcategories GROUP BY category_id, cagent_id); run if the next record wont be executed
-alter table cagent_cagentcategories add constraint cagent_cagentcategories_uq unique (category_id, cagent_id);
-
-
-alter table shipment add column is_billing boolean;
-drop table _saas_billing_history;
-
-alter table plans drop column n_products;
-alter table plans drop column n_counterparties;
-alter table plans drop column n_megabytes;
-
-alter table plans add column n_products       numeric(12,2);
-alter table plans add column n_counterparties numeric(12,2);
-alter table plans add column n_megabytes         numeric(12,2);
-
-update plans set n_products=0.1, n_counterparties=0.1, n_megabytes=0.05 where is_nolimits=false and is_free=true;
-update plans set n_products=0.00, n_counterparties=0.00, n_megabytes=0.00 where is_nolimits=true;
-update plans set n_products=1, n_counterparties=1, n_megabytes=1 where is_nolimits=false and is_free=false;
-
-alter table users add column repair_pass_code_sent timestamp with time zone;
-
-update version set value = '1.3.0', date = '03-07-2023';
-
-------------------------------------------------  end of 1.3.0  ------------------------------------------------------
-------------------------------------------------  start of 1.4.0  -----------------------------------------------------
-insert into sprav_sys_languages (id, name, suffix, default_locale_id) values (3,'Српски','sr', 10);
-
-alter table documents add column doc_name_sr varchar (40);
-alter table sprav_sys_countries add column name_sr varchar (128);
-alter table sprav_sys_timezones add column name_sr varchar (128);
-update sprav_sys_timezones set name_sr=name_en;
-alter table _dictionary add column tr_sr text;
-alter table _saas_agreements add column name_sr varchar (300);
-alter table _saas_agreements add column text_sr varchar(2000000);
-update _saas_agreements set name_sr=name_en, text_sr=text_en;
-alter table _saas_messages add column tr_sr text;
-update _saas_messages set tr_sr=tr_en;
-alter table sprav_sys_writeoff add column name_sr varchar (128);
-alter table sprav_sys_writeoff add column description_sr varchar (256);
-alter table permissions add column name_sr  varchar(250);
-alter table plans add column name_sr  varchar(200);
-alter table sprav_sys_ppr add column name_sr  varchar(128);
-
--- Countries --
-update sprav_sys_countries set name_sr='Русија' where id=1;
-update sprav_sys_countries set name_sr='Белорусија' where id=2;
-update sprav_sys_countries set name_sr='Украјина' where id=3;
-update sprav_sys_countries set name_sr='Казахстан' where id=4;
-update sprav_sys_countries set name_sr='Јерменија' where id=5;
-update sprav_sys_countries set name_sr='Грузија' where id=6;
-update sprav_sys_countries set name_sr='Молдавија' where id=7;
-update sprav_sys_countries set name_sr='Узбекистан' where id=8;
-update sprav_sys_countries set name_sr='Таџикистан' where id=9;
-update sprav_sys_countries set name_sr='Естонија ' where id=10;
-update sprav_sys_countries set name_sr='Летонија' where id=11;
-update sprav_sys_countries set name_sr='Литванија' where id=12;
-update sprav_sys_countries set name_sr='Киргистан' where id=13;
-update sprav_sys_countries set name_sr='Туркменистан' where id=14;
-update sprav_sys_countries set name_sr='Азербејџан' where id=15;
-update sprav_sys_countries set name_sr='Мађарска' where id=16;
-update sprav_sys_countries set name_sr='Црна Гора' where id=17;
-update sprav_sys_countries set name_sr='Ирак' where id=18;
-update sprav_sys_countries set name_sr='Мексико' where id=19;
-update sprav_sys_countries set name_sr='Белиз' where id=20;
-update sprav_sys_countries set name_sr='Аруба' where id=21;
-update sprav_sys_countries set name_sr='Микронезија' where id=22;
-update sprav_sys_countries set name_sr='Бахами' where id=23;
-update sprav_sys_countries set name_sr='Коморе' where id=24;
-update sprav_sys_countries set name_sr='Маурицијус' where id=25;
-update sprav_sys_countries set name_sr='Мјанмар' where id=26;
-update sprav_sys_countries set name_sr='Немачка' where id=27;
-update sprav_sys_countries set name_sr='Науру' where id=28;
-update sprav_sys_countries set name_sr='Непал' where id=29;
-update sprav_sys_countries set name_sr='Хрватска' where id=30;
-update sprav_sys_countries set name_sr='Бахреин' where id=31;
-update sprav_sys_countries set name_sr='Тајланд' where id=32;
-update sprav_sys_countries set name_sr='Сомалија' where id=33;
-update sprav_sys_countries set name_sr='Палау' where id=34;
-update sprav_sys_countries set name_sr='Токелау' where id=35;
-update sprav_sys_countries set name_sr='Француска' where id=36;
-update sprav_sys_countries set name_sr='Финска ' where id=37;
-update sprav_sys_countries set name_sr='Израел' where id=38;
-update sprav_sys_countries set name_sr='Шри Ланка' where id=39;
-update sprav_sys_countries set name_sr='Самоа' where id=40;
-update sprav_sys_countries set name_sr='Сенегал' where id=41;
-update sprav_sys_countries set name_sr='Свазиленд' where id=42;
-update sprav_sys_countries set name_sr='Бермуда' where id=43;
-update sprav_sys_countries set name_sr='Словенија' where id=44;
-update sprav_sys_countries set name_sr='Тајван' where id=45;
-update sprav_sys_countries set name_sr='Чиле' where id=46;
-update sprav_sys_countries set name_sr='САД' where id=47;
-update sprav_sys_countries set name_sr='Фији' where id=48;
-update sprav_sys_countries set name_sr='Тувалу' where id=49;
-update sprav_sys_countries set name_sr='Норвешка' where id=50;
-update sprav_sys_countries set name_sr='Руанда' where id=51;
-update sprav_sys_countries set name_sr='Чад' where id=52;
-update sprav_sys_countries set name_sr='Острво Ман' where id=53;
-update sprav_sys_countries set name_sr='Оман' where id=54;
-update sprav_sys_countries set name_sr='Панама' where id=55;
-update sprav_sys_countries set name_sr='Перу' where id=56;
-update sprav_sys_countries set name_sr='Реинион' where id=57;
-update sprav_sys_countries set name_sr='Еквадор' where id=58;
-update sprav_sys_countries set name_sr='Исланд' where id=59;
-update sprav_sys_countries set name_sr='Малдиви' where id=60;
-update sprav_sys_countries set name_sr='Маршалска острва' where id=61;
-update sprav_sys_countries set name_sr='Венецуела' where id=62;
-update sprav_sys_countries set name_sr='Уједињени арапски Емирати' where id=63;
-update sprav_sys_countries set name_sr='Сан-Марино' where id=64;
-update sprav_sys_countries set name_sr='Гана' where id=65;
-update sprav_sys_countries set name_sr='Гамбија' where id=66;
-update sprav_sys_countries set name_sr='Белгија' where id=67;
-update sprav_sys_countries set name_sr='Бенин' where id=68;
-update sprav_sys_countries set name_sr='Џибути' where id=69;
-update sprav_sys_countries set name_sr='Кипар' where id=70;
-update sprav_sys_countries set name_sr='Јордан' where id=71;
-update sprav_sys_countries set name_sr='Грчка' where id=72;
-update sprav_sys_countries set name_sr='Либерија' where id=73;
-update sprav_sys_countries set name_sr='Словачка' where id=74;
-update sprav_sys_countries set name_sr='Костарика' where id=75;
-update sprav_sys_countries set name_sr='Румунија' where id=76;
-update sprav_sys_countries set name_sr='Намибија' where id=77;
-update sprav_sys_countries set name_sr='Лесото' where id=78;
-update sprav_sys_countries set name_sr='Македонија' where id=79;
-update sprav_sys_countries set name_sr='Хонгконг' where id=80;
-update sprav_sys_countries set name_sr='Либан' where id=81;
-update sprav_sys_countries set name_sr='Нигерија' where id=82;
-update sprav_sys_countries set name_sr='Танзанија' where id=83;
-update sprav_sys_countries set name_sr='Тринидад и Тобаго' where id=84;
-update sprav_sys_countries set name_sr='Куба' where id=85;
-update sprav_sys_countries set name_sr='Лаос' where id=86;
-update sprav_sys_countries set name_sr='Либија' where id=87;
-update sprav_sys_countries set name_sr='Турска' where id=88;
-update sprav_sys_countries set name_sr='Судан' where id=89;
-update sprav_sys_countries set name_sr='Мартиник' where id=90;
-update sprav_sys_countries set name_sr='Сијера Леоне' where id=91;
-update sprav_sys_countries set name_sr='Ел Салвадор' where id=92;
-update sprav_sys_countries set name_sr='Нови Зеланд' where id=93;
-update sprav_sys_countries set name_sr='Сирија' where id=94;
-update sprav_sys_countries set name_sr='Италија' where id=95;
-update sprav_sys_countries set name_sr='Кина' where id=96;
-update sprav_sys_countries set name_sr='Замбија' where id=97;
-update sprav_sys_countries set name_sr='Гвинеја' where id=98;
-update sprav_sys_countries set name_sr='Мауританија' where id=99;
-update sprav_sys_countries set name_sr='Авганистан' where id=100;
-update sprav_sys_countries set name_sr='Швајцарска' where id=101;
-update sprav_sys_countries set name_sr='Нова Каледонија' where id=102;
-update sprav_sys_countries set name_sr='Курасао' where id=103;
-update sprav_sys_countries set name_sr='Фарска Острва' where id=104;
-update sprav_sys_countries set name_sr='Боливија' where id=105;
-update sprav_sys_countries set name_sr='Папуа Нова Гвинеја' where id=106;
-update sprav_sys_countries set name_sr='Соломонска острва' where id=107;
-update sprav_sys_countries set name_sr='Велика Британија' where id=108;
-update sprav_sys_countries set name_sr='Камбоџа' where id=109;
-update sprav_sys_countries set name_sr='Бонаире, Синт Еустатије и Саба' where id=110;
-update sprav_sys_countries set name_sr='Португал' where id=111;
-update sprav_sys_countries set name_sr='Света Луција' where id=112;
-update sprav_sys_countries set name_sr='Босна и Херцеговина' where id=113;
-update sprav_sys_countries set name_sr='Макао' where id=114;
-update sprav_sys_countries set name_sr='Индија' where id=115;
-update sprav_sys_countries set name_sr='Кенија' where id=116;
-update sprav_sys_countries set name_sr='Малави' where id=117;
-update sprav_sys_countries set name_sr='Гвајана' where id=118;
-update sprav_sys_countries set name_sr='Јемен' where id=119;
-update sprav_sys_countries set name_sr='Катар' where id=120;
-update sprav_sys_countries set name_sr='Малезија' where id=121;
-update sprav_sys_countries set name_sr='Питкерн' where id=122;
-update sprav_sys_countries set name_sr='Сент Пјер и Микелон' where id=123;
-update sprav_sys_countries set name_sr='Шведска' where id=124;
-update sprav_sys_countries set name_sr='Америчка Самоа' where id=125;
-update sprav_sys_countries set name_sr='Антигва и Барбуда' where id=126;
-update sprav_sys_countries set name_sr='Аргентина' where id=127;
-update sprav_sys_countries set name_sr='Ирска' where id=128;
-update sprav_sys_countries set name_sr='Мали' where id=129;
-update sprav_sys_countries set name_sr='Конго' where id=130;
-update sprav_sys_countries set name_sr='Ватикан' where id=131;
-update sprav_sys_countries set name_sr='Уганда' where id=132;
-update sprav_sys_countries set name_sr='Иран' where id=133;
-update sprav_sys_countries set name_sr='Сејшели' where id=134;
-update sprav_sys_countries set name_sr='Мароко' where id=135;
-update sprav_sys_countries set name_sr='Зеленортска Острва' where id=136;
-update sprav_sys_countries set name_sr='Доминика' where id=137;
-update sprav_sys_countries set name_sr='Кајманска острва' where id=138;
-update sprav_sys_countries set name_sr='Зимбабве' where id=139;
-update sprav_sys_countries set name_sr='Саудијска Арабија' where id=140;
-update sprav_sys_countries set name_sr='Гренада' where id=141;
-update sprav_sys_countries set name_sr='Монтсеррат' where id=142;
-update sprav_sys_countries set name_sr='Малта' where id=143;
-update sprav_sys_countries set name_sr='Уругвај' where id=144;
-update sprav_sys_countries set name_sr='Тунис' where id=145;
-update sprav_sys_countries set name_sr='Канада' where id=146;
-update sprav_sys_countries set name_sr='Источни Тимор' where id=147;
-update sprav_sys_countries set name_sr='Ангвила' where id=148;
-update sprav_sys_countries set name_sr='Тонга' where id=149;
-update sprav_sys_countries set name_sr='Индонезија' where id=150;
-update sprav_sys_countries set name_sr='Барбадос' where id=151;
-update sprav_sys_countries set name_sr='Буркина Фасо' where id=152;
-update sprav_sys_countries set name_sr='Колумбија' where id=153;
-update sprav_sys_countries set name_sr='Гватемала' where id=154;
-update sprav_sys_countries set name_sr='Пакистан' where id=155;
-update sprav_sys_countries set name_sr='Обала Слоноваче' where id=156;
-update sprav_sys_countries set name_sr='Јапан' where id=157;
-update sprav_sys_countries set name_sr='Гибралтар' where id=158;
-update sprav_sys_countries set name_sr='Западна Сахара' where id=159;
-update sprav_sys_countries set name_sr='Луксембург' where id=160;
-update sprav_sys_countries set name_sr='Филипини' where id=161;
-update sprav_sys_countries set name_sr='Бразил' where id=162;
-update sprav_sys_countries set name_sr='Шпанија' where id=163;
-update sprav_sys_countries set name_sr='Валис и Футуна' where id=164;
-update sprav_sys_countries set name_sr='Аустрија' where id=165;
-update sprav_sys_countries set name_sr='Лихтенштајн' where id=166;
-update sprav_sys_countries set name_sr='Бутан' where id=167;
-update sprav_sys_countries set name_sr='Данска' where id=168;
-update sprav_sys_countries set name_sr='Монголија' where id=169;
-update sprav_sys_countries set name_sr='Монако' where id=170;
-update sprav_sys_countries set name_sr='Хаити' where id=171;
-update sprav_sys_countries set name_sr='Мадагаскар' where id=172;
-update sprav_sys_countries set name_sr='Екваторијална Гвинеја' where id=173;
-update sprav_sys_countries set name_sr='Камерун' where id=174;
-update sprav_sys_countries set name_sr='Брунеј' where id=175;
-update sprav_sys_countries set name_sr='Нијуе' where id=176;
-update sprav_sys_countries set name_sr='Того' where id=177;
-update sprav_sys_countries set name_sr='Гуам' where id=178;
-update sprav_sys_countries set name_sr='Ангола' where id=179;
-update sprav_sys_countries set name_sr='Сингапур' where id=180;
-update sprav_sys_countries set name_sr='Јамајка' where id=181;
-update sprav_sys_countries set name_sr='Нигер' where id=182;
-update sprav_sys_countries set name_sr='Никарагва' where id=183;
-update sprav_sys_countries set name_sr='Етиопија' where id=184;
-update sprav_sys_countries set name_sr='Србија' where id=185;
-update sprav_sys_countries set name_sr='Габон' where id=186;
-update sprav_sys_countries set name_sr='Гвинеја Бисао' where id=187;
-update sprav_sys_countries set name_sr='Бангладеш' where id=188;
-update sprav_sys_countries set name_sr='Боцвана' where id=189;
-update sprav_sys_countries set name_sr='Албанија' where id=190;
-update sprav_sys_countries set name_sr='Гренланд' where id=191;
-update sprav_sys_countries set name_sr='Јужни Судан' where id=192;
-update sprav_sys_countries set name_sr='Северна Кореја' where id=193;
-update sprav_sys_countries set name_sr='Синт Маартен' where id=194;
-update sprav_sys_countries set name_sr='Мозамбик' where id=195;
-update sprav_sys_countries set name_sr='Бугарска' where id=196;
-update sprav_sys_countries set name_sr='Француска Гвајана' where id=197;
-update sprav_sys_countries set name_sr='Аустралија' where id=198;
-update sprav_sys_countries set name_sr='Андорра' where id=199;
-update sprav_sys_countries set name_sr='Кирибати' where id=200;
-update sprav_sys_countries set name_sr='Порторико' where id=201;
-update sprav_sys_countries set name_sr='Еритреја' where id=202;
-update sprav_sys_countries set name_sr='Француска Полинезија' where id=203;
-update sprav_sys_countries set name_sr='Острва Туркс и Каикос' where id=204;
-update sprav_sys_countries set name_sr='Парагвај' where id=205;
-update sprav_sys_countries set name_sr='Пољска' where id=206;
-update sprav_sys_countries set name_sr='Свети Винцент и Гренадини' where id=207;
-update sprav_sys_countries set name_sr='Палестина' where id=208;
-update sprav_sys_countries set name_sr='Свалбард и Јан Мајен' where id=209;
-update sprav_sys_countries set name_sr='Алжир' where id=210;
-update sprav_sys_countries set name_sr='острво Норфолк' where id=211;
-update sprav_sys_countries set name_sr='Америчка Девичанска острва' where id=212;
-update sprav_sys_countries set name_sr='Хондурас' where id=213;
-update sprav_sys_countries set name_sr='Доминиканска република' where id=214;
-update sprav_sys_countries set name_sr='Гваделуп' where id=215;
-update sprav_sys_countries set name_sr='Кувајт' where id=216;
-update sprav_sys_countries set name_sr='Централна Афричка Република' where id=217;
-update sprav_sys_countries set name_sr='Северна Маријанска острва' where id=218;
-update sprav_sys_countries set name_sr='Чешка' where id=219;
-update sprav_sys_countries set name_sr='Низоземска' where id=220;
-update sprav_sys_countries set name_sr='Британска Девичанска острва' where id=221;
-update sprav_sys_countries set name_sr='Сан Томе и Принсипи' where id=222;
-update sprav_sys_countries set name_sr='Бурунди' where id=223;
-update sprav_sys_countries set name_sr='Суринам' where id=224;
-update sprav_sys_countries set name_sr='Кукова острва' where id=225;
-update sprav_sys_countries set name_sr='Света Јелена' where id=226;
-update sprav_sys_countries set name_sr='Сент Китс и Невис' where id=227;
-update sprav_sys_countries set name_sr='Фокландска острва' where id=228;
-update sprav_sys_countries set name_sr='Вануату' where id=229;
-update sprav_sys_countries set name_sr='Јужна Кореја' where id=230;
-update sprav_sys_countries set name_sr='Јужна Африка' where id=231;
-update sprav_sys_countries set name_sr='Вијетнам' where id=232;
-update sprav_sys_countries set name_sr='Конго, Демократска Република' where id=233;
-update sprav_sys_countries set name_sr='Египат' where id=234;
-
--- Documents --
-update documents set doc_name_sr='Отпрема' where id=21;
-update documents set doc_name_sr='Међусобна плаћања' where id=47;
-update documents set doc_name_sr='Депозити' where id=46;
-update documents set doc_name_sr='Поврати од купаца' where id=28;
-update documents set doc_name_sr='Враћа добављачима' where id=29;
-update documents set doc_name_sr='Долазне уплате' where id=33;
-update documents set doc_name_sr='Повлачења' where id=45;
-update documents set doc_name_sr='Новац тече' where id=48;
-update documents set doc_name_sr='Jединице' where id=11;
-update documents set doc_name_sr='Поруџбине купаца' where id=23;
-update documents set doc_name_sr='Инвентар' where id=27;
-update documents set doc_name_sr='Одлазне уплате' where id=34;
-update documents set doc_name_sr='Смене благајника' where id=43;
-update documents set doc_name_sr='Чекови' where id=44;
-update documents set doc_name_sr='Касе' where id=24;
-update documents set doc_name_sr='Касе предузећа' where id=42;
-update documents set doc_name_sr='Уговорне стране' where id=12;
-update documents set doc_name_sr='Корекције' where id=41;
-update documents set doc_name_sr='Порези' where id=50;
-update documents set doc_name_sr='Стављања' where id=16;
-update documents set doc_name_sr='Одељења' where id=4;
-update documents set doc_name_sr='Налози добављачу' where id=39;
-update documents set doc_name_sr='Групе производа' where id=10;
-update documents set doc_name_sr='Премјештања' where id=30;
-update documents set doc_name_sr='Корисници' where id=5;
-update documents set doc_name_sr='Предузеће' where id=3;
-update documents set doc_name_sr='Профит и губитак' where id=49;
-update documents set doc_name_sr='Прихватања' where id=15;
-update documents set doc_name_sr='Потврде о пријему' where id=35;
-update documents set doc_name_sr='Потврде о исплати' where id=36;
-update documents set doc_name_sr='Малопродаја' where id=25;
-update documents set doc_name_sr='Улоге корисника' where id=6;
-update documents set doc_name_sr='Отписи' where id=17;
-update documents set doc_name_sr='Почетна страница' where id=26;
-update documents set doc_name_sr='Статуси докумената' where id=22;
-update documents set doc_name_sr='Расходи' where id=40;
-update documents set doc_name_sr='Издати ПДВ фактуре' where id=37;
-update documents set doc_name_sr='Примљене ПДВ фактуре' where id=38;
-update documents set doc_name_sr='Рачуни купцима' where id=31;
-update documents set doc_name_sr='Рачуни добављача' where id=32;
-update documents set doc_name_sr='Типови цене' where id=9;
-update documents set doc_name_sr='Преостали производи' where id=18;
-update documents set doc_name_sr='Производи и услуге' where id=14;
-update documents set doc_name_sr='Фајлови' where id=13;
-update documents set doc_name_sr='Цене' where id=19;
-update documents set doc_name_sr='Банковне рачуни' where id=52;
-update documents set doc_name_sr='Валуте' where id=51;
-update documents set doc_name_sr='Атрибути производа' where id=53;
-update documents set doc_name_sr='Интернет продавнице' where id=54;
-update documents set doc_name_sr='Претплата' where id=55;
-
--- Dictionary --
-update _dictionary set tr_sr='т. р.' where key='acc_short';
-update _dictionary set tr_sr='Прихватање' where key='acceptance';
-update _dictionary set tr_sr='Рачуноводствене услуге' where key='accounting_srvcs';
-update _dictionary set tr_sr='Sve' where key='all';
-update _dictionary set tr_sr='Основна цена' where key='basic_price';
-update _dictionary set tr_sr='Црн' where key='black';
-update _dictionary set tr_sr='Каса предузећа' where key='boxoffice';
-update _dictionary set tr_sr='Поруџбина купаца' where key='c_order';
-update _dictionary set tr_sr='Рачуновођа' where key='cagent_accntnts';
-update _dictionary set tr_sr='Банка' where key='cagent_bank';
-update _dictionary set tr_sr='Превозник' where key='cagent_carrier';
-update _dictionary set tr_sr='Купац' where key='cagent_customer';
-update _dictionary set tr_sr='Директор (ви)' where key='cagent_director_y';
-update _dictionary set tr_sr='Станодавац' where key='cagent_landlord';
-update _dictionary set tr_sr='Добављач' where key='cagent_supplier';
-update _dictionary set tr_sr='Пореска служба' where key='cagent_taxoffce';
-update _dictionary set tr_sr='Каса предузећа' where key='cash_room';
-update _dictionary set tr_sr='Рачуноводствене услуге' where key='catg_accounting';
-update _dictionary set tr_sr='Банке' where key='catg_banks';
-update _dictionary set tr_sr='Купаца' where key='catg_customers';
-update _dictionary set tr_sr='Запослени' where key='catg_employees';
-update _dictionary set tr_sr='Лидови' where key='catg_leads';
-update _dictionary set tr_sr='Изнајмљивање' where key='catg_rent';
-update _dictionary set tr_sr='Добављачи' where key='catg_suppliers';
-update _dictionary set tr_sr='Пореске службе' where key='catg_tax_srvcs';
-update _dictionary set tr_sr='Транспорт' where key='catg_transport';
-update _dictionary set tr_sr='Боја' where key='color';
-update _dictionary set tr_sr='Предузећа' where key='company';
-update _dictionary set tr_sr='Завршено' where key='completed';
-update _dictionary set tr_sr='Е-маил за потврду' where key='confirmation_email';
-update _dictionary set tr_sr='Исправка' where key='correction';
-update _dictionary set tr_sr='Уговорна страна' where key='cparty';
-update _dictionary set tr_sr='Аустралијски долар' where key='curr_australian_dollar';
-update _dictionary set tr_sr='Канадски долар' where key='curr_canadian_dollar';
-update _dictionary set tr_sr='Евро' where key='curr_euro';
-update _dictionary set tr_sr='Новозеландски долар' where key='curr_new_zealand_dollar';
-update _dictionary set tr_sr='Британска фунта' where key='curr_pound_sterling';
-update _dictionary set tr_sr='Руска рубља' where key='curr_russian_rouble';
-update _dictionary set tr_sr='Амерички долар' where key='curr_us_dollar';
-update _dictionary set tr_sr='Поруџбина купаца' where key='customersorders';
-update _dictionary set tr_sr='Моја онлајн продавница' where key='default_store_name';
-update _dictionary set tr_sr='Одељење' where key='department';
-update _dictionary set tr_sr='Депозити' where key='depositing';
-update _dictionary set tr_sr='Банкарске услуге' where key='exp_banking_srvcs';
-update _dictionary set tr_sr='Плаћање производа и услуга' where key='exp_pay_goods_srvcs';
-update _dictionary set tr_sr='Трансфер унутар предузећа' where key='exp_pay_wh_company';
-update _dictionary set tr_sr='Изнајмљивање' where key='exp_rent';
-update _dictionary set tr_sr='Поврати од купаца' where key='exp_return';
-update _dictionary set tr_sr='Плата' where key='exp_salary';
-update _dictionary set tr_sr='Порез на доходак' where key='exp_taxes';
-update _dictionary set tr_sr='Трошкови' where key='expenditure';
-update _dictionary set tr_sr='Потрошња' where key='expense';
-update _dictionary set tr_sr='Документи' where key='f_ctg_docs';
-update _dictionary set tr_sr='Производи' where key='f_ctg_goods';
-update _dictionary set tr_sr='Слике' where key='f_ctg_images';
-update _dictionary set tr_sr='Шаблони' where key='f_ctg_templates';
-update _dictionary set tr_sr='са печатом и потписима' where key='f_with_stamp_sign';
-update _dictionary set tr_sr='Фајлови' where key='file';
-update _dictionary set tr_sr='Приход' where key='income';
-update _dictionary set tr_sr='Инвентар' where key='inventory';
-update _dictionary set tr_sr='Рачун добављача' where key='invoicein';
-update _dictionary set tr_sr='Рачун купца' where key='invoiceout';
-update _dictionary set tr_sr='Каса' where key='kassa';
-update _dictionary set tr_sr='Лого' where key='logo';
-update _dictionary set tr_sr='Моја банка' where key='main_bank_acc';
-update _dictionary set tr_sr='Каса предузећа' where key='main_cash_room';
-update _dictionary set tr_sr='Новац' where key='money';
-update _dictionary set tr_sr='Новац тече' where key='moneyflow';
-update _dictionary set tr_sr='Премјештање' where key='moving';
-update _dictionary set tr_sr='Међусобна плаћања' where key='mut_payments';
-update _dictionary set tr_sr='Моје предузеће' where key='my_company';
-update _dictionary set tr_sr='Моје одељење' where key='my_department';
-update _dictionary set tr_sr='Нове поруџбине' where key='new_orders';
-update _dictionary set tr_sr='Не' where key='no';
-update _dictionary set tr_sr='бр.' where key='number';
-update _dictionary set tr_sr='Отворите документ у новом прозору' where key='open_in_new_window';
-update _dictionary set tr_sr='Потврда о пријему' where key='orderin';
-update _dictionary set tr_sr='Потврда о исплати' where key='orderout';
-update _dictionary set tr_sr='Налог добављачу' where key='ordersup';
-update _dictionary set tr_sr='Захтев за брисање веб странице са интернет продавницом' where key='os_req_rcvd';
-update _dictionary set tr_sr='Закашњели рачуни' where key='overdue_invcs';
-update _dictionary set tr_sr='Закашњеле поруџбине' where key='overdue_ordrs';
-update _dictionary set tr_sr='Примање' where key='p_catg_in_srvcs';
-update _dictionary set tr_sr='Моји производи' where key='p_catg_myprods';
-update _dictionary set tr_sr='Моје услуге' where key='p_catg_srvcs';
-update _dictionary set tr_sr='Долазна уплата' where key='paymentin';
-update _dictionary set tr_sr='Одлазна уплата' where key='paymentout';
-update _dictionary set tr_sr='Порези на плате' where key='payroll_taxes';
-update _dictionary set tr_sr='стављање' where key='posting';
-update _dictionary set tr_sr='Цедуља са ценом' where key='pricetag';
-update _dictionary set tr_sr='Тип цене' where key='pricetype';
-update _dictionary set tr_sr='Рачуноводствене услуге' where key='prod_accounting';
-update _dictionary set tr_sr='Банкарске услуге' where key='prod_banking';
-update _dictionary set tr_sr='Обавезе пореза на доходак' where key='prod_incomtax';
-update _dictionary set tr_sr='Мој производ' where key='prod_my_prod';
-update _dictionary set tr_sr='Моја услуга' where key='prod_my_srvc';
-update _dictionary set tr_sr='Обавезе пореза на зараде' where key='prod_prolltax';
-update _dictionary set tr_sr='Услуга изнајмљивања' where key='prod_rent';
-update _dictionary set tr_sr='Услуге транспорта' where key='prod_transp';
-update _dictionary set tr_sr='Рад и услуге од запосленог' where key='prod_work_empl';
-update _dictionary set tr_sr='Група производа' where key='productgroup';
-update _dictionary set tr_sr='Профит и губитак' where key='profitloss';
-update _dictionary set tr_sr='Чек' where key='receipt';
-update _dictionary set tr_sr='Малопродаја' where key='retailsale';
-update _dictionary set tr_sr='Малопродаје' where key='retailsales';
-update _dictionary set tr_sr='Поврат од купаца' where key='return';
-update _dictionary set tr_sr='Враћа добављачу' where key='returnsup';
-update _dictionary set tr_sr='Улоге корисника' where key='role';
-update _dictionary set tr_sr='Администратори' where key='role_admins';
-update _dictionary set tr_sr='Цена са попустом' where key='sale_price';
-update _dictionary set tr_sr='Одабрано' where key='selected';
-update _dictionary set tr_sr='Смене благајника' where key='shift';
-update _dictionary set tr_sr='Отпрема' where key='shipment';
-update _dictionary set tr_sr='Потпис' where key='signature';
-update _dictionary set tr_sr='Адреса сајта' where key='site_address';
-update _dictionary set tr_sr='Подаци о сајту' where key='site_data';
-update _dictionary set tr_sr='Назив сајта' where key='site_name';
-update _dictionary set tr_sr='Величина' where key='size';
-update _dictionary set tr_sr='Припрема наруџбине' where key='st_assembl_ord';
-update _dictionary set tr_sr='Припрема' where key='st_assembly';
-update _dictionary set tr_sr='Чекају испоруку' where key='st_await_iss';
-update _dictionary set tr_sr='Отказати' where key='st_cancel';
-update _dictionary set tr_sr='Клијент' where key='st_cg_customer';
-update _dictionary set tr_sr='Лидови - Преговори' where key='st_cg_lead_negot';
-update _dictionary set tr_sr='Лидови - Ново' where key='st_cg_lead_new';
-update _dictionary set tr_sr='Лидови - Изашло је из левка' where key='st_cg_lead_out';
-update _dictionary set tr_sr='Лидови - Понуда је послата' where key='st_cg_lead_prop';
-update _dictionary set tr_sr='Нова уговорна страна' where key='st_cg_new';
-update _dictionary set tr_sr='Завршено' where key='st_completed';
-update _dictionary set tr_sr='У процесу' where key='st_in_process';
-update _dictionary set tr_sr='Рачун је издат' where key='st_invc_issued';
-update _dictionary set tr_sr='Рачун је плаћен' where key='st_invc_paid';
-update _dictionary set tr_sr='Издаје се купцу' where key='st_issd_buyer';
-update _dictionary set tr_sr='Новац прихваћен' where key='st_money_accptd';
-update _dictionary set tr_sr='Новац је издат' where key='st_money_issued';
-update _dictionary set tr_sr='Нови документ' where key='st_new';
-update _dictionary set tr_sr='Нова наруџба' where key='st_new_order';
-update _dictionary set tr_sr='Наруџба испоручена' where key='st_ord_delvrd';
-update _dictionary set tr_sr='Плаћање извршено' where key='st_paym_made';
-update _dictionary set tr_sr='Послано' where key='st_payment_send';
-update _dictionary set tr_sr='Штампано' where key='st_printed';
-update _dictionary set tr_sr='Повраћај је извршен' where key='st_ret_compl';
-update _dictionary set tr_sr='Производи су послате' where key='st_send';
-update _dictionary set tr_sr='Чекам рачун' where key='st_wait_invoice';
-update _dictionary set tr_sr='Чекање исплате новца' where key='st_wait_pay';
-update _dictionary set tr_sr='Чека се цене' where key='st_wait_prices';
-update _dictionary set tr_sr='Чека се долазак' where key='st_wait_receive';
-update _dictionary set tr_sr='Печат' where key='stamp';
-update _dictionary set tr_sr='Статус документа' where key='status';
-update _dictionary set tr_sr='Порез' where key='tax';
-update _dictionary set tr_sr='Без ПДВ-а' where key='tax_no_tax';
-update _dictionary set tr_sr='ПДВ' where key='tax_tax';
-update _dictionary set tr_sr='Резултат смене' where key='tr';
-update _dictionary set tr_sr='Центиметар' where key='um_centimeter';
-update _dictionary set tr_sr='цм' where key='um_centimeter_s';
-update _dictionary set tr_sr='Кубни метар' where key='um_cubic_meter';
-update _dictionary set tr_sr='м3' where key='um_cubic_meter_s';
-update _dictionary set tr_sr='Грам' where key='um_gramm';
-update _dictionary set tr_sr='г' where key='um_gramm_s';
-update _dictionary set tr_sr='Килограм' where key='um_kilogramm';
-update _dictionary set tr_sr='кг' where key='um_kilogramm_s';
-update _dictionary set tr_sr='Литар' where key='um_litre';
-update _dictionary set tr_sr='л' where key='um_litre_s';
-update _dictionary set tr_sr='Метар' where key='um_meter';
-update _dictionary set tr_sr='м' where key='um_meter_s';
-update _dictionary set tr_sr='Ствар' where key='um_piece';
-update _dictionary set tr_sr='ст' where key='um_piece_s';
-update _dictionary set tr_sr='Квадратни метар' where key='um_square_meter';
-update _dictionary set tr_sr='м2' where key='um_square_meter_s';
-update _dictionary set tr_sr='Тон' where key='um_ton';
-update _dictionary set tr_sr='Т' where key='um_ton_s';
-update _dictionary set tr_sr='Непребројиво' where key='um_uncountable';
-update _dictionary set tr_sr='Јединица' where key='unit';
-update _dictionary set tr_sr='Корисника' where key='user';
-update _dictionary set tr_sr='Примљена ПДВ фактура' where key='v_invoicein';
-update _dictionary set tr_sr='Издата ПДВ фактура' where key='v_invoiceout';
-update _dictionary set tr_sr='Примљена ПДВ фактура' where key='vatinvoicein';
-update _dictionary set tr_sr='Издата ПДВ фактура' where key='vatinvoiceout';
-update _dictionary set tr_sr='бео' where key='white';
-update _dictionary set tr_sr='Ко је тражио брисање' where key='who_requested_removal';
-update _dictionary set tr_sr='Повлачење' where key='withdrawal';
-update _dictionary set tr_sr='Наплата додатне услуге' where key='withdrawal_add_service';
-update _dictionary set tr_sr='Наплата за тарифу' where key='withdrawal_plan';
-update _dictionary set tr_sr='Наплата додатне опције' where key='withdrawal_plan_option';
-update _dictionary set tr_sr='Наплата' where key='writeoff';
-update _dictionary set tr_sr='Да' where key='yes';
-update _dictionary set tr_sr='Дужни су вам' where key='you_owed';
-update _dictionary set tr_sr='Ви дугујете' where key='your_debt';
-
--- Writeoffs --
-update sprav_sys_writeoff set name_sr='Општи текући трошкови' where id=1;
-update sprav_sys_writeoff set name_sr='Трошкови продаје' where id=2;
-update sprav_sys_writeoff set name_sr='Недостаци и губици од оштећења' where id=3;
-update sprav_sys_writeoff set name_sr='Општи трошкови производње' where id=4;
-update sprav_sys_writeoff set name_sr='Примарна производња' where id=5;
-update sprav_sys_writeoff set name_sr='Помоћна производња' where id=6;
-update sprav_sys_writeoff set name_sr='Остали расходи' where id=7;
-update sprav_sys_writeoff set description_sr='На пример, папир за канцеларијску опрему је издат рачуновођи' where id=1;
-update sprav_sys_writeoff set description_sr='На пример, издат је контејнер за паковање готових производа' where id=2;
-update sprav_sys_writeoff set description_sr='На пример, отписивање недостајућих материјала' where id=3;
-update sprav_sys_writeoff set description_sr='На пример, крпе и рукавице су пуштене чистачици која је опслуживала радионицу' where id=4;
-update sprav_sys_writeoff set description_sr='На пример, пуштају се сировине за производњу производа' where id=5;
-update sprav_sys_writeoff set description_sr='На пример, материјали се пуштају у радионицу' where id=6;
-update sprav_sys_writeoff set description_sr='На пример, отписивање дотрајалих алата или опреме' where id=7;
-
--- Permissions --
-update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=137;
-update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=154;
-update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=171;
-update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=155;
-update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=172;
-update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=138;
-update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=158;
-update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=175;
-update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=141;
-update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=142;
-update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=176;
-update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=159;
-update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=173;
-update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=139;
-update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=156;
-update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=140;
-update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=174;
-update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=157;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=630;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=614;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=423;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=618;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=403;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=622;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=634;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=626;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=395;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=399;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=443;
-update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=463;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=623;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=460;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=473;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=627;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=495;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=631;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=515;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=526;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=537;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=396;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=392;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=484;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=400;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=548;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=420;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=440;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=611;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=615;
-update permissions set name_sr='Довршавање докумената за сва предузећа' where id=619;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=398;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=621;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=633;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=613;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=442;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=617;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=625;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=629;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=462;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=402;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=394;
-update permissions set name_sr='Довршавање докумената за своје одељење' where id=422;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=624;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=628;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=397;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=441;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=393;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=401;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=632;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=461;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=538;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=549;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=421;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=527;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=485;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=474;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=620;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=616;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=612;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=516;
-update permissions set name_sr='Довршавање докумената за своје предузеће' where id=496;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=407;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=298;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=363;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=255;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=331;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=347;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=379;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=427;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=192;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=202;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=578;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=570;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=218;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=311;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=282;
-update permissions set name_sr='Креирање докумената за свог одељења' where id=447;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=272;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=281;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=362;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=519;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=406;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=508;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=499;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=488;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=346;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=673;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=477;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=297;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=530;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=541;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=552;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=569;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=577;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=201;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=185;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=426;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=637;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=466;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=446;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=378;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=164;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=147;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=330;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=217;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=254;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=130;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=655;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=646;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=664;
-update permissions set name_sr='Креирање докумената за своје предузеће' where id=310;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=645;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=146;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=163;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=184;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=200;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=576;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=551;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=654;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=672;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=540;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=529;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=309;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=271;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=280;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=507;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=498;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=487;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=465;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=445;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=345;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=377;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=425;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=405;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=361;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=253;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=216;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=129;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=120;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=111;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=93;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=329;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=11;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=518;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=568;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=636;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=31;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=663;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=476;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=3;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=22;
-update permissions set name_sr='Креирање докумената за свих предузећа' where id=296;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=194;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=411;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=367;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=451;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=259;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=431;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=383;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=286;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=351;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=335;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=315;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=222;
-update permissions set name_sr='Брисање докумената које сте сами креирали' where id=206;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=299;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=467;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=542;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=553;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=478;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=448;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=94;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=656;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=112;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=121;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=428;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=674;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=408;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=380;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=364;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=500;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=4;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=131;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=509;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=520;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=531;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=489;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=32;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=12;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=23;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=348;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=665;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=638;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=332;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=647;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=283;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=273;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=312;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=256;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=219;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=203;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=186;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=165;
-update permissions set name_sr='Брисање докумената свих предузећа' where id=148;
-update permissions set name_sr='Брисање докумената свог одељења' where id=301;
-update permissions set name_sr='Брисање докумената свог одељења' where id=366;
-update permissions set name_sr='Брисање докумената свог одељења' where id=410;
-update permissions set name_sr='Брисање докумената свог одељења' where id=450;
-update permissions set name_sr='Брисање докумената свог одељења' where id=430;
-update permissions set name_sr='Брисање докумената свог одељења' where id=382;
-update permissions set name_sr='Брисање докумената свог одељења' where id=350;
-update permissions set name_sr='Брисање докумената свог одељења' where id=334;
-update permissions set name_sr='Брисање докумената свог одељења' where id=285;
-update permissions set name_sr='Брисање докумената свог одељења' where id=314;
-update permissions set name_sr='Брисање докумената свог одељења' where id=221;
-update permissions set name_sr='Брисање докумената свог одељења' where id=205;
-update permissions set name_sr='Брисање докумената свог одељења' where id=193;
-update permissions set name_sr='Брисање докумената свог одељења' where id=258;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=204;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=149;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=166;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=187;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=220;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=313;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=274;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=284;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=333;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=349;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=381;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=429;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=648;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=521;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=666;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=554;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=543;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=532;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=257;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=365;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=132;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=675;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=510;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=479;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=501;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=490;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=468;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=449;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=409;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=300;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=657;
-update permissions set name_sr='Брисање докумената своје предузеће' where id=639;
-update permissions set name_sr='Прикажи' where id=324;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=252;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=653;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=662;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=475;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=295;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=126;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=143;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=160;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=586;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=589;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=671;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=680;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=404;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=424;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=183;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=199;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=215;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=231;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=238;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=644;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=308;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=268;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=279;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=344;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=360;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=376;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=444;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=464;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=486;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=497;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=506;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=517;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=528;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=539;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=550;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=559;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=567;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=575;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=583;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=562;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=18;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=17;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=19;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=28;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=635;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=328;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=90;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=108;
-update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=117;
-update permissions set name_sr='Уређивање' where id=682;
-update permissions set name_sr='Уређивање свих предузећа' where id=8;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=267;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=323;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=391;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=214;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=419;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=459;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=439;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=359;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=375;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=230;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=294;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=198;
-update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=343;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=482;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=124;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=135;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=152;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=190;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=169;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=471;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=642;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=34;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=678;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=115;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=97;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=305;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=493;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=557;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=546;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=535;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=504;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=651;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=513;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=524;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=227;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=264;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=277;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=291;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=320;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=340;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=356;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=372;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=388;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=16;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=660;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=416;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=436;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=669;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=456;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=27;
-update permissions set name_sr='Уређивање докумената свих предузећа' where id=211;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=307;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=374;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=342;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=438;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=390;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=197;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=229;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=322;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=213;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=266;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=358;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=293;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=458;
-update permissions set name_sr='Уређивање докумената свог одељења' where id=418;
-update permissions set name_sr='Уређивање своје предузеће' where id=7;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=98;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=558;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=437;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=417;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=389;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=373;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=357;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=341;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=26;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=661;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=15;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=321;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=278;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=228;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=191;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=643;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=153;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=483;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=652;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=306;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=116;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=125;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=136;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=170;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=212;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=265;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=292;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=457;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=472;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=494;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=505;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=514;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=679;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=525;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=536;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=547;
-update permissions set name_sr='Уређивање докумената своје предузеће' where id=670;
-update permissions set name_sr='Корпа - Брисање фајлови из корпе за сва предузећа' where id=179;
-update permissions set name_sr='Корпа - Брисање фајлови из корпе за своје предузеће' where id=180;
-update permissions set name_sr='Корпа - Пражњење корпе за сва предузећа' where id=181;
-update permissions set name_sr='Корпа - Пражњење корпе за своје предузеће' where id=182;
-update permissions set name_sr='Враћење фајлова из корпе за сва предузећа' where id=177;
-update permissions set name_sr='Враћење фајлова из корпе за своје предузеће' where id=178;
-update permissions set name_sr='Извештај "Cтања на залихама" - погледајте свих предузећа' where id=606;
-update permissions set name_sr='Извештај "Стање на залихама" - погледајте своје предузеће' where id=607;
-update permissions set name_sr='Извештај "Стање на залихама" - погледајте свог одељења' where id=608;
-update permissions set name_sr='Извештај "Приход и трошкови" погледајте свих предузећа' where id=592;
-update permissions set name_sr='Извештај "Приход и трошкови" погледајте своје предузеће' where id=593;
-update permissions set name_sr='Извештај "Новац" погледајте свих предузећа' where id=594;
-update permissions set name_sr='Извештај "Новац" погледајте своје предузеће' where id=595;
-update permissions set name_sr='Извештај "Нове наруџбе" погледајте свих предузећа' where id=600;
-update permissions set name_sr='Извештај "Нове наруџбе" погледајте своје предузеће' where id=601;
-update permissions set name_sr='Извештај "Оперативни трошкови" погледајте свих предузећа' where id=609;
-update permissions set name_sr='Извештај "Оперативни трошкови" погледајте своје предузеће' where id=610;
-update permissions set name_sr='Извештај "Закашњели рачуни" погледајте свих предузећа' where id=604;
-update permissions set name_sr='Извештај "Закашњели рачуни" погледајте своје предузеће' where id=605;
-update permissions set name_sr='Извештај "Закашњеле поруџбине" погледајте свих предузећа' where id=602;
-update permissions set name_sr='Извештај "Закашњеле поруџбине" погледајте своје предузеће' where id=603;
-update permissions set name_sr='Извештај "Обим продаје" погледајте свих предузећа' where id=325;
-update permissions set name_sr='Извештај "Обим продаје" погледајте своје предузеће' where id=326;
-update permissions set name_sr='Извештај "Обим продаје" погледајте свог одељења' where id=327;
-update permissions set name_sr='Извештај "Дужни су вам" погледајте свих предузећа' where id=598;
-update permissions set name_sr='Извештај "Дужни су вам" погледајте своје предузеће' where id=599;
-update permissions set name_sr='Извештај "Ви дугујете" погледајте свих предузећа' where id=596;
-update permissions set name_sr='Извештај "Ви дугујете" погледајте своје предузеће' where id=597;
-update permissions set name_sr='Постављање стања на залихама свих предузећа' where id=232;
-update permissions set name_sr='Постављање стања на залихама своје предузеће' where id=233;
-update permissions set name_sr='Постављање стања на залихама свог одељења' where id=234;
-update permissions set name_sr='Постављање цена за свих предузећа' where id=239;
-update permissions set name_sr='Постављање цена своје предузеће' where id=240;
-update permissions set name_sr='Поглед' where id=681;
-update permissions set name_sr='Погледајте све компаније' where id=6;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=415;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=226;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=196;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=455;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=574;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=582;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=210;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=435;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=339;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=263;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=387;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=371;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=355;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=290;
-update permissions set name_sr='Погледајте документе које сте сами креирали' where id=319;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=29;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=658;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=368;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=287;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=302;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=25;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=667;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=563;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=133;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=480;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=452;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=469;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=590;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=587;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=584;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=579;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=571;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=560;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=260;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=207;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=676;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=555;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=544;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=522;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=432;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=384;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=352;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=336;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=275;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=316;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=223;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=188;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=167;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=150;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=649;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=412;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=95;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=113;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=122;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=491;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=502;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=511;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=14;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=533;
-update permissions set name_sr='Погледајте документе свих предузећа' where id=640;
-update permissions set name_sr='Погледајте документе свог одељења' where id=386;
-update permissions set name_sr='Погледајте документе свог одељења' where id=354;
-update permissions set name_sr='Погледајте документе свог одељења' where id=209;
-update permissions set name_sr='Погледајте документе свог одељења' where id=338;
-update permissions set name_sr='Погледајте документе свог одељења' where id=225;
-update permissions set name_sr='Погледајте документе свог одељења' where id=195;
-update permissions set name_sr='Погледајте документе свог одељења' where id=318;
-update permissions set name_sr='Погледајте документе свог одељења' where id=289;
-update permissions set name_sr='Погледајте документе свог одељења' where id=581;
-update permissions set name_sr='Погледајте документе свог одељења' where id=566;
-update permissions set name_sr='Погледајте документе свог одељења' where id=454;
-update permissions set name_sr='Погледајте документе свог одељења' where id=414;
-update permissions set name_sr='Погледајте документе свог одељења' where id=434;
-update permissions set name_sr='Погледајте документе свог одељења' where id=565;
-update permissions set name_sr='Погледајте документе свог одељења' where id=370;
-update permissions set name_sr='Погледајте документе свог одељења' where id=573;
-update permissions set name_sr='Погледајте документе свог одељења' where id=304;
-update permissions set name_sr='Погледајте документе свог одељења' where id=262;
-update permissions set name_sr='Погледајте стања производа за сва предузећа' where id=235;
-update permissions set name_sr='Погледајте стања производа своје предузеће' where id=236;
-update permissions set name_sr='Погледајте стања производа свог одељења' where id=237;
-update permissions set name_sr='Погледајте цене за сва предузећа' where id=242;
-update permissions set name_sr='Погледајте своје предузеће' where id=5;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=585;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=556;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=523;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=433;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=385;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=353;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=24;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=96;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=453;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=470;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=369;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=572;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=564;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=13;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=492;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=503;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=512;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=317;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=288;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=677;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=134;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=261;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=534;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=545;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=208;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=668;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=561;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=303;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=114;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=123;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=641;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=413;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=591;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=588;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=580;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=337;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=276;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=224;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=189;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=168;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=151;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=481;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=650;
-update permissions set name_sr='Погледајте документе своје предузеће' where id=659;
-update permissions set name_sr='Погледајте цене своје предузеће' where id=243;
-
--- Plans --
-update plans set name_sr='Бесплатно' where id=2;
-update plans set name_sr='Без ограничења' where id=1;
-update plans set name_sr='Старт' where id=5;
-
--- Prosuct or service --
-update sprav_sys_ppr set name_sr='Производ' where id=1;
-update sprav_sys_ppr set name_sr='Услуга' where id=4;
-
-
-alter table sprav_sys_locales alter column date_format type varchar(20);
-insert into sprav_sys_locales (id,name,code,date_format) values(11,'Serbian Cyrillic','sr-cyrl','FMDD. FMMM. YYYY.');
-insert into sprav_sys_locales (id,name,code,date_format) values(12,'Montenegrin','me','DD.MM.YYYY');
-insert into sprav_sys_locales (id,name,code,date_format) values(13,'Bosnian','bs','DD.MM.YYYY');
-insert into sprav_sys_locales (id,name,code,date_format) values(14,'Croatian','hr','DD.MM.YYYY');
-
-create table scdl_dep_parts(
-                                      id                 bigserial primary key not null,
-                                      department_id      bigint not null,-- Id of a parent department
-                                      master_id          bigint,
-                                      name               varchar(120), -- Term name.
-                                      description        varchar(1000), -- HTML description of the resource.
-                                      menu_order         int,    -- Menu order, used to custom sort the resource.
-                                      is_active          boolean, -- Means that users can reserve the services in this part of department.
-                                      is_deleted         boolean,
-                                      foreign key (master_id) references users(id),
-                                      foreign key (department_id) references departments(id)
-);
-
-create table sprav_resources ( -- describes resources. For example, work place (table+chair), or any instrument that needs to make service
-                                      id                          bigserial primary key not null,
-                                      master_id                   bigint not null,
-                                      company_id                  bigint not null,
-                                      creator_id                  bigint,
-                                      changer_id                  bigint,
-                                      date_time_created timestamp with time zone not null,
-                                      date_time_changed timestamp with time zone,
-                                      name                        varchar (250) not null,
-                                      description                 varchar(2000),
-                                      is_deleted                  boolean,
-                                      foreign key (master_id) references users(id),
-                                      foreign key (creator_id) references users(id),
-                                      foreign key (changer_id) references users(id),
-                                      foreign key (company_id) references companies(id)
-);
-
-create table scdl_resource_dep_parts_qtt(  -- describes how many resources is in each department part
-                                      master_id          bigint,
-                                      dep_part_id        bigint not null,
-                                      resource_id        bigint not null,
-                                      quantity           int not null,
-                                      foreign key (master_id) references users(id),
-                                      foreign key (dep_part_id) references scdl_dep_parts(id),
-                                      foreign key (resource_id) references sprav_resources(id)
-);
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (56,'Ресурсы','resources',1,'sprav_resources','Ресурсы','Resources','Ресурси');
-
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(683,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',56,10),
-(684,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',56,20),
-(685,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',56,30),
-(686,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',56,130),
-(687,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',56,140),
-(688,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',56,50),
-(689,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',56,60),
-(690,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',56,90),
-(691,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',56,100);
-
-alter table scdl_resource_dep_parts_qtt add constraint scdl_resource_dep_parts_qtt_uq unique (dep_part_id, resource_id);
-
-create table scdl_product_resource_qtt(  -- describes what resources need a product (service) and how many of them
-                                          master_id          bigint,
-                                          product_id         bigint not null,
-                                          resource_id        bigint not null,
-                                          quantity           int not null,
-                                          foreign key (master_id) references users(id),
-                                          foreign key (resource_id) references products(id),
-                                          foreign key (resource_id) references sprav_resources(id)
-);
-alter table scdl_product_resource_qtt add constraint scdl_product_resource_qtt_uq unique (product_id, resource_id);
-
-create table sprav_jobtitles ( -- describes job titles and what services they can provide
-                               id                          bigserial primary key not null,
-                               master_id                   bigint not null,
-                               company_id                  bigint not null,
-                               creator_id                  bigint,
-                               changer_id                  bigint,
-                               date_time_created timestamp with time zone not null,
-                               date_time_changed timestamp with time zone,
-                               name                        varchar (250) not null,
-                               description                 varchar(2000),
-                               is_deleted                  boolean,
-                               foreign key (master_id) references users(id),
-                               foreign key (creator_id) references users(id),
-                               foreign key (changer_id) references users(id),
-                               foreign key (company_id) references companies(id)
-);
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (57,'Должности','jobtitles',1,'sprav_jobtitles','Должности','Job titles','Звања');
-
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(692,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',57,10),
-(693,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',57,20),
-(694,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',57,30),
-(695,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',57,130),
-(696,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',57,140),
-(697,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',57,50),
-(698,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',57,60),
-(699,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',57,90),
-(700,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',57,100);
-
-
-create table scdl_user_products(
-  -- describes list of services that employee can provide
-                                 master_id          bigint,
-                                 user_id            bigint not null,
-                                 product_id         bigint not null,
-                                 foreign key (master_id)   references users(id),
-                                 foreign key (user_id)     references users(id),
-                                 foreign key (product_id)  references products(id)
-);
-alter table scdl_user_products add constraint scdl_user_products_uq unique (user_id, product_id);
-
-create table scdl_dep_part_products(
-  -- describes list of services provided in this part of the department
-                                     master_id          bigint,
-                                     dep_part_id        bigint not null,
-                                     product_id         bigint not null,
-                                     foreign key (master_id)   references users(id),
-                                     foreign key (dep_part_id) references scdl_dep_parts(id),
-                                     foreign key (product_id)  references products(id)
-);
-alter table scdl_dep_part_products add constraint scdl_dep_part_products_uq unique (dep_part_id, product_id);
-
-alter table users add column if not exists is_employee boolean;
-alter table users add column is_currently_employed boolean;
-alter table users add column job_title_id bigint;
-alter table users add column counterparty_id bigint;
-alter table users add column incoming_service_id bigint;
-
-alter table users add constraint user_cagent_uq unique (id, counterparty_id);
-alter table users add constraint user_job_title_id_fkey foreign key (job_title_id) references sprav_jobtitles(id);
-alter table users add constraint user_counterparty_id_fkey foreign key (counterparty_id) references cagents(id);
-alter table users add constraint user_incoming_service_id_fkey foreign key (incoming_service_id) references products(id);
-
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('second', 'Second', 'Секунда', 'Секунда'),
-('minute', 'Minute', 'Минута', 'Минут'),
-('hour', 'Hour', 'Час', 'Сат'),
-('day', 'One day', 'Сутки ', 'Дан'),
-('second_s', 's', 'сек', 'сек'),
-('minute_s', 'm', 'мин', 'мин'),
-('hour_s', 'h', 'час', 'сат'),
-('day_s', 'Day', 'сут', 'дан');
-
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('session', 'Session', 'Сеанс', 'Сесија'),
-('session_s', 'session', 'sеанс', 'sесија');
-
-insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units types set. Do not need a translation because using only internally
-
-create table sprav_sys_scdl_reminders(
-                               id                          int primary key not null,
-                               type                        varchar(50) not null, -- email, sms
-                               value_text                  varchar (250) not null, -- 1 hour before, 2 hour before, 4 hour before, 1 day before
-                               value_seconds               int not null -- 3600, 7200, 14400, 86400
-);
-
-insert into sprav_sys_scdl_reminders (id, type, value_text, value_seconds) values
-(100,  'SMS',   '5_minutes_before_start',    300),
-(200,  'SMS',   '10_minutes_before_start',   600),
-(300,  'SMS',   '15_minutes_before_start',   900),
-(400,  'SMS',   '30_minutes_before_start',   1800),
-(500,  'SMS',   '1_hour_before_start',       3600),
-(600,  'SMS',   '2_hour_before_start',       7200),
-(700,  'SMS',   '4_hour_before_start',       14400),
-(800,  'SMS',   '1_day_before_start',        86400),
-(900,  'Email', '5_minutes_before_start',    300),
-(1000, 'Email', '10_minutes_before_start',   600),
-(1100, 'Email', '15_minutes_before_start',   900),
-(1200, 'Email', '30_minutes_before_start',   1800),
-(1300, 'Email', '1_hour_before_start',       3600),
-(1400, 'Email', '2_hour_before_start',       7200),
-(1500, 'Email', '4_hour_before_start',       14400),
-(1600, 'Email', '1_day_before_start',        86400);
-
-create table scdl_reminders(
-  -- describes set of reminders for service
-                               master_id                   bigint,
-                               product_id                  bigint not null,
-                               reminder_id                 int not null,
-                               type                        varchar(10) not null, -- customer / employee
-                               foreign key (master_id)     references users(id),
-                               foreign key (product_id)    references products(id),
-                               foreign key (reminder_id)   references sprav_sys_scdl_reminders(id) on delete cascade
-);
-alter table scdl_reminders add constraint scdl_reminders_uq unique (master_id, product_id, reminder_id, type);
-
-create table scdl_assignments(
-  -- describes set of assignment types for service
-                               master_id                   bigint,
-                               product_id                  bigint not null,
-                               assignment_type             varchar (50) not null,  -- the way of create an appointment: Customer on website / Manually (administrator of salon, hospital etc.) / ...
-                               foreign key (master_id)     references users(id),
-                               foreign key (product_id)    references products(id)
-);
-alter table scdl_assignments add constraint scdl_assignments_uq unique (master_id, product_id, assignment_type);
-
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('5_minutes_before_start', '5 minutes before start', 'за 5 минут до начала', '5 минута пре почетка'),
-('10_minutes_before_start', '10 minutes before start', 'за 10 минут до начала', '10 минута пре почетка'),
-('15_minutes_before_start', '15 minutes before start', 'за 15 минут до начала', '15 минута пре почетка'),
-('30_minutes_before_start', '30 minutes before start', 'за 30 минут до начала', '30 минута пре почетка'),
-('1_hour_before_start', '1 hour before start', 'за 1 час до начала', '1 сат пре почетка'),
-('2_hour_before_start', '2 hours before start', 'за 2 часа до начала', '2 сата пре почетка'),
-('4_hour_before_start', '4 hours before start', 'за 4 часа до начала', '4 сата пре почетка'),
-('1_day_before_start', '1 day before start', 'за 1 день до начала', '1 дан пре почетка');
-
-alter table products add column is_srvc_by_appointment boolean;   -- this service is selling by appointments
-alter table products add column scdl_is_employee_required boolean;    -- a service provider is needed only at the start
-alter table products add column scdl_max_pers_on_same_time int;   -- the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
-alter table products add column scdl_srvc_duration int;           -- time minimal duration of the service.
-alter table products add column scdl_appointment_atleast_before_time int;    -- minimum time before the start of the service for which customers can make an appointment
-alter table products add column scdl_appointment_atleast_before_unit_id int; -- the unit of measure of minimum time before the start of the service for which customers can make an appointment
-alter table products add constraint scdl_appointment_atleast_before_unit_id_fkey foreign key (scdl_appointment_atleast_before_unit_id) references sprav_sys_edizm(id);
-alter table products add column scdl_srvc_duration_unit_id int;    -- the unit of measure of time minimal duration of the service
-alter table products add constraint scdl_srvc_duration_unit_id_fkey foreign key (scdl_srvc_duration_unit_id) references sprav_sys_edizm(id);
-
-
-
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('customer_on_website', 'Customer on the website', 'Заказчик на сайте', 'Купац на сајту'),
-('manually', 'Manually', 'Вручную', 'Ручно');
-
-alter table sprav_sys_scdl_reminders add column is_active boolean;
-update sprav_sys_scdl_reminders set is_active=false where type='SMS';
-update sprav_sys_scdl_reminders set is_active=true where type='Email';
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (58,'График работы сотрудников','employeescdl',1,'','График работы сотрудников','Employee work schedule','Распоред рада запослених');
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(701,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',58,10),
-(702,'Просмотр','View','Поглед',58,50),
-(703,'Редактирование','Editing','Уређивање',58,90);
-
-alter table scdl_dep_parts add column date_time_created timestamp with time zone;
-alter table scdl_dep_parts add column date_time_changed timestamp with time zone;
-alter table scdl_dep_parts add column creator_id bigint;
-alter table scdl_dep_parts add column changer_id bigint;
-alter table scdl_dep_parts add constraint creator_id_fkey foreign key (creator_id) references users(id);
-alter table scdl_dep_parts add constraint changer_id_fkey foreign key (changer_id) references users(id);
-alter table scdl_dep_parts alter column date_time_created set not null;
-alter table scdl_dep_parts alter column creator_id set not null;
-
-create table scdl_scedule_day(
-  -- describes one day of employee
-                                   id                          bigserial primary key not null,
-                                   master_id                   bigint not null,
-                                   employee_id                 bigint not null,
-                                   day_date                    date not null,
-                                   foreign key (employee_id)   references users(id),
-                                   foreign key (master_id)     references users(id)
-);
-alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (employee_id, day_date);
-
-create table scdl_workshift(
-  -- describes the work shift of employee
-                                   id                          bigserial primary key not null,
-                                   master_id                   bigint not null,
-                                   scedule_day_id              bigint not null,
-                                   time_from                   time,
-                                   time_to                     time,
-                                   foreign key (master_id)     references users(id),
-                                   foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
-);
-alter table scdl_workshift add constraint workshift_scedule_day_uq unique (scedule_day_id); -- can be only one workshift per one day
-
-create table scdl_workshift_breaks(
-  -- describes the breaks of workshift
-                                    id                          bigserial primary key not null,
-                                    master_id                   bigint not null,
-                                    workshift_id                bigint not null,
-                                    time_from                   time not null,
-                                    time_to                     time not null,
-                                    is_paid                     boolean,
-                                    precent                     int,
-                                    foreign key (workshift_id)  references scdl_workshift(id) on delete cascade,
-                                    foreign key (master_id)     references users(id)
-);
-
-create table scdl_workshift_deppart
-(
-  -- describes the departments parts where this workshift is belongs to
-                                    master_id                   bigint not null,
-                                    workshift_id                bigint not null,
-                                    deppart_id                  bigint not null,
-                                    foreign key (workshift_id)  references scdl_workshift (id) on delete cascade,
-                                    foreign key (deppart_id)    references scdl_dep_parts (id) on delete cascade,
-                                    foreign key (master_id)     references users(id)
-);
-alter table scdl_workshift_deppart add constraint scdl_workshift_deppart_uq unique (workshift_id, deppart_id);
-
-create table scdl_vacation(
-  -- describes the any type of vacation of employee
-                                    id                          bigserial primary key not null,
-                                    master_id                   bigint not null,
-                                    scedule_day_id              bigint not null,
-                                    name                        varchar(1000),
-                                    is_paid                     boolean,
-                                    payment_per_day             numeric(12,2),
-                                    foreign key (master_id)     references users(id),
-                                    foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
-);
-alter table scdl_vacation add constraint vacation_scedule_day_uq unique (scedule_day_id); -- can be only one vacation per one day
-
-CREATE INDEX scdl_workshift_breaks_workshift_id_index ON public.scdl_workshift_breaks USING btree (workshift_id);
-CREATE INDEX scdl_workshift_breaks_master_id_index ON public.scdl_workshift_breaks USING btree (master_id);
-CREATE INDEX scdl_workshift_deppart_workshift_id_index ON public.scdl_workshift_deppart USING btree (workshift_id);
-CREATE INDEX scdl_workshift_deppart_master_id_index ON public.scdl_workshift_deppart USING btree (master_id);
-CREATE INDEX scdl_workshift_master_id_index ON public.scdl_workshift USING btree (master_id);
-CREATE INDEX scdl_workshift_scedule_day_id_index ON public.scdl_workshift USING btree (scedule_day_id);
-CREATE INDEX scdl_vacation_master_id_index ON public.scdl_vacation USING btree (master_id);
-CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING btree (scedule_day_id);
-
-create table scdl_appointments(
-  -- describes appointments
-                             id                                 bigserial primary key not null,
-                             master_id                          bigint not null,
-                             company_id                         bigint not null,
-                             creator_id                         bigint not null,
-                             changer_id                         bigint,
-                             owner_id                           bigint not null,
-                             employee_id                        bigint,
-                             date_time_created                  timestamp with time zone not null,
-                             date_time_changed                  timestamp with time zone,
-                             status_id                          bigint,
-                             doc_number                         int not null,
-                             name                               varchar(1000),
-                             description                        varchar(2000),
-                             nds                                boolean,
-                             nds_included                       boolean,
-                             is_deleted                         boolean,
-                             is_completed                       boolean,
-                             uid                                varchar (36),
-                             linked_docs_group_id               bigint,
-                             dep_part_id                        bigint not null,
-                             starts_at_time                     timestamp with time zone not null,
-                             ends_at_time                       timestamp with time zone,
-                             foreign key (master_id)            references users(id),
-                             foreign key (owner_id)             references users(id),
-                             foreign key (creator_id)           references users(id),
-                             foreign key (changer_id)           references users(id),
-                             foreign key (employee_id)          references users(id),
-                             foreign key (company_id)           references companies(id),
-                             foreign key (status_id)            references sprav_status_dock (id) on delete set null,
-                             foreign key (linked_docs_group_id) references linked_docs_groups(id),
-                             foreign key (dep_part_id)          references scdl_dep_parts(id)
-);
-
-create table scdl_appointments_product(
-                             id                                 bigserial primary key not null,
-                             master_id                          bigint not null,
-                             product_id                         bigint not null,
-                             appointment_id                     bigint not null,
-                             price_type_id                      bigint,
-                             department_id                      bigint not null,
-                             product_count                      numeric(15,3) not null,
-                             product_price                      numeric(12,2) not null,
-                             product_sumprice                   numeric(15,2) not null,
-                             edizm_id                           bigint not null,
-                             nds_id                             bigint not null,
-                             cagent_id                          bigint not null,
-                             product_price_of_type_price        numeric(12,2),
-                             foreign key (appointment_id)       references scdl_appointments (id),
-                             foreign key (edizm_id)             references sprav_sys_edizm (id),
-                             foreign key (nds_id)               references sprav_taxes (id),
-                             foreign key (price_type_id)        references sprav_type_prices (id),
-                             foreign key (product_id )          references products (id),
-                             foreign key (department_id )       references departments (id),
-                             foreign key (cagent_id )           references cagents (id),
-                             foreign key (master_id)            references users(id)
-);
-alter table scdl_appointments_product add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
-(705,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',59,20),
-(706,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',59,30),
-(707,'Создание документов своих отделений','Create documents of your departments','Креирање докумената за свог одељења',59,40),
-(708,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',59,50),
-(709,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',59,60),
-(710,'Просмотр документов своих отделений','View documents of your departments','Погледајте документе свог одељења',59,70),
-(711,'Просмотр документов созданных собой','View documents created by yourself','Погледајте документе које сте сами креирали',59,80),
-(712,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',59,90),
-(713,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',59,100),
-(changeDocumentOwner,'Редактирование документов своих отделений','Editing documents of your departments','Уређивање докумената свог одељења',59,110),
-(715,'Редактирование документов созданных собой','Editing documents created by yourself','Уређивање докумената које сте сами креирали',59,120),
-(716,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',59,130),
-(717,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',59,140),
-(718,'Удаление документов своих отделений','Deleting documents of your departments','Брисање докумената свог одељења',59,150),
-(719,'Удаление документов созданных собой','Deleting documents created by yourself','Брисање докумената које сте сами креирали',59,160),
-(720,'Проведение документов всех предприятий','Completion documents of all companies','Довршавање докумената за сва предузећа',59,170),
-(721,'Проведение документов своего предприятия','Completion your company documents','Довршавање докумената за своје предузеће',59,180),
-(722,'Проведение документов своих отделений','Completion documents of your departments','Довршавање докумената за своје одељење',59,190),
-(723,'Проведение документов созданных собой','Completion documents created by yourself','Довршавање докумената које сте сами креирали',59,200);
-
-alter table companies add column booking_doc_name_variation_id int; --variation's id of name of booking document: 1-appointment, 2-reservation
-
-insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (60,'Календарь','calendar',1,'','Календарь','Calendar','Календар');
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(724,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',60,10);
-
-alter table companies add column time_zone_id int; --id of company's main time zone
-
-insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
-(725,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',60,50),
-(726,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',60,60);
-
-alter table users drop column status_employee; -- column is not using
-insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
-
-create table scdl_appointment_files (
-                                      appointment_id bigint not null,
-                                      file_id bigint not null,
-                                      foreign key (file_id) references files (id) ON DELETE CASCADE,
-                                      foreign key (appointment_id) references scdl_appointments (id) ON DELETE CASCADE
-);
-alter table linked_docs add column scdl_appointments_id bigint;
-alter table linked_docs add constraint scdl_appointments_id_fkey foreign key (scdl_appointments_id) references scdl_appointments (id);
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('appointment', 'Appointment', 'Запись', 'Састанак'),
-('reservation', 'Reservation', 'Бронирование', 'Резервација');
-
-create table settings_calendar (
-                                 id                          bigserial primary key not null,
-                                 master_id                   bigint not null,
-                                 date_time_update            timestamp with time zone,
-                                 user_id                     bigint not null,
-                                 company_id                  bigint,
-                                 start_view                  varchar not null, -- month / scheduler / resources
-                                 timeline_step               int not null,     -- step in minutes
-                                 day_start_minute            int not null,     -- minute of day start (0-1438) that means 00:00 - 23:58
-                                 day_end_minute              int not null,     -- minute of day end (1-1439)   that means 00:01 - 23:59
-                                 resources_screen_scale      varchar not null, -- month / week / day
-                                 display_cancelled           boolean not null, -- display or not cancelled events by default
-                                 foreign key (master_id) references users(id),
-                                 foreign key (user_id) references users(id),
-                                 foreign key (company_id) references companies(id)
-);
-alter table settings_calendar add constraint settings_calendar_user_uq UNIQUE (company_id, user_id);
-
-create table settings_appointment (
-                                    id                          bigserial primary key not null,
-                                    master_id                   bigint not null,
-                                    date_time_update            timestamp with time zone,
-                                    user_id                     bigint not null,
-                                    company_id                  bigint,
-                                    start_time                  varchar not null,   -- current / set_manually    The last one is suitable for hotels for checkin time
-                                    end_date_time               varchar not null,   -- no_calc / sum_all_length / max_length
-                                    calc_date_but_time          boolean not null,   -- if user wants to calc only dates. Suitable for hotels for checkout time
-                                    start_time_manually         varchar(5),         -- 'HH:mm' if start_time = 'set_manually'
-                                    end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'no_calc'
-                                    hide_employee_field         boolean not null,   -- If for all services of company employees are not needed
-                                    foreign key (master_id) references users(id),
-                                    foreign key (user_id) references users(id),
-                                    foreign key (company_id) references companies(id)
-);
-alter table settings_appointment add constraint settings_appointment_user_uq UNIQUE (company_id, user_id);
-
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('dep_part', 'Part of department', 'Часть отделения', 'Део одељења');
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('st_new_', 	'New', 				'Новый', 		'Нови'),
-('st_confirmed','Сonfirmed',		'Подтверждён',	'Потврђен'),
-('st_processed','Being processed',	'Выполняется',	'У току');
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('um_vizit', 	    'Vizit', 				'Посещение', 		'Посета'),
-('um_vizit_sm', 	'viz', 				'пос.', 		'пос.');
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('um_night', 	    'Night', 				'Ночь', 		'Ноћ'),
-('um_night_sm', 	'night', 				'ноч', 		'ноћ');
-insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
-('jt_administrator', 'Администратор', 'Administrator', 'Администратор'),
-('jt_manager', 'Управляющий', 'Manager', 'Менаџер'),
-('jt_manicurist', 'Мастер маникюра', 'Manicurist', 'Маникер'),
-('jt_hairdresser-stylist', 'Парикмахер-стилист', 'Hairdresser-stylist', 'Фризер-стилиста'),
-('jt_eyebrow master', 'Мастер-бровист', 'Eyebrow master', 'Мајстор за обрве'),
-('jt_cosmetologist', 'Косметолог', 'Cosmetologist', 'Козметичарка'),
-('jt_visagiste', 'Визажист', 'Visagiste', 'Висагисте'),
-('jt_masseur', 'Массажист', 'Masseur', 'Масер'),
-('jt_instructor', 'Инструктор', 'Instructor', 'Инструктор'),
-('jt_trainer', 'Тренер', 'Trainer', 'Тренер'),
-('jt_dentist', 'Стоматолог', 'Dentist', 'Зубар'),
-('jt_orthodontist', 'Ортодонт', 'Orthodontist', 'Ортодонт'),
-('jt_surgeon', 'Хирург', 'Surgeon', 'Хирург'),
-('jt_therapist', 'Терапевт', 'Therapist', 'Терапеут'),
-('jt_neurologist', 'Невролог', 'Neurologist', 'Неуролог'),
-('jt_cardiologist', 'Кардиолог', 'Cardiologist', 'Кардиолог'),
-('jt_usd_doctor', 'Врач УЗИ-диагностики', 'Ultrasound diagnostics doctor', 'Доктор ултразвучне дијагностике'),
-('jt_family_doctor', 'Врач общей практики (семейный врач)', 'General practitioner (family doctor)', 'Лекар опште праксе (породични лекар)'),
-('jt_photographer', 'Фотограф', 'Photographer', 'Фотограф'),
-('jt_teacher', 'Преподаватель', 'Teacher', 'Учитељу');
-
-alter table settings_general add column create_support_user boolean;
-update settings_general set create_support_user = true;
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('acc_tech_support', 	    'Support user', 				'Пользователь тех. поддержки', 		'Корисник подршке');
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('email_confirmation',
- 'Email confirmation',
- 'Подтверждение электонной почты',
- 'потврда е-поште'),
-('you_registered_new_acc',
- 'You have registered new account. Please use the below link to confirm your e-mail.',
- 'Вы зарегистрировали новый аккаунт. Пожалуйста, используйте ссылку ниже, чтобы подтвердить свой адрес электронной почты.',
- 'Регистровали сте нови налог. Користите везу испод да потврдите своју е-пошту.'),
-('click_link',
- 'Click on Link',
- 'Нажмите на ссылку',
- 'Кликните на линк'),
-('password_recovery',
- 'Password recovery',
- 'Восстановление пароля',
- 'Повратак изгубљене шифре'),
-('you_rereqested_new_pwd',
- 'You have requested for a new password. Please use the below link to set new password.',
- 'Вы запросили новый пароль. Пожалуйста, используйте ссылку ниже, чтобы установить новый пароль.',
- 'Захтевали сте нову лозинку. Молимо користите везу испод да поставите нову лозинку.');
-insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
-('service', 'Service', 'Услуга', 'Услуга'),
-('service_s', 'service', 'услуга', 'услуга');
-
-alter table settings_appointment add column status_id_on_complete bigint;
-alter table settings_appointment alter start_time drop not null;
-alter table settings_appointment alter end_date_time drop not null;
-alter table settings_appointment alter calc_date_but_time drop not null;
-alter table settings_appointment alter hide_employee_field drop not null;
-
--- 1.4.0-2
-insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
-('f_med_contr_exmpl','Пример договора медобслуживания','Sample contract of medical services','Узорак уговора о медицинским услугама');
-alter table users add column is_display_in_employee_list boolean;
-update version set value = '1.4.0-2', date = '15-08-2024';
-
+-- alter table companies_payment_accounts add column creator_id bigint;
+-- alter table companies_payment_accounts add column changer_id bigint;
+-- alter table companies_payment_accounts add column date_time_created timestamp with time zone;
+-- alter table companies_payment_accounts add column date_time_changed timestamp with time zone;
+-- alter table companies_payment_accounts add column description varchar(2048);
+-- alter table companies_payment_accounts add column intermediatery varchar(2048);
+-- alter table companies_payment_accounts add column swift varchar(11);
+-- alter table companies_payment_accounts add column iban varchar(34);
+-- alter table companies_payment_accounts add column is_main boolean;
+-- alter table companies_payment_accounts add column is_deleted boolean;
+-- alter table companies_payment_accounts add constraint companies_payment_accounts_creator_id_fkey foreign key (creator_id) references users (id);
+-- alter table companies_payment_accounts add constraint companies_payment_accounts_changer_id_fkey foreign key (changer_id) references users (id);
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (52,'Расчётные счета','accounts',1,'companies_payment_accounts','Расчётные счета', 'Bank accounts');
+-- insert into permissions (id,name_ru,name_en,document_id,output_order) values
+-- (653,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',52,10),
+-- (654,'Создание документов по всем предприятиям','Creation of documents for all companies',52,20),
+-- (655,'Создание документов своего предприятия','Create your company documents',52,30),
+-- (656,'Удаление документов всех предприятий','Deleting documents of all companies',52,130),
+-- (657,'Удаление документов своего предприятия','Deleting your company documents',52,140),
+-- (658,'Просмотр документов всех предприятий','View documents of all companies',52,50),
+-- (659,'Просмотр документов своего предприятия','View your company documents',52,60),
+-- (660,'Редактирование документов всех предприятий','Editing documents of all companies',52,90),
+-- (661,'Редактирование документов своего предприятия','Editing your company documents',52,100);
+-- alter table cagents_payment_accounts add column intermediatery varchar(2048);
+-- alter table cagents_payment_accounts add column swift varchar(11);
+-- alter table cagents_payment_accounts add column iban varchar(34);
+-- alter table template_docs drop constraint template_docs_file_id_fkey;
+-- alter table template_docs add constraint template_docs_file_id_fkey foreign key (file_id) references files (id) on delete cascade;
+--
+-- alter table companies add column legal_form varchar(240);
+-- alter table cagents add column legal_form varchar(240);
+-- update companies set legal_form = '';
+-- update cagents set legal_form = '';
+--
+-- create table plans(
+--                     id                 serial primary key not null,
+--                     name_en            varchar(200) not null,
+--                     name_ru            varchar(200) not null,
+--                     version            int not null,
+--                     daily_price        numeric(10,10) not null,
+--                     is_default         boolean not null,
+--                     is_nolimits        boolean not null, -- used for standalone servers. If 'TRUE' - system will not check the limits
+--                     is_archive         boolean not null,
+--                     date_time_created  timestamp with time zone not null,
+--                     date_time_archived timestamp with time zone,
+--                     output_order       int not null,
+--                     n_companies        int not null,
+--                     n_departments      int not null,
+--                     n_users            int not null,
+--                     n_products         int not null,
+--                     n_counterparties   int not null,
+--                     n_megabytes        int not null
+-- );
+-- alter table plans add constraint plans_name_en_version_uq unique (name_en, version) ;
+-- alter table plans add constraint plans_name_ru_version_uq unique (name_ru, version) ;
+--
+-- create table plans_add_options(
+--                     id                 bigserial primary key not null,
+--                     user_id            bigint not null,
+--                     n_companies        int not null,
+--                     companies_ppu      numeric(10,10),
+--                     n_departments      int not null,
+--                     departments_ppu    numeric(10,10),
+--                     n_users            int not null,
+--                     users_ppu          numeric(10,10),
+--                     n_products         int not null,
+--                     products_ppu       numeric(10,10),
+--                     n_counterparties   int not null,
+--                     counterparties_ppu numeric(10,10),
+--                     n_megabytes        int not null,
+--                     megabytes_ppu      numeric(10,10),
+--                     foreign key (user_id) references users(id)
+-- );
+-- alter table plans_add_options add constraint user_id_uq unique (user_id) ;
+--
+-- insert into plans (
+--                     name_en,
+--                     name_ru,
+--                     version,
+--                     daily_price,
+--                     is_default,
+--                     is_nolimits,
+--                     is_archive,
+--                     date_time_created,
+--                     output_order,
+--                     n_companies,
+--                     n_departments,
+--                     n_users,
+--                     n_products,
+--                     n_counterparties,
+--                     n_megabytes) values
+--                     ('No limits','Безлимитный', 1, 0, true, true,  false, now(), 100, 0, 0, 0, 0, 0, 0),
+--                     ('Free',     'Бесплатный',  1, 0, true, false, false, now(), 200, 1, 1, 1, 100, 100, 50);
+--
+-- alter table users add column plan_id int;
+-- alter table users add constraint plan_id_fkey foreign key (plan_id) references plans (id);
+-- update users set plan_id = 1 where id = master_id;
+--
+-- alter table settings_general add column plan_default_id int;
+-- alter table settings_general add constraint plan_default_id_fkey foreign key (plan_default_id) references plans (id);
+-- update settings_general set plan_default_id = 2;
+-- alter table settings_general alter plan_default_id set not null;
+--
+-- update version set value = '1.0.1-0', date = '27-06-2022';
+-- ------------------------------------------------  end of 1.0.1   -----------------------------------------------------
+-- -----------------------------------------------  begin of 1.0.2   ----------------------------------------------------
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('um_uncountable',          'Неисчислимое',               'Uncountable'),
+-- ('um_kilogramm',            'Килограмм',                  'Kilogramm'),
+-- ('um_gramm',                'Грамм',                      'Gramm'),
+-- ('um_ton',                  'Тонна',                      'Ton'),
+-- ('um_meter',                'Метр',                       'Meter'),
+-- ('um_centimeter',           'Сантиметр',                  'Centimeter'),
+-- ('um_litre',                'Литр',                       'Litre'),
+-- ('um_cubic_meter',          'Кубический метр',            'Cubic meter'),
+-- ('um_square_meter',         'Квадратный метр',            'Square meter'),
+-- ('um_kilogramm_s',          'кг',                         'kg'),
+-- ('um_gramm_s',              'г',                          'g'),
+-- ('um_ton_s',                'т',                          't'),
+-- ('um_meter_s',              'м',                          'm'),
+-- ('um_centimeter_s',         'см',                         'cm'),
+-- ('um_litre_s',              'л',                          'L'),
+-- ('um_cubic_meter_s',        'м3',                         'm3'),
+-- ('um_square_meter_s',       'м2',                         'm2'),
+--
+-- ('curr_us_dollar',          'Американский доллар',        'US Dollar'),
+-- ('curr_euro',               'Евро',                       'Euro'),
+-- ('curr_canadian_dollar',    'Канадский доллар',           'Canadian Dollar'),
+-- ('curr_australian_dollar',  'Австралийский доллар',       'Australian Dollar'),
+-- ('curr_new_zealand_dollar', 'Новозеландский доллар',      'New Zealand Dollar'),
+-- ('curr_russian_rouble',     'Российский рубль',           'Russian Rouble'),
+-- ('curr_pound_sterling',     'Фунт стерлингов',            'Pound Sterling'),
+--
+-- ('tax_no_tax',              'Без НДС',                    'No taxes'),
+-- ('tax_tax',                 'НДС',                        'Vat'),
+--
+-- ('main_bank_acc',           'Мой банк',                   'Main Bank account'),
+-- ('main_cash_room',          'Касса предприятия',          'Main Cash room'),
+-- ('my_company',              'Мое предприятие',            'My company'),
+-- ('my_department',           'Мое отделение',              'My department'),
+-- ('role_admins',             'Администраторы',             'Administrators'),
+--
+-- ('catg_suppliers',          'Поставщики',                 'Suppliers'),
+-- ('catg_customers',          'Покупатели',                 'Customers'),
+-- ('catg_employees',          'Сотрудники',                 'Employees'),
+-- ('catg_banks',              'Банки',                      'Banks'),
+-- ('catg_transport',          'Транспорт',                  'Transport'),
+-- ('catg_rent',               'Аренда',                     'Rent'),
+-- ('catg_tax_srvcs',          'Налоговые',                  'Tax services'),
+--
+-- ('basic_price',             'Базовая цена',               'Basic price'),
+--
+-- ('exp_rent',                'Аренда',                     'Rent'),
+-- ('exp_return',              'Возвраты',                   'Return'),
+-- ('exp_salary',              'Зарплата',                   'Salary'),
+-- ('exp_banking_srvcs',       'Банк. обслуживание',         'Banking services'),
+-- ('exp_taxes',               'Налоги',                     'Taxes'),
+-- ('exp_pay_goods_srvcs',     'Оплата за товары и услуги',  'Payment for goods and services'),
+-- ('exp_pay_wh_company',      'Внутренние платежи',         'Payments within the company');
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('um_piece',                'Штука',                      'Piece'),
+-- ('um_piece_s',              'шт',                         'pcs');
+-- update version set value = '1.0.2', date = '02-07-2022';
+-- ------------------------------------------------  end of 1.0.2  ------------------------------------------------------
+-- -----------------------------------------------  begin of 1.0.3   ----------------------------------------------------
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('f_ctg_images',                'Картинки',                      'Images'),
+-- ('f_ctg_goods',                 'Товары',                        'Goods'),
+-- ('f_ctg_docs',                  'Документы',                     'Docs'),
+-- ('f_with_stamp_sign',           'с печатью и подписями',         'with stamp and signatures');
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('signature',                   'Подпись',                       'Signature'),
+-- ('logo',                        'Логотип',                       'Logo');
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('f_ctg_templates',             'Шаблоны',                       'Templates');
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('stamp',                       'Печать',                        'Stamp');
+-- update version set value = '1.0.3', date = '08-07-2022';
+-- ------------------------------------------------  end of 1.0.3  ------------------------------------------------------
+-- -----------------------------------------------  begin of 1.0.4   ----------------------------------------------------
+-- update documents set doc_name_en = 'Products and Services' where doc_name_ru = 'Товары и услуги';
+-- alter table user_settings add column time_format varchar(2);
+-- update user_settings set time_format = '12'; -- can be 12 or 24
+-- alter table user_settings alter time_format set not null;
+--
+-- ALTER TABLE acceptance ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE acceptance SET create_time_holder = acceptance_date::TIMESTAMP;
+-- ALTER TABLE acceptance ALTER COLUMN acceptance_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE acceptance DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE return ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE return SET create_time_holder = date_return::TIMESTAMP;
+-- ALTER TABLE return ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE return DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE returnsup ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE returnsup SET create_time_holder = date_return::TIMESTAMP;
+-- ALTER TABLE returnsup ALTER COLUMN date_return TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE returnsup DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE ordersup ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE ordersup SET create_time_holder = ordersup_date::TIMESTAMP;
+-- ALTER TABLE ordersup ALTER COLUMN ordersup_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE ordersup DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE invoicein ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE invoicein SET create_time_holder = invoicein_date::TIMESTAMP;
+-- ALTER TABLE invoicein ALTER COLUMN invoicein_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE invoicein DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE invoiceout ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE invoiceout SET create_time_holder = invoiceout_date::TIMESTAMP;
+-- ALTER TABLE invoiceout ALTER COLUMN invoiceout_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE invoiceout DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE customers_orders ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE customers_orders SET create_time_holder = shipment_date::TIMESTAMP;
+-- ALTER TABLE customers_orders ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE customers_orders DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE shipment ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE shipment SET create_time_holder = shipment_date::TIMESTAMP;
+-- ALTER TABLE shipment ALTER COLUMN shipment_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE shipment DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE writeoff ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE writeoff SET create_time_holder = writeoff_date::TIMESTAMP;
+-- ALTER TABLE writeoff ALTER COLUMN writeoff_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE writeoff DROP COLUMN create_time_holder;
+--
+-- ALTER TABLE posting ADD COLUMN create_time_holder TIMESTAMP with time zone;
+-- UPDATE posting SET create_time_holder = posting_date::TIMESTAMP;
+-- ALTER TABLE posting ALTER COLUMN posting_date TYPE TIMESTAMP with time zone USING create_time_holder;
+-- ALTER TABLE posting DROP COLUMN create_time_holder;
+--
+-- update version set value = '1.0.4', date = '27-08-2022';
+-- ------------------------------------------------  end of 1.0.4  ------------------------------------------------------
+-- -----------------------------------------------  start of 1.0.5  -----------------------------------------------------
+-- update documents set doc_name_en = 'Purchase order' where doc_name_ru = 'Заказ поставщику';
+-- update _dictionary set tr_en = 'Purchase order' where key = 'ordersup';
+--
+-- update version set value = '1.0.4-1', date = '28-08-2022';
+-- ------------------------------------------------  end of 1.0.4  ------------------------------------------------------
+-- -----------------------------------------------  start of 1.1.0  -----------------------------------------------------
+-- alter table sprav_taxes add column woo_id int;
+--
+-- alter table companies add column is_store boolean;
+-- alter table companies add column store_site_address varchar(128); -- e.g. http://localhost/DokioShop
+-- alter table companies add column store_key varchar(128);    -- consumer key
+-- alter table companies add column store_secret varchar(128); -- consumer secret
+-- alter table companies add column store_type varchar(8); -- e.g. woo
+-- alter table companies add column store_api_version varchar(16); -- e.g. v3
+-- alter table companies add column crm_secret_key varchar(36); -- smth like UUID
+-- alter table companies add column store_price_type_regular bigint; -- id of regular price
+-- alter table companies add column store_price_type_sale bigint; -- id of sale price
+-- alter table companies add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
+-- alter table companies add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
+--
+-- alter table sprav_taxes add constraint woo_id_uq unique (company_id, woo_id) ;
+-- alter table sprav_taxes alter column value type numeric(4,2);
+-- alter table sprav_taxes alter column multiplier type numeric(5,4);
+--
+-- alter table product_categories add column date_time_sync timestamp with time zone;
+-- alter table product_categories add column slug varchar(120);
+-- alter table product_categories add column description varchar(250);
+-- alter table product_categories add column display varchar(16);--Options: default, products, subcategories and both. Default is default.
+-- alter table product_categories add column image_id bigint; -- id of category image file
+-- alter table product_categories add constraint image_id_fkey foreign key (image_id) references files (id) ON DELETE SET NULL;
+-- alter table files add column alt varchar(120);
+-- alter table product_categories add column woo_id int;
+-- alter table product_categories add constraint product_categories_woo_id_uq unique (company_id, woo_id) ;
+-- alter table product_categories add constraint product_categories_slug_uq unique (company_id, slug);-- all company categories need to have unique slug names
+-- alter table product_categories add constraint product_categories_name_uq unique (parent_id, name); -- one parent category can't contains two or more subcategories with the same names
+-- CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
+-- alter table product_categories add column is_store_category boolean;
+-- alter table products add column type	varchar(8); --Product type. Options: simple, grouped, external and variable. Default is simple.
+-- alter table products add column slug varchar(120); --Product slug.
+-- alter table products add column featured boolean; --Featured product. Default is false.
+-- alter table products add column short_description varchar(2048);
+-- alter table products alter column description TYPE varchar(16384);
+-- alter table products add column virtual boolean; --If the product is virtual. Default is false.
+-- alter table products add column downloadable	boolean; 	--If the product is downloadable. Default is false.
+-- alter table products add column download_limit	integer; --Number of times downloadable files can be downloaded after purchase. Default is -1.
+-- alter table products add column download_expiry	 integer; --Number of days until access to downloadable files expires. Default is -1.
+-- alter table products add column external_url	varchar(255); --Product external URL. Only for external products.
+-- alter table products add column button_text	 varchar(60); --Product external button text. Only for external products.
+-- alter table products add column tax_status	varchar(8); --	Tax status. Options: taxable, shipping and none. Default is taxable.
+-- alter table products add column manage_stock	boolean; --	Stock management at product level. Default is false.
+-- alter table products add column stock_status varchar(10);	--Controls the stock status of the product. Options: instock, outofstock, onbackorder. Default is instock.
+-- alter table products add column backorders	varchar(6); --If managing stock, this controls if backorders are allowed. Options: no, notify and yes. Default is no.
+-- alter table products add column sold_individually	 boolean; --	Allow one item to be bought in a single order. Default is false.
+-- alter table products add column height	numeric(10,3); --	Product height.
+-- alter table products add column width	numeric(10,3); --	Product width.
+-- alter table products add column length	numeric(10,3); --	Product length.
+-- alter table products add column shipping_class	varchar(120); --	Shipping class slug.
+-- alter table products add column reviews_allowed	 boolean; -- Allow reviews. Default is true.
+-- alter table products add column parent_id	 bigint; --	Product parent ID.
+-- alter table products add constraint parent_id_fkey foreign key (parent_id) references products (id);
+-- alter table products add column purchase_note	 varchar(1000); -- Optional note to send the customer after purchase.
+-- alter table products add column menu_order	int; -- Menu order, used to custom sort products.
+-- alter table products add column date_on_sale_from_gmt  timestamp with time zone;
+-- alter table products add column date_on_sale_to_gmt  timestamp with time zone;
+--
+-- -- DELETE FROM product_productcategories WHERE ctid NOT IN (SELECT max(ctid) FROM product_productcategories GROUP BY category_id, product_id); --use this if the next row won't be run perfect (there is duplicates)
+-- alter table product_productcategories add constraint product_productcategories_uq unique (category_id, product_id);
+--
+-- create table product_upsell(
+--                     master_id          bigint,
+--                     product_id         bigint,
+--                     child_id           bigint,
+--                     foreign key (master_id)        references users(id),
+--                     foreign key (product_id)       references products(id),
+--                     foreign key (child_id)         references products(id)
+-- );
+-- create table product_crosssell(
+--                              master_id          bigint,
+--                              product_id         bigint,
+--                              child_id           bigint,
+--                              foreign key (master_id)        references users(id),
+--                              foreign key (product_id)       references products(id),
+--                              foreign key (child_id)         references products(id)
+-- );
+-- alter table product_upsell add constraint product_upsell_uq unique (child_id, product_id);
+-- alter table product_crosssell add constraint product_crosssell_uq unique (child_id, product_id);
+-- create table product_grouped(
+--                                 master_id          bigint,
+--                                 product_id         bigint,
+--                                 child_id           bigint,
+--                                 foreign key (master_id)        references users(id),
+--                                 foreign key (product_id)       references products(id),
+--                                 foreign key (child_id)         references products(id)
+-- );
+-- alter table product_grouped add constraint product_grouped_uq unique (child_id, product_id);
+--
+-- alter table products add column low_stock_threshold	numeric(12,3); --	Low stock threshold
+--
+-- create table product_downloadable_files(
+--                                 product_id          bigint,
+--                                 file_id             bigint,
+--                                 output_order        int,
+--                                 foreign key (file_id)          references files(id),
+--                                 foreign key (product_id)       references products(id)
+-- );
+-- alter table product_downloadable_files add constraint product_downloadable_files_uq unique (file_id, product_id);
+--
+-- create table product_attributes(
+--                             id                  bigserial primary key not null,
+--                             master_id           bigint not null,
+--                             company_id          bigint not null,
+--                             creator_id          bigint not null,
+--                             changer_id          bigint,
+--                             date_time_created   timestamp with time zone not null,
+--                             date_time_changed   timestamp with time zone,
+--                             woo_id              int, -- Attribute name.MANDATORY
+--                             name                varchar(120),
+--                             slug                varchar(120), -- An alphanumeric identifier for the resource unique to its type.
+--                             type                varchar(16), -- Type of attribute. By default only 'select' is supported.
+--                             order_by            varchar(16), -- Default sort order. Options: menu_order, name, name_num and id. Default is menu_order.
+--                             has_archives        boolean, -- Enable/Disable attribute archives. Default is false.
+--                             is_deleted boolean,
+--                             foreign key (master_id) references users(id),
+--                             foreign key (creator_id) references users(id),
+--                             foreign key (changer_id) references users(id),
+--                             foreign key (company_id) references companies(id)
+-- );
+-- create table product_attribute_terms(
+--                              id                 bigserial primary key not null,
+--                              woo_id             int,
+--                              master_id          bigint,
+--                              attribute_id       bigint, -- Id of a parent attribute
+--                              name               varchar(120), -- Term name.
+--                              slug               varchar(120), -- An alphanumeric identifier for the resource unique to its type.
+--                              description        varchar(1000), -- HTML description of the resource.
+--                              menu_order         int,    -- Menu order, used to custom sort the resource.
+--                              foreign key (master_id) references users(id),
+--                              foreign key (attribute_id) references product_attributes(id) on delete cascade
+-- );
+--
+-- create table product_custom_attributes(
+--                               id                 bigserial primary key not null,
+--                               master_id          bigint,
+--                               product_id         bigint,
+--                               name               varchar(120),
+--                               terms              varchar(1000), -- String with terms divided by | e.g. Red | Blue | Yellow
+--                               visible            boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page.
+--                               foreign key (master_id) references users(id),
+--                               foreign key (product_id) references products(id)
+-- );
+-- alter table product_custom_attributes add constraint product_custom_attributes_name_uq unique (name, product_id);
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('color',    'Цвет','Color'),
+-- ('size',     'Размер','Size');
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (53,'Атрибуты товаров','productattributes',1,'product_attributes','Атрибуты товаров', 'Product attributes');
+--
+-- insert into permissions (id,name_ru,name_en,document_id,output_order) values
+-- (662,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',53,10),
+-- (663,'Создание документов по всем предприятиям','Creation of documents for all companies',53,20),
+-- (664,'Создание документов своего предприятия','Create your company documents',53,30),
+-- (665,'Удаление документов всех предприятий','Deleting documents of all companies',53,130),
+-- (666,'Удаление документов своего предприятия','Deleting your company documents',53,140),
+-- (667,'Просмотр документов всех предприятий','View documents of all companies',53,50),
+-- (668,'Просмотр документов своего предприятия','View your company documents',53,60),
+-- (669,'Редактирование документов всех предприятий','Editing documents of all companies',53,90),
+-- (670,'Редактирование документов своего предприятия','Editing your company documents',53,100);
+--
+--
+-- alter table product_attributes add constraint product_attributes_slug_uq unique (company_id, slug);-- all company product attributes need to have unique slug names
+-- alter table product_attribute_terms add constraint product_attribute_terms_slug_uq unique (attribute_id, slug);-- product attribute need to have unique terms slug names
+-- alter table product_attributes add constraint product_attributes_name_uq unique (company_id, name);--product attribute name must be unique
+-- alter table product_attribute_terms add constraint product_attribute_terms_name_uq unique (attribute_id, name);-- product attribute need to have unique terms names
+-- alter table product_attribute_terms alter column attribute_id set not null;
+--
+--
+-- create table product_productattributes(
+--                                         master_id     bigint not null,
+--                                         product_id    bigint not null,
+--                                         attribute_id  bigint not null,
+--                                         position      int not null, -- 	Attribute position
+--                                         visible       boolean, -- Define if the attribute is visible on the "Additional information" tab in the product's page. Default is false.
+--                                         variation	    boolean, -- Define if the attribute can be used as variation. Default is false.
+--                                         foreign key (master_id) references users(id),
+--                                         foreign key (product_id) references products(id),
+--                                         foreign key (attribute_id) references product_attributes(id)
+-- );
+-- alter table product_productattributes add constraint product_productattribute_uq unique (product_id, attribute_id);--product attribute in the product card must be unique
+-- create table product_terms(
+--                                         master_id     bigint not null,
+--                                         product_id    bigint not null,
+--                                         term_id       bigint not null,
+--                                         foreign key (master_id) references users(id),
+--                                         foreign key (product_id) references products(id),
+--                                         foreign key (term_id) references product_attribute_terms(id)
+-- );
+--
+-- alter table product_terms add constraint product_term_uq unique (product_id, term_id);--product term in the product card must be unique
+--
+-- alter table product_terms add column product_attribute_id bigint not null;
+-- alter table product_terms add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes (id);
+--
+--
+-- alter table product_terms drop constraint product_terms_term_id_fkey, add constraint product_terms_term_id_fkey foreign key (term_id) references product_attribute_terms(id) on delete cascade;
+-- alter table products add column woo_id int;
+-- alter table products add column date_time_syncwoo timestamp with time zone;
+-- --DELETE FROM product_files WHERE ctid NOT IN (SELECT max(ctid) FROM product_files GROUP BY file_id, product_id); run it, if next row won't be executed
+-- alter table product_files add constraint product_file_uq unique (file_id, product_id);
+-- alter table products add column need_to_syncwoo boolean; -- the product is need to be synchronized because its category turned into store type category
+-- alter table customers_orders add column woo_gmt_date varchar(19);
+-- alter table customers_orders add column woo_id int;
+-- alter table companies add column nds_included boolean; -- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
+-- alter table companies add column store_orders_department_id bigint;
+-- alter table companies add constraint store_orders_department_id_fkey foreign key (store_orders_department_id) references departments (id);
+-- alter table companies add column store_if_customer_not_found varchar(11); -- create_new or use_default
+-- alter table companies add column store_default_customer_id bigint;
+-- alter table companies add constraint store_default_customer_id_fkey foreign key (store_default_customer_id) references cagents (id);
+-- alter table cagents add column woo_id integer;
+-- alter table companies add column store_default_creator_id bigint;
+-- alter table companies add constraint store_default_creator_id_fkey foreign key (store_default_creator_id) references users (id);
+-- alter table companies add column store_days_for_esd int;
+-- alter table products add constraint product_woo_id_uq unique (company_id, woo_id);
+-- create table company_store_departments(
+--                                       master_id          bigint not null,
+--                                       company_id         bigint not null,
+--                                       department_id      bigint not null,
+--                                       menu_order         int,    -- Menu order, used to custom sort the departments
+--                                       foreign key (master_id) references users(id),
+--                                       foreign key (department_id) references departments(id),
+--                                       foreign key (company_id) references companies(id)
+-- );
+-- alter table company_store_departments add constraint company_store_department_uq unique (company_id, department_id);
+-- alter table companies add column store_auto_reserve boolean; -- auto reserve product after getting internet store order
+-- alter table products add column outofstock_aftersale boolean; -- auto set product as out-of-stock after it has been sold
+-- update version set value = '1.1.0', date = '28-12-2022';
+-- ------------------------------------------------  end of 1.1.0  ------------------------------------------------------
+-- ------------------------------------------------  start of 1.1.1  ------------------------------------------------------
+-- alter table template_docs add column type varchar(8); -- the type of template/ Can be: "document", "label"
+-- alter table template_docs add column num_labels_in_row int; -- quantity of labels in the each row
+-- update template_docs set type='document';
+-- alter table template_docs alter column type set not null;
+-- alter table products add column label_description varchar(2048);
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('pricetag',             'Ценник',                       'Price tag');
+-- alter table products add column description_html varchar(16384);
+-- alter table products add column short_description_html varchar(3000);
+-- alter table products add column description_type varchar(6); -- editor / custom
+-- alter table products add column short_description_type varchar(6); -- editor / custom
+-- alter table file_filecategories alter column category_id TYPE bigint USING category_id::bigint;
+-- alter table sprav_sys_edizm add column is_default boolean;
+-- create table customers_orders_files (
+--                                 customers_orders_id bigint not null,
+--                                 file_id bigint not null,
+--                                 foreign key (file_id) references files (id) ON DELETE CASCADE,
+--                                 foreign key (customers_orders_id ) references customers_orders (id) ON DELETE CASCADE
+-- );
+-- alter table plans add column n_stores int;
+-- update plans set n_stores=1 where name_en='No limits';
+-- update plans set n_stores=0 where name_en='Free';
+-- alter table plans alter column n_stores set not null;
+-- alter table plans_add_options add column n_stores int not null;
+-- alter table plans_add_options add column stores_ppu numeric(10,3);
+-- alter table plans_add_options alter column companies_ppu TYPE numeric (10,3);
+-- alter table plans_add_options alter column departments_ppu TYPE numeric (10,3);
+-- alter table plans_add_options alter column users_ppu TYPE numeric (10,3);
+-- alter table plans_add_options alter column products_ppu TYPE numeric (10,3);
+-- alter table plans_add_options alter column counterparties_ppu TYPE numeric (10,3);
+-- alter table plans_add_options alter column megabytes_ppu TYPE numeric (10,3);
+-- alter table companies add column store_ip varchar(21);
+-- update companies set crm_secret_key = null where crm_secret_key='';
+-- alter table companies add constraint crm_secret_key_uq unique (crm_secret_key);
+-- -- CREATE UNIQUE INDEX crm_secret_key_uq ON companies (crm_secret_key) WHERE crm_secret_key IS NOT NULL;
+-- CREATE INDEX crm_secret_key_idx ON companies(crm_secret_key);
+-- update version set value = '1.1.1', date = '13-01-2023';
+-- ------------------------------------------------  end of 1.1.1  ------------------------------------------------------
+-- ----------------------------------------------  start of 1.2.0  ------------------------------------------------------
+-- drop table if exists sites_html;
+-- drop table if exists sites_routes;
+-- drop table if exists sites;
+-- delete from usergroup_permissions where permission_id in (select id from permissions where document_id=20);
+-- delete from permissions where document_id=20;
+-- delete from documents where id=20;
+--
+-- create table stores (id bigserial primary key not null,
+--                      master_id  bigint not null,
+--                      company_id bigint not null,
+--                      creator_id bigint not null,
+--                      changer_id bigint,
+--                      date_time_created timestamp with time zone not null,
+--                      date_time_changed timestamp with time zone,
+--                      name varchar(250) not null,
+--                      lang_code  varchar(2) not null,
+--                      store_type varchar(8) not null, -- e.g. woo
+--                      store_api_version varchar(16) not null, -- e.g. v3
+--                      crm_secret_key varchar(36), -- smth like UUID
+--                      store_price_type_regular bigint not null, -- id of regular price
+--                      store_price_type_sale bigint, -- id of sale price
+--                      store_ip varchar(21) not null,
+--                      is_deleted boolean,
+--                      store_auto_reserve boolean,
+--                      store_days_for_esd int not null,
+--                      store_default_creator_id bigint not null,
+--                      store_default_customer_id bigint,
+--                      store_if_customer_not_found varchar(11) not null,
+--                      store_orders_department_id bigint not null,
+--                      foreign key (master_id) references users(id),
+--                      foreign key (creator_id) references users(id),
+--                      foreign key (changer_id) references users(id),
+--                      foreign key (company_id) references companies(id),
+--                      foreign key (store_default_creator_id) references users(id),
+--                      foreign key (store_default_customer_id) references cagents(id),
+--                      foreign key (store_orders_department_id) references departments(id)
+-- );
+-- alter table stores add constraint store_price_type_regular_id_fkey foreign key (store_price_type_regular) references sprav_type_prices (id);
+-- alter table stores add constraint store_price_type_sale_id_fkey foreign key (store_price_type_sale) references sprav_type_prices (id);
+-- alter table stores add constraint store_crm_secret_key_uq unique (crm_secret_key);
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (54,'Интернет-магазины','stores',1,'stores','Интернет-магазины', 'Online stores');
+--
+-- insert into permissions (id,name_ru,name_en,document_id,output_order) values
+-- (671,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',54,10),
+-- (672,'Создание документов по всем предприятиям','Creation of documents for all companies',54,20),
+-- (673,'Создание документов своего предприятия','Create your company documents',54,30),
+-- (674,'Удаление документов всех предприятий','Deleting documents of all companies',54,130),
+-- (675,'Удаление документов своего предприятия','Deleting your company documents',54,140),
+-- (676,'Просмотр документов всех предприятий','View documents of all companies',54,50),
+-- (677,'Просмотр документов своего предприятия','View your company documents',54,60),
+-- (678,'Редактирование документов всех предприятий','Editing documents of all companies',54,90),
+-- (679,'Редактирование документов своего предприятия','Editing your company documents',54,100);
+--
+-- create table store_departments(
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 store_id           bigint not null,
+--                                 department_id      bigint not null,
+--                                 menu_order         int,    -- Menu order, used to custom sort the departments
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (department_id) references departments(id),
+--                                 foreign key (store_id) references stores(id),
+--                                 foreign key (company_id) references companies(id)
+-- );
+-- alter table store_departments add constraint store_department_uq unique (store_id, department_id);
+-- create table stores_products (
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 store_id           bigint not null,
+--                                 product_id         bigint not null,
+--                                 woo_id             int,
+--                                 need_to_syncwoo    boolean,
+--                                 date_time_syncwoo  timestamp with time zone,
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (product_id) references products(id),
+--                                 foreign key (store_id) references stores(id)
+-- );
+-- alter table stores_products add constraint stores_products_uq unique (store_id, product_id);
+-- alter table companies add column store_default_lang_code  varchar(2);-- e.g. RU or EN
+-- update companies set store_default_lang_code='EN';
+-- create table store_translate_categories(
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 lang_code          varchar(2) not null,
+--                                 category_id        bigint not null,
+--                                 name               varchar(512),
+--                                 slug               varchar(120),
+--                                 description        varchar(250),
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (category_id) references product_categories(id) on delete cascade
+-- );
+-- alter table store_translate_categories add constraint category_lang_uq unique (category_id, lang_code);
+-- alter table companies alter column store_default_lang_code set not null;
+-- create table stores_productcategories (
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 store_id           bigint not null,
+--                                 category_id        bigint not null,
+--                                 woo_id             int,
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (category_id) references product_categories(id) on delete cascade,
+--                                 foreign key (store_id) references stores(id)
+-- );
+-- alter table stores_productcategories add constraint stores_categories_uq unique (store_id, category_id);
+--
+-- create table store_translate_attributes(
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 lang_code          varchar(2) not null,
+--                                 attribute_id       bigint not null,
+--                                 name               varchar(512),
+--                                 slug               varchar(120),
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (attribute_id) references product_attributes(id) on delete cascade
+-- );
+-- alter table store_translate_attributes add constraint attribute_lang_uq unique (attribute_id, lang_code);
+-- create table stores_attributes (
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 store_id           bigint not null,
+--                                 attribute_id       bigint not null,
+--                                 woo_id             int,
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (attribute_id) references product_attributes(id) on delete cascade,
+--                                 foreign key (store_id) references stores(id)
+-- );
+-- alter table stores_attributes add constraint stores_attributes_uq unique (store_id, attribute_id);
+-- create table store_translate_terms(
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 lang_code          varchar(2) not null,
+--                                 term_id            bigint not null,
+--                                 name               varchar(512),
+--                                 slug               varchar(120),
+--                                 description        varchar(250),
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade
+-- );
+-- alter table store_translate_terms add constraint term_lang_uq unique (term_id, lang_code);
+-- create table stores_terms (
+--                                 master_id          bigint not null,
+--                                 company_id         bigint not null,
+--                                 store_id           bigint not null,
+--                                 term_id            bigint not null,
+--                                 woo_id             int,
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (term_id) references product_attribute_terms(id) on delete cascade,
+--                                 foreign key (store_id) references stores(id)
+-- );
+-- alter table stores_terms add constraint stores_terms_uq unique (store_id, term_id);
+-- create table store_translate_products(
+--                                     master_id          bigint not null,
+--                                     company_id         bigint not null,
+--                                     lang_code          varchar(2) not null,
+--                                     product_id         bigint not null,
+--                                     name               varchar(512),
+--                                     slug               varchar(512),
+--                                     description        varchar(100000),
+--                                     description_html   varchar(100000),
+--                                     short_description  varchar(100000),
+--                                     short_description_html varchar(100000),
+--                                     foreign key (master_id) references users(id),
+--                                     foreign key (company_id) references companies(id),
+--                                     foreign key (product_id) references products(id) on delete cascade
+-- );
+-- alter table store_translate_products add constraint product_lang_uq unique (product_id, lang_code);
+-- alter table products alter column description type varchar(100000);
+-- alter table products alter column description_html type varchar(100000);
+-- alter table products alter column short_description type varchar(100000);
+-- alter table products alter column short_description_html type varchar(100000);
+-- alter table products alter column slug type varchar(512);
+--
+-- alter table customers_orders add column store_id bigint;
+-- alter table customers_orders add constraint customers_orders_store_id_fkey foreign key (store_id) references stores (id);
+-- CREATE UNIQUE INDEX store_translate_attributes_slug_uq ON store_translate_attributes (company_id, lang_code, slug) WHERE slug !='';-- attribute need to have unique translated slugs for each language
+-- drop index product_categories_name_nn_uq;
+-- CREATE UNIQUE INDEX product_categories_name_nn_uq ON product_categories (name, company_id) WHERE parent_id IS NULL;
+-- alter table product_categories drop constraint product_categories_slug_uq;
+-- CREATE UNIQUE INDEX product_categories_slug_uq ON product_categories (company_id, slug) WHERE slug !='';
+-- alter table product_attributes drop constraint product_attributes_name_uq;
+-- alter table store_translate_terms add column attribute_id int not null ;
+-- alter table store_translate_terms add constraint store_translate_terms_attribute_id_fkey foreign key (attribute_id) references product_attributes (id) on delete cascade;
+-- CREATE UNIQUE INDEX store_translate_terms_name_uq ON store_translate_terms (attribute_id, lang_code, name) WHERE name !='';
+-- CREATE UNIQUE INDEX store_translate_terms_slug_uq ON store_translate_terms (attribute_id, lang_code, slug) WHERE slug !='';
+-- alter table plans alter column  daily_price type numeric (20,10);
+-- drop table company_store_departments;
+-- insert into _dictionary (key, tr_en, tr_ru) values ('sale_price', 'Sale price', 'Скидочная цена');
+--
+-- alter table products drop column woo_id;
+-- alter table products drop column date_time_syncwoo;
+-- alter table products drop column need_to_syncwoo;
+-- alter table companies drop column is_store;
+-- alter table companies drop column store_site_address;
+-- alter table companies drop column store_key;
+-- alter table companies drop column store_secret;
+-- alter table companies drop column store_type;
+-- alter table companies drop column store_api_version;
+-- alter table companies drop column crm_secret_key;
+-- alter table companies drop column store_price_type_regular;
+-- alter table companies drop column store_price_type_sale;
+-- alter table product_categories drop column woo_id;
+-- alter table product_attributes drop column woo_id;
+-- alter table product_attribute_terms drop column woo_id;
+-- update version set value = '1.2.0', date = '13-03-2023';
+-- ------------------------------------------------  end of 1.2.0  ------------------------------------------------------
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('payroll_taxes',               'Налоги на зарплату',                       'Payroll taxes'),
+-- ('accounting_srvcs',            'Бухгалтерские услуги',                     'Accounting services');
+-- update _dictionary set tr_ru = 'Подоходные налоги', tr_en = 'Income taxes' where key = 'exp_taxes';
+--
+-- CREATE UNIQUE INDEX products_sku_uq ON products (article, company_id) WHERE article !=''; -- because in WooCommerce article must be unique
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('catg_accounting',              'Бухгалтерские услуги',                      'Accounting services'),
+-- ('cagent_director_y',            'Директор (вы)',                             'CEO (you)'),
+-- ('cagent_accntnts',              'Бухгалтер',                                 'Accountant'),
+-- ('cagent_supplier',              'Поставщик',                                 'Supplier'),
+-- ('cagent_customer',              'Покупатель',                                'Customer'),
+-- ('cagent_bank',                  'Банк',                                      'Bank'),
+-- ('cagent_taxoffce',              'Налоговая служба',                          'Tax office'),
+-- ('cagent_carrier',               'Перевозчик',                                'Carrier'),
+-- ('cagent_landlord',              'Арендодатель',                              'Landlord'),
+-- ('p_catg_myprods',               'Мои товары',                                'My products'),
+-- ('p_catg_srvcs',                 'Мои услуги',                                'My services'),
+-- ('p_catg_in_srvcs',              'Принимаемые',                               'Receiving'),
+-- ('prod_work_empl',               'Работа и услуги от сотрудника',             'Work and services from an employee'),
+-- ('prod_transp',                  'Транспортные услуги',                       'Transport service'),
+-- ('prod_rent',                    'Услуги аренды',                             'Rent service'),
+-- ('prod_prolltax',                'Обязательства по налогам на зарплату',      'Payroll taxes obligations'),
+-- ('prod_incomtax',                'Обязательства по налогу на прибыль',        'Income taxes obligations'),
+-- ('prod_banking',                 'Банковские услуги',                         'Banking service'),
+-- ('prod_my_prod',                 'Мой товар',                                 'My example product'),
+-- ('prod_my_srvc',                 'Моя услуга',                                'My example service'),
+-- ('prod_accounting',              'Бухгалтерские услуги',                      'Accounting service');
+--
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values ('catg_leads',              'Лиды',                      'Leads');
+--
+--
+-- update version set value = '1.2.1', date = '05-04-2023';
+-- ------------------------------------------------  end of 1.2.1  ------------------------------------------------------
+-- -----------------------------------------------  start of 1.2.2  -----------------------------------------------------
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('st_cg_new',               'Новый контрагент',                 'New counterparty'),
+-- ('st_cg_lead_new',          'Лид - Новый',                      'Lead - New added'),
+-- ('st_cg_lead_prop',         'Лид - Отправлено предложение',     'Lead - Sent proposal'),
+-- ('st_cg_lead_negot',        'Лид - Переговоры',                 'Lead - Negotiations'),
+-- ('st_cg_lead_out',          'Лид - Вышел из воронки',           'Lead - Out of funnel'),
+-- ('st_cg_customer',          'Клиент',                           'Customer');
+--
+-- update version set value = '1.2.2', date = '16-04-2023';
+-- ------------------------------------------------  end of 1.2.2  ------------------------------------------------------
+-- ------------------------------------------------  start of 1.3.0  -----------------------------------------------------
+--
+-- alter table users add column  plan_price           numeric (20,10);
+-- alter table users add column  free_trial_days      int;
+-- alter table users add column  is_blocked_master_id boolean; -- blocked the master user and all its child users
+-- alter table plans add column  n_stores_woo         int;
+-- alter table plans_add_options add column n_stores_woo   int;
+-- alter table plans_add_options add column stores_woo_ppu numeric (10,3); -- price per unit
+-- alter table settings_general  add column free_trial_days int;
+-- update settings_general set free_trial_days=14;
+-- alter table users add column plan_version int;
+-- alter table stores add column rent_store_requested boolean;
+-- alter table stores add column rent_store_exists boolean;
+-- alter table stores add column rent_store_ip varchar(15);
+-- alter table stores add column rent_store_third_lvl_domain_name varchar(30);
+-- alter table settings_general  add column is_saas boolean;
+-- update settings_general set is_saas = false;
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en) values (55,'Подписка','subscription',1,'','Подписка', 'Subscription');
+-- insert into permissions (id,name_ru,name_en,document_id,output_order) values
+-- (680,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar',55,10),
+-- (681,'Просмотр','View',55,50),
+-- (682,'Редактирование','Editing',55,90);
+-- update plans set n_stores_woo=0;
+--
+-- insert into plans_add_options (user_id,n_companies,n_departments,n_users,n_products,n_counterparties,n_megabytes,n_stores,n_stores_woo,companies_ppu,departments_ppu,users_ppu,products_ppu,counterparties_ppu,megabytes_ppu,stores_ppu,stores_woo_ppu)
+-- select u.id,0,0,0,0,0,0,0,0,0.166,0.166,0.166,0.166,0.166,0.166,0.166,0.233 from users u where id=master_id;
+--
+-- create table plans_add_options_prices (
+--                                         name            varchar(100) not null,
+--                                         ppu             numeric (15,10) not null,
+--                                         step            int not null,
+--                                         quantity_limit  int not null,
+--                                         is_active       boolean not null
+--                                       );
+--
+-- insert into plans_add_options_prices  (name, ppu, step, quantity_limit, is_active) values
+--                                       ('companies',      0.166,         1,    1000,   true),
+--                                       ('departments',    0.166,         1,    1000,   true),
+--                                       ('users',          0.166,         1,    100,    true),
+--                                       ('products',       0.000166,      1000, 100000, true),
+--                                       ('counterparties', 0.000166,      1000, 100000, true),
+--                                       ('megabytes',      0.0003333333,  500,  5000,   true),
+--                                       ('stores',         0.166,         1,    10,     true),
+--                                       ('stores_woo',     0.233,         1,    10,     true);
+--
+--
+--
+--
+--
+-- alter table companies add column vat varchar(100);
+-- alter table cagents add column vat varchar(100);
+-- alter table settings_acceptance drop constraint settings_acceptance_user_uq;
+-- alter table settings_acceptance add constraint settings_acceptance_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_correction drop constraint if exists settings_correction_user_uq;
+-- alter table settings_correction add constraint settings_correction_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_uq;
+-- alter table settings_customers_orders add constraint settings_customers_orders_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_inventory drop constraint if exists settings_inventory_user_uq;
+-- alter table settings_inventory add constraint settings_inventory_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_invoicein drop constraint if exists settings_invoicein_user_uq;
+-- alter table settings_invoicein add constraint settings_invoicein_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_uq;
+-- alter table settings_invoiceout add constraint settings_invoiceout_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_moving drop constraint if exists settings_moving_user_uq;
+-- alter table settings_moving add constraint settings_moving_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_orderin drop constraint if exists settings_orderin_user_uq;
+-- alter table settings_orderin add constraint settings_orderin_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_orderout drop constraint if exists settings_orderout_user_uq;
+-- alter table settings_orderout add constraint settings_orderout_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_ordersup drop constraint if exists settings_ordersup_user_uq;
+-- alter table settings_ordersup add constraint settings_ordersup_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_paymentin drop constraint if exists settings_paymentin_user_uq;
+-- alter table settings_paymentin add constraint settings_paymentin_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_paymentout drop constraint if exists settings_paymentout_user_uq;
+-- alter table settings_paymentout add constraint settings_paymentout_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_posting drop constraint if exists settings_posting_user_uq;
+-- alter table settings_posting add constraint settings_posting_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_uq;
+-- alter table settings_retail_sales add constraint settings_retail_sales_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_return drop constraint if exists settings_return_user_uq;
+-- alter table settings_return add constraint settings_return_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_returnsup drop constraint if exists settings_returnsup_user_uq;
+-- alter table settings_returnsup add constraint settings_returnsup_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_shipment drop constraint if exists settings_shipment_user_uq;
+-- alter table settings_shipment add constraint settings_shipment_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_uq;
+-- alter table settings_vatinvoicein add constraint settings_vatinvoicein_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_uq;
+-- alter table settings_vatinvoiceout add constraint settings_vatinvoiceout_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_writeoff drop constraint if exists settings_writeoff_user_uq;
+-- alter table settings_writeoff add constraint settings_writeoff_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_dashboard drop constraint if exists settings_dashboard_user_uq;
+-- alter table settings_dashboard add constraint settings_dashboard_user_uq UNIQUE (company_id, user_id);
+-- alter table settings_correction drop constraint if exists settings_correction_user_id_key;
+-- alter table settings_customers_orders drop constraint if exists settings_customers_orders_user_id_key;
+-- alter table settings_inventory drop constraint if exists settings_inventory_user_id_key;
+-- alter table settings_invoicein drop constraint if exists settings_invoicein_user_id_key;
+-- alter table settings_invoiceout drop constraint if exists settings_invoiceout_user_id_key;
+-- alter table settings_moving drop constraint if exists settings_moving_user_id_key;
+-- alter table settings_orderin drop constraint if exists settings_orderin_user_id_key;
+-- alter table settings_orderout drop constraint if exists settings_orderout_user_id_key;
+-- alter table settings_ordersup drop constraint if exists settings_ordersup_user_id_key;
+-- alter table settings_paymentin drop constraint if exists settings_paymentin_user_id_key;
+-- alter table settings_paymentout drop constraint if exists settings_paymentout_user_id_key;
+-- alter table settings_posting drop constraint if exists settings_posting_user_id_key;
+-- alter table settings_retail_sales drop constraint if exists settings_retail_sales_user_id_key;
+-- alter table settings_return drop constraint if exists settings_return_user_id_key;
+-- alter table settings_returnsup drop constraint if exists settings_returnsup_user_id_key;
+-- alter table settings_shipment drop constraint if exists settings_shipment_user_id_key;
+-- alter table settings_vatinvoicein drop constraint if exists settings_vatinvoicein_user_id_key;
+-- alter table settings_vatinvoiceout drop constraint if exists settings_vatinvoiceout_user_id_key;
+-- alter table settings_writeoff drop constraint if exists settings_writeoff_user_id_key;
+-- alter table settings_dashboard drop constraint if exists settings_dashboard_user_id_key;
+--
+-- alter table settings_acceptance add column date_time_update timestamp with time zone;
+-- alter table settings_correction add column date_time_update timestamp with time zone;
+-- alter table settings_customers_orders add column date_time_update timestamp with time zone;
+-- alter table settings_inventory add column date_time_update timestamp with time zone;
+-- alter table settings_invoicein add column date_time_update timestamp with time zone;
+-- alter table settings_invoiceout add column date_time_update timestamp with time zone;
+-- alter table settings_moving add column date_time_update timestamp with time zone;
+-- alter table settings_orderin add column date_time_update timestamp with time zone;
+-- alter table settings_orderout add column date_time_update timestamp with time zone;
+-- alter table settings_ordersup add column date_time_update timestamp with time zone;
+-- alter table settings_paymentin add column date_time_update timestamp with time zone;
+-- alter table settings_paymentout add column date_time_update timestamp with time zone;
+-- alter table settings_posting add column date_time_update timestamp with time zone;
+-- alter table settings_retail_sales add column date_time_update timestamp with time zone;
+-- alter table settings_return add column date_time_update timestamp with time zone;
+-- alter table settings_returnsup add column date_time_update timestamp with time zone;
+-- alter table settings_shipment add column date_time_update timestamp with time zone;
+-- alter table settings_vatinvoicein add column date_time_update timestamp with time zone;
+-- alter table settings_vatinvoiceout add column date_time_update timestamp with time zone;
+-- alter table settings_writeoff add column date_time_update timestamp with time zone;
+-- alter table settings_dashboard add column date_time_update timestamp with time zone;
+--
+-- -- this table describes the field "Default Form Values" in WooCommerce
+-- create table default_attributes(
+--                                  master_id     bigint not null,
+--                                  product_id    bigint not null, -- variable (parent) product.
+--                                  attribute_id  bigint not null,
+--                                  term_id       bigint not null,
+--                                  foreign key (master_id) references users(id) on delete cascade,
+--                                  foreign key (product_id) references products(id) on delete cascade,
+--                                  foreign key (attribute_id) references product_attributes(id) on delete cascade,
+--                                  foreign key (term_id) references product_attribute_terms(id) on delete cascade
+-- );
+--
+-- alter table product_productattributes drop constraint product_productattributes_attribute_id_fkey, add constraint product_productattributes_attribute_id_fkey foreign key (attribute_id) references product_attributes(id) on delete cascade;
+-- alter table product_terms drop constraint attribute_id_fkey, add constraint attribute_id_fkey foreign key (product_attribute_id) references product_attributes(id) on delete cascade;
+--
+-- create table product_variations
+-- (
+--                                  id         bigserial primary key not null,
+--                                  master_id  bigint not null,
+--                                  product_id bigint not null, -- variable (parent) product.
+--                                  variation_product_id bigint not null,  -- variation of variable (parent) product.
+--                                  menu_order int,
+--                                  foreign key (master_id) references users (id) on delete cascade,
+--                                  foreign key (variation_product_id) references products(id),
+--                                  foreign key (product_id) references products (id) on delete cascade
+-- );
+--
+-- alter table product_variations add constraint variation_product_id_uq UNIQUE (variation_product_id);
+--
+-- create table product_variations_row_items(
+--   -- each row of this table describes a part of one variation
+--   -- for example:
+--   -- variation with id=1 contains [Color(id=50) = Red(id=5)] and [Size(id=51) = Large(id=10)]
+--   -- then it will be described in this table by two rows as
+--   -- variation_id=1, attribute_id=50, term_id=5;
+--   -- variation_id=1, attribute_id=51, term_id=10;
+--                                  id                   bigserial primary key not null,
+--                                  variation_id         bigint not null,
+--                                  master_id            bigint not null,
+--                                  attribute_id         bigint not null,
+--                                  term_id              bigint,
+--                                  foreign key (master_id) references users(id),
+--                                  foreign key (variation_id) references product_variations(id) on delete cascade,
+--                                  foreign key (attribute_id) references product_attributes(id) on delete cascade,
+--                                  foreign key (term_id) references product_attribute_terms(id) on delete cascade
+-- );
+--
+-- alter table product_variations_row_items add constraint variation_row_attribute_id_uq UNIQUE (variation_id, attribute_id);
+-- alter table default_attributes add constraint variation_default_attributes_uq UNIQUE (product_id, attribute_id);
+-- alter table default_attributes alter column term_id drop not null;
+-- create table stores_variations (
+--                                  master_id          bigint not null,
+--                                  company_id         bigint not null,
+--                                  store_id           bigint not null,
+--                                  product_id         bigint not null,
+--                                  woo_id             int,
+--                                  need_to_syncwoo    boolean,
+--                                  date_time_syncwoo  timestamp with time zone,
+--                                  foreign key (master_id) references users(id),
+--                                  foreign key (company_id) references companies(id),
+--                                  --for automatic deletion row in this table after deleting the variation
+--                                  foreign key (product_id) references product_variations(variation_product_id) on delete cascade,
+--                                  foreign key (store_id) references stores(id)
+-- );
+-- alter table stores_variations add constraint stores_variations_uq unique (store_id, product_id);
+--
+-- update plans set is_default = (CASE WHEN id=2 THEN true ELSE false END);
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('black',    'чёрный','black'),
+-- ('white',     'белый','white');
+--
+-- alter table plans_add_options_prices add constraint name_uq unique (name);
+-- create table _saas_billing_history
+-- (id bigserial primary key not null,
+--  date_time_created timestamp with time zone not null,
+--  for_what_date date not null,
+--  master_account_id  bigint not null,
+--  operation_type varchar(100) not null, -- i.e. depositing, withdrawal_plan, withdrawal_plan_option, correction etc.
+--  plan_id int, -- plan id
+--  option_name  varchar(100), -- additional option name like "department", "store_connection"
+--  option_ppu  numeric (20,10), -- price per unit of option
+--  option_quantity int, -- quantity of option like  "plan_option_name = Store connection,  plan_option_quantity = 2"
+--  operation_sum numeric (20,10) not null,
+--  additional varchar(10000), --additional info
+--  foreign key (master_account_id) references users(id),
+--  foreign key (plan_id) references plans(id),
+--  foreign key (option_name) references plans_add_options_prices(name)
+-- );
+--
+-- alter table plans drop column is_default; -- it is not need because default plan is in settings_general->plan_default_id
+-- alter table plans add column is_free boolean; -- for free plans the billing is not applied, also this users can't use an additional options
+-- update plans set is_free = true;
+-- alter table plans alter column is_free set not null;
+-- alter table plans alter column n_stores_woo set not null;
+--
+-- alter table plans_add_options_prices alter column ppu type numeric (20,10);
+-- alter table plans_add_options alter column stores_ppu type numeric(20,10);
+-- alter table plans_add_options alter column stores_woo_ppu type numeric(20,10);
+-- alter table plans_add_options alter column companies_ppu type numeric (20,10);
+-- alter table plans_add_options alter column departments_ppu type numeric (20,10);
+-- alter table plans_add_options alter column users_ppu type numeric (20,10);
+-- alter table plans_add_options alter column products_ppu type numeric (20,10);
+-- alter table plans_add_options alter column counterparties_ppu type numeric (20,10);
+-- alter table plans_add_options alter column megabytes_ppu type numeric (20,10);
+-- update plans_add_options set megabytes_ppu = 0.0003333333;
+-- update plans_add_options_prices set ppu=0.0003333333 where name='megabytes';
+--
+-- alter table plans add column is_available_for_user_switching boolean; --  Can user switch its current plan to this plan?
+-- update plans set is_available_for_user_switching = true where is_nolimits = false;
+-- update plans set is_available_for_user_switching = false where is_nolimits = true;
+-- alter table plans alter column is_available_for_user_switching set not null;
+--
+-- alter table plans_add_options_prices add column quantity_trial_limit int;
+-- update plans_add_options_prices set quantity_trial_limit = 1 where name = 'companies';
+-- update plans_add_options_prices set quantity_trial_limit = 4 where name = 'departments';
+-- update plans_add_options_prices set quantity_trial_limit = 5 where name = 'users';
+-- update plans_add_options_prices set quantity_trial_limit = 0 where name = 'products';
+-- update plans_add_options_prices set quantity_trial_limit = 0 where name = 'counterparties';
+-- update plans_add_options_prices set quantity_trial_limit = 0 where name = 'megabytes';
+-- update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores';
+-- update plans_add_options_prices set quantity_trial_limit = 1 where name = 'stores_woo';
+-- alter table plans_add_options_prices alter column quantity_trial_limit set not null;
+--
+-- alter table settings_general add column free_plan_id int;
+-- update settings_general set free_plan_id = 2;
+-- alter table settings_general alter column free_plan_id set not null;
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('withdrawal_plan',            'Списание за тариф',     'Plan write-off'),
+-- ('withdrawal_plan_option',     'Списание за доп. опции','Additional options write-off');
+--
+-- alter table settings_general add column let_woo_plugin_to_sync boolean;
+-- update settings_general set let_woo_plugin_to_sync=true;
+-- alter table settings_general alter column let_woo_plugin_to_sync set not null;
+-- alter table settings_general add column woo_plugin_oldest_acceptable_ver varchar(10);
+-- update settings_general set woo_plugin_oldest_acceptable_ver='1.3.0';
+-- alter table settings_general alter column woo_plugin_oldest_acceptable_ver set not null;
+-- alter table stores add column is_let_sync boolean;
+-- update stores set is_let_sync=true;
+-- alter table stores alter column is_let_sync set not null;
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('withdrawal_add_service',     'Списание за доп. сервис','Additional service write-off');
+--
+-- alter table settings_general add column is_sites_distribution boolean; -- in this SaaS there is a sites distribution
+-- update settings_general set is_sites_distribution=false;
+-- alter table settings_general alter column is_sites_distribution set not null;
+--
+-- create table _saas_stores_for_ordering (
+--                                 id                            bigserial primary key not null,
+--
+--                                 date_time_created             timestamp with time zone not null,
+--                                 ready_to_distribute           boolean not null,
+--                                 distributed                   boolean not null,
+--                                 is_queried_to_delete          boolean not null, -- user sent query to delete
+--                                 is_deleted                    boolean not null, -- site was physically deleted from server
+--
+--                                 panel_domain                  varchar(100),
+--                                 client_no                     varchar(100),
+--                                 client_name                   varchar(100),
+--                                 client_login                  varchar(100),
+--                                 client_password               bytea,
+--                                 site_domain                   varchar(100),
+--                                 site_root                     varchar(100),
+--                                 ftp_user                      varchar(100),
+--                                 ftp_password                  bytea,
+--                                 db_user                       varchar(100),
+--                                 db_password                   bytea,
+--                                 db_name                       varchar(100),
+--                                 wp_login                      varchar(100),
+--                                 wp_password                   bytea,
+--                                 wp_server_ip                  varchar(16) ,
+--                                 dokio_secret_key              varchar(100),
+--                                 record_creator_name           varchar(100), -- name of employee who created this record
+--
+--                                 date_time_ordered             timestamp with time zone, -- when user sent query to get site
+--                                 date_time_distributed         timestamp with time zone, -- when user got the site
+--                                 date_time_query_to_delete     timestamp with time zone, -- when user sent query to delete - store mark as "is_queried_to_delete=true"
+--                                 date_time_deleted             timestamp with time zone, -- when site was physically deleted from server
+--                                 master_id                     bigint,
+--                                 company_id                    bigint,
+--                                 store_id                      bigint,           -- online store connection
+--                                 orderer_id                    bigint,           -- who ordered (who is clicked on the button "Order store")
+--                                 deleter_id                    bigint,           -- who deleted (who is clicked on the button "Delete store")
+--                                 orderer_ip                    varchar(100),     -- ip address from which store ordered
+--
+--                                 foreign key (master_id) references users(id),
+--                                 foreign key (company_id) references companies(id),
+--                                 foreign key (orderer_id) references users(id),
+--                                 foreign key (deleter_id) references users(id),
+--                                 foreign key (store_id) references stores(id)
+-- );
+--
+-- alter table settings_general add column   stores_alert_email    varchar(100);
+-- update settings_general set stores_alert_email = '';
+-- alter table settings_general alter column stores_alert_email  set not null;
+--
+-- alter table settings_general add column   min_qtt_stores_alert  int;
+-- update      settings_general set          min_qtt_stores_alert  = 0;
+-- alter table settings_general alter column min_qtt_stores_alert  set not null;
+--
+-- create table _saas_agreements(
+--                                id                    bigserial primary key not null,
+--                                type                  varchar(100) not null,
+--                                version               varchar(100) not null,
+--                                version_date          date not null,
+--                                name_en               varchar(300) not null,
+--                                text_en               varchar(2000000) not null,
+--                                name_ru               varchar(300) not null,
+--                                text_ru               varchar(2000000) not null
+-- );
+--
+-- create table _saas_agreements_units(
+--                                id                    bigserial primary key not null,
+--                                date_time_agree       timestamp with time zone not null,
+--                                master_user           bigint not null,
+--                                user_who_agree        bigint not null,
+--                                agreement_id          bigint not null,
+--                                store_id              bigint,
+--                                store_woo_id          bigint,
+--                                foreign key (agreement_id) references _saas_agreements(id),
+--                                foreign key (master_user) references users(id),
+--                                foreign key (user_who_agree) references users(id),
+--                                foreign key (store_id) references stores(id),
+--                                foreign key (store_woo_id) references _saas_stores_for_ordering(id)
+-- );
+--
+-- CREATE EXTENSION pgcrypto;
+--
+-- alter table settings_general add column max_store_orders_per_24h_1_account int;
+-- update settings_general  set max_store_orders_per_24h_1_account =1;
+-- alter table settings_general alter column max_store_orders_per_24h_1_account set not null;
+-- alter table settings_general add column max_store_orders_per_24h_1_ip int;
+-- update settings_general  set max_store_orders_per_24h_1_ip=1;
+-- alter table settings_general alter column max_store_orders_per_24h_1_ip set not null;
+--
+-- create table _saas_messages
+-- (
+--   key               varchar(200)  PRIMARY KEY not null,
+--   tr_en             text,
+--   tr_ru             text
+-- );
+-- alter table _saas_messages add constraint _saas_messages_key_uq unique (key);
+-- insert into _saas_messages (key, tr_ru, tr_en) values (
+--   'success_online_store_order',
+--   '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Спасибо за заказ сайта!</strong></span></span></h1>
+--   <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>Желаем удачи в бизнесе!</strong></span></span></p>
+--   ',
+--   '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+--   <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:18px"><strong>We wish you good luck in business!</strong></span></span></p>
+-- ');
+-- insert into _saas_messages (key, tr_ru, tr_en) values (
+-- 'online_store_no_free_but_ordered',
+-- '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+-- <p style="text-align:center"><span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">К сожалению, свободных сайтов нет.</span></span></p>
+-- <span style="font-family:Tahoma,Geneva,sans-serif"><span style="font-size:16px">Благодарим за понимание!</span></span></p>
+-- ',
+-- '<h1 style="text-align:center"><span style="font-size:24px"><span style="font-family:Tahoma,Geneva,sans-serif"><strong>Thank you for ordering the site!</strong></span></span></h1>
+-- <p style="text-align:center"><span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Unfortunately, there are no free slots with sites at the moment.</span></span></p>
+-- <span style="font-size:16px"><span style="font-family:Tahoma,Geneva,sans-serif">Thank you for understanding!</span></span></p>
+-- '
+-- );
+-- alter table _saas_stores_for_ordering add constraint _saas_stores_for_ordering_dokio_secret_key_uq unique (dokio_secret_key);
+--
+-- alter table stores drop constraint store_crm_secret_key_uq;
+-- CREATE UNIQUE INDEX stores_crm_secret_key_uq ON stores (crm_secret_key) WHERE crm_secret_key !='';
+-- alter table settings_general drop column if exists email_rent_stores_responsible_employee ;
+--
+-- insert into _saas_messages (key, tr_ru, tr_en) values (
+--       'delete_online_store_request',
+--       'Зравствуйте.
+--        Поступил запрос на удаление сайта с интернет-магазином.
+--       Если запрос верен и вы на самом деле хотите удалить сайт с интернет-магазином, пожалуйста, подтвердите данное намерение, отправив фразу "Да, я хочу удалить сайт" на указанный ниже email:
+--       ',
+--       'Hello!
+--       Received a request to delete a site with an online store.
+--       If the request is correct and you really want to delete the site with an online store, please confirm this intention by sending the phrase "Yes, I want to delete the site" to the email below:
+--       ');
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('site_data',              'Данные о сайте',          'Site data'),
+-- ('site_address',           'Адрес сайта',             'Site address'),
+-- ('site_name',              'Найименование сайта',     'Site name'),
+-- ('who_requested_removal',  'Кто запросил удаление',   'Who requested removal'),
+-- ('confirmation_email',     'Email для подтверждения', 'Confirmation email');
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('os_req_rcvd',              'Запрос на удаление сайта с интернет-магазинтм',          'Online store deletion request received');
+--
+-- alter table settings_general add column saas_payment_currency varchar(100);
+-- update settings_general set saas_payment_currency = 'USD';
+-- alter table settings_general alter column saas_payment_currency set not null;
+--
+-- alter table settings_general add column url_terms_and_conditions varchar(1000);
+-- update settings_general  set url_terms_and_conditions = '';
+-- alter table settings_general alter column url_terms_and_conditions set not null;
+--
+-- alter table settings_general add column url_privacy_policy varchar(1000);
+-- update settings_general  set url_privacy_policy = '';
+-- alter table settings_general alter column url_privacy_policy set not null;
+--
+-- alter table settings_general add column url_data_processing_agreement varchar(1000);
+-- update settings_general  set url_data_processing_agreement = '';
+-- alter table settings_general alter column url_data_processing_agreement set not null;
+--
+-- alter table _saas_stores_for_ordering add column third_lvl_user_domain varchar(100);
+--
+-- CREATE UNIQUE INDEX third_lvl_user_domain_uq ON _saas_stores_for_ordering (third_lvl_user_domain) WHERE third_lvl_user_domain IS NOT NULL;
+--
+-- alter table settings_general add column root_domain varchar(255);               --like dokio.me
+-- update settings_general set root_domain = '';
+-- alter table settings_general alter column root_domain set not null;
+--
+-- insert into _saas_messages (key, tr_ru, tr_en) values (
+--     'site_name_access',
+--     '<p style="text-align:center"><strong>ВНИМАНИЕ</strong></p>
+--     <p><span style="font-size:14px">Сначала сайт будет доступен по сгенерированному системой имени.<br />
+--     По выбранному Вами имени сайт будет доступен в течение 24 часов.
+--     </span></p>',
+--     '<p style="text-align:center"><strong>NOTE</strong></p>
+--     <p><span style="font-size:14px">At first the site will be accessible with a system-generated name.<br />
+--     It will be available at your choosen name within 24h.
+--     </span></p>');
+--
+-- alter table users add column jr_legal_form varchar(10);
+-- alter table users add column jr_jur_name varchar(100);
+-- alter table users add column jr_name varchar(100);
+-- alter table users add column jr_surname varchar(100);
+-- alter table users add column jr_country_id int;
+-- alter table users add column jr_vat varchar(100);
+-- alter table users add constraint jr_country_id_fkey foreign key (jr_country_id) references sprav_sys_countries(id);
+-- alter table users add column jr_changer_id bigint;
+-- alter table users add constraint jr_changer_id_fkey foreign key (jr_changer_id) references users(id);
+-- alter table users add column jr_date_time_changed timestamp with time zone;
+-- alter table users alter column jr_jur_name type varchar(500);
+--
+-- update users set plan_id=2 where plan_id is null;
+-- alter table users alter column plan_id set not null;
+--
+-- alter table _saas_stores_for_ordering add column is_existed_store_variation boolean;
+-- alter table _saas_stores_for_ordering add column parent_variation_store_id bigint;
+-- alter table _saas_stores_for_ordering add column variation_name_position varchar(6); -- "after" or "before"
+-- alter table _saas_stores_for_ordering add column variation_name varchar(100);
+-- alter table _saas_stores_for_ordering add constraint parent_variation_store_id_fkey foreign key (parent_variation_store_id) references _saas_stores_for_ordering(id);
+-- CREATE UNIQUE INDEX _saas_stores_for_ordering_var_uq ON _saas_stores_for_ordering (parent_variation_store_id, variation_name) WHERE variation_name IS NOT NULL and variation_name!='';
+-- alter table _saas_stores_for_ordering add column site_url varchar(256);
+-- update _saas_stores_for_ordering set site_url=null;
+-- alter table _saas_stores_for_ordering alter column site_url set not null;
+-- CREATE UNIQUE INDEX _saas_stores_for_ordering_site_url_uq ON _saas_stores_for_ordering (site_url) WHERE site_url !='' and is_deleted = false;
+--
+-- alter table stores_attributes add column need_to_syncwoo    boolean;
+-- alter table stores_attributes add column date_time_syncwoo  timestamp with time zone;
+-- alter table stores_terms add column need_to_syncwoo    boolean;
+-- alter table stores_terms add column date_time_syncwoo  timestamp with time zone;
+--
+-- alter table product_attribute_terms add column date_time_changed timestamp with time zone;
+--
+-- alter table stores_productcategories add column need_to_syncwoo    boolean;
+-- alter table stores_productcategories add column date_time_syncwoo  timestamp with time zone;
+--
+-- alter table product_attributes add column description varchar(250);
+--
+-- alter table product_prices_history alter column price_value drop not null;
+--   alter table users alter column plan_id drop not null;
+--
+-- insert into _saas_messages (key, tr_ru, tr_en) values (
+--                                                         'email_template',
+--                                                         '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+-- <html xmlns="http://www.w3.org/1999/xhtml">
+-- <head>
+-- 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+-- 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-- 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+-- 	<title></title>
+-- 	<style type="text/css">
+-- 		body {
+-- 			margin: 0;
+-- 			background-color: white;
+-- 		}
+-- 		table {
+-- 			border-spacing: 0;
+-- 		}
+-- 		td {
+-- 			padding: 0;
+-- 		}
+-- 		img {
+-- 			border: 0;
+-- 		}
+--
+-- 	</style>
+-- </head>
+-- <body>
+-- 	<center class="wrapper">
+-- 		<table class="main" width="100%">
+-- 		<tr>
+-- 			<td style="text-align: center;">
+-- 				<h2>
+-- 					{HEADER}
+-- 				</h2>
+-- 			</td>
+-- 		</tr>
+-- 		<tr>
+-- 			<td style="text-align: center;">
+-- 				{CONTENT}
+-- 			</td>
+-- 		</tr>
+-- 		</table>
+-- 	</center>
+-- </body>
+-- </html>',
+--                                                         '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+-- <html xmlns="http://www.w3.org/1999/xhtml">
+-- <head>
+-- 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+-- 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+-- 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+-- 	<title></title>
+-- 	<style type="text/css">
+-- 		body {
+-- 			margin: 0;
+-- 			background-color: white;
+-- 		}
+-- 		table {
+-- 			border-spacing: 0;
+-- 		}
+-- 		td {
+-- 			padding: 0;
+-- 		}
+-- 		img {
+-- 			border: 0;
+-- 		}
+--
+-- 	</style>
+-- </head>
+-- <body>
+-- 	<center class="wrapper">
+-- 		<table class="main" width="100%">
+-- 		<tr>
+-- 			<td style="text-align: center;">
+-- 				<h2>
+-- 					{HEADER}
+-- 				</h2>
+-- 			</td>
+-- 		</tr>
+-- 		<tr>
+-- 			<td style="text-align: center;">
+-- 				{CONTENT}
+-- 			</td>
+-- 		</tr>
+-- 		</table>
+-- 	</center>
+-- </body>
+-- </html>');
+--
+-- insert into _dictionary (key, tr_ru, tr_en) values
+-- ('default_store_name',              'Мой интернет-магазин',          'My online store');
+--
+-- create table stores_sync_statuses(
+--              id bigserial primary key not null,
+--              master_id  bigint not null,
+--              store_id  bigint not null,
+--              date_time_start timestamp with time zone,
+--              date_time_end timestamp with time zone,
+--              job varchar(10) not null,
+--              foreign key (master_id) references users(id),
+--              foreign key (store_id) references stores(id)
+--                                  );
+-- alter table stores_sync_statuses add constraint stores_sync_statuses_uq unique (store_id, job);
+--
+-- alter table usergroup drop column is_archive;
+-- alter table usergroup drop column company_id;
+-- delete from usergroup_permissions where permission_id in (33,30);
+-- delete from permissions where id in (33,30);
+-- drop table products_history; -- now product_history used instead
+-- alter table user_settings add column sidenav_drawer varchar(5);-- "open" or "close"
+-- update _dictionary set tr_en = 'Purchase order' where key='ordersup';
+--
+-- create table _saas_payment_select(
+--                                      id                    serial primary key not null,
+--                                      name                  varchar(100) not null,  -- work (technical) name. Not used in user's interface
+--                                      img_address           varchar(1000) not null, -- like 'https://mysite.com/assets/img/stripe.jpg'
+--                                      output_order          int not null,           -- 1,2,30,100,...
+--                                      link                  varchar(2048),          -- link to payment
+--                                      is_active             boolean not null,       -- show or hide
+--                                      description_msg_key   varchar(200),           -- key of translation in a table _saas_payment_select
+--                                      foreign key (description_msg_key) references _saas_messages(key)
+-- );
+--
+-- alter table settings_general add column billing_master_id bigint;
+-- alter table settings_general add column billing_shipment_creator_id bigint;
+-- alter table settings_general add column billing_shipment_company_id bigint;
+-- alter table settings_general add column billing_shipment_department_id bigint;
+-- alter table settings_general add column billing_cagents_category_id bigint;
+-- alter table settings_general add column billing_companies_product_id bigint;
+-- alter table settings_general add column billing_departments_product_id bigint;
+-- alter table settings_general add column billing_users_product_id bigint;
+-- alter table settings_general add column billing_products_product_id bigint;
+-- alter table settings_general add column billing_counterparties_product_id bigint;
+-- alter table settings_general add column billing_megabytes_product_id bigint;
+-- alter table settings_general add column billing_stores_product_id bigint;
+-- alter table settings_general add column billing_stores_woo_product_id bigint;
+-- alter table settings_general add column billing_plan_product_id bigint;
+--
+-- alter table settings_general add constraint billing_master_id_fkey foreign key (billing_master_id) references users(id);
+-- alter table settings_general add constraint billing_shipment_creator_id_fkey foreign key (billing_shipment_creator_id) references users(id);
+-- alter table settings_general add constraint billing_shipment_company_id_fkey foreign key (billing_shipment_company_id) references companies(id);
+-- alter table settings_general add constraint billing_shipment_department_id_fkey foreign key (billing_shipment_department_id) references departments(id);
+-- alter table settings_general add constraint billing_cagents_category_id_fkey foreign key (billing_cagents_category_id) references cagent_categories(id);
+-- alter table settings_general add constraint billing_companies_product_id_fkey foreign key (billing_companies_product_id) references products(id);
+-- alter table settings_general add constraint billing_departments_product_id_fkey foreign key (billing_departments_product_id) references products(id);
+-- alter table settings_general add constraint billing_users_product_id_fkey foreign key (billing_users_product_id) references products(id);
+-- alter table settings_general add constraint billing_products_product_id_fkey foreign key (billing_products_product_id) references products(id);
+-- alter table settings_general add constraint billing_counterparties_product_id_fkey foreign key (billing_counterparties_product_id) references products(id);
+-- alter table settings_general add constraint billing_megabytes_product_id_fkey foreign key (billing_megabytes_product_id) references products(id);
+-- alter table settings_general add constraint billing_stores_product_id_fkey foreign key (billing_stores_product_id) references products(id);
+-- alter table settings_general add constraint billing_stores_woo_product_id_fkey foreign key (billing_stores_woo_product_id) references products(id);
+-- alter table settings_general add constraint billing_plan_product_id_fkey foreign key (billing_plan_product_id) references products(id);
+--
+--
+-- alter table cagents add column user_id bigint;
+-- CREATE UNIQUE INDEX cagents_user_id_uq ON cagents (user_id) WHERE user_id IS NOT NULL;
+-- alter table cagents add constraint user_id_fkey foreign key (user_id) references users(id);
+-- --DELETE FROM cagent_cagentcategories WHERE ctid NOT IN (SELECT max(ctid) FROM cagent_cagentcategories GROUP BY category_id, cagent_id); run if the next record wont be executed
+-- alter table cagent_cagentcategories add constraint cagent_cagentcategories_uq unique (category_id, cagent_id);
+--
+--
+-- alter table shipment add column is_billing boolean;
+-- drop table _saas_billing_history;
+--
+-- alter table plans drop column n_products;
+-- alter table plans drop column n_counterparties;
+-- alter table plans drop column n_megabytes;
+--
+-- alter table plans add column n_products       numeric(12,2);
+-- alter table plans add column n_counterparties numeric(12,2);
+-- alter table plans add column n_megabytes         numeric(12,2);
+--
+-- update plans set n_products=0.1, n_counterparties=0.1, n_megabytes=0.05 where is_nolimits=false and is_free=true;
+-- update plans set n_products=0.00, n_counterparties=0.00, n_megabytes=0.00 where is_nolimits=true;
+-- update plans set n_products=1, n_counterparties=1, n_megabytes=1 where is_nolimits=false and is_free=false;
+--
+-- alter table users add column repair_pass_code_sent timestamp with time zone;
+--
+-- update version set value = '1.3.0', date = '03-07-2023';
+--
+-- ------------------------------------------------  end of 1.3.0  ------------------------------------------------------
+-- ------------------------------------------------  start of 1.4.0  -----------------------------------------------------
+-- insert into sprav_sys_languages (id, name, suffix, default_locale_id) values (3,'Српски','sr', 10);
+--
+-- alter table documents add column doc_name_sr varchar (40);
+-- alter table sprav_sys_countries add column name_sr varchar (128);
+-- alter table sprav_sys_timezones add column name_sr varchar (128);
+-- update sprav_sys_timezones set name_sr=name_en;
+-- alter table _dictionary add column tr_sr text;
+-- alter table _saas_agreements add column name_sr varchar (300);
+-- alter table _saas_agreements add column text_sr varchar(2000000);
+-- update _saas_agreements set name_sr=name_en, text_sr=text_en;
+-- alter table _saas_messages add column tr_sr text;
+-- update _saas_messages set tr_sr=tr_en;
+-- alter table sprav_sys_writeoff add column name_sr varchar (128);
+-- alter table sprav_sys_writeoff add column description_sr varchar (256);
+-- alter table permissions add column name_sr  varchar(250);
+-- alter table plans add column name_sr  varchar(200);
+-- alter table sprav_sys_ppr add column name_sr  varchar(128);
+--
+-- -- Countries --
+-- update sprav_sys_countries set name_sr='Русија' where id=1;
+-- update sprav_sys_countries set name_sr='Белорусија' where id=2;
+-- update sprav_sys_countries set name_sr='Украјина' where id=3;
+-- update sprav_sys_countries set name_sr='Казахстан' where id=4;
+-- update sprav_sys_countries set name_sr='Јерменија' where id=5;
+-- update sprav_sys_countries set name_sr='Грузија' where id=6;
+-- update sprav_sys_countries set name_sr='Молдавија' where id=7;
+-- update sprav_sys_countries set name_sr='Узбекистан' where id=8;
+-- update sprav_sys_countries set name_sr='Таџикистан' where id=9;
+-- update sprav_sys_countries set name_sr='Естонија ' where id=10;
+-- update sprav_sys_countries set name_sr='Летонија' where id=11;
+-- update sprav_sys_countries set name_sr='Литванија' where id=12;
+-- update sprav_sys_countries set name_sr='Киргистан' where id=13;
+-- update sprav_sys_countries set name_sr='Туркменистан' where id=14;
+-- update sprav_sys_countries set name_sr='Азербејџан' where id=15;
+-- update sprav_sys_countries set name_sr='Мађарска' where id=16;
+-- update sprav_sys_countries set name_sr='Црна Гора' where id=17;
+-- update sprav_sys_countries set name_sr='Ирак' where id=18;
+-- update sprav_sys_countries set name_sr='Мексико' where id=19;
+-- update sprav_sys_countries set name_sr='Белиз' where id=20;
+-- update sprav_sys_countries set name_sr='Аруба' where id=21;
+-- update sprav_sys_countries set name_sr='Микронезија' where id=22;
+-- update sprav_sys_countries set name_sr='Бахами' where id=23;
+-- update sprav_sys_countries set name_sr='Коморе' where id=24;
+-- update sprav_sys_countries set name_sr='Маурицијус' where id=25;
+-- update sprav_sys_countries set name_sr='Мјанмар' where id=26;
+-- update sprav_sys_countries set name_sr='Немачка' where id=27;
+-- update sprav_sys_countries set name_sr='Науру' where id=28;
+-- update sprav_sys_countries set name_sr='Непал' where id=29;
+-- update sprav_sys_countries set name_sr='Хрватска' where id=30;
+-- update sprav_sys_countries set name_sr='Бахреин' where id=31;
+-- update sprav_sys_countries set name_sr='Тајланд' where id=32;
+-- update sprav_sys_countries set name_sr='Сомалија' where id=33;
+-- update sprav_sys_countries set name_sr='Палау' where id=34;
+-- update sprav_sys_countries set name_sr='Токелау' where id=35;
+-- update sprav_sys_countries set name_sr='Француска' where id=36;
+-- update sprav_sys_countries set name_sr='Финска ' where id=37;
+-- update sprav_sys_countries set name_sr='Израел' where id=38;
+-- update sprav_sys_countries set name_sr='Шри Ланка' where id=39;
+-- update sprav_sys_countries set name_sr='Самоа' where id=40;
+-- update sprav_sys_countries set name_sr='Сенегал' where id=41;
+-- update sprav_sys_countries set name_sr='Свазиленд' where id=42;
+-- update sprav_sys_countries set name_sr='Бермуда' where id=43;
+-- update sprav_sys_countries set name_sr='Словенија' where id=44;
+-- update sprav_sys_countries set name_sr='Тајван' where id=45;
+-- update sprav_sys_countries set name_sr='Чиле' where id=46;
+-- update sprav_sys_countries set name_sr='САД' where id=47;
+-- update sprav_sys_countries set name_sr='Фији' where id=48;
+-- update sprav_sys_countries set name_sr='Тувалу' where id=49;
+-- update sprav_sys_countries set name_sr='Норвешка' where id=50;
+-- update sprav_sys_countries set name_sr='Руанда' where id=51;
+-- update sprav_sys_countries set name_sr='Чад' where id=52;
+-- update sprav_sys_countries set name_sr='Острво Ман' where id=53;
+-- update sprav_sys_countries set name_sr='Оман' where id=54;
+-- update sprav_sys_countries set name_sr='Панама' where id=55;
+-- update sprav_sys_countries set name_sr='Перу' where id=56;
+-- update sprav_sys_countries set name_sr='Реинион' where id=57;
+-- update sprav_sys_countries set name_sr='Еквадор' where id=58;
+-- update sprav_sys_countries set name_sr='Исланд' where id=59;
+-- update sprav_sys_countries set name_sr='Малдиви' where id=60;
+-- update sprav_sys_countries set name_sr='Маршалска острва' where id=61;
+-- update sprav_sys_countries set name_sr='Венецуела' where id=62;
+-- update sprav_sys_countries set name_sr='Уједињени арапски Емирати' where id=63;
+-- update sprav_sys_countries set name_sr='Сан-Марино' where id=64;
+-- update sprav_sys_countries set name_sr='Гана' where id=65;
+-- update sprav_sys_countries set name_sr='Гамбија' where id=66;
+-- update sprav_sys_countries set name_sr='Белгија' where id=67;
+-- update sprav_sys_countries set name_sr='Бенин' where id=68;
+-- update sprav_sys_countries set name_sr='Џибути' where id=69;
+-- update sprav_sys_countries set name_sr='Кипар' where id=70;
+-- update sprav_sys_countries set name_sr='Јордан' where id=71;
+-- update sprav_sys_countries set name_sr='Грчка' where id=72;
+-- update sprav_sys_countries set name_sr='Либерија' where id=73;
+-- update sprav_sys_countries set name_sr='Словачка' where id=74;
+-- update sprav_sys_countries set name_sr='Костарика' where id=75;
+-- update sprav_sys_countries set name_sr='Румунија' where id=76;
+-- update sprav_sys_countries set name_sr='Намибија' where id=77;
+-- update sprav_sys_countries set name_sr='Лесото' where id=78;
+-- update sprav_sys_countries set name_sr='Македонија' where id=79;
+-- update sprav_sys_countries set name_sr='Хонгконг' where id=80;
+-- update sprav_sys_countries set name_sr='Либан' where id=81;
+-- update sprav_sys_countries set name_sr='Нигерија' where id=82;
+-- update sprav_sys_countries set name_sr='Танзанија' where id=83;
+-- update sprav_sys_countries set name_sr='Тринидад и Тобаго' where id=84;
+-- update sprav_sys_countries set name_sr='Куба' where id=85;
+-- update sprav_sys_countries set name_sr='Лаос' where id=86;
+-- update sprav_sys_countries set name_sr='Либија' where id=87;
+-- update sprav_sys_countries set name_sr='Турска' where id=88;
+-- update sprav_sys_countries set name_sr='Судан' where id=89;
+-- update sprav_sys_countries set name_sr='Мартиник' where id=90;
+-- update sprav_sys_countries set name_sr='Сијера Леоне' where id=91;
+-- update sprav_sys_countries set name_sr='Ел Салвадор' where id=92;
+-- update sprav_sys_countries set name_sr='Нови Зеланд' where id=93;
+-- update sprav_sys_countries set name_sr='Сирија' where id=94;
+-- update sprav_sys_countries set name_sr='Италија' where id=95;
+-- update sprav_sys_countries set name_sr='Кина' where id=96;
+-- update sprav_sys_countries set name_sr='Замбија' where id=97;
+-- update sprav_sys_countries set name_sr='Гвинеја' where id=98;
+-- update sprav_sys_countries set name_sr='Мауританија' where id=99;
+-- update sprav_sys_countries set name_sr='Авганистан' where id=100;
+-- update sprav_sys_countries set name_sr='Швајцарска' where id=101;
+-- update sprav_sys_countries set name_sr='Нова Каледонија' where id=102;
+-- update sprav_sys_countries set name_sr='Курасао' where id=103;
+-- update sprav_sys_countries set name_sr='Фарска Острва' where id=104;
+-- update sprav_sys_countries set name_sr='Боливија' where id=105;
+-- update sprav_sys_countries set name_sr='Папуа Нова Гвинеја' where id=106;
+-- update sprav_sys_countries set name_sr='Соломонска острва' where id=107;
+-- update sprav_sys_countries set name_sr='Велика Британија' where id=108;
+-- update sprav_sys_countries set name_sr='Камбоџа' where id=109;
+-- update sprav_sys_countries set name_sr='Бонаире, Синт Еустатије и Саба' where id=110;
+-- update sprav_sys_countries set name_sr='Португал' where id=111;
+-- update sprav_sys_countries set name_sr='Света Луција' where id=112;
+-- update sprav_sys_countries set name_sr='Босна и Херцеговина' where id=113;
+-- update sprav_sys_countries set name_sr='Макао' where id=114;
+-- update sprav_sys_countries set name_sr='Индија' where id=115;
+-- update sprav_sys_countries set name_sr='Кенија' where id=116;
+-- update sprav_sys_countries set name_sr='Малави' where id=117;
+-- update sprav_sys_countries set name_sr='Гвајана' where id=118;
+-- update sprav_sys_countries set name_sr='Јемен' where id=119;
+-- update sprav_sys_countries set name_sr='Катар' where id=120;
+-- update sprav_sys_countries set name_sr='Малезија' where id=121;
+-- update sprav_sys_countries set name_sr='Питкерн' where id=122;
+-- update sprav_sys_countries set name_sr='Сент Пјер и Микелон' where id=123;
+-- update sprav_sys_countries set name_sr='Шведска' where id=124;
+-- update sprav_sys_countries set name_sr='Америчка Самоа' where id=125;
+-- update sprav_sys_countries set name_sr='Антигва и Барбуда' where id=126;
+-- update sprav_sys_countries set name_sr='Аргентина' where id=127;
+-- update sprav_sys_countries set name_sr='Ирска' where id=128;
+-- update sprav_sys_countries set name_sr='Мали' where id=129;
+-- update sprav_sys_countries set name_sr='Конго' where id=130;
+-- update sprav_sys_countries set name_sr='Ватикан' where id=131;
+-- update sprav_sys_countries set name_sr='Уганда' where id=132;
+-- update sprav_sys_countries set name_sr='Иран' where id=133;
+-- update sprav_sys_countries set name_sr='Сејшели' where id=134;
+-- update sprav_sys_countries set name_sr='Мароко' where id=135;
+-- update sprav_sys_countries set name_sr='Зеленортска Острва' where id=136;
+-- update sprav_sys_countries set name_sr='Доминика' where id=137;
+-- update sprav_sys_countries set name_sr='Кајманска острва' where id=138;
+-- update sprav_sys_countries set name_sr='Зимбабве' where id=139;
+-- update sprav_sys_countries set name_sr='Саудијска Арабија' where id=140;
+-- update sprav_sys_countries set name_sr='Гренада' where id=141;
+-- update sprav_sys_countries set name_sr='Монтсеррат' where id=142;
+-- update sprav_sys_countries set name_sr='Малта' where id=143;
+-- update sprav_sys_countries set name_sr='Уругвај' where id=144;
+-- update sprav_sys_countries set name_sr='Тунис' where id=145;
+-- update sprav_sys_countries set name_sr='Канада' where id=146;
+-- update sprav_sys_countries set name_sr='Источни Тимор' where id=147;
+-- update sprav_sys_countries set name_sr='Ангвила' where id=148;
+-- update sprav_sys_countries set name_sr='Тонга' where id=149;
+-- update sprav_sys_countries set name_sr='Индонезија' where id=150;
+-- update sprav_sys_countries set name_sr='Барбадос' where id=151;
+-- update sprav_sys_countries set name_sr='Буркина Фасо' where id=152;
+-- update sprav_sys_countries set name_sr='Колумбија' where id=153;
+-- update sprav_sys_countries set name_sr='Гватемала' where id=154;
+-- update sprav_sys_countries set name_sr='Пакистан' where id=155;
+-- update sprav_sys_countries set name_sr='Обала Слоноваче' where id=156;
+-- update sprav_sys_countries set name_sr='Јапан' where id=157;
+-- update sprav_sys_countries set name_sr='Гибралтар' where id=158;
+-- update sprav_sys_countries set name_sr='Западна Сахара' where id=159;
+-- update sprav_sys_countries set name_sr='Луксембург' where id=160;
+-- update sprav_sys_countries set name_sr='Филипини' where id=161;
+-- update sprav_sys_countries set name_sr='Бразил' where id=162;
+-- update sprav_sys_countries set name_sr='Шпанија' where id=163;
+-- update sprav_sys_countries set name_sr='Валис и Футуна' where id=164;
+-- update sprav_sys_countries set name_sr='Аустрија' where id=165;
+-- update sprav_sys_countries set name_sr='Лихтенштајн' where id=166;
+-- update sprav_sys_countries set name_sr='Бутан' where id=167;
+-- update sprav_sys_countries set name_sr='Данска' where id=168;
+-- update sprav_sys_countries set name_sr='Монголија' where id=169;
+-- update sprav_sys_countries set name_sr='Монако' where id=170;
+-- update sprav_sys_countries set name_sr='Хаити' where id=171;
+-- update sprav_sys_countries set name_sr='Мадагаскар' where id=172;
+-- update sprav_sys_countries set name_sr='Екваторијална Гвинеја' where id=173;
+-- update sprav_sys_countries set name_sr='Камерун' where id=174;
+-- update sprav_sys_countries set name_sr='Брунеј' where id=175;
+-- update sprav_sys_countries set name_sr='Нијуе' where id=176;
+-- update sprav_sys_countries set name_sr='Того' where id=177;
+-- update sprav_sys_countries set name_sr='Гуам' where id=178;
+-- update sprav_sys_countries set name_sr='Ангола' where id=179;
+-- update sprav_sys_countries set name_sr='Сингапур' where id=180;
+-- update sprav_sys_countries set name_sr='Јамајка' where id=181;
+-- update sprav_sys_countries set name_sr='Нигер' where id=182;
+-- update sprav_sys_countries set name_sr='Никарагва' where id=183;
+-- update sprav_sys_countries set name_sr='Етиопија' where id=184;
+-- update sprav_sys_countries set name_sr='Србија' where id=185;
+-- update sprav_sys_countries set name_sr='Габон' where id=186;
+-- update sprav_sys_countries set name_sr='Гвинеја Бисао' where id=187;
+-- update sprav_sys_countries set name_sr='Бангладеш' where id=188;
+-- update sprav_sys_countries set name_sr='Боцвана' where id=189;
+-- update sprav_sys_countries set name_sr='Албанија' where id=190;
+-- update sprav_sys_countries set name_sr='Гренланд' where id=191;
+-- update sprav_sys_countries set name_sr='Јужни Судан' where id=192;
+-- update sprav_sys_countries set name_sr='Северна Кореја' where id=193;
+-- update sprav_sys_countries set name_sr='Синт Маартен' where id=194;
+-- update sprav_sys_countries set name_sr='Мозамбик' where id=195;
+-- update sprav_sys_countries set name_sr='Бугарска' where id=196;
+-- update sprav_sys_countries set name_sr='Француска Гвајана' where id=197;
+-- update sprav_sys_countries set name_sr='Аустралија' where id=198;
+-- update sprav_sys_countries set name_sr='Андорра' where id=199;
+-- update sprav_sys_countries set name_sr='Кирибати' where id=200;
+-- update sprav_sys_countries set name_sr='Порторико' where id=201;
+-- update sprav_sys_countries set name_sr='Еритреја' where id=202;
+-- update sprav_sys_countries set name_sr='Француска Полинезија' where id=203;
+-- update sprav_sys_countries set name_sr='Острва Туркс и Каикос' where id=204;
+-- update sprav_sys_countries set name_sr='Парагвај' where id=205;
+-- update sprav_sys_countries set name_sr='Пољска' where id=206;
+-- update sprav_sys_countries set name_sr='Свети Винцент и Гренадини' where id=207;
+-- update sprav_sys_countries set name_sr='Палестина' where id=208;
+-- update sprav_sys_countries set name_sr='Свалбард и Јан Мајен' where id=209;
+-- update sprav_sys_countries set name_sr='Алжир' where id=210;
+-- update sprav_sys_countries set name_sr='острво Норфолк' where id=211;
+-- update sprav_sys_countries set name_sr='Америчка Девичанска острва' where id=212;
+-- update sprav_sys_countries set name_sr='Хондурас' where id=213;
+-- update sprav_sys_countries set name_sr='Доминиканска република' where id=214;
+-- update sprav_sys_countries set name_sr='Гваделуп' where id=215;
+-- update sprav_sys_countries set name_sr='Кувајт' where id=216;
+-- update sprav_sys_countries set name_sr='Централна Афричка Република' where id=217;
+-- update sprav_sys_countries set name_sr='Северна Маријанска острва' where id=218;
+-- update sprav_sys_countries set name_sr='Чешка' where id=219;
+-- update sprav_sys_countries set name_sr='Низоземска' where id=220;
+-- update sprav_sys_countries set name_sr='Британска Девичанска острва' where id=221;
+-- update sprav_sys_countries set name_sr='Сан Томе и Принсипи' where id=222;
+-- update sprav_sys_countries set name_sr='Бурунди' where id=223;
+-- update sprav_sys_countries set name_sr='Суринам' where id=224;
+-- update sprav_sys_countries set name_sr='Кукова острва' where id=225;
+-- update sprav_sys_countries set name_sr='Света Јелена' where id=226;
+-- update sprav_sys_countries set name_sr='Сент Китс и Невис' where id=227;
+-- update sprav_sys_countries set name_sr='Фокландска острва' where id=228;
+-- update sprav_sys_countries set name_sr='Вануату' where id=229;
+-- update sprav_sys_countries set name_sr='Јужна Кореја' where id=230;
+-- update sprav_sys_countries set name_sr='Јужна Африка' where id=231;
+-- update sprav_sys_countries set name_sr='Вијетнам' where id=232;
+-- update sprav_sys_countries set name_sr='Конго, Демократска Република' where id=233;
+-- update sprav_sys_countries set name_sr='Египат' where id=234;
+--
+-- -- Documents --
+-- update documents set doc_name_sr='Отпрема' where id=21;
+-- update documents set doc_name_sr='Међусобна плаћања' where id=47;
+-- update documents set doc_name_sr='Депозити' where id=46;
+-- update documents set doc_name_sr='Поврати од купаца' where id=28;
+-- update documents set doc_name_sr='Враћа добављачима' where id=29;
+-- update documents set doc_name_sr='Долазне уплате' where id=33;
+-- update documents set doc_name_sr='Повлачења' where id=45;
+-- update documents set doc_name_sr='Новац тече' where id=48;
+-- update documents set doc_name_sr='Jединице' where id=11;
+-- update documents set doc_name_sr='Поруџбине купаца' where id=23;
+-- update documents set doc_name_sr='Инвентар' where id=27;
+-- update documents set doc_name_sr='Одлазне уплате' where id=34;
+-- update documents set doc_name_sr='Смене благајника' where id=43;
+-- update documents set doc_name_sr='Чекови' where id=44;
+-- update documents set doc_name_sr='Касе' where id=24;
+-- update documents set doc_name_sr='Касе предузећа' where id=42;
+-- update documents set doc_name_sr='Уговорне стране' where id=12;
+-- update documents set doc_name_sr='Корекције' where id=41;
+-- update documents set doc_name_sr='Порези' where id=50;
+-- update documents set doc_name_sr='Стављања' where id=16;
+-- update documents set doc_name_sr='Одељења' where id=4;
+-- update documents set doc_name_sr='Налози добављачу' where id=39;
+-- update documents set doc_name_sr='Групе производа' where id=10;
+-- update documents set doc_name_sr='Премјештања' where id=30;
+-- update documents set doc_name_sr='Корисници' where id=5;
+-- update documents set doc_name_sr='Предузеће' where id=3;
+-- update documents set doc_name_sr='Профит и губитак' where id=49;
+-- update documents set doc_name_sr='Прихватања' where id=15;
+-- update documents set doc_name_sr='Потврде о пријему' where id=35;
+-- update documents set doc_name_sr='Потврде о исплати' where id=36;
+-- update documents set doc_name_sr='Малопродаја' where id=25;
+-- update documents set doc_name_sr='Улоге корисника' where id=6;
+-- update documents set doc_name_sr='Отписи' where id=17;
+-- update documents set doc_name_sr='Почетна страница' where id=26;
+-- update documents set doc_name_sr='Статуси докумената' where id=22;
+-- update documents set doc_name_sr='Расходи' where id=40;
+-- update documents set doc_name_sr='Издати ПДВ фактуре' where id=37;
+-- update documents set doc_name_sr='Примљене ПДВ фактуре' where id=38;
+-- update documents set doc_name_sr='Рачуни купцима' where id=31;
+-- update documents set doc_name_sr='Рачуни добављача' where id=32;
+-- update documents set doc_name_sr='Типови цене' where id=9;
+-- update documents set doc_name_sr='Преостали производи' where id=18;
+-- update documents set doc_name_sr='Производи и услуге' where id=14;
+-- update documents set doc_name_sr='Фајлови' where id=13;
+-- update documents set doc_name_sr='Цене' where id=19;
+-- update documents set doc_name_sr='Банковне рачуни' where id=52;
+-- update documents set doc_name_sr='Валуте' where id=51;
+-- update documents set doc_name_sr='Атрибути производа' where id=53;
+-- update documents set doc_name_sr='Интернет продавнице' where id=54;
+-- update documents set doc_name_sr='Претплата' where id=55;
+--
+-- -- Dictionary --
+-- update _dictionary set tr_sr='т. р.' where key='acc_short';
+-- update _dictionary set tr_sr='Прихватање' where key='acceptance';
+-- update _dictionary set tr_sr='Рачуноводствене услуге' where key='accounting_srvcs';
+-- update _dictionary set tr_sr='Sve' where key='all';
+-- update _dictionary set tr_sr='Основна цена' where key='basic_price';
+-- update _dictionary set tr_sr='Црн' where key='black';
+-- update _dictionary set tr_sr='Каса предузећа' where key='boxoffice';
+-- update _dictionary set tr_sr='Поруџбина купаца' where key='c_order';
+-- update _dictionary set tr_sr='Рачуновођа' where key='cagent_accntnts';
+-- update _dictionary set tr_sr='Банка' where key='cagent_bank';
+-- update _dictionary set tr_sr='Превозник' where key='cagent_carrier';
+-- update _dictionary set tr_sr='Купац' where key='cagent_customer';
+-- update _dictionary set tr_sr='Директор (ви)' where key='cagent_director_y';
+-- update _dictionary set tr_sr='Станодавац' where key='cagent_landlord';
+-- update _dictionary set tr_sr='Добављач' where key='cagent_supplier';
+-- update _dictionary set tr_sr='Пореска служба' where key='cagent_taxoffce';
+-- update _dictionary set tr_sr='Каса предузећа' where key='cash_room';
+-- update _dictionary set tr_sr='Рачуноводствене услуге' where key='catg_accounting';
+-- update _dictionary set tr_sr='Банке' where key='catg_banks';
+-- update _dictionary set tr_sr='Купаца' where key='catg_customers';
+-- update _dictionary set tr_sr='Запослени' where key='catg_employees';
+-- update _dictionary set tr_sr='Лидови' where key='catg_leads';
+-- update _dictionary set tr_sr='Изнајмљивање' where key='catg_rent';
+-- update _dictionary set tr_sr='Добављачи' where key='catg_suppliers';
+-- update _dictionary set tr_sr='Пореске службе' where key='catg_tax_srvcs';
+-- update _dictionary set tr_sr='Транспорт' where key='catg_transport';
+-- update _dictionary set tr_sr='Боја' where key='color';
+-- update _dictionary set tr_sr='Предузећа' where key='company';
+-- update _dictionary set tr_sr='Завршено' where key='completed';
+-- update _dictionary set tr_sr='Е-маил за потврду' where key='confirmation_email';
+-- update _dictionary set tr_sr='Исправка' where key='correction';
+-- update _dictionary set tr_sr='Уговорна страна' where key='cparty';
+-- update _dictionary set tr_sr='Аустралијски долар' where key='curr_australian_dollar';
+-- update _dictionary set tr_sr='Канадски долар' where key='curr_canadian_dollar';
+-- update _dictionary set tr_sr='Евро' where key='curr_euro';
+-- update _dictionary set tr_sr='Новозеландски долар' where key='curr_new_zealand_dollar';
+-- update _dictionary set tr_sr='Британска фунта' where key='curr_pound_sterling';
+-- update _dictionary set tr_sr='Руска рубља' where key='curr_russian_rouble';
+-- update _dictionary set tr_sr='Амерички долар' where key='curr_us_dollar';
+-- update _dictionary set tr_sr='Поруџбина купаца' where key='customersorders';
+-- update _dictionary set tr_sr='Моја онлајн продавница' where key='default_store_name';
+-- update _dictionary set tr_sr='Одељење' where key='department';
+-- update _dictionary set tr_sr='Депозити' where key='depositing';
+-- update _dictionary set tr_sr='Банкарске услуге' where key='exp_banking_srvcs';
+-- update _dictionary set tr_sr='Плаћање производа и услуга' where key='exp_pay_goods_srvcs';
+-- update _dictionary set tr_sr='Трансфер унутар предузећа' where key='exp_pay_wh_company';
+-- update _dictionary set tr_sr='Изнајмљивање' where key='exp_rent';
+-- update _dictionary set tr_sr='Поврати од купаца' where key='exp_return';
+-- update _dictionary set tr_sr='Плата' where key='exp_salary';
+-- update _dictionary set tr_sr='Порез на доходак' where key='exp_taxes';
+-- update _dictionary set tr_sr='Трошкови' where key='expenditure';
+-- update _dictionary set tr_sr='Потрошња' where key='expense';
+-- update _dictionary set tr_sr='Документи' where key='f_ctg_docs';
+-- update _dictionary set tr_sr='Производи' where key='f_ctg_goods';
+-- update _dictionary set tr_sr='Слике' where key='f_ctg_images';
+-- update _dictionary set tr_sr='Шаблони' where key='f_ctg_templates';
+-- update _dictionary set tr_sr='са печатом и потписима' where key='f_with_stamp_sign';
+-- update _dictionary set tr_sr='Фајлови' where key='file';
+-- update _dictionary set tr_sr='Приход' where key='income';
+-- update _dictionary set tr_sr='Инвентар' where key='inventory';
+-- update _dictionary set tr_sr='Рачун добављача' where key='invoicein';
+-- update _dictionary set tr_sr='Рачун купца' where key='invoiceout';
+-- update _dictionary set tr_sr='Каса' where key='kassa';
+-- update _dictionary set tr_sr='Лого' where key='logo';
+-- update _dictionary set tr_sr='Моја банка' where key='main_bank_acc';
+-- update _dictionary set tr_sr='Каса предузећа' where key='main_cash_room';
+-- update _dictionary set tr_sr='Новац' where key='money';
+-- update _dictionary set tr_sr='Новац тече' where key='moneyflow';
+-- update _dictionary set tr_sr='Премјештање' where key='moving';
+-- update _dictionary set tr_sr='Међусобна плаћања' where key='mut_payments';
+-- update _dictionary set tr_sr='Моје предузеће' where key='my_company';
+-- update _dictionary set tr_sr='Моје одељење' where key='my_department';
+-- update _dictionary set tr_sr='Нове поруџбине' where key='new_orders';
+-- update _dictionary set tr_sr='Не' where key='no';
+-- update _dictionary set tr_sr='бр.' where key='number';
+-- update _dictionary set tr_sr='Отворите документ у новом прозору' where key='open_in_new_window';
+-- update _dictionary set tr_sr='Потврда о пријему' where key='orderin';
+-- update _dictionary set tr_sr='Потврда о исплати' where key='orderout';
+-- update _dictionary set tr_sr='Налог добављачу' where key='ordersup';
+-- update _dictionary set tr_sr='Захтев за брисање веб странице са интернет продавницом' where key='os_req_rcvd';
+-- update _dictionary set tr_sr='Закашњели рачуни' where key='overdue_invcs';
+-- update _dictionary set tr_sr='Закашњеле поруџбине' where key='overdue_ordrs';
+-- update _dictionary set tr_sr='Примање' where key='p_catg_in_srvcs';
+-- update _dictionary set tr_sr='Моји производи' where key='p_catg_myprods';
+-- update _dictionary set tr_sr='Моје услуге' where key='p_catg_srvcs';
+-- update _dictionary set tr_sr='Долазна уплата' where key='paymentin';
+-- update _dictionary set tr_sr='Одлазна уплата' where key='paymentout';
+-- update _dictionary set tr_sr='Порези на плате' where key='payroll_taxes';
+-- update _dictionary set tr_sr='стављање' where key='posting';
+-- update _dictionary set tr_sr='Цедуља са ценом' where key='pricetag';
+-- update _dictionary set tr_sr='Тип цене' where key='pricetype';
+-- update _dictionary set tr_sr='Рачуноводствене услуге' where key='prod_accounting';
+-- update _dictionary set tr_sr='Банкарске услуге' where key='prod_banking';
+-- update _dictionary set tr_sr='Обавезе пореза на доходак' where key='prod_incomtax';
+-- update _dictionary set tr_sr='Мој производ' where key='prod_my_prod';
+-- update _dictionary set tr_sr='Моја услуга' where key='prod_my_srvc';
+-- update _dictionary set tr_sr='Обавезе пореза на зараде' where key='prod_prolltax';
+-- update _dictionary set tr_sr='Услуга изнајмљивања' where key='prod_rent';
+-- update _dictionary set tr_sr='Услуге транспорта' where key='prod_transp';
+-- update _dictionary set tr_sr='Рад и услуге од запосленог' where key='prod_work_empl';
+-- update _dictionary set tr_sr='Група производа' where key='productgroup';
+-- update _dictionary set tr_sr='Профит и губитак' where key='profitloss';
+-- update _dictionary set tr_sr='Чек' where key='receipt';
+-- update _dictionary set tr_sr='Малопродаја' where key='retailsale';
+-- update _dictionary set tr_sr='Малопродаје' where key='retailsales';
+-- update _dictionary set tr_sr='Поврат од купаца' where key='return';
+-- update _dictionary set tr_sr='Враћа добављачу' where key='returnsup';
+-- update _dictionary set tr_sr='Улоге корисника' where key='role';
+-- update _dictionary set tr_sr='Администратори' where key='role_admins';
+-- update _dictionary set tr_sr='Цена са попустом' where key='sale_price';
+-- update _dictionary set tr_sr='Одабрано' where key='selected';
+-- update _dictionary set tr_sr='Смене благајника' where key='shift';
+-- update _dictionary set tr_sr='Отпрема' where key='shipment';
+-- update _dictionary set tr_sr='Потпис' where key='signature';
+-- update _dictionary set tr_sr='Адреса сајта' where key='site_address';
+-- update _dictionary set tr_sr='Подаци о сајту' where key='site_data';
+-- update _dictionary set tr_sr='Назив сајта' where key='site_name';
+-- update _dictionary set tr_sr='Величина' where key='size';
+-- update _dictionary set tr_sr='Припрема наруџбине' where key='st_assembl_ord';
+-- update _dictionary set tr_sr='Припрема' where key='st_assembly';
+-- update _dictionary set tr_sr='Чекају испоруку' where key='st_await_iss';
+-- update _dictionary set tr_sr='Отказати' where key='st_cancel';
+-- update _dictionary set tr_sr='Клијент' where key='st_cg_customer';
+-- update _dictionary set tr_sr='Лидови - Преговори' where key='st_cg_lead_negot';
+-- update _dictionary set tr_sr='Лидови - Ново' where key='st_cg_lead_new';
+-- update _dictionary set tr_sr='Лидови - Изашло је из левка' where key='st_cg_lead_out';
+-- update _dictionary set tr_sr='Лидови - Понуда је послата' where key='st_cg_lead_prop';
+-- update _dictionary set tr_sr='Нова уговорна страна' where key='st_cg_new';
+-- update _dictionary set tr_sr='Завршено' where key='st_completed';
+-- update _dictionary set tr_sr='У процесу' where key='st_in_process';
+-- update _dictionary set tr_sr='Рачун је издат' where key='st_invc_issued';
+-- update _dictionary set tr_sr='Рачун је плаћен' where key='st_invc_paid';
+-- update _dictionary set tr_sr='Издаје се купцу' where key='st_issd_buyer';
+-- update _dictionary set tr_sr='Новац прихваћен' where key='st_money_accptd';
+-- update _dictionary set tr_sr='Новац је издат' where key='st_money_issued';
+-- update _dictionary set tr_sr='Нови документ' where key='st_new';
+-- update _dictionary set tr_sr='Нова наруџба' where key='st_new_order';
+-- update _dictionary set tr_sr='Наруџба испоручена' where key='st_ord_delvrd';
+-- update _dictionary set tr_sr='Плаћање извршено' where key='st_paym_made';
+-- update _dictionary set tr_sr='Послано' where key='st_payment_send';
+-- update _dictionary set tr_sr='Штампано' where key='st_printed';
+-- update _dictionary set tr_sr='Повраћај је извршен' where key='st_ret_compl';
+-- update _dictionary set tr_sr='Производи су послате' where key='st_send';
+-- update _dictionary set tr_sr='Чекам рачун' where key='st_wait_invoice';
+-- update _dictionary set tr_sr='Чекање исплате новца' where key='st_wait_pay';
+-- update _dictionary set tr_sr='Чека се цене' where key='st_wait_prices';
+-- update _dictionary set tr_sr='Чека се долазак' where key='st_wait_receive';
+-- update _dictionary set tr_sr='Печат' where key='stamp';
+-- update _dictionary set tr_sr='Статус документа' where key='status';
+-- update _dictionary set tr_sr='Порез' where key='tax';
+-- update _dictionary set tr_sr='Без ПДВ-а' where key='tax_no_tax';
+-- update _dictionary set tr_sr='ПДВ' where key='tax_tax';
+-- update _dictionary set tr_sr='Резултат смене' where key='tr';
+-- update _dictionary set tr_sr='Центиметар' where key='um_centimeter';
+-- update _dictionary set tr_sr='цм' where key='um_centimeter_s';
+-- update _dictionary set tr_sr='Кубни метар' where key='um_cubic_meter';
+-- update _dictionary set tr_sr='м3' where key='um_cubic_meter_s';
+-- update _dictionary set tr_sr='Грам' where key='um_gramm';
+-- update _dictionary set tr_sr='г' where key='um_gramm_s';
+-- update _dictionary set tr_sr='Килограм' where key='um_kilogramm';
+-- update _dictionary set tr_sr='кг' where key='um_kilogramm_s';
+-- update _dictionary set tr_sr='Литар' where key='um_litre';
+-- update _dictionary set tr_sr='л' where key='um_litre_s';
+-- update _dictionary set tr_sr='Метар' where key='um_meter';
+-- update _dictionary set tr_sr='м' where key='um_meter_s';
+-- update _dictionary set tr_sr='Ствар' where key='um_piece';
+-- update _dictionary set tr_sr='ст' where key='um_piece_s';
+-- update _dictionary set tr_sr='Квадратни метар' where key='um_square_meter';
+-- update _dictionary set tr_sr='м2' where key='um_square_meter_s';
+-- update _dictionary set tr_sr='Тон' where key='um_ton';
+-- update _dictionary set tr_sr='Т' where key='um_ton_s';
+-- update _dictionary set tr_sr='Непребројиво' where key='um_uncountable';
+-- update _dictionary set tr_sr='Јединица' where key='unit';
+-- update _dictionary set tr_sr='Корисника' where key='user';
+-- update _dictionary set tr_sr='Примљена ПДВ фактура' where key='v_invoicein';
+-- update _dictionary set tr_sr='Издата ПДВ фактура' where key='v_invoiceout';
+-- update _dictionary set tr_sr='Примљена ПДВ фактура' where key='vatinvoicein';
+-- update _dictionary set tr_sr='Издата ПДВ фактура' where key='vatinvoiceout';
+-- update _dictionary set tr_sr='бео' where key='white';
+-- update _dictionary set tr_sr='Ко је тражио брисање' where key='who_requested_removal';
+-- update _dictionary set tr_sr='Повлачење' where key='withdrawal';
+-- update _dictionary set tr_sr='Наплата додатне услуге' where key='withdrawal_add_service';
+-- update _dictionary set tr_sr='Наплата за тарифу' where key='withdrawal_plan';
+-- update _dictionary set tr_sr='Наплата додатне опције' where key='withdrawal_plan_option';
+-- update _dictionary set tr_sr='Наплата' where key='writeoff';
+-- update _dictionary set tr_sr='Да' where key='yes';
+-- update _dictionary set tr_sr='Дужни су вам' where key='you_owed';
+-- update _dictionary set tr_sr='Ви дугујете' where key='your_debt';
+--
+-- -- Writeoffs --
+-- update sprav_sys_writeoff set name_sr='Општи текући трошкови' where id=1;
+-- update sprav_sys_writeoff set name_sr='Трошкови продаје' where id=2;
+-- update sprav_sys_writeoff set name_sr='Недостаци и губици од оштећења' where id=3;
+-- update sprav_sys_writeoff set name_sr='Општи трошкови производње' where id=4;
+-- update sprav_sys_writeoff set name_sr='Примарна производња' where id=5;
+-- update sprav_sys_writeoff set name_sr='Помоћна производња' where id=6;
+-- update sprav_sys_writeoff set name_sr='Остали расходи' where id=7;
+-- update sprav_sys_writeoff set description_sr='На пример, папир за канцеларијску опрему је издат рачуновођи' where id=1;
+-- update sprav_sys_writeoff set description_sr='На пример, издат је контејнер за паковање готових производа' where id=2;
+-- update sprav_sys_writeoff set description_sr='На пример, отписивање недостајућих материјала' where id=3;
+-- update sprav_sys_writeoff set description_sr='На пример, крпе и рукавице су пуштене чистачици која је опслуживала радионицу' where id=4;
+-- update sprav_sys_writeoff set description_sr='На пример, пуштају се сировине за производњу производа' where id=5;
+-- update sprav_sys_writeoff set description_sr='На пример, материјали се пуштају у радионицу' where id=6;
+-- update sprav_sys_writeoff set description_sr='На пример, отписивање дотрајалих алата или опреме' where id=7;
+--
+-- -- Permissions --
+-- update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=137;
+-- update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=154;
+-- update permissions set name_sr='Категорије - Креирање за сва предузећа' where id=171;
+-- update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=155;
+-- update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=172;
+-- update permissions set name_sr='Категорије - Креирање за своје предузеће' where id=138;
+-- update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=158;
+-- update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=175;
+-- update permissions set name_sr='Категорије - Избрисање за сва предузећа' where id=141;
+-- update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=142;
+-- update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=176;
+-- update permissions set name_sr='Категорије - Избрисање за своје предузеће' where id=159;
+-- update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=173;
+-- update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=139;
+-- update permissions set name_sr='Категорије - Уређивање за сва предузећа' where id=156;
+-- update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=140;
+-- update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=174;
+-- update permissions set name_sr='Категорије - Уређивање за своје предузеће' where id=157;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=630;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=614;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=423;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=618;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=403;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=622;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=634;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=626;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=395;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=399;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=443;
+-- update permissions set name_sr='Довршавање докумената које сте сами креирали' where id=463;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=623;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=460;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=473;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=627;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=495;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=631;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=515;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=526;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=537;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=396;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=392;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=484;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=400;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=548;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=420;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=440;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=611;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=615;
+-- update permissions set name_sr='Довршавање докумената за сва предузећа' where id=619;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=398;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=621;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=633;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=613;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=442;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=617;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=625;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=629;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=462;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=402;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=394;
+-- update permissions set name_sr='Довршавање докумената за своје одељење' where id=422;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=624;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=628;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=397;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=441;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=393;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=401;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=632;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=461;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=538;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=549;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=421;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=527;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=485;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=474;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=620;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=616;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=612;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=516;
+-- update permissions set name_sr='Довршавање докумената за своје предузеће' where id=496;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=407;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=298;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=363;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=255;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=331;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=347;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=379;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=427;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=192;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=202;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=578;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=570;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=218;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=311;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=282;
+-- update permissions set name_sr='Креирање докумената за свог одељења' where id=447;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=272;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=281;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=362;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=519;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=406;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=508;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=499;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=488;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=346;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=673;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=477;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=297;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=530;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=541;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=552;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=569;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=577;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=201;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=185;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=426;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=637;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=466;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=446;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=378;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=164;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=147;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=330;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=217;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=254;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=130;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=655;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=646;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=664;
+-- update permissions set name_sr='Креирање докумената за своје предузеће' where id=310;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=645;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=146;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=163;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=184;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=200;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=576;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=551;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=654;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=672;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=540;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=529;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=309;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=271;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=280;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=507;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=498;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=487;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=465;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=445;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=345;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=377;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=425;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=405;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=361;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=253;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=216;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=129;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=120;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=111;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=93;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=329;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=11;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=518;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=568;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=636;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=31;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=663;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=476;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=3;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=22;
+-- update permissions set name_sr='Креирање докумената за свих предузећа' where id=296;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=194;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=411;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=367;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=451;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=259;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=431;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=383;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=286;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=351;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=335;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=315;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=222;
+-- update permissions set name_sr='Брисање докумената које сте сами креирали' where id=206;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=299;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=467;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=542;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=553;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=478;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=448;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=94;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=656;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=112;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=121;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=428;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=674;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=408;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=380;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=364;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=500;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=4;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=131;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=509;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=520;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=531;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=489;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=32;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=12;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=23;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=348;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=665;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=638;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=332;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=647;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=283;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=273;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=312;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=256;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=219;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=203;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=186;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=165;
+-- update permissions set name_sr='Брисање докумената свих предузећа' where id=148;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=301;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=366;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=410;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=450;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=430;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=382;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=350;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=334;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=285;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=314;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=221;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=205;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=193;
+-- update permissions set name_sr='Брисање докумената свог одељења' where id=258;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=204;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=149;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=166;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=187;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=220;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=313;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=274;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=284;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=333;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=349;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=381;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=429;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=648;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=521;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=666;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=554;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=543;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=532;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=257;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=365;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=132;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=675;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=510;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=479;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=501;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=490;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=468;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=449;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=409;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=300;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=657;
+-- update permissions set name_sr='Брисање докумената своје предузеће' where id=639;
+-- update permissions set name_sr='Прикажи' where id=324;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=252;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=653;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=662;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=475;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=295;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=126;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=143;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=160;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=586;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=589;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=671;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=680;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=404;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=424;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=183;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=199;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=215;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=231;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=238;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=644;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=308;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=268;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=279;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=344;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=360;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=376;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=444;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=464;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=486;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=497;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=506;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=517;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=528;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=539;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=550;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=559;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=567;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=575;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=583;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=562;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=18;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=17;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=19;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=28;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=635;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=328;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=90;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=108;
+-- update permissions set name_sr='Прикажи на листи докумената на бочној траци' where id=117;
+-- update permissions set name_sr='Уређивање' where id=682;
+-- update permissions set name_sr='Уређивање свих предузећа' where id=8;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=267;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=323;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=391;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=214;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=419;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=459;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=439;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=359;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=375;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=230;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=294;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=198;
+-- update permissions set name_sr='Уређивање докумената које сте сами креирали' where id=343;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=482;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=124;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=135;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=152;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=190;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=169;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=471;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=642;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=34;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=678;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=115;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=97;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=305;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=493;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=557;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=546;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=535;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=504;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=651;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=513;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=524;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=227;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=264;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=277;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=291;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=320;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=340;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=356;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=372;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=388;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=16;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=660;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=416;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=436;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=669;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=456;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=27;
+-- update permissions set name_sr='Уређивање докумената свих предузећа' where id=211;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=307;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=374;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=342;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=438;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=390;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=197;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=229;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=322;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=213;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=266;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=358;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=293;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=458;
+-- update permissions set name_sr='Уређивање докумената свог одељења' where id=418;
+-- update permissions set name_sr='Уређивање своје предузеће' where id=7;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=98;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=558;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=437;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=417;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=389;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=373;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=357;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=341;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=26;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=661;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=15;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=321;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=278;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=228;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=191;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=643;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=153;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=483;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=652;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=306;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=116;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=125;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=136;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=170;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=212;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=265;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=292;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=457;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=472;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=494;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=505;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=514;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=679;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=525;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=536;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=547;
+-- update permissions set name_sr='Уређивање докумената своје предузеће' where id=670;
+-- update permissions set name_sr='Корпа - Брисање фајлови из корпе за сва предузећа' where id=179;
+-- update permissions set name_sr='Корпа - Брисање фајлови из корпе за своје предузеће' where id=180;
+-- update permissions set name_sr='Корпа - Пражњење корпе за сва предузећа' where id=181;
+-- update permissions set name_sr='Корпа - Пражњење корпе за своје предузеће' where id=182;
+-- update permissions set name_sr='Враћење фајлова из корпе за сва предузећа' where id=177;
+-- update permissions set name_sr='Враћење фајлова из корпе за своје предузеће' where id=178;
+-- update permissions set name_sr='Извештај "Cтања на залихама" - погледајте свих предузећа' where id=606;
+-- update permissions set name_sr='Извештај "Стање на залихама" - погледајте своје предузеће' where id=607;
+-- update permissions set name_sr='Извештај "Стање на залихама" - погледајте свог одељења' where id=608;
+-- update permissions set name_sr='Извештај "Приход и трошкови" погледајте свих предузећа' where id=592;
+-- update permissions set name_sr='Извештај "Приход и трошкови" погледајте своје предузеће' where id=593;
+-- update permissions set name_sr='Извештај "Новац" погледајте свих предузећа' where id=594;
+-- update permissions set name_sr='Извештај "Новац" погледајте своје предузеће' where id=595;
+-- update permissions set name_sr='Извештај "Нове наруџбе" погледајте свих предузећа' where id=600;
+-- update permissions set name_sr='Извештај "Нове наруџбе" погледајте своје предузеће' where id=601;
+-- update permissions set name_sr='Извештај "Оперативни трошкови" погледајте свих предузећа' where id=609;
+-- update permissions set name_sr='Извештај "Оперативни трошкови" погледајте своје предузеће' where id=610;
+-- update permissions set name_sr='Извештај "Закашњели рачуни" погледајте свих предузећа' where id=604;
+-- update permissions set name_sr='Извештај "Закашњели рачуни" погледајте своје предузеће' where id=605;
+-- update permissions set name_sr='Извештај "Закашњеле поруџбине" погледајте свих предузећа' where id=602;
+-- update permissions set name_sr='Извештај "Закашњеле поруџбине" погледајте своје предузеће' where id=603;
+-- update permissions set name_sr='Извештај "Обим продаје" погледајте свих предузећа' where id=325;
+-- update permissions set name_sr='Извештај "Обим продаје" погледајте своје предузеће' where id=326;
+-- update permissions set name_sr='Извештај "Обим продаје" погледајте свог одељења' where id=327;
+-- update permissions set name_sr='Извештај "Дужни су вам" погледајте свих предузећа' where id=598;
+-- update permissions set name_sr='Извештај "Дужни су вам" погледајте своје предузеће' where id=599;
+-- update permissions set name_sr='Извештај "Ви дугујете" погледајте свих предузећа' where id=596;
+-- update permissions set name_sr='Извештај "Ви дугујете" погледајте своје предузеће' where id=597;
+-- update permissions set name_sr='Постављање стања на залихама свих предузећа' where id=232;
+-- update permissions set name_sr='Постављање стања на залихама своје предузеће' where id=233;
+-- update permissions set name_sr='Постављање стања на залихама свог одељења' where id=234;
+-- update permissions set name_sr='Постављање цена за свих предузећа' where id=239;
+-- update permissions set name_sr='Постављање цена своје предузеће' where id=240;
+-- update permissions set name_sr='Поглед' where id=681;
+-- update permissions set name_sr='Погледајте све компаније' where id=6;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=415;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=226;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=196;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=455;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=574;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=582;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=210;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=435;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=339;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=263;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=387;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=371;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=355;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=290;
+-- update permissions set name_sr='Погледајте документе које сте сами креирали' where id=319;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=29;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=658;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=368;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=287;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=302;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=25;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=667;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=563;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=133;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=480;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=452;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=469;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=590;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=587;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=584;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=579;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=571;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=560;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=260;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=207;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=676;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=555;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=544;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=522;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=432;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=384;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=352;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=336;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=275;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=316;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=223;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=188;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=167;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=150;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=649;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=412;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=95;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=113;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=122;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=491;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=502;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=511;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=14;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=533;
+-- update permissions set name_sr='Погледајте документе свих предузећа' where id=640;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=386;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=354;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=209;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=338;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=225;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=195;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=318;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=289;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=581;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=566;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=454;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=414;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=434;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=565;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=370;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=573;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=304;
+-- update permissions set name_sr='Погледајте документе свог одељења' where id=262;
+-- update permissions set name_sr='Погледајте стања производа за сва предузећа' where id=235;
+-- update permissions set name_sr='Погледајте стања производа своје предузеће' where id=236;
+-- update permissions set name_sr='Погледајте стања производа свог одељења' where id=237;
+-- update permissions set name_sr='Погледајте цене за сва предузећа' where id=242;
+-- update permissions set name_sr='Погледајте своје предузеће' where id=5;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=585;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=556;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=523;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=433;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=385;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=353;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=24;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=96;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=453;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=470;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=369;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=572;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=564;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=13;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=492;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=503;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=512;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=317;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=288;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=677;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=134;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=261;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=534;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=545;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=208;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=668;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=561;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=303;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=114;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=123;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=641;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=413;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=591;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=588;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=580;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=337;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=276;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=224;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=189;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=168;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=151;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=481;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=650;
+-- update permissions set name_sr='Погледајте документе своје предузеће' where id=659;
+-- update permissions set name_sr='Погледајте цене своје предузеће' where id=243;
+--
+-- -- Plans --
+-- update plans set name_sr='Бесплатно' where id=2;
+-- update plans set name_sr='Без ограничења' where id=1;
+-- update plans set name_sr='Старт' where id=5;
+--
+-- -- Prosuct or service --
+-- update sprav_sys_ppr set name_sr='Производ' where id=1;
+-- update sprav_sys_ppr set name_sr='Услуга' where id=4;
+--
+--
+-- alter table sprav_sys_locales alter column date_format type varchar(20);
+-- insert into sprav_sys_locales (id,name,code,date_format) values(11,'Serbian Cyrillic','sr-cyrl','FMDD. FMMM. YYYY.');
+-- insert into sprav_sys_locales (id,name,code,date_format) values(12,'Montenegrin','me','DD.MM.YYYY');
+-- insert into sprav_sys_locales (id,name,code,date_format) values(13,'Bosnian','bs','DD.MM.YYYY');
+-- insert into sprav_sys_locales (id,name,code,date_format) values(14,'Croatian','hr','DD.MM.YYYY');
+--
+-- create table scdl_dep_parts(
+--                                       id                 bigserial primary key not null,
+--                                       department_id      bigint not null,-- Id of a parent department
+--                                       master_id          bigint,
+--                                       name               varchar(120), -- Term name.
+--                                       description        varchar(1000), -- HTML description of the resource.
+--                                       menu_order         int,    -- Menu order, used to custom sort the resource.
+--                                       is_active          boolean, -- Means that users can reserve the services in this part of department.
+--                                       is_deleted         boolean,
+--                                       foreign key (master_id) references users(id),
+--                                       foreign key (department_id) references departments(id)
+-- );
+--
+-- create table sprav_resources ( -- describes resources. For example, work place (table+chair), or any instrument that needs to make service
+--                                       id                          bigserial primary key not null,
+--                                       master_id                   bigint not null,
+--                                       company_id                  bigint not null,
+--                                       creator_id                  bigint,
+--                                       changer_id                  bigint,
+--                                       date_time_created timestamp with time zone not null,
+--                                       date_time_changed timestamp with time zone,
+--                                       name                        varchar (250) not null,
+--                                       description                 varchar(2000),
+--                                       is_deleted                  boolean,
+--                                       foreign key (master_id) references users(id),
+--                                       foreign key (creator_id) references users(id),
+--                                       foreign key (changer_id) references users(id),
+--                                       foreign key (company_id) references companies(id)
+-- );
+--
+-- create table scdl_resource_dep_parts_qtt(  -- describes how many resources is in each department part
+--                                       master_id          bigint,
+--                                       dep_part_id        bigint not null,
+--                                       resource_id        bigint not null,
+--                                       quantity           int not null,
+--                                       foreign key (master_id) references users(id),
+--                                       foreign key (dep_part_id) references scdl_dep_parts(id),
+--                                       foreign key (resource_id) references sprav_resources(id)
+-- );
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (56,'Ресурсы','resources',1,'sprav_resources','Ресурсы','Resources','Ресурси');
+--
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (683,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',56,10),
+-- (684,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',56,20),
+-- (685,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',56,30),
+-- (686,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',56,130),
+-- (687,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',56,140),
+-- (688,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',56,50),
+-- (689,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',56,60),
+-- (690,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',56,90),
+-- (691,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',56,100);
+--
+-- alter table scdl_resource_dep_parts_qtt add constraint scdl_resource_dep_parts_qtt_uq unique (dep_part_id, resource_id);
+--
+-- create table scdl_product_resource_qtt(  -- describes what resources need a product (service) and how many of them
+--                                           master_id          bigint,
+--                                           product_id         bigint not null,
+--                                           resource_id        bigint not null,
+--                                           quantity           int not null,
+--                                           foreign key (master_id) references users(id),
+--                                           foreign key (resource_id) references products(id),
+--                                           foreign key (resource_id) references sprav_resources(id)
+-- );
+-- alter table scdl_product_resource_qtt add constraint scdl_product_resource_qtt_uq unique (product_id, resource_id);
+--
+-- create table sprav_jobtitles ( -- describes job titles and what services they can provide
+--                                id                          bigserial primary key not null,
+--                                master_id                   bigint not null,
+--                                company_id                  bigint not null,
+--                                creator_id                  bigint,
+--                                changer_id                  bigint,
+--                                date_time_created timestamp with time zone not null,
+--                                date_time_changed timestamp with time zone,
+--                                name                        varchar (250) not null,
+--                                description                 varchar(2000),
+--                                is_deleted                  boolean,
+--                                foreign key (master_id) references users(id),
+--                                foreign key (creator_id) references users(id),
+--                                foreign key (changer_id) references users(id),
+--                                foreign key (company_id) references companies(id)
+-- );
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (57,'Должности','jobtitles',1,'sprav_jobtitles','Должности','Job titles','Звања');
+--
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (692,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',57,10),
+-- (693,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',57,20),
+-- (694,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',57,30),
+-- (695,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',57,130),
+-- (696,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',57,140),
+-- (697,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',57,50),
+-- (698,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',57,60),
+-- (699,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',57,90),
+-- (700,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',57,100);
+--
+--
+-- create table scdl_user_products(
+--   -- describes list of services that employee can provide
+--                                  master_id          bigint,
+--                                  user_id            bigint not null,
+--                                  product_id         bigint not null,
+--                                  foreign key (master_id)   references users(id),
+--                                  foreign key (user_id)     references users(id),
+--                                  foreign key (product_id)  references products(id)
+-- );
+-- alter table scdl_user_products add constraint scdl_user_products_uq unique (user_id, product_id);
+--
+-- create table scdl_dep_part_products(
+--   -- describes list of services provided in this part of the department
+--                                      master_id          bigint,
+--                                      dep_part_id        bigint not null,
+--                                      product_id         bigint not null,
+--                                      foreign key (master_id)   references users(id),
+--                                      foreign key (dep_part_id) references scdl_dep_parts(id),
+--                                      foreign key (product_id)  references products(id)
+-- );
+-- alter table scdl_dep_part_products add constraint scdl_dep_part_products_uq unique (dep_part_id, product_id);
+--
+-- alter table users add column if not exists is_employee boolean;
+-- alter table users add column is_currently_employed boolean;
+-- alter table users add column job_title_id bigint;
+-- alter table users add column counterparty_id bigint;
+-- alter table users add column incoming_service_id bigint;
+--
+-- alter table users add constraint user_cagent_uq unique (id, counterparty_id);
+-- alter table users add constraint user_job_title_id_fkey foreign key (job_title_id) references sprav_jobtitles(id);
+-- alter table users add constraint user_counterparty_id_fkey foreign key (counterparty_id) references cagents(id);
+-- alter table users add constraint user_incoming_service_id_fkey foreign key (incoming_service_id) references products(id);
+--
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('second', 'Second', 'Секунда', 'Секунда'),
+-- ('minute', 'Minute', 'Минута', 'Минут'),
+-- ('hour', 'Hour', 'Час', 'Сат'),
+-- ('day', 'One day', 'Сутки ', 'Дан'),
+-- ('second_s', 's', 'сек', 'сек'),
+-- ('minute_s', 'm', 'мин', 'мин'),
+-- ('hour_s', 'h', 'час', 'сат'),
+-- ('day_s', 'Day', 'сут', 'дан');
+--
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('session', 'Session', 'Сеанс', 'Сесија'),
+-- ('session_s', 'session', 'sеанс', 'sесија');
+--
+-- insert into sprav_sys_edizm_types (id, name, si) values (6, 'Время','сек.'); -- Added the time to units types set. Do not need a translation because using only internally
+--
+-- create table sprav_sys_scdl_reminders(
+--                                id                          int primary key not null,
+--                                type                        varchar(50) not null, -- email, sms
+--                                value_text                  varchar (250) not null, -- 1 hour before, 2 hour before, 4 hour before, 1 day before
+--                                value_seconds               int not null -- 3600, 7200, 14400, 86400
+-- );
+--
+-- insert into sprav_sys_scdl_reminders (id, type, value_text, value_seconds) values
+-- (100,  'SMS',   '5_minutes_before_start',    300),
+-- (200,  'SMS',   '10_minutes_before_start',   600),
+-- (300,  'SMS',   '15_minutes_before_start',   900),
+-- (400,  'SMS',   '30_minutes_before_start',   1800),
+-- (500,  'SMS',   '1_hour_before_start',       3600),
+-- (600,  'SMS',   '2_hour_before_start',       7200),
+-- (700,  'SMS',   '4_hour_before_start',       14400),
+-- (800,  'SMS',   '1_day_before_start',        86400),
+-- (900,  'Email', '5_minutes_before_start',    300),
+-- (1000, 'Email', '10_minutes_before_start',   600),
+-- (1100, 'Email', '15_minutes_before_start',   900),
+-- (1200, 'Email', '30_minutes_before_start',   1800),
+-- (1300, 'Email', '1_hour_before_start',       3600),
+-- (1400, 'Email', '2_hour_before_start',       7200),
+-- (1500, 'Email', '4_hour_before_start',       14400),
+-- (1600, 'Email', '1_day_before_start',        86400);
+--
+-- create table scdl_reminders(
+--   -- describes set of reminders for service
+--                                master_id                   bigint,
+--                                product_id                  bigint not null,
+--                                reminder_id                 int not null,
+--                                type                        varchar(10) not null, -- customer / employee
+--                                foreign key (master_id)     references users(id),
+--                                foreign key (product_id)    references products(id),
+--                                foreign key (reminder_id)   references sprav_sys_scdl_reminders(id) on delete cascade
+-- );
+-- alter table scdl_reminders add constraint scdl_reminders_uq unique (master_id, product_id, reminder_id, type);
+--
+-- create table scdl_assignments(
+--   -- describes set of assignment types for service
+--                                master_id                   bigint,
+--                                product_id                  bigint not null,
+--                                assignment_type             varchar (50) not null,  -- the way of create an appointment: Customer on website / Manually (administrator of salon, hospital etc.) / ...
+--                                foreign key (master_id)     references users(id),
+--                                foreign key (product_id)    references products(id)
+-- );
+-- alter table scdl_assignments add constraint scdl_assignments_uq unique (master_id, product_id, assignment_type);
+--
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('5_minutes_before_start', '5 minutes before start', 'за 5 минут до начала', '5 минута пре почетка'),
+-- ('10_minutes_before_start', '10 minutes before start', 'за 10 минут до начала', '10 минута пре почетка'),
+-- ('15_minutes_before_start', '15 minutes before start', 'за 15 минут до начала', '15 минута пре почетка'),
+-- ('30_minutes_before_start', '30 minutes before start', 'за 30 минут до начала', '30 минута пре почетка'),
+-- ('1_hour_before_start', '1 hour before start', 'за 1 час до начала', '1 сат пре почетка'),
+-- ('2_hour_before_start', '2 hours before start', 'за 2 часа до начала', '2 сата пре почетка'),
+-- ('4_hour_before_start', '4 hours before start', 'за 4 часа до начала', '4 сата пре почетка'),
+-- ('1_day_before_start', '1 day before start', 'за 1 день до начала', '1 дан пре почетка');
+--
+-- alter table products add column is_srvc_by_appointment boolean;   -- this service is selling by appointments
+-- alter table products add column scdl_is_employee_required boolean;    -- a service provider is needed only at the start
+-- alter table products add column scdl_max_pers_on_same_time int;   -- the number of persons to whom a service can be provided at a time by one service provider (1 - dentist or hairdresser, 5-10 - yoga class)
+-- alter table products add column scdl_srvc_duration int;           -- time minimal duration of the service.
+-- alter table products add column scdl_appointment_atleast_before_time int;    -- minimum time before the start of the service for which customers can make an appointment
+-- alter table products add column scdl_appointment_atleast_before_unit_id int; -- the unit of measure of minimum time before the start of the service for which customers can make an appointment
+-- alter table products add constraint scdl_appointment_atleast_before_unit_id_fkey foreign key (scdl_appointment_atleast_before_unit_id) references sprav_sys_edizm(id);
+-- alter table products add column scdl_srvc_duration_unit_id int;    -- the unit of measure of time minimal duration of the service
+-- alter table products add constraint scdl_srvc_duration_unit_id_fkey foreign key (scdl_srvc_duration_unit_id) references sprav_sys_edizm(id);
+--
+--
+--
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('customer_on_website', 'Customer on the website', 'Заказчик на сайте', 'Купац на сајту'),
+-- ('manually', 'Manually', 'Вручную', 'Ручно');
+--
+-- alter table sprav_sys_scdl_reminders add column is_active boolean;
+-- update sprav_sys_scdl_reminders set is_active=false where type='SMS';
+-- update sprav_sys_scdl_reminders set is_active=true where type='Email';
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (58,'График работы сотрудников','employeescdl',1,'','График работы сотрудников','Employee work schedule','Распоред рада запослених');
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (701,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',58,10),
+-- (702,'Просмотр','View','Поглед',58,50),
+-- (703,'Редактирование','Editing','Уређивање',58,90);
+--
+-- alter table scdl_dep_parts add column date_time_created timestamp with time zone;
+-- alter table scdl_dep_parts add column date_time_changed timestamp with time zone;
+-- alter table scdl_dep_parts add column creator_id bigint;
+-- alter table scdl_dep_parts add column changer_id bigint;
+-- alter table scdl_dep_parts add constraint creator_id_fkey foreign key (creator_id) references users(id);
+-- alter table scdl_dep_parts add constraint changer_id_fkey foreign key (changer_id) references users(id);
+-- alter table scdl_dep_parts alter column date_time_created set not null;
+-- alter table scdl_dep_parts alter column creator_id set not null;
+--
+-- create table scdl_scedule_day(
+--   -- describes one day of employee
+--                                    id                          bigserial primary key not null,
+--                                    master_id                   bigint not null,
+--                                    employee_id                 bigint not null,
+--                                    day_date                    date not null,
+--                                    foreign key (employee_id)   references users(id),
+--                                    foreign key (master_id)     references users(id)
+-- );
+-- alter table scdl_scedule_day add constraint day_type_for_employee_is_uq unique (employee_id, day_date);
+--
+-- create table scdl_workshift(
+--   -- describes the work shift of employee
+--                                    id                          bigserial primary key not null,
+--                                    master_id                   bigint not null,
+--                                    scedule_day_id              bigint not null,
+--                                    time_from                   time,
+--                                    time_to                     time,
+--                                    foreign key (master_id)     references users(id),
+--                                    foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
+-- );
+-- alter table scdl_workshift add constraint workshift_scedule_day_uq unique (scedule_day_id); -- can be only one workshift per one day
+--
+-- create table scdl_workshift_breaks(
+--   -- describes the breaks of workshift
+--                                     id                          bigserial primary key not null,
+--                                     master_id                   bigint not null,
+--                                     workshift_id                bigint not null,
+--                                     time_from                   time not null,
+--                                     time_to                     time not null,
+--                                     is_paid                     boolean,
+--                                     precent                     int,
+--                                     foreign key (workshift_id)  references scdl_workshift(id) on delete cascade,
+--                                     foreign key (master_id)     references users(id)
+-- );
+--
+-- create table scdl_workshift_deppart
+-- (
+--   -- describes the departments parts where this workshift is belongs to
+--                                     master_id                   bigint not null,
+--                                     workshift_id                bigint not null,
+--                                     deppart_id                  bigint not null,
+--                                     foreign key (workshift_id)  references scdl_workshift (id) on delete cascade,
+--                                     foreign key (deppart_id)    references scdl_dep_parts (id) on delete cascade,
+--                                     foreign key (master_id)     references users(id)
+-- );
+-- alter table scdl_workshift_deppart add constraint scdl_workshift_deppart_uq unique (workshift_id, deppart_id);
+--
+-- create table scdl_vacation(
+--   -- describes the any type of vacation of employee
+--                                     id                          bigserial primary key not null,
+--                                     master_id                   bigint not null,
+--                                     scedule_day_id              bigint not null,
+--                                     name                        varchar(1000),
+--                                     is_paid                     boolean,
+--                                     payment_per_day             numeric(12,2),
+--                                     foreign key (master_id)     references users(id),
+--                                     foreign key (scedule_day_id)references scdl_scedule_day(id) on delete cascade
+-- );
+-- alter table scdl_vacation add constraint vacation_scedule_day_uq unique (scedule_day_id); -- can be only one vacation per one day
+--
+-- CREATE INDEX scdl_workshift_breaks_workshift_id_index ON public.scdl_workshift_breaks USING btree (workshift_id);
+-- CREATE INDEX scdl_workshift_breaks_master_id_index ON public.scdl_workshift_breaks USING btree (master_id);
+-- CREATE INDEX scdl_workshift_deppart_workshift_id_index ON public.scdl_workshift_deppart USING btree (workshift_id);
+-- CREATE INDEX scdl_workshift_deppart_master_id_index ON public.scdl_workshift_deppart USING btree (master_id);
+-- CREATE INDEX scdl_workshift_master_id_index ON public.scdl_workshift USING btree (master_id);
+-- CREATE INDEX scdl_workshift_scedule_day_id_index ON public.scdl_workshift USING btree (scedule_day_id);
+-- CREATE INDEX scdl_vacation_master_id_index ON public.scdl_vacation USING btree (master_id);
+-- CREATE INDEX scdl_vacation_scedule_day_id_index ON public.scdl_vacation USING btree (scedule_day_id);
+--
+-- create table scdl_appointments(
+--   -- describes appointments
+--                              id                                 bigserial primary key not null,
+--                              master_id                          bigint not null,
+--                              company_id                         bigint not null,
+--                              creator_id                         bigint not null,
+--                              changer_id                         bigint,
+--                              owner_id                           bigint not null,
+--                              employee_id                        bigint,
+--                              date_time_created                  timestamp with time zone not null,
+--                              date_time_changed                  timestamp with time zone,
+--                              status_id                          bigint,
+--                              doc_number                         int not null,
+--                              name                               varchar(1000),
+--                              description                        varchar(2000),
+--                              nds                                boolean,
+--                              nds_included                       boolean,
+--                              is_deleted                         boolean,
+--                              is_completed                       boolean,
+--                              uid                                varchar (36),
+--                              linked_docs_group_id               bigint,
+--                              dep_part_id                        bigint not null,
+--                              starts_at_time                     timestamp with time zone not null,
+--                              ends_at_time                       timestamp with time zone,
+--                              foreign key (master_id)            references users(id),
+--                              foreign key (owner_id)             references users(id),
+--                              foreign key (creator_id)           references users(id),
+--                              foreign key (changer_id)           references users(id),
+--                              foreign key (employee_id)          references users(id),
+--                              foreign key (company_id)           references companies(id),
+--                              foreign key (status_id)            references sprav_status_dock (id) on delete set null,
+--                              foreign key (linked_docs_group_id) references linked_docs_groups(id),
+--                              foreign key (dep_part_id)          references scdl_dep_parts(id)
+-- );
+--
+-- create table scdl_appointments_product(
+--                              id                                 bigserial primary key not null,
+--                              master_id                          bigint not null,
+--                              product_id                         bigint not null,
+--                              appointment_id                     bigint not null,
+--                              price_type_id                      bigint,
+--                              department_id                      bigint not null,
+--                              product_count                      numeric(15,3) not null,
+--                              product_price                      numeric(12,2) not null,
+--                              product_sumprice                   numeric(15,2) not null,
+--                              edizm_id                           bigint not null,
+--                              nds_id                             bigint not null,
+--                              cagent_id                          bigint not null,
+--                              product_price_of_type_price        numeric(12,2),
+--                              foreign key (appointment_id)       references scdl_appointments (id),
+--                              foreign key (edizm_id)             references sprav_sys_edizm (id),
+--                              foreign key (nds_id)               references sprav_taxes (id),
+--                              foreign key (price_type_id)        references sprav_type_prices (id),
+--                              foreign key (product_id )          references products (id),
+--                              foreign key (department_id )       references departments (id),
+--                              foreign key (cagent_id )           references cagents (id),
+--                              foreign key (master_id)            references users(id)
+-- );
+-- alter table scdl_appointments_product add constraint scdl_appointment_cagent_product_uq unique (cagent_id, appointment_id, product_id);
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (59,'Записи','appointments',1,'scdl_appointments','Записи','Appointments','Састанке');
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (704,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',59,10),
+-- (705,'Создание документов по всем предприятиям','Creation of documents for all companies','Креирање докумената за свих предузећа',59,20),
+-- (706,'Создание документов своего предприятия','Create your company documents','Креирање докумената за своје предузеће',59,30),
+-- (707,'Создание документов своих отделений','Create documents of your departments','Креирање докумената за свог одељења',59,40),
+-- (708,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',59,50),
+-- (709,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',59,60),
+-- (710,'Просмотр документов своих отделений','View documents of your departments','Погледајте документе свог одељења',59,70),
+-- (711,'Просмотр документов созданных собой','View documents created by yourself','Погледајте документе које сте сами креирали',59,80),
+-- (712,'Редактирование документов всех предприятий','Editing documents of all companies','Уређивање докумената свих предузећа',59,90),
+-- (713,'Редактирование документов своего предприятия','Editing your company documents','Уређивање докумената своје предузеће',59,100),
+-- (changeDocumentOwner,'Редактирование документов своих отделений','Editing documents of your departments','Уређивање докумената свог одељења',59,110),
+-- (715,'Редактирование документов созданных собой','Editing documents created by yourself','Уређивање докумената које сте сами креирали',59,120),
+-- (716,'Удаление документов всех предприятий','Deleting documents of all companies','Брисање докумената свих предузећа',59,130),
+-- (717,'Удаление документов своего предприятия','Deleting your company documents','Брисање докумената своје предузеће',59,140),
+-- (718,'Удаление документов своих отделений','Deleting documents of your departments','Брисање докумената свог одељења',59,150),
+-- (719,'Удаление документов созданных собой','Deleting documents created by yourself','Брисање докумената које сте сами креирали',59,160),
+-- (720,'Проведение документов всех предприятий','Completion documents of all companies','Довршавање докумената за сва предузећа',59,170),
+-- (721,'Проведение документов своего предприятия','Completion your company documents','Довршавање докумената за своје предузеће',59,180),
+-- (722,'Проведение документов своих отделений','Completion documents of your departments','Довршавање докумената за своје одељење',59,190),
+-- (723,'Проведение документов созданных собой','Completion documents created by yourself','Довршавање докумената које сте сами креирали',59,200);
+--
+-- alter table companies add column booking_doc_name_variation_id int; --variation's id of name of booking document: 1-appointment, 2-reservation
+--
+-- insert into documents (id, name, page_name, show, table_name, doc_name_ru, doc_name_en, doc_name_sr) values (60,'Календарь','calendar',1,'','Календарь','Calendar','Календар');
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (724,'Отображать в списке документов на боковой панели','Display in the list of documents in the sidebar','Прикажи на листи докумената на бочној траци',60,10);
+--
+-- alter table companies add column time_zone_id int; --id of company's main time zone
+--
+-- insert into permissions (id,name_ru,name_en,name_sr,document_id,output_order) values
+-- (725,'Просмотр документов всех предприятий','View documents of all companies','Погледајте документе свих предузећа',60,50),
+-- (726,'Просмотр документов своего предприятия','View your company documents','Погледајте документе своје предузеће',60,60);
+--
+-- alter table users drop column status_employee; -- column is not using
+-- insert into sprav_sys_edizm_types (id, name, si) values (7, 'Неисчислимое',''); -- Added the Uncountable to units types set. Do not need a translation because using only internally
+--
+-- create table scdl_appointment_files (
+--                                       appointment_id bigint not null,
+--                                       file_id bigint not null,
+--                                       foreign key (file_id) references files (id) ON DELETE CASCADE,
+--                                       foreign key (appointment_id) references scdl_appointments (id) ON DELETE CASCADE
+-- );
+-- alter table linked_docs add column scdl_appointments_id bigint;
+-- alter table linked_docs add constraint scdl_appointments_id_fkey foreign key (scdl_appointments_id) references scdl_appointments (id);
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('appointment', 'Appointment', 'Запись', 'Састанак'),
+-- ('reservation', 'Reservation', 'Бронирование', 'Резервација');
+--
+-- create table settings_calendar (
+--                                  id                          bigserial primary key not null,
+--                                  master_id                   bigint not null,
+--                                  date_time_update            timestamp with time zone,
+--                                  user_id                     bigint not null,
+--                                  company_id                  bigint,
+--                                  start_view                  varchar not null, -- month / scheduler / resources
+--                                  timeline_step               int not null,     -- step in minutes
+--                                  day_start_minute            int not null,     -- minute of day start (0-1438) that means 00:00 - 23:58
+--                                  day_end_minute              int not null,     -- minute of day end (1-1439)   that means 00:01 - 23:59
+--                                  resources_screen_scale      varchar not null, -- month / week / day
+--                                  display_cancelled           boolean not null, -- display or not cancelled events by default
+--                                  foreign key (master_id) references users(id),
+--                                  foreign key (user_id) references users(id),
+--                                  foreign key (company_id) references companies(id)
+-- );
+-- alter table settings_calendar add constraint settings_calendar_user_uq UNIQUE (company_id, user_id);
+--
+-- create table settings_appointment (
+--                                     id                          bigserial primary key not null,
+--                                     master_id                   bigint not null,
+--                                     date_time_update            timestamp with time zone,
+--                                     user_id                     bigint not null,
+--                                     company_id                  bigint,
+--                                     start_time                  varchar not null,   -- current / set_manually    The last one is suitable for hotels for checkin time
+--                                     end_date_time               varchar not null,   -- no_calc / sum_all_length / max_length
+--                                     calc_date_but_time          boolean not null,   -- if user wants to calc only dates. Suitable for hotels for checkout time
+--                                     start_time_manually         varchar(5),         -- 'HH:mm' if start_time = 'set_manually'
+--                                     end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'no_calc'
+--                                     hide_employee_field         boolean not null,   -- If for all services of company employees are not needed
+--                                     foreign key (master_id) references users(id),
+--                                     foreign key (user_id) references users(id),
+--                                     foreign key (company_id) references companies(id)
+-- );
+-- alter table settings_appointment add constraint settings_appointment_user_uq UNIQUE (company_id, user_id);
+--
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('dep_part', 'Part of department', 'Часть отделения', 'Део одељења');
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('st_new_', 	'New', 				'Новый', 		'Нови'),
+-- ('st_confirmed','Сonfirmed',		'Подтверждён',	'Потврђен'),
+-- ('st_processed','Being processed',	'Выполняется',	'У току');
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('um_vizit', 	    'Vizit', 				'Посещение', 		'Посета'),
+-- ('um_vizit_sm', 	'viz', 				'пос.', 		'пос.');
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('um_night', 	    'Night', 				'Ночь', 		'Ноћ'),
+-- ('um_night_sm', 	'night', 				'ноч', 		'ноћ');
+-- insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
+-- ('jt_administrator', 'Администратор', 'Administrator', 'Администратор'),
+-- ('jt_manager', 'Управляющий', 'Manager', 'Менаџер'),
+-- ('jt_manicurist', 'Мастер маникюра', 'Manicurist', 'Маникер'),
+-- ('jt_hairdresser-stylist', 'Парикмахер-стилист', 'Hairdresser-stylist', 'Фризер-стилиста'),
+-- ('jt_eyebrow master', 'Мастер-бровист', 'Eyebrow master', 'Мајстор за обрве'),
+-- ('jt_cosmetologist', 'Косметолог', 'Cosmetologist', 'Козметичарка'),
+-- ('jt_visagiste', 'Визажист', 'Visagiste', 'Висагисте'),
+-- ('jt_masseur', 'Массажист', 'Masseur', 'Масер'),
+-- ('jt_instructor', 'Инструктор', 'Instructor', 'Инструктор'),
+-- ('jt_trainer', 'Тренер', 'Trainer', 'Тренер'),
+-- ('jt_dentist', 'Стоматолог', 'Dentist', 'Зубар'),
+-- ('jt_orthodontist', 'Ортодонт', 'Orthodontist', 'Ортодонт'),
+-- ('jt_surgeon', 'Хирург', 'Surgeon', 'Хирург'),
+-- ('jt_therapist', 'Терапевт', 'Therapist', 'Терапеут'),
+-- ('jt_neurologist', 'Невролог', 'Neurologist', 'Неуролог'),
+-- ('jt_cardiologist', 'Кардиолог', 'Cardiologist', 'Кардиолог'),
+-- ('jt_usd_doctor', 'Врач УЗИ-диагностики', 'Ultrasound diagnostics doctor', 'Доктор ултразвучне дијагностике'),
+-- ('jt_family_doctor', 'Врач общей практики (семейный врач)', 'General practitioner (family doctor)', 'Лекар опште праксе (породични лекар)'),
+-- ('jt_photographer', 'Фотограф', 'Photographer', 'Фотограф'),
+-- ('jt_teacher', 'Преподаватель', 'Teacher', 'Учитељу');
+--
+-- alter table settings_general add column create_support_user boolean;
+-- update settings_general set create_support_user = true;
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('acc_tech_support', 	    'Support user', 				'Пользователь тех. поддержки', 		'Корисник подршке');
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('email_confirmation',
+--  'Email confirmation',
+--  'Подтверждение электонной почты',
+--  'потврда е-поште'),
+-- ('you_registered_new_acc',
+--  'You have registered new account. Please use the below link to confirm your e-mail.',
+--  'Вы зарегистрировали новый аккаунт. Пожалуйста, используйте ссылку ниже, чтобы подтвердить свой адрес электронной почты.',
+--  'Регистровали сте нови налог. Користите везу испод да потврдите своју е-пошту.'),
+-- ('click_link',
+--  'Click on Link',
+--  'Нажмите на ссылку',
+--  'Кликните на линк'),
+-- ('password_recovery',
+--  'Password recovery',
+--  'Восстановление пароля',
+--  'Повратак изгубљене шифре'),
+-- ('you_rereqested_new_pwd',
+--  'You have requested for a new password. Please use the below link to set new password.',
+--  'Вы запросили новый пароль. Пожалуйста, используйте ссылку ниже, чтобы установить новый пароль.',
+--  'Захтевали сте нову лозинку. Молимо користите везу испод да поставите нову лозинку.');
+-- insert into _dictionary (key, tr_en, tr_ru, tr_sr) values
+-- ('service', 'Service', 'Услуга', 'Услуга'),
+-- ('service_s', 'service', 'услуга', 'услуга');
+--
+-- alter table settings_appointment add column status_id_on_complete bigint;
+-- alter table settings_appointment alter start_time drop not null;
+-- alter table settings_appointment alter end_date_time drop not null;
+-- alter table settings_appointment alter calc_date_but_time drop not null;
+-- alter table settings_appointment alter hide_employee_field drop not null;
+--
+-- -- 1.4.0-2
+-- insert into _dictionary (key, tr_ru, tr_en, tr_sr) values
+-- ('f_med_contr_exmpl','Пример договора медобслуживания','Sample contract of medical services','Узорак уговора о медицинским услугама');
+-- alter table users add column is_display_in_employee_list boolean;
+-- update version set value = '1.4.0-2', date = '15-08-2024';
+--
 
 
 
@@ -6795,3 +6795,114 @@ update permissions set name_ru='Просмотр своих документов
 update version set value = '1.4.1', date = '12-09-2024';
 
 ------------------------------------------------  end of 1.4.1  ------------------------------------------------------
+
+create table scdl_os_company_settings (
+                                    id                          bigserial primary key not null,
+                                    master_id                   bigint not null,
+                                    company_id                  bigint not null,
+                                    step                        int not null,       -- step of time slots (10,15,30,60 minutes)
+                                    max_amount_services         int not null,       -- max amount of services that customer can select at once
+                                    locale_id                   int not null,       -- date format
+                                    time_format                 varchar(2),         -- 12 or 24
+                                    duration                    varchar(7),         -- duration of vizit: "summary" - as sum of all services duration. "longest" - duration of a longest service. "defined" - predefined duration
+                                    predefined_duration         int,                -- predefined duration of the appointment
+                                    predefined_duration_unit_id bigint,             -- the unit of measure of predefined duration of the appointment's time
+
+
+
+                                    end_date_time               varchar not null,   -- no_calc / sum_all_length / max_length
+                                    calc_date_but_time          boolean not null,   -- if user wants to calc only dates. Suitable for hotels for checkout time
+                                    start_time_manually         varchar(5),         -- 'HH:mm' if start_time = 'set_manually'
+                                    end_time_manually           varchar(5),         -- 'HH:mm' if end_time = 'no_calc'
+                                    hide_employee_field         boolean not null,   -- If for all services of company employees are not needed
+                                    foreign key (master_id) references users(id),
+                                    foreign key (locale_id) references sprav_sys_locales(id),
+                                    foreign key (predefined_duration_unit_id) references sprav_sys_edizm(id),
+                                    foreign key (company_id) references companies(id)
+);
+alter table settings_appointment add constraint settings_appointment_user_uq UNIQUE (company_id, user_id);
+
+create table scdl_os_company_settings (                                                    -- "os" means "Online schedule"
+                                        id                          bigserial primary key not null,
+                                        master_id                   bigint not null,
+                                        company_id                  bigint not null,
+                                        fld_step                        int not null,           -- step of time slots (10,15,30,60 minutes)
+                                        fld_max_amount_services         int not null,           -- max amount of services that customer can select at once
+                                        fld_locale_id                   int not null,           -- date format
+                                        fld_time_format                 varchar(2) not null,    -- 12 or 24
+                                        fld_duration                    varchar(7) not null,    -- duration of vizit: "summary" - as sum of all services duration. "longest" - duration of a longest service. "defined" - predefined duration
+                                        fld_predefined_duration         int,                    -- predefined duration of the appointment (if duration = "defined")
+                                        fld_predefined_duration_unit_id bigint,                 -- the unit of measure of predefined duration of the appointment's time (if duration = "defined")
+                                        fld_tel_prefix                  varchar(7),             -- prefix for the "telephone" field
+                                        fld_ask_telephone               boolean,                -- display "telephone" field
+                                        fld_ask_email                   boolean,                -- display "email" field
+                                        fld_url_slug                    varchar(50),            -- URL slug for company. With it URL be like "https://erphy.me/dss/onlinescedule?company=my_company_name_slug&locale=en&..."
+                                        txt_btn_select_time          varchar(20) not null,
+                                        txt_btn_select_specialist    varchar(20) not null,
+                                        txt_btn_select_services      varchar(20) not null,
+                                        txt_summary_header           varchar(20) not null,
+                                        txt_summary_date             varchar(20) not null,
+                                        txt_summary_time_start       varchar(20) not null,
+                                        txt_summary_time_end         varchar(20) not null,
+                                        txt_summary_duration         varchar(20) not null,
+                                        txt_summary_specialist       varchar(20) not null,
+                                        txt_summary_services         varchar(20) not null,
+                                        txt_btn_create_order         varchar(20) not null,
+                                        txt_btn_send_order           varchar(20) not null,
+                                        txt_fld_your_name            varchar(100) not null,
+                                        txt_fld_your_tel             varchar(100) not null,
+                                        txt_fld_your_email            varchar(100) not null,
+                                        txt_msg_send_successful      varchar(200) not null,
+                                        txt_msg_send_error           varchar(200) not null,
+                                        txt_msg_time_not_enable      varchar(200) not null,
+                                        stl_color_buttons            varchar(7) not null,
+                                        stl_color_buttons_text       varchar(7) not null,
+                                        stl_color_text               varchar(7) not null,
+                                        stl_corner_radius            varchar(7) not null,
+                                        stl_font_family              varchar(200) not null,
+                                        foreign key (master_id) references users(id),
+                                        foreign key (fld_locale_id) references sprav_sys_locales(id),
+                                        foreign key (fld_predefined_duration_unit_id) references sprav_sys_edizm(id),
+                                        foreign key (company_id) references companies(id)
+);
+alter table scdl_os_company_settings add constraint scdl_os_company_settings_company_uq UNIQUE (company_id);
+alter table scdl_os_company_settings add constraint scdl_os_company_settings_url_slug_uq UNIQUE (fld_url_slug);
+create table scdl_os_company_languages (                                                    -- "os" means "Online schedule"
+                                         id                          bigserial primary key not null,
+                                         master_id                   bigint not null,
+                                         company_id                  bigint not null,
+                                         suffix                      varchar(2)  not null,    -- like EN, FR, ES...
+                                         name                        varchar(20)  not null,   -- like English, ...
+                                         flag_file_id                bigint,                  -- file contained flag icon
+                                         foreign key (flag_file_id)  references files(id)
+);
+alter table scdl_os_company_languages add constraint scdl_os_company_languages_lang_uq UNIQUE (company_id, suffix);
+
+alter table departments add column os_show_in_list boolean;
+
+create table scdl_os_translate(
+                                    master_id                    bigint not null,
+                                    company_id                   bigint not null,
+                                    lang_code                    varchar(2) not null,
+                                    txt_btn_select_time          varchar(20) not null,
+                                    txt_btn_select_specialist    varchar(20) not null,
+                                    txt_btn_select_services      varchar(20) not null,
+                                    txt_summary_header           varchar(20) not null,
+                                    txt_summary_date             varchar(20) not null,
+                                    txt_summary_time_start       varchar(20) not null,
+                                    txt_summary_time_end         varchar(20) not null,
+                                    txt_summary_duration         varchar(20) not null,
+                                    txt_summary_specialist       varchar(20) not null,
+                                    txt_summary_services         varchar(20) not null,
+                                    txt_btn_create_order         varchar(20) not null,
+                                    txt_btn_send_order           varchar(20) not null,
+                                    txt_fld_your_name            varchar(100) not null,
+                                    txt_fld_your_tel             varchar(100) not null,
+                                    txt_fld_your_email           varchar(100) not null,
+                                    txt_msg_send_successful      varchar(200) not null,
+                                    txt_msg_send_error           varchar(200) not null,
+                                    txt_msg_time_not_enable      varchar(200) not null,
+                                    foreign key (master_id) references users(id),
+                                    foreign key (company_id) references companies(id)
+);
+alter table scdl_os_translate add constraint scdl_os_translate_lang_uq unique (company_id, lang_code);

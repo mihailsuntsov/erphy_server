@@ -18,6 +18,9 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
+import com.dokio.message.request.additional.OnlineSchedulingLanguage;
+
 import java.util.List;
 import java.util.Set;
 
@@ -87,25 +90,86 @@ public class CompaniesForm {
     private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
     private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
     private Integer time_zone_id;
-    /*
-    private Boolean is_store;            // on off the store
-    private String  store_site_address;  // e.g. http://localhost/DokioShop
-    private String  store_key;           // consumer key
-    private String  store_secret;        // consumer secret
-    private String  store_type;          // e.g. woo
-    private String  store_api_version;   // e.g. v3
-    private String  crm_secret_key;      // like UUID generated
-    private Long    store_price_type_regular;    // id of regular type price
-    private Long    store_price_type_sale;       // id of sale type price
-    private Long    store_orders_department_id;  // department for creation Customer order from store
-    private String  store_if_customer_not_found; // "create_new" or "use_default". Default is "create_new"
-    private Long    store_default_customer_id;   // counterparty id if store_if_customer_not_found=use_default
-    private Long    store_default_creator_id;    // default user that will be marked as a creator of store order. Default is master user
-    private Integer store_days_for_esd;          // number of days for ESD of created store order. Default is 0
-    private List<Long> companyStoreDepartments;  // ID of the departments in which calculated the amount of products for the online store
-    private Boolean store_auto_reserve;          // auto reserve product after getting internet store order
-    private String store_ip;                     // internet-store ip address
-    */
+
+
+    private Integer fld_step;
+    private Integer fld_max_amount_services;
+    private Integer fld_locale_id;
+    private String fld_time_format;
+    private String fld_duration;
+    private Integer fld_predefined_duration;
+    private Long   fld_predefined_duration_unit_id;
+    private String fld_tel_prefix;
+    private Boolean fld_ask_telephone;
+    private Boolean fld_ask_email;
+    private String fld_url_slug;
+    private String txt_btn_select_time;
+    private String txt_btn_select_specialist;
+    private String txt_btn_select_services;
+    private String txt_summary_header;
+    private String txt_summary_date;
+    private String txt_summary_time_start;
+    private String txt_summary_time_end;
+    private String txt_summary_duration;
+    private String txt_summary_specialist;
+    private String txt_summary_services;
+    private String txt_btn_create_order;
+    private String txt_btn_send_order;
+    private String txt_msg_send_successful;
+    private String txt_msg_send_error;
+    private String txt_msg_time_not_enable;
+    private String txt_fld_your_name;
+    private String txt_fld_your_tel;
+    private String txt_fld_your_email;
+    private String stl_color_buttons;
+    private String stl_color_buttons_text;
+    private String stl_color_text;
+    private String stl_corner_radius;
+    private String stl_font_family;
+    private Set<OnlineSchedulingLanguage> onlineSchedulingLanguagesList;
+    private List<OnlineSchedulingFieldsTranslation> onlineSchedulingFieldsTranslations;
+
+
+    public List<OnlineSchedulingFieldsTranslation> getOnlineSchedulingFieldsTranslations() {
+        return onlineSchedulingFieldsTranslations;
+    }
+
+    public void setOnlineSchedulingFieldsTranslations(List<OnlineSchedulingFieldsTranslation> onlineSchedulingFieldsTranslations) {
+        this.onlineSchedulingFieldsTranslations = onlineSchedulingFieldsTranslations;
+    }
+
+    public Set<OnlineSchedulingLanguage> getOnlineSchedulingLanguagesList() {
+        return onlineSchedulingLanguagesList;
+    }
+
+    public String getTxt_fld_your_name() {
+        return txt_fld_your_name;
+    }
+
+    public void setTxt_fld_your_name(String txt_fld_your_name) {
+        this.txt_fld_your_name = txt_fld_your_name;
+    }
+
+    public String getTxt_fld_your_tel() {
+        return txt_fld_your_tel;
+    }
+
+    public void setTxt_fld_your_tel(String txt_fld_your_tel) {
+        this.txt_fld_your_tel = txt_fld_your_tel;
+    }
+
+    public String getTxt_fld_your_email() {
+        return txt_fld_your_email;
+    }
+
+    public void setTxt_fld_your_email(String txt_fld_your_email) {
+        this.txt_fld_your_email = txt_fld_your_email;
+    }
+
+    public void setOnlineSchedulingLanguagesList(Set<OnlineSchedulingLanguage> onlineSchedulingLanguagesList) {
+        this.onlineSchedulingLanguagesList = onlineSchedulingLanguagesList;
+    }
+
     private String store_default_lang_code;      // internet-store basic language, e.g. EN, RU, UA, ...
 
     public String getJr_vat() {
@@ -611,6 +675,254 @@ public class CompaniesForm {
 
     public void setGlavbuh_signature_id(Long glavbuh_signature_id) {
         this.glavbuh_signature_id = glavbuh_signature_id;
+    }
+
+    public Integer getFld_step() {
+        return fld_step;
+    }
+
+    public void setFld_step(Integer fld_step) {
+        this.fld_step = fld_step;
+    }
+
+    public Integer getFld_max_amount_services() {
+        return fld_max_amount_services;
+    }
+
+    public void setFld_max_amount_services(Integer fld_max_amount_services) {
+        this.fld_max_amount_services = fld_max_amount_services;
+    }
+
+    public Integer getFld_locale_id() {
+        return fld_locale_id;
+    }
+
+    public void setFld_locale_id(Integer fld_locale_id) {
+        this.fld_locale_id = fld_locale_id;
+    }
+
+    public String getFld_time_format() {
+        return fld_time_format;
+    }
+
+    public void setFld_time_format(String fld_time_format) {
+        this.fld_time_format = fld_time_format;
+    }
+
+    public String getFld_duration() {
+        return fld_duration;
+    }
+
+    public void setFld_duration(String fld_duration) {
+        this.fld_duration = fld_duration;
+    }
+
+    public Integer getFld_predefined_duration() {
+        return fld_predefined_duration;
+    }
+
+    public void setFld_predefined_duration(Integer fld_predefined_duration) {
+        this.fld_predefined_duration = fld_predefined_duration;
+    }
+
+    public Long getFld_predefined_duration_unit_id() {
+        return fld_predefined_duration_unit_id;
+    }
+
+    public void setFld_predefined_duration_unit_id(Long fld_predefined_duration_unit_id) {
+        this.fld_predefined_duration_unit_id = fld_predefined_duration_unit_id;
+    }
+
+    public String getFld_tel_prefix() {
+        return fld_tel_prefix;
+    }
+
+    public void setFld_tel_prefix(String fld_tel_prefix) {
+        this.fld_tel_prefix = fld_tel_prefix;
+    }
+
+    public Boolean getFld_ask_telephone() {
+        return fld_ask_telephone;
+    }
+
+    public void setFld_ask_telephone(Boolean fld_ask_telephone) {
+        this.fld_ask_telephone = fld_ask_telephone;
+    }
+
+    public Boolean getFld_ask_email() {
+        return fld_ask_email;
+    }
+
+    public void setFld_ask_email(Boolean fld_ask_email) {
+        this.fld_ask_email = fld_ask_email;
+    }
+
+    public String getFld_url_slug() {
+        return fld_url_slug;
+    }
+
+    public void setFld_url_slug(String fld_url_slug) {
+        this.fld_url_slug = fld_url_slug;
+    }
+
+    public String getTxt_btn_select_time() {
+        return txt_btn_select_time;
+    }
+
+    public void setTxt_btn_select_time(String txt_btn_select_time) {
+        this.txt_btn_select_time = txt_btn_select_time;
+    }
+
+    public String getTxt_btn_select_specialist() {
+        return txt_btn_select_specialist;
+    }
+
+    public void setTxt_btn_select_specialist(String txt_btn_select_specialist) {
+        this.txt_btn_select_specialist = txt_btn_select_specialist;
+    }
+
+    public String getTxt_btn_select_services() {
+        return txt_btn_select_services;
+    }
+
+    public void setTxt_btn_select_services(String txt_btn_select_services) {
+        this.txt_btn_select_services = txt_btn_select_services;
+    }
+
+    public String getTxt_summary_header() {
+        return txt_summary_header;
+    }
+
+    public void setTxt_summary_header(String txt_summary_header) {
+        this.txt_summary_header = txt_summary_header;
+    }
+
+    public String getTxt_summary_date() {
+        return txt_summary_date;
+    }
+
+    public void setTxt_summary_date(String txt_summary_date) {
+        this.txt_summary_date = txt_summary_date;
+    }
+
+    public String getTxt_summary_time_start() {
+        return txt_summary_time_start;
+    }
+
+    public void setTxt_summary_time_start(String txt_summary_time_start) {
+        this.txt_summary_time_start = txt_summary_time_start;
+    }
+
+    public String getTxt_summary_time_end() {
+        return txt_summary_time_end;
+    }
+
+    public void setTxt_summary_time_end(String txt_summary_time_end) {
+        this.txt_summary_time_end = txt_summary_time_end;
+    }
+
+    public String getTxt_summary_duration() {
+        return txt_summary_duration;
+    }
+
+    public void setTxt_summary_duration(String txt_summary_duration) {
+        this.txt_summary_duration = txt_summary_duration;
+    }
+
+    public String getTxt_summary_specialist() {
+        return txt_summary_specialist;
+    }
+
+    public void setTxt_summary_specialist(String txt_summary_specialist) {
+        this.txt_summary_specialist = txt_summary_specialist;
+    }
+
+    public String getTxt_summary_services() {
+        return txt_summary_services;
+    }
+
+    public void setTxt_summary_services(String txt_summary_services) {
+        this.txt_summary_services = txt_summary_services;
+    }
+
+    public String getTxt_btn_create_order() {
+        return txt_btn_create_order;
+    }
+
+    public void setTxt_btn_create_order(String txt_btn_create_order) {
+        this.txt_btn_create_order = txt_btn_create_order;
+    }
+
+    public String getTxt_btn_send_order() {
+        return txt_btn_send_order;
+    }
+
+    public void setTxt_btn_send_order(String txt_btn_send_order) {
+        this.txt_btn_send_order = txt_btn_send_order;
+    }
+
+    public String getTxt_msg_send_successful() {
+        return txt_msg_send_successful;
+    }
+
+    public void setTxt_msg_send_successful(String txt_msg_send_successful) {
+        this.txt_msg_send_successful = txt_msg_send_successful;
+    }
+
+    public String getTxt_msg_send_error() {
+        return txt_msg_send_error;
+    }
+
+    public void setTxt_msg_send_error(String txt_msg_send_error) {
+        this.txt_msg_send_error = txt_msg_send_error;
+    }
+
+    public String getTxt_msg_time_not_enable() {
+        return txt_msg_time_not_enable;
+    }
+
+    public void setTxt_msg_time_not_enable(String txt_msg_time_not_enable) {
+        this.txt_msg_time_not_enable = txt_msg_time_not_enable;
+    }
+
+    public String getStl_color_buttons() {
+        return stl_color_buttons;
+    }
+
+    public void setStl_color_buttons(String stl_color_buttons) {
+        this.stl_color_buttons = stl_color_buttons;
+    }
+
+    public String getStl_color_buttons_text() {
+        return stl_color_buttons_text;
+    }
+
+    public void setStl_color_buttons_text(String stl_color_buttons_text) {
+        this.stl_color_buttons_text = stl_color_buttons_text;
+    }
+
+    public String getStl_color_text() {
+        return stl_color_text;
+    }
+
+    public void setStl_color_text(String stl_color_text) {
+        this.stl_color_text = stl_color_text;
+    }
+
+    public String getStl_corner_radius() {
+        return stl_corner_radius;
+    }
+
+    public void setStl_corner_radius(String stl_corner_radius) {
+        this.stl_corner_radius = stl_corner_radius;
+    }
+
+    public String getStl_font_family() {
+        return stl_font_family;
+    }
+
+    public void setStl_font_family(String stl_font_family) {
+        this.stl_font_family = stl_font_family;
     }
 
     @Override
