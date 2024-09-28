@@ -9,6 +9,15 @@ public class PointOfScedule {
     private Long        userId;
     private String      userName;
     private String      pointOfSceduleName;
+    private Long        workshift_id;
+
+    public Long getWorkshift_id() {
+        return workshift_id;
+    }
+
+    public void setWorkshift_id(Long workshift_id) {
+        this.workshift_id = workshift_id;
+    }
 
     public String getUserName() {
         return userName;

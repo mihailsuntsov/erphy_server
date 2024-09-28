@@ -2026,7 +2026,8 @@ public class ProductsRepositoryJPA {
                         " coalesce(slug,'') as slug," +
                         " image_id as image_id," +
                         " coalesce(parent_id, 0) as parent_id," +
-                        " coalesce(is_store_category, false) as is_store_category" +
+                        " coalesce(is_store_category, false) as is_store_category," +
+                        " coalesce(is_booking_category, false) as is_booking_category" +
                         " from product_categories " +
                         " where master_id = " + myMasterId + " and id = " + categoryId;
         try{
@@ -2042,6 +2043,7 @@ public class ProductsRepositoryJPA {
                 doc.setImage(Objects.isNull(queryList.get(0)[4])?null:fileRepository.getImageFileInfo(((BigInteger) queryList.get(0)[4]).longValue()));
                 doc.setParentCategoryId(Long.parseLong(             queryList.get(0)[5].toString()));
                 doc.setIsStoreCategory((Boolean)                    queryList.get(0)[6]);
+                doc.setIsBookingCategory((Boolean)                  queryList.get(0)[7]);
                 doc.setStoresIds(getCategoryStoresIds(categoryId, myMasterId));
             }
             return doc;
@@ -2105,6 +2107,7 @@ public class ProductsRepositoryJPA {
                         "company_id," +
                         "date_time_created," +
                         "is_store_category," +
+                        "is_booking_category," +
                         "output_order" +
                         ") values ( " +
                         ":name, " +
@@ -2118,6 +2121,7 @@ public class ProductsRepositoryJPA {
                         request.getCompanyId() + ", " +
                         "(to_timestamp('" + timestamp + "','YYYY-MM-DD HH24:MI:SS.MS')), " +
                         request.getIsStoreCategory() + ", " +
+                        request.getIsBookingCategory() + ", " +
                         "(select coalesce(max(output_order)+1,1) from product_categories where company_id = " + request.getCompanyId() + " and parent_id " + (request.getParentCategoryId() > 0 ?(" = " + request.getParentCategoryId() ): " is null") + ")" +
                         ")";
                 try {
@@ -2216,7 +2220,8 @@ public class ProductsRepositoryJPA {
                     " image_id = " + (Objects.isNull(request.getImage())?null:request.getImage().getId()) + ", " +
                     " date_time_changed = now()," +
                     " changer_id = " + changer + ", " +
-                    " is_store_category = " + request.getIsStoreCategory() +
+                    " is_store_category = " + request.getIsStoreCategory() + ", " +
+                    " is_booking_category = " + request.getIsBookingCategory() +
                     " where id = " + request.getId() +
                     " and master_id = " + myMasterId;
             if (!securityRepositoryJPA.userHasPermissions_OR(14L, "173")) //Если нет прав по всем предприятиям
@@ -2545,7 +2550,7 @@ public class ProductsRepositoryJPA {
             Query query = entityManager.createNativeQuery(stringQuery);
             return ((BigInteger)query.getSingleResult()).longValue() > 0L;
         } catch (Exception e) {
-            logger.error("Exception in method areCategoriesHaveStores. SQL query:"+stringQuery, e);
+            logger.error("Exception in method isStoreCategories. SQL query:"+stringQuery, e);
             e.printStackTrace();
             throw new Exception();
         }
@@ -4713,6 +4718,30 @@ public class ProductsRepositoryJPA {
             e.printStackTrace();
             throw new Exception();
         }
+    }
+
+    @Transactional
+    public Integer setProductCategoriesAsBookingOrUnbooking(UniversalForm request) throws Exception {
+        boolean userHasPermissions_OwnUpdate = securityRepositoryJPA.userHasPermissions_OR(14L, "174"); // "Editing of categories"
+        Long masterId = userRepositoryJPA.getMyMasterId();//владелец моего аккаунта
+        if (userHasPermissions_OwnUpdate) //и сохраняемый документ под юрисдикцией главного аккаунта
+        {
+            String stringQuery =
+                    " update product_categories set is_booking_category = " + request.getYesNo() +
+                            " where master_id=" + masterId +
+                            " and company_id=" + request.getId() +
+                            " and id in " + commonUtilites.SetOfLongToString(request.getSetOfLongs1(), ",", "(", ")") +
+                            " and coalesce(is_booking_category,false) != " + request.getYesNo();
+            try {
+                Query query = entityManager.createNativeQuery(stringQuery);
+                query.executeUpdate();
+                return 1;
+            } catch (Exception e) {
+                logger.error("Exception in method setProductCategoriesAsBookingOrUnbooking. SQL query:" + stringQuery, e);
+                e.printStackTrace();
+                return null;
+            }
+        } else return -1;
     }
 //*****************************************************************************************************************************************************
 //**********************************************  P R O D U C T   A T T R I B U T E S   ***************************************************************

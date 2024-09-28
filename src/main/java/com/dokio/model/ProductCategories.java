@@ -74,6 +74,17 @@ public class ProductCategories {
     @Column(name="is_store_category")
     private Boolean is_store_category;
 
+    @Column(name="is_booking_category")
+    private Boolean is_booking_category;
+
+    public Boolean getIs_booking_category() {
+        return is_booking_category;
+    }
+
+    public void setIs_booking_category(Boolean is_booking_category) {
+        this.is_booking_category = is_booking_category;
+    }
+
     public Long getId() {
         return id;
     }

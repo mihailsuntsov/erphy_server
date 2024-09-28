@@ -279,13 +279,13 @@ public class CalendarRepositoryJPA {
 //
 //    }
 
-    public List<BreakJSON> getCalendarUsersBreaksList(CalendarEventsQueryForm queryForm) {
+    public List<BreakJSON> getCalendarUsersBreaksList(CalendarEventsQueryForm queryForm, String myTimeZone, Long masterId) {
 //        if(securityRepositoryJPA.userHasPermissions_OR(60L, "725,726"))//(см. файл Permissions Id)
 //        {
             try{
-                String myTimeZone = userRepository.getUserTimeZone();
-                Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
-                Long masterId = userRepositoryJPA.getMyMasterId();
+//                String myTimeZone = userRepository.getUserTimeZone();
+//                Long masterId = userRepositoryJPA.getMyMasterId();
+//                Long myCompanyId = userRepositoryJPA.getMyCompanyId_();
                 int companyTimeZoneId = (Integer) commonUtilites.getFieldValueFromTableById("companies", "time_zone_id", masterId, queryForm.getCompanyId());
                 String companyTimeZone = commonUtilites.getTimeZoneById(companyTimeZoneId);
                 DateTimeFormatter sqlQueryFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -302,8 +302,8 @@ public class CalendarRepositoryJPA {
 //                dateTo = dateTo.plusDays(1+7);
 
                 if (    !commonUtilites.isDateValid(queryForm.getDateFrom()) ||
-                        !commonUtilites.isDateValid(queryForm.getDateTo()) ||
-                        (!securityRepositoryJPA.userHasPermissions_OR(60L, "725") && !myCompanyId.equals(queryForm.getCompanyId())))//если есть право только на своё предприятие, но запрашиваем не своё
+                        !commonUtilites.isDateValid(queryForm.getDateTo())/* ||
+                        (!securityRepositoryJPA.userHasPermissions_OR(60L, "725") && !myCompanyId.equals(queryForm.getCompanyId()))*/)//если есть право только на своё предприятие, но запрашиваем не своё
                     throw new IllegalArgumentException("Invalid query parameters");
 
 
@@ -313,8 +313,6 @@ public class CalendarRepositoryJPA {
                         dateFrom.format(sqlQueryFormatter),
                         dateTo.format(sqlQueryFormatter),
                         queryForm.getDepparts(),
-                        queryForm.getJobtitles(),
-                        queryForm.getEmployees(),
                         companyTimeZone,
                         myTimeZone,
                         masterId
@@ -349,9 +347,17 @@ public class CalendarRepositoryJPA {
                     }
 
 
-
+                    // если начались данные по новому пользователю и break не был открыт
+                    // начальным временем, то его надо открыть первой секундой начальной даты dateFrom,
+                    // закрыть началом новой смены
+                    // и добавить его в breaks
+                    // if the new user data has started and break was not opened by the start time,
+                    // then it must be opened at the forst second of the start date,
+                    // also it must be closed by start date of new work shift
+                    // and after add the current break_ object to breaks
                     if(pointOfScedule.getPointOfSceduleName().equals("workshift_time_from") && isNewUser){
                         break_ = new BreakJSON(new CalendarUser(currentUserId, currentUserName, new CalendarColors("#008000","#FDF1BA")),dateFrom.format(calendarFormatter)+"T00:00:00.000Z", pointOfScedule.getPointOfSceduleTime());
+                        break_.setWorkshift_id(pointOfScedule.getWorkshift_id()); // the end of break is a start of work shift
                         breaks.add(break_);
                     }
 
@@ -378,6 +384,7 @@ public class CalendarRepositoryJPA {
 
                     ){
                         break_.setEnd(pointOfScedule.getPointOfSceduleTime());
+                        break_.setWorkshift_id(pointOfScedule.getWorkshift_id()); // the end of break is a start of work shift
                         breaks.add(break_);
                     }
 
@@ -422,13 +429,11 @@ public class CalendarRepositoryJPA {
 
 
 
-    private List<PointOfScedule> getPointsOfScedule(Long companyId, String dateFrom, String dateTo, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String companyTimeZone, String myTimeZone, Long masterId){
+    private List<PointOfScedule> getPointsOfScedule(Long companyId, String dateFrom, String dateTo, Set<Long> depPartsIds, String companyTimeZone, String myTimeZone, Long masterId){
 
         String stringQuery;
 
         String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
-//        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
-        String employeesIds_ = commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
 
         stringQuery =
         "   select " +
@@ -438,7 +443,8 @@ public class CalendarRepositoryJPA {
         "   to_char(to_timestamp(concat(to_char(sd1.day_date, 'YYYY-MM-DD'),' ',to_char(w1.time_from,'HH24:MI')),'YYYY-MM-DD HH24:MI:SS.MS') at time zone '"+myTimeZone+"' at time zone '"+companyTimeZone+"','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') as point_of_scedule_time, " +
         "   sd1.employee_id as user_id, " +
         "   'workshift_time_from' as point_of_scedule_name, " +
-        "   u1.name as user_name " +
+        "   u1.name as user_name, " +
+        "   w1.id as workshift_id" +
         "   from " +
         "   scdl_scedule_day sd1 " +
         "   inner join scdl_workshift w1 on w1.scedule_day_id = sd1.id " +
@@ -478,7 +484,8 @@ public class CalendarRepositoryJPA {
         "   end as point_of_scedule_time, " +
         "   sd2.employee_id as user_id, " +
         "   'workshift_time_to' as point_of_scedule_name, " +
-        "   u2.name as user_name " +
+        "   u2.name as user_name, " +
+        "   w2.id as workshift_id" +
         "   from " +
         "   scdl_scedule_day sd2 " +
         "   inner join scdl_workshift w2 on w2.scedule_day_id = sd2.id " +
@@ -514,7 +521,8 @@ public class CalendarRepositoryJPA {
         "       end as point_of_scedule_time, " +
         "   sd3.employee_id as user_id, " +
         "   'workshift_time_from' as point_of_scedule_name, " +
-        "   u3.name as user_name " +
+        "   u3.name as user_name, " +
+        "   w3.id as workshift_id" +
         "   from " +
         "   scdl_scedule_day sd3 " +
         "   inner join scdl_workshift w3 on w3.scedule_day_id = sd3.id " +
@@ -551,7 +559,8 @@ public class CalendarRepositoryJPA {
         "   end as point_of_scedule_time, " +
         "   sd4.employee_id as user_id, " +
         "   'workshift_time_to' as point_of_scedule_name, " +
-        "   u4.name as user_name " +
+        "   u4.name as user_name, " +
+        "   w4.id as workshift_id" +
         "   from " +
         "   scdl_scedule_day sd4 " +
         "   inner join scdl_workshift w4 on w4.scedule_day_id = sd4.id " +
@@ -589,6 +598,7 @@ public class CalendarRepositoryJPA {
                 doc.setUserId(                     Long.parseLong(      obj[3].toString()));
                 doc.setPointOfSceduleName((String)                      obj[4]);
                 doc.setUserName((String)                                obj[5]);
+                doc.setWorkshift_id(               Long.parseLong(      obj[6].toString()));
                 returnList.add(doc);
             }
             return returnList;
@@ -604,15 +614,9 @@ public class CalendarRepositoryJPA {
 
     // IDs of employees that are free by Appointment events. Does not take into account accessibility of employees by scedule of workshifts
     // IDs сотрудников, которые свободны по Записям в заданный промежуток времени. Не учитывает доступность/занятость сотрудников по графику рабочих смен
-    private List<Long> getEmployeesIdsFreeByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, String myTimeZone, Long masterId) {
+    public List<Long> getEmployeesIdsFreeByAppointments(boolean isFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, String myTimeZone, Long masterId) {
 
-        String stringQuery;
-//        String depPartsIds_ =  commonUtilites.SetOfLongToString(depPartsIds, ",", "(", ")");
-//        String jobTitlesIds_ = commonUtilites.SetOfLongToString(jobTitlesIds, ",", "(", ")");
-//        String servicesIds_ =  commonUtilites.SetOfLongToString(servicesIds, ",", "(", ")");
-//        String employeesIds_ =  commonUtilites.SetOfLongToString(employeesIds, ",", "(", ")");
-
-        stringQuery =
+        String stringQuery =
         " select u.id from users u where " +
         " u.company_id = "+companyId+" and " +
         " u.master_id = "+masterId+" and " +
@@ -663,7 +667,7 @@ public class CalendarRepositoryJPA {
             return returnList;
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getFreeOrOccupiedEmployeesIds. SQL query:" + stringQuery, e);
+            logger.error("Exception in method getEmployeesIdsFreeByAppointments. SQL query:" + stringQuery, e);
             return new ArrayList<>();
         }
     }
@@ -671,7 +675,7 @@ public class CalendarRepositoryJPA {
 
     // Return IDs of free employees by shifts schedule and by period of time of all they appointments
     // IDs сотрудников, которые свободны и по расписанию смен, и по заданному промежутку времени.
-    private Set<Long> getFreeEmployeeIdsList (Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone,Long masterId){
+    private Set<Long> getFreeEmployeeIdsList (Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> depPartsIds, String myTimeZone,Long masterId){
 //-------------------------------------------------------------------------------------------------------
 //   employee Id   Has shifts schedule?    Is it working time?    Is employee free by appointment?
 //
@@ -715,7 +719,7 @@ public class CalendarRepositoryJPA {
         */
         if(employeesIdsFreeByAppointments.size()>0){
 
-            List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds,employeesIds));
+            List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds),myTimeZone,masterId);
 
             // break contains the start and end of employee's non-working time unit. Time has a format YYYY-MM-DDTHH:MM:00Z like 2024-03-25T13:00:00Z
             // this time presented in the time zone settings of user (myTimeZone)
@@ -753,7 +757,7 @@ public class CalendarRepositoryJPA {
     }
     // Return IDs of non-free employees by shifts schedule or by period of time of all they appointments
     // IDs сотрудников, которые не свободны по расписанию смен или по заданному промежутку времени.
-    private Set<Long> getNonAccessibleEmployeesIdsList (String kindOfNoFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> servicesIds, Set<Long> depPartsIds, Set<Long> jobTitlesIds, Set<Long> employeesIds, String myTimeZone,Long masterId){
+    private Set<Long> getNonAccessibleEmployeesIdsList (String kindOfNoFree, Long currentAppointmentId, Long companyId, String dateFrom, String timeFrom, String dateTo, String timeTo, Set<Long> depPartsIds, String myTimeZone,Long masterId){
 //-------------------------------------------------------------------------------------------------------
 //   employee Id   Has shifts schedule?    Is it working time?    Is employee free by appointment?
 //
@@ -806,7 +810,7 @@ public class CalendarRepositoryJPA {
         DateTimeFormatter system_formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy' 'HH:mm").withZone(ZoneId.of("UTC"));
         LocalDateTime a_date_start = LocalDateTime.parse(dateFrom+" "+timeFrom, system_formatter);
         LocalDateTime a_date_end =   LocalDateTime.parse(dateTo+" "+timeTo, system_formatter);
-        List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds,jobTitlesIds,employeesIds));
+        List<BreakJSON>employeesBreaksList = getCalendarUsersBreaksList(new CalendarEventsQueryForm(companyId,dateFrom,dateTo,depPartsIds), myTimeZone, masterId);
         // break contains the start and end of employee's non-working time unit. Time has a format YYYY-MM-DDTHH:MM:00Z like 2024-03-25T13:00:00Z
         // this time presented in the time zone settings of user (myTimeZone)
         // dateFrom, timeFrom,dateTo,timeTo           are also in the time zone of user
@@ -842,9 +846,9 @@ public class CalendarRepositoryJPA {
             boolean isAll = request.getIsAll();
 
             if (!isAll && request.getIsFree()) // when query is going from Appointment to get free employees list
-                employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), request.getEmployeesIds(), myTimeZone, masterId);
+                employeesIdsList = getFreeEmployeeIdsList(request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getDepPartsIds(), myTimeZone, masterId);
             else if (!isAll && !request.getIsFree()) // when query is going from Appointment to get busy employees list
-                employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getServicesIds(), request.getDepPartsIds(), request.getJobTitlesIds(), request.getEmployeesIds(), myTimeZone, masterId);
+                employeesIdsList = getNonAccessibleEmployeesIdsList(request.getKindOfNoFree(), request.getAppointmentId(), request.getCompanyId(), request.getDateFrom(), request.getTimeFrom(), request.getDateTo(), request.getTimeTo(), request.getDepPartsIds(), myTimeZone, masterId);
 
 
             if (isAll || employeesIdsList.size() > 0) {

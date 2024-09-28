@@ -6902,7 +6902,41 @@ create table scdl_os_translate(
                                     txt_msg_send_successful      varchar(200) not null,
                                     txt_msg_send_error           varchar(200) not null,
                                     txt_msg_time_not_enable      varchar(200) not null,
-                                    foreign key (master_id) references users(id),
-                                    foreign key (company_id) references companies(id)
+                                    txt_any_specialist           varchar(100) not null,
+                                    txt_hour                     varchar(20) not null,
+                                    txt_minute                   varchar(20) not null,
+                                    txt_nearest_app_time         varchar(100) not null,
+                                    txt_today                    varchar(20) not null,
+                                    txt_tomorrow                 varchar(20) not null,
+                                    txt_morning                  varchar(20) not null,
+                                    txt_day                      varchar(20) not null,
+                                    txt_evening                  varchar(20) not null,
+                                    txt_night                    varchar(20) not null,
+                                    foreign key (master_id)      references users(id),
+                                    foreign key (company_id)     references companies(id)
 );
 alter table scdl_os_translate add constraint scdl_os_translate_lang_uq unique (company_id, lang_code);
+
+alter table product_categories add column is_booking_category boolean;
+
+alter table scdl_os_company_settings add column fld_privce_type_id bigint;
+alter table scdl_os_company_settings add column fld_creator_id bigint;
+alter table scdl_os_company_settings add column txt_any_specialist varchar(100);
+alter table scdl_os_company_settings add column txt_hour varchar(20);
+alter table scdl_os_company_settings add column txt_minute varchar(20);
+alter table scdl_os_company_settings add column txt_nearest_app_time varchar(100);
+alter table scdl_os_company_settings add column txt_today varchar(20);
+alter table scdl_os_company_settings add column txt_tomorrow varchar(20);
+alter table scdl_os_company_settings add column txt_morning varchar(20);
+alter table scdl_os_company_settings add column txt_day varchar(20);
+alter table scdl_os_company_settings add column txt_evening varchar(20);
+alter table scdl_os_company_settings add column txt_night varchar(20);
+alter table scdl_os_company_settings add column stl_background_color varchar(7);
+alter table scdl_os_company_settings add column stl_panel_color varchar(7);
+alter table scdl_os_company_settings add column stl_panel_max_width int;
+alter table scdl_os_company_settings add column stl_panel_max_width_unit varchar(2);
+alter table scdl_os_company_settings add column stl_not_selected_elements_color varchar(7);
+alter table scdl_os_company_settings add column stl_selected_elements_color varchar(7);
+alter table scdl_os_company_settings add column stl_job_title_color varchar(7);
+alter table scdl_os_company_settings add constraint fld_privce_type_id_fkey foreign key (fld_privce_type_id) references sprav_type_prices (id);
+alter table scdl_os_company_settings add constraint fld_creator_id_fkey foreign key (fld_creator_id) references users (id);

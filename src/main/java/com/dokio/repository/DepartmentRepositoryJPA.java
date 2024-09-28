@@ -951,7 +951,7 @@ public class DepartmentRepositoryJPA {
         }
     }
 
-    private List<DepartmentWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId, Long companyId){
+    public List<DepartmentWithPartsJSON> departmentsPartsListConstruct(String stringQuery, Long masterId, Long companyId){
         try {
             Query query = entityManager.createNativeQuery(stringQuery);
             List<Object[]> queryList = query.getResultList();

@@ -31,8 +31,17 @@ public class ProductCategoryJSON {
     private Long            parentCategoryId;
     private Long            companyId;
     private Boolean         isStoreCategory;
+    private Boolean         isBookingCategory;
     private List<StoreTranslationCategoryJSON> storeCategoryTranslations;
     private List<Long>      storesIds;
+
+    public Boolean getIsBookingCategory() {
+        return isBookingCategory;
+    }
+
+    public void setIsBookingCategory(Boolean bookingCategory) {
+        isBookingCategory = bookingCategory;
+    }
 
     public List<Long> getStoresIds() {
         return storesIds;

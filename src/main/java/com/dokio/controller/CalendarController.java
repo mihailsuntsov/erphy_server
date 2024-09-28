@@ -4,6 +4,8 @@ import com.dokio.message.request.Settings.SettingsCalendarForm;
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
 import com.dokio.repository.CalendarRepositoryJPA;
+import com.dokio.repository.UserRepositoryJPA;
+import com.dokio.security.services.UserDetailsServiceImpl;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,7 +18,10 @@ public class CalendarController {
 
 
     Logger logger = Logger.getLogger("CalendarController");
-
+    @Autowired
+    private UserDetailsServiceImpl userRepository;
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
     @Autowired
     CalendarRepositoryJPA calendarRepository;
 
@@ -32,7 +37,10 @@ public class CalendarController {
     @PostMapping("/api/auth/getCalendarUsersBreaksList")
     public  ResponseEntity<?> getCalendarUsersBreaksList(@RequestBody CalendarEventsQueryForm request) {
         logger.info("Processing post request for path /api/auth/getCalendarUsersBreaksList: " + request.toString());
-        try {return new ResponseEntity<>(calendarRepository.getCalendarUsersBreaksList(request), HttpStatus.OK);}
+        try {
+            String myTimeZone = userRepository.getUserTimeZone();
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            return new ResponseEntity<>(calendarRepository.getCalendarUsersBreaksList(request,myTimeZone,masterId), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getCalendarUsersBreaksList error", e);
             return new ResponseEntity<>("Controller getCalendarUsersBreaksList error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }

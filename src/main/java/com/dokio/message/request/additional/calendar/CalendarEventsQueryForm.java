@@ -16,13 +16,21 @@ public class CalendarEventsQueryForm {
     private Boolean withCancelledEvents;
     private Boolean ifNoEmployeesThenNoEvents;
 
-    public CalendarEventsQueryForm(Long companyId, String dateFrom, String dateTo, Set<Long> depparts, Set<Long> jobtitles, Set<Long> employees) {
+    private String companyUrlSlug;
+
+    public CalendarEventsQueryForm(Long companyId, String dateFrom, String dateTo, Set<Long> depparts) {
         this.companyId = companyId;
         this.dateFrom = dateFrom;
         this.dateTo = dateTo;
         this.depparts = depparts;
-        this.jobtitles = jobtitles;
-        this.employees = employees;
+    }
+
+    public String getCompanyUrlSlug() {
+        return companyUrlSlug;
+    }
+
+    public void setCompanyUrlSlug(String companyUrlSlug) {
+        this.companyUrlSlug = companyUrlSlug;
     }
 
     public Boolean getWithCancelledEvents() {

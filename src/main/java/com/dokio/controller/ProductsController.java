@@ -245,6 +245,14 @@ public class ProductsController {
         return new ResponseEntity<>("Error updating product", HttpStatus.INTERNAL_SERVER_ERROR);}
 
     }
+    @PostMapping("/api/auth/setProductCategoriesAsBookingOrUnbooking")
+    @SuppressWarnings("Duplicates")
+    public ResponseEntity<?> setProductCategoriesAsBookingOrUnbooking(@RequestBody UniversalForm request){
+        logger.info("Processing post request for path /api/auth/setProductCategoriesAsBookingOrUnbooking: " + request.toString());
+        try {return new ResponseEntity<>(productsRepositoryJPA.setProductCategoriesAsBookingOrUnbooking(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller setProductCategoriesAsBookingOrUnbooking error with request=" + request.toString(), e);
+            return new ResponseEntity<>("Error setProductCategoriesAsBookingOrUnbooking controller", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
 
 //    @PostMapping("/api/auth/updateProductCustomFields")
 //    @SuppressWarnings("Duplicates")
