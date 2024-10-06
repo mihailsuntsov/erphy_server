@@ -8,6 +8,7 @@ import java.util.Set;
 
 public class OnlineSchedulingSettingsJSON {
 
+    private String company_name;
     private Integer fld_step;
     private Integer fld_max_amount_services;
     private Integer fld_locale_id;
@@ -42,8 +43,188 @@ public class OnlineSchedulingSettingsJSON {
     private String stl_color_text;
     private String stl_corner_radius;
     private String stl_font_family;
+    private String txt_any_specialist;
+    private String txt_hour;
+    private String txt_minute;
+    private String txt_nearest_app_time;
+    private String txt_today;
+    private String txt_tomorrow;
+    private String txt_morning;
+    private String txt_day;
+    private String txt_evening;
+    private String txt_night;
+    private String stl_background_color;
+    private String stl_panel_color;
+    private Integer stl_panel_max_width;
+    private String stl_panel_max_width_unit;
+    private String stl_not_selected_elements_color;
+    private String stl_selected_elements_color;
+    private String stl_job_title_color;
+    private String fld_creator;
+    private String  date_format;   //online scheduling settings locale
+
     private Set<OnlineSchedulingLanguage> onlineSchedulingLanguagesList;
     private List<OnlineSchedulingFieldsTranslation> onlineSchedulingFieldsTranslations;
+
+    public String getDate_format() {
+        return date_format;
+    }
+
+    public void setDate_format(String date_format) {
+        this.date_format = date_format;
+    }
+
+    public String getCompany_name() {
+        return company_name;
+    }
+
+    public void setCompany_name(String company_name) {
+        this.company_name = company_name;
+    }
+
+    public String getTxt_any_specialist() {
+        return txt_any_specialist;
+    }
+
+    public void setTxt_any_specialist(String txt_any_specialist) {
+        this.txt_any_specialist = txt_any_specialist;
+    }
+
+    public String getTxt_hour() {
+        return txt_hour;
+    }
+
+    public void setTxt_hour(String txt_hour) {
+        this.txt_hour = txt_hour;
+    }
+
+    public String getTxt_minute() {
+        return txt_minute;
+    }
+
+    public void setTxt_minute(String txt_minute) {
+        this.txt_minute = txt_minute;
+    }
+
+    public String getTxt_nearest_app_time() {
+        return txt_nearest_app_time;
+    }
+
+    public void setTxt_nearest_app_time(String txt_nearest_app_time) {
+        this.txt_nearest_app_time = txt_nearest_app_time;
+    }
+
+    public String getTxt_today() {
+        return txt_today;
+    }
+
+    public void setTxt_today(String txt_today) {
+        this.txt_today = txt_today;
+    }
+
+    public String getTxt_tomorrow() {
+        return txt_tomorrow;
+    }
+
+    public void setTxt_tomorrow(String txt_tomorrow) {
+        this.txt_tomorrow = txt_tomorrow;
+    }
+
+    public String getTxt_morning() {
+        return txt_morning;
+    }
+
+    public void setTxt_morning(String txt_morning) {
+        this.txt_morning = txt_morning;
+    }
+
+    public String getTxt_day() {
+        return txt_day;
+    }
+
+    public void setTxt_day(String txt_day) {
+        this.txt_day = txt_day;
+    }
+
+    public String getTxt_evening() {
+        return txt_evening;
+    }
+
+    public void setTxt_evening(String txt_evening) {
+        this.txt_evening = txt_evening;
+    }
+
+    public String getTxt_night() {
+        return txt_night;
+    }
+
+    public void setTxt_night(String txt_night) {
+        this.txt_night = txt_night;
+    }
+
+    public String getStl_background_color() {
+        return stl_background_color;
+    }
+
+    public void setStl_background_color(String stl_background_color) {
+        this.stl_background_color = stl_background_color;
+    }
+
+    public String getStl_panel_color() {
+        return stl_panel_color;
+    }
+
+    public void setStl_panel_color(String stl_panel_color) {
+        this.stl_panel_color = stl_panel_color;
+    }
+
+    public Integer getStl_panel_max_width() {
+        return stl_panel_max_width;
+    }
+
+    public void setStl_panel_max_width(Integer stl_panel_max_width) {
+        this.stl_panel_max_width = stl_panel_max_width;
+    }
+
+    public String getStl_panel_max_width_unit() {
+        return stl_panel_max_width_unit;
+    }
+
+    public void setStl_panel_max_width_unit(String stl_panel_max_width_unit) {
+        this.stl_panel_max_width_unit = stl_panel_max_width_unit;
+    }
+
+    public String getStl_not_selected_elements_color() {
+        return stl_not_selected_elements_color;
+    }
+
+    public void setStl_not_selected_elements_color(String stl_not_selected_elements_color) {
+        this.stl_not_selected_elements_color = stl_not_selected_elements_color;
+    }
+
+    public String getStl_selected_elements_color() {
+        return stl_selected_elements_color;
+    }
+
+    public void setStl_selected_elements_color(String stl_selected_elements_color) {
+        this.stl_selected_elements_color = stl_selected_elements_color;
+    }
+
+    public String getStl_job_title_color() {
+        return stl_job_title_color;
+    }
+
+    public void setStl_job_title_color(String stl_job_title_color) {
+        this.stl_job_title_color = stl_job_title_color;
+    }
+
+    public String getFld_creator() {
+        return fld_creator;
+    }
+
+    public void setFld_creator(String fld_creator) {
+        this.fld_creator = fld_creator;
+    }
 
     public Integer getFld_step() {
         return fld_step;

@@ -934,7 +934,9 @@ public class DepartmentRepositoryJPA {
                         "           p.description as description," +
                         "           coalesce(p.is_active, true) as is_active," +
                         "           d.name as department_name, " +
-                        "           d.id as department_id " +
+                        "           d.id as department_id, " +
+                        "           coalesce(d.address,'') as dep_address, " +
+                        "           coalesce(d.additional,'') as dep_additional " +
                         "           from scdl_dep_parts p" +
                         "           INNER JOIN users u ON p.master_id=u.id" +
                         "           INNER JOIN departments d ON p.department_id=d.id" +
@@ -946,7 +948,7 @@ public class DepartmentRepositoryJPA {
             return departmentsPartsListConstruct(stringQuery, masterId, companyId);
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Exception in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
+            logger.error("ExceptigetCalendarEventsListon in method getDepartmentsWithPartsList. SQL query:" + stringQuery, e);
             return null;
         }
     }
@@ -961,12 +963,18 @@ public class DepartmentRepositoryJPA {
             Long lastDepId = 0L;
             Long currentDepId=0L;
             String lastDepName = "";
+            String lastDepAddress = "";
+            String lastDepAdd = "";
             String currentDepName = "";
+            String currentDepAddress = "";
+            String currentDepAdd = "";
 
             for (Object[] obj : queryList) {
 
                 currentDepId = Long.parseLong(obj[5].toString());
                 currentDepName = (String) obj[4];
+                currentDepAddress = (String) obj[6];
+                currentDepAdd = (String) obj[7];
 
                 DepartmentPartJSON part = new DepartmentPartJSON();
                 part.setId(Long.parseLong(           obj[0].toString()));
@@ -977,16 +985,18 @@ public class DepartmentRepositoryJPA {
                 part.setResources(filterResourcesByDepPart(part.getId(),resources));
 
                 if((!currentDepId.equals(lastDepId)) && lastDepId != 0L ) { // department has been changed
-                    returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, partsList));
+                    returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList));
                     partsList = new ArrayList<>();
                 }
                 partsList.add(part);
                 lastDepId = currentDepId;
                 lastDepName = currentDepName;
+                lastDepAddress = currentDepAddress;
+                lastDepAdd = currentDepAdd;
             }
 
             if(currentDepId>0L)
-                returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, partsList));
+                returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList));
 
             return returnList;
         } catch (Exception e) {

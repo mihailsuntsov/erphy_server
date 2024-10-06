@@ -6,12 +6,16 @@ public class DepartmentWithPartsJSON {
 
     private Long   department_id;
     private String department_name;
+    private String department_address;
+    private String department_additional;
     private List<DepartmentPartJSON> parts;
 
-    public DepartmentWithPartsJSON(Long department_id, String department_name, List<DepartmentPartJSON> parts) {
+    public DepartmentWithPartsJSON(Long department_id, String department_name, String department_address, String department_additional, List<DepartmentPartJSON> parts) {
         this.department_id = department_id;
         this.department_name = department_name;
         this.parts = parts;
+        this.department_address = department_address;
+        this.department_additional = department_additional;
     }
 //    private Long part_id;
 //    private Long department_id;
@@ -20,6 +24,22 @@ public class DepartmentWithPartsJSON {
 //    private Boolean is_active;
 //    private String department_name;
 
+
+    public String getDepartment_address() {
+        return department_address;
+    }
+
+    public void setDepartment_address(String department_address) {
+        this.department_address = department_address;
+    }
+
+    public String getDepartment_additional() {
+        return department_additional;
+    }
+
+    public void setDepartment_additional(String department_additional) {
+        this.department_additional = department_additional;
+    }
 
     public Long getDepartment_id() {
         return department_id;

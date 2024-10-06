@@ -2,6 +2,7 @@ package com.dokio.controller;
 
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
+import com.dokio.message.request.onlineScheduling.OnlineSchedulingForm;
 import com.dokio.repository.OnlineSchedulingRepositoryJPA;
 import com.dokio.message.response.onlineScheduling.CompanyParamsJSON;
 import com.dokio.repository.CalendarRepositoryJPA;
@@ -73,4 +74,19 @@ public class OnlineSchedulingController {
         catch (Exception e){e.printStackTrace();logger.error("Controller getOnlineSchedulingProductCategories error with companyUrlSlug=" + companyUrlSlug +", langCode="+langCode, e);
             return new ResponseEntity<>("Controller getOnlineSchedulingProductCategories error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
-}
+    @PostMapping("/api/public/getOnlineSchedulingServices")
+    public  ResponseEntity<?> getOnlineSchedulingServices(@RequestBody OnlineSchedulingForm request) {
+        logger.info("Processing post request for path /api/public/getOnlineSchedulingServices: " + request.toString());
+        try {return new ResponseEntity<>(onlineSchedulingRepository.getOnlineSchedulingServices(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getOnlineSchedulingServices error", e);
+            return new ResponseEntity<>("Controller getOnlineSchedulingServices error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+    @PostMapping("/api/public/getCalendarEventsList")
+    public  ResponseEntity<?> getCalendarEventsList(@RequestBody CalendarEventsQueryForm request) {
+        logger.info("Processing post request for path /api/public/getCalendarEventsList: " + request.toString());
+        try {
+            request.setWithSensitiveInfo(false);// to not loading Titles of appointments with client names etc.
+            return new ResponseEntity<>(calendarRepository.getCalendarEventsList(request), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getCalendarEventsList error", e);
+            return new ResponseEntity<>("Controller public/getCalendarEventsList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }}

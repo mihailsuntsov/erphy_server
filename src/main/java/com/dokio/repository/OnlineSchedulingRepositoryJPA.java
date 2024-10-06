@@ -2,6 +2,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.additional.AppointmentMainInfoForm;
 import com.dokio.message.request.additional.calendar.CalendarEventsQueryForm;
+import com.dokio.message.request.onlineScheduling.OnlineSchedulingForm;
 import com.dokio.message.response.additional.DepartmentWithPartsJSON;
 import com.dokio.message.response.additional.appointment.AppointmentEmployee;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
@@ -9,6 +10,7 @@ import com.dokio.message.response.additional.calendar.BreakJSON;
 import com.dokio.message.response.onlineScheduling.*;
 import com.dokio.message.response.store.woo.v3.ProductCategoriesJSON;
 import com.dokio.message.response.store.woo.v3.ProductCategoryJSON;
+import com.dokio.message.response.store.woo.v3.products.ImageJSON;
 import com.dokio.util.CommonUtilites;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.math.BigDecimal;
 import java.util.*;
 
 @Repository("OnlineSchedulingRepositoryJPA")
@@ -47,9 +50,12 @@ public class OnlineSchedulingRepositoryJPA {
                 " os.master_id as master_id, " +
                 " os.company_id as company_id, " +
                 " cmp.time_zone_id as time_zone_id, " +
-                " tz.canonical_id as time_zone_name" +
+                " tz.canonical_id as time_zone_name," +
+                " sslc.date_format as date_format, " +
+                " os.fld_time_format as time_format " +
                 " from scdl_os_company_settings os " +
                 " inner join companies cmp on cmp.id=os.company_id" +
+                " inner join sprav_sys_locales sslc on os.fld_locale_id = sslc.id" +
                 " left outer join sprav_sys_timezones tz on cmp.time_zone_id=tz.id" +
                 " where " +
                 " os.fld_url_slug = :fld_url_slug";
@@ -62,6 +68,9 @@ public class OnlineSchedulingRepositoryJPA {
             params.setCompanyId(Long.parseLong(     obj[1].toString()));
             params.setTime_zone_id((Integer)        obj[2]);
             params.setTime_zone_name((String)       obj[3]);
+            params.setDate_format((String)          obj[4]);
+            params.setTime_format((String)          obj[5]);
+
             return params;
         } catch (NoResultException nre) {
             return new CompanyParamsJSON();
@@ -110,46 +119,88 @@ public class OnlineSchedulingRepositoryJPA {
                 "           coalesce(os.stl_font_family, 'Roboto, sans-serif') as stl_font_family, " +
                 "           coalesce(os.txt_fld_your_name, 'Your name') as txt_fld_your_name, " +
                 "           coalesce(os.txt_fld_your_tel, 'Telephone') as txt_fld_your_tel, " +
-                "           coalesce(os.txt_fld_your_email, 'Email') as txt_fld_your_email" +
-                "           from scdl_os_company_settings os where master_id="+params.getMasterId()+" and company_id="+params.getCompanyId();
+                "           coalesce(os.txt_fld_your_email, 'Email') as txt_fld_your_email," +
+
+                "           coalesce(os.txt_any_specialist,'Any specialist') as txt_any_specialist, " +
+                "           coalesce(os.txt_hour,'hour') as txt_hour, " +
+                "           coalesce(os.txt_minute,'minutes') as txt_minute, " +
+                "           coalesce(os.txt_nearest_app_time,'The nearest appointment time') as txt_nearest_app_time, " +
+                "           coalesce(os.txt_today,'Today') as txt_today, " +
+                "           coalesce(os.txt_tomorrow,'Tomorrow') as txt_tomorrow, " +
+                "           coalesce(os.txt_morning,'Morning') as txt_morning, " +
+                "           coalesce(os.txt_day,'Day') as txt_day, " +
+                "           coalesce(os.txt_evening,'Evening') as txt_evening, " +
+                "           coalesce(os.txt_night,'Night') as txt_night, " +
+                "           coalesce(os.stl_background_color,'#f5f5f5') as stl_background_color, " +
+                "           coalesce(os.stl_panel_color,'#ffffff') as stl_panel_color, " +
+                "           coalesce(os.stl_panel_max_width,'600') as stl_panel_max_width, " +
+                "           coalesce(os.stl_panel_max_width_unit,'px') as stl_panel_max_width_unit, " +
+                "           coalesce(os.stl_not_selected_elements_color,'#c2c2c2') as stl_not_selected_elements_color, " +
+                "           coalesce(os.stl_selected_elements_color,'#223559') as stl_selected_elements_color, " +
+                "           coalesce(os.stl_job_title_color,'#545454') as stl_job_title_color," +
+                "           cmp.name as company_name " +
+                "           from scdl_os_company_settings os " +
+                "           inner join companies cmp on cmp.id = os.company_id " +
+//                "           inner join sprav_sys_locales sslc on os.fld_locale_id = sslc.id" +
+                "           where os.master_id="+params.getMasterId()+" and os.company_id="+params.getCompanyId();
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             Object[] obj = (Object[]) query.getSingleResult();
             OnlineSchedulingSettingsJSON result = new OnlineSchedulingSettingsJSON();
-            result.setFld_step((Integer)                    obj[0]);
-            result.setFld_max_amount_services((Integer)     obj[1]);
-            result.setFld_locale_id((Integer)               obj[2]);
-            result.setFld_time_format((String)              obj[3]);
-            result.setFld_duration((String)                 obj[4]);
-            result.setFld_predefined_duration((Integer)     obj[5]);
-            result.setFld_predefined_duration_unit_id(      obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
-            result.setFld_tel_prefix((String)               obj[7]);
-            result.setFld_ask_telephone((Boolean)           obj[8]);
-            result.setFld_ask_email((Boolean)               obj[9]);
-            result.setFld_url_slug((String)                 obj[10]);
-            result.setTxt_btn_select_time((String)          obj[11]);
-            result.setTxt_btn_select_specialist((String)    obj[12]);
-            result.setTxt_btn_select_services((String)      obj[13]);
-            result.setTxt_summary_header((String)           obj[14]);
-            result.setTxt_summary_date((String)             obj[15]);
-            result.setTxt_summary_time_start((String)       obj[16]);
-            result.setTxt_summary_time_end((String)         obj[17]);
-            result.setTxt_summary_duration((String)         obj[18]);
-            result.setTxt_summary_specialist((String)       obj[19]);
-            result.setTxt_summary_services((String)         obj[20]);
-            result.setTxt_btn_create_order((String)         obj[21]);
-            result.setTxt_btn_send_order((String)           obj[22]);
-            result.setTxt_msg_send_successful((String)      obj[23]);
-            result.setTxt_msg_send_error((String)           obj[24]);
-            result.setTxt_msg_time_not_enable((String)      obj[25]);
-            result.setStl_color_buttons((String)            obj[26]);
-            result.setStl_color_buttons_text((String)       obj[27]);
-            result.setStl_color_text((String)               obj[28]);
-            result.setStl_corner_radius((String)            obj[29]);
-            result.setStl_font_family((String)              obj[30]);
-            result.setTxt_fld_your_name((String)            obj[31]);
-            result.setTxt_fld_your_tel((String)             obj[32]);
-            result.setTxt_fld_your_email((String)           obj[33]);
+            result.setFld_step((Integer)                        obj[0]);
+            result.setFld_max_amount_services((Integer)         obj[1]);
+            result.setFld_locale_id((Integer)                   obj[2]);
+            result.setFld_time_format((String)                  obj[3]);
+            result.setFld_duration((String)                     obj[4]);
+            result.setFld_predefined_duration((Integer)         obj[5]);
+            result.setFld_predefined_duration_unit_id(          obj[6] != null ? Long.parseLong(obj[6].toString()) : null);
+            result.setFld_tel_prefix((String)                   obj[7]);
+            result.setFld_ask_telephone((Boolean)               obj[8]);
+            result.setFld_ask_email((Boolean)                   obj[9]);
+            result.setFld_url_slug((String)                     obj[10]);
+            result.setTxt_btn_select_time((String)              obj[11]);
+            result.setTxt_btn_select_specialist((String)        obj[12]);
+            result.setTxt_btn_select_services((String)          obj[13]);
+            result.setTxt_summary_header((String)               obj[14]);
+            result.setTxt_summary_date((String)                 obj[15]);
+            result.setTxt_summary_time_start((String)           obj[16]);
+            result.setTxt_summary_time_end((String)             obj[17]);
+            result.setTxt_summary_duration((String)             obj[18]);
+            result.setTxt_summary_specialist((String)           obj[19]);
+            result.setTxt_summary_services((String)             obj[20]);
+            result.setTxt_btn_create_order((String)             obj[21]);
+            result.setTxt_btn_send_order((String)               obj[22]);
+            result.setTxt_msg_send_successful((String)          obj[23]);
+            result.setTxt_msg_send_error((String)               obj[24]);
+            result.setTxt_msg_time_not_enable((String)          obj[25]);
+            result.setStl_color_buttons((String)                obj[26]);
+            result.setStl_color_buttons_text((String)           obj[27]);
+            result.setStl_color_text((String)                   obj[28]);
+            result.setStl_corner_radius((String)                obj[29]);
+            result.setStl_font_family((String)                  obj[30]);
+            result.setTxt_fld_your_name((String)                obj[31]);
+            result.setTxt_fld_your_tel((String)                 obj[32]);
+            result.setTxt_fld_your_email((String)               obj[33]);
+            result.setTxt_any_specialist((String)               obj[34]);
+            result.setTxt_hour((String)                         obj[35]);
+            result.setTxt_minute((String)                       obj[36]);
+            result.setTxt_nearest_app_time((String)             obj[37]);
+            result.setTxt_today((String)                        obj[38]);
+            result.setTxt_tomorrow((String)                     obj[39]);
+            result.setTxt_morning((String)                      obj[40]);
+            result.setTxt_day((String)                          obj[41]);
+            result.setTxt_evening((String)                      obj[42]);
+            result.setTxt_night((String)                        obj[43]);
+            result.setStl_background_color((String)             obj[44]);
+            result.setStl_panel_color((String)                  obj[45]);
+            result.setStl_panel_max_width((Integer)             obj[46]);
+            result.setStl_panel_max_width_unit((String)         obj[47]);
+            result.setStl_not_selected_elements_color((String)  obj[48]);
+            result.setStl_selected_elements_color((String)      obj[49]);
+            result.setStl_job_title_color((String)              obj[50]);
+            result.setCompany_name((String)                     obj[51]);
+            result.setDate_format(              params.getDate_format());
+
             result.setOnlineSchedulingLanguagesList(companyRepository.getOnlineSchedulingLanguagesList(params.getCompanyId(),params.getMasterId()));
             result.setOnlineSchedulingFieldsTranslations(companyRepository.getOnlineSchedulingFieldsTranslationsList(params.getCompanyId(),params.getMasterId()));
             return result;
@@ -176,7 +227,9 @@ public class OnlineSchedulingRepositoryJPA {
                         "           p.description as description," +
                         "           coalesce(p.is_active, true) as is_active," +
                         "           d.name as department_name, " +
-                        "           d.id as department_id " +
+                        "           d.id as department_id, " +
+                        "           coalesce(d.address,'') as dep_address, " +
+                        "           coalesce(d.additional,'') as dep_additional " +
                         "           from scdl_dep_parts p" +
                         "           INNER JOIN users u ON p.master_id=u.id" +
                         "           INNER JOIN departments d ON p.department_id=d.id" +
@@ -490,11 +543,161 @@ public class OnlineSchedulingRepositoryJPA {
     }
 
 
+    public Set<OnlineSchedulingServiceJSON> getOnlineSchedulingServices(OnlineSchedulingForm onlineSchedulingForm) {
 
+        String stringQuery = "";
+        String companyUrlSlug = onlineSchedulingForm.getCompanyUrlSlug();
+        String langCode = onlineSchedulingForm.getLangCode();
+        Set<Long> servicesIds = onlineSchedulingForm.getServicesIds();
+        String servicesIds_ = commonUtilites.SetOfLongToString(servicesIds, ",", "(", ")");
+        try{
+            CompanyParamsJSON params = getCompanyParamsBySlug(companyUrlSlug);
+            Long companyId = params.getCompanyId();
+            Long masterId = params.getMasterId();
+//            OnlineSchedulingSettingsJSON osSettings = getOnlineSchedulingSettings(companyUrlSlug);
+            Long priceTypeId = Long.valueOf(commonUtilites.getFieldValueFromTableById("departments", "price_id", masterId, onlineSchedulingForm.getDepId()).toString());
 
+            stringQuery =   " select " +
+                            " p.id as id," +
+                            " coalesce(NULLIF(translator.name, ''), p.name) as name, " +
+                            " coalesce(p.type, 'simple') as type, " +
+                            " p.article as sku, " +
+                            " pr.price_value as price " +
 
+                            " from products p " +
+                            " INNER JOIN product_productcategories ppc ON ppc.product_id=p.id " +
+                            " INNER JOIN product_categories pc ON pc.id=ppc.category_id " +
+                            " INNER JOIN product_prices pr ON pr.product_id=p.id and pr.price_type_id=" + priceTypeId +
+                            " LEFT OUTER JOIN store_translate_products translator ON p.id = translator.product_id and translator.lang_code = upper('" + langCode + "')" +
 
+                            " where " +
 
+                            " p.company_id = " + companyId +
+                            " and coalesce(pc.is_booking_category,false)=true " + // if product is in the booking category
+                            " and coalesce(p.is_deleted, false) = false " +
+                            " and p.id not in (select variation_product_id from product_variations where master_id = " + masterId + ")" + // product is not used as variation
+                            " and coalesce(p.is_deleted, false) = false " +
+                            " and p.id in " + servicesIds_ +
+                            " order by p.name ";
+
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            Set<OnlineSchedulingServiceJSON> returnList = new HashSet<>();
+            Set<Long> productIds = new HashSet<>();
+
+            for (Object[] obj : queryList) {
+                OnlineSchedulingServiceJSON doc = new OnlineSchedulingServiceJSON();
+                doc.setId(Long.parseLong(                           obj[0].toString()));
+                doc.setName((String)                                obj[1]);
+                doc.setType((String)                                obj[2]);
+                doc.setSku((String)                                 obj[3]);
+                doc.setPrice((                                      obj[4]).toString());
+                returnList.add(doc);
+                productIds.add(doc.getId());
+            }
+            if(returnList.size()>0){
+                Map<Long,Set<Long>> productCategoriesIds = getServicesCategoriesIds(productIds);
+                Map<Long,List<ImageJSON>> productImages  = getServicesImages(productIds, companyId);
+
+                for(OnlineSchedulingServiceJSON doc : returnList){
+                    doc.setCategories(productCategoriesIds.get(doc.getId()));
+                    doc.setImages(productImages.get(doc.getId()));
+                }
+            }
+            return returnList;
+        }catch (Exception e) {
+            logger.error("Exception in method getOnlineSchedulingServices. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private Map<Long,Set<Long>> getServicesCategoriesIds(Set<Long> productIds) {
+        String productIds_ = commonUtilites.SetOfLongToString(productIds,",","(",")");
+        String stringQuery= " SELECT " +
+                            " product_id, " +
+                            " category_id " +
+                            " FROM product_productcategories " +
+                            " WHERE " +
+                            " product_id in " + productIds_ +
+                            " ORDER BY product_id";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            Long currentProductId=0L;
+            Set<Long>categoriesIds = new HashSet<>();
+            Map<Long,Set<Long>> returnMap = new HashMap<>();
+            for (Object[] obj : queryList) {
+                Long currentCycleProductId = Long.parseLong(obj[0].toString());
+                if(!currentCycleProductId.equals(currentProductId) && !currentProductId.equals(0L)){
+                    returnMap.put(currentProductId, categoriesIds);
+                    categoriesIds = new HashSet<>();
+                    currentProductId = currentCycleProductId;
+                } else if (!currentCycleProductId.equals(currentProductId) && currentProductId.equals(0L)) {
+                    currentProductId = currentCycleProductId;
+                }
+                categoriesIds.add(Long.parseLong(obj[1].toString()));
+            }
+            returnMap.put(currentProductId, categoriesIds);
+            return returnMap;
+        }catch (Exception e) {
+            logger.error("Exception in method getProductCategoriesIds. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private Map<Long,List<ImageJSON>> getServicesImages(Set<Long> productIds, Long companyId) throws Exception {
+        String productIds_ = commonUtilites.SetOfLongToString(productIds,",","(",")");
+        String stringQuery =
+                "           select " +
+                        "           p.id as product_id, " +
+                        "           coalesce(f.original_name,'') as img_original_name, "+
+                        "           coalesce(f.name,'') as img_name, "+
+                        "           coalesce(f.alt,'') as img_alt "+
+                        "           from " +
+                        "           products p " +
+                        "           inner join product_files pf on p.id=pf.product_id " +
+                        "           inner join files f on pf.file_id=f.id " +
+                        "           where " +
+                        "           p.id in " + productIds_ +
+                        "           and f.trash is not true " +
+                        "           and p.company_id= " + companyId +
+                        "           and coalesce(f.anonyme_access, false) is true " +
+                        "           order by p.id, pf.output_order";
+
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            Long currentProductId=0L;
+            List<ImageJSON> imagesList = new ArrayList<>();
+            Map<Long,List<ImageJSON>> returnMap = new HashMap<>();
+
+            for (Object[] obj : queryList) {
+                Long currentCycleProductId = Long.parseLong(obj[0].toString());
+                if(!currentCycleProductId.equals(currentProductId) && !currentProductId.equals(0L)){
+                    returnMap.put(currentProductId, imagesList);
+                    imagesList = new ArrayList<>();
+                    currentProductId = currentCycleProductId;
+                } else if (!currentCycleProductId.equals(currentProductId) && currentProductId.equals(0L)) {
+                    currentProductId = currentCycleProductId;
+                }
+                imagesList.add( new ImageJSON(
+                        (String)                                        obj[1],
+                        apiserver + "/api/public/getFile/" + obj[2],
+                        (String)                                        obj[3]
+                    )
+                );
+            }
+            returnMap.put(currentProductId, imagesList);
+
+            return returnMap;
+        } catch (Exception e) {
+            logger.error("Exception in method getServicesImages. SQL query:"+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
 
 
 

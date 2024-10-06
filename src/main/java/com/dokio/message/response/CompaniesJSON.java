@@ -147,7 +147,6 @@ public class CompaniesJSON {
     private Set<OnlineSchedulingLanguage> onlineSchedulingLanguagesList;
     private List<OnlineSchedulingFieldsTranslation> onlineSchedulingFieldsTranslations;
 
-    private Long fld_privce_type_id;
     private Long fld_creator_id;
     private String txt_any_specialist;
     private String txt_hour;
@@ -166,13 +165,14 @@ public class CompaniesJSON {
     private String stl_not_selected_elements_color;
     private String stl_selected_elements_color;
     private String stl_job_title_color;
+    private String fld_creator;
 
-    public Long getFld_privce_type_id() {
-        return fld_privce_type_id;
+    public String getFld_creator() {
+        return fld_creator;
     }
 
-    public void setFld_privce_type_id(Long fld_privce_type_id) {
-        this.fld_privce_type_id = fld_privce_type_id;
+    public void setFld_creator(String fld_creator) {
+        this.fld_creator = fld_creator;
     }
 
     public Long getFld_creator_id() {

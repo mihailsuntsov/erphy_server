@@ -17,12 +17,21 @@ public class CalendarEventsQueryForm {
     private Boolean ifNoEmployeesThenNoEvents;
 
     private String companyUrlSlug;
+    private Boolean withSensitiveInfo;
 
     public CalendarEventsQueryForm(Long companyId, String dateFrom, String dateTo, Set<Long> depparts) {
         this.companyId = companyId;
         this.dateFrom = dateFrom;
         this.dateTo = dateTo;
         this.depparts = depparts;
+    }
+
+    public Boolean getWithSensitiveInfo() {
+        return withSensitiveInfo;
+    }
+
+    public void setWithSensitiveInfo(Boolean withSensitiveInfo) {
+        this.withSensitiveInfo = withSensitiveInfo;
     }
 
     public String getCompanyUrlSlug() {

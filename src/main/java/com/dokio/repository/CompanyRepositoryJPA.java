@@ -515,8 +515,26 @@ public class CompanyRepositoryJPA {
                         "           coalesce(os.stl_font_family, 'Roboto, sans-serif') as stl_font_family, " +
                         "           coalesce(os.txt_fld_your_name, 'Your name') as txt_fld_your_name, " +
                         "           coalesce(os.txt_fld_your_tel, 'Telephone') as txt_fld_your_tel, " +
-                        "           coalesce(os.txt_fld_your_email, 'Email') as txt_fld_your_email " +
-
+                        "           coalesce(os.txt_fld_your_email, 'Email') as txt_fld_your_email, " +
+                        "           coalesce(os.fld_creator_id,"+myMasterId+") as fld_creator_id, " +
+                        "           coalesce(os.txt_any_specialist,'Any specialist') as txt_any_specialist, " +
+                        "           coalesce(os.txt_hour,'hour') as txt_hour, " +
+                        "           coalesce(os.txt_minute,'minutes') as txt_minute, " +
+                        "           coalesce(os.txt_nearest_app_time,'The nearest appointment time') as txt_nearest_app_time, " +
+                        "           coalesce(os.txt_today,'Today') as txt_today, " +
+                        "           coalesce(os.txt_tomorrow,'Tomorrow') as txt_tomorrow, " +
+                        "           coalesce(os.txt_morning,'Morning') as txt_morning, " +
+                        "           coalesce(os.txt_day,'Day') as txt_day, " +
+                        "           coalesce(os.txt_evening,'Evening') as txt_evening, " +
+                        "           coalesce(os.txt_night,'Night') as txt_night, " +
+                        "           coalesce(os.stl_background_color,'#f5f5f5') as stl_background_color, " +
+                        "           coalesce(os.stl_panel_color,'#ffffff') as stl_panel_color, " +
+                        "           coalesce(os.stl_panel_max_width,'600') as stl_panel_max_width, " +
+                        "           coalesce(os.stl_panel_max_width_unit,'px') as stl_panel_max_width_unit, " +
+                        "           coalesce(os.stl_not_selected_elements_color,'#c2c2c2') as stl_not_selected_elements_color, " +
+                        "           coalesce(os.stl_selected_elements_color,'#223559') as stl_selected_elements_color, " +
+                        "           coalesce(os.stl_job_title_color,'#545454') as stl_job_title_color, " +
+                        "           coalesce(ucb.name, u.name) as fld_creator" + // name of creator by default
                         "           from companies p " +
                         "           INNER JOIN users u ON p.master_id=u.id " +
                         "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -524,14 +542,9 @@ public class CompanyRepositoryJPA {
                         "           LEFT OUTER JOIN sprav_sys_opf sso ON p.opf_id=sso.id " +
                         "           LEFT OUTER JOIN sprav_status_dock stat ON p.status_id=stat.id" +
                         "           LEFT OUTER JOIN sprav_sys_countries ctr ON p.country_id=ctr.id" +
-                        //                    "           LEFT OUTER JOIN cagents cag ON p.store_default_customer_id=cag.id" +
-                        //                    "           LEFT OUTER JOIN users uoc ON p.store_default_creator_id=uoc.id " +
-                        //                    "           LEFT OUTER JOIN sprav_sys_regions reg ON p.region_id=reg.id" +
-                        //                    "           LEFT OUTER JOIN sprav_sys_cities cty ON p.city_id=cty.id" +
                         "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
                         "           LEFT OUTER JOIN scdl_os_company_settings os ON os.company_id=p.id " +
-                        //                    "           LEFT OUTER JOIN sprav_sys_regions jr_reg ON p.jr_region_id=jr_reg.id" +
-                        //                    "           LEFT OUTER JOIN sprav_sys_cities jr_cty ON p.jr_city_id=jr_cty.id" +
+                        "           LEFT OUTER JOIN users ucb ON os.fld_creator_id=ucb.id " +
                         "           where p.id= " + id +
                         "           and  p.master_id=" + myMasterId;
 
@@ -658,7 +671,25 @@ public class CompanyRepositoryJPA {
                 doc.setTxt_fld_your_name((String) queryList.get(0)[110]);
                 doc.setTxt_fld_your_tel((String) queryList.get(0)[111]);
                 doc.setTxt_fld_your_email((String) queryList.get(0)[112]);
-
+                doc.setFld_creator_id(Long.parseLong(queryList.get(0)[113].toString()));
+                doc.setTxt_any_specialist((String) queryList.get(0)[114]);
+                doc.setTxt_hour((String) queryList.get(0)[115]);
+                doc.setTxt_minute((String) queryList.get(0)[116]);
+                doc.setTxt_nearest_app_time((String) queryList.get(0)[117]);
+                doc.setTxt_today((String) queryList.get(0)[118]);
+                doc.setTxt_tomorrow((String) queryList.get(0)[119]);
+                doc.setTxt_morning((String) queryList.get(0)[120]);
+                doc.setTxt_day((String) queryList.get(0)[121]);
+                doc.setTxt_evening((String) queryList.get(0)[122]);
+                doc.setTxt_night((String) queryList.get(0)[123]);
+                doc.setStl_background_color((String) queryList.get(0)[124]);
+                doc.setStl_panel_color((String) queryList.get(0)[125]);
+                doc.setStl_panel_max_width((Integer) queryList.get(0)[126]);
+                doc.setStl_panel_max_width_unit((String) queryList.get(0)[127]);
+                doc.setStl_not_selected_elements_color((String) queryList.get(0)[128]);
+                doc.setStl_selected_elements_color((String) queryList.get(0)[129]);
+                doc.setStl_job_title_color((String) queryList.get(0)[130]);
+                doc.setFld_creator((String) queryList.get(0)[131]);
 
                 doc.setOnlineSchedulingLanguagesList(getOnlineSchedulingLanguagesList(doc.getId(),myMasterId));
 
@@ -694,7 +725,17 @@ public class CompanyRepositoryJPA {
                 "           coalesce(p.txt_msg_send_successful,'') as txt_msg_send_successful, " +
                 "           coalesce(p.txt_msg_send_error,'') as txt_msg_send_error, " +
                 "           coalesce(p.txt_msg_time_not_enable,'') as txt_msg_time_not_enable, " +
-                "           p.lang_code as lang_code" +
+                "           p.lang_code as lang_code," +
+                "           coalesce(p.txt_any_specialist,'') as txt_any_specialist, " +
+                "           coalesce(p.txt_hour,'') as txt_hour, " +
+                "           coalesce(p.txt_minute,'') as txt_minute, " +
+                "           coalesce(p.txt_nearest_app_time,'') as txt_nearest_app_time, " +
+                "           coalesce(p.txt_today,'') as txt_today, " +
+                "           coalesce(p.txt_tomorrow,'') as txt_tomorrow, " +
+                "           coalesce(p.txt_morning,'') as txt_morning, " +
+                "           coalesce(p.txt_day,'') as txt_day, " +
+                "           coalesce(p.txt_evening,'') as txt_evening, " +
+                "           coalesce(p.txt_night,'') as txt_night " +
                 "           from     scdl_os_translate p " +
                 "           where    p.master_id=" + masterId +
                 "           and      p.company_id =" + companyId +
@@ -724,6 +765,16 @@ public class CompanyRepositoryJPA {
                 doc.setTxt_msg_send_error((String) obj[16]);
                 doc.setTxt_msg_time_not_enable((String) obj[17]);
                 doc.setLangCode((String) obj[18]);
+                doc.setTxt_any_specialist((String) queryList.get(0)[19]);
+                doc.setTxt_hour((String) queryList.get(0)[20]);
+                doc.setTxt_minute((String) queryList.get(0)[21]);
+                doc.setTxt_nearest_app_time((String) queryList.get(0)[22]);
+                doc.setTxt_today((String) queryList.get(0)[23]);
+                doc.setTxt_tomorrow((String) queryList.get(0)[24]);
+                doc.setTxt_morning((String) queryList.get(0)[25]);
+                doc.setTxt_day((String) queryList.get(0)[26]);
+                doc.setTxt_evening((String) queryList.get(0)[27]);
+                doc.setTxt_night((String) queryList.get(0)[28]);
                 returnList.add(doc);
             }
             return returnList;
@@ -757,7 +808,17 @@ public class CompanyRepositoryJPA {
                 " txt_msg_time_not_enable, " +
                 " txt_fld_your_name, " +
                 " txt_fld_your_tel, " +
-                " txt_fld_your_email " +
+                " txt_fld_your_email, " +
+                " txt_any_specialist, " +
+                " txt_hour, " +
+                " txt_minute, " +
+                " txt_nearest_app_time, " +
+                " txt_today, " +
+                " txt_tomorrow, " +
+                " txt_morning, " +
+                " txt_day, " +
+                " txt_evening, " +
+                " txt_night " +
                 "   ) values (" +
                 master_id+", "+
                 company_id+", "+
@@ -779,7 +840,17 @@ public class CompanyRepositoryJPA {
                 " :txt_msg_time_not_enable, " +
                 " :txt_fld_your_name, " +
                 " :txt_fld_your_tel, " +
-                " :txt_fld_your_email " +
+                " :txt_fld_your_email, " +
+                " :txt_any_specialist, " +
+                " :txt_hour, " +
+                " :txt_minute, " +
+                " :txt_nearest_app_time, " +
+                " :txt_today, " +
+                " :txt_tomorrow, " +
+                " :txt_morning, " +
+                " :txt_day, " +
+                " :txt_evening, " +
+                " :txt_night" +
                 ") ON CONFLICT ON CONSTRAINT scdl_os_translate_lang_uq " +// "upsert"
                 " DO update set " +
                 " txt_btn_select_time = :txt_btn_select_time,  " +
@@ -799,7 +870,17 @@ public class CompanyRepositoryJPA {
                 " txt_msg_time_not_enable = :txt_msg_time_not_enable,  " +
                 " txt_fld_your_name = :txt_fld_your_name,  " +
                 " txt_fld_your_tel = :txt_fld_your_tel,  " +
-                " txt_fld_your_email = :txt_fld_your_email  ";
+                " txt_fld_your_email = :txt_fld_your_email,  " +
+                " txt_any_specialist = :txt_any_specialist, " +
+                " txt_hour = :txt_hour, " +
+                " txt_minute = :txt_minute, " +
+                " txt_nearest_app_time = :txt_nearest_app_time, " +
+                " txt_today = :txt_today, " +
+                " txt_tomorrow = :txt_tomorrow, " +
+                " txt_morning = :txt_morning, " +
+                " txt_day = :txt_day, " +
+                " txt_evening = :txt_evening, " +
+                " txt_night = :txt_night";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
             query.setParameter("lang_code", row.getLangCode());
@@ -821,6 +902,16 @@ public class CompanyRepositoryJPA {
             query.setParameter("txt_fld_your_name", row.getTxt_fld_your_name());
             query.setParameter("txt_fld_your_tel", row.getTxt_fld_your_tel());
             query.setParameter("txt_fld_your_email", row.getTxt_fld_your_email());
+            query.setParameter("txt_any_specialist", row.getTxt_any_specialist());
+            query.setParameter("txt_hour", row.getTxt_hour());
+            query.setParameter("txt_minute", row.getTxt_minute());
+            query.setParameter("txt_nearest_app_time", row.getTxt_nearest_app_time());
+            query.setParameter("txt_today", row.getTxt_today());
+            query.setParameter("txt_tomorrow", row.getTxt_tomorrow());
+            query.setParameter("txt_morning", row.getTxt_morning());
+            query.setParameter("txt_day", row.getTxt_day());
+            query.setParameter("txt_evening", row.getTxt_evening());
+            query.setParameter("txt_night", row.getTxt_night());
             query.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -1081,7 +1172,25 @@ public class CompanyRepositoryJPA {
                     " stl_color_buttons_text, " +
                     " stl_color_text, " +
                     " stl_corner_radius, " +
-                    " stl_font_family " +
+                    " stl_font_family, " +
+                    " fld_creator_id, " +
+                    " txt_any_specialist, " +
+                    " txt_hour, " +
+                    " txt_minute, " +
+                    " txt_nearest_app_time, " +
+                    " txt_today, " +
+                    " txt_tomorrow, " +
+                    " txt_morning, " +
+                    " txt_day, " +
+                    " txt_evening, " +
+                    " txt_night, " +
+                    " stl_background_color, " +
+                    " stl_panel_color, " +
+                    " stl_panel_max_width, " +
+                    " stl_panel_max_width_unit, " +
+                    " stl_not_selected_elements_color, " +
+                    " stl_selected_elements_color, " +
+                    " stl_job_title_color " +
                     ") values (" +
                     masterId + ", " +
                     request.getId() + ", " +
@@ -1118,7 +1227,25 @@ public class CompanyRepositoryJPA {
                     " :stl_color_buttons_text, " +
                     " :stl_color_text, " +
                     " :stl_corner_radius, " +
-                    " :stl_font_family " +
+                    " :stl_font_family, " +
+                    request.getFld_creator_id() + ", " +
+                    " :txt_any_specialist, " +
+                    " :txt_hour, " +
+                    " :txt_minute, " +
+                    " :txt_nearest_app_time, " +
+                    " :txt_today, " +
+                    " :txt_tomorrow, " +
+                    " :txt_morning, " +
+                    " :txt_day, " +
+                    " :txt_evening, " +
+                    " :txt_night, " +
+                    " :stl_background_color, " +
+                    " :stl_panel_color, " +
+                    request.getStl_panel_max_width() + ", " +
+                    " :stl_panel_max_width_unit, " +
+                    " :stl_not_selected_elements_color, " +
+                    " :stl_selected_elements_color, " +
+                    " :stl_job_title_color " +
                     ") " +
                     " ON CONFLICT ON CONSTRAINT scdl_os_company_settings_company_uq " +// "upsert"
                     " DO UPDATE SET " +
@@ -1155,7 +1282,25 @@ public class CompanyRepositoryJPA {
                     " stl_color_buttons_text = :stl_color_buttons_text,  " +
                     " stl_color_text = :stl_color_text,  " +
                     " stl_corner_radius = :stl_corner_radius,  " +
-                    " stl_font_family = :stl_font_family ;";
+                    " stl_font_family = :stl_font_family, " +
+                    " fld_creator_id = " + request.getFld_creator_id() + ", " +
+                    " txt_any_specialist = :txt_any_specialist, " +
+                    " txt_hour = :txt_hour, " +
+                    " txt_minute = :txt_minute, " +
+                    " txt_nearest_app_time = :txt_nearest_app_time, " +
+                    " txt_today = :txt_today, " +
+                    " txt_tomorrow = :txt_tomorrow, " +
+                    " txt_morning = :txt_morning, " +
+                    " txt_day = :txt_day, " +
+                    " txt_evening = :txt_evening, " +
+                    " txt_night = :txt_night, " +
+                    " stl_background_color = :stl_background_color, " +
+                    " stl_panel_color = :stl_panel_color, " +
+                    " stl_panel_max_width = " + request.getStl_panel_max_width() + ", " +
+                    " stl_panel_max_width_unit = :stl_panel_max_width_unit, " +
+                    " stl_not_selected_elements_color = :stl_not_selected_elements_color, " +
+                    " stl_selected_elements_color = :stl_selected_elements_color, " +
+                    " stl_job_title_color = :stl_job_title_color";
 
         Query query = entityManager.createNativeQuery(stringQuery);
         try
@@ -1198,7 +1343,6 @@ public class CompanyRepositoryJPA {
             query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
             query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
             query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
-
             query.setParameter("fld_time_format", request.getFld_time_format());
             query.setParameter("fld_duration", request.getFld_duration());
             query.setParameter("fld_tel_prefix", request.getFld_tel_prefix());
@@ -1226,6 +1370,22 @@ public class CompanyRepositoryJPA {
             query.setParameter("stl_color_text", request.getStl_color_text());
             query.setParameter("stl_corner_radius", request.getStl_corner_radius());
             query.setParameter("stl_font_family", request.getStl_font_family());
+            query.setParameter("txt_any_specialist", request.getTxt_any_specialist());
+            query.setParameter("txt_hour", request.getTxt_hour());
+            query.setParameter("txt_minute", request.getTxt_minute());
+            query.setParameter("txt_nearest_app_time", request.getTxt_nearest_app_time());
+            query.setParameter("txt_today", request.getTxt_today());
+            query.setParameter("txt_tomorrow", request.getTxt_tomorrow());
+            query.setParameter("txt_morning", request.getTxt_morning());
+            query.setParameter("txt_day", request.getTxt_day());
+            query.setParameter("txt_evening", request.getTxt_evening());
+            query.setParameter("txt_night", request.getTxt_night());
+            query.setParameter("stl_background_color", request.getStl_background_color());
+            query.setParameter("stl_panel_color", request.getStl_panel_color());
+            query.setParameter("stl_panel_max_width_unit", request.getStl_panel_max_width_unit());
+            query.setParameter("stl_not_selected_elements_color", request.getStl_not_selected_elements_color());
+            query.setParameter("stl_selected_elements_color", request.getStl_selected_elements_color());
+            query.setParameter("stl_job_title_color", request.getStl_job_title_color());
 
             query.executeUpdate();
         }catch (Exception e) {
@@ -1334,185 +1494,169 @@ public class CompanyRepositoryJPA {
         } else return -1L;
     }
 
-
-    public Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId) throws Exception {
-        String stringQuery;
-        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
-        Long myId = userRepository.getUserId();
-        Long newDocId;
-        stringQuery =   "insert into companies (" +
-                " master_id," + //мастер-аккаунт
-                " creator_id," + //создатель
-                " date_time_created," + //дата и время создания
-                " name, " +//наименование
-                " opf_id,"+//организационно-правовая форма предприятия
-                " code, " +//код
-                " telephone, " +//телефон
-                " site, " +//факс
-                " email, " +//емейл
-//                " currency_id,"+//валюта предприятия
-                " status_id,"+//статус предприятия
-                //фактический адрес
-                " zip_code, " +//почтовый индекс
-                " country_id,"+//страна
-//                " region_id,"+//область
-//                " city_id,"+//город/нас.пункт
-                " region, " +//область
-                " city, " +//город/нас.пункт
-                " street, " +//улица
-                " home, " +//дом
-                " flat, " +//квартира
-                " additional_address, " +//дополнение к адресу
-                //Юридические реквизиты
-                " jr_jur_full_name, " +//полное название (для юрлиц)
-                " jr_jur_kpp, " +//кпп (для юрлиц)
-                " jr_jur_ogrn, " +//огрн (для юрлиц)
-                //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
-                " jr_zip_code, " +//почтовый индекс
-                " jr_country_id,"+//страна
-//                " jr_region_id,"+//область
-//                " jr_city_id,"+//город/нас.пункт
-                " jr_region, " +//область
-                " jr_city, " +//город/нас.пункт
-                " jr_street, " +//улица
-                " jr_home, " +//дом
-                " jr_flat, " +//квартира
-                " jr_additional_address, " +//дополнение к адресу
-                " jr_inn, " +//ИНН
-                " jr_okpo, " + //ОКПО
-                " jr_fio_family, " +//Фамилия
-                " jr_fio_name, " +//Имя
-                " jr_fio_otchestvo, " +//Отчество
-                " jr_ip_ogrnip, " + //ОГРНИП (для ИП)
-                " jr_ip_svid_num, " +//номер свидетельства (для ИП)
-                " jr_ip_reg_date," +
-                " nds_payer,"+//является ли плательщиком НДС
-                " fio_director,"+//ФИО управляющего
-                " director_position,"+//должность управляющего
-                " fio_glavbuh,"+//ФИО главбуха
-                " st_prefix_barcode_pieced, "  + // prefix of barcode for pieced product
-                " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
-                " st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
-                " type, " +
-                " legal_form,"+
-                " nds_included, " +
-                " vat, " +// VAT number
-                " store_default_lang_code," +
-                " booking_doc_name_variation_id," +
-                " time_zone_id " +
-                ") values (" +
-                myMasterId + ", "+
-                myId + ", "+
-                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
-                ":name, " +//наименование
-                request.getOpf_id() + ", " +//организационно-правовая форма предприятия
-                ":code, " +//код
-                ":telephone, " +//телефон
-                ":site, " +//факс
-                ":email, " +//емейл
-//                request.getCurrency_id() + ", " +//валюта
-                request.getStatus_id() + ", " +//статус документа
-                //фактический адрес
-                ":zip_code, " +//почтовый индекс
-                request.getCountry_id() + ", " +//страна
-//                request.getRegion_id() + ", " +//область
-//                request.getCity_id() + ", " +//город/нас.пункт
-                ":region, " +//область
-                ":city, " +//город/нас.пункт
-                ":street, " +//улица
-                ":home, " +//дом
-                ":flat, " +//квартира
-                ":additional_address, " +//дополнение к адресу
-                //Юридические реквизиты
-                ":jr_jur_full_name, " +//полное название (для юрлиц)
-                ":jr_jur_kpp, " +//кпп (для юрлиц)
-                ":jr_jur_ogrn, " +//огрн (для юрлиц)
-                //юридический адрес (для юрлиц) /адрес регистрации (для ип и физлиц)
-                ":jr_zip_code, " +//почтовый индекс
-                request.getJr_country_id() + ", " +//страна
-//                request.getJr_region_id() + ", " +//область
-//                request.getJr_city_id() + ", " +//город/нас.пункт
-                ":jr_region, " +//область
-                ":jr_city, " +//город/нас.пункт
-                ":jr_street, " +//улица
-                ":jr_home, " +//дом
-                ":jr_flat, " +//квартира
-                ":jr_additional_address, " +//дополнение к адресу
-                ":jr_inn, " +//ИНН
-                ":jr_okpo, " + //ОКПО
-                ":jr_fio_family, " +//Фамилия
-                ":jr_fio_name, " +//Имя
-                ":jr_fio_otchestvo, " +//Отчество
-                ":jr_ip_ogrnip, " + //ОГРНИП (для ИП)
-                ":jr_ip_svid_num, " +//номер свидетельства (для ИП)
-                "to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
-                request.getNds_payer() + ", " +//является ли плательщиком НДС
-                " :fio_director,"+//ФИО управляющего
-                " :director_position,"+//должность управляющего
-                " :fio_glavbuh,"+//ФИО главбуха
-                (Objects.isNull(request.getSt_prefix_barcode_pieced())?21:request.getSt_prefix_barcode_pieced()) + ", " +// prefix of barcode for pieced product
-                (Objects.isNull(request.getSt_prefix_barcode_packed())?20:request.getSt_prefix_barcode_packed()) + ", " +// prefix of barcode for packed product
-                ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
-                ":type, " +
-                ":legal_form,"+
-                request.getNds_included() + ", " +
-                ":jr_vat, " +
-                " upper(:store_default_lang_code), " +
-                request.getBooking_doc_name_variation_id() + " ," +
-                request.getTime_zone_id() +
-                ")";
-        try{
-            Query query = entityManager.createNativeQuery(stringQuery);
-
-            query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
-            query.setParameter("type",request.getType());
-            query.setParameter("name", (request.getName()!=null?request.getName():""));
-            query.setParameter("code",(request.getCode() == null ? "": request.getCode()));
-            query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
-            query.setParameter("site",(request.getSite() == null ? "": request.getSite()));
-            query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
-            query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
-            query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
-            query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
-            query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
-            query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
-            query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
-            query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
-            query.setParameter("jr_jur_full_name",(request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()));
-            query.setParameter("jr_jur_kpp",(request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()));
-            query.setParameter("jr_jur_ogrn",(request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()));
-            query.setParameter("jr_zip_code",(request.getJr_zip_code() == null ? "": request.getJr_zip_code()));
-            query.setParameter("jr_region",(request.getJr_region() == null ? "": request.getJr_region()));
-            query.setParameter("jr_city",(request.getJr_city() == null ? "": request.getJr_city()));
-            query.setParameter("jr_street",(request.getJr_street() == null ? "": request.getJr_street()));
-            query.setParameter("jr_home",(request.getJr_home() == null ? "": request.getJr_home()));
-            query.setParameter("jr_flat",(request.getJr_flat() == null ? "": request.getJr_flat()));
-            query.setParameter("jr_additional_address",(request.getJr_additional_address() == null ? "": request.getJr_additional_address()));
-            query.setParameter("jr_inn",(request.getJr_inn() == null ? "": request.getJr_inn()));
-            query.setParameter("jr_okpo",(request.getJr_okpo() == null ? "": request.getJr_okpo()));
-            query.setParameter("jr_fio_family",(request.getJr_fio_family() == null ? "": request.getJr_fio_family()));
-            query.setParameter("jr_fio_name",(request.getJr_fio_name() == null ? "": request.getJr_fio_name()));
-            query.setParameter("jr_fio_otchestvo",(request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()));
-            query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
-            query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
-            query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
-            query.setParameter("fio_director",(request.getFio_director()!=null?request.getFio_director():""));
-            query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
-            query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
-            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
-            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
-            query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
-            query.executeUpdate();
-            stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
-            Query query2 = entityManager.createNativeQuery(stringQuery);
-            newDocId=Long.valueOf(query2.getSingleResult().toString());
-            return newDocId;
-        } catch (Exception e) {
-            logger.error("Exception in method insertCompanyBaseFields. SQL query:"+stringQuery, e);
-            e.printStackTrace();
-            throw new Exception(e);
-        }
-    }
+//
+//    public Long insertCompanyBaseFields(CompaniesForm request,Long myMasterId) throws Exception {
+//        String stringQuery;
+//        String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+//        Long myId = userRepository.getUserId();
+//        Long newDocId;
+//        stringQuery =   "insert into companies (" +
+//                " master_id," + //мастер-аккаунт
+//                " creator_id," + //создатель
+//                " date_time_created," + //дата и время создания
+//                " name, " +//наименование
+//                " opf_id,"+//организационно-правовая форма предприятия
+//                " code, " +//код
+//                " telephone, " +//телефон
+//                " site, " +//факс
+//                " email, " +//емейл
+//                " status_id,"+//статус предприятия
+//                " zip_code, " +//почтовый индекс
+//                " country_id,"+//страна
+//                " region, " +//область
+//                " city, " +//город/нас.пункт
+//                " street, " +//улица
+//                " home, " +//дом
+//                " flat, " +//квартира
+//                " additional_address, " +//дополнение к адресу
+//                " jr_jur_full_name, " +//полное название (для юрлиц)
+//                " jr_jur_kpp, " +//кпп (для юрлиц)
+//                " jr_jur_ogrn, " +//огрн (для юрлиц)
+//                " jr_zip_code, " +//почтовый индекс
+//                " jr_country_id,"+//страна
+//                " jr_region, " +//область
+//                " jr_city, " +//город/нас.пункт
+//                " jr_street, " +//улица
+//                " jr_home, " +//дом
+//                " jr_flat, " +//квартира
+//                " jr_additional_address, " +//дополнение к адресу
+//                " jr_inn, " +//ИНН
+//                " jr_okpo, " + //ОКПО
+//                " jr_fio_family, " +//Фамилия
+//                " jr_fio_name, " +//Имя
+//                " jr_fio_otchestvo, " +//Отчество
+//                " jr_ip_ogrnip, " + //ОГРНИП (для ИП)
+//                " jr_ip_svid_num, " +//номер свидетельства (для ИП)
+//                " jr_ip_reg_date," +
+//                " nds_payer,"+//является ли плательщиком НДС
+//                " fio_director,"+//ФИО управляющего
+//                " director_position,"+//должность управляющего
+//                " fio_glavbuh,"+//ФИО главбуха
+//                " st_prefix_barcode_pieced, "  + // prefix of barcode for pieced product
+//                " st_prefix_barcode_packed, "  + // prefix of barcode for packed product
+//                " st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
+//                " type, " +
+//                " legal_form,"+
+//                " nds_included, " +
+//                " vat, " +// VAT number
+//                " store_default_lang_code," +
+//                " booking_doc_name_variation_id," +
+//                " time_zone_id " +
+//                ") values (" +
+//                myMasterId + ", "+
+//                myId + ", "+
+//                "to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')," +
+//                ":name, " +//наименование
+//                request.getOpf_id() + ", " +//организационно-правовая форма предприятия
+//                ":code, " +//код
+//                ":telephone, " +//телефон
+//                ":site, " +//факс
+//                ":email, " +//емейл
+//                request.getStatus_id() + ", " +//статус документа
+//                ":zip_code, " +//почтовый индекс
+//                request.getCountry_id() + ", " +//страна
+//                ":region, " +//область
+//                ":city, " +//город/нас.пункт
+//                ":street, " +//улица
+//                ":home, " +//дом
+//                ":flat, " +//квартира
+//                ":additional_address, " +//дополнение к адресу
+//                ":jr_jur_full_name, " +//полное название (для юрлиц)
+//                ":jr_jur_kpp, " +//кпп (для юрлиц)
+//                ":jr_jur_ogrn, " +//огрн (для юрлиц)
+//                ":jr_zip_code, " +//почтовый индекс
+//                request.getJr_country_id() + ", " +//страна
+//                ":jr_region, " +//область
+//                ":jr_city, " +//город/нас.пункт
+//                ":jr_street, " +//улица
+//                ":jr_home, " +//дом
+//                ":jr_flat, " +//квартира
+//                ":jr_additional_address, " +//дополнение к адресу
+//                ":jr_inn, " +//ИНН
+//                ":jr_okpo, " + //ОКПО
+//                ":jr_fio_family, " +//Фамилия
+//                ":jr_fio_name, " +//Имя
+//                ":jr_fio_otchestvo, " +//Отчество
+//                ":jr_ip_ogrnip, " + //ОГРНИП (для ИП)
+//                ":jr_ip_svid_num, " +//номер свидетельства (для ИП)
+//                "to_date(cast(:jr_ip_reg_date as TEXT),'DD.MM.YYYY')," +
+//                request.getNds_payer() + ", " +//является ли плательщиком НДС
+//                " :fio_director,"+//ФИО управляющего
+//                " :director_position,"+//должность управляющего
+//                " :fio_glavbuh,"+//ФИО главбуха
+//                (Objects.isNull(request.getSt_prefix_barcode_pieced())?21:request.getSt_prefix_barcode_pieced()) + ", " +// prefix of barcode for pieced product
+//                (Objects.isNull(request.getSt_prefix_barcode_packed())?20:request.getSt_prefix_barcode_packed()) + ", " +// prefix of barcode for packed product
+//                ":st_netcost_policy," +  // policy of netcost calculation by all company or by each department separately
+//                ":type, " +
+//                ":legal_form,"+
+//                request.getNds_included() + ", " +
+//                ":jr_vat, " +
+//                " upper(:store_default_lang_code), " +
+//                request.getBooking_doc_name_variation_id() + " ," +
+//                request.getTime_zone_id() +
+//                ")";
+//        try{
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//
+//            query.setParameter("st_netcost_policy",request.getSt_netcost_policy());
+//            query.setParameter("type",request.getType());
+//            query.setParameter("name", (request.getName()!=null?request.getName():""));
+//            query.setParameter("code",(request.getCode() == null ? "": request.getCode()));
+//            query.setParameter("telephone",(request.getTelephone() == null ? "": request.getTelephone()));
+//            query.setParameter("site",(request.getSite() == null ? "": request.getSite()));
+//            query.setParameter("email",(request.getEmail() == null ? "": request.getEmail()));
+//            query.setParameter("zip_code",(request.getZip_code() == null ? "": request.getZip_code()));
+//            query.setParameter("region",(request.getRegion() == null ? "": request.getRegion()));
+//            query.setParameter("city",(request.getCity() == null ? "": request.getCity()));
+//            query.setParameter("street",(request.getStreet() == null ? "": request.getStreet()));
+//            query.setParameter("home",(request.getHome() == null ? "": request.getHome()));
+//            query.setParameter("flat",(request.getFlat() == null ? "": request.getFlat()));
+//            query.setParameter("additional_address",(request.getAdditional_address() == null ? "": request.getAdditional_address()));
+//            query.setParameter("jr_jur_full_name",(request.getJr_jur_full_name() == null ? "": request.getJr_jur_full_name()));
+//            query.setParameter("jr_jur_kpp",(request.getJr_jur_kpp() == null ? "": request.getJr_jur_kpp()));
+//            query.setParameter("jr_jur_ogrn",(request.getJr_jur_ogrn() == null ? "": request.getJr_jur_ogrn()));
+//            query.setParameter("jr_zip_code",(request.getJr_zip_code() == null ? "": request.getJr_zip_code()));
+//            query.setParameter("jr_region",(request.getJr_region() == null ? "": request.getJr_region()));
+//            query.setParameter("jr_city",(request.getJr_city() == null ? "": request.getJr_city()));
+//            query.setParameter("jr_street",(request.getJr_street() == null ? "": request.getJr_street()));
+//            query.setParameter("jr_home",(request.getJr_home() == null ? "": request.getJr_home()));
+//            query.setParameter("jr_flat",(request.getJr_flat() == null ? "": request.getJr_flat()));
+//            query.setParameter("jr_additional_address",(request.getJr_additional_address() == null ? "": request.getJr_additional_address()));
+//            query.setParameter("jr_inn",(request.getJr_inn() == null ? "": request.getJr_inn()));
+//            query.setParameter("jr_okpo",(request.getJr_okpo() == null ? "": request.getJr_okpo()));
+//            query.setParameter("jr_fio_family",(request.getJr_fio_family() == null ? "": request.getJr_fio_family()));
+//            query.setParameter("jr_fio_name",(request.getJr_fio_name() == null ? "": request.getJr_fio_name()));
+//            query.setParameter("jr_fio_otchestvo",(request.getJr_fio_otchestvo() == null ? "": request.getJr_fio_otchestvo()));
+//            query.setParameter("jr_ip_ogrnip",(request.getJr_ip_ogrnip() == null ? "": request.getJr_ip_ogrnip()));
+//            query.setParameter("jr_ip_svid_num",(request.getJr_ip_svid_num() == null ? "": request.getJr_ip_svid_num()));
+//            query.setParameter("jr_ip_reg_date",(request.getJr_ip_reg_date()!=null && !request.getJr_ip_reg_date().isEmpty()) ? (request.getJr_ip_reg_date()) : null);
+//            query.setParameter("fio_director",(request.getFio_director()!=null?request.getFio_director():""));
+//            query.setParameter("director_position",(request.getDirector_position()!=null?request.getDirector_position():""));
+//            query.setParameter("fio_glavbuh",(request.getFio_glavbuh()!=null?request.getFio_glavbuh():""));
+//            query.setParameter("legal_form",(request.getLegal_form()!=null?request.getLegal_form():""));
+//            query.setParameter("jr_vat", (request.getJr_vat() == null ? "": request.getJr_vat()));
+//            query.setParameter("store_default_lang_code",((request.getStore_default_lang_code()!=null&&!request.getStore_default_lang_code().equals(""))?request.getStore_default_lang_code():"EN"));
+//            query.executeUpdate();
+//            stringQuery="select id from companies where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
+//            Query query2 = entityManager.createNativeQuery(stringQuery);
+//            newDocId=Long.valueOf(query2.getSingleResult().toString());
+//            return newDocId;
+//        } catch (Exception e) {
+//            logger.error("Exception in method insertCompanyBaseFields. SQL query:"+stringQuery, e);
+//            e.printStackTrace();
+//            throw new Exception(e);
+//        }
+//    }
 
     @SuppressWarnings("Duplicates")
     public void setCompanyAdditionals(Long companyId) throws Exception {

@@ -31,7 +31,7 @@ public class CalendarController {
         logger.info("Processing post request for path /api/auth/getCalendarEventsList: " + request.toString());
         try {return new ResponseEntity<>(calendarRepository.getCalendarEventsList(request), HttpStatus.OK);}
         catch (Exception e){e.printStackTrace();logger.error("Controller getCalendarEventsList error", e);
-            return new ResponseEntity<>("Controller getCalendarEventsList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+            return new ResponseEntity<>("Controller auth/getCalendarEventsList error", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 
     @PostMapping("/api/auth/getCalendarUsersBreaksList")

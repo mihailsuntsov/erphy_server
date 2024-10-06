@@ -6919,7 +6919,6 @@ alter table scdl_os_translate add constraint scdl_os_translate_lang_uq unique (c
 
 alter table product_categories add column is_booking_category boolean;
 
-alter table scdl_os_company_settings add column fld_privce_type_id bigint;
 alter table scdl_os_company_settings add column fld_creator_id bigint;
 alter table scdl_os_company_settings add column txt_any_specialist varchar(100);
 alter table scdl_os_company_settings add column txt_hour varchar(20);
@@ -6938,5 +6937,4 @@ alter table scdl_os_company_settings add column stl_panel_max_width_unit varchar
 alter table scdl_os_company_settings add column stl_not_selected_elements_color varchar(7);
 alter table scdl_os_company_settings add column stl_selected_elements_color varchar(7);
 alter table scdl_os_company_settings add column stl_job_title_color varchar(7);
-alter table scdl_os_company_settings add constraint fld_privce_type_id_fkey foreign key (fld_privce_type_id) references sprav_type_prices (id);
 alter table scdl_os_company_settings add constraint fld_creator_id_fkey foreign key (fld_creator_id) references users (id);

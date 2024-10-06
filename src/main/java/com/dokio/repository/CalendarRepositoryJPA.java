@@ -9,6 +9,7 @@ import com.dokio.message.response.additional.IdNameAndDescription;
 import com.dokio.message.response.additional.appointment.DepartmentPartWithServicesIds;
 import com.dokio.message.response.additional.calendar.*;
 import com.dokio.message.response.additional.appointment.AppointmentEmployee;
+import com.dokio.message.response.onlineScheduling.CompanyParamsJSON;
 import com.dokio.security.CryptoService;
 import com.dokio.security.services.UserDetailsServiceImpl;
 import com.dokio.util.CommonUtilites;
@@ -52,6 +53,8 @@ public class CalendarRepositoryJPA {
     private CommonUtilites commonUtilites;
     @Autowired
     ProductsRepositoryJPA productsRepository;
+    @Autowired
+    OnlineSchedulingRepositoryJPA onlineSchedulingRepository;
 //    @Autowired
 //    private LinkedDocsUtilites linkedDocsUtilites;
     @Autowired
@@ -64,13 +67,28 @@ public class CalendarRepositoryJPA {
     public List<CalendarEventJSON> getCalendarEventsList(CalendarEventsQueryForm request) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         List<CalendarEventJSON> returnList = new ArrayList<>();
-        LocalDate localDate = LocalDate.now();
-        UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
-        String dateFormat = userSettings.getDateFormat();
-        String timeFormat = (userSettings.getTimeFormat().equals("12")?" HH12:MI AM":" HH24:MI"); // '12' or '24'
-        Long masterId = userRepositoryJPA.getMyMasterId();
-        String myTimeZone = userRepository.getUserTimeZone();
+//        LocalDate localDate = LocalDate.now();
+        String myTimeZone = "";
+        Long masterId = null;
+        String dateFormat = "";
+        String timeFormat = "";
 
+        if(Objects.isNull(request.getCompanyUrlSlug())) {
+            UserSettingsJSON userSettings = userRepositoryJPA.getMySettings();
+            dateFormat = userSettings.getDateFormat();
+            timeFormat = (userSettings.getTimeFormat().equals("12") ? " HH12:MI AM" : " HH24:MI"); // '12' or '24'
+            masterId = userRepositoryJPA.getMyMasterId();
+            myTimeZone = userRepository.getUserTimeZone();
+        } else {
+            CompanyParamsJSON params = onlineSchedulingRepository.getCompanyParamsBySlug(request.getCompanyUrlSlug());
+            myTimeZone = params.getTime_zone_name();
+            masterId = params.getMasterId();
+            request.setCompanyId(params.getCompanyId());
+            dateFormat = params.getDate_format();
+            timeFormat = (params.getTime_format().equals("12") ? " HH12:MI AM" : " HH24:MI");
+        }
+
+        if(Objects.isNull(request.getWithSensitiveInfo())) request.setWithSensitiveInfo(true);
 
         String depPartsIds_ =  commonUtilites.SetOfLongToString(request.getDepparts(), ",", "(", ")");
 //        String jobTitlesIds_ = commonUtilites.SetOfLongToString(request.getJobtitles(), ",", "(", ")");
@@ -165,7 +183,7 @@ public class CalendarRepositoryJPA {
 
             for (Object[] obj : queryList) {
                 Long currentCycleAppointmentId = Long.parseLong(obj[0].toString());
-                String currentCycleAppointmentName = ((String) obj[1]) + " " +  generateStartANdEndDateTime((String)obj[14],(String)obj[15],(String)obj[16],(String)obj[17]) + (!((String)obj[5]).equals("")?(", "+(String)obj[5]):"");
+                String currentCycleAppointmentName = request.getWithSensitiveInfo()?(((String) obj[1]) + " " +  generateStartANdEndDateTime((String)obj[14],(String)obj[15],(String)obj[16],(String)obj[17]) + (!((String)obj[5]).equals("")?(", "+(String)obj[5]):"")):"";
                 String currentCycleDateStart = (String) obj[2];
                 String currentCycleDateEnd = (String) obj[3];
                 Long currentCycleEmployeeId =obj[4] != null ? Long.parseLong(obj[4].toString()) : null;
