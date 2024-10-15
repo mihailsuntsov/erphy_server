@@ -18,6 +18,7 @@
 
 package com.dokio.message.response;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
 import com.dokio.message.request.additional.OnlineSchedulingLanguage;
 
@@ -109,6 +110,7 @@ public class CompaniesJSON {
 //    private Integer reg_country_id;           // country of registration
 //    private String tax_number;                // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
 
     private Integer fld_step;
     private Integer fld_max_amount_services;
@@ -166,6 +168,14 @@ public class CompaniesJSON {
     private String stl_selected_elements_color;
     private String stl_job_title_color;
     private String fld_creator;
+
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
 
     public String getFld_creator() {
         return fld_creator;

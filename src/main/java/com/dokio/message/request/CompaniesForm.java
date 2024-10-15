@@ -18,6 +18,7 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
 import com.dokio.message.request.additional.OnlineSchedulingLanguage;
 
@@ -91,6 +92,7 @@ public class CompaniesForm {
     private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
     private Integer time_zone_id;
 
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
 
     private Integer fld_step;
     private Integer fld_max_amount_services;
@@ -147,7 +149,13 @@ public class CompaniesForm {
     private String stl_selected_elements_color;
     private String stl_job_title_color;
 
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
 
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
 
     public Long getFld_creator_id() {
         return fld_creator_id;

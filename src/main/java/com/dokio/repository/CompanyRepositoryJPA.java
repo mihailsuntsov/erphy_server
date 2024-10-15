@@ -1,6 +1,7 @@
 package com.dokio.repository;
 import com.dokio.controller.AuthRestAPIs;
 import com.dokio.message.request.*;
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
 import com.dokio.message.request.additional.OnlineSchedulingLanguage;
 import com.dokio.message.response.CompaniesPaymentAccountsJSON;
@@ -692,7 +693,7 @@ public class CompanyRepositoryJPA {
                 doc.setFld_creator((String) queryList.get(0)[131]);
 
                 doc.setOnlineSchedulingLanguagesList(getOnlineSchedulingLanguagesList(doc.getId(),myMasterId));
-
+                doc.setOnlineSchedulingContactsList(getContactsList(doc.getId(),myMasterId));
 
                 doc.setOnlineSchedulingFieldsTranslations(getOnlineSchedulingFieldsTranslationsList(doc.getId(), myMasterId));
                 return doc;
@@ -954,6 +955,42 @@ public class CompanyRepositoryJPA {
         }
     }
 
+    public List<CompanyContactsForm> getContactsList (Long company_id, Long masterId) {
+        String stringQuery;
+        stringQuery =
+                "           select" +
+                        "           p.contact_type," +      // instagram/youtube/email/telephone etc.
+                        "           p.contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        "           p.additional,"+         // eg. "Sales manager telephone"
+                        "           p.display_in_os," +     // display or not in online scheduling
+                        "           p.location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        "           p.output_order " +
+                        "           from company_contacts p" +
+                        "           where  p.master_id=" + masterId +
+                        "           and p.company_id=" + company_id +
+                        "           order by p.output_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CompanyContactsForm> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                CompanyContactsForm doc = new CompanyContactsForm();
+                doc.setContact_type((String)                obj[0]);
+                doc.setContact_value((String)               obj[1]);
+                doc.setAdditional((String)                  obj[2]);
+                doc.setDisplay_in_os((Boolean)              obj[3]);
+                doc.setLocation_os((String)                 obj[4]);
+                doc.setOutput_order((Integer)               obj[5]);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getContactsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
     public Integer updateCompany(CompaniesForm request) {
@@ -1003,6 +1040,7 @@ public class CompanyRepositoryJPA {
                         saveOnlineSchedulingFieldsTranslations(row, myMasterId, request.getId());
                     }
                 }
+                saveContacts(request.getId(), myMasterId, request.getOnlineSchedulingContactsList());
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -1012,6 +1050,116 @@ public class CompanyRepositoryJPA {
             }
         } else return -1;
     }
+
+    public Boolean saveContacts(Long companyId, Long myMasterId, List<CompanyContactsForm> contactsList){
+        Set<Long> contactsIds=new HashSet<>();
+        try {
+            cu.idBelongsMyMaster("companies", companyId, myMasterId);
+            // Сначала удалим контакты, которые были удалены на фронете.
+            // Собираем List из id оставшихся контактов, и удаляем все что не входит в этот List
+            for (CompanyContactsForm contact : contactsList) {
+                if(!Objects.isNull(contact.getId())) {
+                    cu.idBelongsMyMaster("company_contacts", contact.getId(), myMasterId);
+                    cu.idBelongsMyMaster("companies", contact.getCompany_id(), myMasterId);
+                    contactsIds.add(contact.getId());
+                }
+            }
+            deleteContactsExcessRows(contactsIds.size()>0?(cu.SetOfLongToString(contactsIds,",","","")):"0", myMasterId, companyId);
+            // Затем в зависимости от того, есть или нет такой контакт в БД, делаем соответственно update или insert
+            for (CompanyContactsForm contact : contactsList) {
+                if(Objects.isNull(contact.getId())) {
+                    insertContact(contact, myMasterId);
+                }else {
+                    updateContact(contact, myMasterId);
+                }
+            }
+
+        } catch (Exception e){
+            e.printStackTrace();
+            logger.error("Exception in method CompanyRepositoryJPA/saveContacts.", e);
+            return null;
+        }
+        return true;
+    }
+    private Boolean insertContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " insert into company_contacts (" +
+                        " master_id," +
+                        " company_id," +
+                        " contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os," +     // display or not in online scheduling
+                        " location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order" +
+                        ") values ("+
+                        masterId + ","+
+                        contact.getCompany_id() + ","+
+                        ":contact_type ,"+
+                        ":contact_value ,"+
+                        ":additional ,"+
+                        contact.getDisplay_in_os() + ","+
+                        ":location_os,"+
+                        contact.getOutput_order()+
+                        ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method CompanyRepositoryJPA/insertContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean updateContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " update company_contacts set" +
+                        " contact_type = :contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value = :contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional = :additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os = " + contact.getDisplay_in_os()  + ", " + // display or not in online scheduling
+                        " location_os = :location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order = " + contact.getOutput_order() +
+                        " where master_id = " + masterId + " and company_id=" + contact.getCompany_id() +" and id = " + contact.getId();
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method CompanyRepositoryJPA/updateContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean deleteContactsExcessRows(String contactsIds, Long masterId, Long companyId) throws Exception {
+        String stringQuery;
+        stringQuery =   " delete from company_contacts " +
+                " where master_id=" + masterId +
+                " and company_id=" + companyId +
+                " and id not in (" + contactsIds + ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method CompanyRepositoryJPA/deleteContactsExcessRows. SQL - "+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
     private void saveOnlineSchedulingLanguage(Long master_id, Long company_id, OnlineSchedulingLanguage language) throws Exception {
         String stringQuery =
                 "   insert into scdl_os_company_languages (" +
@@ -1419,43 +1567,43 @@ public class CompanyRepositoryJPA {
         }
     }
 
-    private void insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) throws Exception {
-        String stringQuery;
-        try {
-            stringQuery =   " insert into companies_payment_accounts (" +
-                    "master_id," +
-                    "company_id," +
-                    "bik," +
-                    "name," +
-                    "address," +
-                    "corr_account," +
-                    "payment_account," +
-                    "output_order"+
-                    ") values ("
-                    + master_id +", "
-                    + company_id +", "
-                    + ":bik, "
-                    + ":name, "
-                    + ":address, "
-                    + ":corr_acc, "
-                    + ":paym_acc, "
-                    + row.getOutput_order() + ")";
-
-            Query query = entityManager.createNativeQuery(stringQuery);
-            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
-            query.setParameter("name", (row.getName()!=null?row.getName():""));
-            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
-            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
-            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
-            query.executeUpdate();
-        }
-        catch (Exception e) {
-            logger.error("Error of insertCompanyPaymentAccounts", e);
-            e.printStackTrace();
-            throw new Exception(e);
-        }
-
-    }
+//    private void insertCompanyPaymentAccounts(CompaniesPaymentAccountsForm row, Long master_id, Long company_id) throws Exception {
+//        String stringQuery;
+//        try {
+//            stringQuery =   " insert into companies_payment_accounts (" +
+//                    "master_id," +
+//                    "company_id," +
+//                    "bik," +
+//                    "name," +
+//                    "address," +
+//                    "corr_account," +
+//                    "payment_account," +
+//                    "output_order"+
+//                    ") values ("
+//                    + master_id +", "
+//                    + company_id +", "
+//                    + ":bik, "
+//                    + ":name, "
+//                    + ":address, "
+//                    + ":corr_acc, "
+//                    + ":paym_acc, "
+//                    + row.getOutput_order() + ")";
+//
+//            Query query = entityManager.createNativeQuery(stringQuery);
+//            query.setParameter("bik", (row.getBik()!=null?row.getBik():""));
+//            query.setParameter("name", (row.getName()!=null?row.getName():""));
+//            query.setParameter("address",(row.getAddress()!=null?row.getAddress():""));
+//            query.setParameter("corr_acc",(row.getCorr_account()!=null?row.getCorr_account():""));
+//            query.setParameter("paym_acc",(row.getPayment_account()!=null?row.getPayment_account():""));
+//            query.executeUpdate();
+//        }
+//        catch (Exception e) {
+//            logger.error("Error of insertCompanyPaymentAccounts", e);
+//            e.printStackTrace();
+//            throw new Exception(e);
+//        }
+//
+//    }
 
     @SuppressWarnings("Duplicates")
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {Exception.class})
