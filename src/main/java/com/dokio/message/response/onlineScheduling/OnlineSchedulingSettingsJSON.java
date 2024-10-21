@@ -1,5 +1,6 @@
 package com.dokio.message.response.onlineScheduling;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.OnlineSchedulingFieldsTranslation;
 import com.dokio.message.request.additional.OnlineSchedulingLanguage;
 
@@ -65,6 +66,15 @@ public class OnlineSchedulingSettingsJSON {
 
     private Set<OnlineSchedulingLanguage> onlineSchedulingLanguagesList;
     private List<OnlineSchedulingFieldsTranslation> onlineSchedulingFieldsTranslations;
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
+
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
 
     public String getDate_format() {
         return date_format;

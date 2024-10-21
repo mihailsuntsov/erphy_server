@@ -592,8 +592,13 @@ public class FileRepositoryJPA {
         } else return -1;
     }
 
+    public FileInfoJSON getFileAuth(Long fileId, Long masterId) {
+        String fileName = (String)commonUtilites.getFieldValueFromTableById("files", "name",  masterId, fileId);
+        return getFileAuth(fileName, masterId);
+    }
+
     @SuppressWarnings("Duplicates")//отдача данных (original_name, path) о файле, если есть права
-        public FileInfoJSON getFileAuth(String filename, Long masterId) {
+    public FileInfoJSON getFileAuth(String filename, Long masterId) {
 
         List<Integer> myPermissions = securityRepositoryJPA.giveMeMyPermissions(13L);
         if(myPermissions.contains(150) || myPermissions.contains(151) || myPermissions.contains(727))
@@ -619,6 +624,7 @@ public class FileRepositoryJPA {
             FileInfoJSON doc = new FileInfoJSON();
             doc.setOriginal_name((String) queryList.get(0)[0]);
             doc.setPath((String) queryList.get(0)[1]);
+            doc.setName(filename);
             return doc;
         } else return null;
     }

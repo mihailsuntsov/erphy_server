@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -296,7 +297,7 @@ public class FilesController {
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
                     .body(cos);
-        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }
     @SuppressWarnings("Duplicates")
@@ -316,7 +317,7 @@ public class FilesController {
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
                     .body(cos);
-        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }
 
@@ -335,10 +336,34 @@ public class FilesController {
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
                     .body(cos);
-        } else {ResponseEntity responseEntity = new ResponseEntity<>("Недостаточно прав на файл, или файла нет в базе данных.", HttpStatus.FORBIDDEN);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
             return responseEntity;}
     }
 
+    @SuppressWarnings("Duplicates")
+    @GetMapping(value = "/api/auth/getFileImageById/{fileid:.+}" ,
+    produces = "image/jpeg")
+    @ResponseBody
+    public ResponseEntity<byte[]> getFileImageById(@PathVariable String fileid) throws Exception, UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/auth/getFileImageById: file ID=" + fileid);
+        Long masterId = userRepositoryJPA.getMyMasterId();
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(Long.valueOf(fileid), masterId);
+        if(fileInfo !=null){
+//            String filePath=fileInfo.getPath()+"/thumbs/"+fileInfo.getName();
+            String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
+            String originalFileName = fileInfo.getOriginal_name();
+            byte[] cos = storageService.loadFile(filePath, masterId);
+//            HttpHeaders h = new HttpHeaders();
+//            h.add("Content-type", "image/jpeg");
+//            final HttpHeaders httpHeaders= new HttpHeaders();
+//            httpHeaders.setContentType(MediaType.IMAGE_PNG);
+            return ResponseEntity.ok()
+//                    .headers(httpHeaders)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
+                    .body(cos);
+        } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
+            return responseEntity;}
+    }
 //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************
 //*************************************************************************************************************************************************

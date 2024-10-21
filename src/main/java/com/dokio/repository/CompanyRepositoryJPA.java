@@ -693,7 +693,7 @@ public class CompanyRepositoryJPA {
                 doc.setFld_creator((String) queryList.get(0)[131]);
 
                 doc.setOnlineSchedulingLanguagesList(getOnlineSchedulingLanguagesList(doc.getId(),myMasterId));
-                doc.setOnlineSchedulingContactsList(getContactsList(doc.getId(),myMasterId));
+                doc.setOnlineSchedulingContactsList(getContactsList(doc.getId(),myMasterId, false));
 
                 doc.setOnlineSchedulingFieldsTranslations(getOnlineSchedulingFieldsTranslationsList(doc.getId(), myMasterId));
                 return doc;
@@ -955,42 +955,6 @@ public class CompanyRepositoryJPA {
         }
     }
 
-    public List<CompanyContactsForm> getContactsList (Long company_id, Long masterId) {
-        String stringQuery;
-        stringQuery =
-                "           select" +
-                        "           p.contact_type," +      // instagram/youtube/email/telephone etc.
-                        "           p.contact_value,"+      // eg. https://www.instagram.com/myinstagram
-                        "           p.additional,"+         // eg. "Sales manager telephone"
-                        "           p.display_in_os," +     // display or not in online scheduling
-                        "           p.location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
-                        "           p.output_order " +
-                        "           from company_contacts p" +
-                        "           where  p.master_id=" + masterId +
-                        "           and p.company_id=" + company_id +
-                        "           order by p.output_order";
-        try {
-            Query query = entityManager.createNativeQuery(stringQuery);
-            List<Object[]> queryList = query.getResultList();
-            List<CompanyContactsForm> returnList = new ArrayList<>();
-            for (Object[] obj : queryList) {
-                CompanyContactsForm doc = new CompanyContactsForm();
-                doc.setContact_type((String)                obj[0]);
-                doc.setContact_value((String)               obj[1]);
-                doc.setAdditional((String)                  obj[2]);
-                doc.setDisplay_in_os((Boolean)              obj[3]);
-                doc.setLocation_os((String)                 obj[4]);
-                doc.setOutput_order((Integer)               obj[5]);
-                returnList.add(doc);
-            }
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("Exception in method getContactsList. SQL query:" + stringQuery, e);
-            return null;
-        }
-    }
-
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = {RuntimeException.class})
     @SuppressWarnings("Duplicates")
     public Integer updateCompany(CompaniesForm request) {
@@ -1049,6 +1013,46 @@ public class CompanyRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+
+    public List<CompanyContactsForm> getContactsList (Long company_id, Long masterId, Boolean onlyDisplayInOS) {
+        String stringQuery;
+        stringQuery =
+                "           select" +
+                        "           p.contact_type," +      // instagram/youtube/email/telephone etc.
+                        "           p.contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        "           p.additional,"+         // eg. "Sales manager telephone"
+                        "           p.display_in_os," +     // display or not in online scheduling
+                        "           p.location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        "           p.output_order, " +
+                        "           p.id" +
+                        "           from company_contacts p" +
+                        "           where  p.master_id=" + masterId +
+                        (onlyDisplayInOS?" and coalesce(display_in_os,false)=true ":"") +
+                        "           and p.company_id=" + company_id +
+                        "           order by p.output_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CompanyContactsForm> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                CompanyContactsForm doc = new CompanyContactsForm();
+                doc.setContact_type((String)                obj[0]);
+                doc.setContact_value((String)               obj[1]);
+                doc.setAdditional((String)                  obj[2]);
+                doc.setDisplay_in_os((Boolean)              obj[3]);
+                doc.setLocation_os((String)                 obj[4]);
+                doc.setOutput_order((Integer)               obj[5]);
+                doc.setId(Long.parseLong(                   obj[6].toString()));
+                doc.setCompany_id(company_id);
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getContactsList. SQL query:" + stringQuery, e);
+            return null;
+        }
     }
 
     public Boolean saveContacts(Long companyId, Long myMasterId, List<CompanyContactsForm> contactsList){

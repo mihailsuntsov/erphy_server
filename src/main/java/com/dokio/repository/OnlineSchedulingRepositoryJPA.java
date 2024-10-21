@@ -203,6 +203,8 @@ public class OnlineSchedulingRepositoryJPA {
 
             result.setOnlineSchedulingLanguagesList(companyRepository.getOnlineSchedulingLanguagesList(params.getCompanyId(),params.getMasterId()));
             result.setOnlineSchedulingFieldsTranslations(companyRepository.getOnlineSchedulingFieldsTranslationsList(params.getCompanyId(),params.getMasterId()));
+            result.setOnlineSchedulingContactsList(companyRepository.getContactsList(params.getCompanyId(),params.getMasterId(),true));
+
             return result;
         } catch (NoResultException nre) {
             return new OnlineSchedulingSettingsJSON();
@@ -233,10 +235,12 @@ public class OnlineSchedulingRepositoryJPA {
                         "           from scdl_dep_parts p" +
                         "           INNER JOIN users u ON p.master_id=u.id" +
                         "           INNER JOIN departments d ON p.department_id=d.id" +
+//                        "           LEFT OUTER JOIN department_contacts вс on dc.department_id=p.id " +
                         "           where  p.master_id=" + masterId +
                         "           and p.department_id in (select id from departments where company_id="+companyId+" and coalesce(is_deleted,false)=false)" +
                         "           and coalesce(p.is_deleted, false) = false" +
-                        "           order by d.name,p.menu_order";
+                        "           and d.display_in_online_scheduling = true " +
+                        "           order by d.name, p.menu_order";
         try {
             return departmentRepository.departmentsPartsListConstruct(stringQuery, masterId, companyId);
         } catch (Exception e) {

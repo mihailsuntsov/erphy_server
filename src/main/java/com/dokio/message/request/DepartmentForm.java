@@ -18,6 +18,7 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.DepartmentPartsForm;
 
 import java.util.List;
@@ -39,6 +40,24 @@ public class DepartmentForm {
     private Long boxoffice_id;
     private Long payment_account_id;
     private List<DepartmentPartsForm> parts;
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
+    private Boolean display_in_online_scheduling;
+
+    public Boolean getDisplay_in_online_scheduling() {
+        return display_in_online_scheduling;
+    }
+
+    public void setDisplay_in_online_scheduling(Boolean display_in_online_scheduling) {
+        this.display_in_online_scheduling = display_in_online_scheduling;
+    }
+
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
 
     public List<DepartmentPartsForm> getParts() {
         return parts;

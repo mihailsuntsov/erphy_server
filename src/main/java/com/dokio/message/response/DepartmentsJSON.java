@@ -18,9 +18,11 @@
 
 package com.dokio.message.response;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.sql.Timestamp;
+import java.util.List;
 
 public class DepartmentsJSON {
 
@@ -44,6 +46,24 @@ public class DepartmentsJSON {
     private Long payment_account_id;
     private String date_time_created;
     private String date_time_changed;
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
+    private Boolean display_in_online_scheduling;
+
+    public Boolean getDisplay_in_online_scheduling() {
+        return display_in_online_scheduling;
+    }
+
+    public void setDisplay_in_online_scheduling(Boolean display_in_online_scheduling) {
+        this.display_in_online_scheduling = display_in_online_scheduling;
+    }
+
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
 
     public Long getNum_childrens() {
         return num_childrens;

@@ -332,4 +332,21 @@ public class DepartmentsController {
             logger.error("Controller getDeppartValues error with id=" + id.toString(), e);
             return new ResponseEntity<>("Error loading document values", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
+
+
+    @RequestMapping(
+            value = "/api/auth/getDepartmentContactsList",
+            params = {"company_id","department_id"},
+            method = RequestMethod.GET, produces = "application/json;charset=utf8")
+    public ResponseEntity<?> getDepartmentContactsList(
+            @RequestParam("company_id") Long company_id,
+            @RequestParam("department_id") Long department_id
+            ) {
+        logger.info("Processing get request for path /api/auth/deleteDepartmentPart with " +
+                " company_id=" + company_id.toString() + ", department_id=" + department_id.toString());
+        try {return new ResponseEntity<>(departmentRepositoryJPA.getContactsList(company_id, department_id,null), HttpStatus.OK);}
+        catch (Exception e){e.printStackTrace();logger.error("Controller getDepartmentContactsList error with company_id=" + company_id.toString() + ", department_id=" + department_id.toString(), e);
+            return new ResponseEntity<>("Requesting getDepartmentContactsList error", HttpStatus.INTERNAL_SERVER_ERROR);}
+    }
+
 }

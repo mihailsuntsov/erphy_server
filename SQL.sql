@@ -6954,5 +6954,20 @@ create table company_contacts(
                                foreign key (company_id)     references companies(id)
 );
 
+create table department_contacts(
+                               id                           bigserial primary key not null,
+                               master_id                    bigint not null not null,
+                               company_id                   bigint not null not null,
+                               department_id                bigint not null not null,
+                               additional   				        varchar(100) not null, -- eg. "Sales manager telephone"
+                               contact_type 				        varchar(50) not null, 			-- instagram/youtube/email/telephone
+                               contact_value 				        varchar(1000) not null, 		-- eg. https://www.instagram.com/msuntsov
+                               display_in_os 				        boolean, 					        -- display or not in online scheduling
+                               location_os 				          varchar(10), 					    -- where display this contact in Online scheduling (vertical/horizontal)
+                               output_order				          int not null,
+                               foreign key (master_id)      references users(id),
+                               foreign key (company_id)     references companies(id)
+);
 
+alter table departments add column display_in_online_scheduling boolean;
 

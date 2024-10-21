@@ -92,6 +92,17 @@ public class Departments {
     @ManyToMany(mappedBy="departments")
     private Set<User> users = new HashSet<User>();
 
+    @Column(name="display_in_online_scheduling")
+    private Boolean display_in_online_scheduling;
+
+    public Boolean getDisplay_in_online_scheduling() {
+        return display_in_online_scheduling;
+    }
+
+    public void setDisplay_in_online_scheduling(Boolean display_in_online_scheduling) {
+        this.display_in_online_scheduling = display_in_online_scheduling;
+    }
+
     public SpravTypePrices getPriceType() {
         return priceType;
     }

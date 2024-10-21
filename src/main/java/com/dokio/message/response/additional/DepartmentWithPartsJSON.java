@@ -1,5 +1,7 @@
 package com.dokio.message.response.additional;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
+
 import java.util.List;
 
 public class DepartmentWithPartsJSON {
@@ -9,21 +11,24 @@ public class DepartmentWithPartsJSON {
     private String department_address;
     private String department_additional;
     private List<DepartmentPartJSON> parts;
+    List<CompanyContactsForm> contactsList;
 
-    public DepartmentWithPartsJSON(Long department_id, String department_name, String department_address, String department_additional, List<DepartmentPartJSON> parts) {
+    public DepartmentWithPartsJSON(Long department_id, String department_name, String department_address, String department_additional, List<DepartmentPartJSON> parts, List<CompanyContactsForm> contactsList) {
         this.department_id = department_id;
         this.department_name = department_name;
         this.parts = parts;
         this.department_address = department_address;
         this.department_additional = department_additional;
+        this.contactsList = contactsList;
     }
-//    private Long part_id;
-//    private Long department_id;
-//    private String part_name;
-//    private String part_description;
-//    private Boolean is_active;
-//    private String department_name;
 
+    public List<CompanyContactsForm> getContactsList() {
+        return contactsList;
+    }
+
+    public void setContactsList(List<CompanyContactsForm> contactsList) {
+        this.contactsList = contactsList;
+    }
 
     public String getDepartment_address() {
         return department_address;

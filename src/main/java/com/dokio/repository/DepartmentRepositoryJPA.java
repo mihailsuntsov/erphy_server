@@ -19,6 +19,7 @@
 package com.dokio.repository;
 
 import com.dokio.message.request.DepartmentForm;
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.DepartmentPartsForm;
 import com.dokio.message.response.DepartmentsListJSON;
 import com.dokio.message.response.Settings.UserSettingsJSON;
@@ -242,7 +243,8 @@ public class DepartmentRepositoryJPA {
                     " name," +
                     " address," +
                     " price_id," +
-                    " additional" +//доп. информация по отделению
+                    " additional," +//доп. информация по отделению
+                    " display_in_online_scheduling" +
                     ") values ("+
                     myMasterId + ", "+//мастер-аккаунт
                     myId + ", "+ //создатель
@@ -253,7 +255,8 @@ public class DepartmentRepositoryJPA {
                     ":name," +
                     ":address," +
                     request.getPrice_id() + ", " +
-                    ":additional)";
+                    ":additional," +
+                    request.getDisplay_in_online_scheduling()+")";
             try{
 
                 commonUtilites.idBelongsMyMaster("companies", request.getCompany_id(), myMasterId);
@@ -269,7 +272,7 @@ public class DepartmentRepositoryJPA {
                 stringQuery="select id from departments where date_time_created=(to_timestamp('"+timestamp+"','YYYY-MM-DD HH24:MI:SS.MS')) and creator_id="+myId;
                 Query query2 = entityManager.createNativeQuery(stringQuery);
                 newDocId=Long.valueOf(query2.getSingleResult().toString());
-
+                saveContacts(request.getCompany_id(), newDocId, myMasterId, request.getOnlineSchedulingContactsList());
                 return newDocId;
 
             } catch (Exception e) {
@@ -304,6 +307,7 @@ public class DepartmentRepositoryJPA {
                             " boxoffice_id="+request.getBoxoffice_id()+"," +
                             " payment_account_id="+request.getPayment_account_id()+"," +
                             " changer_id = " + myId + ","+
+                            " display_in_online_scheduling = " + request.getDisplay_in_online_scheduling() + "," +
                             " date_time_changed= now()" +
                             " where " +
                             " id= "+request.getId()+" and master_id = " + myMasterId;
@@ -320,6 +324,7 @@ public class DepartmentRepositoryJPA {
                 query.setParameter("additional",request.getAdditional());
                 query.executeUpdate();
                 saveDepartmentPartsOrder(request.getParts(),myMasterId);
+                saveContacts(request.getCompany_id(), request.getId(), myMasterId, request.getOnlineSchedulingContactsList());
                 return 1;
             }catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -330,11 +335,11 @@ public class DepartmentRepositoryJPA {
         } else return -1; //недостаточно прав
     }
 
-    public Departments getDepartmentById(Long id){
-        EntityManager em = emf.createEntityManager();
-        Departments d = em.find(Departments.class, id);
-        return d;
-    }
+//    public Departments getDepartmentById(Long id){
+//        EntityManager em = emf.createEntityManager();
+//        Departments d = em.find(Departments.class, id);
+//        return d;
+//    }
 
 //    public List<Departments> getDeptChildrens(int parentDeptId){
 //        String stringQuery;
@@ -523,7 +528,8 @@ public class DepartmentRepositoryJPA {
                     "           coalesce((select name from departments where id=coalesce(p.parent_id,'0')),'') as parent, " +
                     "           (select count(*) from departments ds where ds.parent_id=p.id) as num_childrens," +
                     "           p.boxoffice_id as boxoffice_id, " +
-                    "           p.payment_account_id as payment_account_id " +
+                    "           p.payment_account_id as payment_account_id, " +
+                    "           coalesce(p.display_in_online_scheduling, false) " +
 
                     "           from departments p" +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
@@ -562,6 +568,7 @@ public class DepartmentRepositoryJPA {
                     returnObj.setNum_childrens(Long.parseLong(                  obj[15].toString()));
                     returnObj.setBoxoffice_id(obj[16] != null ? Long.parseLong( obj[16].toString()) : null);
                     returnObj.setPayment_account_id(obj[17]!=null?Long.parseLong(obj[17].toString()) : null);
+                    returnObj.setDisplay_in_online_scheduling((Boolean)         obj[18]);
                 }
                 return returnObj;
             } catch (Exception e) {
@@ -671,7 +678,8 @@ public class DepartmentRepositoryJPA {
                 " boxoffice_id, " +
                 " payment_account_id, " +
                 " name," +
-                " address" +
+                " address," +
+                " display_in_online_scheduling" +
                 ") values ("+
                 myMasterId + ", "+//мастер-аккаунт
                 myMasterId + ", "+ //создатель
@@ -681,7 +689,8 @@ public class DepartmentRepositoryJPA {
                 request.getBoxoffice_id()+ ", "+ // касса предприятия
                 request.getPayment_account_id() + ", "+ //
                 ":name," +
-                "''"+
+                "'', " +
+                "true"+
                 ")";
         try{
             Query query = entityManager.createNativeQuery(stringQuery);
@@ -959,7 +968,7 @@ public class DepartmentRepositoryJPA {
             List<Object[]> queryList = query.getResultList();
             List<DepartmentWithPartsJSON> returnList = new ArrayList<>();
             List<DepartmentPartJSON> partsList = new ArrayList<>();
-            List<ResourceDepPart> resources = spravResourceRepository.getResourcesList(companyId,masterId); // all resources of company
+            List<ResourceDepPart> resources = spravResourceRepository.getResourcesList(companyId, masterId); // all resources of company
             Long lastDepId = 0L;
             Long currentDepId=0L;
             String lastDepName = "";
@@ -969,12 +978,17 @@ public class DepartmentRepositoryJPA {
             String currentDepAddress = "";
             String currentDepAdd = "";
 
+
+            List<CompanyContactsForm> contactsList = getContactsList (companyId, null, masterId);// if null then all departments
+
+
             for (Object[] obj : queryList) {
 
                 currentDepId = Long.parseLong(obj[5].toString());
                 currentDepName = (String) obj[4];
                 currentDepAddress = (String) obj[6];
                 currentDepAdd = (String) obj[7];
+
 
                 DepartmentPartJSON part = new DepartmentPartJSON();
                 part.setId(Long.parseLong(           obj[0].toString()));
@@ -985,7 +999,12 @@ public class DepartmentRepositoryJPA {
                 part.setResources(filterResourcesByDepPart(part.getId(),resources));
 
                 if((!currentDepId.equals(lastDepId)) && lastDepId != 0L ) { // department has been changed
-                    returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList));
+                    List<CompanyContactsForm> lastDepContactsList=new ArrayList<>();
+                    for(CompanyContactsForm contact: contactsList){
+                        if(contact.getDepartment_id().equals(lastDepId) && contact.getDisplay_in_os())
+                            lastDepContactsList.add(contact);
+                    }
+                    returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList, lastDepContactsList));
                     partsList = new ArrayList<>();
                 }
                 partsList.add(part);
@@ -995,8 +1014,14 @@ public class DepartmentRepositoryJPA {
                 lastDepAdd = currentDepAdd;
             }
 
-            if(currentDepId>0L)
-                returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList));
+            if(currentDepId>0L) {
+                List<CompanyContactsForm> lastDepContactsList=new ArrayList<>();
+                for(CompanyContactsForm contact: contactsList){
+                    if(contact.getDepartment_id().equals(lastDepId) && contact.getDisplay_in_os())
+                        lastDepContactsList.add(contact);
+                }
+                returnList.add(new DepartmentWithPartsJSON(lastDepId, lastDepName, lastDepAddress, lastDepAdd, partsList, lastDepContactsList));
+            }
 
             return returnList;
         } catch (Exception e) {
@@ -1383,5 +1408,168 @@ public class DepartmentRepositoryJPA {
                 return null;
             }
         } else return -1;
+    }
+
+    // ******************************************** CONTACTS ********************************************
+
+    public List<CompanyContactsForm> getContactsList (Long company_id, Long department_id, Long masterId) {
+        String stringQuery;
+        if(Objects.isNull(masterId))
+            masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                "           select" +
+                        "           p.contact_type," +      // instagram/youtube/email/telephone etc.
+                        "           p.contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        "           p.additional,"+         // eg. "Sales manager telephone"
+                        "           p.display_in_os," +     // display or not in online scheduling
+                        "           p.location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        "           p.output_order, " +
+                        "           p.id," +
+                        "           p.department_id " +
+                        "           from department_contacts p" +
+                        "           where  p.master_id=" + masterId +
+                        "           and p.company_id=" + company_id;
+        if(!Objects.isNull(department_id)) stringQuery=stringQuery+" and p.department_id=" + department_id;
+        stringQuery=stringQuery+" order by p.output_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CompanyContactsForm> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                CompanyContactsForm doc = new CompanyContactsForm();
+                doc.setContact_type((String)                obj[0]);
+                doc.setContact_value((String)               obj[1]);
+                doc.setAdditional((String)                  obj[2]);
+                doc.setDisplay_in_os((Boolean)              obj[3]);
+                doc.setLocation_os((String)                 obj[4]);
+                doc.setOutput_order((Integer)               obj[5]);
+                doc.setId(Long.parseLong(                   obj[6].toString()));
+                doc.setCompany_id(company_id);
+                doc.setDepartment_id(Long.parseLong(        obj[7].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method getContactsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public Boolean saveContacts(Long companyId, Long department_id, Long myMasterId, List<CompanyContactsForm> contactsList){
+        Set<Long> contactsIds=new HashSet<>();
+        try {
+            commonUtilites.idBelongsMyMaster("companies", companyId, myMasterId);
+            commonUtilites.idBelongsMyMaster("departments", department_id, myMasterId);
+            // Сначала удалим контакты, которые были удалены на фронете.
+            // Собираем List из id оставшихся контактов, и удаляем все что не входит в этот List
+            for (CompanyContactsForm contact : contactsList) {
+                if(!Objects.isNull(contact.getId())) {
+                    commonUtilites.idBelongsMyMaster("department_contacts", contact.getId(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", contact.getCompany_id(), myMasterId);
+                    contactsIds.add(contact.getId());
+                }
+            }
+            deleteContactsExcessRows(contactsIds.size()>0?(commonUtilites.SetOfLongToString(contactsIds,",","","")):"0", myMasterId, companyId, department_id);
+            // Затем в зависимости от того, есть или нет такой контакт в БД, делаем соответственно update или insert
+            for (CompanyContactsForm contact : contactsList) {
+                if(Objects.isNull(contact.getId())) {
+                    contact.setDepartment_id(department_id);
+                    insertContact(contact, myMasterId);
+                }else {
+                    updateContact(contact, myMasterId);
+                }
+            }
+
+        } catch (Exception e){
+            e.printStackTrace();
+            logger.error("Exception in method DepartmentRepositoryJPA/saveContacts.", e);
+            return null;
+        }
+        return true;
+    }
+    private Boolean insertContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " insert into department_contacts (" +
+                        " master_id," +
+                        " company_id," +
+                        " department_id," +
+                        " contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os," +     // display or not in online scheduling
+                        " location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order" +
+                        ") values ("+
+                        masterId + ","+
+                        contact.getCompany_id() + ","+
+                        contact.getDepartment_id() + ","+
+                        ":contact_type ,"+
+                        ":contact_value ,"+
+                        ":additional ,"+
+                        contact.getDisplay_in_os() + ","+
+                        ":location_os,"+
+                        contact.getOutput_order()+
+                        ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method DepartmentRepositoryJPA/insertContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean updateContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " update department_contacts set" +
+                        " contact_type = :contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value = :contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional = :additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os = " + contact.getDisplay_in_os()  + ", " + // display or not in online scheduling
+                        " location_os = :location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order = " + contact.getOutput_order() +
+                        " where master_id = " + masterId +
+                        " and company_id=" + contact.getCompany_id() +
+                        " and department_id=" + contact.getDepartment_id() +
+                        " and id = " + contact.getId();
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method DepartmentRepositoryJPA/updateContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean deleteContactsExcessRows(String contactsIds, Long masterId, Long companyId, Long departmentId) throws Exception {
+        String stringQuery;
+        stringQuery =   " delete from department_contacts " +
+                " where master_id=" + masterId +
+                " and company_id=" + companyId +
+                " and department_id=" + departmentId +
+                " and id not in (" + contactsIds + ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method DepartmentRepositoryJPA/deleteContactsExcessRows. SQL - "+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
     }
 }
