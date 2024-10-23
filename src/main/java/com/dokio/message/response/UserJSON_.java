@@ -1,5 +1,6 @@
 package com.dokio.message.response;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.response.additional.IdAndNameJSON;
 import com.dokio.message.response.additional.UserProductDeppartsJSON;
 
@@ -41,6 +42,51 @@ public class UserJSON_ {
         private String counterparty_name;
         private String incoming_service_name;
         private boolean is_display_in_employee_list;
+        private Long logo_id;
+        private String logo_file_name;
+        private Boolean is_business_card;
+        private Boolean is_online_booking;
+        private List<CompanyContactsForm> onlineSchedulingContactsList;
+
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
+
+    public Boolean getIs_business_card() {
+        return is_business_card;
+    }
+
+    public void setIs_business_card(Boolean is_business_card) {
+        this.is_business_card = is_business_card;
+    }
+
+    public Boolean getIs_online_booking() {
+        return is_online_booking;
+    }
+
+    public void setIs_online_booking(Boolean is_online_booking) {
+        this.is_online_booking = is_online_booking;
+    }
+
+    public Long getLogo_id() {
+        return logo_id;
+    }
+
+    public void setLogo_id(Long logo_id) {
+        this.logo_id = logo_id;
+    }
+
+    public String getLogo_file_name() {
+        return logo_file_name;
+    }
+
+    public void setLogo_file_name(String logo_file_name) {
+        this.logo_file_name = logo_file_name;
+    }
 
     public boolean isIs_display_in_employee_list() {
         return is_display_in_employee_list;

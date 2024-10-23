@@ -340,29 +340,63 @@ public class FilesController {
             return responseEntity;}
     }
 
-    @SuppressWarnings("Duplicates")
-    @GetMapping(value = "/api/auth/getFileImageById/{fileid:.+}" ,
-    produces = "image/jpeg")
+    @RequestMapping(
+            value = "/api/auth/getFileImageById",
+            params = {"file_id","is_full_size"},
+            method = RequestMethod.GET,
+            produces = "image/jpeg")
     @ResponseBody
-    public ResponseEntity<byte[]> getFileImageById(@PathVariable String fileid) throws Exception, UnsupportedEncodingException {
-        logger.info("Processing get request for path /api/auth/getFileImageById: file ID=" + fileid);
+    public ResponseEntity<byte[]> getFileImageById(
+            @RequestParam("file_id") Long file_id,
+            @RequestParam("is_full_size") Boolean is_full_size
+    ) throws Exception {
+        logger.info("Processing get request for path /api/auth/getFileImageById: file ID=" + file_id);
         Long masterId = userRepositoryJPA.getMyMasterId();
-        FileInfoJSON fileInfo = fileRepository.getFileAuth(Long.valueOf(fileid), masterId);
+        FileInfoJSON fileInfo = fileRepository.getFileAuth(Long.valueOf(file_id), masterId);
         if(fileInfo !=null){
-//            String filePath=fileInfo.getPath()+"/thumbs/"+fileInfo.getName();
-            String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
+            String filePath=fileInfo.getPath()+(is_full_size?"/":"/thumbs/")+fileInfo.getName();
             String originalFileName = fileInfo.getOriginal_name();
             byte[] cos = storageService.loadFile(filePath, masterId);
-//            HttpHeaders h = new HttpHeaders();
-//            h.add("Content-type", "image/jpeg");
-//            final HttpHeaders httpHeaders= new HttpHeaders();
-//            httpHeaders.setContentType(MediaType.IMAGE_PNG);
             return ResponseEntity.ok()
-//                    .headers(httpHeaders)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
                     .body(cos);
         } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
             return responseEntity;}
+    }
+
+//    @GetMapping(value = "/api/auth/getFileImageById/{fileid:.+}" ,
+//    produces = "image/jpeg")
+//    @ResponseBody
+//    public ResponseEntity<byte[]> getFileImageById(@PathVariable String fileid) throws Exception, UnsupportedEncodingException {
+//        logger.info("Processing get request for path /api/auth/getFileImageById: file ID=" + fileid);
+//        Long masterId = userRepositoryJPA.getMyMasterId();
+//        FileInfoJSON fileInfo = fileRepository.getFileAuth(Long.valueOf(fileid), masterId);
+//        if(fileInfo !=null){
+////            String filePath=fileInfo.getPath()+"/thumbs/"+fileInfo.getName();
+//            String filePath=fileInfo.getPath()+"/"+fileInfo.getName();
+//            String originalFileName = fileInfo.getOriginal_name();
+//            byte[] cos = storageService.loadFile(filePath, masterId);
+////            HttpHeaders h = new HttpHeaders();
+////            h.add("Content-type", "image/jpeg");
+////            final HttpHeaders httpHeaders= new HttpHeaders();
+////            httpHeaders.setContentType(MediaType.IMAGE_PNG);
+//            return ResponseEntity.ok()
+////                    .headers(httpHeaders)
+//                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + URLEncoder.encode(originalFileName, "UTF-8").replace("+", " ") + "\"")
+//                    .body(cos);
+//        } else {ResponseEntity responseEntity = new ResponseEntity<>("Not enought permissions, of there is no file in system", HttpStatus.FORBIDDEN);
+//            return responseEntity;}
+//    }
+
+    @GetMapping(value = "/api/auth/getFileIinfoById/{fileid:.+}")
+    @ResponseBody
+    public ResponseEntity<?> getFileIinfoById(@PathVariable String fileid) throws Exception, UnsupportedEncodingException {
+        logger.info("Processing get request for path /api/auth/getFileIinfoById: file ID=" + fileid);
+        try {
+            Long masterId = userRepositoryJPA.getMyMasterId();
+            return new ResponseEntity<>(fileRepository.getFileAuth(Long.valueOf(fileid), masterId), HttpStatus.OK);}
+        catch (Exception e){logger.error("Controller recoverFilesFromTrash error", e);
+            return new ResponseEntity<>("Error recovering files from trash", HttpStatus.INTERNAL_SERVER_ERROR);}
     }
 //*************************************************************************************************************************************************
 //**************************************************  C A T E G O R I E S  ************************************************************************

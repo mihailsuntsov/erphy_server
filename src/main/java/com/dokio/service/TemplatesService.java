@@ -84,7 +84,7 @@ public class TemplatesService {
                 return new FileInfoJSON();
             }
         } catch (Exception e) {
-            logger.error("Exception in method getFileName. SQL: " + stringQuery);
+            logger.error("Exception in method getFileInfo. SQL: " + stringQuery);
             e.printStackTrace();
             return null;
         }
@@ -116,7 +116,7 @@ public class TemplatesService {
                 return new FileInfoJSON();
             }
         } catch (Exception e) {
-            logger.error("Exception in method getFileName. SQL: " + stringQuery);
+            logger.error("Exception in method getFileInfo. SQL: " + stringQuery);
             e.printStackTrace();
             return null;
         }

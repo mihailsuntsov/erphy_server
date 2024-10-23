@@ -65,6 +65,9 @@ public class User{
     @Column(name = "activation_code")
     private String activationCode;
 
+    @Column(name = "logo_id")
+    private Long logo_id;
+
     @Column(name = "repair_pass_code")
     private String repairPassCode;
 
@@ -186,6 +189,13 @@ public class User{
     @Column(name = "is_display_in_employee_list") // This user will be displayed in the lists of users who provide services
     private Boolean is_display_in_employee_list;
 
+    @Column(name = "is_business_card") // This user will be displayed in the lists of users who provide services
+    private Boolean is_business_card;
+
+    @Column(name = "is_online_booking") // This user will be displayed in the lists of users who provide services
+    private Boolean is_online_booking;
+
+
 
     public User() {}
 
@@ -194,6 +204,30 @@ public class User{
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public Long getLogo_id() {
+        return logo_id;
+    }
+
+    public void setLogo_id(Long logo_id) {
+        this.logo_id = logo_id;
+    }
+
+    public Boolean getIs_business_card() {
+        return is_business_card;
+    }
+
+    public void setIs_business_card(Boolean is_business_card) {
+        this.is_business_card = is_business_card;
+    }
+
+    public Boolean getIs_online_booking() {
+        return is_online_booking;
+    }
+
+    public void setIs_online_booking(Boolean is_online_booking) {
+        this.is_online_booking = is_online_booking;
     }
 
     public BigDecimal getPlanPrice() {

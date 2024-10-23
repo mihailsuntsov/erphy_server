@@ -18,6 +18,7 @@
 
 package com.dokio.message.request;
 
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.UserProductDeppartsForm;
 import com.dokio.message.response.additional.IdAndNameJSON;
 
@@ -48,6 +49,9 @@ public class SignUpForm {
     private Integer localeId;
     private Integer languageId;
     private String language;
+    private Long logo_id;
+    private Boolean is_business_card;
+    private Boolean is_online_booking;
     private List<IdAndNameJSON> userProducts;
     private List<IdAndNameJSON> deppartProducts;
     private boolean is_employee;
@@ -56,6 +60,7 @@ public class SignUpForm {
     private Long job_title_id;
     private Long counterparty_id;
     private Long incoming_service_id;
+    private List<CompanyContactsForm> onlineSchedulingContactsList;
 
     @Override
     public String toString() {
@@ -83,6 +88,9 @@ public class SignUpForm {
                 ", localeId=" + localeId +
                 ", languageId=" + languageId +
                 ", language='" + language + '\'' +
+                ", logo_id=" + logo_id +
+                ", is_business_card=" + is_business_card +
+                ", is_online_booking=" + is_online_booking +
                 ", userProducts=" + userProducts +
                 ", deppartProducts=" + deppartProducts +
                 ", is_employee=" + is_employee +
@@ -94,12 +102,44 @@ public class SignUpForm {
                 '}';
     }
 
+    public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
+        return onlineSchedulingContactsList;
+    }
+
+    public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
+        this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
+
+    public Boolean getIs_business_card() {
+        return is_business_card;
+    }
+
+    public void setIs_business_card(Boolean is_business_card) {
+        this.is_business_card = is_business_card;
+    }
+
+    public Boolean getIs_online_booking() {
+        return is_online_booking;
+    }
+
+    public void setIs_online_booking(Boolean is_online_booking) {
+        this.is_online_booking = is_online_booking;
+    }
+
     public boolean isIs_display_in_employee_list() {
         return is_display_in_employee_list;
     }
 
     public void setIs_display_in_employee_list(boolean is_display_in_employee_list) {
         this.is_display_in_employee_list = is_display_in_employee_list;
+    }
+
+    public Long getLogo_id() {
+        return logo_id;
+    }
+
+    public void setLogo_id(Long logo_id) {
+        this.logo_id = logo_id;
     }
 
     public int getId() {

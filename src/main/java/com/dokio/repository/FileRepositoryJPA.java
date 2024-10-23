@@ -135,7 +135,7 @@ public class FileRepositoryJPA {
                     "           from files p " +
                     "           INNER JOIN companies cmp ON p.company_id=cmp.id " +
 //                    "           INNER JOIN users u ON p.master_id=u.id " +
-                    "           INNER JOIN users uo ON p.owner_id=uo.id " +
+                    "           LEFT OUTER JOIN users uo ON p.owner_id=uo.id " + // LEFT OUTER because owner_id can be null
                     "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
                     "           LEFT OUTER JOIN users uc ON p.changer_id=uc.id " +
                     "           where  p.master_id=" + myMasterId +

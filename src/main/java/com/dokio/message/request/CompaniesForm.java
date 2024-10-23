@@ -91,6 +91,9 @@ public class CompaniesForm {
     private Boolean nds_included;                // used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
     private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
     private Integer time_zone_id;
+    private Long logo_id;
+    private Boolean is_business_card;
+    private Boolean is_online_booking;
 
     private List<CompanyContactsForm> onlineSchedulingContactsList;
 
@@ -149,12 +152,36 @@ public class CompaniesForm {
     private String stl_selected_elements_color;
     private String stl_job_title_color;
 
+    public Boolean getIs_business_card() {
+        return is_business_card;
+    }
+
+    public void setIs_business_card(Boolean is_business_card) {
+        this.is_business_card = is_business_card;
+    }
+
+    public Boolean getIs_online_booking() {
+        return is_online_booking;
+    }
+
+    public void setIs_online_booking(Boolean is_online_booking) {
+        this.is_online_booking = is_online_booking;
+    }
+
     public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
         return onlineSchedulingContactsList;
     }
 
     public void setOnlineSchedulingContactsList(List<CompanyContactsForm> onlineSchedulingContactsList) {
         this.onlineSchedulingContactsList = onlineSchedulingContactsList;
+    }
+
+    public Long getLogo_id() {
+        return logo_id;
+    }
+
+    public void setLogo_id(Long logo_id) {
+        this.logo_id = logo_id;
     }
 
     public Long getFld_creator_id() {

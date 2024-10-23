@@ -20,6 +20,7 @@ package com.dokio.repository;
 
 import com.dokio.message.request.Settings.UserSettingsForm;
 import com.dokio.message.request.SignUpForm;
+import com.dokio.message.request.additional.CompanyContactsForm;
 import com.dokio.message.request.additional.LegalMasterUserInfoForm;
 //import com.dokio.message.request.additional.UserProductDeppartsForm;
 import com.dokio.message.request.additional.UserCagentForm;
@@ -108,6 +109,8 @@ public class UserRepositoryJPA {
     SpravStatusDocRepository ssd;
     @Autowired
     private CryptoService cryptoService;
+    @Autowired
+    private UserRepositoryJPA userRepositoryJPA;
 
 
 
@@ -214,6 +217,8 @@ public class UserRepositoryJPA {
 //                    }
 //                    deleteDeppartsThatNoMoreContainInThisProduct(existingDepparts, masterId, product.getProduct_id(), (long) signUpRequest.getId());
                 }
+                saveContacts(Long.valueOf(signUpRequest.getCompany_id()), createdUserId, masterId, signUpRequest.getOnlineSchedulingContactsList());
+
                 return createdUserId;
             } catch (Exception e) {
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -285,7 +290,9 @@ public class UserRepositoryJPA {
                 user.setJob_title_id(request.getJob_title_id());
                 user.setCounterparty_id(request.getCounterparty_id());
                 user.setIncoming_service_id(request.getIncoming_service_id());
-
+                user.setLogo_id(request.getLogo_id());
+                user.setIs_business_card(request.getIs_business_card());
+                user.setIs_online_booking(request.getIs_online_booking());
                 em.getTransaction().commit();
                 em.close();
 
@@ -302,6 +309,7 @@ public class UserRepositoryJPA {
                     existingUserServices.add(product.getId());
                 }
                 deleteNoMoreContainedUserServicesOrEmployees(existingUserServices, masterId, (long) request.getId(),"product");
+                saveContacts(Long.valueOf(request.getCompany_id()), Long.valueOf(request.getId()), masterId, request.getOnlineSchedulingContactsList());
                 return 1;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -894,12 +902,18 @@ public class UserRepositoryJPA {
                     "           coalesce(sjt.name,'') as jobtitle_name, " +
                     "           pgp_sym_decrypt(cg.name_enc,:cryptoPassword) as counterparty_name, " +
                     "           prd.name as service_name, " +
-                    "           coalesce(p.is_display_in_employee_list, false) as is_display_in_employee_list" +
+                    "           coalesce(p.is_display_in_employee_list, false) as is_display_in_employee_list," +
+                    "           p.logo_id as logo_id, " +
+                    "           f.name as logo_file_name, " +
+                    "           coalesce(p.is_business_card,false) as is_business_card, " +
+                    "           coalesce(p.is_online_booking,false) as is_online_booking " +
+
                     "           from users p" +
 
                     "           left outer join sprav_jobtitles sjt on sjt.id = p.job_title_id " +
                     "           left outer join cagents cg on cg.id = p.counterparty_id " +
                     "           left outer join products prd on prd.id = p.incoming_service_id " +
+                    "           left outer join files f ON p.logo_id=f.id " +
 
                     "           where p.master_id="+myMasterId+" and p.id= " + id;
             stringQuery = stringQuery + " and p.master_id="+getMyMasterId();//принадлежит к предприятиям моего родителя
@@ -949,11 +963,16 @@ public class UserRepositoryJPA {
                     doc.setCounterparty_name((String)           obj[29]);
                     doc.setIncoming_service_name((String)       obj[30]);
                     doc.setIs_display_in_employee_list((Boolean)obj[31]);
+                    doc.setLogo_id(queryList.get(0)[32] != null ? Long.parseLong(queryList.get(0)[32].toString()) : null);
+                    doc.setLogo_file_name((String) queryList.get(0)[33]);
+                    doc.setIs_business_card((Boolean) queryList.get(0)[34]);
+                    doc.setIs_online_booking((Boolean) queryList.get(0)[35]);
 
                     doc.setUserDepartmentsNames(getUserDepartmentsNames(id));
                     doc.setUserDepartmentsId(getUserDepartmentsId(id));
                     doc.setUserGroupsId(getUserGroupsId(id));
                     doc.setUserProducts(getUserProducts(id, myMasterId));
+                    doc.setOnlineSchedulingContactsList(getContactsList(doc.getCompany_id(),doc.getId(),myMasterId));
 
                 }
                 return doc;
@@ -1872,6 +1891,170 @@ public class UserRepositoryJPA {
             throw new Exception();
         }
     }
+
+    // ******************************************** CONTACTS ********************************************
+
+    public List<CompanyContactsForm> getContactsList (Long company_id, Long user_id, Long masterId) {
+        String stringQuery;
+        if(Objects.isNull(masterId))
+            masterId = userRepositoryJPA.getMyMasterId();
+        stringQuery =
+                "           select" +
+                        "           p.contact_type," +      // instagram/youtube/email/telephone etc.
+                        "           p.contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        "           p.additional,"+         // eg. "Sales manager telephone"
+                        "           p.display_in_os," +     // display or not in online scheduling
+                        "           p.location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        "           p.output_order, " +
+                        "           p.id," +
+                        "           p.user_id " +
+                        "           from user_contacts p" +
+                        "           where  p.master_id=" + masterId +
+                        "           and p.company_id=" + company_id;
+        if(!Objects.isNull(user_id)) stringQuery=stringQuery+" and p.user_id=" + user_id;
+        stringQuery=stringQuery+" order by p.output_order";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            List<Object[]> queryList = query.getResultList();
+            List<CompanyContactsForm> returnList = new ArrayList<>();
+            for (Object[] obj : queryList) {
+                CompanyContactsForm doc = new CompanyContactsForm();
+                doc.setContact_type((String)                obj[0]);
+                doc.setContact_value((String)               obj[1]);
+                doc.setAdditional((String)                  obj[2]);
+                doc.setDisplay_in_os((Boolean)              obj[3]);
+                doc.setLocation_os((String)                 obj[4]);
+                doc.setOutput_order((Integer)               obj[5]);
+                doc.setId(Long.parseLong(                   obj[6].toString()));
+                doc.setCompany_id(company_id);
+                doc.setUser_id(Long.parseLong(        obj[7].toString()));
+                returnList.add(doc);
+            }
+            return returnList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method UserRepositoryJPA/getContactsList. SQL query:" + stringQuery, e);
+            return null;
+        }
+    }
+
+    public Boolean saveContacts(Long companyId, Long user_id, Long myMasterId, List<CompanyContactsForm> contactsList){
+        Set<Long> contactsIds=new HashSet<>();
+        try {
+            commonUtilites.idBelongsMyMaster("companies", companyId, myMasterId);
+            commonUtilites.idBelongsMyMaster("users", user_id, myMasterId);
+            // Сначала удалим контакты, которые были удалены на фронете.
+            // Собираем List из id оставшихся контактов, и удаляем все что не входит в этот List
+            for (CompanyContactsForm contact : contactsList) {
+                if(!Objects.isNull(contact.getId())) {
+                    commonUtilites.idBelongsMyMaster("user_contacts", contact.getId(), myMasterId);
+                    commonUtilites.idBelongsMyMaster("companies", contact.getCompany_id(), myMasterId);
+                    contactsIds.add(contact.getId());
+                }
+            }
+            deleteContactsExcessRows(contactsIds.size()>0?(commonUtilites.SetOfLongToString(contactsIds,",","","")):"0", myMasterId, companyId, user_id);
+            // Затем в зависимости от того, есть или нет такой контакт в БД, делаем соответственно update или insert
+            for (CompanyContactsForm contact : contactsList) {
+                if(Objects.isNull(contact.getId())) {
+                    contact.setUser_id(user_id);
+                    insertContact(contact, myMasterId);
+                }else {
+                    updateContact(contact, myMasterId);
+                }
+            }
+
+        } catch (Exception e){
+            e.printStackTrace();
+            logger.error("Exception in method UserRepositoryJPA/saveContacts.", e);
+            return null;
+        }
+        return true;
+    }
+    private Boolean insertContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " insert into user_contacts (" +
+                        " master_id," +
+                        " company_id," +
+                        " user_id," +
+                        " contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os," +     // display or not in online scheduling
+                        " location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order" +
+                        ") values ("+
+                        masterId + ","+
+                        contact.getCompany_id() + ","+
+                        contact.getUser_id() + ","+
+                        ":contact_type ,"+
+                        ":contact_value ,"+
+                        ":additional ,"+
+                        contact.getDisplay_in_os() + ","+
+                        ":location_os,"+
+                        contact.getOutput_order()+
+                        ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method UserRepositoryJPA/insertContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean updateContact(CompanyContactsForm contact,Long masterId) throws Exception {
+        String stringQuery =
+                " update user_contacts set" +
+                        " contact_type = :contact_type," +      // instagram/youtube/email/telephone etc.
+                        " contact_value = :contact_value,"+      // eg. https://www.instagram.com/myinstagram
+                        " additional = :additional,"+         // eg. "Sales manager telephone"
+                        " display_in_os = " + contact.getDisplay_in_os()  + ", " + // display or not in online scheduling
+                        " location_os = :location_os," +       // where display this contact in Online scheduling (vertical/horizontal)
+                        " output_order = " + contact.getOutput_order() +
+                        " where master_id = " + masterId +
+                        " and company_id=" + contact.getCompany_id() +
+                        " and user_id=" + contact.getUser_id() +
+                        " and id = " + contact.getId();
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.setParameter("contact_type",contact.getContact_type());
+            query.setParameter("contact_value",contact.getContact_value());
+            query.setParameter("additional",contact.getAdditional());
+            query.setParameter("location_os",contact.getLocation_os());
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Exception in method UserRepositoryJPA/updateContact. SQL: " + stringQuery, e);
+            throw new Exception();//кидаем исключение чтобы произошла отмена транзакции
+        }
+    }
+    private Boolean deleteContactsExcessRows(String contactsIds, Long masterId, Long companyId, Long userId) throws Exception {
+        String stringQuery;
+        stringQuery =   " delete from user_contacts " +
+                " where master_id=" + masterId +
+                " and company_id=" + companyId +
+                " and user_id=" + userId +
+                " and id not in (" + contactsIds + ")";
+        try {
+            Query query = entityManager.createNativeQuery(stringQuery);
+            query.executeUpdate();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error("Exception in method UserRepositoryJPA/deleteContactsExcessRows. SQL - "+stringQuery, e);
+            e.printStackTrace();
+            throw new Exception();
+        }
+    }
+
 }
 
 

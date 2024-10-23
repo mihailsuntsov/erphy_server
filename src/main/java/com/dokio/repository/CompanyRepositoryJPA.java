@@ -535,7 +535,12 @@ public class CompanyRepositoryJPA {
                         "           coalesce(os.stl_not_selected_elements_color,'#c2c2c2') as stl_not_selected_elements_color, " +
                         "           coalesce(os.stl_selected_elements_color,'#223559') as stl_selected_elements_color, " +
                         "           coalesce(os.stl_job_title_color,'#545454') as stl_job_title_color, " +
-                        "           coalesce(ucb.name, u.name) as fld_creator" + // name of creator by default
+                        "           coalesce(ucb.name, u.name) as fld_creator," + // name of creator by default
+                        "           p.logo_id as logo_id, " +
+                        "           f.name as logo_file_name, " +
+                        "           coalesce(p.is_business_card,false) as is_business_card, " +
+                        "           coalesce(p.is_online_booking,false) as is_online_booking " +
+
                         "           from companies p " +
                         "           INNER JOIN users u ON p.master_id=u.id " +
                         "           LEFT OUTER JOIN users us ON p.creator_id=us.id " +
@@ -546,6 +551,7 @@ public class CompanyRepositoryJPA {
                         "           LEFT OUTER JOIN sprav_sys_countries jr_ctr ON p.jr_country_id=jr_ctr.id" +
                         "           LEFT OUTER JOIN scdl_os_company_settings os ON os.company_id=p.id " +
                         "           LEFT OUTER JOIN users ucb ON os.fld_creator_id=ucb.id " +
+                        "           LEFT OUTER JOIN files f ON p.logo_id=f.id " +
                         "           where p.id= " + id +
                         "           and  p.master_id=" + myMasterId;
 
@@ -691,11 +697,15 @@ public class CompanyRepositoryJPA {
                 doc.setStl_selected_elements_color((String) queryList.get(0)[129]);
                 doc.setStl_job_title_color((String) queryList.get(0)[130]);
                 doc.setFld_creator((String) queryList.get(0)[131]);
-
                 doc.setOnlineSchedulingLanguagesList(getOnlineSchedulingLanguagesList(doc.getId(),myMasterId));
                 doc.setOnlineSchedulingContactsList(getContactsList(doc.getId(),myMasterId, false));
-
                 doc.setOnlineSchedulingFieldsTranslations(getOnlineSchedulingFieldsTranslationsList(doc.getId(), myMasterId));
+                doc.setLogo_id(queryList.get(0)[132] != null ? Long.parseLong(queryList.get(0)[132].toString()) : null);
+                doc.setLogo_file_name((String) queryList.get(0)[133]);
+                doc.setIs_business_card((Boolean) queryList.get(0)[134]);
+                doc.setIs_online_booking((Boolean) queryList.get(0)[135]);
+
+
                 return doc;
             }catch (Exception e) {
                 logger.error("Error of getCompanyValues. stringQuery="+stringQuery, e);
@@ -1274,7 +1284,9 @@ public class CompanyRepositoryJPA {
                     " st_prefix_barcode_pieced = "  + request.getSt_prefix_barcode_pieced() + ", " +// prefix of barcode for pieced product
                     " st_prefix_barcode_packed = "  + request.getSt_prefix_barcode_packed() + ", " +// prefix of barcode for packed product
                     " st_netcost_policy = :st_netcost_policy, " +   // policy of netcost calculation by all company or by each department separately
-
+                    " logo_id = "+request.getLogo_id() + ", " +
+                    " is_business_card = " + request.getIs_business_card() + ", " +
+                    " is_online_booking = " + request.getIs_online_booking() + ", " +
                     " type =            :type," +// entity or individual
                     " legal_form = :legal_form,"+
 //                    " reg_country_id = " + request.getReg_country_id() + "," + // country of registration

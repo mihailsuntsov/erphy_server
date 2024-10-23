@@ -30,11 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import com.dokio.service.StorageService;
@@ -51,7 +47,7 @@ public class UploadController {
     List<String> files = new ArrayList<String>();
 
     @PostMapping("/api/auth/postFile")
-    public ResponseEntity<String> postFile(
+    public ResponseEntity<?> postFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("companyId") Long companyId,
             @RequestParam("anonyme_access") Boolean anonyme_access,
@@ -61,7 +57,6 @@ public class UploadController {
                 + "companyId=" + companyId  + "categoryId=" + categoryId);
 
 
-        String message;
         try {
             int fileSizeMb = Math.round(file.getSize()/1024/1024);
             //plan limit check
@@ -70,14 +65,14 @@ public class UploadController {
                 if(userRepositoryJPA.getMyConsumedResources().getMegabytes()+fileSizeMb>userRepositoryJPA.getMyMaxAllowedResources().getMegabytes())
                     return ResponseEntity.status(HttpStatus.OK).body("-120"); // if current file will be uploaded, then sum size of all master-user files will out of bounds of tariff plan
             Long fileId = storageService.store(file,companyId,anonyme_access,categoryId,description,userRepositoryJPA.getMyMasterId(),userRepositoryJPA.getMyId(), false);
-            if (fileId>0L) message = "You successfully uploaded " + file.getOriginalFilename() + "!";
-            else message = fileId.toString(); // it can be -1, that means not enough permissions
-            return ResponseEntity.status(HttpStatus.OK).body(message);
+            return ResponseEntity.status(HttpStatus.OK).body(fileId);
         } catch (Exception e) {
-            message = "FAIL to upload " + file.getOriginalFilename() + "!";
-            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(null);
         }
     }
+
+
+
 
     @GetMapping("/api/auth/getallfiles")
     public ResponseEntity<List<String>> getListFiles(Model model) {

@@ -6966,8 +6966,33 @@ create table department_contacts(
                                location_os 				          varchar(10), 					    -- where display this contact in Online scheduling (vertical/horizontal)
                                output_order				          int not null,
                                foreign key (master_id)      references users(id),
-                               foreign key (company_id)     references companies(id)
+                               foreign key (company_id)     references companies(id),
+                               foreign key (department_id)  references departments(id)
 );
 
 alter table departments add column display_in_online_scheduling boolean;
 
+alter table companies add column logo_id bigint;
+alter table companies add constraint logo_id_fkey foreign key (logo_id) references files(id);
+alter table users add column logo_id bigint;
+alter table users add constraint logo_id_fkey foreign key (logo_id) references files(id);
+
+alter table companies add column is_business_card boolean;
+alter table companies add column is_online_booking boolean;
+alter table users add column is_business_card boolean;
+alter table users add column is_online_booking boolean;
+create table user_contacts(
+                                  id                            bigserial primary key not null,
+                                  master_id                     bigint not null not null,
+                                  company_id                    bigint not null not null,
+                                  user_id                       bigint not null not null,
+                                  additional   				          varchar(100) not null, -- eg. "Sales manager telephone"
+                                  contact_type 				          varchar(50) not null, 			-- instagram/youtube/email/telephone
+                                  contact_value 				        varchar(1000) not null, 		-- eg. https://www.instagram.com/msuntsov
+                                  display_in_os 				        boolean, 					        -- display or not in online scheduling
+                                  location_os 				          varchar(10), 					    -- where display this contact in Online scheduling (vertical/horizontal)
+                                  output_order				          int not null,
+                                  foreign key (master_id)       references users(id),
+                                  foreign key (company_id)      references companies(id),
+                                  foreign key (user_id)         references users(id)
+);

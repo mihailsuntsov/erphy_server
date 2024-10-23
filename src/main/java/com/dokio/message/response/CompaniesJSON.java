@@ -107,6 +107,10 @@ public class CompaniesJSON {
     private Boolean nds_included;               //-- used with nds_payer as default values for Customers orders fields "Tax" and "Tax included"
     private Integer booking_doc_name_variation_id; // variation's id of name of booking document: 1-appointment, 2-reservation
     private Integer time_zone_id;
+    private Long logo_id;
+    private String logo_file_name;
+    private Boolean is_business_card;
+    private Boolean is_online_booking;
 //    private Integer reg_country_id;           // country of registration
 //    private String tax_number;                // tax number assigned to the taxpayer in the country of registration (like INN in Russia)
 //    private String reg_number;                // registration number assigned to the taxpayer in the country of registration (like OGRN or OGRNIP in Russia)
@@ -168,6 +172,38 @@ public class CompaniesJSON {
     private String stl_selected_elements_color;
     private String stl_job_title_color;
     private String fld_creator;
+
+    public Boolean getIs_business_card() {
+        return is_business_card;
+    }
+
+    public void setIs_business_card(Boolean is_business_card) {
+        this.is_business_card = is_business_card;
+    }
+
+    public Boolean getIs_online_booking() {
+        return is_online_booking;
+    }
+
+    public void setIs_online_booking(Boolean is_online_booking) {
+        this.is_online_booking = is_online_booking;
+    }
+
+    public Long getLogo_id() {
+        return logo_id;
+    }
+
+    public void setLogo_id(Long logo_id) {
+        this.logo_id = logo_id;
+    }
+
+    public String getLogo_file_name() {
+        return logo_file_name;
+    }
+
+    public void setLogo_file_name(String logo_file_name) {
+        this.logo_file_name = logo_file_name;
+    }
 
     public List<CompanyContactsForm> getOnlineSchedulingContactsList() {
         return onlineSchedulingContactsList;

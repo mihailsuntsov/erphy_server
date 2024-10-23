@@ -6,12 +6,21 @@ public class CompanyContactsForm {
     private Long    master_id;
     private Long    company_id;
     private Long    department_id;
+    private Long    user_id;
     private String  additional;     // eg. "Sales manager telephone"
     private String  contact_type;   //instagram/youtube/email/telephone
     private String  contact_value;  //  eg. https://www.instagram.com/msuntsov
     private Boolean display_in_os;  // where display this contact in Online scheduling
     private String  location_os;    // vertical/horizontal
     private Integer output_order;
+
+    public Long getUser_id() {
+        return user_id;
+    }
+
+    public void setUser_id(Long user_id) {
+        this.user_id = user_id;
+    }
 
     public Long getDepartment_id() {
         return department_id;
